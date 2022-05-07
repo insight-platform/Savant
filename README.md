@@ -40,7 +40,8 @@ In our practice, when we create commercial AI software, we often meet the cases 
 
 These cases require detecting the objects in the way the parts of other things hit the bounding box minimally. To achieve that, unique models which calculate box angle are used [RAPiD](https://vip.bu.edu/projects/vsns/cossy/fisheye/rapid/).
 
-![image1](https://vip.bu.edu/files/2020/05/Edge_teaser_w_count.gif) ![image2](https://vip.bu.edu/files/2020/05/RAPiD_1024_Crowd_exhibition_w_count.gif)
+![image1](https://vip.bu.edu/files/2020/05/Edge_teaser_w_count.gif)
+![image2](https://vip.bu.edu/files/2020/05/RAPiD_1024_Crowd_exhibition_w_count.gif)
 
 Such models require additional post-processing, which involves the rotation because otherwise, you cannot utilize most of the classifier models as they need orthogonal boxes as their input.
 
