@@ -118,3 +118,9 @@ The framework uses an established protocol based on Apache AVRO, both for source
 The Framework and Adapters are delivered in the form of a Docker image. To implement the pipeline, you take the base image, add AI models and a custom code with extra dependencies, then build the resulting container image. Some pipelines which don't require additional dependencies can be implemented just by mapping directories with models and user functions into the docker image.
 
 As for now, we provide images for conventional PC architecture based on Intel or AMD CPU and discrete GPUs and for Jetson ARM-based devices.
+
+### What's Next
+
+- [Getting Started]()
+- [Publications and Samples]()
+- [API Documentation]()
