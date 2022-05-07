@@ -124,3 +124,7 @@ As for now, we provide images for conventional PC architecture based on Intel or
 - [Getting Started]()
 - [Publications and Samples]()
 - [API Documentation]()
+
+## Contribution
+
+We welcome anyone who wishes to contribute, report and learn.
