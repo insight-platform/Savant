@@ -56,7 +56,7 @@ Despite the enormous efforts of Nvidia to make the devices fully compatible, the
 
 Even DeepStream itself sometimes behaves unpredictably in certain conditions. The framework code handles those corner cases to avoid crashes or misbehavior.
 
-### Realtime and Capacity Processing
+### Low Latency and Capacity Processing
 
 When running an inference application on an edge device, the developer usually wants real-time performance. Such requirement is due to the nature of the edge - the users place devices near the live data sources like sensors or video cameras, and they expect the device capacity is enough to handle incoming messages or video-stream without the loss. 
 
