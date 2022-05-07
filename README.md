@@ -37,8 +37,19 @@ The framework gives the developer the means to configure and reconfigure the inf
 
 ### Dynamic Sources Management
 
-Dynamic Sources Management
-Savant allows the developer to handle virtual streams of anything without restarting the pipeline. The video files, sets of video files, image collections, network video streams, and raw video frames (USB, GigE) - all is processed universally without the need to reload the pipeline to attach or detach the stream. 
+In DeepStream, the sources and sinks are part of the Gstreamer pipeline because it's by design. However, such a design makes it difficult to create reliable applications in the real world. 
+
+There are reasons for that. The first one is low reliability. The source and sink are external entities that, being coupled into the pipeline, can make it crash when they are failed or are no longer available. E.g., when the RTSP camera is not available, the corresponding RTSP Gstreamer source signals the pipeline to terminate. 
+
+The problem becomes dramatic when multiple sources ingest data into a single pipeline - a natural case in the real world. You don't want to load multiple instances of the same AI models into the GPU because of RAM limitations and overall resource overutilization. So, following the natural Gstreamer approach, you have a muxer scheme with a high chance of failing if any source fails. 
+
+That's why you want to have sources decoupled from the pipeline - to increase the stability of the pipeline and avoid unnecessarily reloads in case of source failure.
+
+Another reason is dynamic source management which is a very difficult task when managed through the Gstreamer directly. You have to implement the logic which attaches and detaches the sources and sinks when needed.
+
+The third reason is connected with media formats. You have to reconfigure Gstremer pads setting proper capabilities when the data source changes the format of media, e.g., switching from h.264 to HEVC codec. The simplest way to do that is to crash and recover, which causes significant unavailability time while AI models are compiled to TensorRT and loaded in GPU RAM. So, you want to avoid that as well.
+
+The framework introduces the means which address all the mentioned problems magically without the need to handle them someway. It allows the developer to handle streams of anything without restarting the pipeline. The video files, sets of video files, image collections, network video streams, and raw video frames (USB, GigE) - all is processed universally without the need to reload the pipeline to attach or detach the stream. 
 
 The framework virtualizes the stream concept by decoupling it from the real-life data source and takes care of a garbage collection for no longer available streams.
 
@@ -79,20 +90,6 @@ Servers deployed in the data center have many resources - dozens of cores, lots 
 Savant provides the configuration means to run the pipeline in a real-time mode, which skips the data if the device is incapable of handling them in the real-time, and in synchronous mode, which guarantees the processing of all the data in a capacity way, maximizing the utilization of the available resources.
 
 ### Handy Source and Sink Adapters
-
-In DeepStream, the sources and sinks are part of the Gstreamer pipeline because it's by design. However, such a design makes it difficult to create reliable applications in the real world. 
-
-There are reasons for that. The first one is low reliability. The source and sink are external entities that, being coupled into the pipeline, can make it crash when they are failed or are no longer available. E.g., when the RTSP camera is not available, the corresponding RTSP Gstreamer source signals the pipeline to terminate. 
-
-The problem becomes dramatic when multiple sources ingest data into a single pipeline - a natural case in the real world. You don't want to load multiple instances of the same AI models into the GPU because of RAM limitations and overall resource overutilization. So, following the natural Gstreamer approach, you have a muxer scheme with a high chance of failing if any source fails. 
-
-That's why you want to have sources decoupled from the pipeline - to increase the stability of the pipeline and avoid unnecessarily reloads in case of source failure.
-
-Another reason is dynamic source management which is a very difficult task when managed through the Gstreamer directly. You have to implement the logic which attaches and detaches the sources and sinks when needed.
-
-The third reason is connected with media formats. You have to reconfigure Gstremer pads setting proper capabilities when the data source changes the format of media, e.g., switching from h.264 to HEVC codec. The simplest way to do that is to crash and recover, which causes significant unavailability time while AI models are compiled to TensorRT and loaded in GPU RAM. So, you want to avoid that as well.
-
-Savant introduces all the means which solve all the mentioned problems magically without the need to handle them someway.
 
 We have implemented several ready-to-use adapters which you can utilize instantly or use as a foundation to develop your own.
 
