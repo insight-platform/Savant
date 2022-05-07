@@ -28,12 +28,12 @@ The Savant framework provides many really needed features out of the box. When w
 
 ## Features
 
-### Dynamic Inference Variables
+### Dynamic Variables
 
 The framework gives the developer the means to configure and reconfigure the inference pipeline operational parameters dynamically with:
-- incoming per-frame metadata;
-- Etcd variables which a watched and instantly applied;
-- 3rd-party sources that are accessible through user-defined functions.
+- ingested frames in per-frame metadata;
+- Etcd, which a watched and instantly applied;
+- 3rd-party sources through user-defined functions.
 
 ### Dynamic Sources Management
 
