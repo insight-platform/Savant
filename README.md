@@ -48,7 +48,11 @@ Savant supports the bounding box rotation out of the box right before passing th
 
 ### Works On Edge and Data Center Equipment
 
+The framework is designed and developed in such a way to run the pipelines on both edge Nvidia devices (Jetson Family) and datacenter devices (like Tesla, Quadro, etc.) with minor or zero changes.
 
+Despite the enormous efforts of Nvidia to make the devices fully compatible, there are architectural features that require special processing to make the code compatible between discrete GPU and Jetson appliances.
+
+Even DeepStream itself sometimes behaves unpredictably in certain conditions. The framework code handles those corner cases to avoid crashes or misbehavior.
 
 ### Realtime and Capacity Processing
 
