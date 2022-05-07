@@ -56,6 +56,16 @@ Even DeepStream itself sometimes behaves unpredictably in certain conditions. Th
 
 ### Realtime and Capacity Processing
 
+When running an inference application on an edge device, the developer usually wants real-time performance. Such requirement is due to the nature of the edge - the users place devices near the live data sources like sensors or video cameras, and they expect the device capacity is enough to handle incoming messages or video-stream without the loss. 
+
+Edge devices usually are low in computing resources, including the storage, CPU, GPU, and RAM, so their overuse is not desired because it could lead to data loss.
+
+On the other hand, the data transmitted to the data center are expected to be processed with latency and delay (because the transmission itself introduces that delay and latency). 
+
+Servers deployed in the data center have many resources - dozens of cores, lots of RAM, very powerful GPU accelerators, and a large amount of storage. It makes it possible to run capacity processing ingesting the data to devices from the files or message brokers (like Apache Kafka) to utilize 100% of the device, limiting the rate only by backpressure of the processing pipeline. Also, the data center devices process the data in parallel - by increasing the number of GPU accelerators installed in the server and among servers.
+
+Savant provides the configuration means to run the pipeline in a real-time mode, which skips the data if the device is incapable of handling them in the real-time, and in synchronous mode, which guarantees the processing of all the data in a capacity way, maximizing the utilization of the available resources.
+
 ### Handy Source and Sink Adapters
 
 ### Easy to Deploy
