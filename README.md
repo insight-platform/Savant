@@ -1,6 +1,6 @@
 # Savant
 
-Savant is an open-source, high-level toolkit for implementing real-time, streaming, highly efficient multimedia AI applications on the Nvidia stack. It makes it possible to develop the inference pipelines which utilize the best Nvidia approaches for both data center and edge accelerators with a very moderate amount of code in Python.
+Savant is an open-source, high-level framework for building real-time, streaming, highly efficient multimedia AI applications on the Nvidia stack. It makes it possible to develop the inference pipelines which utilize the best Nvidia approaches for both data center and edge accelerators with a very moderate amount of code in Python.
 
 [Nvidia DeepStream](https://developer.nvidia.com/deepstream-sdk) is today's most advanced toolkit for developing high-performance real-time streaming AI applications that run several times faster than conventional AI applications executed within the conventional runtimes like PyTorch, TensorFlow and similar. 
 
@@ -45,3 +45,13 @@ These cases require detecting the objects in the way the parts of other things h
 Such models require additional post-processing, which involves the rotation because otherwise, you cannot utilize most of the classifier models as they need orthogonal boxes as their input.
 
 Savant supports the bounding box rotation out of the box right before passing them to the classifier models.
+
+### Works On Edge and Data Center Equipment
+
+
+
+### Realtime and Capacity Processing
+
+### Handy Source and Sink Adapters
+
+### Easy to Deploy
