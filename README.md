@@ -16,10 +16,21 @@ Savant is a very high-level framework over the DeepStream, which incapsulates al
 
 The Savant framework provides many really needed features out of the box. When we created Savant, we utilized the best of our experience, which we achieved through several years of commercial DeepStream development.
 
-### Dynamic Pipeline Configuration
+### Dynamic Inference Variables
 
-The framework gives the developer the means to configure and reconfigure the inference pipeline operation dynamically with:
+The framework gives the developer the means to configure and reconfigure the inference pipeline operational parameters dynamically with:
 - incoming per-frame metadata;
 - Etcd variables which a watched and instantly applied;
 - 3rd-party sources that are accessible through user-defined functions.
+
+### Dynamic Sources Management
+
+Dynamic Sources Management
+Savant allows the developer to handle virtual streams of anything without restarting the pipeline. The video files, sets of video files, image collections, network video streams, and raw video frames (USB, GigE) - all is processed universally without the need to reload the pipeline to attach or detach the stream. 
+
+The framework virtualizes the stream concept by decoupling it from the real-life data source and takes care of a garbage collection for no longer available streams.
+
+As a developer, you use handy source adapters to ingest media data into the framework runtime and use sink adapters to get the results out of it. The adapters can transfer the media through the network or locally. We have already implemented plenty of them useful in a real-life, and you can implement the required one for you if needed - the protocol is simple and utilizes standard open source tools.
+
+The decoupled nature of adapters also provides better reliability because the failed data source affects the adapter operation, not a framework operation.
 
