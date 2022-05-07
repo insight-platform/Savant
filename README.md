@@ -72,4 +72,37 @@ Savant provides the configuration means to run the pipeline in a real-time mode,
 
 ### Handy Source and Sink Adapters
 
+In DeepStream, the sources and sinks are part of the Gstreamer pipeline because it's by design. However, such a design makes it difficult to create reliable applications in the real world. 
+
+There are reasons for that. The first one is low reliability. The source and sink are external entities that, being coupled into the pipeline, can make it crash when they are failed or are no longer available. E.g., when the RTSP camera is not available, the corresponding RTSP Gstreamer source signals the pipeline to terminate. 
+
+The problem becomes dramatic when multiple sources ingest data into a single pipeline - a natural case in the real world. You don't want to load multiple instances of the same AI models into the GPU because of RAM limitations and overall resource overutilization. So, following the natural Gstreamer approach, you have a muxer scheme with a high chance of failing if any source fails. 
+
+That's why you want to have sources decoupled from the pipeline - to increase the stability of the pipeline and avoid unnecessarily reloads in case of source failure.
+
+Another reason is dynamic source management which is a very difficult task when managed through the Gstreamer directly. You have to implement the logic which attaches and detaches the sources and sinks when needed.
+
+The third reason is connected with media formats. You have to reconfigure Gstremer pads setting proper capabilities when the data source changes the format of media, e.g., switching from h.264 to HEVC codec. The simplest way to do that is to crash and recover, which causes significant unavailability time while AI models are compiled to TensorRT and loaded in GPU RAM. So, you want to avoid that as well.
+
+Savant introduces all the means which solve all the mentioned problems magically without the need to handle them someway.
+
+We have implemented several ready-to-use adapters which you can utilize instantly or use as a foundation to develop your own.
+
+Currently, the following source adapters are available:
+- Local video file source;
+- URL video source;
+- Local directory of video files;
+- RTSP source;
+- Local image file source;
+- URL Image source;
+- Image directory source;
+- USB cam source;
+
+There are basic sink adapters are implemented:
+- Inference results to JSON file stream;
+- Resulting video overlay displayed on a screen (per source);
+- MP4 file (per source).
+
+The framework uses an established protocol based on Apache AVRO, both for sources and sinks. The sources and sinks talk to Savant through ZeroMQ sockets.
+
 ### Easy to Deploy
