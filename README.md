@@ -36,12 +36,12 @@ The decoupled nature of adapters also provides better reliability because the fa
 
 ## Rotated Bounding Boxes Out Of The Box
 
-In our practice, when we create commercial AI software, we often meet the cases where the detection bounding boxes are rotated relative to a video frame. It is often the case when the camera observes the viewport from the ceiling when the objects are situated on the floor. 
+In our practice, when we create commercial AI software, we often meet the cases where the bounding boxes rotated relative to a video frame. For example, it is often the case when the camera observes the viewport from the ceiling when the objects reside on the floor. 
 
-These cases require detecting the objects in the way the parts of other things hit the bounding box minimally. To achieve that, unique models which calculate box angle are used [RAPiD](https://vip.bu.edu/projects/vsns/cossy/fisheye/rapid/).
+These cases require detecting the objects in the way the parts of other things hit the bounding box minimally. To achieve that, the developers use unique models that calculate box angle like [RAPiD](https://vip.bu.edu/projects/vsns/cossy/fisheye/rapid/).
 
 ![image](https://user-images.githubusercontent.com/15047882/167245173-aa0a18cd-06c9-4517-8817-253d120c0e07.png)
 
 Such models require additional post-processing, which involves the rotation because otherwise, you cannot utilize most of the classifier models as they need orthogonal boxes as their input.
 
-Savant supports rotated bounding boxes out of the box as well as the means to handle rotated bounding boxes right before they are passed to the classifier models.
+Savant supports the bounding box rotation out of the box right before passing them to the classifier models.
