@@ -34,7 +34,7 @@ As a developer, you use handy source adapters to ingest media data into the fram
 
 The decoupled nature of adapters also provides better reliability because the failed data source affects the adapter operation, not a framework operation.
 
-## Rotated Bounding Boxes Out Of The Box
+### Rotated Bounding Boxes Out Of The Box
 
 In our practice, when we create commercial AI software, we often meet the cases where the bounding boxes rotated relative to a video frame. For example, it is often the case when the camera observes the viewport from the ceiling when the objects reside on the floor. 
 
