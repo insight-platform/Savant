@@ -16,6 +16,8 @@ Savant is a very high-level framework over the DeepStream, which incapsulates al
 
 The Savant framework provides many really needed features out of the box. When we created Savant, we utilized the best of our experience, which we achieved through several years of commercial DeepStream development.
 
+## Features
+
 ### Dynamic Inference Variables
 
 The framework gives the developer the means to configure and reconfigure the inference pipeline operational parameters dynamically with:
