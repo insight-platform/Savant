@@ -22,7 +22,7 @@ Why choose Savant if DeepStream solves the problem? Because DeepStream is a very
 
 The root of that is that DeepStream is implemented as a set of plug-ins for Gstreamer - the open-source multi-media framework for highly-efficient streaming applications. It makes developing more or less sophisticated DeepStream applications very difficult because the developer must understand how the Gstreamer processes the data. That makes the learning curve very steep.
 
-Savant is a very high-level framework over the DeepStream, which incapsulates all the Gstreamer internals from the developer and provides a beneficial tools for implementing real-life streaming AI inference applications. So, as a developer, you implement your inference pipeline as a set of declarative (YAML) blocks with several user-defined functions in Python (and C/C++ if you would like to utilize the most of CUDA runtime).
+Savant is a very high-level framework over the DeepStream, which hides all the Gstreamer internals from the developer and provides a beneficial tools for implementing real-life streaming AI inference applications. So, as a developer, you implement your inference pipeline as a set of declarative (YAML) blocks with several user-defined functions in Python (and C/C++ if you would like to utilize the most of CUDA runtime).
 
 The Savant framework provides many really needed features out of the box. When we created Savant, we utilized the best of our experience, which we achieved through several years of commercial DeepStream development.
 
