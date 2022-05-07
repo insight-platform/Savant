@@ -4,7 +4,7 @@ Savant is an open-source, high-level framework for building real-time, streaming
 
 [Nvidia DeepStream](https://developer.nvidia.com/deepstream-sdk) is today's most advanced toolkit for developing high-performance real-time streaming AI applications that run several times faster than conventional AI applications executed within the conventional runtimes like PyTorch, TensorFlow and similar. 
 
-![Nvidia DeepStream Picture](https://developer.nvidia.com/sites/default/files/akamai/deepstream/metropolis-and-iva-deepstreadm-sdk-block-diagrams-2009801-r1-1.png)
+[![Nvidia DeepStream Picture](https://developer.nvidia.com/sites/default/files/akamai/deepstream/metropolis-and-iva-deepstreadm-sdk-block-diagrams-2009801-r1-1.png)](#)
 
 That is possible due to specially designed architecture, which utilizes the best Nvidia accelerator features, including hardware encoding and decoding for video streams, moving the frames thru inference blocks mostly in GPU RAM without excessive data transfers between CPU and GPU RAM. It also stands on a highly optimized low-level software stack that optimizes inference operations to get the best of the hardware used.
 
