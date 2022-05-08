@@ -93,7 +93,8 @@ WIP
 
 ## Utility And Coding Examples
 
-WIP
+This section includes examples that solve particular problems met in practical tasks. To understand them, we advise you
+to get familiar with [ML/AI Examples](#mlai-examples) to feel free to implement the pipelines with Savant.
 
 ### Etcd Dynamic Pipeline Configuration
 
@@ -105,3 +106,8 @@ WIP
 
 ### Kafka Source-Sink Adapter
 
+WIP
+
+### Bounding Box Rotation With Savant
+
+WIP
