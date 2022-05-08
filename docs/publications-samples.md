@@ -64,12 +64,12 @@ The results are demonstrated on multiple fake RTSP streams.
 
 ### Hard-Hat People Counter With OCR
 
-Pretty Sophisticated example which detects the person with PeopleNet, next detects the hard hat within the person 
-bounding box with specially trained RetinaNet model, assigns hard hats to persons, and finally runs EasyOCR PyTorch 
-code to recognize the mark on a hard hat. The persons are tracked on the scene with DeepStream's Nvtracker plugin. 
+A pretty sophisticated example that looks for the persons with PeopleNet, next it detects the hard hat within the person
+bounding box with custom trained RetinaNet model, assigns hard hats to persons, and finally runs EasyOCR PyTorch code to
+recognize the mark on a hard hat. Finally, the persons are tracked on the scene with DeepStream's Nvtracker plugin.
 
-The line crossing count is done either with Nvdsanalytics plugin which gives false results pretty often or with 
-custom UDF function which gives results of a better quality.
+The line crossing count is done either with the Nvdsanalytics plugin, which gives false results or with a custom UDF
+function, which provides better quality results.
 
 Please find the code and instructions in the [Repository](#).
 In addition, a step-by-step guide published on the Medium Portal is also [available](#).
