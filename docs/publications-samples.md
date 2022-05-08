@@ -15,6 +15,8 @@ how-to guides published on the Medium portal, where one can study them step-by-s
 
 ### Object Detector (YOLOv4)
 
+![image](https://user-images.githubusercontent.com/15047882/167287037-afeab5a3-8d61-477e-b6c6-9128636026b8.png)
+
 A minimalistic pipeline that uses standard [YOLOv4](https://github.com/pjreddie/darknet) to detect objects in the video.
 It's an excellent place to begin diving into Savant.
 
@@ -34,7 +36,7 @@ Operational Modes are:
 
 ### People Counter (PeopleNet + Nvidia Tracker)
 
-
+![image](https://user-images.githubusercontent.com/15047882/167286974-b620d64c-cee3-4922-8809-28454284c916.png)
 
 A simple pipeline that detects the people within the camera's viewport and counts those who crossed the line in both
 directions. The sample utilizes Nvidia PeopleNet Model and the Nvtracker DeepStream plugin to track the persons.
@@ -70,6 +72,8 @@ Tested Platforms are:
 The results are demonstrated on multiple fake RTSP streams.
 
 ### Hard-Hat People Counter With OCR
+
+![image](https://user-images.githubusercontent.com/15047882/167287122-9709230e-e3d8-4740-9b0a-1a47419fcd30.png)
 
 A pretty sophisticated example that looks for the persons with PeopleNet, next it detects the hard hat within the person
 bounding box with custom trained RetinaNet model, assigns hard hats to persons, and finally runs EasyOCR PyTorch code to
