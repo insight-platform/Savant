@@ -17,6 +17,11 @@ It's an excellent place to begin diving into Savant.
 Please find the code and instructions in the [Repository](#).
 In addition, a step-by-step guide published on the Medium Portal is also [available](#).
 
+Tested Platforms are:
+- Jetson Nano, Xavier NX, Xavier AGX;
+- Nvidia Turing;
+- Nvidia Ampere.
+
 ### People Counter (PeopleNet + Nvidia Tracker)
 
 ### Hard-Hat People Counter With OCR
