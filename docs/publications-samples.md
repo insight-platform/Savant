@@ -39,7 +39,7 @@ Tested Platforms are:
 - Nvidia Turing;
 - Nvidia Ampere.
 
-The work results are demonstrated on multiple fake RTSP streams.
+The results are demonstrated on multiple fake RTSP streams.
 
 ### Hard-Hat People Counter With OCR
 
