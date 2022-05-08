@@ -8,6 +8,7 @@ that utilize the best Nvidia approaches for data center and edge accelerators.
 
 - [Getting Started](docs/getting-started.md)
 - [Publications and Samples](docs/publications-samples.md)
+- [Architecture](docs/architecture.md)
 - [API Documentation]()
 
 ## About Nvidia DeepStream
