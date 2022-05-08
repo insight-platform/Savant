@@ -34,6 +34,8 @@ Operational Modes are:
 
 ### People Counter (PeopleNet + Nvidia Tracker)
 
+
+
 A simple pipeline that detects the people within the camera's viewport and counts those who crossed the line in both
 directions. The sample utilizes Nvidia PeopleNet Model and the Nvtracker DeepStream plugin to track the persons.
 
@@ -49,6 +51,8 @@ Tested Platforms are:
 The results are demonstrated on multiple fake RTSP streams.
 
 ### FishEye Camera People Detector and Tracker (RAPiD + SORT)
+
+[![image](https://user-images.githubusercontent.com/15047882/167245173-aa0a18cd-06c9-4517-8817-253d120c0e07.png)](#)
 
 The sample demonstrates how detector models that result in rotated bounding boxes work in Savant. The detector model
 used in the example is [RAPiD](https://vip.bu.edu/projects/vsns/cossy/fisheye/rapid/). The tracker is a modified SORT
