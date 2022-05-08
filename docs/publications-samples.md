@@ -84,5 +84,16 @@ The results are demonstrated on multiple fake RTSP streams.
 
 ### Camera Scene Change Detector
 
-### Sophisticated Person Profiler and Tracker
+WIP
 
+### Etcd Dynamic Pipeline Configuration
+
+WIP
+
+### Per-Frame Dynamic Pipeline Configuration
+
+WIP
+
+### Kafka Source-Sink Adapter
+
+WIP
