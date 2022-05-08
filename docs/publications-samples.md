@@ -99,10 +99,9 @@ WIP
 
 WIP
 
-### Per-Frame Dynamic Pipeline Configuration
+### Implementing Custom Source & Sink Adapters
 
 WIP
 
 ### Kafka Source-Sink Adapter
 
-WIP
