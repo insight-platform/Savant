@@ -19,22 +19,43 @@ Please find the code and instructions in the [Repository](#).
 In addition, a step-by-step guide published on the Medium Portal is also [available](#).
 
 Tested Platforms are:
+
 - Jetson Nano, Xavier NX, Xavier AGX;
 - Nvidia Turing;
 - Nvidia Ampere.
 
 Operational Modes are:
+
 - real-time processing: fake RTSP stream, MJPEG/RGBA USB-camera;
 - capacity processing: directory of files.
 
 ### People Counter (PeopleNet + Nvidia Tracker)
 
-A simple pipeline that detects the people within the camera's viewport and counts those who crossed the line in both directions. The sample utilizes Nvidia PeopleNet Model and the Nvtracker DeepStream plugin to track the persons.
+A simple pipeline that detects the people within the camera's viewport and counts those who crossed the line in both
+directions. The sample utilizes Nvidia PeopleNet Model and the Nvtracker DeepStream plugin to track the persons.
 
 Please find the code and instructions in the [Repository](#).
 In addition, a step-by-step guide published on the Medium Portal is also [available](#).
 
 Tested Platforms are:
+
+- Jetson Nano, Xavier NX, Xavier AGX;
+- Nvidia Turing;
+- Nvidia Ampere.
+
+The results are demonstrated on multiple fake RTSP streams.
+
+### FishEye Camera People Detector and Tracker (RAPiD + SORT)
+
+The sample demonstrates how detector models that result in rotated bounding boxes work in Savant. The detector model
+used in the example is [RAPiD](https://vip.bu.edu/projects/vsns/cossy/fisheye/rapid/). The tracker is a modified SORT
+implementation that can track such bounding boxes on the scene.
+
+Please find the code and instructions in the [Repository](#).
+In addition, a step-by-step guide published on the Medium Portal is also [available](#).
+
+Tested Platforms are:
+
 - Jetson Nano, Xavier NX, Xavier AGX;
 - Nvidia Turing;
 - Nvidia Ampere.
