@@ -23,8 +23,7 @@ Tested Platforms are:
 - Nvidia Ampere.
 
 Operational Modes are:
-- real-time processing: fake RTSP stream;
-- real-time processing: MJPEG/RGBA USB-camera;
+- real-time processing: fake RTSP stream, MJPEG/RGBA USB-camera;
 - capacity processing: directory of files.
 
 ### People Counter (PeopleNet + Nvidia Tracker)
