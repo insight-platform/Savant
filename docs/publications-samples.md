@@ -3,7 +3,7 @@
 On this page, you can find practical examples, how-tos, publications, and other non-formal documentation links that can
 help you dive into Savant.
 
-## Examples
+## ML/AI Examples
 
 To help novice users to dive into Savant, we have prepared several ready-to-use examples, which one can download, build
 and launch. In addition, every sample includes all you need to run it: the source code, models, build file, sample data,
@@ -83,6 +83,12 @@ Tested Platforms are:
 The results are demonstrated on multiple fake RTSP streams.
 
 ### Camera Scene Change Detector
+
+WIP
+
+### Car Plate Detector
+
+## Utility And Coding Examples
 
 WIP
 
