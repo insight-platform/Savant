@@ -8,7 +8,7 @@ In the DeepStream, operations like video decoding, frame transformations, infere
 
 ![Nvidia DeepStream Architecture](https://user-images.githubusercontent.com/15047882/167308102-eea0915d-e1e5-4924-bd4c-69da34d47fc7.png)
 
-Unfortunately, DeepStream is still very sophisticated for a regular AI/ML engineer because it introduces a very sophisticated knowledge domain - Gstreamer programming. Gstreamer is very advanced software with a pretty complex API that is developed to build reliable streaming applications.
+Unfortunately, DeepStream is still very steep for an ML engineer because it introduces a very sophisticated knowledge domain - Gstreamer programming. Gstreamer is very advanced software with a pretty complex API that is developed to build reliable streaming applications.
 
 So, to build your software on top of DeepStream, you have to have:
 1. machine-learning expertise (probably you have);
@@ -16,4 +16,4 @@ So, to build your software on top of DeepStream, you have to have:
 3. Video processing expertise;
 4. Gstreamer expertise;
 
-Sounds sophisticated. Savant tries to address the last two points with a very simple and robust architecture.
+Sounds sophisticated. Savant is designed to address the last two points with a very simple and robust architecture built on top of Gstreamer/DeepStream - as a framework user you no longer care about Gstreamer programming, because the framework solves most typical problems in its architecture.
