@@ -22,6 +22,10 @@ Tested Platforms are:
 - Nvidia Turing;
 - Nvidia Ampere.
 
+Operational Modes are:
+- Real-time processing: fake looped RTSP stream;
+- Capacity processing: directory of files.
+
 ### People Counter (PeopleNet + Nvidia Tracker)
 
 ### Hard-Hat People Counter With OCR
