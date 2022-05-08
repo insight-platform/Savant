@@ -6,8 +6,8 @@ that utilize the best Nvidia approaches for data center and edge accelerators.
 
 ## TL;DR Links
 
-- [Getting Started]()
-- [Publications and Samples]()
+- [Getting Started](docs/getting-started.md)
+- [Publications and Samples](docs/publications-samples.md)
 - [API Documentation]()
 
 ## About Nvidia DeepStream
@@ -182,8 +182,8 @@ Jetson ARM-based devices.
 
 ## What's Next
 
-- [Getting Started]()
-- [Publications and Samples]()
+- [Getting Started](docs/getting-started.md)
+- [Publications and Samples](docs/publications-samples.md)
 - [API Documentation]()
 
 ## Contribution
