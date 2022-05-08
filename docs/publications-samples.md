@@ -3,6 +3,9 @@
 On this page, you can find practical examples, how-tos, publications, and other non-formal documentation links that can
 help you dive into Savant.
 
+- [ML/AI Examples](#mlai-examples)
+- [Utility And Coding Examples](#utility-and-coding-examples)
+
 ## ML/AI Examples
 
 To help novice users to dive into Savant, we have prepared several ready-to-use examples, which one can download, build
