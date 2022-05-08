@@ -97,7 +97,9 @@ The results are demonstrated on multiple fake RTSP streams.
 
 WIP
 
-### Car Plate Detector
+### Car Plate Detector (Nvdia)
+
+WIP
 
 ## Utility And Coding Examples
 
