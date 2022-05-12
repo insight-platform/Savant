@@ -19,13 +19,13 @@ that utilize the best Nvidia approaches for data center and edge accelerators.
 - Nvidia Hopper, hopefully - haven't chance to get it yet :-)
 
 ## Features
-- Same pipelines for Edge and Core;
+- Unified pipelines for Edge and Core;
 - Production-ready out of the box;
 - Automatic transparent dynamic data-source management;
 - Works on Nvidia DeepStream;
 - Dynamic pipeline reconfiguration with Etcd;
 - Handy data sources and sinks;
-- Unique features for rotated bounding boxes.
+- Support for rotated bounding boxes.
 
 ## About Nvidia DeepStream
 
