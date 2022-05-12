@@ -61,3 +61,7 @@ Savant handles all such cases by providing a virtual stream abstraction. That ab
 In Savant, real-life sources are never directly bound to the Gstreamer graph, so they affect only corresponding adapters. Meanwhile, the pipeline is kept in memory and can process data from stable sources.
 
 ![Savant Virtual Sources](https://user-images.githubusercontent.com/15047882/168033994-0da8304f-cb02-4fd0-a9c2-5c8636367a4e.png)
+
+Muxed Virtual Stream block accepts the streaming data from the outside world via [ZeroMQ](https://zeromq.org/) socket. The framework supports two kinds of sockets:
+- Pub/Sub - when you would like to drop the excessive input data but run the inference in real-time;
+- Push/Pull - when you would like to use back-pressure to stop the source from injecting the data too fast, but don't care about real-time processing.
