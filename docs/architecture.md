@@ -32,3 +32,5 @@ Savant introduces valuable extensions to the DeepStream framework through the ab
 **Libraries**. We have developed custom preprocessing and postprocessing functions for efficient computations delivered with the framework.
 
 **Virtual Streams Subsystem**. One of the most valuable parts of the framework which doing magic. We will cover it in depth later. But, to get an idea, the subsystem represents any external media or sensor data in a unified format, automatically rolling out necessary processing elements of Gstreamer that process the data elements and running garbage collection when they are no longer needed.  
+
+**Declarative Gstreamer Configurator**. The subsystem translates processing blocks specified with YAML to the Gstreamer graph that does the work. Those blocks include standard model interfaces, custom preprocessing and postprocessing invocations, data selectors, and user-defined code in Python.
