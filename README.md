@@ -171,20 +171,22 @@ own.
 
 Currently, the following source adapters are available:
 
-- Local video file source;
-- URL video source;
+- Local video file;
+- URL video;
 - Local directory of video files;
-- RTSP source;
-- Local image file source;
-- URL Image source;
-- Image directory source;
-- USB cam source;
+- RTSP;
+- Local image file;
+- URL Image;
+- Image directory;
+- USB cam;
+- Apache Kafka.
 
 There are basic sink adapters implemented:
 
 - Inference results in JSON file stream;
 - Resulting video overlay displayed on a screen (per source);
-- MP4 file (per source).
+- MP4 file (per source);
+- Apache Kafka.
 
 The framework uses an established protocol based on Apache AVRO, both for sources and sinks. The sources and sinks talk
 to Savant through ZeroMQ sockets.
