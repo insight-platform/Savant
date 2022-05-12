@@ -11,6 +11,13 @@ that utilize the best Nvidia approaches for data center and edge accelerators.
 - [Architecture](docs/architecture.md)
 - [API Documentation]()
 
+## Runs On
+
+- Nvidia Jetson Nano, NX Xavier, Xavier AGX;
+- Nvidia Turing GPU;
+- Nvidia Ampere GPU;
+- Nvidia Hopper, hopefully - haven't chance to get it yet :-)
+
 ## About Nvidia DeepStream
 
 [Nvidia DeepStream](https://developer.nvidia.com/deepstream-sdk) is today's most advanced toolkit for developing
