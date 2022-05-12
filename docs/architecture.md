@@ -78,3 +78,6 @@ As an example of decoupling, you can imagine a pipeline that requires enriching 
 
 ![metadata](https://user-images.githubusercontent.com/15047882/168040020-e87f288d-8cad-4b6c-8ec7-a27dc4b649f5.png)
 
+Sink streams are also muxed and virtualized. The data is in AVRO format and is sent to a single ZeroMQ socket, which also can be:
+- Pub/Sub - when you would like to drop the excessive output data but continue running the inference in real-time;
+- Push/Pull - when you would like to use back-pressure to stop the pipeline from sending the data too fast because receiving part is too slow to keep up.
