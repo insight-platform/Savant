@@ -40,4 +40,6 @@ Savant introduces valuable extensions to the DeepStream framework through the ab
 
 ## Virtual Stream Architecture
 
-todo
+The Gstreamer and DeepStream stream is bound to a single data source. E.g., a stream can represent an RTSP camera. Therefore, that stream is a part of the Gstreamer processing graph. For example, when dealing with a simple Gstreamer pipeline, it looks like shown on the left side of the picture:
+
+![image](https://user-images.githubusercontent.com/15047882/168025015-d49c4978-4b21-4170-ad2f-123a8d0bbc90.png)
