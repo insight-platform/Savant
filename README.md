@@ -30,7 +30,9 @@ The person, who:
 - Works on Nvidia DeepStream;
 - Dynamic pipeline reconfiguration with Etcd;
 - Handy data sources and sinks;
-- Support for rotated bounding boxes.
+- Support for rotated bounding boxes;
+- Docker-native environment;
+- Apache2 license.
 
 ## Runs On
 
