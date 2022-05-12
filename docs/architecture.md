@@ -53,3 +53,9 @@ The first obvious drawback is that loading AI models in GPU takes some time, and
 The second one happens when you use an unreliable data source that flaps from time to time (e.g., RTSP camera). To handle it correctly, you have to create custom Gstreamer code that watches signals from the Gstreamer event bus, handles such disconnect events, dynamically reconstruct the pipeline, and resume the operation after.
 
 Without coding such processing, Gstreamer will crash even if it's OK to restart; it takes some time to load AI models in GPU RAM.
+
+Finally, we face the real problem when multiple data sources are processed in a multiplexing way within a single DeepStream/Gstreamer pipeline. Practically it's a commonplace scenario: the DeepStream is blazing fast, so it can process a lot of data. Users inject data from multiple sources into a single pipeline to load it well. That leads to a growth of outages because if a single source is out of order, the whole pipeline crashes without proper signal processing.
+
+Savant handles all such cases by providing a virtual stream abstraction. That abstraction introduces Gstreamer sources that are "always-on" because they are decoupled from real-life sources. The framework spawns those virtual streams, switches data flow to them, determines when they are no longer in use, and wipes them, detaching them from the pipeline.
+
+In Savant, real-life sources are never directly bound to the Gstreamer graph, so they affect only corresponding adapters. Meanwhile, the pipeline is kept in memory and can process data from stable sources.
