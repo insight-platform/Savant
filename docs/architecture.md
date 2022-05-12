@@ -34,4 +34,6 @@ Savant introduces valuable extensions to the DeepStream framework through the ab
 
 **Pipeline Configurator**. The subsystem translates processing blocks specified with YAML to the Gstreamer graph that does the work. Those blocks include standard model interfaces, custom preprocessing and postprocessing invocations, data selectors, and user-defined code in Python.
 
-**Source Adapters**. Set of data adapters developed to fit framework architecture that can inject data from various media sources into the framework.
+**Source Adapters**. Set of data adapters developed to fit framework architecture that can inject frames from various media sources into the framework. Source adapters are also excellent examples of how to build your adapter. Decoupling source adapters from the framework also increases the stability and reliability of the processing.
+
+**Sink Adapters**. After being processed by the framework, the data is injected into an external system. The framework provides the unified interface for that. With adapters framework converts and sends the data into external systems safely. Decoupling sink adapters from the framework also increases the stability and reliability of the processing.
