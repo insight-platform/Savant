@@ -215,6 +215,7 @@ Jetson ARM-based devices.
 
 - [Getting Started](docs/getting-started.md)
 - [Publications and Samples](docs/publications-samples.md)
+- [Architecture](docs/architecture.md)
 - [API Documentation]()
 
 ## Contribution
