@@ -22,8 +22,7 @@ Sounds sophisticated. Savant is designed to address the last two points with a v
 
 Savant introduces valuable extensions to the DeepStream framework through the abstraction level built above DeepStream and Gstreamer. The purpose of that layer is to hide all the complexity of Gstreamer with handy abstractions, tools, and automation. One can see the most important logical elements in the picture:
 
-![Savant Architecture](https://user-images.githubusercontent.com/15047882/168017486-a8cd71a1-2154-426e-990c-eec27ac72937.png)
-
+![Savant Architecture](https://user-images.githubusercontent.com/15047882/168019278-f75e5653-4332-4cd9-a54b-fa9e57902d26.png)
 
 **Framework Core**. The framework's engine integrates with Gstreamer and DeepStream, allowing developers to create extensions and programmatic implementations of customized pipelines outside Savant's declarative architecture.
 
@@ -33,4 +32,4 @@ Savant introduces valuable extensions to the DeepStream framework through the ab
 
 **Virtual Streams Subsystem**. One of the most valuable parts of the framework which doing magic. We will cover it in depth later. But, to get an idea, the subsystem represents any external media or sensor data in a unified format, automatically rolling out necessary processing elements of Gstreamer that process the data elements and running garbage collection when they are no longer needed.  
 
-**Declarative Gstreamer Configurator**. The subsystem translates processing blocks specified with YAML to the Gstreamer graph that does the work. Those blocks include standard model interfaces, custom preprocessing and postprocessing invocations, data selectors, and user-defined code in Python.
+**Pipeline Configurator**. The subsystem translates processing blocks specified with YAML to the Gstreamer graph that does the work. Those blocks include standard model interfaces, custom preprocessing and postprocessing invocations, data selectors, and user-defined code in Python.
