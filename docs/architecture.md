@@ -59,3 +59,5 @@ Finally, we face the real problem when multiple data sources are processed in a 
 Savant handles all such cases by providing a virtual stream abstraction. That abstraction introduces Gstreamer sources that are "always-on" because they are decoupled from real-life sources. The framework spawns those virtual streams, switches data flow to them, determines when they are no longer in use, and wipes them, detaching them from the pipeline.
 
 In Savant, real-life sources are never directly bound to the Gstreamer graph, so they affect only corresponding adapters. Meanwhile, the pipeline is kept in memory and can process data from stable sources.
+
+![Savant Virtual Sources](https://user-images.githubusercontent.com/15047882/168033994-0da8304f-cb02-4fd0-a9c2-5c8636367a4e.png)
