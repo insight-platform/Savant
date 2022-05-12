@@ -33,3 +33,5 @@ Savant introduces valuable extensions to the DeepStream framework through the ab
 **Virtual Streams Subsystem**. One of the most valuable parts of the framework which doing magic. We will cover it in depth later. But, to get an idea, the subsystem represents any external media or sensor data in a unified format, automatically rolling out necessary processing elements of Gstreamer that process the data elements and running garbage collection when they are no longer needed.  
 
 **Pipeline Configurator**. The subsystem translates processing blocks specified with YAML to the Gstreamer graph that does the work. Those blocks include standard model interfaces, custom preprocessing and postprocessing invocations, data selectors, and user-defined code in Python.
+
+**Source Adapters**. Set of data adapters developed to fit framework architecture that can inject data from various media sources into the framework.
