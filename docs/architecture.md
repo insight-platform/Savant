@@ -82,15 +82,15 @@ Sink streams are also muxed and virtualized. The data is in AVRO format and is s
 - Pub/Sub - when you would like to drop the excessive output data but continue running the inference in real-time;
 - Push/Pull - when you would like to use back-pressure to stop the pipeline from sending the data too fast because receiving part is too slow to keep up.
 
-## Pipeline Configurator
-
-TODO
-
 ## Source Adapters
 
 TODO
 
 ## Sink Adapters
+
+TODO
+
+## Pipeline Configurator
 
 TODO
 
