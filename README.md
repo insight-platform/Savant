@@ -19,7 +19,7 @@ Savant is not for AI model training; it's for efficient and effective inference 
 
 The one, who wants:
 
-- to get the maximum performance of Nvidia equipment on streaming inference tasks either on edge and in core;
+- to get the maximum performance of Nvidia equipment on streaming inference tasks either on edge or in core;
 - to decrease time to market when building dynamic pipelines with DeepStream technology without extra hassle.
 
 ## Features
