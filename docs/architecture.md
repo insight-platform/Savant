@@ -45,3 +45,11 @@ The Gstreamer and DeepStream stream is bound to a single data source. E.g., a st
 ![image](https://user-images.githubusercontent.com/15047882/168025015-d49c4978-4b21-4170-ad2f-123a8d0bbc90.png)
 
 It works well for static pipelines, which process "reliable" data sources like files located in a filesystem. In the scenario, the pipeline is launched for a particular file, processes it, and finally exits at the end of the processing.
+
+However, the above example is very primitive and has many drawbacks. Let's look at them. 
+
+The first obvious drawback is that loading AI models in GPU takes some time, and thus it's impossible to utilize 100% of GPU when reloading the pipeline after each file.
+
+The second one happens when you use an unreliable data source that flaps from time to time (e.g., RTSP camera). To handle it correctly, you have to create custom Gstreamer code that watches signals from the Gstreamer event bus, handles such disconnect events, dynamically reconstruct the pipeline, and resume the operation after.
+
+Without coding such processing, Gstreamer will crash even if it's OK to restart; it takes some time to load AI models in GPU RAM.
