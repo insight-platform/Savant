@@ -64,7 +64,7 @@ In Savant, real-life sources are never directly bound to the Gstreamer graph, so
 
 Muxed Virtual Stream block accepts the streaming data from the outside world via [ZeroMQ](https://zeromq.org/) socket. The framework supports two kinds of sockets:
 - Pub/Sub - when you would like to drop the excessive input data but run the inference in real-time;
-- Push/Pull - when you would like to use back-pressure to stop the source from injecting the data too fast, but don't care about real-time processing.
+- Push/Pull - when you would like to use back-pressure to stop the source from injecting the data too fast but don't care about real-time processing.
 
 Virtual Stream Manager investigates the packets from the Muxed Virtual Stream and dynamically manages corresponding Gstreamer elements to integrate streams into the pipeline.
 
