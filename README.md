@@ -22,18 +22,6 @@ The one, who wants:
 - to get the maximum performance of Nvidia equipment on streaming inference tasks either on edge or in core;
 - to decrease time to market when building dynamic pipelines with DeepStream technology without extra hassle.
 
-## Features
-
-- Unified pipelines for Edge and Core;
-- Production-ready out of the box;
-- Automatic transparent dynamic data-source management;
-- Works on Nvidia DeepStream;
-- Dynamic pipeline reconfiguration with Etcd;
-- Handy data sources and sinks;
-- Support for rotated bounding boxes;
-- Docker-native environment;
-- Apache2 license.
-
 ## Runs On
 
 - Nvidia Jetson Nano, NX Xavier, Xavier AGX;
