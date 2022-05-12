@@ -38,7 +38,7 @@ Savant introduces valuable extensions to the DeepStream framework through the ab
 
 **Sink Adapters**. After being processed by the framework, the data is injected into an external system. The framework provides the unified interface for that. With adapters framework converts and sends the data into external systems safely. Decoupling sink adapters from the framework also increases the stability and reliability of the processing.
 
-## Virtual Stream Architecture
+## Virtual Streams Architecture
 
 The Gstreamer and DeepStream stream is bound to a single data source. E.g., a stream can represent an RTSP camera. Therefore, that stream is a part of the Gstreamer processing graph. For example, when dealing with a simple Gstreamer pipeline, it looks like shown on the left side of the picture:
 
