@@ -86,14 +86,14 @@ Sink streams are also muxed and virtualized. The data is in AVRO format and is s
 
 TODO
 
-### Source Adapters
+## Source Adapters
 
 TODO
 
-### Sink Adapters
+## Sink Adapters
 
 TODO
 
-### Dynamic Pipeline Configuration
+## Dynamic Pipeline Configuration
 
 TODO
