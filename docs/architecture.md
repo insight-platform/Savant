@@ -54,7 +54,7 @@ The second one happens when you use an unreliable data source that flaps from ti
 
 Without coding such processing, Gstreamer will crash even if it's OK to restart; it takes some time to load AI models in GPU RAM.
 
-Finally, we face the real problem when multiple data sources are processed in a multiplexing way within a single DeepStream/Gstreamer pipeline. Practically it's a commonplace scenario: the DeepStream is blazing fast, so it can process a lot of data. Users inject data from multiple sources into a single pipeline to load it well. That leads to a growth of outages because if a single source is out of order, the whole pipeline crashes without proper signal processing.
+Finally, we face the real problem when multiple data sources are processed in a multiplexed way within a single DeepStream/Gstreamer pipeline. Practically it's a commonplace scenario: the DeepStream is blazing fast, so it can process a lot of data. Users inject data from multiple sources into a single pipeline to load it well. That leads to a growth of outages because if a single source is out of order, the whole pipeline crashes without proper signal processing.
 
 Savant handles all such cases by providing a virtual stream abstraction. That abstraction introduces Gstreamer sources that are "always-on" because they are decoupled from real-life sources. The framework spawns those virtual streams, switches data flow to them, determines when they are no longer in use, and wipes them, detaching them from the pipeline.
 
@@ -65,3 +65,16 @@ In Savant, real-life sources are never directly bound to the Gstreamer graph, so
 Muxed Virtual Stream block accepts the streaming data from the outside world via [ZeroMQ](https://zeromq.org/) socket. The framework supports two kinds of sockets:
 - Pub/Sub - when you would like to drop the excessive input data but run the inference in real-time;
 - Push/Pull - when you would like to use back-pressure to stop the source from injecting the data too fast, but don't care about real-time processing.
+
+Virtual Stream Manager investigates the packets from the Muxed Virtual Stream and dynamically manages corresponding Gstreamer elements to integrate streams into the pipeline.
+
+Each message received by Muxed Virtual Stream is in AVRO format, including stream information, payload, and metadata attributes. While stream information and payload are mandatory, metadata attributes are optional elements that provide two features:
+- ability to adjust the processing on a frame-by-frame basis;
+- ability to split pipelines into a decoupled parts;
+
+As an example of per-frame metadata, you could imagine a temperature sensor or lightness sensor information that tunes the AI algorithm to behave correctly.
+
+As an example of decoupling, you can imagine a pipeline that requires enriching the data in the middle. The first part of the pipeline produces intermediate results, passing them into the free-form software, injecting additional metadata attributes, filtering them, and sending the data to the second part of the pipeline. Such design helps to utilize GPU resources at most; otherwise, if to try implementing such a pipeline in an all-in-one way, you face the IO latencies which affect GPU utilization efficiency. The rule of thumb is to avoid external interactions from the pipeline.
+
+![metadata](https://user-images.githubusercontent.com/15047882/168040020-e87f288d-8cad-4b6c-8ec7-a27dc4b649f5.png)
+
