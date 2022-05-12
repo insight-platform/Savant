@@ -11,14 +11,19 @@ that utilize the best Nvidia approaches for data center and edge accelerators.
 - [Architecture](docs/architecture.md)
 - [API Documentation]()
 
-## Runs On
+## What it's not
 
-- Nvidia Jetson Nano, NX Xavier, Xavier AGX;
-- Nvidia Turing GPU;
-- Nvidia Ampere GPU;
-- Nvidia Hopper, hopefully - haven't chance to get it yet :-)
+Savant is not for AI model training, it's for efficient and effective inference for dynamic, production applications working on Edge and Core Nvidia equipment.
+
+## Who would love it?
+
+We believe the one, who:
+
+- builds high-performance AI streaming that uses best-in-class Nvidia practices;
+- needs DeepStream on steroids without extra hassle and coding Gstreamer.
 
 ## Features
+
 - Unified pipelines for Edge and Core;
 - Production-ready out of the box;
 - Automatic transparent dynamic data-source management;
@@ -26,6 +31,13 @@ that utilize the best Nvidia approaches for data center and edge accelerators.
 - Dynamic pipeline reconfiguration with Etcd;
 - Handy data sources and sinks;
 - Support for rotated bounding boxes.
+
+## Runs On
+
+- Nvidia Jetson Nano, NX Xavier, Xavier AGX;
+- Nvidia Turing GPU;
+- Nvidia Ampere GPU;
+- Nvidia Hopper, hopefully - haven't chance to get it yet :-)
 
 ## About Nvidia DeepStream
 
