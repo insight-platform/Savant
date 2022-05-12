@@ -13,7 +13,7 @@ that utilize the best Nvidia approaches for data center and edge accelerators.
 
 ## What it's not
 
-Savant is not for AI model training, it's for efficient and effective inference for dynamic, production applications working on Edge and Core Nvidia equipment.
+Savant is not for AI model training; it's for efficient and effective inference applications working on Edge and Core Nvidia equipment.
 
 ## Who would love it?
 
