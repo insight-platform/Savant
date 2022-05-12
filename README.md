@@ -17,7 +17,7 @@ Savant is not for AI model training; it's for efficient and effective inference 
 
 ## Who would love it?
 
-The person, who:
+The one, who:
 
 - builds high-performance AI streaming that uses best-in-class Nvidia practices, tools and equipment;
 - needs DeepStream on steroids without extra hassle and coding Gstreamer.
