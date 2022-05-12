@@ -94,4 +94,6 @@ TODO
 
 TODO
 
-### Dynamic
+### Dynamic Pipeline Configuration
+
+TODO
