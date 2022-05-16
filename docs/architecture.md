@@ -84,7 +84,20 @@ Sink streams are also muxed and virtualized. The data is in AVRO format and is s
 
 ## Source Adapters
 
-TODO
+We developed several data source adapters that fit daily development and production use cases. The developers can also use them as a source base for creating custom adapters - the apparent scenario is implementing an adapter that mixes external data into frames providing additional data to the AI pipeline. 
+
+Every adapter is designed for use with a particular data source: 
+- local or remote video file; 
+- directory of video files, 
+- local or remote image file;
+- directory of images;
+- RTSP stream;
+- USB/CSI camera stream;
+- Image/Video Stream in Apache Kafka.
+
+Since the adapter is decoupled from the pipeline, its launch is not expensive. Adapter crash also doesn't affect the pipeline execution. Local and remote adapters for video files support both sync and as-fast-as-possible models of data injection. 
+
+The first mode sends data in the pipeline with the FPS specified in the file - it's convenient when testing real-time execution GPU utilization or visual inspection. The second mode is used when the purpose is to process as much data as possible utilizing all available GPU resources.
 
 ## Sink Adapters
 
