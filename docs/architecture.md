@@ -101,7 +101,17 @@ The first mode sends data in the pipeline with the FPS specified in the file - i
 
 ## Sink Adapters
 
-TODO
+Sink adapters send inference data and(or) generated multi-media data into external storage for future use. Unfortunately, there are many such storages, and schemes of stored data may vary even within a single system. That's why it's impossible to build universal sink adapters that fit all needs. So instead, we developed several sinks which can be easily modified to create the one you need in your system:
+
+A developer would be especially interested in the following sinks:
+- JSON metadata sink saves inference results into JSON records in a file;
+- video file sink saves the resulting video or image set into a video file;
+- video play sink displays video or pictures on screen;
+
+Following sinks can be used in production as-is:
+- Elasticsearch sink writes resulting inference data into Elasticsearch index;
+- MongoDB sink writes resulting inference data into MongoDB document index;
+- Kafka sink writes resulting inference data into metadata Kafka topic and resulting video into video Kafka topic.
 
 ## Pipeline Configurator
 
