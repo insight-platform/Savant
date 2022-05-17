@@ -143,11 +143,21 @@ It works like follows:
 
 Let's briefly walk through the data processing. In step (1), you can see the unit of data that moves through the pipeline. The data unit consists of a media frame in GPU RAM (typically for video) and metadata allocated in CPU RAM. 
 
-When the data unit reaches the element of a pipeline, element selector (2) filters whether or not the element must process the data unit. 
+When the data unit reaches the element of a pipeline, element selector (2) filters whether the element must process the data unit or not. Remember, the selector doesn't **drop** units from the further processing, not selected units just pass through the element. 
+
+_E.g. The previous element was YOLO, and the selector of the current element selects only person class with confidence 0.5 and higher to find hardhats._
 
 If so, the unit media frame and required metadata are passed to the processing block of the element (3) - you can see the inference block in the diagram; however it can be another kind of processing, e.g., classic CV algorithm run in CPU or GPU.
 
-Processing element (3) generates certain output like tensors or bounding boxes, attributes that are passed back to postprocessing (4). The postprocessing block may drop, mangle or modify metadata to match the needs of the subsequent elements and enriches existing metadata elements with new ones.
+Processing element (3) generates certain output like tensors or bounding boxes, attributes that are passed back to postprocessing (4). 
+
+The postprocessing block may drop, mangle or modify metadata to match the needs of the subsequent elements (5).
+
+_E.g. The hard hat model produces hard hat bounding boxes with confidence. The postprocessing block only outputs those with confidence greater than 0.6._
+
+The framework joins existing metadata records passed through the element (6) with those produced by the element (5).
+
+Figure (7) shows that after the element is applied to the data unit still has a media frame located in GPU RAM and metadata records in CPU RAM. The frame can be the same if the element does not change the frame data or if the element changes the frame, it is changed.
 
 ## Dynamic Pipeline Configuration
 
