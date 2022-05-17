@@ -139,11 +139,15 @@ Every element does the following operations on data:
 
 It works like follows:
 
-![processing](https://user-images.githubusercontent.com/15047882/168786243-95902b69-3c6a-4299-8d0c-f4138a996745.png)
+![processing](https://user-images.githubusercontent.com/15047882/168789581-d57fa66b-b4c6-4226-9bfa-fcfc9bfe95ca.png)
 
-Let's briefly walk thru the data processing.
+Let's briefly walk through the data processing. In step (1), you can see the unit of data that moves through the pipeline. The data unit consists of a media frame in GPU RAM (typically for video) and metadata allocated in CPU RAM. 
 
-On a figure (1) you
+When the data unit reaches the element of a pipeline, element selector (2) filters whether or not the element must process the data unit. 
+
+If so, the unit media frame and required metadata are passed to the processing block of the element (3) - you can see the inference block in the diagram; however it can be another kind of processing, e.g., classic CV algorithm run in CPU or GPU.
+
+Processing element (3) generates certain output like tensors or bounding boxes, attributes that are passed back to postprocessing (4). The postprocessing block may drop, mangle or modify metadata to match the needs of the subsequent elements and enriches existing metadata elements with new ones.
 
 ## Dynamic Pipeline Configuration
 
