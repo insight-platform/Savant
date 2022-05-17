@@ -159,7 +159,7 @@ The framework joins existing metadata records passed through the element (6) wit
 
 Figure (7) shows that after the element is applied to the data unit still has a media frame located in GPU RAM and metadata records in CPU RAM. The frame can be the same if the element does not change the frame data or if the element changes the frame, it is changed.
 
-The whole pipeline of elements works like shown in the picture:
+The whole pipeline of elements works as shown in the picture:
 
 ![module](https://user-images.githubusercontent.com/15047882/168820145-f0998d68-cd27-47d3-a36b-906958d81d7c.png)
 
