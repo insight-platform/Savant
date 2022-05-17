@@ -139,8 +139,11 @@ Every element does the following operations on data:
 
 It works like follows:
 
-![processing](https://user-images.githubusercontent.com/15047882/168785936-45e150d0-d905-4474-932e-a2a2978bc203.png)
+![processing](https://user-images.githubusercontent.com/15047882/168786243-95902b69-3c6a-4299-8d0c-f4138a996745.png)
 
+Let's briefly walk thru the data processing.
+
+On a figure (1) you
 
 ## Dynamic Pipeline Configuration
 
