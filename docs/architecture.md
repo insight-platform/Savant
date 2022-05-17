@@ -161,7 +161,7 @@ Figure (7) shows that after the element is applied to the data unit still has a 
 
 The whole pipeline of elements works as shown in the picture:
 
-![module](https://user-images.githubusercontent.com/15047882/168820145-f0998d68-cd27-47d3-a36b-906958d81d7c.png)
+![module](https://user-images.githubusercontent.com/15047882/168824194-fa7da94a-6a99-443d-814f-4d16b38d8aee.png)
 
 Ideally, heavyweight image frames do not leave the GPU RAM, being handled by CUDA kernels, while the system CPU executes metadata operations. However, sometimes, the image frames or at least parts of them may be copied to the CPU. When an element doesn't have a CUDA kernel implemented, less-efficient processing is accomplished in the system CPU. Another case is when a highly efficient model implemented in CPU exists - e.g., a model from OpenVino Zoo, so it can be effective to copy part of a frame to run CPU inference. 
 
