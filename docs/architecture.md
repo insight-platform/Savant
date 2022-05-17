@@ -137,7 +137,7 @@ Every element does the following operations on data:
 - processes selected data;
 - transforms metadata with new attributes.
 
-It works like follows:
+The following image displays how it works:
 
 ![processing](https://user-images.githubusercontent.com/15047882/168789581-d57fa66b-b4c6-4226-9bfa-fcfc9bfe95ca.png)
 
