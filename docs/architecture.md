@@ -115,7 +115,32 @@ Following sinks can be used in production as-is:
 
 ## Pipeline Configurator
 
-TODO
+The pipeline configurator translates the YAML pipeline into a proper Gstreamer graph with DeepStream plugins. 
+
+The pipeline is defined in the module.yml manifest file and includes the following blocks:
+- a module name;
+- global parameters block;
+- a pipeline block consisting of a source, a sink, and processing elements.
+
+There are number of processing element types that can form a pipeline:
+- detector;
+- attribute_model;
+- rotated_object_detector;
+- pyfunc;
+- complex_model;
+- ... etc ...
+
+Every element represents a graph node that handles data passing through it. The element of a type (like detector) has parameters that configure its behavior. The parameters for every element type are described in the documentation.
+
+Every element does the following operations on data:
+- selects/filters the incoming data units for processing;
+- processes selected data;
+- transforms metadata with new attributes.
+
+It works like follows:
+
+![processing](https://user-images.githubusercontent.com/15047882/168785936-45e150d0-d905-4474-932e-a2a2978bc203.png)
+
 
 ## Dynamic Pipeline Configuration
 
