@@ -161,7 +161,7 @@ Figure (7) shows that after the element is applied to the data unit still has a 
 
 The whole pipeline of elements works like shown in the picture:
 
-![module](https://user-images.githubusercontent.com/15047882/168820145-f0998d68-cd27-47d3-a36b-906958d81d7c.png)
+[![module](https://user-images.githubusercontent.com/15047882/168820145-f0998d68-cd27-47d3-a36b-906958d81d7c.png)](https://user-images.githubusercontent.com/15047882/168820145-f0998d68-cd27-47d3-a36b-906958d81d7c.png)
 
 
 ## Dynamic Pipeline Configuration
