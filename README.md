@@ -1,14 +1,33 @@
-# Savant
+# Savant - High-Performance Streaming Inference Framework for Humans
 
 Savant is an open-source, high-level framework for building real-time, streaming, highly efficient multimedia AI
-applications on the Nvidia stack. It makes it possible to rapidly develop dynamic, fault-tolerant inference pipelines
-that utilize the best Nvidia approaches for data center and edge accelerators.
+applications on the Nvidia stack. It makes it possible to develop dynamic, fault-tolerant inference pipelines
+that utilize the best Nvidia approaches for data center and edge accelerators very quickly.
 
-## TL;DR Links
+## Quick Links
 
 - [Getting Started](docs/getting-started.md)
 - [Publications and Samples](docs/publications-samples.md)
+- [Architecture](docs/architecture.md)
 - [API Documentation]()
+
+## What it's not
+
+Savant is not for AI model training; it's for building fast streaming inference applications working on Edge and Core Nvidia equipment.
+
+## Who would love it?
+
+The one, who wants:
+
+- to get the maximum performance of Nvidia equipment on streaming inference tasks either on edge or in core;
+- to decrease time to market when building dynamic pipelines with DeepStream technology without extra hassle.
+
+## Runs On
+
+- Nvidia Jetson Nano, NX Xavier, Xavier AGX;
+- Nvidia Turing GPU;
+- Nvidia Ampere GPU;
+- Nvidia Hopper, hopefully - haven't chance to get it yet :-)
 
 ## About Nvidia DeepStream
 
@@ -158,14 +177,17 @@ own.
 
 Currently, the following source adapters are available:
 
-- Local video file source;
-- URL video source;
+- Local video file;
+- URL video;
 - Local directory of video files;
-- RTSP source;
-- Local image file source;
-- URL Image source;
-- Image directory source;
-- USB cam source;
+- RTSP;
+- Local image file;
+- URL Image;
+- Image directory;
+- USB cam;
+- Apache Kafka;
+- Elasticsearch;
+- MongoDB.
 
 There are basic sink adapters implemented:
 
@@ -191,6 +213,7 @@ Jetson ARM-based devices.
 
 - [Getting Started](docs/getting-started.md)
 - [Publications and Samples](docs/publications-samples.md)
+- [Architecture](docs/architecture.md)
 - [API Documentation]()
 
 ## Contribution
