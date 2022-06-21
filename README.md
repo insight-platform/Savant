@@ -94,19 +94,19 @@ simple and utilizes standard open source tools.
 The decoupled nature of adapters also provides better reliability because the failed data source affects the adapter
 operation, not a framework operation.
 
-### Rotated Bounding Boxes Out Of The Box
+### Oriented Bounding Boxes Out Of The Box
 
 In our practice, when we develop commercial inference software, we often meet the cases where the bounding boxes rotated
-relative to a video frame. For example, it is often the case when the camera observes the viewport from the ceiling when
-the objects reside on the floor.
+relative to a video frame (oriented bounding boxes). For example, it is often the case when the camera observes the 
+viewport from the ceiling when the objects reside on the floor.
 
-Such cases require drawing the boxes around the objects in a way to overlap minimally. To achieve that, we use special
-models that introduce bounding boxes with rotation angles. Take a look
+Such cases require placing the objects within boxes in a way to overlap minimally. To achieve that,
+we use special models that introduce bounding boxes that are not orthogonal to frame axes. Take a look
 at [RAPiD](https://vip.bu.edu/projects/vsns/cossy/fisheye/rapid/) to get the clue.
 
 [![image](https://user-images.githubusercontent.com/15047882/167245173-aa0a18cd-06c9-4517-8817-253d120c0e07.png)](#)
 
-Such models require additional post-processing, which involves the rotation because otherwise, you cannot utilize most
+Such models require additional post-processing, which involves the rotation - otherwise, you cannot utilize most
 of the classifier models as they need orthogonal boxes as their input.
 
 Savant supports the bounding box rotation preprocessing function out of the box. It is applied to the boxes right before
@@ -145,6 +145,12 @@ Savant provides the configuration means to run the pipeline in a real-time mode,
 incapable of handling them in the real-time, and in synchronous mode, which guarantees the processing of all the data in
 a capacity way, maximizing the utilization of the available resources.
 
+### Ready-To-Use API
+
+From a user perspective, the Savant pipeline is a self-contained service that accepts input data through Apache Avro 
+API. It makes Savant ideal and ready for deployment within the systems. Whether developers use provided handy adapters 
+or send data into a pipeline directly, both cases use API provided by the Savant. 
+
 ### Handy Source and Sink Adapters
 
 We have implemented several ready-to-use adapters, which you can utilize as is or use as a foundation to develop your
@@ -163,11 +169,12 @@ Currently, the following source adapters are available:
 
 There are basic sink adapters implemented:
 
-- Inference results in JSON file stream;
+- Inference results are placed into JSON file stream;
 - Resulting video overlay displayed on a screen (per source);
-- MP4 file (per source).
+- MP4 file (per source);
+- image directory (per source);
 
-The framework uses an established protocol based on Apache AVRO, both for sources and sinks. The sources and sinks talk
+The framework uses an established protocol based on Apache Avro, both for sources and sinks. The sources and sinks talk
 to Savant through ZeroMQ sockets.
 
 ### Easy to Deploy
