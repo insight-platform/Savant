@@ -1,0 +1,2 @@
+Sphinx~=5.1
+sphinx_rtd_theme~=1.0
