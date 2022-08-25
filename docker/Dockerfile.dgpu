@@ -1,0 +1,28 @@
+FROM nvcr.io/nvidia/deepstream:6.1-base AS base
+
+# python to python3 by default
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 10
+
+# install base packages
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y \
+    python3-pip \
+    python3-dev \
+    libcairo2-dev \
+    libgirepository1.0-dev \
+    python3-gst-1.0 \
+    gstreamer1.0-python3-plugin-loader \
+    && apt-get autoremove -y \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# create app directory
+ARG APP_PATH=/opt/app
+ENV APP_PATH=$APP_PATH
+ENV PYTHONPATH=$APP_PATH
+RUN mkdir -p $APP_PATH
+
+# add deepstream libs to path, so that ctypes can load libnvbufsurface.so
+ENV LD_LIBRARY_PATH=/opt/nvidia/deepstream/deepstream/lib/:/opt/app/module/lib:$LD_LIBRARY_PATH
+
+WORKDIR $APP_PATH

@@ -1,0 +1,85 @@
+name: Build and publish documentation
+
+on:
+  workflow_run:
+    workflows: [Build and publish docker images]
+    types:
+      - completed
+
+  # to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  
+  build:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    container:
+      image: python:3.8-buster
+      volumes:
+        - /html:/html       
+    defaults:
+      run:
+        working-directory: ./docs
+
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Install dependencies
+        run: |
+          apt update && apt install --no-install-recommends -y graphviz
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Build documentation
+        run: |
+          make clean html
+          cp -r ./build/html/* /html
+        
+# doesn't work - messes the paths, replaced with 2 steps: archive + upload
+#       - name: Upload artifact
+#         uses: actions/upload-pages-artifact@v1
+#         with:
+#           path: /html
+
+      - name: Archive artifact
+        shell: bash
+        run: |
+          tar \
+            --dereference --hard-dereference \
+            --directory /html \
+            -cvf /html/artifact.tar \
+            .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@main
+        with:
+          name: github-pages
+          path: /html/artifact.tar
+          if-no-files-found: error
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{steps.deployment.outputs.page_url}}
+      
+    steps:
+      - name: Setup Pages
+        uses: actions/configure-pages@v1
+        
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1
