@@ -6,10 +6,10 @@ that utilize the best Nvidia approaches for data center and edge accelerators ve
 
 ## Quick Links
 
-- [Getting Started](docs/getting-started.md)
+- [Getting Started](https://insight-platform.github.io/Savant/getting_started/intro.html)
 - [Publications and Samples](docs/publications-samples.md)
 - [Architecture](docs/architecture.md)
-- [API Documentation]()
+- [API Documentation](https://insight-platform.github.io/Savant/reference/api/index.html)
 
 ## What it's not
 
@@ -211,10 +211,10 @@ Jetson ARM-based devices.
 
 ## What's Next
 
-- [Getting Started](docs/getting-started.md)
+- [Getting Started](https://insight-platform.github.io/Savant/getting_started/intro.html)
 - [Publications and Samples](docs/publications-samples.md)
 - [Architecture](docs/architecture.md)
-- [API Documentation]()
+- [API Documentation](https://insight-platform.github.io/Savant/reference/api/index.html)
 
 ## Contribution
 

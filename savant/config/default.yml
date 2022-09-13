@@ -1,0 +1,63 @@
+# module name, required
+name: ${oc.env:MODULE_NAME}
+
+# init sources priority used in 'initializer' resolver
+# lower numbers mean higher priority
+parameter_init_priority:
+  environment: 20
+  etcd: 10
+
+# base module parameters
+parameters:
+  # python logging level for the ``savant`` logger
+  # When writing custom code for your module,
+  # either name your logger with ``savant.`` prefix,
+  # or disregard this parameter and set up your own logger.
+  log_level: ${oc.env:LOGLEVEL, 'INFO'}
+
+  # required paths
+  # the path to the models directory within the module container
+  model_path: ${oc.env:MODEL_PATH, /models}
+  # the path to the downloads directory within the module container
+  download_path: ${oc.env:DOWNLOAD_PATH, /downloads}
+
+  # storages
+  dynamic_parameter_storage: etcd
+  etcd_config:
+    endpoints:
+      - host: etcd-server
+        port: 2379
+    timeout: 15
+
+  # pipeline processing frame width/height
+  frame_width: ${initializer:frame_width, 1280}
+  frame_height: ${initializer:frame_height, 720}
+
+  # FPS measurement period
+  fps_period: ${oc.decode:${oc.env:FPS_PERIOD, 10000}}
+
+  # pipeline output queue max size
+  queue_maxsize: 100
+
+  # parameters of a frame to include in module output
+  # leave empty to include only metadata (no frames)
+  output_frame: ${json:${oc.env:OUTPUT_FRAME, null}}
+
+# pipeline definition
+pipeline:
+  source:
+    element: zeromq_source_bin
+    properties:
+      socket: ${oc.env:ZMQ_SRC_ENDPOINT}
+      socket_type: ${oc.env:ZMQ_SRC_TYPE, PULL}
+      bind: ${oc.decode:${oc.env:ZMQ_SRC_BIND, True}}
+
+# elements:
+# elements should be defined here
+
+  sink:
+    - element: zeromq_sink
+      properties:
+        socket: ${oc.env:ZMQ_SINK_ENDPOINT}
+        socket_type: ${oc.env:ZMQ_SINK_TYPE, PUB}
+        bind: ${oc.decode:${oc.env:ZMQ_SINK_BIND, True}}

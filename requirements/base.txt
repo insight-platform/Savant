@@ -1,0 +1,18 @@
+fastavro~=1.4.4
+pyzmq~=22.2.1
+
+omegaconf~=2.2
+# for omegaconf arithmetic resolver
+simpleeval~=0.9.12
+
+# dynamic parameters storage
+#etcd3~=0.12.0
+# TODO: replace with release with MultiEndpointEtcd3Client support
+https://github.com/kragniz/python-etcd3/archive/refs/heads/master.zip
+# required for etcd3
+protobuf<3.21
+
+# remote file support
+requests~=2.27
+boto3~=1.23
+tqdm~=4.64

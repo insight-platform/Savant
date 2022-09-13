@@ -22,14 +22,13 @@ from gi.repository import Gst
 Gst.init(None)
 
 # -- Project information -----------------------------------------------------
-
 project = 'Savant'
-copyright = '2022, Bitworks Software'
-author = 'Bitworks Software'
+copyright = '2022 BWSoft Management, LLC'
+# author = 'BWSoft'
 
 # The full version, including alpha/beta/rc tags
-release = '0.0.1'
-
+from savant import __version__
+release = __version__
 
 # -- General configuration ---------------------------------------------------
 

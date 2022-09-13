@@ -1,0 +1,267 @@
+from fractions import Fraction
+from typing import Any, NamedTuple, Optional
+
+from savant.api import serialize, ENCODING_REGISTRY
+from savant.gstreamer import GObject, Gst, GstBase
+from savant.gstreamer.codecs import CODEC_BY_CAPS_NAME, Codec
+from savant.gstreamer.metadata import DEFAULT_FRAMERATE
+from savant.gstreamer.utils import LoggerMixin
+
+
+class FrameParams(NamedTuple):
+    """Frame parameters."""
+
+    codec_name: str
+    width: str
+    height: str
+    framerate: str
+
+
+class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
+    """GStreamer plugin to serialize video frames to avro message."""
+
+    GST_PLUGIN_NAME: str = 'video_to_avro_serializer'
+
+    __gstmetadata__ = (
+        'Serializes video frames to avro messages',
+        'Transform',
+        'Serializes video frame to avro message',
+        'Pavel Tomskikh <tomskih_pa@bw-sw.com>',
+    )
+
+    __gsttemplates__ = (
+        Gst.PadTemplate.new(
+            'src',
+            Gst.PadDirection.SRC,
+            Gst.PadPresence.ALWAYS,
+            Gst.Caps.new_any(),
+        ),
+        Gst.PadTemplate.new(
+            'sink',
+            Gst.PadDirection.SINK,
+            Gst.PadPresence.ALWAYS,
+            Gst.Caps.from_string(';'.join(x.value.caps_with_params for x in Codec)),
+        ),
+    )
+
+    __gproperties__ = {
+        'source-id': (
+            str,
+            'Source ID',
+            'Source ID, e.g. "camera1".',
+            None,
+            GObject.ParamFlags.READWRITE,
+        ),
+        'location': (
+            str,
+            'Source location',
+            'Source location',
+            None,
+            GObject.ParamFlags.READWRITE,
+        ),
+        # TODO: make fraction
+        'framerate': (
+            str,
+            'Default framerate',
+            'Default framerate',
+            DEFAULT_FRAMERATE,
+            GObject.ParamFlags.READWRITE,
+        ),
+        'eos-on-location-change': (
+            bool,
+            'Send EOS when location changed',
+            'Send EOS when location changed',
+            True,
+            GObject.ParamFlags.READWRITE,
+        ),
+        'eos-on-frame-params-change': (
+            bool,
+            'Send EOS when frame parameters changed',
+            'Send EOS when frame parameters changed',
+            True,
+            GObject.ParamFlags.READWRITE,
+        ),
+    }
+
+    def __init__(self):
+        super().__init__()
+        self.schema = ENCODING_REGISTRY["VideoFrame"]
+        self.eos_schema = ENCODING_REGISTRY["EndOfStream"]
+        # properties
+        self.source_id: Optional[str] = None
+        self.eos_on_location_change: bool = True
+        self.eos_on_frame_params_change: bool = True
+        # will be set after caps negotiation
+        self.frame_params: Optional[FrameParams] = None
+        self.last_frame_params: Optional[FrameParams] = None
+        self.location: Optional[str] = None
+        self.last_location: Optional[str] = None
+        self.default_framerate: str = DEFAULT_FRAMERATE
+
+        self.stream_in_progress = False
+
+    def do_set_caps(  # pylint: disable=unused-argument
+        self, in_caps: Gst.Caps, out_caps: Gst.Caps
+    ):
+        """Checks caps after negotiations."""
+        self.logger.info('Sink caps changed to %s', in_caps)
+        struct: Gst.Structure = in_caps.get_structure(0)
+        try:
+            codec = CODEC_BY_CAPS_NAME[struct.get_name()]
+        except KeyError:
+            self.logger.error('Not supported caps: %s', in_caps.to_string())
+            return False
+        codec_name = codec.value.name
+        frame_width = struct.get_int('width').value
+        frame_height = struct.get_int('height').value
+        if struct.has_field('framerate'):
+            _, framerate_num, framerate_demon = struct.get_fraction('framerate')
+            framerate = f'{framerate_num}/{framerate_demon}'
+        else:
+            framerate = self.default_framerate
+        self.frame_params = FrameParams(
+            codec_name=codec_name,
+            width=frame_width,
+            height=frame_height,
+            framerate=framerate,
+        )
+        return True
+
+    def do_get_property(self, prop: GObject.GParamSpec):
+        """Gst plugin get property function.
+
+        :param prop: structure that encapsulates the parameter info
+        """
+        if prop.name == 'source-id':
+            return self.source_id
+        if prop.name == 'location':
+            return self.location
+        if prop.name == 'framerate':
+            return self.default_framerate
+        if prop.name == 'eos-on-location-change':
+            return self.eos_on_location_change
+        if prop.name == 'eos-on-frame-params-change':
+            return self.eos_on_frame_params_change
+        raise AttributeError(f'Unknown property {prop.name}.')
+
+    def do_set_property(self, prop: GObject.GParamSpec, value: Any):
+        """Gst plugin set property function.
+
+        :param prop: structure that encapsulates the parameter info
+        :param value: new value for parameter, type dependents on parameter
+        """
+        if prop.name == 'source-id':
+            self.source_id = value
+        elif prop.name == 'location':
+            self.location = value
+        elif prop.name == 'framerate':
+            try:
+                Fraction(value)  # validate
+            except (ZeroDivisionError, ValueError) as e:
+                raise AttributeError(f'Invalid property {prop.name}: {e}.') from e
+            self.default_framerate = value
+        elif prop.name == 'eos-on-location-change':
+            self.eos_on_location_change = value
+        elif prop.name == 'eos-on-frame-params-change':
+            self.eos_on_frame_params_change = value
+        else:
+            raise AttributeError(f'Unknown property {prop.name}.')
+
+    def do_start(self):
+        assert self.source_id, 'Source ID is required.'
+        return True
+
+    def do_prepare_output_buffer(self, in_buf: Gst.Buffer):
+        """Transform gst function."""
+
+        self.logger.debug(
+            'Processing frame %s of size %s', in_buf.pts, in_buf.get_size()
+        )
+        frame = in_buf.extract_dup(0, in_buf.get_size())
+        if self.stream_in_progress:
+            if (
+                self.eos_on_location_change
+                and self.location != self.last_location
+                or self.eos_on_frame_params_change
+                and self.frame_params != self.last_frame_params
+            ):
+                self.send_end_message()
+        self.last_location = self.location
+        self.last_frame_params = self.frame_params
+
+        message = self.build_message(
+            in_buf.pts,
+            in_buf.dts if in_buf.dts != Gst.CLOCK_TIME_NONE else None,
+            in_buf.duration if in_buf.duration != Gst.CLOCK_TIME_NONE else None,
+            frame,
+            keyframe=not in_buf.has_flags(Gst.BufferFlags.DELTA_UNIT),
+        )
+        data = serialize(self.schema, message)
+
+        out_buf = Gst.Buffer.new_wrapped(data)
+        out_buf.pts = in_buf.pts
+        out_buf.dts = in_buf.dts
+        out_buf.duration = in_buf.duration
+        self.stream_in_progress = True
+
+        return Gst.FlowReturn.OK, out_buf
+
+    def do_sink_event(self, event: Gst.Event):
+        if event.type == Gst.EventType.EOS:
+            self.logger.info('Got End-Of-Stream event')
+            self.send_end_message()
+
+        elif event.type == Gst.EventType.TAG:
+            tag_list: Gst.TagList = event.parse_tag()
+            has_location, location = tag_list.get_string(Gst.TAG_LOCATION)
+            if has_location:
+                self.logger.info('Set location to %s', location)
+                self.location = location
+
+        # Cannot use `super()` since it is `self`
+        return GstBase.BaseTransform.do_sink_event(self, event)
+
+    def send_end_message(self):
+        data = serialize(
+            self.eos_schema,
+            {'source_id': self.source_id},
+        )
+        out_buf = Gst.Buffer.new_wrapped(data)
+        self.srcpad.push(out_buf)
+        self.stream_in_progress = False
+
+    def build_message(
+        self,
+        pts: int,
+        dts: Optional[int],
+        duration: Optional[int],
+        frame: Optional[bytes],
+        **kwargs,
+    ):
+        if pts == Gst.CLOCK_TIME_NONE:
+            # TODO: support CLOCK_TIME_NONE in schema
+            pts = 0
+        message = {
+            'source_id': self.source_id,
+            'framerate': self.frame_params.framerate,
+            'width': self.frame_params.width,
+            'height': self.frame_params.height,
+            'codec': self.frame_params.codec_name,
+            'pts': pts,
+            'dts': dts,
+            'duration': duration,
+            'frame': frame,
+            **kwargs,
+        }
+        if self.location:
+            message['tags'] = {'location': self.location}
+        return message
+
+
+# register plugin
+GObject.type_register(VideoToAvroSerializer)
+__gstelementfactory__ = (
+    VideoToAvroSerializer.GST_PLUGIN_NAME,
+    Gst.Rank.NONE,
+    VideoToAvroSerializer,
+)

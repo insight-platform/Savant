@@ -1,0 +1,15 @@
+{
+    "name": "VideoFrameMetadata",
+    "namespace": "vision.module",
+    "type": "record",
+    "fields": [
+        {
+            "name": "objects",
+            "type": {
+                "type": "array",
+                "items": "vision.module.Object"
+            },
+            "default": []
+        }
+    ]
+}
