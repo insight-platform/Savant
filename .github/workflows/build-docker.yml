@@ -10,8 +10,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  # github.repository as <account>/<repo>
-  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
 
@@ -39,7 +37,7 @@ jobs:
     - run: |
         echo ${{ matrix.arch }}
         echo ${{ matrix.docker_file }}
-        echo ${{ matrix.docker_image }}
+        echo ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.docker_image }}
 
     - uses: actions/checkout@v3
 
@@ -74,7 +72,7 @@ jobs:
       uses: docker/build-push-action@v3
       with:
         file: ${{ matrix.docker_file }}
-        tags: ${{ matrix.docker_image }}
+        tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.docker_image }}
         build-args: |
           DEEPSTREAM_VERSION=${{ matrix.deepstream_version }}
         platforms: ${{ matrix.arch }}
