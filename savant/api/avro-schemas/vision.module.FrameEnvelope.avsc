@@ -1,0 +1,16 @@
+{
+    "doc": "Savant Frame message envelope.",
+    "name": "Frame",
+    "namespace": "vision.module",
+    "type": "record",
+    "fields": [
+        {
+            "name": "schema_sig",
+            "type": "bytes"
+        },
+        {
+            "name": "payload",
+            "type": "bytes"
+        }
+    ]
+}

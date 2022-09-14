@@ -1,0 +1,13 @@
+FROM python:3.9.13-slim
+
+ENV PYTHONUNBUFFERED=1
+ARG APP_PATH=/opt/app
+ENV APP_PATH=$APP_PATH
+ENV PYTHONPATH=$APP_PATH
+WORKDIR $APP_PATH
+
+COPY adapters/requirements.txt ${APP_PATH}/adapters/requirements.txt
+RUN python -m pip install --no-cache-dir -r ${APP_PATH}/adapters/requirements.txt
+
+COPY savant ${APP_PATH}/savant
+COPY adapters/python ${APP_PATH}/adapters/python

@@ -1,0 +1,53 @@
+{
+    "name": "Object",
+    "namespace": "vision.module",
+    "type": "record",
+    "fields": [
+        {
+            "name": "model_name",
+            "type": "string",
+            "doc": "Object model name, e.g. 'peoplenet'."
+        },
+        {
+            "name": "label",
+            "type": "string",
+            "doc": "Object type or class name, e.g. 'person'."
+        },
+        {
+            "name": "object_id",
+            "type": "long",
+            "doc": "Object (track) ID."
+        },
+        {
+            "name": "bbox",
+            "type": "vision.module.BBox"
+        },
+        {
+            "name": "confidence",
+            "type": "float"
+        },
+        {
+            "name": "attributes",
+            "type": {
+                "type": "array",
+                "items": "vision.module.Attribute"
+            },
+            "default": []
+        },
+        {
+            "name": "parent_model_name",
+            "type": ["null", "string"],
+            "default": null
+        },
+        {
+            "name": "parent_label",
+            "type": ["null", "string"],
+            "default": null
+        },
+        {
+            "name": "parent_object_id",
+            "type": ["null", "long"],
+            "default": null
+        }
+    ]
+}

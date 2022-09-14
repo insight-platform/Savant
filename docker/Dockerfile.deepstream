@@ -1,0 +1,90 @@
+ARG DEEPSTREAM_VERSION
+FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-base AS base
+
+# python to python3 by default
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 10
+
+# install base packages
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y \
+    python3-pip \
+    python3-dev \
+    libcairo2-dev \
+    libgirepository1.0-dev \
+    python3-gst-1.0 \
+    gstreamer1.0-python3-plugin-loader \
+    && apt-get autoremove -y \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV PYTHONUNBUFFERED=1
+ARG APP_PATH=/opt/app
+ENV APP_PATH=$APP_PATH
+ENV PYTHONPATH=$APP_PATH
+WORKDIR $APP_PATH
+
+# add deepstream libs to path, so that ctypes can load libnvbufsurface.so
+ENV LD_LIBRARY_PATH=/opt/nvidia/deepstream/deepstream/lib/:/opt/app/module/lib:$LD_LIBRARY_PATH
+
+# install requirements
+COPY requirements/base.txt requirements-base.txt
+COPY requirements/deepstream.txt requirements-deepstream.txt
+RUN python -m pip install --no-cache-dir --upgrade pip
+RUN python -m pip install --no-cache-dir \
+    -r requirements-base.txt \
+    -r requirements-deepstream.txt \
+    && rm requirements-base.txt \
+    && rm requirements-deepstream.txt
+
+COPY savant savant
+ENV GST_PLUGIN_PATH=${APP_PATH}/savant/gst_plugins:${APP_PATH}/savant/utils/gst_plugins
+
+COPY LICENSE savant/
+
+# https://github.com/onnx/onnx-tensorrt/issues/823#issuecomment-1132735098
+# missing symlink for cublas and cublasLt in DS6.1-base image
+# (no missing symlink for cublas and cublasLt in DS6.1-devel image)
+RUN ln -s /usr/local/cuda/targets/x86_64-linux/lib/libcublasLt.so.11 /usr/local/cuda/targets/x86_64-linux/lib/libcublasLt.so \
+    && ln -s /usr/local/cuda/targets/x86_64-linux/lib/libcublas.so.11 /usr/local/cuda/targets/x86_64-linux/lib/libcublas.so \
+    && ldconfig
+
+ENTRYPOINT [ "python", "-m", "savant.entrypoint"]
+
+FROM base AS adapters
+
+COPY adapters/ds ${APP_PATH}/adapters/ds
+COPY adapters/gst/gst_plugins/python/adjust_timestamps.py ${APP_PATH}/adapters/ds/gst_plugins/python/adjust_timestamps.py
+ENV GST_PLUGIN_PATH=${GST_PLUGIN_PATH}:${APP_PATH}/adapters/ds/gst_plugins
+ENTRYPOINT []
+
+FROM base as samples
+
+COPY samples ${APP_PATH}/samples
+
+FROM samples as docs
+
+RUN apt update && apt install --no-install-recommends -y \
+    graphviz && \
+    apt autoremove -y && \
+    apt clean && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY docs/requirements.txt requirements-docs.txt
+RUN python -m pip install --no-cache-dir \
+    -r requirements-docs.txt \
+    && rm requirements-docs.txt
+
+ARG USERNAME=container_user
+# UID should be set to the same value as host OS UID
+ARG USER_UID=1001
+ARG USER_GID=$USER_UID
+# Create the user
+RUN groupadd --gid $USER_GID $USERNAME \
+	&& useradd --uid $USER_UID --gid $USER_GID -m $USERNAME
+
+RUN chown -R $USER_UID:$USER_GID $APP_PATH
+USER $USERNAME
+
+WORKDIR $APP_PATH/docs
+ENTRYPOINT ["make"]
+CMD ["clean", "html"]

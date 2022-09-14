@@ -1,0 +1,108 @@
+ARG DEEPSTREAM_VERSION=6.0.1
+FROM nvcr.io/nvidia/deepstream-l4t:$DEEPSTREAM_VERSION-base AS base
+
+# python2 to python3 by default
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 10
+
+# https://forums.developer.nvidia.com/t/notice-cuda-linux-repository-key-rotation/212771
+RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/3bf863cc.pub
+
+# apt-get cannot create files in /tmp
+RUN chmod 1777 /tmp
+
+# install base packages
+RUN rm -rf /var/lib/apt/lists/* && \
+    apt-get update && \
+    apt-get install -y \
+        autoconf \
+        automake \
+        cmake \
+        gcc \
+        git \
+        libcairo2-dev \
+        libgirepository1.0-dev \
+        libgstreamer1.0-dev \
+        gobject-introspection \
+        libtool \
+        pkg-config \
+        python-dev \
+        python-gi-dev \
+        python-gst-1.0 \
+        python3-pip && \
+    rm -rf /var/lib/apt/lists/*
+
+# upgrade pip so it can use manylinux2014 to get compiled binaries
+RUN python -m pip install --no-cache-dir --upgrade pip
+RUN python -m pip install --no-cache-dir numpy==1.19.4
+# "Cannot uninstall 'PyGObject'. It is a distutils installed project"
+# using already installed version of pygobject and pycairo
+
+# build and install gst-python
+RUN apt-get update && \
+    apt-get install -y --reinstall ca-certificates && \
+    rm -rf /var/lib/apt/lists/* && \
+    cd /tmp && \
+    export GST_LIBS="-lgstreamer-1.0 -lgobject-2.0 -lglib-2.0" && \
+    export GST_CFLAGS="-pthread -I/usr/include/gstreamer-1.0 -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include" && \
+    export PYTHON=/usr/bin/python3 && \
+    export LIBPYTHON=$($PYTHON -c 'from distutils import sysconfig; print(sysconfig.get_config_var("LDLIBRARY"))') && \
+    export LIBPYTHONPATH=$(dirname $(ldconfig -p | grep -w $LIBPYTHON | head -1 | tr ' ' '\n' | grep /)) && \
+    export PYGI_DIRPATH=$($PYTHON -c 'import os;import gi; print(f"{os.path.dirname(gi.__file__)}/overrides")') && \
+    git clone https://github.com/GStreamer/gst-python.git && \
+    cd gst-python && \
+    git checkout 1a8f48a && \
+    ./autogen.sh --disable-gtk-doc --noconfigure && \
+    ./configure --with-libpython-dir=$LIBPYTHONPATH --libdir=$LIBPYTHONPATH --with-pygi-overrides-dir=$PYGI_DIRPATH && \
+    make && \
+    make install && \
+    make clean && make distclean && \
+    cd .. && \
+    rm -r gst-python
+
+# Uninstalling apt packages since they have PyGObject==3.26.1 with bugs related
+# to translating properties between Python and C. Those bugs cause segfault when
+# loading gst-plugins written in python. We needed to install those packages before
+# to build gst-python.
+RUN apt-get remove -y \
+        python-gi \
+        python3-gi \
+        python-gi-dev
+RUN python -m pip install --no-cache-dir pycairo==1.19.0
+RUN python -m pip install --no-cache-dir PyGObject==3.40.1
+
+ENV PYTHONUNBUFFERED=1
+ARG APP_PATH=/opt/app
+ENV APP_PATH=$APP_PATH
+ENV PYTHONPATH=$APP_PATH
+WORKDIR $APP_PATH
+
+# add deepstream libs to path, so that ctypes can load libnvbufsurface.so
+# and module lib to path, so that user lib can be loaded
+ENV LD_LIBRARY_PATH=/opt/nvidia/deepstream/deepstream/lib/:/opt/app/module/lib:$LD_LIBRARY_PATH
+
+# install requirements
+COPY requirements/base.txt requirements-base.txt
+COPY requirements/deepstream-l4t-6.0.1.txt requirements-deepstream-l4t.txt
+RUN python -m pip install --no-cache-dir \
+    -r requirements-base.txt \
+    -r requirements-deepstream-l4t.txt \
+    && rm requirements-base.txt \
+    && rm requirements-deepstream-l4t.txt
+
+COPY savant savant
+ENV GST_PLUGIN_PATH=${APP_PATH}/savant/gst_plugins:${APP_PATH}/savant/utils/gst_plugins
+
+COPY LICENSE savant/
+
+ENTRYPOINT [ "python", "-m", "savant.entrypoint"]
+
+FROM base as samples
+
+COPY samples ${APP_PATH}/samples
+ENTRYPOINT []
+
+FROM base AS adapters
+
+COPY adapters/ds ${APP_PATH}/adapters/ds
+COPY adapters/gst/gst_plugins/python/adjust_timestamps.py ${APP_PATH}/adapters/ds/gst_plugins/python/adjust_timestamps.py
+ENV GST_PLUGIN_PATH=${GST_PLUGIN_PATH}:${APP_PATH}/adapters/ds/gst_plugins

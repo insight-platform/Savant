@@ -1,0 +1,96 @@
+{
+    "name": "VideoFrame",
+    "namespace": "vision.module",
+    "type": "record",
+    "fields": [
+        {
+            "name": "source_id",
+            "type": "string",
+            "doc": "Source ID, e.g. 'camera1'."
+        },
+        {
+            "name": "pts",
+            "type": "long",
+            "doc": "Presentation timestamp of the frame/buffer. Unique frame ID for the source."
+        },
+        {
+            "name": "framerate",
+            "type": "string",
+            "doc": "Source/video frame rate, e.g. '25/1'."
+        },
+        {
+            "name": "width",
+            "type": "int",
+            "doc": "Width of the frame in px."
+        },
+        {
+            "name": "height",
+            "type": "int",
+            "doc": "Height of the frame in px."
+        },
+        {
+            "name": "dts",
+            "type": [
+                "null",
+                "long"
+            ],
+            "doc": "Decoding timestamp of the frame/buffer.",
+            "default": null
+        },
+        {
+            "name": "duration",
+            "type": [
+                "null",
+                "long"
+            ],
+            "doc": "Duration of the frame/buffer in nanoseconds.",
+            "default": null
+        },
+        {
+            "name": "codec",
+            "type": [
+                "null",
+                "string"
+            ],
+            "doc": "Frame video stream codec name, e.g. 'h264'.",
+            "default": null
+        },
+        {
+            "name": "keyframe",
+            "type": "boolean",
+            "doc": "Indicates whether this frame is an I-frame. Should always be true for codecs that don't implement keyframes (e.g. MJPEG)",
+            "default": true
+        },
+        {
+            "name": "frame",
+            "type": [
+                "null",
+                "bytes"
+            ],
+            "doc": "Representation of the encoded frame in bytes.",
+            "default": null
+        },
+        {
+            "name": "metadata",
+            "type": [
+                "null",
+                "vision.module.VideoFrameMetadata"
+            ],
+            "default": null
+        },
+        {
+            "name": "tags",
+            "type": {
+                "type": "map",
+                "values": [
+                    "string",
+                    "boolean",
+                    "long",
+                    "double"
+                ]
+            },
+            "doc": "Additional information about the frame, e.g. source file location.",
+            "default": {}
+        }
+    ]
+}

@@ -1,0 +1,33 @@
+{
+    "name": "BBox",
+    "namespace": "vision.module",
+    "type": "record",
+    "fields": [
+        {
+            "name": "xc",
+            "type": "float",
+            "doc": "X coordinate of the object's center, scaled in [0..1]."
+        },
+        {
+            "name": "yc",
+            "type": "float",
+            "doc": "Y coordinate of the object's center, scaled in [0..1]"
+        },
+        {
+            "name": "width",
+            "type": "float",
+            "doc": "Width of the object, scaled in [0..1]."
+        },
+        {
+            "name": "height",
+            "type": "float",
+            "doc": "Height of the object, scaled in [0..1]."
+        },
+        {
+            "name": "angle",
+            "type": "float",
+            "default": 0,
+            "doc": "Rotation angle of the object in degrees, aspect ratio 1:1."
+        }
+    ]
+}

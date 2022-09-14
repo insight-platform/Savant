@@ -1,0 +1,61 @@
+ARG DEEPSTREAM_VERSION
+FROM nvcr.io/nvidia/deepstream-l4t:$DEEPSTREAM_VERSION-base AS base
+
+# python3 is already default
+
+# install base packages
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y \
+    python3-pip \
+    python3-dev \
+    libcairo2-dev \
+    libgirepository1.0-dev \
+    python3-gst-1.0 \
+    gstreamer1.0-python3-plugin-loader \
+    && apt-get autoremove -y \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN python -m pip install --no-cache-dir --upgrade pip
+
+ENV PYTHONUNBUFFERED=1
+ARG APP_PATH=/opt/app
+ENV APP_PATH=$APP_PATH
+ENV PYTHONPATH=$APP_PATH
+WORKDIR $APP_PATH
+
+# add deepstream libs to path, so that ctypes can load libnvbufsurface.so
+# and module lib to path, so that user lib can be loaded
+ENV LD_LIBRARY_PATH=/opt/nvidia/deepstream/deepstream/lib/:/opt/app/module/lib:$LD_LIBRARY_PATH
+
+# install requirements
+COPY requirements/base.txt requirements-base.txt
+COPY requirements/deepstream-l4t.txt requirements-deepstream-l4t.txt
+RUN python -m pip install --no-cache-dir \
+    -r requirements-base.txt \
+    -r requirements-deepstream-l4t.txt \
+    && rm requirements-base.txt \
+    && rm requirements-deepstream-l4t.txt
+
+COPY savant savant
+ENV GST_PLUGIN_PATH=${APP_PATH}/savant/gst_plugins:${APP_PATH}/savant/utils/gst_plugins
+
+COPY LICENSE savant/
+
+# https://git.bw-sw.com/motion-insights/computer-vision-toolkits/vision-layers-framework/-/issues/44#note_73604
+# missing symlink for cublasLt in DS6.1-l4t-base and samples image
+RUN ln -s /usr/local/cuda/targets/aarch64-linux/lib/libcublasLt.so.11 /usr/local/cuda/targets/aarch64-linux/lib/libcublasLt.so \
+    && ldconfig
+
+ENTRYPOINT [ "python", "-m", "savant.entrypoint"]
+
+FROM base as samples
+
+COPY samples ${APP_PATH}/samples
+ENTRYPOINT []
+
+FROM base AS adapters
+
+COPY adapters/ds ${APP_PATH}/adapters/ds
+COPY adapters/gst/gst_plugins/python/adjust_timestamps.py ${APP_PATH}/adapters/ds/gst_plugins/python/adjust_timestamps.py
+ENV GST_PLUGIN_PATH=${GST_PLUGIN_PATH}:${APP_PATH}/adapters/ds/gst_plugins
