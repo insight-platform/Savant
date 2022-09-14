@@ -29,6 +29,7 @@ jobs:
     needs: build-matrix
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix: ${{ fromJson(needs.build-matrix.outputs.matrix) }}
     permissions:
       contents: read
@@ -74,5 +75,8 @@ jobs:
       with:
         file: ${{ matrix.docker_file }}
         tags: ${{ matrix.docker_image }}
+        build-args: |
+          DEEPSTREAM_VERSION=${{ matrix.deepstream_version }}
         platforms: ${{ matrix.arch }}
+        target: ${{ matrix.target }}
         push: true

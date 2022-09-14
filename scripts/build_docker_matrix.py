@@ -29,6 +29,7 @@ for arch in ARCH_OPTIONS:
     for image in IMAGE_OPTIONS:
         items = []
         with_deepstream = 'deepstream' in image
+        is_adapter = 'adapters' in image
 
         deepstream_options = DEEPSTREAM_OPTIONS
         if arch == 'linux/arm64':
@@ -55,20 +56,35 @@ for arch in ARCH_OPTIONS:
 
                 if arch == 'linux/arm64':
                     docker_image += '-l4t'
-                    docker_file += '-l4t'
+                    if with_deepstream:
+                        docker_file += '-l4t'
 
+                target = ''
+                if with_deepstream:
+                    if is_adapter:
+                        target = 'adapters'
+                    elif 'samples' in tag:
+                        target = 'samples'
+                    else:
+                        target = 'base'
+
+                deepstream_version = version.DEEPSTREAM
                 if DEEPSTREAM_L4T_32 in tag:
                     docker_file += '-' + DEEPSTREAM_L4T_32
+                    deepstream_version = DEEPSTREAM_L4T_32
 
-                items.append({
-                    'arch': arch,
-                    'docker_image': docker_image + ':' + tag,
-                    'docker_file': 'docker/Dockerfile.' + docker_file
-                })
+                items.append(
+                    {
+                        'arch': arch,
+                        'docker_image': docker_image + ':' + tag,
+                        'docker_file': 'docker/Dockerfile.' + docker_file,
+                        'target': target,
+                        'deepstream_version': deepstream_version,
+                    }
+                )
 
         matrix_include += items
 
+# print(json.dumps({'include': matrix_include}, indent=2))
 # print('TOTAL:', len(matrix_include))
-# for item in matrix_include:
-#     print(item['arch'], item['docker_file'], item['docker_image'])
 print(json.dumps({'include': matrix_include}))
