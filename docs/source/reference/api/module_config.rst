@@ -12,7 +12,7 @@ Main module configuration entities
 
 .. inheritance-diagram:: PipelineElement ModelElement PyFuncElement DrawBinElement
     :parts: 1
-    :caption: PipelineElement heirarchy
+    :caption: PipelineElement hierarchy
 
 .. autosummary::
     :toctree: generated

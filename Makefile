@@ -1,3 +1,6 @@
+# `Makefile` for local development.
+# Use to build docker images for your platform, run docker command, and format your code.
+
 SHELL := /bin/bash
 SAVANT_VERSION := $(shell cat savant/VERSION | awk -F= '$$1=="SAVANT"{print $$2}' | sed 's/"//g')
 DEEPSTREAM_VERSION := $(shell cat savant/VERSION | awk -F= '$$1=="DEEPSTREAM"{print $$2}' | sed 's/"//g')
@@ -57,7 +60,7 @@ build-docs:
 	-t savant-docs:$(SAVANT_VERSION) .
 
 run-docs:
-	docker run -it --rm --gpus=all \
+	docker run -it --rm \
 		-v `pwd`/savant:/opt/app/savant \
 		-v `pwd`/docs:/opt/app/docs \
 		--name savant-docs \

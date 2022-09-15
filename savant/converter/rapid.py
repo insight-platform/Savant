@@ -6,10 +6,6 @@ from savant.converter.scale import scale_rbbox
 from savant.base.converter import BaseObjectModelOutputConverter
 from savant.base.model import ObjectModel
 
-# this fake nms function call is made to preload the library and
-# avoid the delay on the first processing frames
-_ = nms(np.random.rand(2, 6).astype(np.float32), 0.5, 0.4, 70)
-
 
 class TensorToBBoxConverter(BaseObjectModelOutputConverter):
     """`RAPiD <https://github.com/duanzhiihao/RAPiD>`_ output to bbox
@@ -30,6 +26,10 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
         self.nms_iou_threshold = nms_iou_threshold
         self.top_k = top_k
         super().__init__()
+
+        # this fake nms function call is made to preload the library and
+        # avoid the delay on the first processing frames
+        _ = nms(np.random.rand(2, 6).astype(np.float32), 0.5, 0.4, 70)
 
     def __call__(
         self,

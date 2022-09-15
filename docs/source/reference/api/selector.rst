@@ -3,7 +3,7 @@ Selectors
 
 .. inheritance-diagram:: savant.selector.BBoxSelector
     :parts: 1
-    :caption: Selectors heirarchy
+    :caption: Selectors hierarchy
     :top-classes: savant.base.pyfunc.BasePyFuncCallableImpl
 
 Base selectors

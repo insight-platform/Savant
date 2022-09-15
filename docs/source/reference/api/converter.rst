@@ -6,7 +6,7 @@ Base converters
 
 .. inheritance-diagram:: savant.base.converter.BaseObjectModelOutputConverter savant.base.converter.BaseAttributeModelOutputConverter savant.base.converter.BaseComplexModelOutputConverter
     :parts: 1
-    :caption: Base converters heirarchy
+    :caption: Base converters hierarchy
     :top-classes: savant.base.pyfunc.BasePyFuncCallableImpl
 
 .. automodule:: savant.base.converter
@@ -30,7 +30,7 @@ Attribute model converters
 
 .. inheritance-diagram:: savant.converter.TensorToLabelConverter savant.converter.TensorToVectorConverter savant.converter.TensorToItemConverter
     :parts: 1
-    :caption: Attribute converters heirarchy
+    :caption: Attribute converters hierarchy
     :top-classes: savant.base.converter.BaseAttributeModelOutputConverter
 
 .. autosummary::

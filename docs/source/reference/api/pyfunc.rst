@@ -3,7 +3,7 @@ PyFuncs
 
 .. inheritance-diagram:: savant.base.pyfunc.BasePyFuncCallableImpl savant.deepstream.pyfunc.NvDsPyFuncPlugin savant.deepstream.drawbin.NvDsDrawBin
     :parts: 1
-    :caption: PyFunc implementations heirarchy
+    :caption: PyFunc implementations hierarchy
 
 Base PyFunc entities
 --------------------

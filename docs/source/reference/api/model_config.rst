@@ -70,11 +70,11 @@ Deepstream model configuration
 
 .. inheritance-diagram:: savant.base.model.Model NvInferModel NvInferDetector NvInferRotatedObjectDetector NvInferInstanceSegmentation NvInferAttributeModel NvInferComplexModel
     :parts: 1
-    :caption: Model heirarchy with nvinfer entities
+    :caption: Model hierarchy with nvinfer entities
 
 .. inheritance-diagram:: savant.base.model.ComplexModelOutput NvInferObjectModelOutput NvInferRotatedObjectModelOutput
     :parts: 1
-    :caption: Model output heirarchy with nvinfer entities
+    :caption: Model output hierarchy with nvinfer entities
 
 .. note::
 
