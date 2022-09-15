@@ -1,4 +1,6 @@
 """ZeroMQ sink."""
+from typing import List
+import inspect
 import zmq
 
 from savant.gst_plugins.python.zeromq_properties import (
@@ -6,8 +8,13 @@ from savant.gst_plugins.python.zeromq_properties import (
     ZEROMQ_PROPERTIES,
 )
 from savant.gstreamer import GObject, Gst, GstBase
-from savant.gstreamer.utils import LoggerMixin
-from savant.utils.zeromq import SenderSocketTypes
+from savant.gstreamer.utils import LoggerMixin, propagate_gst_setting_error
+from savant.utils.zeromq import (
+    SenderSocketTypes,
+    ZMQException,
+    get_socket_type,
+    get_socket_endpoint,
+)
 
 
 class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
@@ -64,13 +71,11 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
             the metadata required to specify parameters
         :param value: new value for param, type dependents on param
         """
+        self.logger.debug('Setting property "%s" to "%s".', prop.name, value)
         if prop.name == 'socket':
             self.socket = value
         elif prop.name == 'socket-type':
-            try:
-                self.socket_type = SenderSocketTypes[value]
-            except KeyError as exc:
-                raise AttributeError(f'Incorrect socket type: {value}') from exc
+            self.socket_type = value
         elif prop.name == 'bind':
             self.bind = value
         else:
@@ -78,7 +83,16 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
 
     def do_start(self):
         """Start source."""
-        assert self.socket is not None, '"socket" property is required.'
+        try:
+            self.socket = get_socket_endpoint(self.socket)
+            self.socket_type = get_socket_type(self.socket_type, SenderSocketTypes)
+        except ZMQException:
+            self.logger.exception('Element start error.')
+            frame = inspect.currentframe()
+            propagate_gst_setting_error(self, frame, __file__)
+            # prevents pipeline from starting
+            return False
+
         self.zmq_context = zmq.Context()
         self.sender = self.zmq_context.socket(self.socket_type.value)
         if self.bind:

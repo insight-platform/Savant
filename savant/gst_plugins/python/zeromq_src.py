@@ -1,4 +1,6 @@
 """ZeroMQ src."""
+from typing import List
+import inspect
 import zmq
 
 from savant.gst_plugins.python.zeromq_properties import (
@@ -6,8 +8,12 @@ from savant.gst_plugins.python.zeromq_properties import (
     ZEROMQ_PROPERTIES,
 )
 from savant.gstreamer import GObject, Gst, GstBase
-from savant.gstreamer.utils import LoggerMixin
-from savant.utils.zeromq import ReceiverSocketTypes, ZeroMQSource
+from savant.gstreamer.utils import LoggerMixin, propagate_gst_setting_error
+from savant.utils.zeromq import (
+    ReceiverSocketTypes,
+    ZeroMQSource,
+    ZMQException,
+)
 
 ZEROMQ_SRC_PROPERTIES = {
     **ZEROMQ_PROPERTIES,
@@ -69,29 +75,36 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
         :param prop: property parameters
         :param value: new value for param, type dependents on param
         """
+        self.logger.debug('Setting property "%s" to "%s".', prop.name, value)
         if prop.name == 'socket':
             self.socket = value
         elif prop.name == 'socket-type':
-            try:
-                self.socket_type = ReceiverSocketTypes[value]
-            except KeyError as exc:
-                raise AttributeError(f'Incorrect socket type: {value}') from exc
+            self.socket_type = value
         elif prop.name == 'bind':
             self.bind = value
         # elif prop.name == 'zmq-context':
         #     self.zmq_context = value
         else:
-            raise AttributeError(f'Unknown property {prop.name}.')
+            raise AttributeError(f'Unknown property "{prop.name}".')
 
     def do_start(self):
         """Start source."""
-        assert self.socket is not None, '"socket" property is required.'
-        self.source = ZeroMQSource(
-            socket=self.socket,
-            socket_type=self.socket_type,
-            bind=self.bind,
-            receive_timeout=self.receive_timeout,
-        )
+        self.logger.debug('Called do_start().')
+
+        try:
+            self.source = ZeroMQSource(
+                socket=self.socket,
+                socket_type=self.socket_type,
+                bind=self.bind,
+                receive_timeout=self.receive_timeout,
+            )
+        except ZMQException:
+            self.logger.exception('Element start error.')
+            frame = inspect.currentframe()
+            propagate_gst_setting_error(self, frame, __file__)
+            # prevents pipeline from starting
+            return False
+
         return True
 
     # pylint: disable=unused-argument

@@ -110,3 +110,16 @@ def on_pad_event(
     if event_handler is None:
         return Gst.PadProbeReturn.PASS
     return event_handler(pad, event, *data)
+
+
+def propagate_gst_setting_error(gst_element: Gst.Element, frame, file_path):
+    gst_element.message_full(
+        type=Gst.MessageType.ERROR,
+        domain=Gst.LibraryError.quark(),
+        code=Gst.LibraryError.SETTINGS,
+        text=None,
+        debug=None,
+        file=file_path,
+        function=frame.f_code.co_name,
+        line=frame.f_code.co_firstlineno,
+    )

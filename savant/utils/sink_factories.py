@@ -12,7 +12,7 @@ from savant.config.schema import PipelineElement
 from savant.gstreamer.codecs import CodecInfo
 from savant.gstreamer.metadata import GstFrameMeta
 from savant.utils.registry import Registry
-from savant.utils.zeromq import SenderSocketTypes
+from savant.utils.zeromq import SenderSocketTypes, get_socket_type, get_socket_endpoint
 
 logger = logging.getLogger(__name__)
 
@@ -92,15 +92,18 @@ class ZeroMQSinkFactory(SinkFactory):
         socket_type: str = SenderSocketTypes.PUB.name,
         bind: bool = True,
     ):
-        self.socket = socket
-        try:
-            self.socket_type = SenderSocketTypes[socket_type]
-        except KeyError as exc:
-            raise AttributeError(f'Incorrect socket type: {socket_type}.') from exc
-        self.bind = bind
         logger.debug(
-            'init ZMQ sink, socket %s, type %s, bind %s.', socket, socket_type, bind
+            'Initializing ZMQ sink: socket %s, type %s, bind %s.',
+            socket,
+            socket_type,
+            bind,
         )
+
+        self.bind = bind
+        # might raise exceptions
+        # will be handled in savant.entrypoint
+        self.socket = get_socket_endpoint(socket)
+        self.socket_type = get_socket_type(socket_type, SenderSocketTypes)
 
     def get_sink(self) -> SinkCallable:
         schema = ENCODING_REGISTRY['VideoFrame']

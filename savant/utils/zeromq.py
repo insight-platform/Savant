@@ -1,9 +1,23 @@
 """ZeroMQ utilities."""
 import logging
 from enum import Enum
-from typing import Optional
+from typing import Optional, Type, Union
 
 import zmq
+
+logger = logging.getLogger(__name__)
+
+
+class ZMQException(Exception):
+    """Error in ZMQ-related code."""
+
+
+class ZMQSocketEndpointException(ZMQException):
+    """Error in ZMQ socket endpoint."""
+
+
+class ZMQSocketTypeException(ZMQException):
+    """Error in ZMQ socket type."""
 
 
 class ReceiverSocketTypes(Enum):
@@ -20,6 +34,36 @@ class SenderSocketTypes(Enum):
     PUB = zmq.PUB
 
 
+def get_socket_endpoint(socket_endpoint: str):
+    if not isinstance(socket_endpoint, str):
+        raise ZMQSocketEndpointException(
+            f'Incorrect socket endpoint: "{socket_endpoint}":'
+            f'"{type(socket_endpoint)}" is not string.'
+        )
+    return socket_endpoint
+
+
+def get_socket_type(
+    socket_type_name: str,
+    socket_type_enum: Union[Type[ReceiverSocketTypes], Type[SenderSocketTypes]],
+):
+    if not isinstance(socket_type_name, str):
+        raise ZMQSocketTypeException(
+            f'Incorrect socket_type_name: "{socket_type_name}":'
+            f'"{type(socket_type_name)}" is not string.'
+        )
+
+    socket_type_name = str.upper(socket_type_name)
+
+    try:
+        return socket_type_enum[socket_type_name]
+    except KeyError as exc:
+        raise ZMQSocketTypeException(
+            f'Incorrect socket type: {socket_type_name} is not one of '
+            f'{[socket_type.name for socket_type in socket_type_enum]}.'
+        ) from exc
+
+
 class ZeroMQSource:
     """ZeroMQ Source class.
 
@@ -32,14 +76,23 @@ class ZeroMQSource:
     def __init__(
         self,
         socket: str,
-        socket_type: ReceiverSocketTypes = ReceiverSocketTypes.PULL,
+        socket_type: str = ReceiverSocketTypes.PULL.name,
         bind: bool = True,
         receive_timeout: int = 1000,
     ):
-        self.logger = logging.getLogger(__name__)
-        self.logger.debug(
-              'Init ZMQ source, socket %s, type %s, bind %s.', socket, socket_type, bind
+        logger.debug(
+            'Initializing ZMQ source: socket %s, type %s, bind %s.',
+            socket,
+            socket_type,
+            bind,
         )
+
+        # might raise exceptions
+        # will be handled in ZeromqSrc element
+        # or image_files.py / metadata_json.py Python sinks
+        socket = get_socket_endpoint(socket)
+        socket_type = get_socket_type(socket_type, ReceiverSocketTypes)
+
         self.receive_timeout = receive_timeout
         self.zmq_context = zmq.Context()
         self.receiver = self.zmq_context.socket(socket_type.value)
@@ -57,7 +110,7 @@ class ZeroMQSource:
         try:
             return self.receiver.recv()
         except zmq.Again:
-            self.logger.debug('Timeout exceeded when receiving the next frame')
+            logger.debug('Timeout exceeded when receiving the next frame')
             return None
 
     def __iter__(self):
@@ -74,8 +127,8 @@ class ZeroMQSource:
     def terminate(self):
         """Finish and free zmq socket."""
         self.is_alive = False
-        self.logger.info('Closing ZeroMQ socket')
+        logger.info('Closing ZeroMQ socket')
         self.receiver.close()
-        self.logger.info('Terminating ZeroMQ context.')
+        logger.info('Terminating ZeroMQ context.')
         self.zmq_context.term()
-        self.logger.info('ZeroMQ context terminated')
+        logger.info('ZeroMQ context terminated')
