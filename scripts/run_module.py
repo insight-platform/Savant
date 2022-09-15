@@ -36,7 +36,6 @@ def get_models_mount(
 )
 @click.option(
     '--in-bind',
-    is_flag=True,
     default=True,
     help='Input ZeroMQ socket bind/connect mode (bind if True)',
     show_default=True,
@@ -55,7 +54,6 @@ def get_models_mount(
 )
 @click.option(
     '--out-bind',
-    is_flag=True,
     default=True,
     help='Output ZeroMQ socket bind/connect mode (bind if True)',
     show_default=True,
@@ -87,6 +85,7 @@ def run_module(
         '-e', f'MODEL_PATH={container_model_dir}',
         '-e', f'GST_DEBUG={gst_debug}',
         '-e', f'LOGLEVEL={loglevel}',
+        '-e', f'FPS_PERIOD={os.environ.get("FPS_PERIOD", 10000)}',
         '-e', f'ZMQ_SRC_ENDPOINT={in_endpoint}',
         '-e', f'ZMQ_SRC_TYPE={in_type}',
         '-e', f'ZMQ_SRC_BIND={in_bind}',

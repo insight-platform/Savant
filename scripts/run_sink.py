@@ -28,7 +28,6 @@ def common_options(func):
     )(func)
     func = click.option(
         '--in-bind',
-        is_flag=True,
         default=False,
         help=(
             'Adapter input (module output) ZeroMQ socket bind/connect mode '
