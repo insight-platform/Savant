@@ -56,7 +56,10 @@ def main(config_file_path: str):
     config = ModuleConfig().load(config_file_path)
     # reconfigure savant logger with updated loglevel
     logging.config.dictConfig(log_conf(config.parameters['log_level'].upper()))
+    logger = logging.getLogger('savant')
 
+    # possible exceptions will cause app to crash and log error by default
+    # no need to handle exceptions here
     sink = sink_factory(config.pipeline.sink)
 
     Gst.init(None)
@@ -68,7 +71,6 @@ def main(config_file_path: str):
         **config.parameters,
     )
 
-    logger = logging.getLogger('savant')
     try:
         with GstPipelineRunner(pipeline):
             for msg in pipeline.stream():

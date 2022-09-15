@@ -62,18 +62,22 @@ class GstPipelineRunner:  # pylint: disable=too-many-instance-attributes
         start_time = time()
 
         bus = self._pipeline.get_bus()
+        logger.debug('Adding signal watch and connecting callbacks...')
         bus.add_signal_watch()
         bus.connect('message::error', self.on_error)
         bus.connect('message::eos', self.on_eos)
         bus.connect('message::warning', self.on_warning)
 
+        logger.debug('Setting pipeline to READY...')
         self._pipeline.set_state(Gst.State.READY)
 
         logger.debug('Setting pipeline to PLAYING...')
         self._pipeline.set_state(Gst.State.PLAYING)
 
+        logger.debug('Calling pipeline.on_startup()...')
         self._pipeline.on_startup()
 
+        logger.debug('Starting main loop thread...')
         self._is_running = True
         self._main_loop_thread.start()
 
@@ -87,13 +91,17 @@ class GstPipelineRunner:  # pylint: disable=too-many-instance-attributes
 
     def shutdown(self):
         """Stops pipeline."""
+        logger.debug('shutdown() called.')
         if not self._is_running:
             return
+
         self._is_running = False
 
         if self._main_loop.is_running():
+            logger.debug('Quitting main loop...')
             self._main_loop.quit()
 
+        logger.debug('Setting pipeline to NULL...')
         self._pipeline.set_state(Gst.State.NULL)
 
         exec_seconds = time() - self._start_time
@@ -101,16 +109,18 @@ class GstPipelineRunner:  # pylint: disable=too-many-instance-attributes
             'Pipeline execution ended after %s.', timedelta(seconds=exec_seconds)
         )
 
+        logger.debug('Calling pipeline.on_shutdown()...')
         self._pipeline.on_shutdown()
 
     def on_error(  # pylint: disable=unused-argument
         self, bus: Gst.Bus, message: Gst.Message
     ):
         """Error callback."""
+        logger.debug('Error callback.')
         err, debug = message.parse_error()
         # calling `raise` here causes the pipeline to hang,
         # just save message and handle it later
-        self._error = f'Received error {err} from {message.src.name}. {debug}'
+        self._error = f'Received error {err} from {message.src.name}. {debug}.'
         self.shutdown()
 
     def on_eos(  # pylint: disable=unused-argument

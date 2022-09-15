@@ -9,7 +9,7 @@ from typing import Dict, Optional
 
 from adapters.python.sinks.chunk_writer import ChunkWriter
 from savant.api import deserialize
-from savant.utils.zeromq import ReceiverSocketTypes, ZeroMQSource
+from savant.utils.zeromq import ZeroMQSource
 
 
 class Patterns:
@@ -149,14 +149,17 @@ def main():
     )
     location = os.environ['LOCATION']
     zmq_endpoint = os.environ['ZMQ_ENDPOINT']
-    zmq_socket_type = ReceiverSocketTypes[os.environ.get('ZMQ_TYPE', 'SUB')]
+    zmq_socket_type = os.environ.get('ZMQ_TYPE', 'SUB')
     zmq_bind = strtobool(os.environ.get('ZMQ_BIND', 'false'))
     skip_frames_without_objects = strtobool(
         os.environ.get('SKIP_FRAMES_WITHOUT_OBJECTS', 'false')
     )
     chunk_size = int(os.environ.get('CHUNK_SIZE', 0))
 
+    # possible exceptions will cause app to crash and log error by default
+    # no need to handle exceptions here
     source = ZeroMQSource(zmq_endpoint, zmq_socket_type, zmq_bind)
+
     sink = MetadataJsonSink(location, skip_frames_without_objects, chunk_size)
     logging.info('Metadata JSON sink started')
 
