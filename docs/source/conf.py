@@ -10,9 +10,9 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath(os.path.join('..', '..')))
+import os
+import sys
+sys.path.append(os.path.abspath('./_ext'))
 
 import gi
 
@@ -44,7 +44,10 @@ extensions = [
     'sphinx.ext.inheritance_diagram',
     'sphinx_rtd_theme',
     'sphinx.ext.autosectionlabel',
+    'repo_link',
 ]
+
+repo_link = 'https://github.com/insight-platform/Savant'
 
 # This value controls how to represent typehints
 autodoc_typehints = 'description'

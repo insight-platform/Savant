@@ -2,7 +2,7 @@ General overview
 ================
 
 Let's define some basic notions, terms, and concepts that will be used below
-to understand how Savant works and how to correctly generate a configuration file.
+to understand how :repo-link:`Savant` works and how to correctly generate a configuration file.
 
 Glossary
 --------
