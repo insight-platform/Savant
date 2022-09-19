@@ -1,7 +1,7 @@
 Examples
 ========
 
-These configuration files for sample Savant modules can help to quickly setup some basic pipeline
+These configuration files for sample :repo-link:`Savant` modules can help to quickly setup some basic pipeline
 or clear up a part of Savant config file format.
 
 The same configs along with detailed READMEs can be found in the main repo.
@@ -26,7 +26,7 @@ and 3 secondary classifiers for one of detected classes.
 Use Deepstream configs for Caffe models
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-All Deepstream models can be quickly and easily included in a Savant pipeline by specifying
+All Deepstream models can be quickly and easily included in a :repo-link:`Savant` pipeline by specifying
 Deepstream nvinfer configs directly in the ``model.config_file`` config node.
 
 Look in the main repo for the nvinfer config files used in this sample.

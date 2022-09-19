@@ -21,7 +21,7 @@ ENV APP_PATH=$APP_PATH
 ENV PYTHONPATH=$APP_PATH
 WORKDIR $APP_PATH
 
-COPY adapters/requirements.txt ${APP_PATH}/adapters/requirements.txt
+COPY adapters/requirements.txt $APP_PATH/adapters/requirements.txt
 # gstreamer1.0-python3-plugin-loader requires python 3.10
 # fastavro and pyzmq don't have built wheels for python 3.10 for aarch64
 # need gcc and python3-dev to build them
@@ -30,7 +30,7 @@ RUN if [ "$(arch)" = "aarch64" ]; then \
         apt-get install -y \
             gcc \
             python3-dev && \
-        python -m pip install --no-cache-dir -r ${APP_PATH}/adapters/requirements.txt && \
+        python -m pip install --no-cache-dir -r adapters/requirements.txt && \
         apt-get purge -y \
             gcc \
             python3-dev && \
@@ -38,10 +38,12 @@ RUN if [ "$(arch)" = "aarch64" ]; then \
         apt-get clean && \
         rm -rf /var/lib/apt/lists/*; \
     else \
-        python -m pip install --no-cache-dir -r ${APP_PATH}/adapters/requirements.txt; \
+        python -m pip install --no-cache-dir -r adapters/requirements.txt; \
     fi
 
-ENV GST_PLUGIN_PATH=${APP_PATH}/savant/gst_plugins:${APP_PATH}/savant/utils/gst_plugins:${APP_PATH}/adapters/gst/gst_plugins
-COPY savant ${APP_PATH}/savant
-COPY adapters/python ${APP_PATH}/adapters/python
-COPY adapters/gst ${APP_PATH}/adapters/gst
+ENV GST_PLUGIN_PATH=$APP_PATH/savant/utils/gst_plugins:$APP_PATH/adapters/gst/gst_plugins
+COPY savant savant
+COPY adapters/python adapters/python
+COPY adapters/gst adapters/gst
+# copy only necessary gst plugins
+COPY savant/gst_plugins/python/zeromq_src.py adapters/gst/gst_plugins/python/

@@ -4,7 +4,7 @@ Introduction
 What is it used for
 -------------------
 
-Savant is built with the goal of simplifying the common tasks encountered when building a video analytics pipeline. With Gstreamer technicalities being hidden by Savant all that's left for the user to write is code and configs specific to their video analytics application.
+:repo-link:`Savant` is built with the goal of simplifying the common tasks encountered when building a video analytics pipeline. With Gstreamer technicalities being hidden by Savant all that's left for the user to write is code and configs specific to their video analytics application.
 
 How is it used
 --------------

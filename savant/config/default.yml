@@ -29,9 +29,9 @@ parameters:
         port: 2379
     timeout: 15
 
-  # pipeline processing frame width/height
-  frame_width: ${initializer:frame_width, 1280}
-  frame_height: ${initializer:frame_height, 720}
+  # pipeline processing frame width/height, default 720p
+  frame_width: ${oc.decode:${oc.env:FRAME_WIDTH, 1280}}
+  frame_height: ${oc.decode:${oc.env:FRAME_HEIGHT, 720}}
 
   # FPS measurement period
   fps_period: ${oc.decode:${oc.env:FPS_PERIOD, 10000}}

@@ -13,13 +13,13 @@ All the model-specific configuration parameters are defined in the model configu
 Deepstream models
 ^^^^^^^^^^^^^^^^^
 
-Deepstream model configuration in Savant is based on
+Deepstream model configuration in :repo-link:`Savant` is based on
 `nvinfer model configuration <https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_plugin_gst-nvinfer.html#id2>`_
 and most of model config parameters can still be provided by specifiying the nvinfer model
 :py:attr:`~savant.deepstream.nvinfer.model.NvInferModel.config_file` in Savant model configuration. But it may be more convenient
 to configure the model entirely through Savant config.
 
-Look for detailed config specfication for Savant-supported Deepstream model types in API refrence:
+Look for detailed config specification for Savant-supported Deepstream model types in API refrence:
 
 #. ``- element: nvinfer@detector``
 
@@ -57,7 +57,7 @@ Any image preprocessing always includes:
 #. Scaling the object image to the input size of the model
 #. Normalizing the image using the mean and standard deviation calculated on training data.
 
-These preprocessing steps are always performed automatically in Savant.
+These preprocessing steps are always performed automatically in :repo-link:`Savant`.
 The parameters are set based on the model's configuration file.
 
 The user can also implement his own preprocessing function which allows to prepare data
@@ -130,7 +130,7 @@ Postprocessing
 --------------
 
 After the model has returned its results, it is required to post-process and convert them
-into Savant framework format. Currently, Savant supports two types of models: detection models
+into Savant framework format. Currently, :repo-link:`Savant` supports two types of models: detection models
 and attribute models (e.g. classification). Models can further be divided into two types
 according to the output format: regular models (Deepstream-native models) and custom models.
 

@@ -1,7 +1,7 @@
 Installing Savant
 =================
 
-The recommended way to run Savant currently does not require any installation steps.
+The recommended way to run :repo-link:`Savant` currently does not require any installation steps.
 
 Savant modules are run in the framework or module docker containers (look for details in the :doc:`next section <running>`).
 
@@ -17,7 +17,7 @@ Requirements for running docker containers with NVIDIA hardware support are desc
 Platform and OS compatibility
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Savant builds on top of Deepstream ecosystem, therefore, it currently requires
+:repo-link:`Savant` builds on top of Deepstream ecosystem, therefore, it currently requires
 
 * R515.65.01 display driver for dGPU platform
 * Jetpack 5.0.2 GA on Jetson AGX Xavier / NX / Orin

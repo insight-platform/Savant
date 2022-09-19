@@ -42,7 +42,7 @@ defines the following **default connection pattern**:
 - Module binds the sink endpoint to a publisher socket.
 - Sink adapters are assumed to connect subscriber sockets to the sink endpoint.
 
-Savant already includes several containerized :ref:`adapter_sources` and :ref:`adapter_sinks`
+:repo-link:`Savant` already includes several containerized :ref:`adapter_sources` and :ref:`adapter_sinks`
 adapters that are ready-to-use with any Savant module.
 
 Each Savant adapter has a number of parameters which can be set through environment variables.
@@ -156,7 +156,7 @@ Custom adapters
 ---------------
 
 A user is not limited by the adapters listed above, it's always possible to develop a custom one.
-Savant requires the following from a custom source or sink adapter:
+:repo-link:`Savant` requires the following from a custom source or sink adapter:
 
 #. Adapters send and receive messages to/from Savant module through ZeroMQ sockets.
    See :ref:`default connection pattern <default_connection_pattern>`.

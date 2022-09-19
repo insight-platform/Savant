@@ -78,7 +78,7 @@ Example run commands
 --------------------
 
 For convenience there are python run scripts that generate appropriate docker run commands.
-These scripts can be found in the ``scripts`` directory in the Savant repository.
+These scripts can be found in the ``scripts`` directory in the :repo-link:`Savant` repository.
 
 Use helper script to run
 
