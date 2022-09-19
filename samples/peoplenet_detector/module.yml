@@ -1,9 +1,8 @@
 name: ${oc.env:MODULE_NAME, 'regular-cam-human-detector-peoplenet'}
 
 parameters:
-  frame_width: ${initializer:frame_width, 960}
-  frame_height: ${initializer:frame_height, 544}
-  person_min_height: ${initializer:person_min_height, 16}
+  frame_width: 960
+  frame_height: 544
   output_frame: ${json:${oc.env:OUTPUT_FRAME, '{"codec":"jpeg"}'}}
 
 pipeline:
@@ -27,8 +26,9 @@ pipeline:
         model_file: resnet34_peoplenet_pruned.etlt  # v2.0 Accuracy: 84.3 Size 20.9 MB
         # model_file: resnet34_peoplenet_int8.etlt  # v2.6 Accuracy: 86.0 Size: 85.03 MB
 
-        precision: int8
-        int8_calib_file: resnet34_peoplenet_int8.txt
+        # default fp16
+        # precision: int8
+        # int8_calib_file: resnet34_peoplenet_int8.txt
         input:
           layer_name: input_1
           shape: [3, 544, 960]

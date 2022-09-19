@@ -37,7 +37,7 @@ RUN python -m pip install --no-cache-dir \
     && rm requirements-deepstream.txt
 
 COPY savant savant
-ENV GST_PLUGIN_PATH=${APP_PATH}/savant/gst_plugins:${APP_PATH}/savant/utils/gst_plugins
+ENV GST_PLUGIN_PATH=$APP_PATH/savant/gst_plugins:$APP_PATH/savant/utils/gst_plugins
 
 COPY LICENSE savant/
 
@@ -48,18 +48,18 @@ RUN ln -s /usr/local/cuda/targets/x86_64-linux/lib/libcublasLt.so.11 /usr/local/
     && ln -s /usr/local/cuda/targets/x86_64-linux/lib/libcublas.so.11 /usr/local/cuda/targets/x86_64-linux/lib/libcublas.so \
     && ldconfig
 
-ENTRYPOINT [ "python", "-m", "savant.entrypoint"]
+ENTRYPOINT ["python", "-m", "savant.entrypoint"]
+
+FROM base as samples
+COPY samples samples
 
 FROM base AS adapters
 
-COPY adapters/ds ${APP_PATH}/adapters/ds
-COPY adapters/gst/gst_plugins/python/adjust_timestamps.py ${APP_PATH}/adapters/ds/gst_plugins/python/adjust_timestamps.py
-ENV GST_PLUGIN_PATH=${GST_PLUGIN_PATH}:${APP_PATH}/adapters/ds/gst_plugins
+COPY adapters/ds adapters/ds
+COPY adapters/gst/gst_plugins/python/adjust_timestamps.py adapters/ds/gst_plugins/python/adjust_timestamps.py
+ENV GST_PLUGIN_PATH=$GST_PLUGIN_PATH:$APP_PATH/adapters/ds/gst_plugins
+
 ENTRYPOINT []
-
-FROM base as samples
-
-COPY samples ${APP_PATH}/samples
 
 FROM samples as docs
 
