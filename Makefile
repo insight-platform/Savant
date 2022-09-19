@@ -8,7 +8,7 @@ DOCKER_FILE := Dockerfile.deepstream
 PLATFORM_SUFFIX :=
 
 ifeq ("$(shell uname -m)", "aarch64")
-    PLATFORM_SUFFIX := "-l4t"
+    PLATFORM_SUFFIX := -l4t
     DOCKER_FILE := Dockerfile.deepstream-l4t
     L4T_MAJOR_VERSION := $(shell dpkg-query --showformat='$${Version}' --show nvidia-l4t-core | cut -f 1 -d '-' | cut -f 1 -d '.')
     ifeq ($(L4T_MAJOR_VERSION), 32)
