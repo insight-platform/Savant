@@ -24,6 +24,12 @@ else
     FPS_PERIOD="period-frames=1000"
 fi
 
+handler() {
+    kill -s SIGINT "${child_pid}"
+    wait "${child_pid}"
+}
+trap handler SIGINT
+
 gst-launch-1.0 --eos-on-shutdown \
     v4l2src device="${DEVICE}" ! \
     "video/x-raw,framerate=${FRAMERATE}" ! \
@@ -31,4 +37,8 @@ gst-launch-1.0 --eos-on-shutdown \
     'video/x-raw,format=RGBA' ! \
     fps_meter "${FPS_PERIOD}" output="${FPS_OUTPUT}" ! \
     video_to_avro_serializer source-id="${SOURCE_ID}" ! \
-    zeromq_sink socket="${ZMQ_ENDPOINT}" socket-type="${ZMQ_SOCKET_TYPE}" bind="${ZMQ_SOCKET_BIND}" sync="${SYNC_OUTPUT}"
+    zeromq_sink socket="${ZMQ_ENDPOINT}" socket-type="${ZMQ_SOCKET_TYPE}" bind="${ZMQ_SOCKET_BIND}" sync="${SYNC_OUTPUT}" \
+    &
+
+child_pid="$!"
+wait "${child_pid}"
