@@ -59,3 +59,7 @@ generated
 
 # local cached models
 models
+
+# gstsavantframemeta specific
+libs/gstsavantframemeta/_skbuild
+libs/gstsavantframemeta/dist
