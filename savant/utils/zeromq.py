@@ -25,6 +25,7 @@ class ReceiverSocketTypes(Enum):
 
     PULL = zmq.PULL
     SUB = zmq.SUB
+    REP = zmq.REP
 
 
 class SenderSocketTypes(Enum):
@@ -32,6 +33,7 @@ class SenderSocketTypes(Enum):
 
     PUSH = zmq.PUSH
     PUB = zmq.PUB
+    REQ = zmq.REQ
 
 
 def get_socket_endpoint(socket_endpoint: str):
@@ -91,27 +93,35 @@ class ZeroMQSource:
         # will be handled in ZeromqSrc element
         # or image_files.py / metadata_json.py Python sinks
         socket = get_socket_endpoint(socket)
-        socket_type = get_socket_type(socket_type, ReceiverSocketTypes)
+        self.socket_type = get_socket_type(socket_type, ReceiverSocketTypes)
 
         self.receive_timeout = receive_timeout
         self.zmq_context = zmq.Context()
-        self.receiver = self.zmq_context.socket(socket_type.value)
+        self.receiver = self.zmq_context.socket(self.socket_type.value)
+        self.receiver.setsockopt(zmq.RCVHWM, 1)
         if bind:
             self.receiver.bind(socket)
         else:
             self.receiver.connect(socket)
-        if socket_type == ReceiverSocketTypes.SUB:
+        if self.socket_type == ReceiverSocketTypes.SUB:
             self.receiver.setsockopt_string(zmq.SUBSCRIBE, '')
         self.receiver.setsockopt(zmq.RCVTIMEO, self.receive_timeout)
         self.is_alive = True
+        if self.socket_type == ReceiverSocketTypes.REP:
+            self._response = b'ok'
+        else:
+            self._response = None
 
     def next_message(self) -> Optional[bytes]:
         """Try to receive next message."""
         try:
-            return self.receiver.recv()
+            message = self.receiver.recv()
         except zmq.Again:
             logger.debug('Timeout exceeded when receiving the next frame')
             return None
+        if self._response is not None:
+            self.receiver.send(self._response)
+        return message
 
     def __iter__(self):
         return self
