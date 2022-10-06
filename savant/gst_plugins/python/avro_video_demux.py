@@ -1,15 +1,21 @@
 """AvroVideoDemux element."""
+import itertools
+
 import time
 from fractions import Fraction
 from threading import Lock, Thread
-from typing import Dict, NamedTuple, Optional, Tuple
+from typing import Dict, NamedTuple, Optional
 
 from dataclasses import dataclass
 
 from savant.api import deserialize
 from savant.gstreamer import GObject, Gst
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
-from savant.gstreamer.metadata import DEFAULT_FRAMERATE, GstFrameMeta
+from savant.gstreamer.metadata import (
+    DEFAULT_FRAMERATE,
+    GstFrameMeta,
+    metadata_add_frame_meta,
+)
 from savant.gstreamer.utils import LoggerMixin
 
 DEFAULT_SOURCE_TIMEOUT = 60
@@ -41,12 +47,6 @@ AVRO_VIDEO_DEMUX_PROPERTIES = {
         'Store metadata',
         False,
         GObject.ParamFlags.READWRITE,
-    ),
-    'metadata-storage': (
-        GObject.TYPE_PYOBJECT,
-        'Metadata storage',
-        'Metadata storage. Dict: (source id, pts) -> metadata.',
-        GObject.ParamFlags.READABLE,
     ),
     'eos-on-timestamps-reset': (
         bool,
@@ -129,8 +129,9 @@ class AvroVideoDemux(LoggerMixin, Gst.Element):
         self.source_lock = Lock()
         self.expiration_thread = Thread(target=self.eviction_job, daemon=True)
         self.store_metadata = False
-        self.metadata_storage: Dict[Tuple[str, int], GstFrameMeta] = {}
         self.max_parallel_streams: int = 0
+
+        self._frame_idx_gen = itertools.count()
 
         self.sink_pad: Gst.Pad = Gst.Pad.new_from_template(
             Gst.PadTemplate.new(
@@ -161,8 +162,6 @@ class AvroVideoDemux(LoggerMixin, Gst.Element):
             return self.source_eviction_interval
         if prop.name == 'store-metadata':
             return self.store_metadata
-        if prop.name == 'metadata-storage':
-            return self.metadata_storage
         if prop.name == 'eos-on-timestamps-reset':
             return self.eos_on_timestamps_reset
         if prop.name == 'max-parallel-streams':
@@ -229,7 +228,7 @@ class AvroVideoDemux(LoggerMixin, Gst.Element):
             source_id,
             len(frame) if frame else 0,
         )
-        self.add_frame_meta(message)
+        frame_idx = next(self._frame_idx_gen)
 
         with self.source_lock:
             source_info: SourceInfo = self.sources.get(source_id)
@@ -264,7 +263,10 @@ class AvroVideoDemux(LoggerMixin, Gst.Element):
             frame_buf.duration = (
                 Gst.CLOCK_TIME_NONE if frame_duration is None else frame_duration
             )
-            self.logger.debug('Pushing frame with pts=%s', frame_pts)
+            self.add_frame_meta(frame_idx, frame_buf, message)
+            self.logger.debug(
+                'Pushing frame with idx=%s and pts=%s', frame_idx, frame_pts
+            )
             result: Gst.FlowReturn = source_info.src_pad.push(frame_buf)
         else:
             result = Gst.FlowReturn.OK
@@ -411,18 +413,23 @@ class AvroVideoDemux(LoggerMixin, Gst.Element):
         self.logger.debug('Waiting %s seconds for the next eviction loop', wait)
         time.sleep(wait)
 
-    def add_frame_meta(self, message: Dict):
+    def add_frame_meta(self, idx: int, frame_buf: Gst.Buffer, message: Dict):
         """Store metadata of a frame."""
         if self.store_metadata:
+            from pygstsavantframemeta import gst_buffer_add_savant_frame_meta
+
+            source_id = message['source_id']
+            pts = message['pts']
             frame_meta = GstFrameMeta(
-                source_id=message['source_id'],
-                pts=message['pts'],
+                source_id=source_id,
+                pts=pts,
                 duration=message['duration'],
                 framerate=message['framerate'],
                 metadata=message['metadata'],
                 tags=message['tags'],
             )
-            self.metadata_storage[(message['source_id'], message['pts'])] = frame_meta
+            metadata_add_frame_meta(source_id, idx, pts, frame_meta)
+            gst_buffer_add_savant_frame_meta(frame_buf, idx)
 
 
 def build_caps(params: FrameParams) -> Gst.Caps:

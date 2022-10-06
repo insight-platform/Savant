@@ -1,4 +1,31 @@
 ARG DEEPSTREAM_VERSION=6.0.1
+FROM nvcr.io/nvidia/deepstream-l4t:$DEEPSTREAM_VERSION-samples AS pygstsavantframemeta_build
+
+RUN apt-get update \
+    && apt-get install -y \
+        build-essential \
+        libgstreamer-plugins-base1.0-dev \
+        libgstreamer1.0-dev \
+        python3-dev \
+        python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN wget --no-verbose -O /tmp/cmake.sh \
+        https://github.com/Kitware/CMake/releases/download/v3.24.2/cmake-3.24.2-linux-aarch64.sh  \
+    && sh /tmp/cmake.sh --skip-license --prefix=/usr \
+    && rm -f /tmp/cmake.sh
+
+# python to python3 by default
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 10
+WORKDIR /libs/gstsavantframemeta
+COPY libs/gstsavantframemeta/requirements.txt .
+RUN python -m pip install --no-cache-dir -r requirements.txt
+
+COPY libs/gstsavantframemeta .
+RUN python setup.py bdist_wheel && \
+    rm -rf _skbuild
+
+
 FROM nvcr.io/nvidia/deepstream-l4t:$DEEPSTREAM_VERSION-base AS base
 
 # python2 to python3 by default
@@ -88,6 +115,9 @@ RUN python -m pip install --no-cache-dir \
     -r requirements-deepstream-l4t.txt \
     && rm requirements-base.txt \
     && rm requirements-deepstream-l4t.txt
+
+COPY --from=pygstsavantframemeta_build /libs/gstsavantframemeta/dist /libs/gstsavantframemeta/dist
+RUN python -m pip install --no-cache-dir /libs/gstsavantframemeta/dist/*.whl
 
 COPY savant savant
 ENV GST_PLUGIN_PATH=$APP_PATH/savant/gst_plugins:$APP_PATH/savant/utils/gst_plugins

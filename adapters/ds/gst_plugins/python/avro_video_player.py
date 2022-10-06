@@ -4,7 +4,6 @@ from typing import Dict, Optional
 from dataclasses import dataclass
 
 from savant.gstreamer import GLib, GObject, Gst
-from savant.gstreamer.metadata import metadata_pop_frame_meta
 from savant.gstreamer.utils import LoggerMixin, on_pad_event, pad_to_source_id
 
 
@@ -132,9 +131,6 @@ class AvroVideoPlayer(LoggerMixin, Gst.Bin):
             'Added pad %s on element %s', new_pad.get_name(), element.get_name()
         )
         branch = BranchInfo(source_id=pad_to_source_id(new_pad))
-        new_pad.add_probe(
-            Gst.PadProbeType.BUFFER, self.replace_idx_with_pts, branch.source_id
-        )
         new_pad.add_probe(Gst.PadProbeType.BLOCK_DOWNSTREAM, self._add_branch, branch)
 
     def _add_branch(
@@ -213,20 +209,6 @@ class AvroVideoPlayer(LoggerMixin, Gst.Bin):
         self.logger.info('Branch with source %s removed', branch.source_id)
 
         return False
-
-    def replace_idx_with_pts(
-        self,
-        pad: Gst.Pad,
-        info: Gst.PadProbeInfo,
-        source_id: str,
-    ):
-        """Replace frame index with a PTS."""
-
-        buffer: Gst.Buffer = info.get_buffer()
-        frame_idx = buffer.pts
-        frame_meta = metadata_pop_frame_meta(source_id, frame_idx)
-        buffer.pts = frame_meta.pts
-        return Gst.PadProbeReturn.OK
 
     def on_caps_change(self, pad: Gst.Pad, event: Gst.Event, branch: BranchInfo):
         caps: Gst.Caps = event.parse_caps()
