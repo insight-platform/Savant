@@ -6,8 +6,9 @@ namespace py = pybind11;
 PYBIND11_MODULE(pygstsavantframemeta, m) {
     m.doc() = "GstSavantFrameMeta library";
 
-    py::class_<GstSavantFrameMeta>(m, "GstSavantFrameMeta")
-        .def_readwrite("idx", &GstSavantFrameMeta::idx);
+    py::class_<GstSavantFrameMeta>(m, "GstSavantFrameMeta",
+                                   "Contains frame related metadata.")
+        .def_readwrite("idx", &GstSavantFrameMeta::idx, "Frame IDX.");
 
     m.def(
         "gst_buffer_get_savant_frame_meta",
