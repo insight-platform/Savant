@@ -49,7 +49,7 @@ pipeline:
     element: zeromq_source_bin
     properties:
       socket: ${oc.env:ZMQ_SRC_ENDPOINT}
-      socket_type: ${oc.env:ZMQ_SRC_TYPE, PULL}
+      socket_type: ${oc.env:ZMQ_SRC_TYPE, REP}
       bind: ${oc.decode:${oc.env:ZMQ_SRC_BIND, True}}
 
 # elements:
