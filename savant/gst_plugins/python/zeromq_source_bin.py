@@ -36,9 +36,13 @@ class ZeroMQSourceBin(LoggerMixin, Gst.Bin):
         self._source: Gst.Element = Gst.ElementFactory.make('zeromq_src')
         self.add(self._source)
 
+        self._queue: Gst.Element = Gst.ElementFactory.make('queue')
+        self.add(self._queue)
+
         self._decodebin: Gst.Element = Gst.ElementFactory.make('avro_video_decode_bin')
         self.add(self._decodebin)
-        assert self._source.link(self._decodebin)
+        assert self._source.link(self._queue)
+        assert self._queue.link(self._decodebin)
         self._decodebin.connect('pad-added', self.on_pad_added)
         self._decodebin.connect('pad-removed', self.on_pad_removed)
 
