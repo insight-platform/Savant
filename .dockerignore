@@ -7,6 +7,6 @@
 docker/
 .dockerignore
 Makefile
-libs/gstsavantframemeta/_skbuild
-libs/gstsavantframemeta/dist
-libs/gstsavantframemeta/*.egg-info
+**/_skbuild/
+**/dist/
+**/*.egg-info/
