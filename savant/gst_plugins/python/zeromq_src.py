@@ -45,7 +45,7 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
     def __init__(self):
         GstBase.BaseSrc.__init__(self)
         self.socket: str = None
-        self.socket_type: ReceiverSocketTypes = ReceiverSocketTypes.PULL
+        self.socket_type: ReceiverSocketTypes = ReceiverSocketTypes.REP
         self.bind: bool = True
         self.zmq_context: zmq.Context = None
         self.context = None

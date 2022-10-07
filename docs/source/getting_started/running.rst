@@ -11,7 +11,7 @@ Connecting containers through ZMQ sources/sinks requires specifying the followin
 
     - ``SOURCE_ID`` is a required env var that specifies an identifier for this source
     - ``ZMQ_ENDPOINT`` is a required env var that specifies the ZMQ socket endpoint for output (module input)
-    - ``ZMQ_TYPE`` env var specifies the ZMQ socket type, ``PUSH`` by default
+    - ``ZMQ_TYPE`` env var specifies the ZMQ socket type, ``REQ`` by default
     - ``ZMQ_BIND`` env var specifies whether the output ZMQ socket type should be bound or connected to, ``False`` by default
     - ``LOCATION`` is a required env var for ``pictures`` and ``videos`` sources that specifies the directory with the source data
     - ``RTSP_URI`` is a required env var for ``rtsp`` source that specifies the rtsp uri with the source data
@@ -20,7 +20,7 @@ Connecting containers through ZMQ sources/sinks requires specifying the followin
 - Module container:
 
     - ``ZMQ_SRC_ENDPOINT`` is a required env var that specifies the input ZMQ socket endpoint, corresponds to source adapter ``ZMQ_ENDPOINT``
-    - ``ZMQ_SRC_TYPE`` env var specifies the input ZMQ socket type, ``PULL`` by default
+    - ``ZMQ_SRC_TYPE`` env var specifies the input ZMQ socket type, ``REP`` by default
     - ``ZMQ_SRC_BIND`` env var specifies whether the input ZMQ socket type should be bound or connected to, ``True`` by default
     - ``ZMQ_SINK_ENDPOINT`` is a required env var that specifies the output ZMQ socket endpoint, corresponds to sink adapter ``ZMQ_ENDPOINT``
     - ``ZMQ_SINK_TYPE`` env var specifies the output ZMQ socket type, ``PUB`` by default

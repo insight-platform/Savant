@@ -44,10 +44,11 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
     def __init__(self):
         GstBase.BaseSink.__init__(self)
         self.socket: str = None
-        self.socket_type: SenderSocketTypes = SenderSocketTypes.PUSH
+        self.socket_type: SenderSocketTypes = SenderSocketTypes.REQ
         self.bind: bool = True
         self.zmq_context: zmq.Context = None
         self.sender: zmq.Socket = None
+        self.wait_response = False
         self.set_sync(False)
 
     def do_get_property(self, prop):
@@ -93,6 +94,7 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
             # prevents pipeline from starting
             return False
 
+        self.wait_response = self.socket_type == SenderSocketTypes.REQ
         self.zmq_context = zmq.Context()
         self.sender = self.zmq_context.socket(self.socket_type.value)
         if self.bind:
@@ -112,6 +114,11 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
         data = mapinfo.data
         self.logger.debug('Sending %s bytes to socket %s.', len(data), self.socket)
         self.sender.send(data)
+        if self.wait_response:
+            resp = self.sender.recv()
+            self.logger.debug(
+                'Received %s bytes from socket %s.', len(resp), self.socket
+            )
         buffer.unmap(mapinfo)
         return Gst.FlowReturn.OK
 
