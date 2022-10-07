@@ -1,9 +1,8 @@
 """AvroVideoDecodeBin element."""
 import time
 
-import itertools
 from threading import Event, Lock
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional
 
 from dataclasses import dataclass
 
@@ -12,7 +11,6 @@ import pyds
 from savant.gst_plugins.python.avro_video_demux import AVRO_VIDEO_DEMUX_PROPERTIES
 from savant.gstreamer import GLib, GObject, Gst  # noqa:F401
 from savant.gstreamer.codecs import Codec, CODEC_BY_CAPS_NAME
-from savant.gstreamer.metadata import GstFrameMeta, metadata_add_frame_meta
 from savant.gstreamer.utils import LoggerMixin, on_pad_event, pad_to_source_id
 from savant.utils.platform import is_aarch64
 
@@ -118,16 +116,12 @@ class AvroVideoDecodeBin(LoggerMixin, Gst.Bin):
         self._low_latency_decoding = False
         self._pass_eos = DEFAULT_PASS_EOS
         self._convert_jpeg_to_rgb = DEFAULT_CONVERT_TO_RGB
-        self._last_idx_gen = itertools.count()
 
         self._demuxer: Gst.Element = Gst.ElementFactory.make('avro_video_demux')
         self._demuxer.set_property('store-metadata', True)
         self._demuxer.set_property('eos-on-timestamps-reset', True)
         self.add(self._demuxer)
         self._demuxer.connect('pad-added', self.on_pad_added)
-        self._metadata_storage: Dict[
-            Tuple[str, int], GstFrameMeta
-        ] = self._demuxer.get_property('metadata-storage')
         self._max_parallel_streams: int = self._demuxer.get_property(
             'max-parallel-streams'
         )
@@ -293,7 +287,6 @@ class AvroVideoDecodeBin(LoggerMixin, Gst.Bin):
             new_pad.get_name(),
             branch.src_pad.get_name(),
         )
-        new_pad.add_probe(Gst.PadProbeType.BUFFER, self.on_decoded_buffer, branch)
 
         new_pad_caps: Gst.Caps = new_pad.get_current_caps()
         decoder_pad_target = new_pad
@@ -331,40 +324,6 @@ class AvroVideoDecodeBin(LoggerMixin, Gst.Bin):
             decoder.get_name(),
             decoder_pad.get_name(),
         )
-
-    def on_decoded_buffer(
-        self,
-        pad: Gst.Pad,
-        info: Gst.PadProbeInfo,
-        branch: BranchInfo,
-    ):
-        """Pad probe to process decoded frame:
-
-        1) replace frame PTS with IDX; 2) put frame metadata to metadata
-        storage at `savant.gstreamer.metadata`.
-        """
-
-        buffer: Gst.Buffer = info.get_buffer()
-        frame_idx = next(self._last_idx_gen)
-        branch.last_frame_idx = frame_idx
-        frame_pts = buffer.pts
-        self.logger.debug(
-            'Replacing buffer PTS %s to frame IDX %s on source %s',
-            frame_pts,
-            frame_idx,
-            branch.source_id,
-        )
-        # TODO: (#82) pass frame IDX as buffer meta
-        buffer.pts = frame_idx
-        frame_meta = self._metadata_storage.pop(
-            (branch.source_id, frame_pts), GstFrameMeta(branch.source_id, frame_pts)
-        )
-        metadata_add_frame_meta(
-            branch.source_id,
-            frame_idx,
-            frame_meta,
-        )
-        return Gst.PadProbeReturn.OK
 
     def on_src_pad_eos(self, pad: Gst.Pad, event: Gst.Event, branch: BranchInfo):
         """Attaches a callback to remove a branch."""

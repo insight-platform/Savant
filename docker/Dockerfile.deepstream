@@ -1,4 +1,17 @@
 ARG DEEPSTREAM_VERSION
+FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-devel AS pygstsavantframemeta_build
+
+# python to python3 by default
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 10
+WORKDIR /libs/gstsavantframemeta
+COPY libs/gstsavantframemeta/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY libs/gstsavantframemeta .
+RUN python setup.py bdist_wheel && \
+    rm -rf _skbuild
+
+
 FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-base AS base
 
 # python to python3 by default
@@ -35,6 +48,9 @@ RUN python -m pip install --no-cache-dir \
     -r requirements-deepstream.txt \
     && rm requirements-base.txt \
     && rm requirements-deepstream.txt
+
+COPY --from=pygstsavantframemeta_build /libs/gstsavantframemeta/dist /libs/gstsavantframemeta/dist
+RUN python -m pip install --no-cache-dir /libs/gstsavantframemeta/dist/*.whl
 
 COPY savant savant
 ENV GST_PLUGIN_PATH=$APP_PATH/savant/gst_plugins:$APP_PATH/savant/utils/gst_plugins

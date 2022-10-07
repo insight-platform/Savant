@@ -30,6 +30,7 @@ wheels/
 pip-wheel-metadata/
 share/python-wheels/
 *.egg-info/
+_skbuild/
 .installed.cfg
 *.egg
 

@@ -9,6 +9,11 @@ import numpy as np
 import pyds
 
 from pysavantboost import ObjectsPreprocessing
+from pygstsavantframemeta import (
+    add_convert_savant_frame_meta_pad_probe,
+    gst_buffer_get_savant_frame_meta,
+    nvds_frame_meta_get_nvds_savant_frame_meta,
+)
 
 from savant.converter.scale import scale_rbbox
 from savant.deepstream.nvinfer.model import (
@@ -302,6 +307,10 @@ class NvDsPipeline(GstPipeline):
                 new_pad_caps,
                 source_info,
             )
+            add_convert_savant_frame_meta_pad_probe(
+                input_src_pad,
+                True,
+            )
             muxer_sink_pad = self._get_muxer_sink_pad(source_info)
             assert input_src_pad.link(muxer_sink_pad) == Gst.PadLinkReturn.OK
             self._pipeline.set_state(Gst.State.PLAYING)
@@ -387,6 +396,10 @@ class NvDsPipeline(GstPipeline):
         )
 
         if self._output_frame and self._output_frame_codec != Codec.RAW_RGBA:
+            add_convert_savant_frame_meta_pad_probe(
+                output_queue.get_static_pad('src'),
+                False,
+            )
             output_converter = self._add_element(
                 PipelineElement(
                     'nvvideoconvert',
@@ -608,15 +621,18 @@ class NvDsPipeline(GstPipeline):
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
             source_id = self._source_id_by_index[nvds_frame_meta.pad_index]
+            savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(
+                nvds_frame_meta
+            )
+            frame_idx = savant_frame_meta.idx if savant_frame_meta else None
+            frame_pts = nvds_frame_meta.buf_pts
+
             self._logger.debug(
                 'Preparing input for frame %s of source %s.',
                 nvds_frame_meta.buf_pts,
                 source_id,
             )
-            frame_meta = metadata_get_frame_meta(
-                source_id,
-                nvds_frame_meta.buf_pts,
-            )
+            frame_meta = metadata_get_frame_meta(source_id, frame_idx, frame_pts)
 
             # add external objects to nvds meta
             for obj_meta in frame_meta.metadata['objects']:
@@ -716,17 +732,18 @@ class NvDsPipeline(GstPipeline):
             buffer.pts,
             source_info.source_id,
         )
-        for pts, frame, keyframe in (
+        for idx, pts, frame, keyframe in (
             self._iterate_frames_from_gst_buffer(buffer)
             if self._output_frame and self._output_frame_codec != Codec.RAW_RGBA
             else self._iterate_frames_from_nvds_batch(buffer)
         ):
             self._logger.debug(
-                'Preparing output for frame %s of source %s.',
+                'Preparing output for frame %s with PTS %s of source %s.',
+                idx,
                 pts,
                 source_info.source_id,
             )
-            frame_meta = metadata_pop_frame_meta(source_info.source_id, pts)
+            frame_meta = metadata_pop_frame_meta(source_info.source_id, idx, pts)
             self._queue.put(
                 SinkVideoFrame(
                     source_info.source_id,
@@ -746,19 +763,23 @@ class NvDsPipeline(GstPipeline):
     def _iterate_frames_from_gst_buffer(self, buffer: Gst.Buffer):
         """Iterate frames from Gst.Buffer.
 
-        :return: generator of (PTS, frame, is_keyframe)
+        :return: generator of (IDX, PTS, frame, is_keyframe)
         """
 
         # get frame if required for output
         frame = buffer.extract_dup(0, buffer.get_size()) if self._output_frame else None
-        yield buffer.pts, frame, not buffer.has_flags(Gst.BufferFlags.DELTA_UNIT)
+        savant_frame_meta = gst_buffer_get_savant_frame_meta(buffer)
+        frame_idx = savant_frame_meta.idx if savant_frame_meta else None
+        frame_pts = buffer.pts
+        is_keyframe = not buffer.has_flags(Gst.BufferFlags.DELTA_UNIT)
+        yield frame_idx, frame_pts, frame, is_keyframe
 
     def _iterate_frames_from_nvds_batch(self, buffer: Gst.Buffer):
         """Iterate frames from NvDs batch.
 
         NvDs batch contains raw RGBA frames. They are all keyframes.
 
-        :return: generator of (PTS, frame, is_keyframe)
+        :return: generator of (IDX, PTS, frame, is_keyframe)
         """
 
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
@@ -771,8 +792,13 @@ class NvDsPipeline(GstPipeline):
                 if self._output_frame
                 else None
             )
+            savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(
+                nvds_frame_meta
+            )
+            frame_idx = savant_frame_meta.idx if savant_frame_meta else None
+            frame_pts = nvds_frame_meta.buf_pts
             # Any frame is keyframe since it was not encoded
-            yield nvds_frame_meta.buf_pts, frame, True
+            yield frame_idx, frame_pts, frame, True
 
     def update_frame_meta(self, pad: Gst.Pad, info: Gst.PadProbeInfo):
         """Prepare frame meta for output."""
@@ -792,10 +818,12 @@ class NvDsPipeline(GstPipeline):
 
             # will extend source metadata
             source_id = self._source_id_by_index[nvds_frame_meta.pad_index]
-            frame_meta = metadata_get_frame_meta(
-                source_id,
-                nvds_frame_meta.buf_pts,
+            savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(
+                nvds_frame_meta
             )
+            frame_idx = savant_frame_meta.idx if savant_frame_meta else None
+            frame_pts = nvds_frame_meta.buf_pts
+            frame_meta = metadata_get_frame_meta(source_id, frame_idx, frame_pts)
 
             # second iteration to collect module objects
             for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
@@ -820,7 +848,7 @@ class NvDsPipeline(GstPipeline):
                 nvds_remove_obj_attrs(nvds_frame_meta, nvds_obj_meta)
                 frame_meta.metadata['objects'].append(obj_meta)
 
-            metadata_add_frame_meta(source_id, nvds_frame_meta.buf_pts, frame_meta)
+            metadata_add_frame_meta(source_id, frame_idx, frame_pts, frame_meta)
 
         return Gst.PadProbeReturn.PASS
 
