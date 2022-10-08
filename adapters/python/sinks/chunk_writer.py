@@ -17,9 +17,7 @@ class ChunkWriter:
         self.frames_in_chunk = 0
         self.opened = False
 
-    def write(
-        self, data, can_start_new_chunk: bool, is_frame: bool = True
-    ) -> bool:
+    def write(self, data, can_start_new_chunk: bool, is_frame: bool = True) -> bool:
         if can_start_new_chunk and 0 < self.chunk_size <= self.frames_in_chunk:
             self.close()
         if not self.opened:

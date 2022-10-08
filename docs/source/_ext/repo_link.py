@@ -8,10 +8,7 @@ def setup(app):
         if options is None:
             options = {}
         node = nodes.reference(
-            rawtext,
-            utils.unescape(text),
-            refuri=app.config.repo_link,
-            **options
+            rawtext, utils.unescape(text), refuri=app.config.repo_link, **options
         )
         return [node], []
 
