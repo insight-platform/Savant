@@ -123,6 +123,20 @@ def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
 
     model_config = OmegaConf.merge(model, model_config)
 
+    # try to parse engine file and check for a match
+    if model_config.engine_file:
+        parse_result = NvInferConfig.parse_model_engine_file(model_config.engine_file)
+        if parse_result and (
+            model_config.batch_size,
+            model_config.gpu_id,
+            model_config.precision,
+        ) != (
+            parse_result['batch_size'],
+            parse_result['gpu_id'],
+            parse_result['precision'],
+        ):
+            model_config.engine_file = None
+
     # model or engine file must be specified
     model_file_required = True
     if model_config.engine_file:
@@ -152,7 +166,7 @@ def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
         model_config.engine_file = NvInferConfig.generate_model_engine_file(
             model_config.model_file,
             model_config.batch_size,
-            int(nvinfer_config['property'].get('gpu-id', 0)) if nvinfer_config else 0,
+            model_config.gpu_id,
             model_config.precision,
         )
         logger.info('Model engine file has been set to "%s".', model_config.engine_file)
