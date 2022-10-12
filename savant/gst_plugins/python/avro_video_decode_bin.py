@@ -395,11 +395,11 @@ class AvroVideoDecodeBin(LoggerMixin, Gst.Bin):
             factory.set_rank(Gst.Rank.NONE)
 
             def on_add_element(
-                    bin: Gst.Bin,
-                    elem: Gst.Element,
+                bin: Gst.Bin,
+                elem: Gst.Element,
             ):
                 if elem.get_factory().get_name() == 'nvv4l2decoder':
-                    self.logger.debug("Added mjpeg=true for nvv4l2decoder element")
+                    self.logger.debug('Added mjpeg=true for nvv4l2decoder element')
                     elem.set_property('mjpeg', 1)
 
             decodebin.connect('element-added', on_add_element)

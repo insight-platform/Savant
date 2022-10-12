@@ -12,6 +12,7 @@
 #
 import os
 import sys
+
 sys.path.append(os.path.abspath('./_ext'))
 
 import gi
@@ -28,6 +29,7 @@ copyright = '2022 BWSoft Management, LLC'
 
 # The full version, including alpha/beta/rc tags
 from savant import __version__
+
 release = __version__
 version = __version__
 

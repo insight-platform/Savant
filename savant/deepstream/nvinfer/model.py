@@ -140,6 +140,9 @@ class NvInferModel(Model):
     tlt_model_key: Optional[str] = None
     """Key for the TAO toolkit encoded model."""
 
+    gpu_id: int = 0
+    """Device ID of GPU to use for pre-processing/inference (dGPU only)."""
+
     # TODO: Add support for Gst-nvinfer props
     # interval - Specifies the number of consecutive batches to be skipped for inference
     # symmetric-padding (with maintain-aspect-ratio) -
