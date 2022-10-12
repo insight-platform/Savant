@@ -135,6 +135,14 @@ def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
             parse_result['gpu_id'],
             parse_result['precision'],
         ):
+            logger.info(
+                'Specified engine file "%s" does not match configuration: '
+                'batch_size=%d, gpu_id=%d, precision=%s.',
+                model_config.engine_file,
+                model_config.batch_size,
+                model_config.gpu_id,
+                model_config.precision.name,
+            )
             model_config.engine_file = None
 
     # model or engine file must be specified
