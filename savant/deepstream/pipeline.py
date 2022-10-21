@@ -893,7 +893,19 @@ class NvDsPipeline(GstPipeline):
                     bbox.width = nvds_obj_meta.rect_params.width
                     bbox.height = nvds_obj_meta.rect_params.height
 
-                    bbox = model.input.preprocess_object_meta(bbox)
+                    parent_bbox = pyds.NvBbox_Coords()
+                    if nvds_obj_meta.parent:
+                        parent_bbox.left = nvds_obj_meta.parent.rect_params.left
+                        parent_bbox.top = nvds_obj_meta.parent.rect_params.top
+                        parent_bbox.width = nvds_obj_meta.parent.rect_params.width
+                        parent_bbox.height = nvds_obj_meta.parent.rect_params.height
+                    else:
+                        parent_bbox.left = 0
+                        parent_bbox.top = 0
+                        parent_bbox.width = self._frame_width
+                        parent_bbox.height = self._frame_height
+
+                    bbox = model.input.preprocess_object_meta(bbox, parent_bbox)
 
                     rect_params = nvds_obj_meta.rect_params
                     rect_params.left = bbox.left

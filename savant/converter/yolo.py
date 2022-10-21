@@ -1,4 +1,6 @@
-"""YOLO base detector postprocessing (converter)."""
+"""YOLO base detector postprocessing (converter).
+TODO: Add `symmetric-padding` support.
+"""
 from typing import Tuple
 import numpy as np
 from savant.base.converter import BaseObjectModelOutputConverter

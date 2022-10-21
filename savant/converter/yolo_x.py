@@ -10,6 +10,23 @@ class TensorToBBoxConverter(YoloTensorToBBoxConverter):
     """`YOLOX <https://github.com/Megvii-BaseDetection/YOLOX>`_ output to bbox
     converter."""
 
+    def __init__(
+        self,
+        decode: bool = False,
+        confidence_threshold: float = 0.25,
+        top_k: int = 3000,
+    ):
+        """
+        :param decode: Decode output before convert.
+            We must decode output if we didn't use `--decode_in_inference`
+            when exporting to ONNX.
+        :param confidence_threshold: Select detections with confidence
+            greater than specified.
+        :param top_k: Maximum number of output detections.
+        """
+        self.decode = decode
+        super().__init__(confidence_threshold=confidence_threshold, top_k=top_k)
+
     def __call__(
         self,
         *output_layers: np.ndarray,
@@ -26,12 +43,12 @@ class TensorToBBoxConverter(YoloTensorToBBoxConverter):
         :return: BBox tensor (class_id, confidence, xc, yc, width, height, [angle])
             offset by roi upper left and scaled by roi width and height
         """
-        grids, strides = _get_grids_strides(model.input.height, model.input.width)
-
         output = output_layers[0]
 
-        output[..., :2] = (output[..., :2] + grids) * strides
-        output[..., 2:4] = np.exp(output[..., 2:4]) * strides
+        if self.decode:
+            grids, strides = _get_grids_strides(model.input.height, model.input.width)
+            output[..., :2] = (output[..., :2] + grids) * strides
+            output[..., 2:4] = np.exp(output[..., 2:4]) * strides
 
         return super().__call__(*[output], model=model, roi=roi)
 

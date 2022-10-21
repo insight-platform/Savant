@@ -8,6 +8,13 @@ from savant.base.model import AttributeModel
 class TensorToLabelConverter(BaseAttributeModelOutputConverter):
     """Raw classifier output to label converter."""
 
+    def __init__(self, softmax: bool = False):
+        """
+        :param softmax: Apply softmax function to output.
+        """
+        self.softmax = softmax
+        super().__init__()
+
     def __call__(
         self,
         *output_layers: np.ndarray,
@@ -21,7 +28,7 @@ class TensorToLabelConverter(BaseAttributeModelOutputConverter):
             multi_label = attr_config.multi_label
             # values are out of range (0, 1) - raw output? - apply softmax
             # (to get valid confidence)
-            if np.any(values > 1.0):
+            if self.softmax or np.any(values > 1.0):
                 values = softmax(values)
                 multi_label = False
 
