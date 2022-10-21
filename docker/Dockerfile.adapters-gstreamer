@@ -48,6 +48,7 @@ RUN meson build \
         --prefix /build/aravis/dist \
         -Dgst-plugin=enabled \
         -Dviewer=disabled  \
+        -Dpacket-socket=disabled  \
         -Dtests=false \
     && cd build \
     && ninja \
