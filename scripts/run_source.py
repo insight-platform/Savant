@@ -328,5 +328,121 @@ def usb_cam_source(
     run_command(cmd)
 
 
+@cli.command('gige')
+@click.option('--width', type=int, help='Width of streaming video')
+@click.option('--height', type=int, help='Height of streaming video')
+@click.option('--framerate', type=str, help='Framerate of streaming video')
+@click.option(
+    # TODO: replace with PixelFormat
+    # https://github.com/AravisProject/aravis/blob/0.8.22/src/arvmisc.c#L656
+    '--input-caps',
+    type=str,
+    help='Caps of input video (e.g. "video/x-raw,format=RGB"). Look '
+    'https://github.com/AravisProject/aravis/blob/0.8.22/src/arvmisc.c#L656 '
+    'for PixelFormat -> Caps mapping.',
+)
+@click.option('--packet-size', type=int, help='GigEVision streaming packet size')
+@click.option(
+    '--auto-packet-size', type=bool, help='Negotiate GigEVision streaming packet size'
+)
+@click.option('--exposure', type=float, help='Exposure time (µs)')
+@click.option('--exposure-auto', help='Auto Exposure Mode, one of "off", "once", "on"')
+@click.option('--gain', type=float, help='Gain (dB)')
+@click.option('--gain-auto', help='Auto Gain Mode, one of "off", "once", "on"')
+@click.option(
+    '--features',
+    help='Additional configuration parameters as a space separated list of feature assignations',
+)
+@click.option(
+    '--host-network', default=False, is_flag=True, help='Use the host network'
+)
+@common_options
+@adapter_docker_image_option('gstreamer')
+@click.argument('camera_name', required=False)
+def gige_cam_source(
+    source_id: str,
+    out_endpoint: str,
+    out_type: str,
+    out_bind: bool,
+    docker_image: str,
+    fps_period_frames: Optional[int],
+    fps_period_seconds: Optional[float],
+    fps_output: str,
+    width: Optional[int],
+    height: Optional[int],
+    framerate: Optional[str],
+    input_caps: Optional[str],
+    packet_size: Optional[int],
+    auto_packet_size: Optional[bool],
+    exposure: Optional[float],
+    exposure_auto: Optional[str],
+    gain: Optional[float],
+    gain_auto: Optional[str],
+    features: Optional[str],
+    host_network: bool,
+    camera_name: Optional[str],
+):
+    """Read video stream from GigE camera CAMERA_NAME.
+
+    If the camera is a GigEVision, CAMERA_NAME can be either:
+
+      - <vendor>-<model>-<serial>
+
+      - <vendor_alias>-<serial>
+
+      - <vendor>-<serial>
+
+      - <user_id>
+
+      - <ip_address>
+
+      - <mac_address>
+    """
+
+    envs = build_common_envs(
+        source_id=source_id,
+        fps_period_frames=fps_period_frames,
+        fps_period_seconds=fps_period_seconds,
+        fps_output=fps_output,
+    )
+
+    if camera_name is not None:
+        envs.append(f'CAMERA_NAME={camera_name}')
+    if width is not None:
+        envs.append(f'WIDTH={width}')
+    if height is not None:
+        envs.append(f'HEIGHT={height}')
+    if framerate is not None:
+        envs.append(f'FRAMERATE={framerate}')
+    if input_caps is not None:
+        envs.append(f'INPUT_CAPS={input_caps}')
+    if packet_size is not None:
+        envs.append(f'PACKET_SIZE={packet_size}')
+    if auto_packet_size is not None:
+        envs.append(f'AUTO_PACKET_SIZE={int(auto_packet_size)}')
+    if exposure is not None:
+        envs.append(f'EXPOSURE={exposure}')
+    if exposure_auto is not None:
+        envs.append(f'EXPOSURE_AUTO={exposure_auto}')
+    if gain is not None:
+        envs.append(f'GAIN={gain}')
+    if gain_auto is not None:
+        envs.append(f'GAIN_AUTO={gain_auto}')
+    if features is not None:
+        envs.append(f'FEATURES={features}')
+
+    cmd = build_docker_run_command(
+        f'source-gige-{source_id}',
+        zmq_endpoint=out_endpoint,
+        zmq_type=out_type,
+        zmq_bind=out_bind,
+        entrypoint='/opt/app/adapters/gst/sources/gige_cam.sh',
+        envs=envs,
+        docker_image=docker_image,
+        host_network=host_network,
+    )
+    run_command(cmd)
+
+
 if __name__ == '__main__':
     cli()
