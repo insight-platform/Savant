@@ -45,6 +45,7 @@ class Codec(Enum):
         'h265parse',
         'nvv4l2h265enc',
     )
+    # TODO: add support for other raw formats (RGB, etc.)
     RAW_RGBA = CodecInfo('raw-rgba', 'video/x-raw', ['format=RGBA'])
     PNG = CodecInfo('png', 'image/png', [], 'pngparse', 'pngenc')
     JPEG = CodecInfo('jpeg', 'image/jpeg', [], 'jpegparse', 'jpegenc')

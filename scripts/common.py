@@ -88,6 +88,7 @@ def build_docker_run_command(
     volumes: List[str] = None,
     devices: List[str] = None,
     with_gpu: bool = False,
+    host_network: bool = False,
 ) -> List[str]:
     """Build docker run command for an adapter container.
 
@@ -105,6 +106,7 @@ def build_docker_run_command(
     :param volumes: add ``-v`` parametrs
     :param devices: add ``--devices`` parameters
     :param with_gpu: add ``--gpus=all`` parameter
+    :param host_network: add ``--network=host`` parameter
     """
     gst_debug = os.environ.get('GST_DEBUG', '2')
     # fmt: off
@@ -142,6 +144,9 @@ def build_docker_run_command(
 
     if with_gpu:
         command.append('--gpus=all')
+
+    if host_network:
+        command.append('--network=host')
 
     command.append(docker_image)
 
