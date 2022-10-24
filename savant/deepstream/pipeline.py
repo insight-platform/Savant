@@ -905,7 +905,9 @@ class NvDsPipeline(GstPipeline):
                         parent_bbox.width = self._frame_width
                         parent_bbox.height = self._frame_height
 
-                    bbox = model.input.preprocess_object_meta(bbox, parent_bbox)
+                    bbox = model.input.preprocess_object_meta(
+                        bbox, parent_bbox=parent_bbox
+                    )
 
                     rect_params = nvds_obj_meta.rect_params
                     rect_params.left = bbox.left

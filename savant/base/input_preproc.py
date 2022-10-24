@@ -12,6 +12,7 @@ class BasePreprocessObjectMeta(BasePyFuncCallableImpl):
     def __call__(
         self,
         bbox: pyds.NvBbox_Coords,
+        *,
         parent_bbox: Optional[pyds.NvBbox_Coords] = None,
         **kwargs
     ) -> pyds.NvBbox_Coords:
