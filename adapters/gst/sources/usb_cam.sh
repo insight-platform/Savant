@@ -28,7 +28,7 @@ handler() {
     kill -s SIGINT "${child_pid}"
     wait "${child_pid}"
 }
-trap handler SIGINT
+trap handler SIGINT SIGTERM
 
 gst-launch-1.0 --eos-on-shutdown \
     v4l2src device="${DEVICE}" ! \
