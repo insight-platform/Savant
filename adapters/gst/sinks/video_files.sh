@@ -18,7 +18,7 @@ handler() {
     kill -s SIGINT "${child_pid}"
     wait "${child_pid}"
 }
-trap handler SIGINT
+trap handler SIGINT SIGTERM
 
 gst-launch-1.0 \
     zeromq_src socket="${ZMQ_ENDPOINT}" socket-type="${ZMQ_SOCKET_TYPE}" bind="${ZMQ_SOCKET_BIND}" ! \

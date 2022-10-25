@@ -39,7 +39,7 @@ handler() {
     kill -s SIGINT "${child_pid}"
     wait "${child_pid}"
 }
-trap handler SIGINT
+trap handler SIGINT SIGTERM
 
 gst-launch-1.0 --eos-on-shutdown \
     media_files_src_bin location="${LOCATION}" file-type="${FILE_TYPE}" framerate="${FRAMERATE}" sort-by-time="${SORT_BY_TIME}" ! \
