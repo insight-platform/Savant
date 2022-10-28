@@ -196,6 +196,7 @@ class NvInferConfig:
         _FieldMap('output-blob-names', 'output.layer_names', lambda v: v.split(';')),
         _FieldMap('num-detected-classes', 'output.num_detected_classes', int),
         _FieldMap('gpu-id', 'gpu_id', int),
+        _FieldMap('secondary-reinfer-interval', 'interval', int),
     ]
 
     _CLASS_ATTR_MAP = [
