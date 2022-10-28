@@ -143,6 +143,8 @@ class NvInferModel(Model):
     gpu_id: int = 0
     """Device ID of GPU to use for pre-processing/inference (dGPU only)."""
 
+    # TODO: Add support for custom models.
+    #  Currently it is supported for regular detector and classifier only.
     interval: int = 0
     """Specifies the number of consecutive batches to be skipped for inference."""
 
