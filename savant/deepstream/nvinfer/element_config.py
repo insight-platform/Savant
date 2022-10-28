@@ -375,7 +375,7 @@ def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
             # set NMS clustering (so far only this one is supported)
             nvinfer_config['property']['cluster-mode'] = 2
 
-    # TODO: Test carefully!
+    # TODO: Test carefully! (removed to avoid duplicate pyfunc init)
     # element_config.model = OmegaConf.to_object(model_config)
     element_config.model = model_config
 
