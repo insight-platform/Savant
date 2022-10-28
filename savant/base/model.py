@@ -105,6 +105,8 @@ class ModelInput:
     """Indicates whether the input preprocessing should maintain image aspect ratio.
     """
 
+    # TODO: Add `symmetric-padding` support.
+
     # TODO: Enhance scaling options
     #  range: Tuple[] = (0, 255) or (0.0, 1.0)
 

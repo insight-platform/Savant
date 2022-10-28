@@ -375,14 +375,14 @@ def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
             # set NMS clustering (so far only this one is supported)
             nvinfer_config['property']['cluster-mode'] = 2
 
-    element_config.model = OmegaConf.to_object(model_config)
+    # TODO: Test carefully! (removed to avoid duplicate pyfunc init)
+    # element_config.model = OmegaConf.to_object(model_config)
+    element_config.model = model_config
 
     # save resulting nvinfer config file
     # build config file name using required model engine file
     model_name = model_config.engine_file.split('.')[0]
-    config_file = f'{model_name}_config.txt'
-    if config_file == model_config.config_file:
-        config_file = f'{model_name}_config_0.txt'
+    config_file = f'{model_name}_config_savant.txt'
     config_file_path = Path(model_config.local_path) / config_file
     NvInferConfig.write_file(nvinfer_config, config_file_path)
     logger.info('Resulting configuration file "%s" has been saved.', config_file_path)
