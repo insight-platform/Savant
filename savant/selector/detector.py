@@ -43,14 +43,14 @@ class BBoxSelector(BaseSelector):
     """Detector bbox per class selector.
 
     .. todo::
-        - support max_width/max_height
         - support topk
-        - check width/height before nms?
 
     :param confidence_threshold: confidence threshold
     :param nms_iou_threshold: nms iou threshold
     :param min_width: minimal bbox width
     :param min_height: minimal bbox height
+    :param max_width: maximum bbox width
+    :param max_height: maximum bbox height
     """
 
     def __init__(
@@ -59,12 +59,17 @@ class BBoxSelector(BaseSelector):
         nms_iou_threshold: float = 0.5,
         min_width: int = 0,
         min_height: int = 0,
+        max_width: int = 0,
+        max_height: int = 0,
+        **kwargs
     ):
+        super().__init__(**kwargs)
         self.confidence_threshold = confidence_threshold
         self.nms_iou_threshold = nms_iou_threshold
         self.min_width = min_width
         self.min_height = min_height
-        super().__init__()
+        self.max_width = max_width
+        self.max_height = max_height
 
     def __call__(self, bbox_tensor: np.ndarray) -> np.ndarray:
         """Filters bboxes by confidence and size, applies NMS.
@@ -95,6 +100,16 @@ class BBoxSelector(BaseSelector):
         if self.min_height:
             selected_bbox_tensor = selected_bbox_tensor[
                 selected_bbox_tensor[:, 5] >= self.min_height
+            ]
+
+        if self.max_width:
+            selected_bbox_tensor = selected_bbox_tensor[
+                selected_bbox_tensor[:, 4] <= self.max_width
+            ]
+
+        if self.max_height:
+            selected_bbox_tensor = selected_bbox_tensor[
+                selected_bbox_tensor[:, 5] <= self.max_height
             ]
 
         return selected_bbox_tensor
