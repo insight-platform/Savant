@@ -94,22 +94,22 @@ class BBoxSelector(BaseSelector):
 
         if self.min_width:
             selected_bbox_tensor = selected_bbox_tensor[
-                selected_bbox_tensor[:, 4] >= self.min_width
+                selected_bbox_tensor[:, 4] > self.min_width
             ]
 
         if self.min_height:
             selected_bbox_tensor = selected_bbox_tensor[
-                selected_bbox_tensor[:, 5] >= self.min_height
+                selected_bbox_tensor[:, 5] > self.min_height
             ]
 
         if self.max_width:
             selected_bbox_tensor = selected_bbox_tensor[
-                selected_bbox_tensor[:, 4] <= self.max_width
+                selected_bbox_tensor[:, 4] < self.max_width
             ]
 
         if self.max_height:
             selected_bbox_tensor = selected_bbox_tensor[
-                selected_bbox_tensor[:, 5] <= self.max_height
+                selected_bbox_tensor[:, 5] < self.max_height
             ]
 
         return selected_bbox_tensor

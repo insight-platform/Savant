@@ -345,8 +345,9 @@ def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
         nvinfer_config['property']['output-tensor-meta'] = 1
         nvinfer_config['property']['network-type'] = NvInferModelType.CUSTOM.value
 
-    if nvinfer_config['property'].get('network-type') is None:
-        # regular model specific configuration
+    # or configure regular model
+    else:
+        nvinfer_config['property']['output-tensor-meta'] = 0
 
         # classifier
         if issubclass(model_type, AttributeModel):
