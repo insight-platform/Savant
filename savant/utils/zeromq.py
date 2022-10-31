@@ -98,7 +98,6 @@ class ZeroMQSource:
         self.receive_timeout = receive_timeout
         self.zmq_context = zmq.Context()
         self.receiver = self.zmq_context.socket(self.socket_type.value)
-        self.receiver.setsockopt(zmq.RCVHWM, 1)
         if bind:
             self.receiver.bind(socket)
         else:
