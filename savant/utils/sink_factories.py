@@ -12,7 +12,12 @@ from savant.config.schema import PipelineElement
 from savant.gstreamer.codecs import CodecInfo
 from savant.gstreamer.metadata import GstFrameMeta
 from savant.utils.registry import Registry
-from savant.utils.zeromq import SenderSocketTypes, get_socket_type, get_socket_endpoint
+from savant.utils.zeromq import (
+    Defaults,
+    SenderSocketTypes,
+    get_socket_type,
+    get_socket_endpoint,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -84,6 +89,7 @@ class ZeroMQSinkFactory(SinkFactory):
     :param socket: zeromq socket.
     :param socket_type: zeromq socket type.
     :param bind: indicates whether the client should bind or connect to zeromq socket.
+    :param send_hwm: high watermark for outbound messages.
     """
 
     def __init__(
@@ -91,6 +97,7 @@ class ZeroMQSinkFactory(SinkFactory):
         socket: str,
         socket_type: str = SenderSocketTypes.PUB.name,
         bind: bool = True,
+        send_hwm: int = Defaults.SEND_HWM,
     ):
         logger.debug(
             'Initializing ZMQ sink: socket %s, type %s, bind %s.',
@@ -104,12 +111,14 @@ class ZeroMQSinkFactory(SinkFactory):
         # will be handled in savant.entrypoint
         self.socket = get_socket_endpoint(socket)
         self.socket_type = get_socket_type(socket_type, SenderSocketTypes)
+        self.send_hwm = send_hwm
 
     def get_sink(self) -> SinkCallable:
         schema = ENCODING_REGISTRY['VideoFrame']
         eos_schema = ENCODING_REGISTRY['EndOfStream']
         context = zmq.Context()
         output_zmq_socket = context.socket(self.socket_type.value)
+        output_zmq_socket.setsockopt(zmq.SNDHWM, self.send_hwm)
         if self.bind:
             output_zmq_socket.bind(self.socket)
         else:
