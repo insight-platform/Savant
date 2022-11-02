@@ -575,13 +575,14 @@ class NvDsPipeline(GstPipeline):
         link: bool = True,
         *data,
     ) -> Gst.Element:
-        """Add drawbin if frame should be in module output and there is no
-        drawbin."""
+        """Adds sink elements."""
 
-        if self._output_frame and 'drawbin' not in {
-            e.element for e, _ in self.elements
-        }:
-            self._add_element(DrawBinElement())
+        # FIXME: Temporarily disabled due to memory leak when using drawbin on jetson nx
+        # add drawbin if frame should be in module output and there is no drawbin
+        # if self._output_frame and 'drawbin' not in {
+        #     e.element for e, _ in self.elements
+        # }:
+        #     self._add_element(DrawBinElement())
 
         demuxer = self._add_element(
             PipelineElement(
