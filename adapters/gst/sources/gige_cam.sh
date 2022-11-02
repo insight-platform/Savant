@@ -22,7 +22,16 @@ elif [[ -n "${FPS_PERIOD_FRAMES}" ]]; then
 else
   FPS_PERIOD="period-frames=1000"
 fi
-INPUT_CAPS="${INPUT_CAPS:="ANY"}"
+
+arv-camera-test-0.8 --name="${CAMERA_NAME}" --duration 1
+arv-tool-0.8 --name="${CAMERA_NAME}" control Width Height | tee resolution.txt
+CAMERA_WIDTH="$(grep -E '^Width = ([0-9]+) .*' resolution.txt | sed -re 's/^Width = ([0-9]+) .*/\1/')"
+CAMERA_HEIGHT="$(grep -E '^Height = ([0-9]+) .*' resolution.txt | sed -re 's/^Height = ([0-9]+) .*/\1/')"
+if [[ -z "${CAMERA_WIDTH}" ]] || [[ -z "${CAMERA_HEIGHT}" ]]; then
+  echo "Failed to get camera resolution"
+  exit 1
+fi
+INPUT_CAPS="video/x-bayer,width=${CAMERA_WIDTH},height=${CAMERA_HEIGHT}"
 
 OUTPUT_CAPS="video/x-raw,format=RGBA"
 if [[ -n "${WIDTH}" ]]; then OUTPUT_CAPS="${OUTPUT_CAPS},width=${WIDTH}"; fi
@@ -44,13 +53,17 @@ handler() {
 }
 trap handler SIGINT SIGTERM
 
+# TODO: improve video_to_avro_serializer performance
 gst-launch-1.0 --eos-on-shutdown \
   aravissrc camera-name="${CAMERA_NAME}" "${ADDITIONAL_ARAVISSRC_ARGS[@]}" ! \
   capsfilter caps="${INPUT_CAPS}" ! \
-  videoconvert ! \
+  bayer2rgb ! \
+  videoscale method=nearest-neighbour ! \
   capsfilter caps="${OUTPUT_CAPS}" ! \
-  fps_meter "${FPS_PERIOD}" output="${FPS_OUTPUT}" ! \
+  queue max-size-buffers=1 ! \
   video_to_avro_serializer source-id="${SOURCE_ID}" ! \
+  queue max-size-buffers=1 ! \
+  fps_meter "${FPS_PERIOD}" output="${FPS_OUTPUT}" ! \
   zeromq_sink socket="${ZMQ_ENDPOINT}" socket-type="${ZMQ_SOCKET_TYPE}" bind="${ZMQ_SOCKET_BIND}" sync="${SYNC_OUTPUT}" \
   &
 
