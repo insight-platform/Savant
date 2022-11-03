@@ -3,6 +3,7 @@ FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-devel AS pygstsavantframemeta
 
 # python to python3 by default
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 10
+
 WORKDIR /libs/gstsavantframemeta
 COPY libs/gstsavantframemeta/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
@@ -53,18 +54,11 @@ COPY --from=pygstsavantframemeta_build /libs/gstsavantframemeta/dist /libs/gstsa
 RUN python -m pip install --no-cache-dir /libs/gstsavantframemeta/dist/*.whl
 
 COPY savant savant
+COPY LICENSE savant/
 ENV GST_PLUGIN_PATH=$APP_PATH/savant/gst_plugins:$APP_PATH/savant/utils/gst_plugins
 
-COPY LICENSE savant/
-
-# https://github.com/onnx/onnx-tensorrt/issues/823#issuecomment-1132735098
-# missing symlink for cublas and cublasLt in DS6.1-base image
-# (no missing symlink for cublas and cublasLt in DS6.1-devel image)
-RUN ln -s /usr/local/cuda/targets/x86_64-linux/lib/libcublasLt.so.11 /usr/local/cuda/targets/x86_64-linux/lib/libcublasLt.so \
-    && ln -s /usr/local/cuda/targets/x86_64-linux/lib/libcublas.so.11 /usr/local/cuda/targets/x86_64-linux/lib/libcublas.so \
-    && ldconfig
-
 ENTRYPOINT ["python", "-m", "savant.entrypoint"]
+
 
 FROM base as samples
 COPY samples samples
@@ -76,6 +70,7 @@ COPY adapters/gst/gst_plugins/python/adjust_timestamps.py adapters/ds/gst_plugin
 ENV GST_PLUGIN_PATH=$GST_PLUGIN_PATH:$APP_PATH/adapters/ds/gst_plugins
 
 ENTRYPOINT []
+
 
 FROM samples as docs
 
@@ -102,5 +97,6 @@ RUN chown -R $USER_UID:$USER_GID $APP_PATH
 USER $USERNAME
 
 WORKDIR $APP_PATH/docs
+
 ENTRYPOINT ["make"]
 CMD ["clean", "html"]
