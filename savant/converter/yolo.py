@@ -64,9 +64,6 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
             bboxes[:, 0] += bboxes[:, 2] / 2
             bboxes[:, 1] += bboxes[:, 3] / 2
 
-            # TODO: tmp workaround
-            confidences += 1.0
-
         # filter by confidence
         if self.confidence_threshold:
             conf_mask = confidences > self.confidence_threshold
