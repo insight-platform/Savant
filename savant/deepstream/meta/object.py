@@ -14,6 +14,7 @@ from savant.deepstream.utils import (
     nvds_add_attr_meta_to_obj,
     nvds_set_selection_type,
     nvds_set_obj_uid,
+    nvds_get_obj_uid,
 )
 from savant.gstreamer.utils import LoggerMixin
 from savant.meta.attribute import AttributeMeta
@@ -140,6 +141,10 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
             return NvDsBBox(self.ds_object_meta)
         if bbox_type == ObjectSelectionType.ROTATED_BBOX:
             return NvDsRBBox(self.ds_object_meta)
+
+    @property
+    def uid(self):
+        return nvds_get_obj_uid(self._frame_meta.frame_meta, self.ds_object_meta)
 
     def get_attr_meta(
         self, element_name: str, attr_name: str

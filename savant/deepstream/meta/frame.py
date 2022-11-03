@@ -5,6 +5,7 @@ from savant.meta.errors import MetaValueError
 from savant.deepstream.meta.iterators import NvDsObjectMetaIterator
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
 from savant.meta.object import ObjectMeta
+from savant.utils.source_info import SourceInfoRegistry
 
 
 class NvDsFrameMeta:
@@ -20,6 +21,18 @@ class NvDsFrameMeta:
         super().__init__()
         self.batch_meta = frame_meta.base_meta.batch_meta
         self.frame_meta = frame_meta
+
+    @property
+    def source_id(self) -> str:
+        """Source id for the frame in the batch."""
+        return SourceInfoRegistry().get_src_id(self.frame_meta.pad_index)
+
+    @property
+    def is_initial(self) -> bool:
+        """Flag indicating whether this frame is the initial one for a video stream
+        or a continuation of an established video stream.
+        """
+        return self.frame_meta.frame_num == 0
 
     @property
     def objects(self) -> Iterator[ObjectMeta]:
