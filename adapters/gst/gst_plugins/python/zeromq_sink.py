@@ -1,5 +1,4 @@
 """ZeroMQ sink."""
-from typing import List
 import inspect
 import zmq
 
@@ -10,6 +9,7 @@ from savant.gst_plugins.python.zeromq_properties import (
 from savant.gstreamer import GObject, Gst, GstBase
 from savant.gstreamer.utils import LoggerMixin, propagate_gst_setting_error
 from savant.utils.zeromq import (
+    Defaults,
     SenderSocketTypes,
     ZMQException,
     get_socket_type,
@@ -39,6 +39,15 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
     __gproperties__ = {
         **ZEROMQ_PROPERTIES,
         'socket-type': socket_type_property(SenderSocketTypes),
+        'send-hwm': (
+            int,
+            'High watermark for outbound messages',
+            'High watermark for outbound messages',
+            1,
+            GObject.G_MAXINT,
+            Defaults.SEND_HWM,
+            GObject.ParamFlags.READWRITE,
+        ),
     }
 
     def __init__(self):
@@ -49,6 +58,7 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
         self.zmq_context: zmq.Context = None
         self.sender: zmq.Socket = None
         self.wait_response = False
+        self.send_hwm = Defaults.SEND_HWM
         self.set_sync(False)
 
     def do_get_property(self, prop):
@@ -63,6 +73,8 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
             return self.socket_type.name
         if prop.name == 'bind':
             return self.bind
+        if prop.name == 'send-hwm':
+            return self.send_hwm
         raise AttributeError(f'Unknown property {prop.name}.')
 
     def do_set_property(self, prop, value):
@@ -79,6 +91,8 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
             self.socket_type = value
         elif prop.name == 'bind':
             self.bind = value
+        elif prop.name == 'send-hwm':
+            self.send_hwm = value
         else:
             raise AttributeError(f'Unknown property {prop.name}.')
 
@@ -97,6 +111,7 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
         self.wait_response = self.socket_type == SenderSocketTypes.REQ
         self.zmq_context = zmq.Context()
         self.sender = self.zmq_context.socket(self.socket_type.value)
+        self.sender.setsockopt(zmq.SNDHWM, self.send_hwm)
         if self.bind:
             self.sender.bind(self.socket)
         else:
