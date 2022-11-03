@@ -89,6 +89,7 @@ class ObjectMeta:
         self._track_id = track_id
         self._parent = parent
         self._bbox = bbox
+        self._uid = None
         self.object_meta_impl: Optional[BaseObjectMetaImpl] = None
         self._attributes = {}
         if attributes:
@@ -252,6 +253,13 @@ class ObjectMeta:
         if self.object_meta_impl:
             return self.object_meta_impl.bbox
         return self._bbox
+
+    @property
+    def uid(self) -> Optional[int]:
+        """Returns uid of the object."""
+        if self.object_meta_impl:
+            return self.object_meta_impl.uid
+        return self._uid
 
     @classmethod
     def _from_be_object_meta(cls, be_object_meta: BaseObjectMetaImpl):

@@ -4,7 +4,6 @@ from collections import defaultdict
 from pathlib import Path
 from threading import Event, Lock
 from typing import Dict, List, Optional, Union
-from dataclasses import dataclass
 import numpy as np
 import pyds
 
@@ -56,21 +55,11 @@ from savant.deepstream.utils import (
 from savant.meta.constants import UNTRACKED_OBJECT_ID
 from savant.meta.type import ObjectSelectionType
 from savant.utils.model_registry import ModelObjectRegistry
+from savant.utils.source_info import SourceInfoRegistry, SourceInfo
 from savant.utils.platform import is_aarch64
 from savant.config.schema import PipelineElement, ModelElement, DrawBinElement
 from savant.base.model import ObjectModel, AttributeModel, ComplexModel
 from savant.utils.sink_factories import SinkEndOfStream, SinkVideoFrame
-
-
-@dataclass
-class SourceInfo:
-    """Source info."""
-
-    source_id: str
-    pad_idx: Optional[int]
-    before_muxer: List[Gst.Element]
-    after_demuxer: List[Gst.Element]
-    lock: Event
 
 
 class NvDsPipeline(GstPipeline):
@@ -107,6 +96,9 @@ class NvDsPipeline(GstPipeline):
 
         # model-object association storage
         self._model_object_registry = ModelObjectRegistry()
+
+        self._source_adding_lock = Lock()
+        self._sources = SourceInfoRegistry()
 
         # c++ preprocessing class
         self._objects_preprocessing = ObjectsPreprocessing()
@@ -158,11 +150,7 @@ class NvDsPipeline(GstPipeline):
         source.name = 'source'
         _source = self._add_element(source)
         _source.connect('pad-added', self.on_source_added)
-        self._source_id_by_index = {}
 
-        self._source_adding_lock = Lock()
-
-        self._sources: Dict[str, SourceInfo] = {}
         # Need to suppress EOS on nvstreammux sink pad to prevent pipeline from shutting down
         self._suppress_eos = source.element == 'zeromq_source_bin'
         # nvstreammux is required for NvDs pipeline
@@ -244,22 +232,18 @@ class NvDsPipeline(GstPipeline):
         self._logger.debug(
             'Adding source %s. Pad name: %s.', source_id, new_pad.get_name()
         )
-        source_info = self._sources.get(source_id)
-        if source_info is not None:
+
+        try:
+            source_info = self._sources.get_source(source_id)
+        except KeyError:
+            source_info = self._sources.init_source(source_id)
+        else:
             while not source_info.lock.wait(5):
                 self._logger.debug(
                     'Waiting source %s to release', source_info.source_id
                 )
             source_info.lock.clear()
-        else:
-            source_info = SourceInfo(
-                source_id=source_id,
-                pad_idx=None,
-                before_muxer=[],
-                after_demuxer=[],
-                lock=Event(),
-            )
-        self._sources[source_id] = source_info
+
         self._logger.debug('Ready to add source %s', source_info.source_id)
 
         # Link elements to source pad only when caps are set
@@ -298,8 +282,8 @@ class NvDsPipeline(GstPipeline):
                 time.sleep(5)
 
         with self._source_adding_lock:
-            self._source_id_by_index[source_info.pad_idx] = source_info.source_id
-            self._sources[source_info.source_id] = source_info
+            self._sources.update_source(source_info)
+
             if not source_info.after_demuxer:
                 self._add_source_output(source_info)
             input_src_pad = self._add_input_converter(
@@ -468,7 +452,7 @@ class NvDsPipeline(GstPipeline):
         self._logger.debug(
             'Got EOS on pad %s.%s', pad.get_parent().get_name(), pad.get_name()
         )
-        source_info = self._sources[source_id]
+        source_info = self._sources.get_source(source_id)
         GLib.idle_add(self._remove_input_elems, source_info, pad)
         return (
             Gst.PadProbeReturn.DROP if self._suppress_eos else Gst.PadProbeReturn.PASS
@@ -558,8 +542,9 @@ class NvDsPipeline(GstPipeline):
         self._logger.debug(
             'Output elements for source %s removed', source_info.source_id
         )
-        del self._source_id_by_index[source_info.pad_idx]
-        del self._sources[source_info.source_id]
+
+        self._sources.remove_source(source_info)
+
         self._free_pad_indices.append(source_info.pad_idx)
         source_info.pad_idx = None
         self._logger.debug('Releasing lock for source %s', source_info.source_id)
@@ -621,7 +606,7 @@ class NvDsPipeline(GstPipeline):
         self._logger.debug('Preparing input for buffer with PTS %s.', buffer.pts)
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
-            source_id = self._source_id_by_index[nvds_frame_meta.pad_index]
+            source_id = self._sources.get_id_by_pad_index(nvds_frame_meta.pad_index)
             savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(
                 nvds_frame_meta
             )
@@ -818,7 +803,7 @@ class NvDsPipeline(GstPipeline):
                     object_ids[nvds_obj_meta.obj_label] += 1
 
             # will extend source metadata
-            source_id = self._source_id_by_index[nvds_frame_meta.pad_index]
+            source_id = self._sources.get_id_by_pad_index(nvds_frame_meta.pad_index)
             savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(
                 nvds_frame_meta
             )
