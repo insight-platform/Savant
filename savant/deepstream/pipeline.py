@@ -234,15 +234,9 @@ class NvDsPipeline(GstPipeline):
         )
 
         try:
-            source_info = self._sources.get_src_info(source_id)
+            source_info = self._sources.get_source(source_id)
         except KeyError:
-            source_info = SourceInfo(
-                source_id=source_id,
-                pad_idx=None,
-                before_muxer=[],
-                after_demuxer=[],
-                lock=Event(),
-            )
+            source_info = self._sources.init_source(source_id)
         else:
             while not source_info.lock.wait(5):
                 self._logger.debug(
@@ -250,7 +244,6 @@ class NvDsPipeline(GstPipeline):
                 )
             source_info.lock.clear()
 
-        self._sources.set_src_info(source_id, source_info)
         self._logger.debug('Ready to add source %s', source_info.source_id)
 
         # Link elements to source pad only when caps are set
@@ -289,8 +282,8 @@ class NvDsPipeline(GstPipeline):
                 time.sleep(5)
 
         with self._source_adding_lock:
-            self._sources.set_src_id(source_info.pad_idx, source_info.source_id)
-            self._sources.set_src_info(source_info.source_id, source_info)
+            self._sources.update_source(source_info)
+
             if not source_info.after_demuxer:
                 self._add_source_output(source_info)
             input_src_pad = self._add_input_converter(
@@ -459,7 +452,7 @@ class NvDsPipeline(GstPipeline):
         self._logger.debug(
             'Got EOS on pad %s.%s', pad.get_parent().get_name(), pad.get_name()
         )
-        source_info = self._sources.get_src_info(source_id)
+        source_info = self._sources.get_source(source_id)
         GLib.idle_add(self._remove_input_elems, source_info, pad)
         return (
             Gst.PadProbeReturn.DROP if self._suppress_eos else Gst.PadProbeReturn.PASS
@@ -550,8 +543,7 @@ class NvDsPipeline(GstPipeline):
             'Output elements for source %s removed', source_info.source_id
         )
 
-        self._sources.free_src_id(source_info.source_id)
-        self._sources.free_pad_idx(source_info.pad_idx)
+        self._sources.remove_source(source_info)
 
         self._free_pad_indices.append(source_info.pad_idx)
         source_info.pad_idx = None
@@ -613,7 +605,7 @@ class NvDsPipeline(GstPipeline):
         self._logger.debug('Preparing input for buffer with PTS %s.', buffer.pts)
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
-            source_id = self._sources.get_src_id(nvds_frame_meta.pad_index)
+            source_id = self._sources.get_id_by_pad_index(nvds_frame_meta.pad_index)
             savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(
                 nvds_frame_meta
             )
@@ -810,7 +802,7 @@ class NvDsPipeline(GstPipeline):
                     object_ids[nvds_obj_meta.obj_label] += 1
 
             # will extend source metadata
-            source_id = self._sources.get_src_id(nvds_frame_meta.pad_index)
+            source_id = self._sources.get_id_by_pad_index(nvds_frame_meta.pad_index)
             savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(
                 nvds_frame_meta
             )

@@ -25,14 +25,12 @@ class NvDsFrameMeta:
     @property
     def source_id(self) -> str:
         """Source id for the frame in the batch."""
-        return SourceInfoRegistry().get_src_id(self.frame_meta.pad_index)
+        return SourceInfoRegistry().get_id_by_pad_index(self.frame_meta.pad_index)
 
     @property
-    def is_initial(self) -> bool:
-        """Flag indicating whether this frame is the initial one for a video stream
-        or a continuation of an established video stream.
-        """
-        return self.frame_meta.frame_num == 0
+    def frame_num(self) -> int:
+        """Current frame number of the source."""
+        return self.frame_meta.frame_num
 
     @property
     def objects(self) -> Iterator[ObjectMeta]:

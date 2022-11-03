@@ -26,48 +26,46 @@ class SourceInfoRegistry(metaclass=SingletonMeta):
         self._sources: Dict[str, SourceInfo] = {}
         self._source_id_by_index: Dict[int, str] = {}
 
-    def set_src_info(self, source_id: str, source_info: SourceInfo) -> None:
-        """Store a source info structure with source id key.
-
-        :param source_id: String to be used as a key for storing SourceInfo structure.
-        :param source_info: SourceInfo structure to be stored.
-        """
+    def init_source(self, source_id: str) -> SourceInfo:
+        source_info = SourceInfo(
+            source_id=source_id,
+            pad_idx=None,
+            before_muxer=[],
+            after_demuxer=[],
+            lock=Event(),
+        )
         self._sources[source_id] = source_info
+        return source_info
 
-    def set_src_id(self, pad_idx: int, source_id: str) -> None:
-        """Store a source id string with pad index key.
-
-        :param pad_idx: Int to be used as a key for storing source id string.
-        :param source_id: string to be stored.
-        """
-        self._source_id_by_index[pad_idx] = source_id
-
-    def free_src_id(self, source_id: str) -> None:
-        """Delete a given source id key from internal map.
-
-        :param source_id: string key to be removed from map.
-        """
-        del self._sources[source_id]
-
-    def free_pad_idx(self, pad_idx: int) -> None:
-        """Delete a given pad index key from internal map.
-
-        :param pad_idx: int key to be removed from map.
-        """
-        del self._source_id_by_index[pad_idx]
-
-    def get_src_id(self, pad_idx: int) -> str:
-        """Retrieve string value associated with given pad index.
-
-        :param pad_idx: Key used to retrieve source id value.
-        :return: Source id value.
-        """
-        return self._source_id_by_index[pad_idx]
-
-    def get_src_info(self, source_id: str) -> SourceInfo:
+    def get_source(self, source_id: str) -> SourceInfo:
         """Retrieve SourceInfo value associated with given source id.
 
         :param source_id: Key used to retrieve SourceInfo value.
         :return: SourceInfo value.
         """
         return self._sources[source_id]
+
+    def update_source(self, source_info: SourceInfo) -> None:
+        """Update internal maps for source_id and pad index
+        of a given SourceInfo structure.
+
+        :param source_info: SourceInfo structure to be stored.
+        """
+        self._sources[source_info.source_id] = source_info
+        self._source_id_by_index[source_info.pad_idx] = source_info.source_id
+
+    def remove_source(self, source_info: SourceInfo) -> None:
+        """Delete a given source info entries from internal map.
+
+        :param source_info: SourceInfo to be removed from map.
+        """
+        del self._sources[source_info.source_id]
+        del self._source_id_by_index[source_info.pad_idx]
+
+    def get_id_by_pad_index(self, pad_idx: int) -> str:
+        """Retrieve string value associated with given pad index.
+
+        :param pad_idx: Key used to retrieve source id value.
+        :return: Source id value.
+        """
+        return self._source_id_by_index[pad_idx]
