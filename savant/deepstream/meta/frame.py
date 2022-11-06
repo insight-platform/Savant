@@ -5,6 +5,7 @@ from savant.meta.errors import MetaValueError
 from savant.deepstream.meta.iterators import NvDsObjectMetaIterator
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
 from savant.meta.object import ObjectMeta
+from savant.utils.source_info import SourceInfoRegistry
 
 
 class NvDsFrameMeta:
@@ -20,6 +21,16 @@ class NvDsFrameMeta:
         super().__init__()
         self.batch_meta = frame_meta.base_meta.batch_meta
         self.frame_meta = frame_meta
+
+    @property
+    def source_id(self) -> str:
+        """Source id for the frame in the batch."""
+        return SourceInfoRegistry().get_id_by_pad_index(self.frame_meta.pad_index)
+
+    @property
+    def frame_num(self) -> int:
+        """Current frame number of the source."""
+        return self.frame_meta.frame_num
 
     @property
     def objects(self) -> Iterator[ObjectMeta]:

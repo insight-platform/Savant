@@ -1,5 +1,4 @@
 """ZeroMQ src."""
-from typing import List
 import inspect
 import zmq
 
@@ -10,6 +9,7 @@ from savant.gst_plugins.python.zeromq_properties import (
 from savant.gstreamer import GObject, Gst, GstBase
 from savant.gstreamer.utils import LoggerMixin, propagate_gst_setting_error
 from savant.utils.zeromq import (
+    Defaults,
     ReceiverSocketTypes,
     ZeroMQSource,
     ZMQException,
@@ -18,6 +18,15 @@ from savant.utils.zeromq import (
 ZEROMQ_SRC_PROPERTIES = {
     **ZEROMQ_PROPERTIES,
     'socket-type': socket_type_property(ReceiverSocketTypes),
+    'receive-hwm': (
+        int,
+        'High watermark for inbound messages',
+        'High watermark for inbound messages',
+        1,
+        GObject.G_MAXINT,
+        Defaults.RECEIVE_HWM,
+        GObject.ParamFlags.READWRITE,
+    ),
 }
 
 
@@ -50,7 +59,8 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
         self.zmq_context: zmq.Context = None
         self.context = None
         self.receiver = None
-        self.receive_timeout: int = 1000
+        self.receive_timeout: int = Defaults.RECEIVE_TIMEOUT
+        self.receive_hwm: int = Defaults.RECEIVE_HWM
         self.source: ZeroMQSource = None
         self.set_live(True)
 
@@ -65,6 +75,8 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
             return self.socket_type.name
         if prop.name == 'bind':
             return self.bind
+        if prop.name == 'receive-hwm':
+            return self.receive_hwm
         # if prop.name == 'zmq-context':
         #     return self.zmq_context
         raise AttributeError(f'Unknown property {prop.name}.')
@@ -82,6 +94,8 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
             self.socket_type = value
         elif prop.name == 'bind':
             self.bind = value
+        elif prop.name == 'receive-hwm':
+            self.receive_hwm = value
         # elif prop.name == 'zmq-context':
         #     self.zmq_context = value
         else:
@@ -97,6 +111,7 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
                 socket_type=self.socket_type,
                 bind=self.bind,
                 receive_timeout=self.receive_timeout,
+                receive_hwm=self.receive_hwm,
             )
         except ZMQException:
             self.logger.exception('Element start error.')

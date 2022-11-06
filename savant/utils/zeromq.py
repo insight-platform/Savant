@@ -36,6 +36,12 @@ class SenderSocketTypes(Enum):
     REQ = zmq.REQ
 
 
+class Defaults:
+    RECEIVE_TIMEOUT = 1000
+    RECEIVE_HWM = 50
+    SEND_HWM = 50
+
+
 def get_socket_endpoint(socket_endpoint: str):
     if not isinstance(socket_endpoint, str):
         raise ZMQSocketEndpointException(
@@ -73,6 +79,7 @@ class ZeroMQSource:
     :param socket_type: zmq socket type
     :param bind: zmq socket mode (bind or connect)
     :param receive_timeout: receive timeout socket option
+    :param receive_hwm: high watermark for inbound messages
     """
 
     def __init__(
@@ -80,7 +87,8 @@ class ZeroMQSource:
         socket: str,
         socket_type: str = ReceiverSocketTypes.PULL.name,
         bind: bool = True,
-        receive_timeout: int = 1000,
+        receive_timeout: int = Defaults.RECEIVE_TIMEOUT,
+        receive_hwm: int = Defaults.RECEIVE_HWM,
     ):
         logger.debug(
             'Initializing ZMQ source: socket %s, type %s, bind %s.',
@@ -98,6 +106,7 @@ class ZeroMQSource:
         self.receive_timeout = receive_timeout
         self.zmq_context = zmq.Context()
         self.receiver = self.zmq_context.socket(self.socket_type.value)
+        self.receiver.setsockopt(zmq.RCVHWM, receive_hwm)
         if bind:
             self.receiver.bind(socket)
         else:
