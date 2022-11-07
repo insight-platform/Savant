@@ -1,9 +1,9 @@
 """DeepStream pipeline."""
-import time
 from collections import defaultdict
 from pathlib import Path
-from threading import Event, Lock
-from typing import Dict, List, Optional, Union
+from threading import Lock
+from typing import List, Optional, Union
+import time
 import numpy as np
 import pyds
 
@@ -57,7 +57,7 @@ from savant.meta.type import ObjectSelectionType
 from savant.utils.model_registry import ModelObjectRegistry
 from savant.utils.source_info import SourceInfoRegistry, SourceInfo
 from savant.utils.platform import is_aarch64
-from savant.config.schema import PipelineElement, ModelElement, DrawBinElement
+from savant.config.schema import PipelineElement, ModelElement
 from savant.base.model import ObjectModel, AttributeModel, ComplexModel
 from savant.utils.sink_factories import SinkEndOfStream, SinkVideoFrame
 
@@ -151,7 +151,8 @@ class NvDsPipeline(GstPipeline):
         _source = self._add_element(source)
         _source.connect('pad-added', self.on_source_added)
 
-        # Need to suppress EOS on nvstreammux sink pad to prevent pipeline from shutting down
+        # Need to suppress EOS on nvstreammux sink pad
+        # to prevent pipeline from shutting down
         self._suppress_eos = source.element == 'zeromq_source_bin'
         # nvstreammux is required for NvDs pipeline
         # add queue and set live-source for rtsp
@@ -272,10 +273,11 @@ class NvDsPipeline(GstPipeline):
                 with self._source_adding_lock:
                     source_info.pad_idx = self._free_pad_indices.pop(0)
             except IndexError:
-                # Avro_video_decode_bin already sent EOS for some stream and adding a new one,
-                # but the former stream did not complete in this pipeline yet.
+                # avro_video_decode_bin already sent EOS for some stream and adding a
+                # new one, but the former stream did not complete in this pipeline yet.
                 self._logger.warning(
-                    'Reached maximum number of streams: %s. Waiting resources for source %s.',
+                    'Reached maximum number of streams: %s. '
+                    'Waiting resources for source %s.',
                     self._max_parallel_streams,
                     source_info.source_id,
                 )
@@ -708,9 +710,10 @@ class NvDsPipeline(GstPipeline):
         buffer: Gst.Buffer,
         source_info: SourceInfo,
     ):
-        """Enque output messages based on frame meta.
+        """Enqueue output messages based on frame meta.
 
         :param buffer: gstreamer buffer that is being processed.
+        :param source_info: output source info
         """
 
         self._logger.debug(
