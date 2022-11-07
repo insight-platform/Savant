@@ -869,8 +869,8 @@ class NvDsPipeline(GstPipeline):
             return
 
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
-        for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
-            if model.input.preprocess_object_meta:
+        if model.input.preprocess_object_meta:
+            for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
                 for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
                     if not self._is_model_input_object(element, nvds_obj_meta):
                         continue
@@ -904,18 +904,18 @@ class NvDsPipeline(GstPipeline):
                     rect_params.width = bbox.width
                     rect_params.height = bbox.height
 
-            elif model.input.preprocess_object_tensor:
-                model_uid, class_id = self._model_object_registry.get_model_object_ids(
-                    model.input.object
-                )
-                self._objects_preprocessing.preprocessing(
-                    element.name,
-                    hash(buffer),
-                    model_uid,
-                    class_id,
-                    model.input.preprocess_object_tensor.padding[0],
-                    model.input.preprocess_object_tensor.padding[1],
-                )
+        elif model.input.preprocess_object_tensor:
+            model_uid, class_id = self._model_object_registry.get_model_object_ids(
+                model.input.object
+            )
+            self._objects_preprocessing.preprocessing(
+                element.name,
+                hash(buffer),
+                model_uid,
+                class_id,
+                model.input.preprocess_object_tensor.padding[0],
+                model.input.preprocess_object_tensor.padding[1],
+            )
 
     def prepare_element_output(self, element: PipelineElement, buffer: Gst.Buffer):
         """Model output postprocessing.
@@ -1137,8 +1137,6 @@ class NvDsPipeline(GstPipeline):
                     rect_params.width = bbox_coords.width
                     rect_params.height = bbox_coords.height
 
-            # restore frame
-            if model.input.preprocess_object_tensor:
-                self._objects_preprocessing.restore_frame(
-                    hash(buffer), nvds_frame_meta.batch_id
-                )
+        # restore frame
+        if model.input.preprocess_object_tensor:
+            self._objects_preprocessing.restore_frame(hash(buffer))
