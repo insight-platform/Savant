@@ -6,4 +6,4 @@ pycairo~=1.20.1
 # pyds for ds 6.0.1
 https://github.com/NVIDIA-AI-IOT/deepstream_python_apps/releases/download/v1.1.1/pyds-1.1.1-py3-none-linux_aarch64.whl
 # savantboost
-https://github.com/insight-platform/SavantBoost/releases/download/v1.0.2/savantboost-1.0.2-cp36-cp36m-linux_aarch64.whl
+https://github.com/insight-platform/SavantBoost/releases/download/v1.0.3/savantboost-1.0.3-cp36-cp36m-linux_aarch64.whl
