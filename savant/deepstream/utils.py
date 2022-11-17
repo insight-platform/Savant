@@ -1,10 +1,8 @@
 """DeepStream utils."""
-from contextlib import contextmanager
 from typing import (
     Any,
     Callable,
     Dict,
-    Generator,
     Iterable,
     List,
     Optional,
@@ -12,8 +10,8 @@ from typing import (
     Union,
 )
 import ctypes
-import pyds
 import numpy as np
+import pyds
 from pysavantboost import (
     add_rbbox_to_object_meta,
     NvRBboxCoords,
@@ -27,14 +25,6 @@ from savant.meta.constants import UNTRACKED_OBJECT_ID, DEFAULT_CONFIDENCE
 from savant.meta.type import InformationType, ObjectSelectionType
 from savant.deepstream.meta.constants import MAX_LABEL_SIZE
 from savant.gstreamer import Gst, GObject  # noqa:F401
-from savant.gstreamer.ffi import GstMapInfo
-from savant.gstreamer.utils import map_gst_buffer
-from savant.deepstream.ffi import (
-    LIBNVBUFSURFACE,
-    NvBufSurface,
-    LIBNVDSMETA,
-    NvDsFrameLatencyInfo,
-)
 
 
 def _make_nvevent_type(event_type: int):
@@ -57,7 +47,7 @@ class IncorrectBBoxType(Exception):
 
 
 class NvDsMetaIterator:
-    """NvDs meta data iterator.
+    """NvDs metadata iterator.
 
     :param item: An object with `data` (optional) and `next` fields
     :param cast_data: A function to cast data
@@ -87,21 +77,6 @@ def nvds_frame_meta_iterator(batch_meta: pyds.NvDsBatchMeta) -> NvDsMetaIterator
     :return: NvDsFrameMeta iterator.
     """
     return NvDsMetaIterator(batch_meta.frame_meta_list, pyds.NvDsFrameMeta.cast)
-
-
-def nvds_frame_iterator(
-    buffer: Gst.Buffer, batch_meta: pyds.NvDsBatchMeta
-) -> Generator[Tuple[pyds.NvDsFrameMeta, np.ndarray], None, None]:
-    """NvDsFrameMeta iterator, returns also a frame as ndarray.
-
-    :param buffer: gstreamer buffer that contains the batch_meta.
-    :param batch_meta: NvDs batch metadata structure that will be iterated on.
-    :return: NvDs frame metadata and frame image data.
-    """
-    with map_gst_buffer(buffer) as gst_map_info:
-        for frame_meta in nvds_frame_meta_iterator(batch_meta):
-            with map_nvbufsurface(gst_map_info, frame_meta.batch_id) as frame:
-                yield frame_meta, frame
 
 
 def nvds_batch_user_meta_iterator(batch_meta: pyds.NvDsBatchMeta) -> NvDsMetaIterator:
@@ -459,97 +434,8 @@ def nvds_infer_tensor_meta_to_outputs(
     return layers
 
 
-@contextmanager
-def map_nvbufsurface(
-    gst_map_info: GstMapInfo,
-    batch_id: int,
-    flag: int = pyds.NvBufSurfaceMemMapFlags.NVBUF_MAP_READ_WRITE,
-) -> np.ndarray:
-    """Gets a pointer to NvBufSurface from GstMapInfo and tries to map it.
-    Unmaps at context exit.
-
-    TODO: Check out pyds.get_nvds_buf_surface
-    in order to replace custom implementation.
-    There was a problem(?) using pyds.get_nvds_buf_surface with DS 5.1 on Jetson.
-
-    :param gst_map_info: GstMapInfo structure of a mapped Gst.Buffer
-    :param batch_id: batch id of a frame in Deepstream batch
-    :param flag: an access mode flag from pyds.NvBufSurfaceMemMapFlags
-    """
-    nvbufsurface_p = ctypes.cast(gst_map_info.data, ctypes.POINTER(NvBufSurface))
-    nvbufsurface = nvbufsurface_p.contents
-
-    nvbufsurface_params = nvbufsurface.surfaceList[batch_id]
-    nvbufsurface_mappedaddr = nvbufsurface_params.mappedAddr
-
-    # TODO: Remove to avoid ValueError with second mapping?
-    if nvbufsurface_mappedaddr.addr[0] is not None:
-        raise ValueError('NvBufMappedAddr already filled.')
-
-    ret_value = LIBNVBUFSURFACE.NvBufSurfaceMap(nvbufsurface_p, batch_id, 0, flag)
-    if ret_value != 0:
-        raise ValueError('Buffer map to be accessed by CPU failed.')
-
-    # Deepstream C example `gstdsexample` calls this function,
-    # but it always returns -1 (fail, according to docs)
-    # https://forums.developer.nvidia.com/t/are-there-any-examples-for-pyds-nvbufsurface-objects-and-methods/124803
-    # res = LIBNVBUFSURFACE.NvBufSurfaceSyncForCpu(nvbufsurface_p, batch_id, 0)
-
-    try:
-        shape = (
-            nvbufsurface_params.planeParams.height[0],
-            nvbufsurface_params.planeParams.width[0],
-            nvbufsurface_params.planeParams.pitch[0]
-            // nvbufsurface_params.planeParams.width[0],
-        )
-        ctypes_arr = ctypes.cast(
-            nvbufsurface_mappedaddr.addr[0],
-            ctypes.POINTER(ctypes.c_uint8 * shape[2] * shape[1] * shape[0]),
-        ).contents
-        yield np.ctypeslib.as_array(ctypes_arr)
-    finally:
-        # res = LIBNVBUFSURFACE.NvBufSurfaceSyncForDevice(
-        #     nvbufsurface_p, frame_meta.batch_id, 0
-        # )
-        LIBNVBUFSURFACE.NvBufSurfaceUnMap(nvbufsurface_p, batch_id, 0)
-
-
-def nvds_is_enabled_latency_measurement():
-    """Indicates whether the environment variable
-    NVDS_ENABLE_LATENCY_MEASUREMENT is exported."""
-    return bool(LIBNVDSMETA.nvds_get_enable_latency_measurement())
-
-
-def nvds_measure_buffer_latency(
-    gst_buffer: Gst.Buffer, batch_size: int
-) -> List[NvDsFrameLatencyInfo]:
-    """Measures the latency of all frames present in the current batch. The
-    latency is computed from decoder input up to the point this API is called.
-    You can install the probe on either pad of the component and call this
-    function to measure the latency.
-
-    There are problems with using of NvDs Latency Measurement API
-
-    1. unknown structure of nvds_batch_meta.batch_user_meta_list item with
-       NVDS_LATENCY_MEASUREMENT_META type
-    2. requirement to reverse batch_user_meta_list, see
-       https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_Application_migration.html
-
-    :param gst_buffer: gstreamer buffer that contains batch metadata.
-    :param batch_size: number of frames in the batch.
-    :return: NvDsFrameLatencyInfo structure.
-    """
-    gst_buffer_p = hash(gst_buffer)
-    # allocate with a margin to avoid `Core dumped`
-    latency_info: List[NvDsFrameLatencyInfo] = (
-        NvDsFrameLatencyInfo * (batch_size + 1)
-    )()
-    num = LIBNVDSMETA.nvds_measure_buffer_latency(gst_buffer_p, latency_info)
-    return latency_info[:num]
-
-
-def _gst_nvevent_extract_source_id(event: Gst.Event, type, struct_name: str):
-    if not (event.type == type and event.has_name(struct_name)):
+def _gst_nvevent_extract_source_id(event: Gst.Event, event_type, struct_name: str):
+    if not (event.type == event_type and event.has_name(struct_name)):
         return None
     struct: Gst.Structure = event.get_structure()
     parsed, source_id = struct.get_uint('source-id')

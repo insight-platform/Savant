@@ -1,6 +1,6 @@
 """GStreamer base pipeline."""
 from queue import Queue, Empty as EmptyException
-from typing import Any, List, Dict, Generator, Optional, Tuple
+from typing import Any, List, Generator, Optional, Tuple
 import logging
 from gi.repository import Gst  # noqa:F401
 
@@ -105,7 +105,9 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
         gst_element = self.create_gst_element(element)
         self._pipeline.add(gst_element)
         if link and self._last_element:
-            self._last_element.link(gst_element)
+            assert self._last_element.link(
+                gst_element
+            ), f'Unable to link {element.name} to {self._last_element.name}'
         self._last_element = gst_element
 
         # set element name from GstElement
@@ -155,12 +157,11 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
         )
         return _source
 
-    # pylint:disable=keyword-arg-before-vararg)
     def _add_sink(
         self,
         sink: Optional[PipelineElement] = None,
         link: bool = True,
-        *probe_data,
+        probe_data: Any = None,
     ) -> Gst.Element:
         if not sink:
             sink = PipelineElement(
@@ -171,7 +172,7 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
 
         # output processor (pre-sink)
         _sink.get_static_pad('sink').add_probe(
-            Gst.PadProbeType.BUFFER, self._output_probe, *probe_data
+            Gst.PadProbeType.BUFFER, self._output_probe, probe_data
         )
 
         return _sink
@@ -187,16 +188,16 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
         """Pipeline input processor."""
 
     def _output_probe(  # pylint: disable=unused-argument
-        self, pad: Gst.Pad, info: Gst.PadProbeInfo, *data
+        self, pad: Gst.Pad, info: Gst.PadProbeInfo, user_data: Any
     ):
         buffer = info.get_buffer()
-        self.prepare_output(buffer, *data)
+        self.prepare_output(buffer, user_data)
         # measure and logging FPS
         if self._fps_meter():
             self._log_fps()
         return Gst.PadProbeReturn.OK
 
-    def prepare_output(self, buffer: Gst.Buffer, *data):
+    def prepare_output(self, buffer: Gst.Buffer, user_data: Any):
         """Pipeline output processor."""
 
     def on_startup(self):

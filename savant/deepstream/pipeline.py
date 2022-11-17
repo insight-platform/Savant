@@ -2,7 +2,7 @@
 from collections import defaultdict
 from pathlib import Path
 from threading import Lock
-from typing import List, Optional, Union
+from typing import Any, List, Optional, Union
 import time
 import numpy as np
 import pyds
@@ -179,7 +179,8 @@ class NvDsPipeline(GstPipeline):
                 element='nvstreammux',
                 name='muxer',
                 properties=frame_processing_parameters,
-            )
+            ),
+            link=False,
         )
         self._logger.info(
             'Pipeline frame processing parameters: %s.', frame_processing_parameters
@@ -560,7 +561,7 @@ class NvDsPipeline(GstPipeline):
         self,
         sink: Optional[PipelineElement] = None,
         link: bool = True,
-        *data,
+        probe_data: Any = None,
     ) -> Gst.Element:
         """Adds sink elements."""
 

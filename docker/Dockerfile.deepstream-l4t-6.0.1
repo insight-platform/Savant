@@ -103,8 +103,7 @@ ENV APP_PATH=$APP_PATH
 ENV PYTHONPATH=$APP_PATH
 WORKDIR $APP_PATH
 
-# add deepstream libs to path, so that ctypes can load libnvbufsurface.so
-# and module lib to path, so that user lib can be loaded
+# add deepstream libs to path, so that ctypes can load them
 ENV LD_LIBRARY_PATH=/opt/nvidia/deepstream/deepstream/lib/:$LD_LIBRARY_PATH
 
 # install requirements
