@@ -249,25 +249,27 @@ class NvDsPipeline(GstPipeline):
         self._logger.debug('Ready to add source %s', source_info.source_id)
 
         # Link elements to source pad only when caps are set
-        new_pad.add_probe(
-            Gst.PadProbeType.EVENT_DOWNSTREAM,
-            on_pad_event,
-            {Gst.EventType.CAPS: self._on_source_caps},
-            source_info,
-        )
+        # new_pad.add_probe(
+        #     Gst.PadProbeType.EVENT_DOWNSTREAM,
+        #     on_pad_event,
+        #     {Gst.EventType.CAPS: self._on_source_caps},
+        #     source_info,
+        # )
+
+        self._on_source_caps(new_pad, event=None, source_info=source_info)
 
     def _on_source_caps(
         self, new_pad: Gst.Pad, event: Gst.Event, source_info: SourceInfo
     ):
         """Handle adding caps to video source pad."""
 
-        new_pad_caps: Gst.Caps = event.parse_caps()
-        self._logger.debug(
-            'Pad %s.%s has caps %s',
-            new_pad.get_parent().get_name(),
-            new_pad.get_name(),
-            new_pad_caps,
-        )
+        # new_pad_caps: Gst.Caps = event.parse_caps()
+        # self._logger.debug(
+        #     'Pad %s.%s has caps %s',
+        #     new_pad.get_parent().get_name(),
+        #     new_pad.get_name(),
+        #     new_pad_caps,
+        # )
 
         while source_info.pad_idx is None:
             try:
@@ -289,11 +291,12 @@ class NvDsPipeline(GstPipeline):
 
             if not source_info.after_demuxer:
                 self._add_source_output(source_info)
-            input_src_pad = self._add_input_converter(
-                new_pad,
-                new_pad_caps,
-                source_info,
-            )
+            # input_src_pad = self._add_input_converter(
+            #     new_pad,
+            #     new_pad_caps,
+            #     source_info,
+            # )
+            input_src_pad = new_pad
             add_convert_savant_frame_meta_pad_probe(
                 input_src_pad,
                 True,
@@ -338,16 +341,16 @@ class NvDsPipeline(GstPipeline):
         # TODO: send EOS to video_converter on unlink if source didn't
         assert new_pad.link(video_converter_sink) == Gst.PadLinkReturn.OK
 
-        capsfilter: Gst.Element = Gst.ElementFactory.make('capsfilter')
-        capsfilter.set_property(
+        caps_filter: Gst.Element = Gst.ElementFactory.make('capsfilter')
+        caps_filter.set_property(
             'caps', Gst.Caps.from_string('video/x-raw(memory:NVMM), format=RGBA')
         )
-        capsfilter.set_state(Gst.State.PLAYING)
-        self._pipeline.add(capsfilter)
-        source_info.before_muxer.append(capsfilter)
-        assert nv_video_converter.link(capsfilter)
+        caps_filter.set_state(Gst.State.PLAYING)
+        self._pipeline.add(caps_filter)
+        source_info.before_muxer.append(caps_filter)
+        assert nv_video_converter.link(caps_filter)
 
-        return capsfilter.get_static_pad('src')
+        return caps_filter.get_static_pad('src')
 
     def _add_source_output(self, source_info: SourceInfo):
         fakesink = super()._add_sink(
@@ -360,8 +363,8 @@ class NvDsPipeline(GstPipeline):
                     'enable-last-sample': 0,
                 },
             ),
-            False,
-            source_info,
+            link=False,
+            probe_data=source_info,
         )
         fakesink.sync_state_with_parent()
 
@@ -382,11 +385,12 @@ class NvDsPipeline(GstPipeline):
             == Gst.PadLinkReturn.OK
         )
 
-        if self._output_frame and self._output_frame_codec != Codec.RAW_RGBA:
-            add_convert_savant_frame_meta_pad_probe(
-                output_queue.get_static_pad('src'),
-                False,
-            )
+        # demuxer -> queue -> fakesink
+        if not self._output_frame:
+            assert output_queue.link(fakesink)
+
+        # demuxer -> queue -> nvvideoconvert -> ... -> fakesink
+        else:
             output_converter = self._add_element(
                 PipelineElement(
                     'nvvideoconvert',
@@ -400,34 +404,48 @@ class NvDsPipeline(GstPipeline):
             source_info.after_demuxer.append(output_converter)
             output_converter.sync_state_with_parent()
 
-            encoder = self._add_element(
-                PipelineElement(
-                    self._output_frame_codec.value.encoder,
-                    properties=self._output_frame_encoder_params,
+            if self._output_frame_codec == Codec.RAW_RGBA:
+                caps_filter = self._add_element(PipelineElement('capsfilter'))
+                caps_filter.set_property(
+                    'caps',
+                    Gst.Caps.from_string('video/x-raw(memory:NVMM), format=RGBA'),
                 )
-            )
-            source_info.after_demuxer.append(encoder)
-            encoder.sync_state_with_parent()
+                source_info.after_demuxer.append(caps_filter)
+                caps_filter.sync_state_with_parent()
+                assert caps_filter.link(fakesink)
 
-            # A parser for codecs h264, h265 is added to include
-            # the Sequence Parameter Set (SPS) and the Picture Parameter Set (PPS)
-            # to IDR frames in the video stream. SPS and PPS are needed
-            # to correct recording or playback not from the beginning
-            # of the video stream.
-            if self._output_frame_codec.value.parser in ['h264parse', 'h265parse']:
-                parser = self._add_element(
+            else:
+                add_convert_savant_frame_meta_pad_probe(
+                    output_queue.get_static_pad('src'),
+                    False,
+                )
+
+                encoder = self._add_element(
                     PipelineElement(
-                        self._output_frame_codec.value.parser,
-                        properties=({'config-interval': -1}),
+                        self._output_frame_codec.value.encoder,
+                        properties=self._output_frame_encoder_params,
                     )
                 )
-                source_info.after_demuxer.append(parser)
-                parser.sync_state_with_parent()
-                assert parser.link(fakesink)
-            else:
-                assert encoder.link(fakesink)
-        else:
-            assert output_queue.link(fakesink)
+                source_info.after_demuxer.append(encoder)
+                encoder.sync_state_with_parent()
+
+                # A parser for codecs h264, h265 is added to include
+                # the Sequence Parameter Set (SPS) and the Picture Parameter Set (PPS)
+                # to IDR frames in the video stream. SPS and PPS are needed
+                # to correct recording or playback not from the beginning
+                # of the video stream.
+                if self._output_frame_codec.value.parser in ['h264parse', 'h265parse']:
+                    parser = self._add_element(
+                        PipelineElement(
+                            self._output_frame_codec.value.parser,
+                            properties=({'config-interval': -1}),
+                        )
+                    )
+                    source_info.after_demuxer.append(parser)
+                    parser.sync_state_with_parent()
+                    assert parser.link(fakesink)
+                else:
+                    assert encoder.link(fakesink)
 
         source_info.after_demuxer.append(fakesink)
 
@@ -456,12 +474,12 @@ class NvDsPipeline(GstPipeline):
             'Got EOS on pad %s.%s', pad.get_parent().get_name(), pad.get_name()
         )
         source_info = self._sources.get_source(source_id)
-        GLib.idle_add(self._remove_input_elems, source_info, pad)
+        GLib.idle_add(self._remove_input_elements, source_info, pad)
         return (
             Gst.PadProbeReturn.DROP if self._suppress_eos else Gst.PadProbeReturn.PASS
         )
 
-    def _remove_input_elems(
+    def _remove_input_elements(
         self,
         source_info: SourceInfo,
         muxer_sink_pad: Gst.Pad,
@@ -523,7 +541,7 @@ class NvDsPipeline(GstPipeline):
         self._logger.debug(
             'Got EOS on pad %s.%s', pad.get_parent().get_name(), pad.get_name()
         )
-        GLib.idle_add(self._remove_output_elems, source_info)
+        GLib.idle_add(self._remove_output_elements, source_info)
 
         self._queue.put(SinkEndOfStream(source_info.source_id))
 
@@ -531,7 +549,7 @@ class NvDsPipeline(GstPipeline):
             Gst.PadProbeReturn.DROP if self._suppress_eos else Gst.PadProbeReturn.PASS
         )
 
-    def _remove_output_elems(self, source_info: SourceInfo):
+    def _remove_output_elements(self, source_info: SourceInfo):
         """Process EOS on last pad."""
         self._logger.debug(
             'Removing output elements for source %s', source_info.source_id
