@@ -57,7 +57,7 @@ from savant.meta.type import ObjectSelectionType
 from savant.utils.model_registry import ModelObjectRegistry
 from savant.utils.source_info import SourceInfoRegistry, SourceInfo
 from savant.utils.platform import is_aarch64
-from savant.config.schema import PipelineElement, ModelElement
+from savant.config.schema import PipelineElement, ModelElement, DrawBin
 from savant.base.model import ObjectModel, AttributeModel, ComplexModel
 from savant.utils.sink_factories import SinkEndOfStream, SinkVideoFrame
 
@@ -249,27 +249,25 @@ class NvDsPipeline(GstPipeline):
         self._logger.debug('Ready to add source %s', source_info.source_id)
 
         # Link elements to source pad only when caps are set
-        # new_pad.add_probe(
-        #     Gst.PadProbeType.EVENT_DOWNSTREAM,
-        #     on_pad_event,
-        #     {Gst.EventType.CAPS: self._on_source_caps},
-        #     source_info,
-        # )
-
-        self._on_source_caps(new_pad, event=None, source_info=source_info)
+        new_pad.add_probe(
+            Gst.PadProbeType.EVENT_DOWNSTREAM,
+            on_pad_event,
+            {Gst.EventType.CAPS: self._on_source_caps},
+            source_info,
+        )
 
     def _on_source_caps(
         self, new_pad: Gst.Pad, event: Gst.Event, source_info: SourceInfo
     ):
         """Handle adding caps to video source pad."""
 
-        # new_pad_caps: Gst.Caps = event.parse_caps()
-        # self._logger.debug(
-        #     'Pad %s.%s has caps %s',
-        #     new_pad.get_parent().get_name(),
-        #     new_pad.get_name(),
-        #     new_pad_caps,
-        # )
+        new_pad_caps: Gst.Caps = event.parse_caps()
+        self._logger.debug(
+            'Pad %s.%s has caps %s',
+            new_pad.get_parent().get_name(),
+            new_pad.get_name(),
+            new_pad_caps,
+        )
 
         while source_info.pad_idx is None:
             try:
@@ -291,12 +289,11 @@ class NvDsPipeline(GstPipeline):
 
             if not source_info.after_demuxer:
                 self._add_source_output(source_info)
-            # input_src_pad = self._add_input_converter(
-            #     new_pad,
-            #     new_pad_caps,
-            #     source_info,
-            # )
-            input_src_pad = new_pad
+            input_src_pad = self._add_input_converter(
+                new_pad,
+                new_pad_caps,
+                source_info,
+            )
             add_convert_savant_frame_meta_pad_probe(
                 input_src_pad,
                 True,
@@ -341,16 +338,7 @@ class NvDsPipeline(GstPipeline):
         # TODO: send EOS to video_converter on unlink if source didn't
         assert new_pad.link(video_converter_sink) == Gst.PadLinkReturn.OK
 
-        caps_filter: Gst.Element = Gst.ElementFactory.make('capsfilter')
-        caps_filter.set_property(
-            'caps', Gst.Caps.from_string('video/x-raw(memory:NVMM), format=RGBA')
-        )
-        caps_filter.set_state(Gst.State.PLAYING)
-        self._pipeline.add(caps_filter)
-        source_info.before_muxer.append(caps_filter)
-        assert nv_video_converter.link(caps_filter)
-
-        return caps_filter.get_static_pad('src')
+        return nv_video_converter.get_static_pad('src')
 
     def _add_source_output(self, source_info: SourceInfo):
         fakesink = super()._add_sink(
@@ -583,12 +571,11 @@ class NvDsPipeline(GstPipeline):
     ) -> Gst.Element:
         """Adds sink elements."""
 
-        # FIXME: Temporarily disabled due to memory leak when using drawbin on jetson nx
         # add drawbin if frame should be in module output and there is no drawbin
-        # if self._output_frame and 'drawbin' not in {
-        #     e.element for e, _ in self.elements
-        # }:
-        #     self._add_element(DrawBinElement())
+        if self._output_frame and not [
+            e for e, _ in self.elements if isinstance(e, DrawBin)
+        ]:
+            self._add_element(DrawBin())
 
         demuxer = self._add_element(
             PipelineElement(
@@ -601,7 +588,7 @@ class NvDsPipeline(GstPipeline):
             demuxer, self._max_parallel_streams
         )
         self._free_pad_indices = list(range(len(self._demuxer_src_pads)))
-        demuxer.get_static_pad('sink').get_peer().add_probe(
+        demuxer.get_static_pad('sink').add_probe(
             Gst.PadProbeType.BUFFER, self.update_frame_meta
         )
 

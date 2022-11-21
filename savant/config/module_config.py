@@ -7,10 +7,10 @@ from omegaconf import OmegaConf, DictConfig
 from savant.config.schema import (
     Module,
     PipelineElement,
-    PyFuncElement,
+    PyFuncBin,
     ModelElement,
     get_element_name,
-    DrawBinElement,
+    DrawBin,
 )
 from savant.deepstream.nvinfer.element_config import nvinfer_configure_element
 from savant.parameter_storage import init_param_storage
@@ -108,11 +108,11 @@ def get_schema_configurator(
     :return: schema + optional configurator callable
     """
 
-    if element == 'pyfunc':
-        return PyFuncElement, None
+    if element == 'pyfunc' or element == 'pyfuncbin':
+        return PyFuncBin, None
 
     if element == 'drawbin':
-        return DrawBinElement, None
+        return DrawBin, None
 
     if element == 'nvinfer':
         return ModelElement, nvinfer_configure_element

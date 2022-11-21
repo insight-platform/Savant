@@ -9,6 +9,33 @@ from savant.base.pyfunc import PyFunc, BasePyFuncPlugin
 from savant.gstreamer import Gst, GstBase, GObject  # noqa: F401
 from savant.gstreamer.utils import LoggerMixin
 
+# RGBA format is required to access the frame (pyds.get_nvds_buf_surface)
+CAPS = Gst.Caps.from_string('video/x-raw(memory:NVMM), format={RGBA}')
+
+PROPS = {
+    'module': (
+        str,
+        'Python module',
+        'Python module name to import or module path.',
+        None,
+        GObject.ParamFlags.READWRITE,
+    ),
+    'class': (
+        str,
+        'Python class name',
+        'Python class name to instantiate.',
+        None,
+        GObject.ParamFlags.READWRITE,
+    ),
+    'kwargs': (
+        str,
+        'Keyword arguments for class initialization',
+        'Keyword argument for Python class initialization.',
+        None,
+        GObject.ParamFlags.READWRITE,
+    ),
+}
+
 
 class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
     """PyFunc GStreamer plugin."""
@@ -16,7 +43,7 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
     GST_PLUGIN_NAME: str = 'pyfunc'
 
     __gstmetadata__ = (
-        'GStreamer plugin to execute user-defined Python function',
+        'GStreamer element to execute user-defined Python function',
         'Transform',
         'Provides a callback to execute user-defined Python functions on every frame. '
         'Can be used for metadata conversion, inference post-processing, etc.',
@@ -25,36 +52,12 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
 
     __gsttemplates__ = (
         Gst.PadTemplate.new(
-            'src', Gst.PadDirection.SRC, Gst.PadPresence.ALWAYS, Gst.Caps.new_any()
+            'sink', Gst.PadDirection.SINK, Gst.PadPresence.ALWAYS, CAPS
         ),
-        Gst.PadTemplate.new(
-            'sink', Gst.PadDirection.SINK, Gst.PadPresence.ALWAYS, Gst.Caps.new_any()
-        ),
+        Gst.PadTemplate.new('src', Gst.PadDirection.SRC, Gst.PadPresence.ALWAYS, CAPS),
     )
 
-    __gproperties__ = {
-        'module': (
-            str,
-            'Python module',
-            'Python module name to import or module path.',
-            None,
-            GObject.ParamFlags.READWRITE,
-        ),
-        'class': (
-            str,
-            'Python class name',
-            'Python class name to instantiate.',
-            None,
-            GObject.ParamFlags.READWRITE,
-        ),
-        'kwargs': (
-            str,
-            'Keyword arguments for class initialization',
-            'Keyword argument for Python class initialization.',
-            None,
-            GObject.ParamFlags.READWRITE,
-        ),
-    }
+    __gproperties__ = PROPS
 
     def __init__(self):
         super().__init__()

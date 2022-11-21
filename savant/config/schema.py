@@ -149,56 +149,7 @@ def get_element_name(element: Union[DictConfig, PipelineElement]) -> str:
 
 
 @dataclass
-class DrawBinElement(PipelineElement, PyFunc):
-    """A pipeline element that will use an object implementing
-    :py:class:`~savant.base.pyfunc.BasePyFuncPlugin`
-    to draw metadata on frames and output the frames to window/files/video.
-
-    .. note::
-
-        Default values for :py:attr:`.module` and :py:attr:`.class_name` attributes
-        are set to use :py:class:`~savant.deepstream.drawbin.NvDsDrawBin` drawbin
-        implementation.
-    """
-
-    element: str = 'drawbin'
-    """``"drawbin"`` is the fixed gstreamer element class for DrawBinElement.
-    """
-
-    module: str = 'savant.deepstream.drawbin'
-    """Module name to import."""
-
-    class_name: str = 'NvDsDrawBin'
-    """Python class name to instantiate."""
-
-    kwargs: Optional[Dict[str, Any]] = None
-    """Class initialization keyword arguments."""
-
-    location: str = ''
-    """Either one:
-    - location of the output file (filesink/multifilesink output)
-    - "display" (nveglglessink output)
-    """
-
-    def __post_init__(self):
-        kwargs = {}
-        if 'kwargs' in self.properties and self.properties['kwargs']:
-            kwargs = json.loads(self.properties['kwargs'])
-        if self.kwargs:
-            kwargs.update(self.kwargs)
-
-        self.properties.update(
-            {
-                'module': self.module,
-                'class': self.class_name,
-                'location': self.location,
-                'kwargs': json.dumps(kwargs),
-            }
-        )
-
-
-@dataclass
-class PyFuncElement(PipelineElement, PyFunc):
+class PyFuncBin(PipelineElement, PyFunc):
     """A pipeline element that will use an object implementing
     :py:class:`~savant.base.pyfunc.BasePyFuncPlugin` to apply custom processing to
     gstreamer buffers.
@@ -212,10 +163,11 @@ class PyFuncElement(PipelineElement, PyFunc):
           class_name: PyFuncImplementationClass
     """
 
-    element: str = 'pyfunc'
-    """``"pyfunc"`` is the fixed gstreamer element class for PyFuncElement."""
+    element: str = 'pyfuncbin'
+    """``"pyfuncbin"`` is the fixed gstreamer element class for PyFuncBin."""
 
     def __post_init__(self):
+        self.element = 'pyfuncbin'  # pyfunc -> pyfuncbin
         kwargs = {}
         if 'kwargs' in self.properties and self.properties['kwargs']:
             kwargs = json.loads(self.properties['kwargs'])
@@ -229,6 +181,33 @@ class PyFuncElement(PipelineElement, PyFunc):
                 'kwargs': json.dumps(kwargs),
             }
         )
+
+
+@dataclass
+class DrawBin(PyFuncBin):
+    """A pipeline element that will use an object implementing
+    :py:class:`~savant.base.pyfunc.BasePyFuncPlugin`
+    to draw metadata on frames and output the frames to window/files/video.
+
+    .. note::
+
+        Default values for :py:attr:`.module` and :py:attr:`.class_name` attributes
+        are set to use :py:class:`~savant.deepstream.drawbin.NvDsDrawBin` drawbin
+        implementation.
+    """
+
+    module: str = 'savant.deepstream.drawbin'
+    """Module name to import."""
+
+    class_name: str = 'NvDsDrawBin'
+    """Python class name to instantiate."""
+
+    kwargs: Optional[Dict[str, Any]] = None
+    """Class initialization keyword arguments."""
+
+    def __post_init__(self):
+        super().__post_init__()
+        self.element_type = 'drawbin'  # subtype of pyfuncbin
 
 
 @dataclass

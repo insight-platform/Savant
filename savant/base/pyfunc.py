@@ -79,7 +79,7 @@ class PyFunc:
         Check :ref:`pipeline element hierarchy<pipeline_element_hierarchy>` to see which
         pipeline elements use PyFunc structure.
 
-    For example, define a :py:class:`~savant.config.schema.PyFuncElement`
+    For example, define a :py:class:`~savant.config.schema.PyFuncBin`
 
     .. code-block:: yaml
 
