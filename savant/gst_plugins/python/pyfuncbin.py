@@ -1,8 +1,8 @@
-"""DrawBin element."""
+"""PyFuncBin."""
 from typing import Any
 
 from savant.gstreamer import Gst, GObject, GLib  # noqa: F401
-from savant.gst_plugins.python.pyfunc import CAPS as PYFUNC_CAPS, PROPS as PYFUNC_PROPS
+from savant.gst_plugins.python.pyfunc import PROPS as PYFUNC_PROPS
 
 
 class PyFuncBin(Gst.Bin):
@@ -19,11 +19,13 @@ class PyFuncBin(Gst.Bin):
     )
 
     __gsttemplates__ = (
+        # only caps = any (not specific nvvideoconvert or pyfunc caps)
+        # solves the problem with memory leak on jetson
         Gst.PadTemplate.new(
-            'sink', Gst.PadDirection.SINK, Gst.PadPresence.ALWAYS, PYFUNC_CAPS
+            'sink', Gst.PadDirection.SINK, Gst.PadPresence.ALWAYS, Gst.Caps.new_any()
         ),
         Gst.PadTemplate.new(
-            'src', Gst.PadDirection.SRC, Gst.PadPresence.ALWAYS, PYFUNC_CAPS
+            'src', Gst.PadDirection.SRC, Gst.PadPresence.ALWAYS, Gst.Caps.new_any()
         ),
     )
 
