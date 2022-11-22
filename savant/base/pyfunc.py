@@ -31,6 +31,10 @@ class BasePyFuncPlugin(BasePyFuncImpl):
     :py:class:`.PyFunc` structure.
     """
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.gst_element: Optional[Gst.Element] = None
+
     def on_start(self) -> bool:
         """Do on plugin start."""
         return True
@@ -79,7 +83,7 @@ class PyFunc:
         Check :ref:`pipeline element hierarchy<pipeline_element_hierarchy>` to see which
         pipeline elements use PyFunc structure.
 
-    For example, define a :py:class:`~savant.config.schema.PyFuncBin`
+    For example, define a :py:class:`~savant.config.schema.PyFuncElement`
 
     .. code-block:: yaml
 

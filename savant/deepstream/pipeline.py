@@ -60,6 +60,7 @@ from savant.utils.platform import is_aarch64
 from savant.config.schema import PipelineElement, ModelElement, DrawBin
 from savant.base.model import ObjectModel, AttributeModel, ComplexModel
 from savant.utils.sink_factories import SinkEndOfStream, SinkVideoFrame
+from savant.deepstream.element_factory import NvDsElementFactory
 
 
 class NvDsPipeline(GstPipeline):
@@ -73,6 +74,9 @@ class NvDsPipeline(GstPipeline):
     :key batch_size: Primary batch size (nvstreammux batch-size)
     :key output_frame: Whether to include frame in module output, not just metadata
     """
+
+    # pipeline element factory
+    _element_factory = NvDsElementFactory()
 
     def __init__(
         self,

@@ -6,11 +6,17 @@ other tasks.
 from typing import Any, Optional
 import json
 from savant.base.pyfunc import PyFunc, BasePyFuncPlugin
-from savant.gstreamer import Gst, GstBase, GObject  # noqa: F401
+from savant.gstreamer import GLib, Gst, GstBase, GObject  # noqa: F401
 from savant.gstreamer.utils import LoggerMixin
 
 # RGBA format is required to access the frame (pyds.get_nvds_buf_surface)
-CAPS = Gst.Caps.from_string('video/x-raw(memory:NVMM), format={RGBA}')
+CAPS = Gst.Caps.from_string(
+    'video/x-raw(memory:NVMM), '
+    'format={RGBA}, '
+    f'width={Gst.IntRange(range(1, GLib.MAXINT))}, '
+    f'height={Gst.IntRange(range(1, GLib.MAXINT))}, '
+    f'framerate={Gst.FractionRange(Gst.Fraction(0, 1), Gst.Fraction(GLib.MAXINT, 1))}'
+)
 
 PROPS = {
     'module': (
@@ -106,7 +112,7 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
         assert isinstance(
             self.pyfunc, BasePyFuncPlugin
         ), f'"{self.pyfunc}" should be an instance of "BasePyFuncPlugin" subclass.'
-
+        self.pyfunc.gst_element = self
         return self.pyfunc.on_start()
 
     def do_stop(self):

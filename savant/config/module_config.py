@@ -7,7 +7,7 @@ from omegaconf import OmegaConf, DictConfig
 from savant.config.schema import (
     Module,
     PipelineElement,
-    PyFuncBin,
+    PyFuncElement,
     ModelElement,
     get_element_name,
     DrawBin,
@@ -108,8 +108,8 @@ def get_schema_configurator(
     :return: schema + optional configurator callable
     """
 
-    if element == 'pyfunc' or element == 'pyfuncbin':
-        return PyFuncBin, None
+    if element == 'pyfunc':
+        return PyFuncElement, None
 
     if element == 'drawbin':
         return DrawBin, None

@@ -149,7 +149,7 @@ def get_element_name(element: Union[DictConfig, PipelineElement]) -> str:
 
 
 @dataclass
-class PyFuncBin(PipelineElement, PyFunc):
+class PyFuncElement(PipelineElement, PyFunc):
     """A pipeline element that will use an object implementing
     :py:class:`~savant.base.pyfunc.BasePyFuncPlugin` to apply custom processing to
     gstreamer buffers.
@@ -163,11 +163,10 @@ class PyFuncBin(PipelineElement, PyFunc):
           class_name: PyFuncImplementationClass
     """
 
-    element: str = 'pyfuncbin'
-    """``"pyfuncbin"`` is the fixed gstreamer element class for PyFuncBin."""
+    element: str = 'pyfunc'
+    """``"pyfunc"`` is the fixed gstreamer element class for PyFuncElement."""
 
     def __post_init__(self):
-        self.element = 'pyfuncbin'  # pyfunc -> pyfuncbin
         kwargs = {}
         if 'kwargs' in self.properties and self.properties['kwargs']:
             kwargs = json.loads(self.properties['kwargs'])
@@ -184,7 +183,7 @@ class PyFuncBin(PipelineElement, PyFunc):
 
 
 @dataclass
-class DrawBin(PyFuncBin):
+class DrawBin(PyFuncElement):
     """A pipeline element that will use an object implementing
     :py:class:`~savant.base.pyfunc.BasePyFuncPlugin`
     to draw metadata on frames and output the frames to window/files/video.
@@ -207,7 +206,8 @@ class DrawBin(PyFuncBin):
 
     def __post_init__(self):
         super().__post_init__()
-        self.element_type = 'drawbin'  # subtype of pyfuncbin
+        self.element = 'pyfunc'
+        self.element_type = 'drawbin'
 
 
 @dataclass

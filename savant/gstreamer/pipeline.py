@@ -4,14 +4,10 @@ from typing import Any, List, Generator, Optional, Tuple
 import logging
 from gi.repository import Gst  # noqa:F401
 
-from savant.parameter_storage import param_storage
 from savant.config.schema import PipelineElement, ModelElement
 from savant.utils.sink_factories import SinkMessage
 from savant.utils.fps_meter import FPSMeter
-
-
-class CreateElementException(Exception):
-    """Unable to create Gst.Element Exception."""
+from savant.gstreamer.element_factory import CreateElementException, GstElementFactory
 
 
 class GstPipeline:  # pylint: disable=too-many-instance-attributes
@@ -24,6 +20,9 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
     :key queue_maxsize: Output queue size.
     :key fps_period: FPS measurement period, in frames.
     """
+
+    # pipeline element factory
+    _element_factory = GstElementFactory()
 
     def __init__(
         self,
@@ -64,32 +63,6 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
             elements = 'no elements'
         return f'{self._pipeline.name}<{self.__class__.__name__}>: {elements}'
 
-    @staticmethod
-    def create_gst_element(element: PipelineElement) -> Gst.Element:
-        """Creates Gst.Element.
-
-        :param element: pipeline element to create.
-        """
-        gst_element = Gst.ElementFactory.make(element.element, element.name)
-        if not gst_element:
-            raise CreateElementException(f'Unable to create element {element}.')
-
-        for prop_name, prop_value in element.properties.items():
-            gst_element.set_property(prop_name, prop_value)
-
-        for prop_name, dyn_gst_prop in element.dynamic_properties.items():
-
-            def on_change(response_value: Any, propery_name: str = prop_name):
-                gst_element.set_property(propery_name, response_value)
-
-            param_storage().register_dynamic_parameter(
-                dyn_gst_prop.storage_key, dyn_gst_prop.default, on_change
-            )
-            prop_value = param_storage()[dyn_gst_prop.storage_key]
-            gst_element.set_property(prop_name, prop_value)
-
-        return gst_element
-
     def _add_element(
         self,
         element: PipelineElement,
@@ -102,7 +75,7 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
                 f'Duplicate element name {element} in the pipeline.'
             )
 
-        gst_element = self.create_gst_element(element)
+        gst_element = self._element_factory.create(element)
         self._pipeline.add(gst_element)
         if link and self._last_element:
             assert self._last_element.link(
