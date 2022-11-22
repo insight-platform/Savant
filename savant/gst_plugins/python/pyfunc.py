@@ -18,30 +18,6 @@ CAPS = Gst.Caps.from_string(
     f'framerate={Gst.FractionRange(Gst.Fraction(0, 1), Gst.Fraction(GLib.MAXINT, 1))}'
 )
 
-PROPS = {
-    'module': (
-        str,
-        'Python module',
-        'Python module name to import or module path.',
-        None,
-        GObject.ParamFlags.READWRITE,
-    ),
-    'class': (
-        str,
-        'Python class name',
-        'Python class name to instantiate.',
-        None,
-        GObject.ParamFlags.READWRITE,
-    ),
-    'kwargs': (
-        str,
-        'Keyword arguments for class initialization',
-        'Keyword argument for Python class initialization.',
-        None,
-        GObject.ParamFlags.READWRITE,
-    ),
-}
-
 
 class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
     """PyFunc GStreamer plugin."""
@@ -63,7 +39,29 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
         Gst.PadTemplate.new('src', Gst.PadDirection.SRC, Gst.PadPresence.ALWAYS, CAPS),
     )
 
-    __gproperties__ = PROPS
+    __gproperties__ = {
+        'module': (
+            str,
+            'Python module',
+            'Python module name to import or module path.',
+            None,
+            GObject.ParamFlags.READWRITE,
+        ),
+        'class': (
+            str,
+            'Python class name',
+            'Python class name to instantiate.',
+            None,
+            GObject.ParamFlags.READWRITE,
+        ),
+        'kwargs': (
+            str,
+            'Keyword arguments for class initialization',
+            'Keyword argument for Python class initialization.',
+            None,
+            GObject.ParamFlags.READWRITE,
+        ),
+    }
 
     def __init__(self):
         super().__init__()

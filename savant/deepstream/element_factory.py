@@ -35,9 +35,7 @@ class NvDsElementFactory(GstElementFactory):
 
         conv: Gst.Element = Gst.ElementFactory.make('nvvideoconvert', 'pyfunc_conv')
         if not is_aarch64():
-            conv.set_property(
-                'nvbuf-memory-type', int(pyds.NVBUF_MEM_CUDA_UNIFIED)
-            )
+            conv.set_property('nvbuf-memory-type', int(pyds.NVBUF_MEM_CUDA_UNIFIED))
         pyfunc_bin.add(conv)
 
         conv_queue: Gst.Element = Gst.ElementFactory.make('queue', 'pyfunc_conv_queue')
