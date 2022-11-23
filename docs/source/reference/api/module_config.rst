@@ -10,7 +10,7 @@ Main module configuration entities
 
 .. _pipeline_element_hierarchy:
 
-.. inheritance-diagram:: PipelineElement ModelElement PyFuncElement DrawBin
+.. inheritance-diagram:: PipelineElement ModelElement PyFuncElement DrawBinElement
     :parts: 1
     :caption: PipelineElement hierarchy
 
@@ -24,7 +24,7 @@ Main module configuration entities
     PipelineElement
     PyFuncElement
     ModelElement
-    DrawBin
+    DrawBinElement
     DynamicGstProperty
 
 Module configuration manager

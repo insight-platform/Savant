@@ -10,7 +10,7 @@ from savant.config.schema import (
     PyFuncElement,
     ModelElement,
     get_element_name,
-    DrawBin,
+    DrawBinElement,
 )
 from savant.deepstream.nvinfer.element_config import nvinfer_configure_element
 from savant.parameter_storage import init_param_storage
@@ -112,7 +112,7 @@ def get_schema_configurator(
         return PyFuncElement, None
 
     if element == 'drawbin':
-        return DrawBin, None
+        return DrawBinElement, None
 
     if element == 'nvinfer':
         return ModelElement, nvinfer_configure_element

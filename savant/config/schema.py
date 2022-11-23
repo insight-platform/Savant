@@ -183,7 +183,7 @@ class PyFuncElement(PipelineElement, PyFunc):
 
 
 @dataclass
-class DrawBin(PyFuncElement):
+class DrawBinElement(PyFuncElement):
     """A pipeline element that will use an object implementing
     :py:class:`~savant.base.pyfunc.BasePyFuncPlugin`
     to draw metadata on frames and output the frames to window/files/video.

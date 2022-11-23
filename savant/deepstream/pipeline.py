@@ -57,7 +57,7 @@ from savant.meta.type import ObjectSelectionType
 from savant.utils.model_registry import ModelObjectRegistry
 from savant.utils.source_info import SourceInfoRegistry, SourceInfo
 from savant.utils.platform import is_aarch64
-from savant.config.schema import PipelineElement, ModelElement, DrawBin
+from savant.config.schema import PipelineElement, ModelElement, DrawBinElement
 from savant.base.model import ObjectModel, AttributeModel, ComplexModel
 from savant.utils.sink_factories import SinkEndOfStream, SinkVideoFrame
 from savant.deepstream.element_factory import NvDsElementFactory
@@ -577,9 +577,9 @@ class NvDsPipeline(GstPipeline):
 
         # add drawbin if frame should be in module output and there is no drawbin
         if self._output_frame and not [
-            e for e, _ in self.elements if isinstance(e, DrawBin)
+            e for e, _ in self.elements if isinstance(e, DrawBinElement)
         ]:
-            self._add_element(DrawBin())
+            self._add_element(DrawBinElement(name='draw_output'))
 
         demuxer = self._add_element(
             PipelineElement(
