@@ -414,7 +414,7 @@ def nvds_infer_tensor_meta_to_outputs(
     """
     data_type_map = {
         pyds.NvDsInferDataType.FLOAT: ctypes.c_float,
-        pyds.NvDsInferDataType.HALF: ctypes.c_float,  # TODO: Check
+        # pyds.NvDsInferDataType.HALF: # TODO: ctypes doesn't support half precision
         pyds.NvDsInferDataType.INT8: ctypes.c_int8,
         pyds.NvDsInferDataType.INT32: ctypes.c_int32,
     }
@@ -422,6 +422,11 @@ def nvds_infer_tensor_meta_to_outputs(
     for i in range(tensor_meta.num_output_layers):
         layer_info = pyds.get_nvds_LayerInfo(tensor_meta, i)
         if not layer_info.isInput and layer_info.layerName in layer_names:
+            if layer_info.dataType not in data_type_map:
+                raise ValueError(
+                    f'Unsupported layer "{layer_info.layerName}" '
+                    f'data type {layer_info.dataType}.'
+                )
             layers[layer_names.index(layer_info.layerName)] = np.copy(
                 np.ctypeslib.as_array(
                     ctypes.cast(
