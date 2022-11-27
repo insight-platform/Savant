@@ -876,7 +876,12 @@ class NvDsPipeline(GstPipeline):
             not model.input.preprocess_object_meta
             and not model.input.preprocess_object_tensor
         ):
+            self._logger.debug(
+                'No need to preprocess input for element %s.', element.full_name
+            )
             return
+
+        self._logger.debug('Preprocessing input for element %s.', element.full_name)
 
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         if model.input.preprocess_object_meta:
@@ -927,6 +932,8 @@ class NvDsPipeline(GstPipeline):
                 model.input.preprocess_object_tensor.padding[1],
             )
 
+        self._logger.debug('Preprocessed input for element %s.', element.full_name)
+
     def prepare_element_output(self, element: PipelineElement, buffer: Gst.Buffer):
         """Model output postprocessing.
 
@@ -935,6 +942,8 @@ class NvDsPipeline(GstPipeline):
         """
         if not isinstance(element, ModelElement):
             return
+
+        self._logger.debug('Postprocessing output for element %s.', element.full_name)
 
         model_uid = self._model_object_registry.get_model_uid(element.name)
         model: Union[
@@ -1150,3 +1159,5 @@ class NvDsPipeline(GstPipeline):
         # restore frame
         if model.input.preprocess_object_tensor:
             self._objects_preprocessing.restore_frame(hash(buffer))
+
+        self._logger.debug('Prepared output for element %s.', element.full_name)
