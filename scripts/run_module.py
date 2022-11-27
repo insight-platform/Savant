@@ -104,7 +104,9 @@ def run_module(
         )
 
     module_name = module_config_path.parent.stem
-    volumes = []
+    volumes = [
+        f'{repo_root_dir / "samples"}:/opt/app/samples'
+    ]
     volumes += get_ipc_mounts((in_endpoint, out_endpoint))
     volumes.append(
         get_downloads_mount(repo_root_dir, module_name, container_downloads_dir)
