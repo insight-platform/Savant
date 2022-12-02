@@ -109,6 +109,41 @@ class NvDsPipeline(GstPipeline):
 
         super().__init__(name=name, source=source, elements=elements, **kwargs)
 
+    def _build_buffer_processor(
+        self,
+        queue: Queue,
+        fps_meter: FPSMeter,
+    ) -> NvDsBufferProcessor:
+        """Create buffer processor."""
+
+        # model-object association storage
+        model_object_registry = ModelObjectRegistry()
+
+        if (
+            self._output_frame_codec is None
+            or self._output_frame_codec == Codec.RAW_RGBA
+        ):
+            return NvDsRawBufferProcessor(
+                queue=queue,
+                fps_meter=fps_meter,
+                sources=self._sources,
+                model_object_registry=model_object_registry,
+                objects_preprocessing=self._objects_preprocessing,
+                frame_width=self._frame_width,
+                frame_height=self._frame_height,
+                output_frame=self._output_frame_codec is not None,
+            )
+        return NvDsEncodedBufferProcessor(
+            queue=queue,
+            fps_meter=fps_meter,
+            sources=self._sources,
+            model_object_registry=model_object_registry,
+            objects_preprocessing=self._objects_preprocessing,
+            frame_width=self._frame_width,
+            frame_height=self._frame_height,
+            codec=self._output_frame_codec.value,
+        )
+
     def _add_element(
         self,
         element: PipelineElement,
@@ -127,6 +162,7 @@ class NvDsPipeline(GstPipeline):
                         self._internal_attrs.add((element.name, attr.name))
         return super()._add_element(element=element, with_probes=with_probes, link=link)
 
+    # Source
     def _add_source(self, source: PipelineElement):
         source.name = 'source'
         _source = self._add_element(source)
@@ -142,58 +178,28 @@ class NvDsPipeline(GstPipeline):
         ].startswith('rtsp://')
         if live_source:
             self._add_element(PipelineElement('queue'))
-        frame_processing_parameters = {
-            'width': self._frame_width,
-            'height': self._frame_height,
-            'batch-size': self._batch_size,
-            # Allowed range for batch-size: 1 - 1024
-            # Allowed range for buffer-pool-size: 4 - 1024
-            'buffer-pool-size': max(4, self._batch_size),
-            'batched-push-timeout': self._batched_push_timeout,
-            'live-source': live_source,  # True for RTSP or USB camera
-            # TODO: remove when the bug with odd will be fixed
-            # https://forums.developer.nvidia.com/t/nvstreammux-error-releasing-cuda-memory/219895/3
-            'interpolation-method': 6,
-        }
-        _muxer = self._add_element(
-            PipelineElement(
-                element='nvstreammux',
-                name='muxer',
-                properties=frame_processing_parameters,
-            )
-        )
-        self._logger.info(
-            'Pipeline frame processing parameters: %s.', frame_processing_parameters
-        )
-        # input processor (post-muxer)
-        _muxer.get_static_pad('src').add_probe(
-            Gst.PadProbeType.BUFFER, self._buffer_processor.input_probe
-        )
-        if self._suppress_eos:
-            _muxer.get_static_pad('src').add_probe(
-                Gst.PadProbeType.EVENT_DOWNSTREAM,
-                on_pad_event,
-                {GST_NVEVENT_PAD_DELETED: self.on_muxer_sink_pad_deleted},
-            )
+        self._create_muxer(live_source)
 
-    def on_muxer_sink_pad_deleted(self, pad: Gst.Pad, event: Gst.Event):
-        """Send GST_NVEVENT_STREAM_EOS event before GST_NVEVENT_PAD_DELETED.
+    # Sink
+    def _add_sink(
+        self,
+        sink: Optional[PipelineElement] = None,
+        link: bool = True,
+        *data,
+    ) -> Gst.Element:
+        """Adds sink elements."""
 
-        GST_NVEVENT_STREAM_EOS is needed to flush data on downstream
-        elements.
-        """
+        # FIXME: Temporarily disabled due to memory leak when using drawbin on jetson nx
+        # add drawbin if frame should be in module output and there is no drawbin
+        # if self._output_frame and 'drawbin' not in {
+        #     e.element for e, _ in self.elements
+        # }:
+        #     self._add_element(DrawBinElement())
 
-        pad_idx = gst_nvevent_parse_pad_deleted(event)
-        self._logger.debug(
-            'Got GST_NVEVENT_PAD_DELETED with source-id %s on %s.%s',
-            pad_idx,
-            pad.get_parent().get_name(),
-            pad.get_name(),
-        )
-        nv_eos_event = gst_nvevent_new_stream_eos(pad_idx)
-        pad.push_event(nv_eos_event)
-        return Gst.PadProbeReturn.PASS
+        self._create_demuxer(link)
+        self._free_pad_indices = list(range(len(self._demuxer_src_pads)))
 
+    # Input
     def on_source_added(  # pylint: disable=unused-argument
         self, element: Gst.Element, new_pad: Gst.Pad
     ):
@@ -278,8 +284,7 @@ class NvDsPipeline(GstPipeline):
                 input_src_pad,
                 True,
             )
-            muxer_sink_pad = self._get_muxer_sink_pad(source_info)
-            assert input_src_pad.link(muxer_sink_pad) == Gst.PadLinkReturn.OK
+            self._link_to_muxer(input_src_pad, source_info)
             self._pipeline.set_state(Gst.State.PLAYING)
 
         self._logger.info('Added source %s', source_info.source_id)
@@ -329,6 +334,27 @@ class NvDsPipeline(GstPipeline):
 
         return capsfilter.get_static_pad('src')
 
+    def _remove_input_elems(
+        self,
+        source_info: SourceInfo,
+        sink_pad: Gst.Pad,
+    ):
+        self._logger.debug(
+            'Removing input elements for source %s', source_info.source_id
+        )
+        for elem in source_info.before_muxer:
+            self._logger.debug('Removing element %s', elem.get_name())
+            elem.set_locked_state(True)
+            elem.set_state(Gst.State.NULL)
+            self._pipeline.remove(elem)
+        source_info.before_muxer = []
+        self._release_muxer_sink_pad(sink_pad)
+        self._logger.debug(
+            'Input elements for source %s removed', source_info.source_id
+        )
+        return False
+
+    # Output
     def _add_source_output(self, source_info: SourceInfo):
         fakesink = super()._add_sink(
             PipelineElement(
@@ -345,7 +371,6 @@ class NvDsPipeline(GstPipeline):
         )
         fakesink.sync_state_with_parent()
 
-        demuxer_src_pad = self._demuxer_src_pads[source_info.pad_idx]
         fakesink_pad: Gst.Pad = fakesink.get_static_pad('sink')
         fakesink_pad.add_probe(
             Gst.PadProbeType.EVENT_DOWNSTREAM,
@@ -357,10 +382,7 @@ class NvDsPipeline(GstPipeline):
         output_queue = self._add_element(PipelineElement('queue'), link=False)
         output_queue.sync_state_with_parent()
         source_info.after_demuxer.append(output_queue)
-        assert (
-            demuxer_src_pad.link(output_queue.get_static_pad('sink'))
-            == Gst.PadLinkReturn.OK
-        )
+        self._link_demuxer_src_pad(output_queue.get_static_pad('sink'), source_info)
 
         if (
             self._output_frame_codec is not None
@@ -414,106 +436,6 @@ class NvDsPipeline(GstPipeline):
 
         source_info.after_demuxer.append(fakesink)
 
-    def _get_muxer_sink_pad(self, source_info: SourceInfo):
-        muxer: Gst.Element = self._pipeline.get_by_name('muxer')
-        # sink_N == NvDsFrameMeta.pad_index
-        sink_pad_name = f'sink_{source_info.pad_idx}'
-        sink_pad: Gst.Pad = muxer.get_static_pad(sink_pad_name)
-        if sink_pad is None:
-            self._logger.debug(
-                'Requesting new sink pad on %s: %s', muxer.get_name(), sink_pad_name
-            )
-            sink_pad: Gst.Pad = muxer.get_request_pad(sink_pad_name)
-            sink_pad.add_probe(
-                Gst.PadProbeType.EVENT_DOWNSTREAM,
-                on_pad_event,
-                {Gst.EventType.EOS: self.on_muxer_sink_pad_eos},
-                source_info.source_id,
-            )
-
-        return sink_pad
-
-    def on_muxer_sink_pad_eos(self, pad: Gst.Pad, event: Gst.Event, source_id: str):
-        """Processes EOS event on muxer sink pad."""
-        self._logger.debug(
-            'Got EOS on pad %s.%s', pad.get_parent().get_name(), pad.get_name()
-        )
-        source_info = self._sources.get_source(source_id)
-        GLib.idle_add(self._remove_input_elems, source_info, pad)
-        return (
-            Gst.PadProbeReturn.DROP if self._suppress_eos else Gst.PadProbeReturn.PASS
-        )
-
-    def _remove_input_elems(
-        self,
-        source_info: SourceInfo,
-        muxer_sink_pad: Gst.Pad,
-    ):
-        self._logger.debug(
-            'Removing input elements for source %s', source_info.source_id
-        )
-        for elem in source_info.before_muxer:
-            self._logger.debug('Removing element %s', elem.get_name())
-            elem.set_locked_state(True)
-            elem.set_state(Gst.State.NULL)
-            self._pipeline.remove(elem)
-        source_info.before_muxer = []
-        muxer: Gst.Element = muxer_sink_pad.get_parent()
-        self._logger.debug(
-            'Releasing pad %s.%s; source: %s',
-            muxer_sink_pad.get_parent().get_name(),
-            muxer_sink_pad.get_name(),
-            source_info.source_id,
-        )
-        # Releasing muxer.sink pad to trigger nv-pad-deleted event on muxer.src pad
-        muxer.release_request_pad(muxer_sink_pad)
-        self._logger.debug(
-            'Input elements for source %s removed', source_info.source_id
-        )
-        return False
-
-    def on_demuxer_src_pad_eos(self, pad: Gst.Pad, event: Gst.Event):
-        """Processes EOS events on demuxer src pad."""
-        pad_idx = gst_nvevent_parse_stream_eos(event)
-        if pad_idx is None or pad != self._demuxer_src_pads[pad_idx]:
-            # nvstreamdemux redirects GST_NVEVENT_STREAM_EOS on each src pad
-            return Gst.PadProbeReturn.PASS
-        self._logger.debug(
-            'Got GST_NVEVENT_STREAM_EOS on %s.%s',
-            pad.get_parent().get_name(),
-            pad.get_name(),
-        )
-        peer: Gst.Pad = pad.get_peer()
-        if peer is not None:
-            self._logger.debug(
-                'Unlinking %s.%s from %s.%s',
-                peer.get_parent().get_name(),
-                peer.get_name(),
-                pad.get_parent().get_name(),
-                pad.get_name(),
-            )
-            pad.unlink(peer)
-            self._logger.debug(
-                'Sending EOS to %s.%s',
-                peer.get_parent().get_name(),
-                peer.get_name(),
-            )
-            peer.send_event(Gst.Event.new_eos())
-        return Gst.PadProbeReturn.DROP
-
-    def on_last_pad_eos(self, pad: Gst.Pad, event: Gst.Event, source_info: SourceInfo):
-        """Process EOS on last pad."""
-        self._logger.debug(
-            'Got EOS on pad %s.%s', pad.get_parent().get_name(), pad.get_name()
-        )
-        GLib.idle_add(self._remove_output_elems, source_info)
-
-        self._queue.put(SinkEndOfStream(source_info.source_id))
-
-        return (
-            Gst.PadProbeReturn.DROP if self._suppress_eos else Gst.PadProbeReturn.PASS
-        )
-
     def _remove_output_elems(self, source_info: SourceInfo):
         """Process EOS on last pad."""
         self._logger.debug(
@@ -540,48 +462,18 @@ class NvDsPipeline(GstPipeline):
         )
         return False
 
-    def _add_sink(
-        self,
-        sink: Optional[PipelineElement] = None,
-        link: bool = True,
-        *data,
-    ) -> Gst.Element:
-        """Adds sink elements."""
-
-        # FIXME: Temporarily disabled due to memory leak when using drawbin on jetson nx
-        # add drawbin if frame should be in module output and there is no drawbin
-        # if self._output_frame and 'drawbin' not in {
-        #     e.element for e, _ in self.elements
-        # }:
-        #     self._add_element(DrawBinElement())
-
-        demuxer = self._add_element(
-            PipelineElement(
-                element='nvstreamdemux',
-                name='demuxer',
-            ),
-            link=link,
+    def on_last_pad_eos(self, pad: Gst.Pad, event: Gst.Event, source_info: SourceInfo):
+        """Process EOS on last pad."""
+        self._logger.debug(
+            'Got EOS on pad %s.%s', pad.get_parent().get_name(), pad.get_name()
         )
-        self._demuxer_src_pads = self.allocate_demuxer_pads(
-            demuxer, self._max_parallel_streams
-        )
-        self._free_pad_indices = list(range(len(self._demuxer_src_pads)))
-        demuxer.get_static_pad('sink').get_peer().add_probe(
-            Gst.PadProbeType.BUFFER, self.update_frame_meta
-        )
+        GLib.idle_add(self._remove_output_elems, source_info)
 
-    def allocate_demuxer_pads(self, demuxer: Gst.Element, n_pads: int):
-        """Allocate a fixed number of demuxer src pads."""
-        pads = []
-        for pad_idx in range(n_pads):
-            pad: Gst.Pad = demuxer.get_request_pad(f'src_{pad_idx}')
-            pad.add_probe(
-                Gst.PadProbeType.EVENT_DOWNSTREAM,
-                on_pad_event,
-                {GST_NVEVENT_STREAM_EOS: self.on_demuxer_src_pad_eos},
-            )
-            pads.append(pad)
-        return pads
+        self._queue.put(SinkEndOfStream(source_info.source_id))
+
+        return (
+            Gst.PadProbeReturn.DROP if self._suppress_eos else Gst.PadProbeReturn.PASS
+        )
 
     def update_frame_meta(self, pad: Gst.Pad, info: Gst.PadProbeInfo):
         """Prepare frame meta for output."""
@@ -635,37 +527,202 @@ class NvDsPipeline(GstPipeline):
 
         return Gst.PadProbeReturn.PASS
 
-    def _build_buffer_processor(
-        self,
-        queue: Queue,
-        fps_meter: FPSMeter,
-    ) -> NvDsBufferProcessor:
-        """Create buffer processor."""
+    # Muxer
+    def _create_muxer(self, live_source: bool) -> Gst.Element:
+        """Create nvstreammux element and add it into pipeline.
 
-        # model-object association storage
-        model_object_registry = ModelObjectRegistry()
+        :param live_source: Whether source is live or not.
+        """
 
-        if (
-            self._output_frame_codec is None
-            or self._output_frame_codec == Codec.RAW_RGBA
-        ):
-            return NvDsRawBufferProcessor(
-                queue=queue,
-                fps_meter=fps_meter,
-                sources=self._sources,
-                model_object_registry=model_object_registry,
-                objects_preprocessing=self._objects_preprocessing,
-                frame_width=self._frame_width,
-                frame_height=self._frame_height,
-                output_frame=self._output_frame_codec is not None,
+        frame_processing_parameters = {
+            'width': self._frame_width,
+            'height': self._frame_height,
+            'batch-size': self._batch_size,
+            # Allowed range for batch-size: 1 - 1024
+            # Allowed range for buffer-pool-size: 4 - 1024
+            'buffer-pool-size': max(4, self._batch_size),
+            'batched-push-timeout': self._batched_push_timeout,
+            'live-source': live_source,  # True for RTSP or USB camera
+            # TODO: remove when the bug with odd will be fixed
+            # https://forums.developer.nvidia.com/t/nvstreammux-error-releasing-cuda-memory/219895/3
+            'interpolation-method': 6,
+        }
+        muxer = self._add_element(
+            PipelineElement(
+                element='nvstreammux',
+                name='muxer',
+                properties=frame_processing_parameters,
             )
-        return NvDsEncodedBufferProcessor(
-            queue=queue,
-            fps_meter=fps_meter,
-            sources=self._sources,
-            model_object_registry=model_object_registry,
-            objects_preprocessing=self._objects_preprocessing,
-            frame_width=self._frame_width,
-            frame_height=self._frame_height,
-            codec=self._output_frame_codec.value,
         )
+        self._logger.info(
+            'Pipeline frame processing parameters: %s.', frame_processing_parameters
+        )
+        # input processor (post-muxer)
+        muxer_src_pad: Gst.Pad = muxer.get_static_pad('src')
+        muxer_src_pad.add_probe(
+            Gst.PadProbeType.BUFFER,
+            self._buffer_processor.input_probe,
+        )
+        if self._suppress_eos:
+            muxer_src_pad.add_probe(
+                Gst.PadProbeType.EVENT_DOWNSTREAM,
+                on_pad_event,
+                {GST_NVEVENT_PAD_DELETED: self._on_muxer_sink_pad_deleted},
+            )
+
+        return muxer
+
+    def _link_to_muxer(self, pad: Gst.Pad, source_info: SourceInfo):
+        """Link src pad to muxer.
+
+        :param pad: Src pad to connect.
+        :param source_info: Video source info.
+        """
+
+        muxer_sink_pad = self._request_muxer_sink_pad(source_info)
+        assert pad.link(muxer_sink_pad) == Gst.PadLinkReturn.OK
+
+    def _request_muxer_sink_pad(self, source_info: SourceInfo) -> Gst.Pad:
+        """Request sink pad from muxer.
+
+        :param source_info: Video source info.
+        """
+
+        muxer: Gst.Element = self._pipeline.get_by_name('muxer')
+        # sink_N == NvDsFrameMeta.pad_index
+        sink_pad_name = f'sink_{source_info.pad_idx}'
+        sink_pad: Gst.Pad = muxer.get_static_pad(sink_pad_name)
+        if sink_pad is None:
+            self._logger.debug(
+                'Requesting new sink pad on %s: %s', muxer.get_name(), sink_pad_name
+            )
+            sink_pad: Gst.Pad = muxer.get_request_pad(sink_pad_name)
+            sink_pad.add_probe(
+                Gst.PadProbeType.EVENT_DOWNSTREAM,
+                on_pad_event,
+                {Gst.EventType.EOS: self._on_muxer_sink_pad_eos},
+                source_info.source_id,
+            )
+
+        return sink_pad
+
+    def _release_muxer_sink_pad(self, pad: Gst.Pad):
+        """Release sink pad of muxer.
+
+        :param pad: Sink pad to release.
+        """
+
+        muxer: Gst.Element = pad.get_parent()
+        self._logger.debug(
+            'Releasing pad %s.%s',
+            pad.get_parent().get_name(),
+            pad.get_name(),
+        )
+        # Releasing muxer.sink pad to trigger nv-pad-deleted event on muxer.src pad
+        muxer.release_request_pad(pad)
+
+    def _on_muxer_sink_pad_eos(self, pad: Gst.Pad, event: Gst.Event, source_id: str):
+        """Processes EOS event on muxer sink pad."""
+
+        self._logger.debug(
+            'Got EOS on pad %s.%s', pad.get_parent().get_name(), pad.get_name()
+        )
+        source_info = self._sources.get_source(source_id)
+        GLib.idle_add(self._remove_input_elems, source_info, pad)
+        return (
+            Gst.PadProbeReturn.DROP if self._suppress_eos else Gst.PadProbeReturn.PASS
+        )
+
+    def _on_muxer_sink_pad_deleted(self, pad: Gst.Pad, event: Gst.Event):
+        """Send GST_NVEVENT_STREAM_EOS event before GST_NVEVENT_PAD_DELETED.
+
+        GST_NVEVENT_STREAM_EOS is needed to flush data on downstream
+        elements.
+        """
+
+        pad_idx = gst_nvevent_parse_pad_deleted(event)
+        self._logger.debug(
+            'Got GST_NVEVENT_PAD_DELETED with source-id %s on %s.%s',
+            pad_idx,
+            pad.get_parent().get_name(),
+            pad.get_name(),
+        )
+        nv_eos_event = gst_nvevent_new_stream_eos(pad_idx)
+        pad.push_event(nv_eos_event)
+        return Gst.PadProbeReturn.PASS
+
+    # Demuxer
+    def _create_demuxer(self, link: bool) -> Gst.Element:
+        """Create nvstreamdemux element and add it into pipeline.
+
+        :param link: Whether to automatically link demuxer to the last pipeline element.
+        """
+
+        demuxer = self._add_element(
+            PipelineElement(
+                element='nvstreamdemux',
+                name='demuxer',
+            ),
+            link=link,
+        )
+        self._demuxer_src_pads = self._allocate_demuxer_pads(
+            demuxer, self._max_parallel_streams
+        )
+        demuxer.get_static_pad('sink').get_peer().add_probe(
+            Gst.PadProbeType.BUFFER, self.update_frame_meta
+        )
+        return demuxer
+
+    def _allocate_demuxer_pads(self, demuxer: Gst.Element, n_pads: int):
+        """Allocate a fixed number of demuxer src pads."""
+
+        pads = []
+        for pad_idx in range(n_pads):
+            pad: Gst.Pad = demuxer.get_request_pad(f'src_{pad_idx}')
+            pad.add_probe(
+                Gst.PadProbeType.EVENT_DOWNSTREAM,
+                on_pad_event,
+                {GST_NVEVENT_STREAM_EOS: self._on_demuxer_src_pad_eos},
+            )
+            pads.append(pad)
+        return pads
+
+    def _on_demuxer_src_pad_eos(self, pad: Gst.Pad, event: Gst.Event):
+        """Processes EOS events on demuxer src pad."""
+
+        pad_idx = gst_nvevent_parse_stream_eos(event)
+        if pad_idx is None or pad != self._demuxer_src_pads[pad_idx]:
+            # nvstreamdemux redirects GST_NVEVENT_STREAM_EOS on each src pad
+            return Gst.PadProbeReturn.PASS
+        self._logger.debug(
+            'Got GST_NVEVENT_STREAM_EOS on %s.%s',
+            pad.get_parent().get_name(),
+            pad.get_name(),
+        )
+        peer: Gst.Pad = pad.get_peer()
+        if peer is not None:
+            self._logger.debug(
+                'Unlinking %s.%s from %s.%s',
+                peer.get_parent().get_name(),
+                peer.get_name(),
+                pad.get_parent().get_name(),
+                pad.get_name(),
+            )
+            pad.unlink(peer)
+            self._logger.debug(
+                'Sending EOS to %s.%s',
+                peer.get_parent().get_name(),
+                peer.get_name(),
+            )
+            peer.send_event(Gst.Event.new_eos())
+        return Gst.PadProbeReturn.DROP
+
+    def _link_demuxer_src_pad(self, pad: Gst.Pad, source_info: SourceInfo):
+        """Link demuxer src pad to some sink pad.
+
+        :param pad: Connect demuxer src pad to this sink pad.
+        :param source_info: Video source info.
+        """
+
+        demuxer_src_pad = self._demuxer_src_pads[source_info.pad_idx]
+        assert demuxer_src_pad.link(pad) == Gst.PadLinkReturn.OK
