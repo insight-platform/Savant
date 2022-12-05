@@ -25,7 +25,7 @@ Connecting containers through ZMQ sources/sinks requires specifying the followin
     - ``ZMQ_SINK_ENDPOINT`` is a required env var that specifies the output ZMQ socket endpoint, corresponds to sink adapter ``ZMQ_ENDPOINT``
     - ``ZMQ_SINK_TYPE`` env var specifies the output ZMQ socket type, ``PUB`` by default
     - ``ZMQ_SINK_BIND`` env var specifies whether the output ZMQ socket type should be bound or connected to, ``True`` by default
-    - ``OUTPUT_FRAME`` env var specifies whether to include frames in module output, and not just metadata; it is required for ``image_files`` and ``video_files`` sinks to produce valid output. Set this var to a JSON string with attribute ``codec`` equal to one of ``h264``, ``hevc``, ``png``, ``jpeg`` or ``raw_rgba`` and optional ``encoder_params``. For example
+    - ``OUTPUT_FRAME`` env var specifies whether to include frames in module output, and not just metadata; it is required for ``image_files`` and ``video_files`` sinks to produce valid output. Set this var to a JSON string with attribute ``codec`` equal to one of ``h264``, ``hevc``, ``png``, ``jpeg`` or ``raw-rgba`` and optional ``encoder_params``. For example
 
         .. code-block:: JSON
 

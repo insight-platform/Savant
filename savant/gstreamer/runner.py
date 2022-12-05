@@ -15,7 +15,7 @@ class StateChangeError(Exception):
     """Gst.StateChangeReturn.FAILURE Exception."""
 
 
-class GstPipelineRunner:  # pylint: disable=too-many-instance-attributes
+class GstPipelineRunner:
     """Manages running Gstreamer pipeline.
 
     :param pipeline: GstPipeline to run.

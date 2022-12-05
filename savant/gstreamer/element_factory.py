@@ -19,8 +19,12 @@ class GstElementFactory:
         :raises CreateElementException: Unknown element.
         :return: Gst.Element.
         """
+        if element.element == 'capsfilter':
+            return self.create_caps_filter(element)
+
         if isinstance(element, PipelineElement):
             return self.create_element(element)
+
         raise CreateElementException(
             f'Undefined element {type(element)} {element} to create.'
         )
@@ -49,4 +53,15 @@ class GstElementFactory:
             prop_value = param_storage()[dyn_gst_prop.storage_key]
             gst_element.set_property(prop_name, prop_value)
 
+        return gst_element
+
+    @staticmethod
+    def create_caps_filter(element: PipelineElement) -> Gst.Element:
+        caps = None
+        if 'caps' in element.properties and isinstance(element.properties['caps'], str):
+            caps = Gst.Caps.from_string(element.properties['caps'])
+            del element.properties['caps']
+        gst_element = GstElementFactory.create_element(element)
+        if caps:
+            gst_element.set_property('caps', caps)
         return gst_element

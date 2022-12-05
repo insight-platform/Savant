@@ -576,10 +576,10 @@ class NvDsPipeline(GstPipeline):
         """Adds sink elements."""
 
         # add drawbin if frame should be in module output and there is no drawbin
-        if self._output_frame and not [
-            e for e, _ in self.elements if isinstance(e, DrawBinElement)
-        ]:
-            self._add_element(DrawBinElement(name='draw_output'))
+        # if self._output_frame and not [
+        #     e for e, _ in self.elements if isinstance(e, DrawBinElement)
+        # ]:
+        #     self._add_element(DrawBinElement(name='draw_output'))
 
         demuxer = self._add_element(
             PipelineElement(
