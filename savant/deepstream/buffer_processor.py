@@ -219,8 +219,8 @@ class NvDsBufferProcessor(GstBufferProcessor):
             yield SinkVideoFrame(
                 source_id=source_info.source_id,
                 frame_meta=frame_meta,
-                frame_width=self._frame_width,
-                frame_height=self._frame_height,
+                frame_width=source_info.dest_resolution.width,
+                frame_height=source_info.dest_resolution.height,
                 frame=output_frame.frame,
                 frame_codec=output_frame.codec,
                 keyframe=output_frame.keyframe,

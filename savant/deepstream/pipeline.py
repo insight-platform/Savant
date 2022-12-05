@@ -18,6 +18,13 @@ from savant.deepstream.buffer_processor import (
     NvDsRawBufferProcessor,
     NvDsEncodedBufferProcessor,
 )
+from savant.deepstream.source_output import (
+    SourceOutputOnlyMeta,
+    SourceOutputH26X,
+    SourceOutputEncoded,
+    SourceOutputRawRgba,
+    SourceOutputPng,
+)
 from savant.gstreamer import Gst, GLib  # noqa:F401
 from savant.gstreamer.codecs import Codec, CODEC_BY_NAME
 from savant.gstreamer.pipeline import GstPipeline
@@ -41,7 +48,7 @@ from savant.deepstream.utils import (
 from savant.meta.constants import UNTRACKED_OBJECT_ID
 from savant.utils.fps_meter import FPSMeter
 from savant.utils.model_registry import ModelObjectRegistry
-from savant.utils.source_info import SourceInfoRegistry, SourceInfo
+from savant.utils.source_info import SourceInfoRegistry, SourceInfo, Resolution
 from savant.utils.platform import is_aarch64
 from savant.config.schema import PipelineElement, ModelElement
 from savant.base.model import AttributeModel, ComplexModel
@@ -95,6 +102,26 @@ class NvDsPipeline(GstPipeline):
         else:
             self._output_frame_codec = None
             self._output_frame_encoder_params = None
+
+        if self._output_frame_codec is None:
+            self._source_output = SourceOutputOnlyMeta()
+        elif self._output_frame_codec == Codec.RAW_RGBA:
+            self._source_output = SourceOutputRawRgba()
+        elif self._output_frame_codec in [Codec.H264, Codec.HEVC]:
+            self._source_output = SourceOutputH26X(
+                codec=self._output_frame_codec.value,
+                params=output_frame.get('encoder_params'),
+            )
+        elif self._output_frame_codec == Codec.PNG:
+            self._source_output = SourceOutputPng(
+                codec=self._output_frame_codec.value,
+                params=output_frame.get('encoder_params'),
+            )
+        else:
+            self._source_output = SourceOutputEncoded(
+                codec=self._output_frame_codec.value,
+                params=output_frame.get('encoder_params'),
+            )
 
         self._demuxer_src_pads: List[Gst.Pad] = []
         self._free_pad_indices: List[int] = []
@@ -254,6 +281,11 @@ class NvDsPipeline(GstPipeline):
             new_pad.get_name(),
             new_pad_caps,
         )
+        caps_struct: Gst.Structure = new_pad_caps.get_structure(0)
+        parsed, width = caps_struct.get_int('width')
+        assert parsed, f'Failed to parse "width" property of caps "{new_pad_caps}"'
+        parsed, height = caps_struct.get_int('height')
+        assert parsed, f'Failed to parse "height" property of caps "{new_pad_caps}"'
 
         while source_info.pad_idx is None:
             try:
@@ -271,6 +303,7 @@ class NvDsPipeline(GstPipeline):
                 time.sleep(5)
 
         with self._source_adding_lock:
+            source_info.src_resolution = Resolution(width, height)
             self._sources.update_source(source_info)
 
             if not source_info.after_demuxer:
@@ -384,55 +417,18 @@ class NvDsPipeline(GstPipeline):
         source_info.after_demuxer.append(output_queue)
         self._link_demuxer_src_pad(output_queue.get_static_pad('sink'), source_info)
 
-        if (
-            self._output_frame_codec is not None
-            and self._output_frame_codec != Codec.RAW_RGBA
-        ):
-            add_convert_savant_frame_meta_pad_probe(
-                output_queue.get_static_pad('src'),
-                False,
-            )
-            output_converter = self._add_element(
-                PipelineElement(
-                    'nvvideoconvert',
-                    properties=(
-                        {}
-                        if is_aarch64()
-                        else {'nvbuf-memory-type': int(pyds.NVBUF_MEM_CUDA_UNIFIED)}
-                    ),
-                ),
-            )
-            source_info.after_demuxer.append(output_converter)
-            output_converter.sync_state_with_parent()
-
-            encoder = self._add_element(
-                PipelineElement(
-                    self._output_frame_codec.value.encoder,
-                    properties=self._output_frame_encoder_params,
-                )
-            )
-            source_info.after_demuxer.append(encoder)
-            encoder.sync_state_with_parent()
-
-            # A parser for codecs h264, h265 is added to include
-            # the Sequence Parameter Set (SPS) and the Picture Parameter Set (PPS)
-            # to IDR frames in the video stream. SPS and PPS are needed
-            # to correct recording or playback not from the beginning
-            # of the video stream.
-            if self._output_frame_codec.value.parser in ['h264parse', 'h265parse']:
-                parser = self._add_element(
-                    PipelineElement(
-                        self._output_frame_codec.value.parser,
-                        properties=({'config-interval': -1}),
-                    )
-                )
-                source_info.after_demuxer.append(parser)
-                parser.sync_state_with_parent()
-                assert parser.link(fakesink)
-            else:
-                assert encoder.link(fakesink)
-        else:
-            assert output_queue.link(fakesink)
+        source_info.dest_resolution = self._source_output.dest_resolution(source_info)
+        self._logger.debug(
+            'Set dest resolution of the source %s to %s',
+            source_info.source_id,
+            source_info.dest_resolution,
+        )
+        output_pad: Gst.Pad = self._source_output.add_output(
+            pipeline=self,
+            source_info=source_info,
+            input_pad=output_queue.get_static_pad('src'),
+        )
+        assert output_pad.link(fakesink_pad) == Gst.PadLinkReturn.OK
 
         source_info.after_demuxer.append(fakesink)
 
