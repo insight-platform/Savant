@@ -1,9 +1,10 @@
 """GStreamer base pipeline."""
 from queue import Queue, Empty as EmptyException
-from typing import Any, List, Dict, Generator, Optional, Tuple
+from typing import Any, List, Generator, Optional, Tuple
 import logging
 from gi.repository import Gst  # noqa:F401
 
+from savant.gstreamer.buffer_processor import GstBufferProcessor
 from savant.parameter_storage import param_storage
 from savant.config.schema import PipelineElement, ModelElement
 from savant.utils.sink_factories import SinkMessage
@@ -39,6 +40,11 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
 
         # init FPS meter
         self._fps_meter = FPSMeter(period_frames=kwargs['fps_period'])
+
+        # create buffer processor
+        self._buffer_processor = self._build_buffer_processor(
+            self._queue, self._fps_meter
+        )
 
         # init pipeline
         self._pipeline: Gst.Pipeline = Gst.Pipeline(name)
@@ -117,41 +123,25 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
 
         if with_probes:
             gst_element.get_static_pad('sink').add_probe(
-                Gst.PadProbeType.BUFFER, self._element_input_probe, element
+                Gst.PadProbeType.BUFFER,
+                self._buffer_processor.element_input_probe,
+                element,
             )
             gst_element.get_static_pad('src').add_probe(
-                Gst.PadProbeType.BUFFER, self._element_output_probe, element
+                Gst.PadProbeType.BUFFER,
+                self._buffer_processor.element_output_probe,
+                element,
             )
             self._logger.debug('Added in/out probes to element %s.', element.full_name)
 
         return gst_element
-
-    def _element_input_probe(  # pylint: disable=unused-argument
-        self, pad: Gst.Pad, info: Gst.PadProbeInfo, element: PipelineElement
-    ):
-        buffer = info.get_buffer()
-        self.prepare_element_input(element, buffer)
-        return Gst.PadProbeReturn.OK
-
-    def prepare_element_input(self, element: PipelineElement, buffer: Gst.Buffer):
-        """Element input processor."""
-
-    def _element_output_probe(  # pylint: disable=unused-argument
-        self, pad: Gst.Pad, info: Gst.PadProbeInfo, element: PipelineElement
-    ):
-        buffer = info.get_buffer()
-        self.prepare_element_output(element, buffer)
-        return Gst.PadProbeReturn.OK
-
-    def prepare_element_output(self, element: PipelineElement, buffer: Gst.Buffer):
-        """Element output processor."""
 
     def _add_source(self, source: PipelineElement) -> Gst.Element:
         source.name = 'source'
         _source = self._add_element(source)
         # input processor (post-source)
         _source.get_static_pad('src').add_probe(
-            Gst.PadProbeType.BUFFER, self._input_probe, 0
+            Gst.PadProbeType.BUFFER, self._buffer_processor.input_probe
         )
         return _source
 
@@ -171,33 +161,10 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
 
         # output processor (pre-sink)
         _sink.get_static_pad('sink').add_probe(
-            Gst.PadProbeType.BUFFER, self._output_probe, *probe_data
+            Gst.PadProbeType.BUFFER, self._buffer_processor.output_probe, *probe_data
         )
 
         return _sink
-
-    def _input_probe(  # pylint: disable=unused-argument
-        self, pad: Gst.Pad, info: Gst.PadProbeInfo, user_data: Any
-    ):
-        buffer = info.get_buffer()
-        self.prepare_input(buffer)
-        return Gst.PadProbeReturn.OK
-
-    def prepare_input(self, buffer: Gst.Buffer):
-        """Pipeline input processor."""
-
-    def _output_probe(  # pylint: disable=unused-argument
-        self, pad: Gst.Pad, info: Gst.PadProbeInfo, *data
-    ):
-        buffer = info.get_buffer()
-        self.prepare_output(buffer, *data)
-        # measure and logging FPS
-        if self._fps_meter():
-            self._log_fps()
-        return Gst.PadProbeReturn.OK
-
-    def prepare_output(self, buffer: Gst.Buffer, *data):
-        """Pipeline output processor."""
 
     def on_startup(self):
         """Callback called after pipeline is set to PLAYING."""
@@ -247,3 +214,11 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
                 yield self._queue.get(timeout=timeout)
             except EmptyException:
                 pass
+
+    def _build_buffer_processor(
+        self,
+        queue: Queue,
+        fps_meter: FPSMeter,
+    ) -> GstBufferProcessor:
+        """Create buffer processor."""
+        return GstBufferProcessor(queue, fps_meter)
