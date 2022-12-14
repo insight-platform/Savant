@@ -154,9 +154,9 @@ class AvroVideoPlayer(LoggerMixin, Gst.Bin):
             ' ! '.join(
                 [
                     'queue',
-                    'capsfilter caps=video/x-raw,format=RGBA',
-                    'autovideoconvert',
-                    'capsfilter caps=video/x-raw(memory:NVMM)',
+                    'nvvideoconvert',
+                    # nveglglessink cannot negotiate with "video/x-raw(memory:NVMM)" on dGPU
+                    'capsfilter caps=video/x-raw',
                     'adjust_timestamps',
                     f'autovideosink name={videosink_name}',
                 ]

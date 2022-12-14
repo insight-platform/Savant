@@ -7,11 +7,19 @@ from savant.utils.singleton import SingletonMeta
 
 
 @dataclass
+class Resolution:
+    width: int
+    height: int
+
+
+@dataclass
 class SourceInfo:
     """Source info."""
 
     source_id: str
     pad_idx: Optional[int]
+    src_resolution: Optional[Resolution]
+    dest_resolution: Optional[Resolution]
     before_muxer: List[Gst.Element]
     after_demuxer: List[Gst.Element]
     lock: Event
@@ -30,6 +38,8 @@ class SourceInfoRegistry(metaclass=SingletonMeta):
         source_info = SourceInfo(
             source_id=source_id,
             pad_idx=None,
+            src_resolution=None,
+            dest_resolution=None,
             before_muxer=[],
             after_demuxer=[],
             lock=Event(),
