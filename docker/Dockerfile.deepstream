@@ -13,6 +13,24 @@ RUN python setup.py bdist_wheel && \
     rm -rf _skbuild
 
 
+FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-devel AS savantboost_build
+
+# Newer cmake ver. needed for "FindCUDAToolkit"
+RUN mkdir -p /tmp/cmake \
+    && cd /tmp/cmake \
+    && wget --progress=bar:force:noscroll https://github.com/Kitware/CMake/releases/download/v3.23.2/cmake-3.23.2-linux-x86_64.sh \
+    && sh cmake-3.23.2-linux-x86_64.sh --skip-license --prefix=/usr/local/
+
+# python to python3 by default
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 10
+
+WORKDIR /libs/savanboost
+COPY libs/savantboost/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY libs/savantboost .
+RUN python setup.py bdist_wheel && rm -rf _skbuild
+
 FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-base AS base
 
 # python to python3 by default
@@ -52,6 +70,9 @@ RUN python -m pip install --no-cache-dir \
 
 COPY --from=pygstsavantframemeta_build /libs/gstsavantframemeta/dist /libs/gstsavantframemeta/dist
 RUN python -m pip install --no-cache-dir /libs/gstsavantframemeta/dist/*.whl
+
+COPY --from=savantboost_build /libs/savanboost/dist /libs/savanboost/dist
+RUN python -m pip install --no-cache-dir /libs/savanboost/dist/*.whl
 
 COPY savant savant
 COPY LICENSE savant/
