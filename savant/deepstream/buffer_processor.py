@@ -646,6 +646,10 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
                 if self._output_frame
                 else None
             )
+            # Unmap NvDs buf surfaces if they're mapped.
+            # This is needed to prevent memory leaks.
+            # See https://github.com/insight-platform/Savant/issues/25 for the details.
+            pyds.unmap_nvds_buf_surface(hash(buffer), nvds_frame_meta.batch_id)
             savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(
                 nvds_frame_meta
             )

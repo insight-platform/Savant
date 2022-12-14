@@ -38,6 +38,7 @@ ENV LD_LIBRARY_PATH=/opt/nvidia/deepstream/deepstream/lib/:$LD_LIBRARY_PATH
 COPY requirements/base.txt requirements-base.txt
 COPY requirements/deepstream-l4t.txt requirements-deepstream-l4t.txt
 RUN python -m pip install --no-cache-dir --upgrade pip
+COPY libs/wheels libs/wheels
 RUN python -m pip install --no-cache-dir \
     -r requirements-base.txt \
     -r requirements-deepstream-l4t.txt \

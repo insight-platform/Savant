@@ -1,0 +1,31 @@
+ARG BASE_IMAGE
+FROM $BASE_IMAGE AS pyds_build
+
+RUN apt-get update \
+    && apt-get install -y \
+        automake \
+        libtool \
+        python-dev \
+        python-gi-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN git clone https://github.com/tomskikh/deepstream_python_apps.git /deepstream_python_apps \
+    && cd /deepstream_python_apps \
+    && git checkout 1eff36e43d6845a1fa10e97c33a75819fe32222a \
+    && git submodule init \
+    && git submodule update \
+    && cd 3rdparty/gst-python \
+    && git submodule init \
+    && git submodule update
+
+WORKDIR /deepstream_python_apps/3rdparty/gst-python
+RUN ./autogen.sh \
+    && make \
+    && make install
+
+WORKDIR /deepstream_python_apps/bindings/build
+ARG PIP_PLATFORM
+RUN cmake -DPIP_PLATFORM=$PIP_PLATFORM .. \
+    && make \
+    && mkdir /dist \
+    && mv *.whl /dist/

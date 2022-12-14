@@ -7,6 +7,7 @@ import pyds
 from pygstsavantframemeta import add_convert_savant_frame_meta_pad_probe
 
 from savant.config.schema import PipelineElement
+from savant.deepstream.utils import nvds_frame_meta_iterator
 from savant.gstreamer import Gst  # noqa:F401
 from savant.gstreamer.codecs import CodecInfo
 from savant.gstreamer.pipeline import GstPipeline
@@ -101,7 +102,7 @@ class SourceOutputWithFrame(SourceOutput):
         output_converter.sync_state_with_parent()
         self._logger.debug('Added converter for video frames')
 
-        self._add_transform_elems(pipeline, source_info)
+        self._add_transform_elems(output_converter, pipeline, source_info)
 
         output_capsfilter = pipeline._add_element(PipelineElement('capsfilter'))
         output_caps = self._build_output_caps(source_info)
@@ -113,7 +114,12 @@ class SourceOutputWithFrame(SourceOutput):
         return output_capsfilter.get_static_pad('src')
 
     @abstractmethod
-    def _add_transform_elems(self, pipeline: GstPipeline, source_info: SourceInfo):
+    def _add_transform_elems(
+        self,
+        output_converter: Gst.Element,
+        pipeline: GstPipeline,
+        source_info: SourceInfo,
+    ):
         pass
 
     @abstractmethod
@@ -126,7 +132,12 @@ class SourceOutputRawRgba(SourceOutputWithFrame):
     Output contains raw-rgba frames along with metadata.
     """
 
-    def _add_transform_elems(self, pipeline: GstPipeline, source_info: SourceInfo):
+    def _add_transform_elems(
+        self,
+        output_converter: Gst.Element,
+        pipeline: GstPipeline,
+        source_info: SourceInfo,
+    ):
         pass
 
     def _build_output_caps(self, source_info: SourceInfo) -> Gst.Caps:
@@ -156,7 +167,16 @@ class SourceOutputEncoded(SourceOutputWithFrame):
         self._codec = codec
         self._params = params or {}
 
-    def _add_transform_elems(self, pipeline: GstPipeline, source_info: SourceInfo):
+    def _add_transform_elems(
+        self,
+        output_converter: Gst.Element,
+        pipeline: GstPipeline,
+        source_info: SourceInfo,
+    ):
+        output_converter.get_static_pad('sink').add_probe(
+            Gst.PadProbeType.BUFFER,
+            _unmap_nvds_buf_surfaces,
+        )
         encoder = pipeline._add_element(
             PipelineElement(self._codec.encoder, properties=self._params)
         )
@@ -183,8 +203,13 @@ class SourceOutputH26X(SourceOutputEncoded):
     Output contains frames encoded with h264 or h265 (hevc) codecs along with metadata.
     """
 
-    def _add_transform_elems(self, pipeline: GstPipeline, source_info: SourceInfo):
-        super()._add_transform_elems(pipeline, source_info)
+    def _add_transform_elems(
+        self,
+        output_converter: Gst.Element,
+        pipeline: GstPipeline,
+        source_info: SourceInfo,
+    ):
+        super()._add_transform_elems(output_converter, pipeline, source_info)
         # A parser for codecs h264, h265 is added to include
         # the Sequence Parameter Set (SPS) and the Picture Parameter Set (PPS)
         # to IDR frames in the video stream. SPS and PPS are needed
@@ -212,3 +237,19 @@ class SourceOutputPng(SourceOutputEncoded):
             width=round(source_info.src_resolution.width / 8) * 8,
             height=round(source_info.src_resolution.height / 8) * 8,
         )
+
+
+def _unmap_nvds_buf_surfaces(
+    pad: Gst.Pad,
+    info: Gst.PadProbeInfo,
+) -> Gst.PadProbeReturn:
+    """Unmap NvDs buf surfaces if they're mapped.
+    This is needed to prevent memory leaks.
+    See https://github.com/insight-platform/Savant/issues/25 for the details.
+    """
+
+    buffer: Gst.Buffer = info.get_buffer()
+    nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
+    for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
+        pyds.unmap_nvds_buf_surface(hash(buffer), nvds_frame_meta.batch_id)
+    return Gst.PadProbeReturn.OK
