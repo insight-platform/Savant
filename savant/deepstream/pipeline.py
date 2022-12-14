@@ -359,7 +359,16 @@ class NvDsPipeline(GstPipeline):
         # TODO: send EOS to video_converter on unlink if source didn't
         assert new_pad.link(video_converter_sink) == Gst.PadLinkReturn.OK
 
-        return nv_video_converter.get_static_pad('src')
+        capsfilter: Gst.Element = Gst.ElementFactory.make('capsfilter')
+        capsfilter.set_property(
+            'caps', Gst.Caps.from_string('video/x-raw(memory:NVMM), format=RGBA')
+        )
+        capsfilter.set_state(Gst.State.PLAYING)
+        self._pipeline.add(capsfilter)
+        source_info.before_muxer.append(capsfilter)
+        assert nv_video_converter.link(capsfilter)
+
+        return capsfilter.get_static_pad('src')
 
     def _remove_input_elements(
         self,
