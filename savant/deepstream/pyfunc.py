@@ -29,6 +29,10 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
             frame_meta = NvDsFrameMeta(frame_meta=nvds_frame_meta)
             self.process_frame_meta(frame_meta)
             self.process_frame(frame_meta, frame)
+            # Unmap NvDs buf surfaces if they're mapped.
+            # This is needed to prevent memory leaks.
+            # See https://github.com/insight-platform/Savant/issues/25 for the details.
+            pyds.unmap_nvds_buf_surface(hash(buffer), nvds_frame_meta.batch_id)
 
     def process_frame_meta(self, frame_meta: NvDsFrameMeta):
         """Process frame metadata. Throws an exception if fatal error has

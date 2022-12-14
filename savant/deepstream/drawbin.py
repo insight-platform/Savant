@@ -37,6 +37,10 @@ class NvDsDrawBin(NvDsPyFuncPlugin):
             self.draw_on_frame(frame_meta, artist)
             surface.flush()
             surface.finish()
+            # Unmap NvDs buf surfaces if they're mapped.
+            # This is needed to prevent memory leaks.
+            # See https://github.com/insight-platform/Savant/issues/25 for the details.
+            pyds.unmap_nvds_buf_surface(hash(buffer), nvds_frame_meta.batch_id)
 
     def draw_on_frame(self, frame_meta: NvDsFrameMeta, artist: Artist):
         """Draws bounding boxes and labels for all objects in the frame.
