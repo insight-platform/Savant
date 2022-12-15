@@ -8,7 +8,7 @@ from pygstsavantframemeta import add_convert_savant_frame_meta_pad_probe
 
 from savant.config.schema import PipelineElement
 from savant.deepstream.base_drawfunc import BaseNvDsDrawFunc
-from savant.deepstream.utils import nvds_frame_meta_iterator
+from savant.deepstream.utils import get_nvds_buf_surface, nvds_frame_meta_iterator
 from savant.gstreamer import Gst  # noqa:F401
 from savant.gstreamer.codecs import CodecInfo
 from savant.gstreamer.pipeline import GstPipeline
@@ -241,8 +241,8 @@ class SourceOutputEncoded(SourceOutputWithFrame):
         buffer: Gst.Buffer = info.get_buffer()
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
-            frame = pyds.get_nvds_buf_surface(hash(buffer), nvds_frame_meta.batch_id)
-            self._draw_func(nvds_frame_meta, frame)
+            with get_nvds_buf_surface(buffer, nvds_frame_meta) as frame:
+                self._draw_func(nvds_frame_meta, frame)
         return Gst.PadProbeReturn.OK
 
 

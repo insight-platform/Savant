@@ -20,6 +20,7 @@ from savant.deepstream.nvinfer.model import (
     NvInferAttributeModel,
 )
 from savant.deepstream.utils import (
+    get_nvds_buf_surface,
     nvds_frame_meta_iterator,
     nvds_obj_meta_iterator,
     nvds_clf_meta_iterator,
@@ -633,12 +634,10 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
             # get frame if required for output
             if self._output_frame:
-                np_frame = pyds.get_nvds_buf_surface(
-                    hash(buffer), nvds_frame_meta.batch_id
-                )
-                if self._draw_func:
-                    self._draw_func(nvds_frame_meta, np_frame)
-                frame = np_frame.tobytes()
+                with get_nvds_buf_surface(buffer, nvds_frame_meta) as np_frame:
+                    if self._draw_func:
+                        self._draw_func(nvds_frame_meta, np_frame)
+                    frame = np_frame.tobytes()
             else:
                 frame = None
             savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(
