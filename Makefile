@@ -6,18 +6,43 @@ SAVANT_VERSION := $(shell cat savant/VERSION | awk -F= '$$1=="SAVANT"{print $$2}
 DEEPSTREAM_VERSION := $(shell cat savant/VERSION | awk -F= '$$1=="DEEPSTREAM"{print $$2}' | sed 's/"//g')
 DOCKER_FILE := Dockerfile.deepstream
 PLATFORM_SUFFIX :=
+PYDS_DOCKER_BUILDKIT := 1
+PYDS_BASE_IMAGE := nvcr.io/nvidia/deepstream:$(DEEPSTREAM_VERSION)-devel
+PYDS_PIP_PLATFORM := linux_x86_64
+PYDS_VERSION := 1.1.4
 
 ifeq ("$(shell uname -m)", "aarch64")
     PLATFORM_SUFFIX := -l4t
     DOCKER_FILE := Dockerfile.deepstream-l4t
     L4T_MAJOR_VERSION := $(shell dpkg-query --showformat='$${Version}' --show nvidia-l4t-core | cut -f 1 -d '-' | cut -f 1 -d '.')
+    # We cannot use buildkit to build pyds on Jetson devices since buildkit doesn't use nvidia runtime.
+    # But we need nvidia runtime to mount required libraries to the containers.
+    PYDS_DOCKER_BUILDKIT := 0
+    PYDS_BASE_IMAGE := nvcr.io/nvidia/deepstream-l4t:$(DEEPSTREAM_VERSION)-triton
+    PYDS_PIP_PLATFORM := linux_aarch64
     ifeq ($(L4T_MAJOR_VERSION), 32)
         DEEPSTREAM_VERSION := 6.0.1
         DOCKER_FILE := Dockerfile.deepstream-l4t-6.0.1
+        PYDS_VERSION := 1.1.1
+        PYDS_BASE_IMAGE := nvcr.io/nvidia/deepstream-l4t:$(DEEPSTREAM_VERSION)-samples
     endif
 endif
 
-build:
+build-pyds:
+	DOCKER_BUILDKIT=$(PYDS_DOCKER_BUILDKIT) docker build \
+	--build-arg BASE_IMAGE=$(PYDS_BASE_IMAGE) \
+	--build-arg PIP_PLATFORM=$(PYDS_PIP_PLATFORM) \
+	--build-arg PYDS_TAG=v$(PYDS_VERSION)-unmap \
+	-f docker/Dockerfile.pyds \
+	-t savant-pyds$(PLATFORM_SUFFIX):$(SAVANT_VERSION)-$(DEEPSTREAM_VERSION) .
+	mkdir -p libs/wheels
+	docker run --rm \
+	--entrypoint cat \
+	savant-pyds$(PLATFORM_SUFFIX):$(SAVANT_VERSION)-$(DEEPSTREAM_VERSION) \
+	/dist/pyds-$(PYDS_VERSION)-py3-none-$(PYDS_PIP_PLATFORM).whl > libs/wheels/pyds-$(PYDS_VERSION)-py3-none-$(PYDS_PIP_PLATFORM).whl
+
+
+build: build-pyds
 	DOCKER_BUILDKIT=1 docker build \
 	--target base \
 	--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
