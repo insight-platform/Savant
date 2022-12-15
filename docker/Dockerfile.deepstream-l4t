@@ -10,37 +10,25 @@ RUN python setup.py bdist_wheel && \
     rm -rf _skbuild
 
 
-FROM nvcr.io/nvidia/deepstream-l4t:$DEEPSTREAM_VERSION-samples AS savantboost_build
+FROM nvcr.io/nvidia/deepstream-l4t:$DEEPSTREAM_VERSION-triton AS savantboost_build
 
 ARG soc=t194
-ARG l4t_version=34.1
-
-ADD --chown=root:root https://repo.download.nvidia.com/jetson/jetson-ota-public.asc /etc/apt/trusted.gpg.d/jetson-ota-public.asc
-
-RUN chmod 644 /etc/apt/trusted.gpg.d/jetson-ota-public.asc \
-    && echo "deb https://repo.download.nvidia.com/jetson/$soc r$l4t_version main" > /etc/apt/sources.list.d/nvidia-l4t-apt-source.list \
-    && rm /etc/ld.so.conf.d/nvidia-tegra.conf \
-    && mkdir -p /opt/nvidia/l4t-packages/ \
-    && touch /opt/nvidia/l4t-packages/.nv-l4t-disable-boot-fw-update-in-preinstall \
-    && apt-get update \
-    && apt-get install -y --allow-change-held-packages \
-        wget \
-        nvidia-l4t-multimedia \
-        libcublas-11-4 \
-        cuda-toolkit-11-4 \
-        build-essential \
-        libgstreamer-plugins-base1.0-dev \
-        libgstreamer1.0-dev \
-        python3-pip \
-        python3.8-dev \
-    && rm -rf /var/lib/apt/lists/*
 
 
-## Newer cmake ver. needed for "FindCUDAToolkit"
 RUN wget --no-verbose -O /tmp/cmake.sh \
         https://github.com/Kitware/CMake/releases/download/v3.24.2/cmake-3.24.2-linux-aarch64.sh  \
     && sh /tmp/cmake.sh --skip-license --prefix=/usr/local \
     && rm -f /tmp/cmake.sh
+
+RUN echo "deb https://repo.download.nvidia.com/jetson/$soc `cat /etc/apt/sources.list | grep jetson/common | cut -d' ' -f3` main" \
+     > /etc/apt/sources.list.d/nvidia-l4t-apt-source.list \
+    && rm /etc/ld.so.conf.d/nvidia-tegra.conf \
+    && mkdir -p /opt/nvidia/l4t-packages/ \
+    && touch /opt/nvidia/l4t-packages/.nv-l4t-disable-boot-fw-update-in-preinstall \
+    && apt-get update \
+    && apt-get install -y \
+        nvidia-l4t-multimedia \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /libs/savanboost
 COPY libs/savantboost/requirements.txt .
