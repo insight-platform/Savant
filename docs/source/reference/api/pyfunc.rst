@@ -31,7 +31,8 @@ Deepstream PyFuncs implementations
     :template: autosummary/class_basic_members.rst
 
     pyfunc.NvDsPyFuncPlugin
-    drawbin.NvDsDrawBin
+    base_drawfunc.BaseNvDsDrawFunc
+    drawfunc.NvDsDrawFunc
 
 PyFunc utilities
 ----------------

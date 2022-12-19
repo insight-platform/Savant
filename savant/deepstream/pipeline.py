@@ -13,6 +13,7 @@ from pygstsavantframemeta import (
     nvds_frame_meta_get_nvds_savant_frame_meta,
 )
 
+from savant.deepstream.base_drawfunc import BaseNvDsDrawFunc
 from savant.deepstream.buffer_processor import (
     NvDsBufferProcessor,
     NvDsRawBufferProcessor,
@@ -95,6 +96,8 @@ class NvDsPipeline(GstPipeline):
 
         self._internal_attrs = set()
 
+        self._draw_func: Optional[BaseNvDsDrawFunc] = kwargs.get('draw_func')
+
         output_frame = kwargs.get('output_frame')
         if output_frame:
             self._output_frame_codec = CODEC_BY_NAME[output_frame['codec']]
@@ -111,16 +114,19 @@ class NvDsPipeline(GstPipeline):
             self._source_output = SourceOutputH26X(
                 codec=self._output_frame_codec.value,
                 params=output_frame.get('encoder_params'),
+                draw_func=self._draw_func,
             )
         elif self._output_frame_codec == Codec.PNG:
             self._source_output = SourceOutputPng(
                 codec=self._output_frame_codec.value,
                 params=output_frame.get('encoder_params'),
+                draw_func=self._draw_func,
             )
         else:
             self._source_output = SourceOutputEncoded(
                 codec=self._output_frame_codec.value,
                 params=output_frame.get('encoder_params'),
+                draw_func=self._draw_func,
             )
 
         self._demuxer_src_pads: List[Gst.Pad] = []
@@ -159,6 +165,7 @@ class NvDsPipeline(GstPipeline):
                 frame_width=self._frame_width,
                 frame_height=self._frame_height,
                 output_frame=self._output_frame_codec is not None,
+                draw_func=self._draw_func,
             )
         return NvDsEncodedBufferProcessor(
             queue=queue,

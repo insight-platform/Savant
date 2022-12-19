@@ -10,12 +10,11 @@ from savant.config.schema import (
     PyFuncElement,
     ModelElement,
     get_element_name,
-    DrawBinElement,
+    DrawFunc,
 )
 from savant.deepstream.nvinfer.element_config import nvinfer_configure_element
 from savant.parameter_storage import init_param_storage
 from savant.utils.singleton import SingletonMeta
-
 
 logger = logging.getLogger(__name__)
 
@@ -111,9 +110,6 @@ def get_schema_configurator(
     if element == 'pyfunc':
         return PyFuncElement, None
 
-    if element == 'drawbin':
-        return DrawBinElement, None
-
     if element == 'nvinfer':
         return ModelElement, nvinfer_configure_element
 
@@ -157,6 +153,19 @@ def setup_batch_size(config: Module) -> None:
     config.parameters['batch_size'] = batch_size
 
 
+def resolve_draw_func_parameter(config: DictConfig):
+    """Resolve draw_func parameter on module config.
+
+    :param config: Module config.
+    """
+
+    draw_func_cfg = config.parameters.get('draw_func')
+    if draw_func_cfg is not None:
+        draw_func_schema = OmegaConf.structured(DrawFunc)
+        draw_func_cfg = OmegaConf.unsafe_merge(draw_func_schema, draw_func_cfg)
+        config.parameters['draw_func'] = draw_func_cfg
+
+
 class ModuleConfig(metaclass=SingletonMeta):
     """Singleton that provides module configuration loading and access."""
 
@@ -186,6 +195,7 @@ class ModuleConfig(metaclass=SingletonMeta):
         module_cfg = OmegaConf.unsafe_merge(
             self._config_schema, self._default_cfg, module_cfg
         )
+        resolve_draw_func_parameter(module_cfg)
         logger.debug('Merged conf\n%s', module_cfg)
         init_param_storage(module_cfg)
 

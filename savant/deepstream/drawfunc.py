@@ -1,42 +1,32 @@
-"""Base implementation of user-defined PyFunc class."""
+"""Default implementation PyFunc for drawing on frame."""
 
+import numpy as np
 import pyds
 from cairo import Context, Format, ImageSurface
+from savant.deepstream.base_drawfunc import BaseNvDsDrawFunc
 from savant.deepstream.meta.frame import NvDsFrameMeta
-from savant.deepstream.pyfunc import NvDsPyFuncPlugin
-from savant.deepstream.utils import nvds_frame_meta_iterator
-from savant.gstreamer import Gst  # noqa: F401
 from savant.meta.bbox import BBox, RBBox
 from savant.meta.constants import UNTRACKED_OBJECT_ID
 from savant.utils.artist import Position, Artist
 
 
-class NvDsDrawBin(NvDsPyFuncPlugin):
-    """NvDsPyFuncPlugin for drawing on frame.
+class NvDsDrawFunc(BaseNvDsDrawFunc):
+    """Default implementation of PyFunc for drawing on frame.
 
     PyFunc implementations are defined in and instantiated by a
     :py:class:`.PyFunc` structure.
     """
 
-    def process_buffer(self, buffer: Gst.Buffer):
-        """Processes gstreamer buffer with Deepstream batch structure. Draws
-        Deepstream metadata objects for each frame in the batch. Throws an
-        exception if fatal error has occurred.
-
-        :param buffer: Gstreamer buffer.
-        """
-        nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
-        for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
-            frame = pyds.get_nvds_buf_surface(hash(buffer), nvds_frame_meta.batch_id)
-            frame_height, frame_width, _ = frame.shape
-            surface = ImageSurface.create_for_data(
-                frame, Format.ARGB32, frame_width, frame_height
-            )
-            artist = Artist(Context(surface))
-            frame_meta = NvDsFrameMeta(frame_meta=nvds_frame_meta)
-            self.draw_on_frame(frame_meta, artist)
-            surface.flush()
-            surface.finish()
+    def __call__(self, nvds_frame_meta: pyds.NvDsFrameMeta, frame: np.ndarray):
+        frame_height, frame_width, _ = frame.shape
+        surface = ImageSurface.create_for_data(
+            frame, Format.ARGB32, frame_width, frame_height
+        )
+        artist = Artist(Context(surface))
+        frame_meta = NvDsFrameMeta(frame_meta=nvds_frame_meta)
+        self.draw_on_frame(frame_meta, artist)
+        surface.flush()
+        surface.finish()
 
     def draw_on_frame(self, frame_meta: NvDsFrameMeta, artist: Artist):
         """Draws bounding boxes and labels for all objects in the frame.
