@@ -223,13 +223,6 @@ class NvDsPipeline(GstPipeline):
     ) -> Gst.Element:
         """Adds sink elements."""
 
-        # FIXME: Temporarily disabled due to memory leak when using drawbin on jetson nx
-        # add drawbin if frame should be in module output and there is no drawbin
-        # if self._output_frame and 'drawbin' not in {
-        #     e.element for e, _ in self.elements
-        # }:
-        #     self._add_element(DrawBinElement())
-
         self._create_demuxer(link)
         self._free_pad_indices = list(range(len(self._demuxer_src_pads)))
 
