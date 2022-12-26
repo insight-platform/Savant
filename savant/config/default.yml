@@ -59,7 +59,6 @@ parameters:
   #   kwargs:
   #     color: RED
   # Class to draw on frames must implement savant.deepstream.base_drawfunc.BaseNvDsDrawFunc.
-  # TODO: update docs
   draw_func: null
 
 
