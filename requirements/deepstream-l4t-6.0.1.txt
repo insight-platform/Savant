@@ -4,4 +4,6 @@ numpy==1.19.4
 # 1.19.0 in base, no available wheels for 1.21
 pycairo~=1.20.1
 # pyds for ds 6.0.1
-https://github.com/NVIDIA-AI-IOT/deepstream_python_apps/releases/download/v1.1.1/pyds-1.1.1-py3-none-linux_aarch64.whl
+# TODO: Use an artifact from https://github.com/NVIDIA-AI-IOT/deepstream_python_apps
+# when https://github.com/NVIDIA-AI-IOT/deepstream_python_apps/pull/6 is merged and released
+./libs/wheels/pyds-1.1.1-py3-none-linux_aarch64.whl

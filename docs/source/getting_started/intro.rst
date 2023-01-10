@@ -70,14 +70,15 @@ And the contents of ``module/car_counter.py`` Python script in this example woul
 
     from collections import Counter
     from savant.deepstream.meta.frame import NvDsFrameMeta
+    from savant.deepstream.pyfunc import NvDsPyFuncPlugin
 
     counter = Counter()
 
     CAR_COLOR_ELEMENT_NAME = 'secondary_carcolor'
     CAR_COLOR_ATTR_NAME = 'car_color'
 
-    class CarCounter(NvDsPyFunc):
-        def process_frame_meta(self, frame_meta: NvDsFrameMeta):
+    class CarCounter(NvDsPyFuncPlugin):
+        def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
             for obj_meta in frame_meta.objects:
                 car_color_attr = obj_meta.get_attr_meta(CAR_COLOR_ELEMENT_NAME, CAR_COLOR_ATTR_NAME)
                 counter[car_color_attr.value] += 1

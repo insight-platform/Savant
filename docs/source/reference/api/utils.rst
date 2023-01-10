@@ -30,3 +30,15 @@ Gstreamer utilities
     :template: autosummary/class.rst
 
     LoggerMixin
+
+DeepStream utilities
+--------------------
+
+.. currentmodule:: savant.deepstream.utils
+
+.. autosummary::
+    :toctree: generated
+    :nosignatures:
+    :template: autosummary/function.rst
+
+    get_nvds_buf_surface

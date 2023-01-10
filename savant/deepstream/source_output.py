@@ -1,12 +1,14 @@
 """Classes for adding output elements to a DeepStream pipeline."""
 import logging
 from abc import ABC, abstractmethod
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 import pyds
 from pygstsavantframemeta import add_convert_savant_frame_meta_pad_probe
 
 from savant.config.schema import PipelineElement
+from savant.deepstream.base_drawfunc import BaseNvDsDrawFunc
+from savant.deepstream.utils import get_nvds_buf_surface, nvds_frame_meta_iterator
 from savant.gstreamer import Gst  # noqa:F401
 from savant.gstreamer.codecs import CodecInfo
 from savant.gstreamer.pipeline import GstPipeline
@@ -150,13 +152,23 @@ class SourceOutputEncoded(SourceOutputWithFrame):
     def __init__(
         self,
         codec: CodecInfo,
-        params: Dict[str, Any] = None,
+        params: Optional[Dict[str, Any]],
+        draw_func: Optional[BaseNvDsDrawFunc],
     ):
+        """
+        :param codec: Codec for output frames.
+        :param params: Parameters of the encoder.
+        :param draw_func: PyFunc to draw on frames.
+        """
+
         super().__init__()
         self._codec = codec
         self._params = params or {}
+        self._draw_func = draw_func
 
     def _add_transform_elems(self, pipeline: GstPipeline, source_info: SourceInfo):
+        if self._draw_func:
+            self._add_frame_drawing(pipeline, source_info)
         encoder = pipeline._add_element(
             PipelineElement(self._codec.encoder, properties=self._params)
         )
@@ -176,6 +188,62 @@ class SourceOutputEncoded(SourceOutputWithFrame):
                 ]
             )
         )
+
+    def _add_frame_drawing(self, pipeline: GstPipeline, source_info: SourceInfo):
+        """Add a pad probe to draw on frames if needed."""
+
+        capsfilter = pipeline._add_element(PipelineElement('capsfilter'))
+        caps = self._build_draw_caps(source_info)
+        capsfilter.set_property('caps', caps)
+        source_info.after_demuxer.append(capsfilter)
+        capsfilter.sync_state_with_parent()
+        self._logger.debug('Added capsfilter for drawing frames with caps %s', caps)
+
+        converter = pipeline._add_element(
+            PipelineElement(
+                'nvvideoconvert',
+                properties=(
+                    {}
+                    if is_aarch64()
+                    else {'nvbuf-memory-type': int(pyds.NVBUF_MEM_CUDA_UNIFIED)}
+                ),
+            ),
+        )
+        source_info.after_demuxer.append(converter)
+        converter.get_static_pad('sink').add_probe(
+            Gst.PadProbeType.BUFFER,
+            self._draw_on_frame_probe,
+        )
+        converter.sync_state_with_parent()
+        self._logger.debug('Added converter with pad probe for drawing frames')
+
+    def _build_draw_caps(self, source_info: SourceInfo) -> Gst.Caps:
+        """Build caps for a pad probe drawing on frames."""
+
+        return Gst.Caps.from_string(
+            ', '.join(
+                [
+                    'video/x-raw(memory:NVMM)',
+                    'format=RGBA',
+                    f'width={source_info.dest_resolution.width}',
+                    f'height={source_info.dest_resolution.height}',
+                ]
+            )
+        )
+
+    def _draw_on_frame_probe(
+        self,
+        pad: Gst.Pad,
+        info: Gst.PadProbeInfo,
+    ) -> Gst.PadProbeReturn:
+        """Pad probe to draw on frames."""
+
+        buffer: Gst.Buffer = info.get_buffer()
+        nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
+        for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
+            with get_nvds_buf_surface(buffer, nvds_frame_meta) as frame:
+                self._draw_func(nvds_frame_meta, frame)
+        return Gst.PadProbeReturn.OK
 
 
 class SourceOutputH26X(SourceOutputEncoded):
