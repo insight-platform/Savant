@@ -168,7 +168,7 @@ class DrawFunc(PyFunc):
     class_name: str = 'NvDsDrawFunc'
     """Python class name to instantiate."""
 
-    rendered_objects: Optional[Dict[str, Dict[str, str]]] = None
+    rendered_objects: Optional[Dict[str, Dict[str, Any]]] = None
     """Objects that will be rendered on the frame
     
     For example,
@@ -187,7 +187,10 @@ class DrawFunc(PyFunc):
     """Class initialization keyword arguments."""
 
     def __post_init__(self):
+        if self.kwargs is None:
+            self.kwargs = {}
         self.kwargs.update({'rendered_objects': self.rendered_objects})
+        super().__post_init__()
 
 
 @dataclass
