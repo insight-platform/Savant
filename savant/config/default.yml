@@ -43,6 +43,25 @@ parameters:
   # leave empty to include only metadata (no frames)
   output_frame: ${json:${oc.env:OUTPUT_FRAME, null}}
 
+  # PyFunc for drawing on frames. Should be an instance of savant.config.schema.DrawFunc.
+  #
+  # To not draw on frames leave "null".
+  #
+  # To use default class to draw on frames use an empty object ("{}")
+  # E.g.:
+  # draw_func: {}
+  #
+  # To use custom class to draw on frames define "module", "class_name" and "kwargs".
+  # E.g.:
+  # draw_func:
+  #   module: custom.drawer
+  #   class_name: CustomDrawer
+  #   kwargs:
+  #     color: RED
+  # Class to draw on frames must implement savant.deepstream.base_drawfunc.BaseNvDsDrawFunc.
+  draw_func: null
+
+
 # pipeline definition
 pipeline:
   source:

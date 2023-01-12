@@ -150,26 +150,22 @@ def get_element_name(element: Union[DictConfig, PipelineElement]) -> str:
 
 
 @dataclass
-class DrawBinElement(PipelineElement, PyFunc):
-    """A pipeline element that will use an object implementing
-    :py:class:`~savant.base.pyfunc.BasePyFuncPlugin`
-    to draw metadata on frames and output the frames to window/files/video.
+class DrawFunc(PyFunc):
+    """A callable PyFunc that will use an object implementing
+    :py:class:`~savant.deepstream.base_drawfunc.BaseNvDsDrawFunc`
+    to draw metadata on frames.
 
     .. note::
 
         Default values for :py:attr:`.module` and :py:attr:`.class_name` attributes
-        are set to use :py:class:`~savant.deepstream.drawbin.NvDsDrawBin` drawbin
+        are set to use :py:class:`~savant.deepstream.drawfunc.NvDsDrawFunc` drawbin
         implementation.
     """
 
-    element: str = 'drawbin'
-    """``"drawbin"`` is the fixed gstreamer element class for DrawBinElement.
-    """
-
-    module: str = 'savant.deepstream.drawbin'
+    module: str = 'savant.deepstream.drawfunc'
     """Module name to import."""
 
-    class_name: str = 'NvDsDrawBin'
+    class_name: str = 'NvDsDrawFunc'
     """Python class name to instantiate."""
 
     rendered_objects: Optional[Dict[str, Dict[str, str]]] = None
@@ -190,29 +186,8 @@ class DrawBinElement(PipelineElement, PyFunc):
     kwargs: Optional[Dict[str, Any]] = None
     """Class initialization keyword arguments."""
 
-    location: str = ''
-    """Either one:
-    - location of the output file (filesink/multifilesink output)
-    - "display" (nveglglessink output)
-    """
-
     def __post_init__(self):
-        kwargs = {}
-        if 'kwargs' in self.properties and self.properties['kwargs']:
-            kwargs = json.loads(self.properties['kwargs'])
-        if self.kwargs:
-            kwargs.update(self.kwargs)
-
-        kwargs.update({'rendered_objects': self.rendered_objects})
-
-        self.properties.update(
-            {
-                'module': self.module,
-                'class': self.class_name,
-                'location': self.location,
-                'kwargs': json.dumps(kwargs),
-            }
-        )
+        self.kwargs.update({'rendered_objects': self.rendered_objects})
 
 
 @dataclass
@@ -239,6 +214,7 @@ class PyFuncElement(PipelineElement, PyFunc):
             kwargs = json.loads(self.properties['kwargs'])
         if self.kwargs:
             kwargs.update(self.kwargs)
+
         if 'name' in self.kwargs:
             logging.warning("'name' is reserved name argument and will be replaced")
         if self.name:
@@ -324,6 +300,8 @@ class Pipeline:
     """Pipeline's main contents: sequence of Pipe that implement all frame
     processing operations. Can be a :py:class:`PipelineElement` or any subclass of it.
     """
+
+    draw_func: Optional[DrawFunc] = None
 
     sink: List[PipelineElement] = field(default_factory=list)
     """Sink elements of a pipeline."""

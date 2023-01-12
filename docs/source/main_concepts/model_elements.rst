@@ -194,10 +194,17 @@ Usually it is enough to overload a ``process_frame`` method of the :py:class:`~s
    from savant.deepstream.pyfunc import NvDsPyFuncPlugin
 
    class PyClass(NvDsPyFuncPlugin):
-      def process_frame(self, frame_meta: NvDsFrameMeta, frame: np.ndarray):
+      def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
          ...
 
-User can get access to all meta information at the lowest level and image data through the function parameters.
+User can get access to all meta information at the lowest level through the function parameters. To access an image data user should use  :py:func:`~savant.deepstream.utils.get_nvds_buf_surface`:
+
+.. code-block:: python
+
+   from savant.deepstream.utils import get_nvds_buf_surface
+   ...
+   with get_nvds_buf_surface(buffer, nvds_frame_meta) as frame:
+      ...
 
 Also you can access the raw ``Gst.Buffer`` with ``process_buffer`` method.
 See base class :py:class:`~savant.deepstream.pyfunc.NvDsPyFuncPlugin` for details.
