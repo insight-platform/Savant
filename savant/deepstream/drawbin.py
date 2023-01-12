@@ -17,6 +17,7 @@ class NvDsDrawBin(NvDsPyFuncPlugin):
     PyFunc implementations are defined in and instantiated by a
     :py:class:`.PyFunc` structure.
     """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         if self.rendered_objects:
@@ -54,13 +55,17 @@ class NvDsDrawBin(NvDsPyFuncPlugin):
             if not obj_meta.element_name and obj_meta.label == 'frame':
                 continue
 
-            if self.rendered_objects is None or \
-                    (obj_meta.element_name in self.rendered_objects and
-                     obj_meta.label in self.rendered_objects[obj_meta.element_name]):
+            if self.rendered_objects is None or (
+                obj_meta.element_name in self.rendered_objects
+                and obj_meta.label in self.rendered_objects[obj_meta.element_name]
+            ):
                 artist.add_bbox(
                     bbox=obj_meta.bbox,
-                    border_color=self.rendered_objects[obj_meta.element_name][obj_meta.label]
-                                        if self.rendered_objects else (0.0, 1.0, 0.0)
+                    border_color=self.rendered_objects[obj_meta.element_name][
+                        obj_meta.label
+                    ]
+                    if self.rendered_objects
+                    else (0.0, 1.0, 0.0),
                 )
 
                 label = obj_meta.label

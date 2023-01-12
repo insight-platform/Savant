@@ -21,6 +21,7 @@ class Position(Enum):
     CENTER_BOTTOM = 8
     RIGHT_BOTTOM = 9
 
+
 # BGR format
 COLOR = {
     'red': (0, 0, 255),
@@ -31,7 +32,7 @@ COLOR = {
     'orange': (0, 165, 255),
     'yellow': (0, 255, 255),
     'lime': (0, 255, 0),
-    'magenta': (255, 0, 255)
+    'magenta': (255, 0, 255),
 }
 
 
