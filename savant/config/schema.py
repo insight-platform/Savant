@@ -173,7 +173,19 @@ class DrawBinElement(PipelineElement, PyFunc):
     """Python class name to instantiate."""
 
     rendered_objects: Optional[Dict[str, Dict[str, str]]] = None
-    """Objects that will be rendered on the frame"""
+    """Objects that will be rendered on the frame
+    
+    For example,
+
+    .. code-block:: yaml
+        - element: drawbin
+            rendered_objects:
+                tracker:
+                    person: red
+                yolov7obb:
+                    person: green
+
+    """
 
     kwargs: Optional[Dict[str, Any]] = None
     """Class initialization keyword arguments."""
