@@ -1,4 +1,5 @@
 """Module and pipeline elements configuration templates."""
+import logging
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
 import json
@@ -171,6 +172,9 @@ class DrawBinElement(PipelineElement, PyFunc):
     class_name: str = 'NvDsDrawBin'
     """Python class name to instantiate."""
 
+    rendered_objects: Optional[Dict[str, Dict[str, str]]] = None
+    """Objects that will be rendered on the frame"""
+
     kwargs: Optional[Dict[str, Any]] = None
     """Class initialization keyword arguments."""
 
@@ -186,6 +190,8 @@ class DrawBinElement(PipelineElement, PyFunc):
             kwargs = json.loads(self.properties['kwargs'])
         if self.kwargs:
             kwargs.update(self.kwargs)
+
+        kwargs.update({'rendered_objects': self.rendered_objects})
 
         self.properties.update(
             {
@@ -221,6 +227,12 @@ class PyFuncElement(PipelineElement, PyFunc):
             kwargs = json.loads(self.properties['kwargs'])
         if self.kwargs:
             kwargs.update(self.kwargs)
+        if 'name' in self.kwargs:
+            logging.warning("'name' is reserved name argument and will be replaced")
+        if self.name:
+            kwargs.update({'name': self.name})
+        else:
+            kwargs.update({'name': self.class_name})
 
         self.properties.update(
             {

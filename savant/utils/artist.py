@@ -21,6 +21,19 @@ class Position(Enum):
     CENTER_BOTTOM = 8
     RIGHT_BOTTOM = 9
 
+# BGR format
+COLOR = {
+    'red': (0, 0, 255),
+    'green': (0, 128, 0),
+    'blue': (255, 0, 0),
+    'darkred': (0, 0, 139),
+    'orangered': (0, 69, 255),
+    'orange': (0, 165, 255),
+    'yellow': (0, 255, 255),
+    'lime': (0, 255, 0),
+    'magenta': (255, 0, 255)
+}
+
 
 class Artist:
     """Drawer on frame cairo context using primitives.
