@@ -1,4 +1,5 @@
 """Module and pipeline elements configuration templates."""
+import logging
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
 import json
@@ -167,8 +168,29 @@ class DrawFunc(PyFunc):
     class_name: str = 'NvDsDrawFunc'
     """Python class name to instantiate."""
 
+    rendered_objects: Optional[Dict[str, Dict[str, Any]]] = None
+    """Objects that will be rendered on the frame
+    
+    For example,
+
+    .. code-block:: yaml
+        - element: drawbin
+            rendered_objects:
+                tracker:
+                    person: red
+                yolov7obb:
+                    person: green
+
+    """
+
     kwargs: Optional[Dict[str, Any]] = None
     """Class initialization keyword arguments."""
+
+    def __post_init__(self):
+        if self.kwargs is None:
+            self.kwargs = {}
+        self.kwargs.update({'rendered_objects': self.rendered_objects})
+        super().__post_init__()
 
 
 @dataclass
@@ -195,6 +217,13 @@ class PyFuncElement(PipelineElement, PyFunc):
             kwargs = json.loads(self.properties['kwargs'])
         if self.kwargs:
             kwargs.update(self.kwargs)
+
+        if 'name' in self.kwargs:
+            logging.warning("'name' is reserved name argument and will be replaced")
+        if self.name:
+            kwargs.update({'name': self.name})
+        else:
+            kwargs.update({'name': self.class_name})
 
         self.properties.update(
             {
