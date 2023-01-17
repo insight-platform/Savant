@@ -11,10 +11,8 @@ def scale_rbbox(
     :param scale_factor_x: scale factor for x coordinates
     :param scale_factor_y: scale factor for y coordinates
     """
-    bboxes_zero_angle = bboxes[np.any([bboxes[:, 4] == 0, bboxes[:, 4] == 180], axis=0)]
-    bboxes_not_zero_angle = bboxes[
-        np.all([bboxes[:, 4] != 0, bboxes[:, 4] != 180], axis=0)
-    ]
+    bboxes_zero_angle = bboxes[np.mod(bboxes[:, 4], 90) == 0]
+    bboxes_not_zero_angle = bboxes[np.mod(bboxes[:, 4], 90) != 0]
 
     if bboxes_not_zero_angle.shape[0] > 0:
         scale_x = np.array([scale_factor_x] * bboxes_not_zero_angle.shape[0])

@@ -109,7 +109,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
             rbbox_coords.height = bbox.height
             rbbox_coords.angle = bbox.angle
             add_rbbox_to_object_meta(
-                self._frame_meta.batch_meta, self._frame_meta.frame_meta, rbbox_coords
+                self._frame_meta.batch_meta, self.ds_object_meta, rbbox_coords
             )
             nvds_set_selection_type(
                 obj_meta=self.ds_object_meta,
