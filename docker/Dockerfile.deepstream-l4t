@@ -1,19 +1,7 @@
 ARG DEEPSTREAM_VERSION
-FROM nvcr.io/nvidia/deepstream-l4t:$DEEPSTREAM_VERSION-triton AS pygstsavantframemeta_build
-
-WORKDIR /libs/gstsavantframemeta
-COPY libs/gstsavantframemeta/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-COPY libs/gstsavantframemeta .
-RUN python setup.py bdist_wheel && \
-    rm -rf _skbuild
-
-
-FROM nvcr.io/nvidia/deepstream-l4t:$DEEPSTREAM_VERSION-triton AS savantboost_build
+FROM nvcr.io/nvidia/deepstream-l4t:$DEEPSTREAM_VERSION-triton AS base_builder
 
 ARG soc=t194
-
 
 RUN wget --no-verbose -O /tmp/cmake.sh \
         https://github.com/Kitware/CMake/releases/download/v3.24.2/cmake-3.24.2-linux-aarch64.sh  \
@@ -30,12 +18,57 @@ RUN echo "deb https://repo.download.nvidia.com/jetson/$soc `cat /etc/apt/sources
         nvidia-l4t-multimedia \
     && rm -rf /var/lib/apt/lists/*
 
+
+FROM base_builder AS pygstsavantframemeta_build
+
+WORKDIR /libs/gstsavantframemeta
+COPY libs/gstsavantframemeta/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY libs/gstsavantframemeta .
+RUN python setup.py bdist_wheel && \
+    rm -rf _skbuild
+
+
+FROM base_builder AS savantboost_build
+
 WORKDIR /libs/savanboost
 COPY libs/savantboost/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY libs/savantboost .
 RUN python setup.py bdist_wheel && rm -rf _skbuild
+
+
+FROM base_builder AS pyds_build
+
+RUN apt-get update \
+    && apt-get install -y \
+        automake \
+        libtool \
+        python-gi-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG PYDS_TAG
+RUN git clone https://github.com/tomskikh/deepstream_python_apps.git /deepstream_python_apps \
+    && cd /deepstream_python_apps \
+    && git checkout $PYDS_TAG \
+    && git submodule init \
+    && git submodule update \
+    && cd 3rdparty/gst-python \
+    && git submodule init \
+    && git submodule update
+
+WORKDIR /deepstream_python_apps/3rdparty/gst-python
+RUN ./autogen.sh \
+    && make \
+    && make install
+
+WORKDIR /deepstream_python_apps/bindings/build
+RUN cmake -DPIP_PLATFORM=linux_aarch64 .. \
+    && make \
+    && mkdir /dist \
+    && mv *.whl /dist/
 
 
 FROM nvcr.io/nvidia/deepstream-l4t:$DEEPSTREAM_VERSION-base AS base
@@ -66,12 +99,14 @@ ENV LD_LIBRARY_PATH=/opt/nvidia/deepstream/deepstream/lib/:$LD_LIBRARY_PATH
 COPY requirements/base.txt requirements-base.txt
 COPY requirements/deepstream-l4t.txt requirements-deepstream-l4t.txt
 RUN python -m pip install --no-cache-dir --upgrade pip
-COPY libs/wheels libs/wheels
 RUN python -m pip install --no-cache-dir \
     -r requirements-base.txt \
     -r requirements-deepstream-l4t.txt \
     && rm requirements-base.txt \
     && rm requirements-deepstream-l4t.txt
+
+COPY --from=pyds_build /dist /libs/pyds/dist
+RUN python -m pip install --no-cache-dir /libs/pyds/dist/*.whl
 
 COPY --from=pygstsavantframemeta_build /libs/gstsavantframemeta/dist /libs/gstsavantframemeta/dist
 RUN python -m pip install --no-cache-dir /libs/gstsavantframemeta/dist/*.whl
