@@ -102,6 +102,42 @@ RUN cmake -DPIP_PLATFORM=linux_aarch64 .. \
     && mv *.whl /dist/
 
 
+FROM base_builder AS opencv_build
+
+WORKDIR /opencv
+ARG OPENCV_VERSION=4.6.0
+RUN git clone --branch "${OPENCV_VERSION}" --depth 1 https://github.com/opencv/opencv
+RUN git clone --branch "${OPENCV_VERSION}" --depth 1 https://github.com/opencv/opencv_contrib
+WORKDIR /opencv/build
+
+RUN python -m pip install --no-cache-dir --upgrade pip
+RUN python -m pip install --no-cache-dir 'numpy==1.19.4'
+
+COPY libs/opencv/savant /opencv/opencv_contrib/modules/savant
+RUN --mount=type=cache,target=/tmp/opencv-cache \
+    cmake \
+        -D CMAKE_BUILD_TYPE=RELEASE \
+        -D OPENCV_EXTRA_MODULES_PATH=/opencv/opencv_contrib/modules  \
+        -D CMAKE_INSTALL_PREFIX=/opencv/dist  \
+        -D OPENCV_DOWNLOAD_PATH=/tmp/opencv-cache \
+        -D PYTHON_DEFAULT_EXECUTABLE=$(which python3) \
+        -D OPENCV_PYTHON_INSTALL_PATH=lib/python3.8/dist-packages \
+        -D OPENCV_FORCE_PYTHON_LIBS=ON \
+        -D BUILD_LIST=core,cudaarithm,cudabgsegm,cudacodec,cudafeatures2d,cudafilters,cudaimgproc,cudev,features2d,flann,imgcodecs,savant,python3 \
+        -D BUILD_opencv_apps=OFF \
+        -D BUILD_DOCS=OFF \
+        -D BUILD_EXAMPLES=OFF \
+        -D BUILD_JAVA=OFF \
+        -D BUILD_PERF_TESTS=OFF \
+        -D BUILD_SHARED_LIBS=ON \
+        -D WITH_CUDA=ON \
+        -D WITH_FFMPEG=OFF \
+        -D WITH_GSTREAMER=OFF \
+        /opencv/opencv
+
+RUN make -j$(nproc) install
+
+
 FROM nvcr.io/nvidia/deepstream-l4t:$DEEPSTREAM_VERSION-base AS base
 
 # python2 to python3 by default
@@ -169,6 +205,8 @@ RUN apt-get remove -y \
         python-gi-dev
 RUN python -m pip install --no-cache-dir pycairo==1.19.0
 RUN python -m pip install --no-cache-dir PyGObject==3.40.1
+
+COPY --from=opencv_build /opencv/dist /usr/local
 
 ENV PYTHONUNBUFFERED=1
 ARG APP_PATH=/opt/app
