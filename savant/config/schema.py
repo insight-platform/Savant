@@ -174,6 +174,7 @@ class DrawFunc(PyFunc):
     For example,
 
     .. code-block:: yaml
+
         - element: drawbin
             rendered_objects:
                 tracker:

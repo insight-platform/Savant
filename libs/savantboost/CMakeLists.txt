@@ -61,7 +61,7 @@ endif(DEFINE $ENV{ENABLE_DEBUG})
 add_subdirectory(savantboost ../build/savantboost)
 
 add_library(${python_module_name} MODULE pysavantboost/src/nms.cpp pysavantboost/src/b_rbbox_meta.cpp pysavantboost/src/pysavantboost.cpp 
-pysavantboost/src/preprocessing.cpp)
+pysavantboost/src/preprocessing.cpp pysavantboost/src/nvsurfaceptr.cpp)
 
 if ($ENV{ENABLE_DEBUG})
     target_compile_definitions(${python_module_name} PUBLIC ENABLE_DEBUG)

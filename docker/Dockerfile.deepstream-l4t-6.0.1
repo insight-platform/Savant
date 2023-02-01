@@ -19,20 +19,6 @@ RUN wget --no-verbose -O /tmp/cmake.sh \
     && sh /tmp/cmake.sh --skip-license --prefix=/usr \
     && rm -f /tmp/cmake.sh
 
-
-FROM base_builder AS pygstsavantframemeta_build
-
-WORKDIR /libs/gstsavantframemeta
-COPY libs/gstsavantframemeta/requirements.txt .
-RUN python -m pip install --no-cache-dir -r requirements.txt
-
-COPY libs/gstsavantframemeta .
-RUN python setup.py bdist_wheel && \
-    rm -rf _skbuild
-
-
-FROM base_builder AS savantboost_build
-
 ARG soc=t210
 ARG l4t_version=32.6
 
@@ -56,12 +42,100 @@ RUN mkdir -p /tmp/cub \
     && mv /tmp/cub/cub /usr/include/ \
     && ls -al /usr/include/cub
 
+
+FROM base_builder AS pygstsavantframemeta_build
+
+WORKDIR /libs/gstsavantframemeta
+COPY libs/gstsavantframemeta/requirements.txt .
+RUN python -m pip install --no-cache-dir -r requirements.txt
+
+COPY libs/gstsavantframemeta .
+RUN python setup.py bdist_wheel && \
+    rm -rf _skbuild
+
+
+FROM base_builder AS savantboost_build
+
 WORKDIR /libs/savanboost
 COPY libs/savantboost/requirements.txt .
 RUN python -m pip install --no-cache-dir -r requirements.txt
 
 COPY libs/savantboost .
 RUN python setup.py bdist_wheel && rm -rf _skbuild
+
+
+FROM base_builder AS pyds_build
+
+RUN apt-get update \
+    && apt-get install -y \
+        automake \
+        cmake \
+        libgstreamer-plugins-base1.0-dev \
+        libgstreamer1.0-dev \
+        libtool \
+        python-dev \
+        python-gi-dev \
+        python3-dev \
+        python3-pip \
+        python3-setuptools \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG PYDS_TAG
+RUN git clone https://github.com/tomskikh/deepstream_python_apps.git /deepstream_python_apps \
+    && cd /deepstream_python_apps \
+    && git checkout $PYDS_TAG \
+    && git submodule init \
+    && git submodule update \
+    && cd 3rdparty/gst-python \
+    && git submodule init \
+    && git submodule update
+
+WORKDIR /deepstream_python_apps/3rdparty/gst-python
+RUN ./autogen.sh \
+    && make \
+    && make install
+
+WORKDIR /deepstream_python_apps/bindings/build
+RUN cmake -DPIP_PLATFORM=linux_aarch64 .. \
+    && make \
+    && mkdir /dist \
+    && mv *.whl /dist/
+
+
+FROM base_builder AS opencv_build
+
+WORKDIR /opencv
+ARG OPENCV_VERSION=4.6.0
+RUN git clone --branch "${OPENCV_VERSION}" --depth 1 https://github.com/opencv/opencv
+RUN git clone --branch "${OPENCV_VERSION}" --depth 1 https://github.com/opencv/opencv_contrib
+WORKDIR /opencv/build
+
+RUN python -m pip install --no-cache-dir --upgrade pip
+RUN python -m pip install --no-cache-dir 'numpy==1.19.4'
+
+COPY libs/opencv/savant /opencv/opencv_contrib/modules/savant
+RUN --mount=type=cache,target=/tmp/opencv-cache \
+    cmake \
+        -D CMAKE_BUILD_TYPE=RELEASE \
+        -D OPENCV_EXTRA_MODULES_PATH=/opencv/opencv_contrib/modules  \
+        -D CMAKE_INSTALL_PREFIX=/opencv/dist  \
+        -D OPENCV_DOWNLOAD_PATH=/tmp/opencv-cache \
+        -D PYTHON_DEFAULT_EXECUTABLE=$(which python3) \
+        -D OPENCV_PYTHON_INSTALL_PATH=lib/python3.8/dist-packages \
+        -D OPENCV_FORCE_PYTHON_LIBS=ON \
+        -D BUILD_LIST=core,cudaarithm,cudabgsegm,cudacodec,cudafeatures2d,cudafilters,cudaimgproc,cudev,features2d,flann,imgcodecs,savant,python3 \
+        -D BUILD_opencv_apps=OFF \
+        -D BUILD_DOCS=OFF \
+        -D BUILD_EXAMPLES=OFF \
+        -D BUILD_JAVA=OFF \
+        -D BUILD_PERF_TESTS=OFF \
+        -D BUILD_SHARED_LIBS=ON \
+        -D WITH_CUDA=ON \
+        -D WITH_FFMPEG=OFF \
+        -D WITH_GSTREAMER=OFF \
+        /opencv/opencv
+
+RUN make -j$(nproc) install
 
 
 FROM nvcr.io/nvidia/deepstream-l4t:$DEEPSTREAM_VERSION-base AS base
@@ -132,6 +206,8 @@ RUN apt-get remove -y \
 RUN python -m pip install --no-cache-dir pycairo==1.19.0
 RUN python -m pip install --no-cache-dir PyGObject==3.40.1
 
+COPY --from=opencv_build /opencv/dist /usr/local
+
 ENV PYTHONUNBUFFERED=1
 ARG APP_PATH=/opt/app
 ENV APP_PATH=$APP_PATH
@@ -145,12 +221,14 @@ ENV LD_LIBRARY_PATH=/opt/nvidia/deepstream/deepstream/lib/:$LD_LIBRARY_PATH
 # install requirements
 COPY requirements/base.txt requirements-base.txt
 COPY requirements/deepstream-l4t-6.0.1.txt requirements-deepstream-l4t.txt
-COPY libs/wheels libs/wheels
 RUN python -m pip install --no-cache-dir \
     -r requirements-base.txt \
     -r requirements-deepstream-l4t.txt \
     && rm requirements-base.txt \
     && rm requirements-deepstream-l4t.txt
+
+COPY --from=pyds_build /dist /libs/pyds/dist
+RUN python -m pip install --no-cache-dir /libs/pyds/dist/*.whl
 
 COPY --from=pygstsavantframemeta_build /libs/gstsavantframemeta/dist /libs/gstsavantframemeta/dist
 RUN python -m pip install --no-cache-dir /libs/gstsavantframemeta/dist/*.whl

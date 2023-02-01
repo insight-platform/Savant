@@ -1,19 +1,5 @@
 ARG DEEPSTREAM_VERSION
-FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-devel AS pygstsavantframemeta_build
-
-# python to python3 by default
-RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 10
-
-WORKDIR /libs/gstsavantframemeta
-COPY libs/gstsavantframemeta/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-COPY libs/gstsavantframemeta .
-RUN python setup.py bdist_wheel && \
-    rm -rf _skbuild
-
-
-FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-devel AS savantboost_build
+FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-devel AS base_builder
 
 # Newer cmake ver. needed for "FindCUDAToolkit"
 RUN mkdir -p /tmp/cmake \
@@ -24,12 +10,91 @@ RUN mkdir -p /tmp/cmake \
 # python to python3 by default
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 10
 
+
+FROM base_builder AS pygstsavantframemeta_build
+
+WORKDIR /libs/gstsavantframemeta
+COPY libs/gstsavantframemeta/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY libs/gstsavantframemeta .
+RUN python setup.py bdist_wheel && \
+    rm -rf _skbuild
+
+
+FROM base_builder AS savantboost_build
+
 WORKDIR /libs/savanboost
 COPY libs/savantboost/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY libs/savantboost .
 RUN python setup.py bdist_wheel && rm -rf _skbuild
+
+
+FROM base_builder AS pyds_build
+
+RUN apt-get update \
+    && apt-get install -y \
+        python-gi-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG PYDS_TAG
+RUN git clone https://github.com/tomskikh/deepstream_python_apps.git /deepstream_python_apps \
+    && cd /deepstream_python_apps \
+    && git checkout $PYDS_TAG \
+    && git submodule init \
+    && git submodule update \
+    && cd 3rdparty/gst-python \
+    && git submodule init \
+    && git submodule update
+
+WORKDIR /deepstream_python_apps/3rdparty/gst-python
+RUN ./autogen.sh \
+    && make \
+    && make install
+
+WORKDIR /deepstream_python_apps/bindings/build
+RUN cmake -DPIP_PLATFORM=linux_x86_64 .. \
+    && make \
+    && mkdir /dist \
+    && mv *.whl /dist/
+
+
+FROM base_builder AS opencv_build
+
+WORKDIR /opencv
+ARG OPENCV_VERSION=4.6.0
+RUN git clone --branch "${OPENCV_VERSION}" --depth 1 https://github.com/opencv/opencv
+RUN git clone --branch "${OPENCV_VERSION}" --depth 1 https://github.com/opencv/opencv_contrib
+WORKDIR /opencv/build
+
+RUN python -m pip install --no-cache-dir 'numpy~=1.22.4'
+
+COPY libs/opencv/savant /opencv/opencv_contrib/modules/savant
+RUN --mount=type=cache,target=/tmp/opencv-cache \
+    cmake \
+        -D CMAKE_BUILD_TYPE=RELEASE \
+        -D OPENCV_EXTRA_MODULES_PATH=/opencv/opencv_contrib/modules  \
+        -D CMAKE_INSTALL_PREFIX=/opencv/dist  \
+        -D OPENCV_DOWNLOAD_PATH=/tmp/opencv-cache \
+        -D PYTHON_DEFAULT_EXECUTABLE=$(which python3) \
+        -D OPENCV_PYTHON_INSTALL_PATH=lib/python3.8/dist-packages \
+        -D OPENCV_FORCE_PYTHON_LIBS=ON \
+        -D BUILD_LIST=core,cudaarithm,cudabgsegm,cudacodec,cudafeatures2d,cudafilters,cudaimgproc,cudev,features2d,flann,imgcodecs,savant,python3 \
+        -D BUILD_opencv_apps=OFF \
+        -D BUILD_DOCS=OFF \
+        -D BUILD_EXAMPLES=OFF \
+        -D BUILD_JAVA=OFF \
+        -D BUILD_PERF_TESTS=OFF \
+        -D BUILD_SHARED_LIBS=ON \
+        -D WITH_CUDA=ON \
+        -D WITH_FFMPEG=OFF \
+        -D WITH_GSTREAMER=OFF \
+        /opencv/opencv
+
+RUN make -j$(nproc) install
+
 
 FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-base AS base
 
@@ -49,6 +114,8 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+COPY --from=opencv_build /opencv/dist /usr/local
+
 ENV PYTHONUNBUFFERED=1
 ARG APP_PATH=/opt/app
 ENV APP_PATH=$APP_PATH
@@ -62,12 +129,14 @@ ENV LD_LIBRARY_PATH=/opt/nvidia/deepstream/deepstream/lib/:$LD_LIBRARY_PATH
 COPY requirements/base.txt requirements-base.txt
 COPY requirements/deepstream.txt requirements-deepstream.txt
 RUN python -m pip install --no-cache-dir --upgrade pip
-COPY libs/wheels libs/wheels
 RUN python -m pip install --no-cache-dir \
     -r requirements-base.txt \
     -r requirements-deepstream.txt \
     && rm requirements-base.txt \
     && rm requirements-deepstream.txt
+
+COPY --from=pyds_build /dist /libs/pyds/dist
+RUN python -m pip install --no-cache-dir /libs/pyds/dist/*.whl
 
 COPY --from=pygstsavantframemeta_build /libs/gstsavantframemeta/dist /libs/gstsavantframemeta/dist
 RUN python -m pip install --no-cache-dir /libs/gstsavantframemeta/dist/*.whl

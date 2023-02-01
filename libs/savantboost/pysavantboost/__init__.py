@@ -8,6 +8,7 @@ from .pysavantboost import (
     ObjectsPreprocessing,
     Image,
     get_rbbox,
+    PyDSCudaMemory,
 )
 
 __all__ = (
@@ -20,4 +21,5 @@ __all__ = (
     'ObjectsPreprocessing',
     'Image',
     'get_rbbox',
+    'PyDSCudaMemory',
 )

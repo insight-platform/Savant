@@ -6,17 +6,19 @@
 #include "nvbufsurface.h"
 #include <unordered_map>
 
-class DSCudaMemory{
+class DSCudaMemory {
 private:
-    struct cudaGraphicsResource* _pResource = nullptr;
+    struct cudaGraphicsResource *_pResource = nullptr;
+    Npp8u *_egl_frame_ptr = nullptr;
     guint _batch_id;
-    bool _EglImageMapBuffer;
     NvBufSurface *_surface;
-    std::unordered_map<guint, Npp8u *> mapped_surface;
 public:
-    DSCudaMemory(NvBufSurface * surface, bool EglImageMapBuffer);
-    Npp8u* GetMapCudaPtr(guint batch_id);
+    DSCudaMemory(NvBufSurface *surface, guint batch_id);
+    Npp8u *GetMapCudaPtr();
     void UnMapCudaPtr();
+    guint width();
+    guint height();
+    guint size();
 };
 
 

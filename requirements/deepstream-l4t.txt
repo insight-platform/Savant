@@ -3,4 +3,4 @@ pycairo~=1.21.0
 # pyds
 # TODO: Use an artifact from https://github.com/NVIDIA-AI-IOT/deepstream_python_apps
 # when https://github.com/NVIDIA-AI-IOT/deepstream_python_apps/pull/6 is merged and released
-./libs/wheels/pyds-1.1.4-py3-none-linux_aarch64.whl
+# https://github.com/NVIDIA-AI-IOT/deepstream_python_apps/releases/download/v1.1.4/pyds-1.1.4-py3-none-linux_aarch64.whl
