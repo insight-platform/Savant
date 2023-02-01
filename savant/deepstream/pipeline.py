@@ -51,7 +51,7 @@ from savant.utils.fps_meter import FPSMeter
 from savant.utils.model_registry import ModelObjectRegistry
 from savant.utils.source_info import SourceInfoRegistry, SourceInfo, Resolution
 from savant.utils.platform import is_aarch64
-from savant.config.schema import PipelineElement, ModelElement
+from savant.config.schema import PipelineElement, ModelElement, FrameParameters
 from savant.base.model import AttributeModel, ComplexModel
 from savant.utils.sink_factories import SinkEndOfStream
 
@@ -62,8 +62,7 @@ class NvDsPipeline(GstPipeline):
     :param name: Pipeline name
     :param source: Pipeline source element
     :param elements: Pipeline elements
-    :key frame_width: Processing frame width (after nvstreammux)
-    :key frame_height: Processing frame height (after nvstreammux)
+    :key frame_params: Processing frame parameters (after nvstreammux)
     :key batch_size: Primary batch size (nvstreammux batch-size)
     :key output_frame: Whether to include frame in module output, not just metadata
     """
@@ -76,8 +75,7 @@ class NvDsPipeline(GstPipeline):
         **kwargs,
     ):
         # pipeline internal processing frame size
-        self._frame_width = kwargs['frame_width']
-        self._frame_height = kwargs['frame_height']
+        self._frame_params: FrameParameters = kwargs['frame']
 
         self._batch_size = kwargs['batch_size']
         # Timeout in microseconds
@@ -162,8 +160,7 @@ class NvDsPipeline(GstPipeline):
                 sources=self._sources,
                 model_object_registry=model_object_registry,
                 objects_preprocessing=self._objects_preprocessing,
-                frame_width=self._frame_width,
-                frame_height=self._frame_height,
+                frame_params=self._frame_params,
                 output_frame=self._output_frame_codec is not None,
                 draw_func=self._draw_func,
             )
@@ -173,8 +170,7 @@ class NvDsPipeline(GstPipeline):
             sources=self._sources,
             model_object_registry=model_object_registry,
             objects_preprocessing=self._objects_preprocessing,
-            frame_width=self._frame_width,
-            frame_height=self._frame_height,
+            frame_params=self._frame_params,
             codec=self._output_frame_codec.value,
         )
 
@@ -503,7 +499,7 @@ class NvDsPipeline(GstPipeline):
                     continue
 
                 obj_meta = nvds_obj_meta_output_converter(
-                    nvds_obj_meta, self._frame_width, self._frame_height
+                    nvds_obj_meta, self._frame_params
                 )
                 for attr_meta_list in nvds_attr_meta_iterator(
                     frame_meta=nvds_frame_meta, obj_meta=nvds_obj_meta
@@ -531,8 +527,8 @@ class NvDsPipeline(GstPipeline):
         """
 
         frame_processing_parameters = {
-            'width': self._frame_width,
-            'height': self._frame_height,
+            'width': self._frame_params.width,
+            'height': self._frame_params.height,
             'batch-size': self._batch_size,
             # Allowed range for batch-size: 1 - 1024
             # Allowed range for buffer-pool-size: 4 - 1024

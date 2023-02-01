@@ -11,6 +11,7 @@ from savant.config.schema import (
     ModelElement,
     get_element_name,
     DrawFunc,
+    FrameParameters,
 )
 from savant.deepstream.nvinfer.element_config import nvinfer_configure_element
 from savant.parameter_storage import init_param_storage
@@ -153,11 +154,16 @@ def setup_batch_size(config: Module) -> None:
     config.parameters['batch_size'] = batch_size
 
 
-def resolve_draw_func_parameter(config: DictConfig):
-    """Resolve draw_func parameter on module config.
+def resolve_parameters(config: DictConfig):
+    """Resolve parameters on module config ("frame", "draw_func", etc.).
 
     :param config: Module config.
     """
+
+    config.parameters['frame'] = OmegaConf.unsafe_merge(
+        OmegaConf.structured(FrameParameters),
+        config.parameters['frame'],
+    )
 
     draw_func_cfg = config.parameters.get('draw_func')
     if draw_func_cfg is not None:
@@ -195,11 +201,11 @@ class ModuleConfig(metaclass=SingletonMeta):
         module_cfg = OmegaConf.unsafe_merge(
             self._config_schema, self._default_cfg, module_cfg
         )
-        resolve_draw_func_parameter(module_cfg)
         logger.debug('Merged conf\n%s', module_cfg)
         init_param_storage(module_cfg)
 
         OmegaConf.resolve(module_cfg)  # to resolve parameters for pipeline elements
+        resolve_parameters(module_cfg)
         logger.debug('Resolved conf\n%s', module_cfg)
         logger.info('Configure pipeline elements...')
 

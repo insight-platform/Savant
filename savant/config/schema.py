@@ -8,6 +8,17 @@ from savant.base.pyfunc import PyFunc
 
 
 @dataclass
+class FrameParameters:
+    """Pipeline processing frame parameters"""
+
+    width: int
+    """Pipeline processing frame width"""
+
+    height: int
+    """Pipeline processing frame height"""
+
+
+@dataclass
 class DynamicGstProperty:
     """Allows configuring a gstreamer element property to be automatically
     updated to current value of a dynamic parameter from parameter storage."""
@@ -350,7 +361,8 @@ class Module:
     .. code-block:: yaml
 
         parameters:
-            frame_width: ${initializer:frame_width,1280}
+            frame:
+                width: ${initializer:frame_width,1280}
 
     Etcd storage will be polled for the current value first,
     in the event etcd is unavailable resolver will

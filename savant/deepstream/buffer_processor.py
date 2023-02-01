@@ -11,7 +11,7 @@ from pygstsavantframemeta import (
 from pysavantboost import ObjectsPreprocessing
 
 from savant.base.model import ObjectModel, ComplexModel
-from savant.config.schema import PipelineElement, ModelElement
+from savant.config.schema import PipelineElement, ModelElement, FrameParameters
 from savant.converter.scale import scale_rbbox
 from savant.deepstream.base_drawfunc import BaseNvDsDrawFunc
 from savant.deepstream.nvinfer.model import (
@@ -61,8 +61,7 @@ class NvDsBufferProcessor(GstBufferProcessor):
         sources: SourceInfoRegistry,
         model_object_registry: ModelObjectRegistry,
         objects_preprocessing: ObjectsPreprocessing,
-        frame_width: int,
-        frame_height: int,
+        frame_params: FrameParameters,
     ):
         """Buffer processor for DeepStream pipeline.
 
@@ -71,16 +70,14 @@ class NvDsBufferProcessor(GstBufferProcessor):
         :param sources: Source info registry.
         :param model_object_registry: Model.Object registry.
         :param objects_preprocessing: Objects processing registry.
-        :param frame_width: Processing frame width (after nvstreammux).
-        :param frame_height: Processing frame height (after nvstreammux).
+        :param frame_params: Processing frame parameters (after nvstreammux).
         """
 
         super().__init__(queue, fps_meter)
         self._sources = sources
         self._model_object_registry = model_object_registry
         self._objects_preprocessing = objects_preprocessing
-        self._frame_width = frame_width
-        self._frame_height = frame_height
+        self._frame_params = frame_params
         self._queue = queue
 
     def prepare_input(self, buffer: Gst.Buffer):
@@ -136,16 +133,16 @@ class NvDsBufferProcessor(GstBufferProcessor):
                                     ]
                                 ]
                             ),
-                            scale_factor_x=self._frame_width,
-                            scale_factor_y=self._frame_height,
+                            scale_factor_x=self._frame_params.width,
+                            scale_factor_y=self._frame_params.height,
                         )[0]
                         selection_type = ObjectSelectionType.ROTATED_BBOX
                     else:
                         scaled_bbox = (
-                            obj_meta['bbox']['xc'] * self._frame_width,
-                            obj_meta['bbox']['yc'] * self._frame_height,
-                            obj_meta['bbox']['width'] * self._frame_width,
-                            obj_meta['bbox']['height'] * self._frame_height,
+                            obj_meta['bbox']['xc'] * self._frame_params.width,
+                            obj_meta['bbox']['yc'] * self._frame_params.height,
+                            obj_meta['bbox']['width'] * self._frame_params.width,
+                            obj_meta['bbox']['height'] * self._frame_params.height,
                             obj_meta['bbox']['angle'],
                         )
                         selection_type = ObjectSelectionType.REGULAR_BBOX
@@ -175,10 +172,10 @@ class NvDsBufferProcessor(GstBufferProcessor):
                 gie_uid=model_uid,
                 # tuple(xc, yc, width, height, angle)
                 bbox=(
-                    self._frame_width / 2,
-                    self._frame_height / 2,
-                    self._frame_width,
-                    self._frame_height,
+                    self._frame_params.width / 2,
+                    self._frame_params.height / 2,
+                    self._frame_params.width,
+                    self._frame_params.height,
                     0,
                 ),
                 obj_label=obj_label,
@@ -267,8 +264,8 @@ class NvDsBufferProcessor(GstBufferProcessor):
                     else:
                         parent_bbox.left = 0
                         parent_bbox.top = 0
-                        parent_bbox.width = self._frame_width
-                        parent_bbox.height = self._frame_height
+                        parent_bbox.width = self._frame_params.width
+                        parent_bbox.height = self._frame_params.height
 
                     bbox = model.input.preprocess_object_meta(
                         bbox, parent_bbox=parent_bbox
@@ -376,11 +373,11 @@ class NvDsBufferProcessor(GstBufferProcessor):
                                 bbox_tensor[:, 2][bbox_tensor[:, 2] < 0.0] = 0.0
                                 bbox_tensor[:, 3][bbox_tensor[:, 3] < 0.0] = 0.0
                                 bbox_tensor[:, 4][
-                                    bbox_tensor[:, 4] > self._frame_width - 1.0
-                                ] = (self._frame_width - 1.0)
+                                    bbox_tensor[:, 4] > self._frame_params.width - 1.0
+                                ] = (self._frame_params.width - 1.0)
                                 bbox_tensor[:, 5][
-                                    bbox_tensor[:, 5] > self._frame_height - 1.0
-                                ] = (self._frame_height - 1.0)
+                                    bbox_tensor[:, 5] > self._frame_params.height - 1.0
+                                ] = (self._frame_params.height - 1.0)
 
                                 # right to width, bottom to height
                                 bbox_tensor[:, 4] -= bbox_tensor[:, 2]
@@ -540,8 +537,7 @@ class NvDsEncodedBufferProcessor(NvDsBufferProcessor):
         sources: SourceInfoRegistry,
         model_object_registry: ModelObjectRegistry,
         objects_preprocessing: ObjectsPreprocessing,
-        frame_width: int,
-        frame_height: int,
+        frame_params: FrameParameters,
         codec: CodecInfo,
     ):
         """Buffer processor for DeepStream pipeline.
@@ -551,8 +547,7 @@ class NvDsEncodedBufferProcessor(NvDsBufferProcessor):
         :param sources: Source info registry.
         :param model_object_registry: Model.Object registry.
         :param objects_preprocessing: Objects processing registry.
-        :param frame_width: Processing frame width (after nvstreammux).
-        :param frame_height: Processing frame height (after nvstreammux).
+        :param frame_params: Processing frame parameters (after nvstreammux).
         :param codec: Codec of the output frames.
         """
 
@@ -563,8 +558,7 @@ class NvDsEncodedBufferProcessor(NvDsBufferProcessor):
             sources=sources,
             model_object_registry=model_object_registry,
             objects_preprocessing=objects_preprocessing,
-            frame_width=frame_width,
-            frame_height=frame_height,
+            frame_params=frame_params,
         )
 
     def _iterate_output_frames(self, buffer: Gst.Buffer) -> Iterator[_OutputFrame]:
@@ -593,8 +587,7 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
         sources: SourceInfoRegistry,
         model_object_registry: ModelObjectRegistry,
         objects_preprocessing: ObjectsPreprocessing,
-        frame_width: int,
-        frame_height: int,
+        frame_params: FrameParameters,
         output_frame: bool,
         draw_func: Optional[BaseNvDsDrawFunc],
     ):
@@ -605,8 +598,7 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
         :param sources: Source info registry.
         :param model_object_registry: Model.Object registry.
         :param objects_preprocessing: Objects processing registry.
-        :param frame_width: Processing frame width (after nvstreammux).
-        :param frame_height: Processing frame height (after nvstreammux).
+        :param frame_params: Processing frame parameters (after nvstreammux).
         :param output_frame: Whether to output frame or not.
         :param draw_func: PyFunc for drawing on frames.
         """
@@ -620,8 +612,7 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
             sources=sources,
             model_object_registry=model_object_registry,
             objects_preprocessing=objects_preprocessing,
-            frame_width=frame_width,
-            frame_height=frame_height,
+            frame_params=frame_params,
         )
 
     def _iterate_output_frames(self, buffer: Gst.Buffer) -> Iterator[_OutputFrame]:

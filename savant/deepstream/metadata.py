@@ -3,6 +3,7 @@ from typing import Any, Dict
 import numpy as np
 import pyds
 
+from savant.config.schema import FrameParameters
 from savant.converter.scale import scale_rbbox
 from savant.deepstream.utils import nvds_get_rbbox
 from savant.meta.attribute import AttributeMeta
@@ -11,14 +12,12 @@ from savant.utils.model_registry import ModelObjectRegistry
 
 def nvds_obj_meta_output_converter(
     nvds_obj_meta: pyds.NvDsObjectMeta,
-    frame_width: int,
-    frame_height: int,
+    frame_params: FrameParameters,
 ) -> Dict[str, Any]:
     """Convert object meta to output format.
 
     :param nvds_obj_meta: NvDsObjectMeta
-    :param frame_width: Frame width, to scale to [0..1]
-    :param frame_height: Frame height
+    :param frame_params: Frame parameters (width/height, to scale to [0..1]
     :return: dict
     """
     model_name, label = ModelObjectRegistry.parse_model_object_key(
@@ -46,8 +45,8 @@ def nvds_obj_meta_output_converter(
                     ]
                 ]
             ),
-            scale_factor_x=1 / frame_width,
-            scale_factor_y=1 / frame_height,
+            scale_factor_x=1 / frame_params.width,
+            scale_factor_y=1 / frame_params.height,
         )[0]
         bbox = dict(
             xc=scaled_bbox[0],
@@ -57,11 +56,11 @@ def nvds_obj_meta_output_converter(
             angle=scaled_bbox[4],
         )
     else:
-        obj_width = rect_params.width / frame_width
-        obj_height = rect_params.height / frame_height
+        obj_width = rect_params.width / frame_params.width
+        obj_height = rect_params.height / frame_params.height
         bbox = dict(
-            xc=rect_params.left / frame_width + obj_width / 2,
-            yc=rect_params.top / frame_height + obj_height / 2,
+            xc=rect_params.left / frame_params.width + obj_width / 2,
+            yc=rect_params.top / frame_params.height + obj_height / 2,
             width=obj_width,
             height=obj_height,
         )
