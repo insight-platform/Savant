@@ -54,7 +54,7 @@ namespace pysavantboost {
         
         gst_buffer_map(buffer, &inmap, GST_MAP_READ);
         auto *inputnvsurface = reinterpret_cast<NvBufSurface *>(inmap.data);
-        DSCudaMemory ds_cuda_memory = DSCudaMemory(inputnvsurface, 0);
+        DSCudaMemory ds_cuda_memory = DSCudaMemory(inputnvsurface, batchID);
         gst_buffer_unmap(buffer, &inmap);
 
         int frame_height = (int) inputnvsurface->surfaceList[batchID].planeParams.height[0];
@@ -62,7 +62,7 @@ namespace pysavantboost {
         
         NppiSize ref_frame_size = {frame_width, frame_height};
 
-        ref_frame = ds_cuda_memory.GetMapCudaPtr(batchID);
+        ref_frame = ds_cuda_memory.GetMapCudaPtr();
         RotateBBox rotated_bbox = RotateBBox(left + width/2, top+height/2, width, height, angle);
         
         object_image = rotated_bbox.CutFromFrame(ref_frame, ref_frame_size, padding_width, padding_height);

@@ -1,5 +1,5 @@
 **/__pycache__
-.idea/
+**/.idea/
 .vscode/
 .gitignore
 .git
@@ -10,3 +10,4 @@ Makefile
 **/_skbuild/
 **/dist/
 **/*.egg-info/
+**/build/
