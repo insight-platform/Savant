@@ -113,6 +113,13 @@ simple and utilizes standard open source tools.
 The decoupled nature of adapters also provides better reliability because the failed data source affects the adapter
 operation, not a framework operation.
 
+### OpenCV CUDA Integration
+
+Savant supports custom OpenCV CUDA bindings which allow accessing DeepStream's in-GPU frames with a broad range of OpenCV CUDA 
+utilities: the feature helps implement highly efficient video transformations, including but not limited to blurring, cropping, clipping, applying banners and graphical elements over the frame, and others. 
+
+To use the functionality, a developer doesn't need anything rather than Python. However, the performance is way better than what can be achieved with a naive map/change/unmap approach which is available through standard Nvidia python bindings for DeepStream. 
+
 ### Oriented Bounding Boxes Out Of The Box
 
 In our practice, when we develop commercial inference software, we often meet the cases where the bounding boxes rotated
