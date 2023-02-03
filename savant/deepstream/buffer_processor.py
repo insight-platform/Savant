@@ -13,7 +13,6 @@ from pysavantboost import ObjectsPreprocessing
 from savant.base.model import ObjectModel, ComplexModel
 from savant.config.schema import PipelineElement, ModelElement, FrameParameters
 from savant.converter.scale import scale_rbbox
-from savant.deepstream.base_drawfunc import BaseNvDsDrawFunc
 from savant.deepstream.nvinfer.model import (
     NvInferRotatedObjectDetector,
     NvInferDetector,
@@ -589,7 +588,6 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
         objects_preprocessing: ObjectsPreprocessing,
         frame_params: FrameParameters,
         output_frame: bool,
-        draw_func: Optional[BaseNvDsDrawFunc],
     ):
         """Buffer processor for DeepStream pipeline.
 
@@ -600,12 +598,10 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
         :param objects_preprocessing: Objects processing registry.
         :param frame_params: Processing frame parameters (after nvstreammux).
         :param output_frame: Whether to output frame or not.
-        :param draw_func: PyFunc for drawing on frames.
         """
 
         self._output_frame = output_frame
         self._codec = Codec.RAW_RGBA.value if output_frame else None
-        self._draw_func = draw_func
         super().__init__(
             queue=queue,
             fps_meter=fps_meter,
@@ -626,8 +622,6 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
             # get frame if required for output
             if self._output_frame:
                 with get_nvds_buf_surface(buffer, nvds_frame_meta) as np_frame:
-                    if self._draw_func:
-                        self._draw_func(nvds_frame_meta, np_frame)
                     frame = np_frame.tobytes()
             else:
                 frame = None

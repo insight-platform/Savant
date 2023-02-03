@@ -45,6 +45,7 @@ from savant.deepstream.utils import (
     nvds_obj_meta_iterator,
     nvds_attr_meta_iterator,
     nvds_remove_obj_attrs,
+    get_nvds_buf_surface,
 )
 from savant.meta.constants import UNTRACKED_OBJECT_ID
 from savant.utils.fps_meter import FPSMeter
@@ -62,7 +63,7 @@ class NvDsPipeline(GstPipeline):
     :param name: Pipeline name
     :param source: Pipeline source element
     :param elements: Pipeline elements
-    :key frame_params: Processing frame parameters (after nvstreammux)
+    :key frame: Processing frame parameters (after nvstreammux)
     :key batch_size: Primary batch size (nvstreammux batch-size)
     :key output_frame: Whether to include frame in module output, not just metadata
     """
@@ -107,24 +108,26 @@ class NvDsPipeline(GstPipeline):
         if self._output_frame_codec is None:
             self._source_output = SourceOutputOnlyMeta()
         elif self._output_frame_codec == Codec.RAW_RGBA:
-            self._source_output = SourceOutputRawRgba()
+            self._source_output = SourceOutputRawRgba(
+                frame_params=self._frame_params,
+            )
         elif self._output_frame_codec in [Codec.H264, Codec.HEVC]:
             self._source_output = SourceOutputH26X(
                 codec=self._output_frame_codec.value,
                 params=output_frame.get('encoder_params'),
-                draw_func=self._draw_func,
+                frame_params=self._frame_params,
             )
         elif self._output_frame_codec == Codec.PNG:
             self._source_output = SourceOutputPng(
                 codec=self._output_frame_codec.value,
                 params=output_frame.get('encoder_params'),
-                draw_func=self._draw_func,
+                frame_params=self._frame_params,
             )
         else:
             self._source_output = SourceOutputEncoded(
                 codec=self._output_frame_codec.value,
                 params=output_frame.get('encoder_params'),
-                draw_func=self._draw_func,
+                frame_params=self._frame_params,
             )
 
         self._demuxer_src_pads: List[Gst.Pad] = []
@@ -162,7 +165,6 @@ class NvDsPipeline(GstPipeline):
                 objects_preprocessing=self._objects_preprocessing,
                 frame_params=self._frame_params,
                 output_frame=self._output_frame_codec is not None,
-                draw_func=self._draw_func,
             )
         return NvDsEncodedBufferProcessor(
             queue=queue,
@@ -332,6 +334,18 @@ class NvDsPipeline(GstPipeline):
             nv_video_converter.set_property(
                 'nvbuf-memory-type', int(pyds.NVBUF_MEM_CUDA_UNIFIED)
             )
+        if self._frame_params.padding:
+            dest_crop = ':'.join(
+                str(x)
+                for x in [
+                    self._frame_params.padding.left,
+                    self._frame_params.padding.top,
+                    self._frame_params.width,
+                    self._frame_params.height,
+                ]
+            )
+            nv_video_converter.set_property('dest-crop', dest_crop)
+
         self._pipeline.add(nv_video_converter)
         nv_video_converter.sync_state_with_parent()
         video_converter_sink: Gst.Pad = nv_video_converter.get_static_pad('sink')
@@ -354,7 +368,12 @@ class NvDsPipeline(GstPipeline):
 
         capsfilter: Gst.Element = Gst.ElementFactory.make('capsfilter')
         capsfilter.set_property(
-            'caps', Gst.Caps.from_string('video/x-raw(memory:NVMM), format=RGBA')
+            'caps',
+            Gst.Caps.from_string(
+                'video/x-raw(memory:NVMM), format=RGBA, '
+                f'width={self._frame_params.total_width}, '
+                f'height={self._frame_params.total_height}'
+            ),
         )
         capsfilter.set_state(Gst.State.PLAYING)
         self._pipeline.add(capsfilter)
@@ -527,8 +546,8 @@ class NvDsPipeline(GstPipeline):
         """
 
         frame_processing_parameters = {
-            'width': self._frame_params.width,
-            'height': self._frame_params.height,
+            'width': self._frame_params.total_width,
+            'height': self._frame_params.total_height,
             'batch-size': self._batch_size,
             # Allowed range for batch-size: 1 - 1024
             # Allowed range for buffer-pool-size: 4 - 1024
@@ -660,10 +679,25 @@ class NvDsPipeline(GstPipeline):
         self._demuxer_src_pads = self._allocate_demuxer_pads(
             demuxer, self._max_parallel_streams
         )
-        demuxer.get_static_pad('sink').get_peer().add_probe(
-            Gst.PadProbeType.BUFFER, self.update_frame_meta
-        )
+        sink_peer_pad: Gst.Pad = demuxer.get_static_pad('sink').get_peer()
+        sink_peer_pad.add_probe(Gst.PadProbeType.BUFFER, self.update_frame_meta)
+        if self._draw_func and self._output_frame_codec:
+            sink_peer_pad.add_probe(Gst.PadProbeType.BUFFER, self._draw_on_frame_probe)
         return demuxer
+
+    def _draw_on_frame_probe(
+        self,
+        pad: Gst.Pad,
+        info: Gst.PadProbeInfo,
+    ) -> Gst.PadProbeReturn:
+        """Pad probe to draw on frames."""
+
+        buffer: Gst.Buffer = info.get_buffer()
+        nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
+        for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
+            with get_nvds_buf_surface(buffer, nvds_frame_meta) as frame:
+                self._draw_func(nvds_frame_meta, frame)
+        return Gst.PadProbeReturn.OK
 
     def _allocate_demuxer_pads(self, demuxer: Gst.Element, n_pads: int):
         """Allocate a fixed number of demuxer src pads."""
