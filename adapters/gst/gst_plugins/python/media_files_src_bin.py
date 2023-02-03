@@ -186,7 +186,12 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
                 typefind.get_name(),
                 caps.to_string(),
             )
-            demuxer: Gst.Element = Gst.ElementFactory.make('qtdemux')
+            if caps[0].get_name().endswith('mpeg'):
+                self.logger.debug('Using `mpegpsdemux` demuxer')
+                demuxer: Gst.Element = Gst.ElementFactory.make('mpegpsdemux')
+            else:
+                self.logger.debug('Using `qtdemux` demuxer')
+                demuxer: Gst.Element = Gst.ElementFactory.make('qtdemux')
             demuxer.connect('pad-added', self.on_pad_added)
             self.add(demuxer)
             self._elements.append(demuxer)
@@ -215,6 +220,7 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
 
     def attach_parser(self, pad: Gst.Pad, caps: Gst.Caps):
         try:
+            self.logger.debug(f"Try to find codec for `{caps[0].get_name()}`")
             codec = CODEC_BY_CAPS_NAME[caps[0].get_name()]
         except KeyError:
             self.logger.debug(
