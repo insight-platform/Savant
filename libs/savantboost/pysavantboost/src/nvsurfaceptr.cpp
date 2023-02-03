@@ -34,6 +34,10 @@ namespace pysavantboost {
         return ds_cuda_memory->size();
     }
 
+    guint PyDSCudaMemory::pitch() {
+        return ds_cuda_memory->pitch();
+    }
+
     void bindnvsurfaceptr(py::module &m) {
         py::class_<PyDSCudaMemory>(m, "PyDSCudaMemory")
                 .def(py::init<uint64_t, guint>())
@@ -41,6 +45,7 @@ namespace pysavantboost {
                 .def("UnMapCudaPtr", &PyDSCudaMemory::UnMapCudaPtr)
                 .def_property_readonly("width", &PyDSCudaMemory::width)
                 .def_property_readonly("height", &PyDSCudaMemory::height)
-                .def_property_readonly("size", &PyDSCudaMemory::size);
+                .def_property_readonly("size", &PyDSCudaMemory::size)
+                .def_property_readonly("pitch", &PyDSCudaMemory::pitch);
     }
 }

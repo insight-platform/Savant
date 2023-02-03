@@ -113,3 +113,7 @@ guint DSCudaMemory::height() {
 guint DSCudaMemory::size() {
     return _surface->surfaceList[_batch_id].dataSize;
 }
+
+guint DSCudaMemory::pitch() {
+    return _surface->surfaceList[_batch_id].pitch;
+}
