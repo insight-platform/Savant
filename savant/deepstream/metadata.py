@@ -30,23 +30,35 @@ def nvds_obj_meta_output_converter(
         if nvds_obj_meta.tracker_confidence < 1.0:  # specified confidence
             confidence = nvds_obj_meta.tracker_confidence
 
+    if frame_params.padding and not frame_params.padding.keep:
+        frame_width = frame_params.width
+        frame_height = frame_params.height
+    else:
+        frame_width = frame_params.total_width
+        frame_height = frame_params.total_height
+
     # scale bbox to [0..1]
     if rect_params.width == 0:
         rbbox = nvds_get_rbbox(nvds_obj_meta)
+        x_center = rbbox.x_center
+        y_center = rbbox.y_center
+        if frame_params.padding and not frame_params.padding.keep:
+            x_center -= frame_params.padding.left
+            y_center -= frame_params.padding.top
         scaled_bbox = scale_rbbox(
             bboxes=np.array(
                 [
                     [
-                        rbbox.x_center,
-                        rbbox.y_center,
+                        x_center,
+                        y_center,
                         rbbox.width,
                         rbbox.height,
                         rbbox.angle,
                     ]
                 ]
             ),
-            scale_factor_x=1 / frame_params.width,
-            scale_factor_y=1 / frame_params.height,
+            scale_factor_x=1 / frame_width,
+            scale_factor_y=1 / frame_height,
         )[0]
         bbox = dict(
             xc=scaled_bbox[0],
@@ -56,11 +68,16 @@ def nvds_obj_meta_output_converter(
             angle=scaled_bbox[4],
         )
     else:
-        obj_width = rect_params.width / frame_params.width
-        obj_height = rect_params.height / frame_params.height
+        obj_left = rect_params.left
+        obj_top = rect_params.top
+        if frame_params.padding and not frame_params.padding.keep:
+            obj_left -= frame_params.padding.left
+            obj_top -= frame_params.padding.top
+        obj_width = rect_params.width / frame_width
+        obj_height = rect_params.height / frame_height
         bbox = dict(
-            xc=rect_params.left / frame_params.width + obj_width / 2,
-            yc=rect_params.top / frame_params.height + obj_height / 2,
+            xc=obj_left / frame_width + obj_width / 2,
+            yc=obj_top / frame_height + obj_height / 2,
             width=obj_width,
             height=obj_height,
         )

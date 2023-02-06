@@ -6,7 +6,7 @@ from typing import Dict, Any, Optional
 import pyds
 from pygstsavantframemeta import add_convert_savant_frame_meta_pad_probe
 
-from savant.config.schema import PipelineElement
+from savant.config.schema import PipelineElement, FrameParameters
 from savant.gstreamer import Gst  # noqa:F401
 from savant.gstreamer.codecs import CodecInfo
 from savant.gstreamer.pipeline import GstPipeline
@@ -70,11 +70,19 @@ class SourceOutputWithFrame(SourceOutput):
     Output contains frames along with metadata.
     """
 
+    def __init__(self, frame_params: FrameParameters):
+        super().__init__()
+        self._frame_params = frame_params
+
     def dest_resolution(self, source_info: SourceInfo) -> Resolution:
-        return Resolution(
-            width=source_info.src_resolution.width,
-            height=source_info.src_resolution.height,
-        )
+        width = source_info.src_resolution.width
+        height = source_info.src_resolution.height
+        if self._frame_params.padding and self._frame_params.padding.keep:
+            width = width * self._frame_params.total_width // self._frame_params.width
+            height = (
+                height * self._frame_params.total_height // self._frame_params.height
+            )
+        return Resolution(width=width, height=height)
 
     def add_output(
         self,
@@ -87,14 +95,26 @@ class SourceOutputWithFrame(SourceOutput):
         self._logger.debug(
             'Added pad probe to convert savant frame meta from NvDsMeta to GstMeta'
         )
+        output_converter_props = {}
+        if not is_aarch64():
+            output_converter_props['nvbuf-memory-type'] = int(
+                pyds.NVBUF_MEM_CUDA_UNIFIED
+            )
+        if self._frame_params.padding and not self._frame_params.padding.keep:
+            output_converter_props['src_crop'] = ':'.join(
+                str(x)
+                for x in [
+                    self._frame_params.padding.left,
+                    self._frame_params.padding.top,
+                    self._frame_params.width,
+                    self._frame_params.height,
+                ]
+            )
+        self._logger.debug('Output converter properties: %s', output_converter_props)
         output_converter = pipeline._add_element(
             PipelineElement(
                 'nvvideoconvert',
-                properties=(
-                    {}
-                    if is_aarch64()
-                    else {'nvbuf-memory-type': int(pyds.NVBUF_MEM_CUDA_UNIFIED)}
-                ),
+                properties=output_converter_props,
             ),
         )
         source_info.after_demuxer.append(output_converter)
@@ -151,13 +171,14 @@ class SourceOutputEncoded(SourceOutputWithFrame):
         self,
         codec: CodecInfo,
         params: Optional[Dict[str, Any]],
+        frame_params: FrameParameters,
     ):
         """
         :param codec: Codec for output frames.
         :param params: Parameters of the encoder.
         """
 
-        super().__init__()
+        super().__init__(frame_params=frame_params)
         self._codec = codec
         self._params = params or {}
 
@@ -213,7 +234,8 @@ class SourceOutputPng(SourceOutputEncoded):
 
     def dest_resolution(self, source_info: SourceInfo) -> Resolution:
         # Rounding resolution to the multiple of 8 to avoid cuda errors.
+        dest_resolution = super().dest_resolution(source_info)
         return Resolution(
-            width=round(source_info.src_resolution.width / 8) * 8,
-            height=round(source_info.src_resolution.height / 8) * 8,
+            width=round(dest_resolution.width / 8) * 8,
+            height=round(dest_resolution.height / 8) * 8,
         )

@@ -119,13 +119,19 @@ class NvDsBufferProcessor(GstBufferProcessor):
                         model_uid,
                         class_id,
                     ) = self._model_object_registry.get_model_object_ids(obj_key)
+                    xc = obj_meta['bbox']['xc']
+                    yc = obj_meta['bbox']['yc']
+                    if self._frame_params.padding:
+                        xc += self._frame_params.padding.left / self._frame_params.width
+                        yc += self._frame_params.padding.top / self._frame_params.height
+
                     if obj_meta['bbox']['angle']:
                         scaled_bbox = scale_rbbox(
                             bboxes=np.array(
                                 [
                                     [
-                                        obj_meta['bbox']['xc'],
-                                        obj_meta['bbox']['yc'],
+                                        xc,
+                                        yc,
                                         obj_meta['bbox']['width'],
                                         obj_meta['bbox']['height'],
                                         obj_meta['bbox']['angle'],
@@ -138,8 +144,8 @@ class NvDsBufferProcessor(GstBufferProcessor):
                         selection_type = ObjectSelectionType.ROTATED_BBOX
                     else:
                         scaled_bbox = (
-                            obj_meta['bbox']['xc'] * self._frame_params.width,
-                            obj_meta['bbox']['yc'] * self._frame_params.height,
+                            xc * self._frame_params.width,
+                            yc * self._frame_params.height,
                             obj_meta['bbox']['width'] * self._frame_params.width,
                             obj_meta['bbox']['height'] * self._frame_params.height,
                             obj_meta['bbox']['angle'],
@@ -163,6 +169,11 @@ class NvDsBufferProcessor(GstBufferProcessor):
             model_uid, class_id = self._model_object_registry.get_model_object_ids(
                 obj_label
             )
+            xc = self._frame_params.width / 2
+            yc = self._frame_params.height / 2
+            if self._frame_params.padding:
+                xc += self._frame_params.padding.left
+                yc += self._frame_params.padding.top
             nvds_add_obj_meta_to_frame(
                 batch_meta=nvds_batch_meta,
                 frame_meta=nvds_frame_meta,
@@ -171,8 +182,8 @@ class NvDsBufferProcessor(GstBufferProcessor):
                 gie_uid=model_uid,
                 # tuple(xc, yc, width, height, angle)
                 bbox=(
-                    self._frame_params.width / 2,
-                    self._frame_params.height / 2,
+                    xc,
+                    yc,
                     self._frame_params.width,
                     self._frame_params.height,
                     0,
@@ -263,6 +274,9 @@ class NvDsBufferProcessor(GstBufferProcessor):
                     else:
                         parent_bbox.left = 0
                         parent_bbox.top = 0
+                        if self._frame_params.padding:
+                            parent_bbox.left = self._frame_params.padding.left
+                            parent_bbox.top = self._frame_params.padding.top
                         parent_bbox.width = self._frame_params.width
                         parent_bbox.height = self._frame_params.height
 
@@ -297,6 +311,16 @@ class NvDsBufferProcessor(GstBufferProcessor):
         """
         if not isinstance(element, ModelElement):
             return
+
+        frame_left = 0.0
+        frame_top = 0.0
+        frame_right = self._frame_params.width - 1.0
+        frame_bottom = self._frame_params.height - 1.0
+        if self._frame_params.padding:
+            frame_left += self._frame_params.padding.left
+            frame_top += self._frame_params.padding.top
+            frame_right += self._frame_params.padding.left
+            frame_bottom += self._frame_params.padding.top
 
         model_uid = self._model_object_registry.get_model_uid(element.name)
         model: Union[
@@ -369,14 +393,18 @@ class NvDsBufferProcessor(GstBufferProcessor):
                                 bbox_tensor[:, 4] += bbox_tensor[:, 2]
                                 bbox_tensor[:, 5] += bbox_tensor[:, 3]
                                 # clip
-                                bbox_tensor[:, 2][bbox_tensor[:, 2] < 0.0] = 0.0
-                                bbox_tensor[:, 3][bbox_tensor[:, 3] < 0.0] = 0.0
+                                bbox_tensor[:, 2][
+                                    bbox_tensor[:, 2] < frame_left
+                                ] = frame_left
+                                bbox_tensor[:, 3][
+                                    bbox_tensor[:, 3] < frame_top
+                                ] = frame_top
                                 bbox_tensor[:, 4][
-                                    bbox_tensor[:, 4] > self._frame_params.width - 1.0
-                                ] = (self._frame_params.width - 1.0)
+                                    bbox_tensor[:, 4] > frame_right
+                                ] = frame_right
                                 bbox_tensor[:, 5][
-                                    bbox_tensor[:, 5] > self._frame_params.height - 1.0
-                                ] = (self._frame_params.height - 1.0)
+                                    bbox_tensor[:, 5] > frame_bottom
+                                ] = frame_bottom
 
                                 # right to width, bottom to height
                                 bbox_tensor[:, 4] -= bbox_tensor[:, 2]
