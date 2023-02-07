@@ -6,8 +6,17 @@ other tasks.
 from typing import Any, Optional
 import json
 from savant.base.pyfunc import PyFunc, BasePyFuncPlugin
-from savant.gstreamer import Gst, GstBase, GObject  # noqa: F401
+from savant.gstreamer import GLib, Gst, GstBase, GObject  # noqa: F401
 from savant.gstreamer.utils import LoggerMixin
+
+# RGBA format is required to access the frame (pyds.get_nvds_buf_surface)
+CAPS = Gst.Caps.from_string(
+    'video/x-raw(memory:NVMM), '
+    'format={RGBA}, '
+    f'width={Gst.IntRange(range(1, GLib.MAXINT))}, '
+    f'height={Gst.IntRange(range(1, GLib.MAXINT))}, '
+    f'framerate={Gst.FractionRange(Gst.Fraction(0, 1), Gst.Fraction(GLib.MAXINT, 1))}'
+)
 
 
 class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
@@ -16,7 +25,7 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
     GST_PLUGIN_NAME: str = 'pyfunc'
 
     __gstmetadata__ = (
-        'GStreamer plugin to execute user-defined Python function',
+        'GStreamer element to execute user-defined Python function',
         'Transform',
         'Provides a callback to execute user-defined Python functions on every frame. '
         'Can be used for metadata conversion, inference post-processing, etc.',
@@ -25,11 +34,9 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
 
     __gsttemplates__ = (
         Gst.PadTemplate.new(
-            'src', Gst.PadDirection.SRC, Gst.PadPresence.ALWAYS, Gst.Caps.new_any()
+            'sink', Gst.PadDirection.SINK, Gst.PadPresence.ALWAYS, CAPS
         ),
-        Gst.PadTemplate.new(
-            'sink', Gst.PadDirection.SINK, Gst.PadPresence.ALWAYS, Gst.Caps.new_any()
-        ),
+        Gst.PadTemplate.new('src', Gst.PadDirection.SRC, Gst.PadPresence.ALWAYS, CAPS),
     )
 
     __gproperties__ = {

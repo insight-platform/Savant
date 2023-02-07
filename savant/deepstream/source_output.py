@@ -89,7 +89,7 @@ class SourceOutputWithFrame(SourceOutput):
         self._logger.debug(
             'Added pad probe to convert savant frame meta from NvDsMeta to GstMeta'
         )
-        output_converter = pipeline._add_element(
+        output_converter = pipeline.add_element(
             PipelineElement(
                 'nvvideoconvert',
                 properties=(
@@ -105,7 +105,7 @@ class SourceOutputWithFrame(SourceOutput):
 
         self._add_transform_elems(pipeline, source_info)
 
-        output_capsfilter = pipeline._add_element(PipelineElement('capsfilter'))
+        output_capsfilter = pipeline.add_element(PipelineElement('capsfilter'))
         output_caps = self._build_output_caps(source_info)
         output_capsfilter.set_property('caps', output_caps)
         source_info.after_demuxer.append(output_capsfilter)
@@ -169,7 +169,7 @@ class SourceOutputEncoded(SourceOutputWithFrame):
     def _add_transform_elems(self, pipeline: GstPipeline, source_info: SourceInfo):
         if self._draw_func:
             self._add_frame_drawing(pipeline, source_info)
-        encoder = pipeline._add_element(
+        encoder = pipeline.add_element(
             PipelineElement(self._codec.encoder, properties=self._params)
         )
         source_info.after_demuxer.append(encoder)
@@ -192,14 +192,14 @@ class SourceOutputEncoded(SourceOutputWithFrame):
     def _add_frame_drawing(self, pipeline: GstPipeline, source_info: SourceInfo):
         """Add a pad probe to draw on frames if needed."""
 
-        capsfilter = pipeline._add_element(PipelineElement('capsfilter'))
+        capsfilter = pipeline.add_element(PipelineElement('capsfilter'))
         caps = self._build_draw_caps(source_info)
         capsfilter.set_property('caps', caps)
         source_info.after_demuxer.append(capsfilter)
         capsfilter.sync_state_with_parent()
         self._logger.debug('Added capsfilter for drawing frames with caps %s', caps)
 
-        converter = pipeline._add_element(
+        converter = pipeline.add_element(
             PipelineElement(
                 'nvvideoconvert',
                 properties=(
@@ -259,7 +259,7 @@ class SourceOutputH26X(SourceOutputEncoded):
         # to correct recording or playback not from the beginning
         # of the video stream.
         parser_params = {'config-interval': -1}
-        parser = pipeline._add_element(
+        parser = pipeline.add_element(
             PipelineElement(self._codec.parser, properties=parser_params)
         )
         source_info.after_demuxer.append(parser)
