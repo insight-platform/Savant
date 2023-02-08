@@ -1,8 +1,9 @@
 name: ${oc.env:MODULE_NAME, 'regular-cam-human-detector-peoplenet'}
 
 parameters:
-  frame_width: 960
-  frame_height: 544
+  frame:
+    width: 960
+    height: 544
   output_frame: ${json:${oc.env:OUTPUT_FRAME, '{"codec":"jpeg"}'}}
 
 pipeline:

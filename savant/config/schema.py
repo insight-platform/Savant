@@ -8,6 +8,55 @@ from savant.base.pyfunc import PyFunc
 
 
 @dataclass
+class FramePadding:
+    """Pipeline processing frame parameters"""
+
+    keep: bool = True
+    """Whether to keep paddings on the output frame"""
+
+    left: int = 0
+    """Size of the left padding"""
+
+    top: int = 0
+    """Size of the top padding"""
+
+    right: int = 0
+    """Size of the right padding"""
+
+    bottom: int = 0
+    """Size of the bottom padding"""
+
+    def __bool__(self):
+        return bool(self.left or self.top or self.right or self.bottom)
+
+
+@dataclass
+class FrameParameters:
+    """Pipeline processing frame parameters"""
+
+    width: int
+    """Pipeline processing frame width"""
+
+    height: int
+    """Pipeline processing frame height"""
+
+    padding: Optional[FramePadding] = None
+    """Add paddings to the frame before processing"""
+
+    @property
+    def total_width(self) -> int:
+        if self.padding is not None:
+            return self.width + self.padding.left + self.padding.right
+        return self.width
+
+    @property
+    def total_height(self) -> int:
+        if self.padding is not None:
+            return self.height + self.padding.top + self.padding.bottom
+        return self.height
+
+
+@dataclass
 class DynamicGstProperty:
     """Allows configuring a gstreamer element property to be automatically
     updated to current value of a dynamic parameter from parameter storage."""
@@ -350,7 +399,8 @@ class Module:
     .. code-block:: yaml
 
         parameters:
-            frame_width: ${initializer:frame_width,1280}
+            frame:
+                width: ${initializer:frame_width,1280}
 
     Etcd storage will be polled for the current value first,
     in the event etcd is unavailable resolver will

@@ -40,6 +40,7 @@ def nvds_to_gpu_mat(
             py_ds_cuda_memory.width,
             cv2.CV_8UC4,
             cuda_ptr,
+            py_ds_cuda_memory.pitch,
         )
     finally:
         py_ds_cuda_memory.UnMapCudaPtr()
