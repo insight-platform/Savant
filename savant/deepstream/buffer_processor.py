@@ -11,9 +11,8 @@ from pygstsavantframemeta import (
 from pysavantboost import ObjectsPreprocessing
 
 from savant.base.model import ObjectModel, ComplexModel
-from savant.config.schema import PipelineElement, ModelElement
+from savant.config.schema import PipelineElement, ModelElement, FrameParameters
 from savant.converter.scale import scale_rbbox
-from savant.deepstream.base_drawfunc import BaseNvDsDrawFunc
 from savant.deepstream.nvinfer.model import (
     NvInferRotatedObjectDetector,
     NvInferDetector,
@@ -61,8 +60,7 @@ class NvDsBufferProcessor(GstBufferProcessor):
         sources: SourceInfoRegistry,
         model_object_registry: ModelObjectRegistry,
         objects_preprocessing: ObjectsPreprocessing,
-        frame_width: int,
-        frame_height: int,
+        frame_params: FrameParameters,
     ):
         """Buffer processor for DeepStream pipeline.
 
@@ -71,16 +69,14 @@ class NvDsBufferProcessor(GstBufferProcessor):
         :param sources: Source info registry.
         :param model_object_registry: Model.Object registry.
         :param objects_preprocessing: Objects processing registry.
-        :param frame_width: Processing frame width (after nvstreammux).
-        :param frame_height: Processing frame height (after nvstreammux).
+        :param frame_params: Processing frame parameters (after nvstreammux).
         """
 
         super().__init__(queue, fps_meter)
         self._sources = sources
         self._model_object_registry = model_object_registry
         self._objects_preprocessing = objects_preprocessing
-        self._frame_width = frame_width
-        self._frame_height = frame_height
+        self._frame_params = frame_params
         self._queue = queue
 
     def prepare_input(self, buffer: Gst.Buffer):
@@ -136,19 +132,24 @@ class NvDsBufferProcessor(GstBufferProcessor):
                                     ]
                                 ]
                             ),
-                            scale_factor_x=self._frame_width,
-                            scale_factor_y=self._frame_height,
+                            scale_factor_x=self._frame_params.width,
+                            scale_factor_y=self._frame_params.height,
                         )[0]
                         selection_type = ObjectSelectionType.ROTATED_BBOX
                     else:
                         scaled_bbox = (
-                            obj_meta['bbox']['xc'] * self._frame_width,
-                            obj_meta['bbox']['yc'] * self._frame_height,
-                            obj_meta['bbox']['width'] * self._frame_width,
-                            obj_meta['bbox']['height'] * self._frame_height,
+                            obj_meta['bbox']['xc'] * self._frame_params.width,
+                            obj_meta['bbox']['yc'] * self._frame_params.height,
+                            obj_meta['bbox']['width'] * self._frame_params.width,
+                            obj_meta['bbox']['height'] * self._frame_params.height,
                             obj_meta['bbox']['angle'],
                         )
                         selection_type = ObjectSelectionType.REGULAR_BBOX
+                    if self._frame_params.padding:
+                        scaled_bbox = (
+                            scaled_bbox[0] + self._frame_params.padding.left,
+                            scaled_bbox[1] + self._frame_params.padding.top,
+                        ) + scaled_bbox[2:]
 
                     nvds_add_obj_meta_to_frame(
                         batch_meta=nvds_batch_meta,
@@ -167,6 +168,11 @@ class NvDsBufferProcessor(GstBufferProcessor):
             model_uid, class_id = self._model_object_registry.get_model_object_ids(
                 obj_label
             )
+            xc = self._frame_params.width / 2
+            yc = self._frame_params.height / 2
+            if self._frame_params.padding:
+                xc += self._frame_params.padding.left
+                yc += self._frame_params.padding.top
             nvds_add_obj_meta_to_frame(
                 batch_meta=nvds_batch_meta,
                 frame_meta=nvds_frame_meta,
@@ -175,10 +181,10 @@ class NvDsBufferProcessor(GstBufferProcessor):
                 gie_uid=model_uid,
                 # tuple(xc, yc, width, height, angle)
                 bbox=(
-                    self._frame_width / 2,
-                    self._frame_height / 2,
-                    self._frame_width,
-                    self._frame_height,
+                    xc,
+                    yc,
+                    self._frame_params.width,
+                    self._frame_params.height,
                     0,
                 ),
                 obj_label=obj_label,
@@ -267,8 +273,11 @@ class NvDsBufferProcessor(GstBufferProcessor):
                     else:
                         parent_bbox.left = 0
                         parent_bbox.top = 0
-                        parent_bbox.width = self._frame_width
-                        parent_bbox.height = self._frame_height
+                        if self._frame_params.padding:
+                            parent_bbox.left = self._frame_params.padding.left
+                            parent_bbox.top = self._frame_params.padding.top
+                        parent_bbox.width = self._frame_params.width
+                        parent_bbox.height = self._frame_params.height
 
                     bbox = model.input.preprocess_object_meta(
                         bbox, parent_bbox=parent_bbox
@@ -301,6 +310,16 @@ class NvDsBufferProcessor(GstBufferProcessor):
         """
         if not isinstance(element, ModelElement):
             return
+
+        frame_left = 0.0
+        frame_top = 0.0
+        frame_right = self._frame_params.width - 1.0
+        frame_bottom = self._frame_params.height - 1.0
+        if self._frame_params.padding:
+            frame_left += self._frame_params.padding.left
+            frame_top += self._frame_params.padding.top
+            frame_right += self._frame_params.padding.left
+            frame_bottom += self._frame_params.padding.top
 
         model_uid = self._model_object_registry.get_model_uid(element.name)
         model: Union[
@@ -373,14 +392,18 @@ class NvDsBufferProcessor(GstBufferProcessor):
                                 bbox_tensor[:, 4] += bbox_tensor[:, 2]
                                 bbox_tensor[:, 5] += bbox_tensor[:, 3]
                                 # clip
-                                bbox_tensor[:, 2][bbox_tensor[:, 2] < 0.0] = 0.0
-                                bbox_tensor[:, 3][bbox_tensor[:, 3] < 0.0] = 0.0
+                                bbox_tensor[:, 2][
+                                    bbox_tensor[:, 2] < frame_left
+                                ] = frame_left
+                                bbox_tensor[:, 3][
+                                    bbox_tensor[:, 3] < frame_top
+                                ] = frame_top
                                 bbox_tensor[:, 4][
-                                    bbox_tensor[:, 4] > self._frame_width - 1.0
-                                ] = (self._frame_width - 1.0)
+                                    bbox_tensor[:, 4] > frame_right
+                                ] = frame_right
                                 bbox_tensor[:, 5][
-                                    bbox_tensor[:, 5] > self._frame_height - 1.0
-                                ] = (self._frame_height - 1.0)
+                                    bbox_tensor[:, 5] > frame_bottom
+                                ] = frame_bottom
 
                                 # right to width, bottom to height
                                 bbox_tensor[:, 4] -= bbox_tensor[:, 2]
@@ -540,8 +563,7 @@ class NvDsEncodedBufferProcessor(NvDsBufferProcessor):
         sources: SourceInfoRegistry,
         model_object_registry: ModelObjectRegistry,
         objects_preprocessing: ObjectsPreprocessing,
-        frame_width: int,
-        frame_height: int,
+        frame_params: FrameParameters,
         codec: CodecInfo,
     ):
         """Buffer processor for DeepStream pipeline.
@@ -551,8 +573,7 @@ class NvDsEncodedBufferProcessor(NvDsBufferProcessor):
         :param sources: Source info registry.
         :param model_object_registry: Model.Object registry.
         :param objects_preprocessing: Objects processing registry.
-        :param frame_width: Processing frame width (after nvstreammux).
-        :param frame_height: Processing frame height (after nvstreammux).
+        :param frame_params: Processing frame parameters (after nvstreammux).
         :param codec: Codec of the output frames.
         """
 
@@ -563,8 +584,7 @@ class NvDsEncodedBufferProcessor(NvDsBufferProcessor):
             sources=sources,
             model_object_registry=model_object_registry,
             objects_preprocessing=objects_preprocessing,
-            frame_width=frame_width,
-            frame_height=frame_height,
+            frame_params=frame_params,
         )
 
     def _iterate_output_frames(self, buffer: Gst.Buffer) -> Iterator[_OutputFrame]:
@@ -593,10 +613,8 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
         sources: SourceInfoRegistry,
         model_object_registry: ModelObjectRegistry,
         objects_preprocessing: ObjectsPreprocessing,
-        frame_width: int,
-        frame_height: int,
+        frame_params: FrameParameters,
         output_frame: bool,
-        draw_func: Optional[BaseNvDsDrawFunc],
     ):
         """Buffer processor for DeepStream pipeline.
 
@@ -605,23 +623,19 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
         :param sources: Source info registry.
         :param model_object_registry: Model.Object registry.
         :param objects_preprocessing: Objects processing registry.
-        :param frame_width: Processing frame width (after nvstreammux).
-        :param frame_height: Processing frame height (after nvstreammux).
+        :param frame_params: Processing frame parameters (after nvstreammux).
         :param output_frame: Whether to output frame or not.
-        :param draw_func: PyFunc for drawing on frames.
         """
 
         self._output_frame = output_frame
         self._codec = Codec.RAW_RGBA.value if output_frame else None
-        self._draw_func = draw_func
         super().__init__(
             queue=queue,
             fps_meter=fps_meter,
             sources=sources,
             model_object_registry=model_object_registry,
             objects_preprocessing=objects_preprocessing,
-            frame_width=frame_width,
-            frame_height=frame_height,
+            frame_params=frame_params,
         )
 
     def _iterate_output_frames(self, buffer: Gst.Buffer) -> Iterator[_OutputFrame]:
@@ -635,8 +649,6 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
             # get frame if required for output
             if self._output_frame:
                 with get_nvds_buf_surface(buffer, nvds_frame_meta) as np_frame:
-                    if self._draw_func:
-                        self._draw_func(nvds_frame_meta, np_frame)
                     frame = np_frame.tobytes()
             else:
                 frame = None

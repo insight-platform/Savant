@@ -3,6 +3,7 @@ from typing import Any, Dict
 import numpy as np
 import pyds
 
+from savant.config.schema import FrameParameters
 from savant.converter.scale import scale_rbbox
 from savant.deepstream.utils import nvds_get_rbbox
 from savant.meta.attribute import AttributeMeta
@@ -11,14 +12,12 @@ from savant.utils.model_registry import ModelObjectRegistry
 
 def nvds_obj_meta_output_converter(
     nvds_obj_meta: pyds.NvDsObjectMeta,
-    frame_width: int,
-    frame_height: int,
+    frame_params: FrameParameters,
 ) -> Dict[str, Any]:
     """Convert object meta to output format.
 
     :param nvds_obj_meta: NvDsObjectMeta
-    :param frame_width: Frame width, to scale to [0..1]
-    :param frame_height: Frame height
+    :param frame_params: Frame parameters (width/height, to scale to [0..1]
     :return: dict
     """
     model_name, label = ModelObjectRegistry.parse_model_object_key(
@@ -31,7 +30,15 @@ def nvds_obj_meta_output_converter(
         if nvds_obj_meta.tracker_confidence < 1.0:  # specified confidence
             confidence = nvds_obj_meta.tracker_confidence
 
+    if frame_params.padding and frame_params.padding.keep:
+        frame_width = frame_params.total_width
+        frame_height = frame_params.total_height
+    else:
+        frame_width = frame_params.width
+        frame_height = frame_params.height
+
     # scale bbox to [0..1]
+    # TODO: use a function to check bbox type explicitly
     if rect_params.width == 0:
         rbbox = nvds_get_rbbox(nvds_obj_meta)
         scaled_bbox = scale_rbbox(
@@ -65,6 +72,9 @@ def nvds_obj_meta_output_converter(
             width=obj_width,
             height=obj_height,
         )
+    if frame_params.padding and not frame_params.padding.keep:
+        bbox['xc'] -= frame_params.padding.left / frame_width
+        bbox['yc'] -= frame_params.padding.top / frame_height
 
     # parse parent object
     parent_model_name, parent_label, parent_object_id = None, None, None

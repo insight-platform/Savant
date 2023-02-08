@@ -31,7 +31,7 @@ Default ZeroMQ source and sink configuration in module config
 
 .. literalinclude:: ../../../savant/config/default.yml
   :language: YAML
-  :lines: 50-
+  :lines: 74-
 
 defines the following **default connection pattern**:
 

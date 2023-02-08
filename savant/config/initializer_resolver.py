@@ -23,7 +23,8 @@ def initializer_resolver(param_name: str, default_val: Any, _parent_, _root_) ->
             etcd: 10
 
         parameters:
-            frame_width: ${initializer:frame_width,1280}
+            frame:
+                width: ${initializer:frame_width,1280}
 
     where
 

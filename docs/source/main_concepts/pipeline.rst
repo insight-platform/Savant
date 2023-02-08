@@ -32,7 +32,7 @@ and :py:attr:`~savant.config.schema.Pipeline.sink` nodes:
 
 .. literalinclude:: ../../../savant/config/default.yml
   :language: YAML
-  :lines: 50-
+  :lines: 74-
 
 It is possible to redefine these values, but it is important to remember that the main
 operation mode for a Savant module is with ZeroMQ source and sink.

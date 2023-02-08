@@ -6,9 +6,7 @@ from typing import Dict, Any, Optional
 import pyds
 from pygstsavantframemeta import add_convert_savant_frame_meta_pad_probe
 
-from savant.config.schema import PipelineElement
-from savant.deepstream.base_drawfunc import BaseNvDsDrawFunc
-from savant.deepstream.utils import get_nvds_buf_surface, nvds_frame_meta_iterator
+from savant.config.schema import PipelineElement, FrameParameters
 from savant.gstreamer import Gst  # noqa:F401
 from savant.gstreamer.codecs import CodecInfo
 from savant.gstreamer.pipeline import GstPipeline
@@ -72,11 +70,19 @@ class SourceOutputWithFrame(SourceOutput):
     Output contains frames along with metadata.
     """
 
+    def __init__(self, frame_params: FrameParameters):
+        super().__init__()
+        self._frame_params = frame_params
+
     def dest_resolution(self, source_info: SourceInfo) -> Resolution:
-        return Resolution(
-            width=source_info.src_resolution.width,
-            height=source_info.src_resolution.height,
-        )
+        width = source_info.src_resolution.width
+        height = source_info.src_resolution.height
+        if self._frame_params.padding and self._frame_params.padding.keep:
+            width = width * self._frame_params.total_width // self._frame_params.width
+            height = (
+                height * self._frame_params.total_height // self._frame_params.height
+            )
+        return Resolution(width=width, height=height)
 
     def add_output(
         self,
@@ -89,14 +95,26 @@ class SourceOutputWithFrame(SourceOutput):
         self._logger.debug(
             'Added pad probe to convert savant frame meta from NvDsMeta to GstMeta'
         )
+        output_converter_props = {}
+        if not is_aarch64():
+            output_converter_props['nvbuf-memory-type'] = int(
+                pyds.NVBUF_MEM_CUDA_UNIFIED
+            )
+        if self._frame_params.padding and not self._frame_params.padding.keep:
+            output_converter_props['src_crop'] = ':'.join(
+                str(x)
+                for x in [
+                    self._frame_params.padding.left,
+                    self._frame_params.padding.top,
+                    self._frame_params.width,
+                    self._frame_params.height,
+                ]
+            )
+        self._logger.debug('Output converter properties: %s', output_converter_props)
         output_converter = pipeline._add_element(
             PipelineElement(
                 'nvvideoconvert',
-                properties=(
-                    {}
-                    if is_aarch64()
-                    else {'nvbuf-memory-type': int(pyds.NVBUF_MEM_CUDA_UNIFIED)}
-                ),
+                properties=output_converter_props,
             ),
         )
         source_info.after_demuxer.append(output_converter)
@@ -153,22 +171,18 @@ class SourceOutputEncoded(SourceOutputWithFrame):
         self,
         codec: CodecInfo,
         params: Optional[Dict[str, Any]],
-        draw_func: Optional[BaseNvDsDrawFunc],
+        frame_params: FrameParameters,
     ):
         """
         :param codec: Codec for output frames.
         :param params: Parameters of the encoder.
-        :param draw_func: PyFunc to draw on frames.
         """
 
-        super().__init__()
+        super().__init__(frame_params=frame_params)
         self._codec = codec
         self._params = params or {}
-        self._draw_func = draw_func
 
     def _add_transform_elems(self, pipeline: GstPipeline, source_info: SourceInfo):
-        if self._draw_func:
-            self._add_frame_drawing(pipeline, source_info)
         encoder = pipeline._add_element(
             PipelineElement(self._codec.encoder, properties=self._params)
         )
@@ -188,62 +202,6 @@ class SourceOutputEncoded(SourceOutputWithFrame):
                 ]
             )
         )
-
-    def _add_frame_drawing(self, pipeline: GstPipeline, source_info: SourceInfo):
-        """Add a pad probe to draw on frames if needed."""
-
-        capsfilter = pipeline._add_element(PipelineElement('capsfilter'))
-        caps = self._build_draw_caps(source_info)
-        capsfilter.set_property('caps', caps)
-        source_info.after_demuxer.append(capsfilter)
-        capsfilter.sync_state_with_parent()
-        self._logger.debug('Added capsfilter for drawing frames with caps %s', caps)
-
-        converter = pipeline._add_element(
-            PipelineElement(
-                'nvvideoconvert',
-                properties=(
-                    {}
-                    if is_aarch64()
-                    else {'nvbuf-memory-type': int(pyds.NVBUF_MEM_CUDA_UNIFIED)}
-                ),
-            ),
-        )
-        source_info.after_demuxer.append(converter)
-        converter.get_static_pad('sink').add_probe(
-            Gst.PadProbeType.BUFFER,
-            self._draw_on_frame_probe,
-        )
-        converter.sync_state_with_parent()
-        self._logger.debug('Added converter with pad probe for drawing frames')
-
-    def _build_draw_caps(self, source_info: SourceInfo) -> Gst.Caps:
-        """Build caps for a pad probe drawing on frames."""
-
-        return Gst.Caps.from_string(
-            ', '.join(
-                [
-                    'video/x-raw(memory:NVMM)',
-                    'format=RGBA',
-                    f'width={source_info.dest_resolution.width}',
-                    f'height={source_info.dest_resolution.height}',
-                ]
-            )
-        )
-
-    def _draw_on_frame_probe(
-        self,
-        pad: Gst.Pad,
-        info: Gst.PadProbeInfo,
-    ) -> Gst.PadProbeReturn:
-        """Pad probe to draw on frames."""
-
-        buffer: Gst.Buffer = info.get_buffer()
-        nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
-        for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
-            with get_nvds_buf_surface(buffer, nvds_frame_meta) as frame:
-                self._draw_func(nvds_frame_meta, frame)
-        return Gst.PadProbeReturn.OK
 
 
 class SourceOutputH26X(SourceOutputEncoded):
@@ -276,7 +234,8 @@ class SourceOutputPng(SourceOutputEncoded):
 
     def dest_resolution(self, source_info: SourceInfo) -> Resolution:
         # Rounding resolution to the multiple of 8 to avoid cuda errors.
+        dest_resolution = super().dest_resolution(source_info)
         return Resolution(
-            width=round(source_info.src_resolution.width / 8) * 8,
-            height=round(source_info.src_resolution.height / 8) * 8,
+            width=round(dest_resolution.width / 8) * 8,
+            height=round(dest_resolution.height / 8) * 8,
         )

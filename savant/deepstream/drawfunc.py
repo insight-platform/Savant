@@ -25,9 +25,27 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
                     labels[label] = COLOR[color]
 
     def __call__(self, nvds_frame_meta: pyds.NvDsFrameMeta, frame: np.ndarray):
-        frame_height, frame_width, _ = frame.shape
+        frame_height, frame_width, frame_channels = frame.shape
+        if not frame.flags['C_CONTIGUOUS']:
+            # Pycairo requires numpy array to be C-contiguous.
+            # Pyds can return non-contiguous array since rows in the array are aligned.
+            new_shape = (
+                frame_height,
+                frame.strides[0] // frame_channels,
+                frame_channels,
+            )
+            self.logger.debug(
+                'Converting numpy array of the shape %s to C-contiguous. New shape: %s.',
+                frame.shape,
+                new_shape,
+            )
+            frame = np.lib.stride_tricks.as_strided(frame, new_shape, frame.strides)
         surface = ImageSurface.create_for_data(
-            frame, Format.ARGB32, frame_width, frame_height
+            frame,
+            Format.ARGB32,
+            frame_width,
+            frame_height,
+            frame.strides[0],
         )
         artist = Artist(Context(surface))
         frame_meta = NvDsFrameMeta(frame_meta=nvds_frame_meta)

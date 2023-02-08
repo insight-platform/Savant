@@ -18,5 +18,6 @@ namespace pysavantboost {
         guint width();
         guint height();
         guint size();
+        guint pitch();
     };
 }
