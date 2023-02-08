@@ -119,19 +119,13 @@ class NvDsBufferProcessor(GstBufferProcessor):
                         model_uid,
                         class_id,
                     ) = self._model_object_registry.get_model_object_ids(obj_key)
-                    xc = obj_meta['bbox']['xc']
-                    yc = obj_meta['bbox']['yc']
-                    if self._frame_params.padding:
-                        xc += self._frame_params.padding.left / self._frame_params.width
-                        yc += self._frame_params.padding.top / self._frame_params.height
-
                     if obj_meta['bbox']['angle']:
                         scaled_bbox = scale_rbbox(
                             bboxes=np.array(
                                 [
                                     [
-                                        xc,
-                                        yc,
+                                        obj_meta['bbox']['xc'],
+                                        obj_meta['bbox']['yc'],
                                         obj_meta['bbox']['width'],
                                         obj_meta['bbox']['height'],
                                         obj_meta['bbox']['angle'],
@@ -144,13 +138,18 @@ class NvDsBufferProcessor(GstBufferProcessor):
                         selection_type = ObjectSelectionType.ROTATED_BBOX
                     else:
                         scaled_bbox = (
-                            xc * self._frame_params.width,
-                            yc * self._frame_params.height,
+                            obj_meta['bbox']['xc'] * self._frame_params.width,
+                            obj_meta['bbox']['yc'] * self._frame_params.height,
                             obj_meta['bbox']['width'] * self._frame_params.width,
                             obj_meta['bbox']['height'] * self._frame_params.height,
                             obj_meta['bbox']['angle'],
                         )
                         selection_type = ObjectSelectionType.REGULAR_BBOX
+                    if self._frame_params.padding:
+                        scaled_bbox = (
+                            scaled_bbox[0] + self._frame_params.padding.left,
+                            scaled_bbox[1] + self._frame_params.padding.top,
+                        ) + scaled_bbox[2:]
 
                     nvds_add_obj_meta_to_frame(
                         batch_meta=nvds_batch_meta,

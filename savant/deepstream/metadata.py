@@ -30,27 +30,23 @@ def nvds_obj_meta_output_converter(
         if nvds_obj_meta.tracker_confidence < 1.0:  # specified confidence
             confidence = nvds_obj_meta.tracker_confidence
 
-    if frame_params.padding and not frame_params.padding.keep:
-        frame_width = frame_params.width
-        frame_height = frame_params.height
-    else:
+    if frame_params.padding and frame_params.padding.keep:
         frame_width = frame_params.total_width
         frame_height = frame_params.total_height
+    else:
+        frame_width = frame_params.width
+        frame_height = frame_params.height
 
     # scale bbox to [0..1]
+    # TODO: use a function to check bbox type explicitly
     if rect_params.width == 0:
         rbbox = nvds_get_rbbox(nvds_obj_meta)
-        x_center = rbbox.x_center
-        y_center = rbbox.y_center
-        if frame_params.padding and not frame_params.padding.keep:
-            x_center -= frame_params.padding.left
-            y_center -= frame_params.padding.top
         scaled_bbox = scale_rbbox(
             bboxes=np.array(
                 [
                     [
-                        x_center,
-                        y_center,
+                        rbbox.x_center,
+                        rbbox.y_center,
                         rbbox.width,
                         rbbox.height,
                         rbbox.angle,
@@ -68,19 +64,17 @@ def nvds_obj_meta_output_converter(
             angle=scaled_bbox[4],
         )
     else:
-        obj_left = rect_params.left
-        obj_top = rect_params.top
-        if frame_params.padding and not frame_params.padding.keep:
-            obj_left -= frame_params.padding.left
-            obj_top -= frame_params.padding.top
         obj_width = rect_params.width / frame_width
         obj_height = rect_params.height / frame_height
         bbox = dict(
-            xc=obj_left / frame_width + obj_width / 2,
-            yc=obj_top / frame_height + obj_height / 2,
+            xc=rect_params.left / frame_width + obj_width / 2,
+            yc=rect_params.top / frame_height + obj_height / 2,
             width=obj_width,
             height=obj_height,
         )
+    if frame_params.padding and not frame_params.padding.keep:
+        bbox['xc'] -= frame_params.padding.left / frame_width
+        bbox['yc'] -= frame_params.padding.top / frame_height
 
     # parse parent object
     parent_model_name, parent_label, parent_object_id = None, None, None
