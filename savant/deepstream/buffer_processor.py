@@ -248,12 +248,7 @@ class NvDsBufferProcessor(GstBufferProcessor):
             not model.input.preprocess_object_meta
             and not model.input.preprocess_object_tensor
         ):
-            self._logger.debug(
-                'No need to preprocess input for element %s.', element.full_name
-            )
             return
-
-        self._logger.debug('Preprocessing input for element %s.', element.full_name)
 
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         if model.input.preprocess_object_meta:
@@ -307,8 +302,6 @@ class NvDsBufferProcessor(GstBufferProcessor):
                 model.input.preprocess_object_tensor.padding[1],
             )
 
-        self._logger.debug('Preprocessed input for element %s.', element.full_name)
-
     def prepare_element_output(self, element: PipelineElement, buffer: Gst.Buffer):
         """Model output postprocessing.
 
@@ -317,8 +310,6 @@ class NvDsBufferProcessor(GstBufferProcessor):
         """
         if not isinstance(element, ModelElement):
             return
-
-        self._logger.debug('Postprocessing output for element %s.', element.full_name)
 
         frame_left = 0.0
         frame_top = 0.0
@@ -548,8 +539,6 @@ class NvDsBufferProcessor(GstBufferProcessor):
         # restore frame
         if model.input.preprocess_object_tensor:
             self._objects_preprocessing.restore_frame(hash(buffer))
-
-        self._logger.debug('Prepared output for element %s.', element.full_name)
 
     def _is_model_input_object(
         self, element: ModelElement, nvds_obj_meta: pyds.NvDsObjectMeta
