@@ -110,7 +110,7 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
         assert isinstance(
             self.pyfunc, BasePyFuncPlugin
         ), f'"{self.pyfunc}" should be an instance of "BasePyFuncPlugin" subclass.'
-
+        self.pyfunc.gst_element = self
         return self.pyfunc.on_start()
 
     def do_stop(self):
