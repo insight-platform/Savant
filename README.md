@@ -24,7 +24,7 @@ The one, who wants:
 
 ## Runs On
 
-- Nvidia Jetson Nano, NX Xavier, Xavier AGX;
+- Nvidia Jetson NX, Xavier AGX;
 - Nvidia Turing GPU;
 - Nvidia Ampere GPU;
 - Nvidia Hopper, hopefully - haven't chance to get it yet :-)
