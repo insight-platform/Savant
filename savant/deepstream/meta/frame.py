@@ -1,11 +1,14 @@
 """Wrapper of deepstream frame meta information."""
-from typing import Iterator
+from typing import Iterator, Any, Dict
 import pyds
+
+from savant.gstreamer.metadata import METADATA_STORAGE
 from savant.meta.errors import MetaValueError
 from savant.deepstream.meta.iterators import NvDsObjectMetaIterator
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
 from savant.meta.object import ObjectMeta
 from savant.utils.source_info import SourceInfoRegistry
+from pygstsavantframemeta import nvds_frame_meta_get_nvds_savant_frame_meta
 
 
 class NvDsFrameMeta:
@@ -21,6 +24,7 @@ class NvDsFrameMeta:
         super().__init__()
         self.batch_meta = frame_meta.base_meta.batch_meta
         self.frame_meta = frame_meta
+        self.savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(frame_meta)
 
     @property
     def source_id(self) -> str:
@@ -47,6 +51,16 @@ class NvDsFrameMeta:
         :return: Objects number.
         """
         return self.frame_meta.num_obj_meta
+
+    @property
+    def tags(self) -> Dict[str, Any]:
+        """Returns tags of frame. These tags are part of the meta information about
+        the frame that comes with the frames in the module.
+
+        :return: Dictionary with tags
+        """
+        source_meta = METADATA_STORAGE[self.source_id]
+        return source_meta.by_idx.get(self.savant_frame_meta.idx).tags
 
     def add_obj_meta(self, object_meta: ObjectMeta):
         """Add an object meta to frame meta.
