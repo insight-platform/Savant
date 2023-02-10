@@ -2,7 +2,7 @@
 from typing import Iterator, Any, Dict
 import pyds
 
-from savant.gstreamer.metadata import METADATA_STORAGE
+from savant.gstreamer.metadata import metadata_get_frame_meta
 from savant.meta.errors import MetaValueError
 from savant.deepstream.meta.iterators import NvDsObjectMetaIterator
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
@@ -24,7 +24,7 @@ class NvDsFrameMeta:
         super().__init__()
         self.batch_meta = frame_meta.base_meta.batch_meta
         self.frame_meta = frame_meta
-        self.savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(frame_meta)
+        self.gst_frame_meta = None
 
     @property
     def source_id(self) -> str:
@@ -59,8 +59,16 @@ class NvDsFrameMeta:
 
         :return: Dictionary with tags
         """
-        source_meta = METADATA_STORAGE[self.source_id]
-        return source_meta.by_idx.get(self.savant_frame_meta.idx).tags
+        if self.gst_frame_meta is None:
+            savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(
+                self.frame_meta
+            )
+            self.gst_frame_meta = metadata_get_frame_meta(
+                source_id=self.source_id,
+                frame_idx=savant_frame_meta.idx if savant_frame_meta else None,
+                frame_pts=self.frame_meta.buf_pts,
+            )
+        return self.gst_frame_meta.tags
 
     def add_obj_meta(self, object_meta: ObjectMeta):
         """Add an object meta to frame meta.
