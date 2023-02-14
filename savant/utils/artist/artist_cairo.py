@@ -1,49 +1,38 @@
 """Cairo-dependent Artist implementation."""
-import math
-from enum import Enum
 from typing import Tuple, Optional, Union, List
-
-from cairo import Context
-
+from contextlib import AbstractContextManager
+import numpy as np
+from cairo import Context, Format, ImageSurface
 from savant.meta.bbox import BBox, RBBox
+from .artist import Artist
+from .utils import Position, bbox_to_vertices
 
-
-class Position(Enum):
-    """Start position of the element drawing relative to the box."""
-
-    CENTER = 1
-    LEFT_TOP = 2
-    CENTER_TOP = 3
-    RIGHT_TOP = 4
-    LEFT_CENTER = 5
-    RIGHT_CENTER = 6
-    LEFT_BOTTOM = 7
-    CENTER_BOTTOM = 8
-    RIGHT_BOTTOM = 9
-
-
-# BGR format
-COLOR = {
-    'red': (0, 0, 255),
-    'green': (0, 128, 0),
-    'blue': (255, 0, 0),
-    'darkred': (0, 0, 139),
-    'orangered': (0, 69, 255),
-    'orange': (0, 165, 255),
-    'yellow': (0, 255, 255),
-    'lime': (0, 255, 0),
-    'magenta': (255, 0, 255),
-}
-
-
-class Artist:
+class ArtistCairo(Artist, AbstractContextManager):
     """Drawer on frame cairo context using primitives.
 
-    :param context: Cairo frame context
+    :param frame: frame data as numpy array
     """
 
-    def __init__(self, context: Context):
-        self.context = context
+    def __init__(self, frame: np.ndarray):
+        self.frame: np.ndarray = frame
+        self.surface = None
+        self.context = None
+
+    def __enter__(self):
+        frame_height, frame_width, frame_channels = self.frame.shape
+        self.surface = ImageSurface.create_for_data(
+            self.frame,
+            Format.ARGB32,
+            frame_width,
+            frame_height,
+            self.frame.strides[0],
+        )
+        self.context = Context(self.surface)
+        return self
+
+    def __exit__(self, *exc_details):
+        self.surface.flush()
+        self.surface.finish()
 
     def add_text(
         self,
@@ -200,26 +189,3 @@ class Artist:
             self.context.close_path()
             self.context.fill()
             self.context.stroke()
-
-
-def bbox_to_vertices(rbbox: RBBox) -> List[Tuple[float, float]]:
-    """Convert rotated bounding boxes to list of 2D points."""
-    x_center, y_center, width, height, angle = (
-        rbbox.x_center,
-        rbbox.y_center,
-        rbbox.width,
-        rbbox.height,
-        rbbox.angle / 180 * math.pi,
-    )
-
-    width_sin = width / 2 * math.sin(angle)
-    width_cos = width / 2 * math.cos(angle)
-    height_sin = height / 2 * math.sin(angle)
-    height_cos = height / 2 * math.cos(angle)
-
-    return [
-        (x_center - width_cos + height_sin, y_center - width_sin - height_cos),
-        (x_center + width_cos + height_sin, y_center + width_sin - height_cos),
-        (x_center + width_cos - height_sin, y_center + width_sin + height_cos),
-        (x_center - width_cos - height_sin, y_center - width_sin + height_cos),
-    ]

@@ -2,16 +2,19 @@
 
 import numpy as np
 import pyds
-from cairo import Context, Format, ImageSurface
 from savant.deepstream.base_drawfunc import BaseNvDsDrawFunc
 from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.meta.bbox import BBox, RBBox
 from savant.meta.constants import UNTRACKED_OBJECT_ID
-from savant.utils.artist import Position, Artist, COLOR
-
+from savant.utils.artist import Position, Artist, ArtistCairo, ArtistOpenCV, COLOR
+from savant.gstreamer import Gst  # noqa: F401
+from savant.deepstream.utils import get_nvds_buf_surface
+from savant.deepstream.opencv_utils import nvds_to_gpu_mat
 
 class NvDsDrawFunc(BaseNvDsDrawFunc):
     """Default implementation of PyFunc for drawing on frame.
+    Uses OpenCV GpuMat to work with frame data without mapping to CPU
+    through OpenCV-based Artist.
 
     PyFunc implementations are defined in and instantiated by a
     :py:class:`.PyFunc` structure.
@@ -24,34 +27,17 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
                 for label, color in labels.items():
                     labels[label] = COLOR[color]
 
-    def __call__(self, nvds_frame_meta: pyds.NvDsFrameMeta, frame: np.ndarray):
-        frame_height, frame_width, frame_channels = frame.shape
-        if not frame.flags['C_CONTIGUOUS']:
-            # Pycairo requires numpy array to be C-contiguous.
-            # Pyds can return non-contiguous array since rows in the array are aligned.
-            new_shape = (
-                frame_height,
-                frame.strides[0] // frame_channels,
-                frame_channels,
-            )
-            self.logger.debug(
-                'Converting numpy array of the shape %s to C-contiguous. New shape: %s.',
-                frame.shape,
-                new_shape,
-            )
-            frame = np.lib.stride_tricks.as_strided(frame, new_shape, frame.strides)
-        surface = ImageSurface.create_for_data(
-            frame,
-            Format.ARGB32,
-            frame_width,
-            frame_height,
-            frame.strides[0],
-        )
-        artist = Artist(Context(surface))
+    def __call__(self, nvds_frame_meta: pyds.NvDsFrameMeta, buffer: Gst.Buffer):
         frame_meta = NvDsFrameMeta(frame_meta=nvds_frame_meta)
-        self.draw_on_frame(frame_meta, artist)
-        surface.flush()
-        surface.finish()
+
+        with nvds_to_gpu_mat(buffer, nvds_frame_meta) as frame_mat:
+
+            artist = ArtistOpenCV(frame_mat)
+            self.draw_on_frame(frame_meta, artist)
+            # roi = cv2.cuda.GpuMat(frame_mat, (0, 0, 100, 200))
+            # # Fill area on the frame with red color
+            # roi.setTo((255, 0, 0, 255))
+        
 
     def draw_on_frame(self, frame_meta: NvDsFrameMeta, artist: Artist):
         """Draws bounding boxes and labels for all objects in the frame.
@@ -97,3 +83,36 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
                         bg_color=(0.0, 0.0, 0.0),
                         anchor_point=Position.CENTER,
                     )
+
+
+class NvDsDrawFuncCairo(NvDsDrawFunc):
+    """PyFunc implementing drawing on frame.
+    Maps frame to CPU as a numpy array and uses Cairo-based Artist.
+
+    PyFunc implementations are defined in and instantiated by a
+    :py:class:`.PyFunc` structure.
+    """
+
+    def __call__(self, nvds_frame_meta: pyds.NvDsFrameMeta, buffer: Gst.Buffer):
+        frame_meta = NvDsFrameMeta(frame_meta=nvds_frame_meta)
+
+        with get_nvds_buf_surface(buffer, nvds_frame_meta) as frame:
+
+            frame_height, frame_width, frame_channels = frame.shape
+            if not frame.flags['C_CONTIGUOUS']:
+                # Pycairo requires numpy array to be C-contiguous.
+                # Pyds can return non-contiguous array since rows in the array are aligned.
+                new_shape = (
+                    frame_height,
+                    frame.strides[0] // frame_channels,
+                    frame_channels,
+                )
+                self.logger.debug(
+                    'Converting numpy array of the shape %s to C-contiguous. New shape: %s.',
+                    frame.shape,
+                    new_shape,
+                )
+                frame = np.lib.stride_tricks.as_strided(frame, new_shape, frame.strides)
+
+            with ArtistCairo(frame) as artist:
+                self.draw_on_frame(frame_meta, artist)

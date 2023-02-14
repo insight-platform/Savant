@@ -2,11 +2,10 @@
 
 from abc import abstractmethod
 
-import numpy as np
 import pyds
 
 from savant.base.pyfunc import BasePyFuncCallableImpl
-
+from savant.gstreamer import Gst  # noqa: F401
 
 class BaseNvDsDrawFunc(BasePyFuncCallableImpl):
     """Base PyFunc for drawing on frame.
@@ -16,7 +15,7 @@ class BaseNvDsDrawFunc(BasePyFuncCallableImpl):
     """
 
     @abstractmethod
-    def __call__(self, nvds_frame_meta: pyds.NvDsFrameMeta, frame: np.ndarray):
+    def __call__(self, nvds_frame_meta: pyds.NvDsFrameMeta, buffer: Gst.Buffer):
         """Processes gstreamer buffer with Deepstream batch structure. Draws
         Deepstream metadata objects for each frame in the batch. Throws an
         exception if fatal error has occurred.
