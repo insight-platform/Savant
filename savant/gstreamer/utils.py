@@ -125,18 +125,3 @@ def propagate_gst_setting_error(gst_element: Gst.Element, frame, file_path):
         function=frame.f_code.co_name,
         line=frame.f_code.co_firstlineno,
     )
-
-
-def debug_bin_to_dot_file(gst_bin: Gst.Bin, file_name: Optional[str] = None):
-    """Writes out the whole network of gstreamer elements
-    that form the bin(pipeline) into a dot file.
-
-    :param gst_bin: Gst Bin or whole Pipeline whose graph needs to be saved
-    :param file_name: File name for saved graph, without extension
-        (`.dot` extension will be used)
-    """
-    if os.getenv('GST_DEBUG_DUMP_DOT_DIR'):
-        if not file_name:
-            dtime = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
-            file_name = f'{dtime}-{gst_bin.name}'
-        Gst.debug_bin_to_dot_file(gst_bin, Gst.DebugGraphDetails.ALL, file_name)

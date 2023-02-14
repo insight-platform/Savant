@@ -134,11 +134,12 @@ class NvDsPipeline(GstPipeline):
         self._free_pad_indices: List[int] = []
 
         if source.element == 'zeromq_source_bin':
-            output_alpha_channel = self._output_frame_codec in [
-                Codec.PNG,
-                Codec.RAW_RGBA,
-            ]
-            source.properties['convert-jpeg-to-rgb'] = output_alpha_channel
+            # TODO: nvjpegdec
+            # output_alpha_channel = self._output_frame_codec in [
+            #     Codec.PNG,
+            #     Codec.RAW_RGBA,
+            # ]
+            # source.properties['convert-jpeg-to-rgb'] = output_alpha_channel
             source.properties['max-parallel-streams'] = self._max_parallel_streams
 
         super().__init__(name=name, source=source, elements=elements, **kwargs)
@@ -330,6 +331,10 @@ class NvDsPipeline(GstPipeline):
         source_info: SourceInfo,
     ) -> Gst.Pad:
         nv_video_converter: Gst.Element = Gst.ElementFactory.make('nvvideoconvert')
+        if not is_aarch64():
+            nv_video_converter.set_property(
+                'nvbuf-memory-type', int(pyds.NVBUF_MEM_CUDA_UNIFIED)
+            )
         if self._frame_params.padding:
             dest_crop = ':'.join(
                 str(x)
@@ -554,6 +559,11 @@ class NvDsPipeline(GstPipeline):
             # https://forums.developer.nvidia.com/t/nvstreammux-error-releasing-cuda-memory/219895/3
             'interpolation-method': 6,
         }
+        if not is_aarch64():
+            frame_processing_parameters['nvbuf-memory-type'] = int(
+                pyds.NVBUF_MEM_CUDA_UNIFIED
+            )
+
         muxer = self.add_element(
             PipelineElement(
                 element='nvstreammux',

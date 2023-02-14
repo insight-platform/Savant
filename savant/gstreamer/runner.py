@@ -1,9 +1,9 @@
 """GStreamer pipeline runner class."""
 from datetime import timedelta
-
 from time import time
 from typing import Optional
 import logging
+import os
 import threading
 from gi.repository import GLib, Gst  # noqa:F401
 from .pipeline import GstPipeline
@@ -67,6 +67,7 @@ class GstPipelineRunner:
         bus.connect('message::error', self.on_error)
         bus.connect('message::eos', self.on_eos)
         bus.connect('message::warning', self.on_warning)
+        bus.connect('message::state-changed', self.on_state_changed)
 
         logger.debug('Setting pipeline to READY...')
         self._pipeline.set_state(Gst.State.READY)
@@ -116,11 +117,12 @@ class GstPipelineRunner:
         self, bus: Gst.Bus, message: Gst.Message
     ):
         """Error callback."""
-        logger.debug('Error callback.')
         err, debug = message.parse_error()
         # calling `raise` here causes the pipeline to hang,
         # just save message and handle it later
-        self._error = f'Received error {err} from {message.src.name}. {debug}.'
+        self._error = f'Received error "{err}" from {message.src.name}.'
+        logger.error(self._error)
+        self._error += f' Debug info: "{debug}".'
         self.shutdown()
 
     def on_eos(  # pylint: disable=unused-argument
@@ -136,3 +138,25 @@ class GstPipelineRunner:
         """Warning callback."""
         warn, debug = message.parse_warning()
         logger.warning('Received warning %s. %s', warn, debug)
+
+    def on_state_changed(  # pylint: disable=unused-argument
+        self, bus: Gst.Bus, msg: Gst.Message
+    ):
+        """Change state callback."""
+        old_state, new_state, _ = msg.parse_state_changed()
+
+        if not msg.src == self._pipeline.pipeline:
+            # not from the pipeline, ignore
+            return
+
+        old_state_name = Gst.Element.state_get_name(old_state)
+        new_state_name = Gst.Element.state_get_name(new_state)
+        logger.debug(
+            'Pipeline state changed from %s to %s.', old_state_name, new_state_name
+        )
+
+        if old_state != new_state and os.getenv('GST_DEBUG_DUMP_DOT_DIR'):
+            file_name = f'pipeline.{old_state_name}_{new_state_name}'
+            Gst.debug_bin_to_dot_file_with_ts(
+                self._pipeline.pipeline, Gst.DebugGraphDetails.ALL, file_name
+            )

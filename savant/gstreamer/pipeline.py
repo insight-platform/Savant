@@ -162,6 +162,14 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
         """
         return self._elements
 
+    @property
+    def pipeline(self) -> Gst.Pipeline:
+        """Get underlying Gst.Pipeline instance.
+
+        :return: Gst.Pipeline instance of this pipeline.
+        """
+        return self._pipeline
+
     def get_bus(self) -> Gst.Bus:
         """Get underlying Gst.Pipeline bus.
 

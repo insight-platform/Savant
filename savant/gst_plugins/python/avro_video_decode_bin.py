@@ -38,14 +38,15 @@ AVRO_VIDEO_DECODE_BIN_PROPERTIES = {
         DEFAULT_PASS_EOS,
         GObject.ParamFlags.READWRITE,
     ),
-    'convert-jpeg-to-rgb': (
-        bool,
-        'Convert frames from JPEG source to RGB',
-        'Convert frames from JPEG source to RGB. '
-        'Need this since "nvjpegdec" outputs transparent RGBA frames',
-        DEFAULT_CONVERT_TO_RGB,
-        GObject.ParamFlags.READWRITE,
-    ),
+    # TODO: nvjpegdec
+    # 'convert-jpeg-to-rgb': (
+    #     bool,
+    #     'Convert frames from JPEG source to RGB',
+    #     'Convert frames from JPEG source to RGB. '
+    #     'Need this since "nvjpegdec" outputs transparent RGBA frames',
+    #     DEFAULT_CONVERT_TO_RGB,
+    #     GObject.ParamFlags.READWRITE,
+    # ),
     **NESTED_DEMUX_PROPERTIES,
 }
 AVRO_VIDEO_DECODE_BIN_SINK_PAD_TEMPLATE = Gst.PadTemplate.new(
@@ -115,7 +116,8 @@ class AvroVideoDecodeBin(LoggerMixin, Gst.Bin):
         # properties
         self._low_latency_decoding = False
         self._pass_eos = DEFAULT_PASS_EOS
-        self._convert_jpeg_to_rgb = DEFAULT_CONVERT_TO_RGB
+        # TODO: nvjpegdec
+        # self._convert_jpeg_to_rgb = DEFAULT_CONVERT_TO_RGB
 
         self._demuxer: Gst.Element = Gst.ElementFactory.make('avro_video_demux')
         self._demuxer.set_property('store-metadata', True)
@@ -142,8 +144,9 @@ class AvroVideoDecodeBin(LoggerMixin, Gst.Bin):
             return self._low_latency_decoding
         if prop.name == 'pass-eos':
             return self._pass_eos
-        if prop.name == 'convert-jpeg-to-rgb':
-            return self._convert_jpeg_to_rgb
+        # TODO: nvjpegdec
+        # if prop.name == 'convert-jpeg-to-rgb':
+        #     return self._convert_jpeg_to_rgb
         if prop.name == 'max-parallel-streams':
             return self._max_parallel_streams
         if prop.name in NESTED_DEMUX_PROPERTIES:
@@ -161,8 +164,9 @@ class AvroVideoDecodeBin(LoggerMixin, Gst.Bin):
             self._low_latency_decoding = value
         elif prop.name == 'pass-eos':
             self._pass_eos = value
-        elif prop.name == 'convert-jpeg-to-rgb':
-            self._convert_jpeg_to_rgb = value
+        # TODO: nvjpegdec
+        # elif prop.name == 'convert-jpeg-to-rgb':
+        #     self._convert_jpeg_to_rgb = value
         elif prop.name == 'max-parallel-streams':
             self._max_parallel_streams = value
             self._demuxer.set_property(prop.name, value)
@@ -288,23 +292,24 @@ class AvroVideoDecodeBin(LoggerMixin, Gst.Bin):
             branch.src_pad.get_name(),
         )
 
-        new_pad_caps: Gst.Caps = new_pad.get_current_caps()
         decoder_pad_target = new_pad
-        if (
-            self._convert_jpeg_to_rgb
-            and branch.codec == Codec.JPEG
-            and contains_nvjpegdec(decodebin)
-            and new_pad_caps is not None
-            and new_pad_caps.is_always_compatible(NV_VIDEO_RGBA_CAPS)
-        ):
-            # "nvjpegdec" outputs transparent RGBA frames. Converting to RGB to fix this.
-            # https://forums.developer.nvidia.com/t/nvjpegdec-produces-transparent-frames/223005
-            self.logger.debug('Converting %s to %s', new_pad_caps, NV_VIDEO_RGB_CAPS)
-            decoder_pad_target = add_nvvideoconvert(
-                branch.decoder,
-                new_pad,
-                NV_VIDEO_RGB_CAPS,
-            )
+        # TODO: nvjpegdec
+        # new_pad_caps: Gst.Caps = new_pad.get_current_caps()
+        # if (
+        #     self._convert_jpeg_to_rgb
+        #     and branch.codec == Codec.JPEG
+        #     and contains_nvjpegdec(decodebin)
+        #     and new_pad_caps is not None
+        #     and new_pad_caps.is_always_compatible(NV_VIDEO_RGBA_CAPS)
+        # ):
+        #     # "nvjpegdec" outputs transparent RGBA frames. Converting to RGB to fix this.
+        #     # https://forums.developer.nvidia.com/t/nvjpegdec-produces-transparent-frames/223005
+        #     self.logger.debug('Converting %s to %s', new_pad_caps, NV_VIDEO_RGB_CAPS)
+        #     decoder_pad_target = add_nvvideoconvert(
+        #         branch.decoder,
+        #         new_pad,
+        #         NV_VIDEO_RGB_CAPS,
+        #     )
 
         decoder: Gst.Bin = decodebin.get_parent()
         decoder_pad: Gst.GhostPad = Gst.GhostPad.new(
@@ -385,24 +390,26 @@ class AvroVideoDecodeBin(LoggerMixin, Gst.Bin):
         decodebin: Gst.Element = decoder.get_by_name(decodebin_name)
 
         # nvjpegdec decoder is selected in decodebin according to the rank.
+        # TODO: nvjpegdec
         # On dgpu all works fine, but version for Jetson does not work with
         # some types of jpeg on hardware level
         # https://forums.developer.nvidia.com/t/nvvideoconvert-memory-compatibility-error/226138,
         # so for Jetson the rank of this decoder is set to 0.
         # https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_FAQ.html#on-jetson-platform-i-get-same-output-when-multiple-jpeg-images-are-fed-to-nvv4l2decoder-using-multifilesrc-plugin-why-is-that
-        if branch.codec == Codec.JPEG and is_aarch64():
+        if branch.codec == Codec.JPEG:  # and is_aarch64():
             factory = Gst.ElementFactory.find('nvjpegdec')
             factory.set_rank(Gst.Rank.NONE)
 
-            def on_add_element(
-                bin: Gst.Bin,
-                elem: Gst.Element,
-            ):
-                if elem.get_factory().get_name() == 'nvv4l2decoder':
-                    self.logger.debug('Added mjpeg=true for nvv4l2decoder element')
-                    elem.set_property('mjpeg', 1)
+            if is_aarch64():
+                def on_add_element(
+                    bin: Gst.Bin,
+                    elem: Gst.Element,
+                ):
+                    if elem.get_factory().get_name() == 'nvv4l2decoder':
+                        self.logger.debug('Added mjpeg=true for nvv4l2decoder element')
+                        elem.set_property('mjpeg', 1)
 
-            decodebin.connect('element-added', on_add_element)
+                decodebin.connect('element-added', on_add_element)
 
         self.logger.debug('Configuring decodebin for source %s', branch.source_id)
         # TODO: configure low-latency decoding
