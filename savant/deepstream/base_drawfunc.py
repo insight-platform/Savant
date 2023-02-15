@@ -21,6 +21,5 @@ class BaseNvDsDrawFunc(BasePyFuncCallableImpl):
         exception if fatal error has occurred.
 
         :param nvds_frame_meta: NvDs metadata for a frame.
-        :param frame: NumPy array with a frame RGBA format.
-                      Shape: (height, width, channels).
+        :param buffer: Gstreamer buffer.
         """

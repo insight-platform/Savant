@@ -29,15 +29,9 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
 
     def __call__(self, nvds_frame_meta: pyds.NvDsFrameMeta, buffer: Gst.Buffer):
         frame_meta = NvDsFrameMeta(frame_meta=nvds_frame_meta)
-
         with nvds_to_gpu_mat(buffer, nvds_frame_meta) as frame_mat:
-
-            artist = ArtistOpenCV(frame_mat)
-            self.draw_on_frame(frame_meta, artist)
-            # roi = cv2.cuda.GpuMat(frame_mat, (0, 0, 100, 200))
-            # # Fill area on the frame with red color
-            # roi.setTo((255, 0, 0, 255))
-        
+            with ArtistOpenCV(frame_mat) as artist:
+                self.draw_on_frame(frame_meta, artist)
 
     def draw_on_frame(self, frame_meta: NvDsFrameMeta, artist: Artist):
         """Draws bounding boxes and labels for all objects in the frame.
@@ -97,8 +91,7 @@ class NvDsDrawFuncCairo(NvDsDrawFunc):
         frame_meta = NvDsFrameMeta(frame_meta=nvds_frame_meta)
 
         with get_nvds_buf_surface(buffer, nvds_frame_meta) as frame:
-
-            frame_height, frame_width, frame_channels = frame.shape
+            frame_height, _, frame_channels = frame.shape
             if not frame.flags['C_CONTIGUOUS']:
                 # Pycairo requires numpy array to be C-contiguous.
                 # Pyds can return non-contiguous array since rows in the array are aligned.

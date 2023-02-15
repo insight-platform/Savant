@@ -5,7 +5,8 @@ import numpy as np
 from cairo import Context, Format, ImageSurface
 from savant.meta.bbox import BBox, RBBox
 from .artist import Artist
-from .utils import Position, bbox_to_vertices
+from .utils import Position, bbox_to_vertices, get_text_origin
+
 
 class ArtistCairo(Artist, AbstractContextManager):
     """Drawer on frame cairo context using primitives.
@@ -65,25 +66,8 @@ class ArtistCairo(Artist, AbstractContextManager):
         """
 
         self.context.set_font_size(size)
-        (text_x, text_y, width, height, _, _) = self.context.text_extents(text)
-        if anchor_point == Position.CENTER:
-            text_x, text_y = anchor_x - width / 2, anchor_y + height / 2
-        elif anchor_point == Position.LEFT_TOP:
-            text_x, text_y = anchor_x, anchor_y + height
-        elif anchor_point == Position.CENTER_TOP:
-            text_x, text_y = anchor_x - width / 2, anchor_y + height
-        elif anchor_point == Position.RIGHT_TOP:
-            text_x, text_y = anchor_x - width, anchor_y + height
-        elif anchor_point == Position.LEFT_CENTER:
-            text_x, text_y = anchor_x, anchor_y + height / 2
-        elif anchor_point == Position.RIGHT_CENTER:
-            text_x, text_y = anchor_x - width, anchor_y + height / 2
-        elif anchor_point == Position.LEFT_BOTTOM:
-            text_x, text_y = anchor_x, anchor_y
-        elif anchor_point == Position.CENTER_BOTTOM:
-            text_x, text_y = anchor_x - width / 2, anchor_y
-        elif anchor_point == Position.RIGHT_BOTTOM:
-            text_x, text_y = anchor_x - width, anchor_y
+        (_, _, width, height, _, _) = self.context.text_extents(text)
+        text_x, text_y = get_text_origin(anchor_point, anchor_x, anchor_y, width, height)
         text_x -= padding
         text_y -= padding
         if bg_color or border_width:
@@ -189,3 +173,7 @@ class ArtistCairo(Artist, AbstractContextManager):
             self.context.close_path()
             self.context.fill()
             self.context.stroke()
+
+    def blur(self, bbox: BBox):
+        """Not implemented"""
+        raise NotImplementedError()

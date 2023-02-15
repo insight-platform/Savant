@@ -71,3 +71,7 @@ class Artist(ABC):
         :param line_color: line color
         :param bg_color: background color
         """
+
+    @abstractmethod
+    def blur(self, bbox: BBox):
+        """Apply gaussian blur to the specified ROI."""

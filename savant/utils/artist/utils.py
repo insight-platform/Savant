@@ -18,6 +18,26 @@ class Position(Enum):
     CENTER_BOTTOM = 8
     RIGHT_BOTTOM = 9
 
+def get_text_origin(anchor_point:Position, anchor_x, anchor_y, text_w, text_h):
+    if anchor_point == Position.CENTER:
+        return anchor_x - text_w / 2, anchor_y + text_h / 2
+    if anchor_point == Position.LEFT_TOP:
+        return anchor_x, anchor_y + text_h
+    if anchor_point == Position.CENTER_TOP:
+        return anchor_x - text_w / 2, anchor_y + text_h
+    if anchor_point == Position.RIGHT_TOP:
+        return anchor_x - text_w, anchor_y + text_h
+    if anchor_point == Position.LEFT_CENTER:
+        return anchor_x, anchor_y + text_h / 2
+    if anchor_point == Position.RIGHT_CENTER:
+        return anchor_x - text_w, anchor_y + text_h / 2
+    if anchor_point == Position.LEFT_BOTTOM:
+        return anchor_x, anchor_y
+    if anchor_point == Position.CENTER_BOTTOM:
+        return anchor_x - text_w / 2, anchor_y
+    if anchor_point == Position.RIGHT_BOTTOM:
+        return anchor_x - text_w, anchor_y
+
 
 def bbox_to_vertices(rbbox: RBBox) -> List[Tuple[float, float]]:
     """Convert rotated bounding boxes to list of 2D points."""

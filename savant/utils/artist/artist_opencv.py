@@ -1,17 +1,37 @@
 from typing import Tuple, Optional, Union, List
+from contextlib import AbstractContextManager
+import numpy as np
 import cv2
 from savant.meta.bbox import BBox, RBBox
 from .artist import Artist
-from .utils import Position
+from .utils import Position, get_text_origin
 
+def convert_color(color: Tuple[float, float, float], alpha:int=255):
+    """Convert color from BGR floats to RGBA int8."""
+    return int(color[2]*255), int(color[1]*255), int(color[0]*255), alpha
 
-class ArtistOpenCV(Artist):
+class ArtistOpenCV(Artist, AbstractContextManager):
     def __init__(self, frame: cv2.cuda.GpuMat) -> None:
         self.stream = cv2.cuda.Stream()
         self.frame: cv2.cuda.GpuMat = frame
-        width, height = self.frame.size()
-        self.max_col = width - 1
-        self.max_row = height - 1
+        self.width, self.height = self.frame.size()
+        self.max_col = self.width - 1
+        self.max_row = self.height - 1
+        self.alpha_op = cv2.cuda.ALPHA_OVER_PREMUL
+        self.overlay = None
+        self.font_face = cv2.FONT_HERSHEY_SIMPLEX
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc_details):
+        # apply alpha comp if overlay is not null
+        if self.overlay is not None:
+            overlay = cv2.cuda.GpuMat(self.overlay)
+            cv2.cuda.alphaComp(overlay, self.frame, self.alpha_op, self.frame, stream=self.stream)
+
+    def __init_overlay(self):
+        self.overlay = np.zeros((self.height, self.width, 4), dtype=np.uint8)
 
     def add_text(
         self,
@@ -42,6 +62,43 @@ class ArtistOpenCV(Artist):
             For example, if you select Position.CENTER, the rectangle with the text
             will be drawn so that the center of the rectangle is at (x,y).
         """
+        if self.overlay is None:
+            self.__init_overlay()
+
+        font_scale = 0.7
+        font_thickness = 2
+
+        text_size, baseline = cv2.getTextSize(
+            text, self.font_face, font_scale, font_thickness
+        )
+
+        text_x, text_y = get_text_origin(anchor_point, anchor_x, anchor_y, text_size[0], text_size[1])
+        text_x = int(text_x) - padding
+        text_y = int(text_y) - padding
+
+        if bg_color or border_width:
+            rect_left = text_x - border_width
+            rect_top = text_y + baseline
+            rect_right = text_x - border_width + text_size[0]
+            rect_bottom = text_y - text_size[1]
+            rect_tl = rect_left, rect_top
+            rect_br = rect_right, rect_bottom
+            if bg_color is not None:
+                cv2.rectangle(self.overlay, rect_tl, rect_br, convert_color(bg_color), cv2.FILLED)
+            if border_width > 0 and border_color != bg_color:
+                cv2.rectangle(self.overlay, rect_tl, rect_br, convert_color(border_color), border_width)
+
+        cv2.putText(
+            self.overlay,
+            text,
+            (text_x, text_y),
+            self.font_face,
+            font_scale,
+            convert_color(text_color),
+            font_thickness,
+            cv2.LINE_AA,
+        )
+
 
     # pylint:disable=too-many-arguments
     def add_bbox(
@@ -61,20 +118,40 @@ class ArtistOpenCV(Artist):
         :param padding: increase the size of the rectangle in each direction,
             value in pixels.
         """
-        
         if isinstance(bbox, BBox):
-            left = max(int(bbox.left) - padding - border_width, 0)
-            top = max(int(bbox.top) - padding - border_width, 0)
+            left = int(bbox.left) - padding - border_width
+            top = int(bbox.top) - padding - border_width
             right = min(left + int(bbox.width) + 2 * (padding + border_width), self.max_col)
             bottom =  min(top + int(bbox.height) + 2 * (padding + border_width), self.max_row)
+            left = max(left, 0)
+            top = max(top, 0)
 
-            b, g, r = border_color
-            color = (int(r*255), int(g*255), int(b*255), 255)
+            if bg_color is not None:
+                color = convert_color(bg_color)
+                self.frame.colRange(left, right).rowRange(top, bottom).setTo(color, stream=self.stream)
 
-            self.frame.colRange(left, right).rowRange(top, top + border_width).setTo(color, stream=self.stream)
-            self.frame.colRange(left, right).rowRange(bottom - border_width, bottom).setTo(color, stream=self.stream)
-            self.frame.colRange(left, left + border_width).rowRange(top, bottom).setTo(color, stream=self.stream)
-            self.frame.colRange(right - border_width, right).rowRange(top, bottom).setTo(color, stream=self.stream)
+            if border_color != bg_color:
+                color = convert_color(border_color)
+                self.frame.colRange(left, right).rowRange(top, top + border_width).setTo(color, stream=self.stream)
+                self.frame.colRange(left, right).rowRange(bottom - border_width, bottom).setTo(color, stream=self.stream)
+                self.frame.colRange(left, left + border_width).rowRange(top, bottom).setTo(color, stream=self.stream)
+                self.frame.colRange(right - border_width, right).rowRange(top, bottom).setTo(color, stream=self.stream)
+
+        elif isinstance(bbox, RBBox):
+            x_center, y_center, width, height, degrees = bbox
+            if padding:
+                width += 2 * padding
+                height += 2 * padding
+
+            vertices = cv2.boxPoints(((x_center, y_center), (width, height), degrees))
+
+            self.add_polygon(
+                vertices=vertices,
+                line_width=border_width,
+                line_color=border_color,
+                bg_color=bg_color,
+            )
+
 
     def add_polygon(
         self,
@@ -90,3 +167,19 @@ class ArtistOpenCV(Artist):
         :param line_color: line color
         :param bg_color: background color
         """
+        if self.overlay is None:
+            self.__init_overlay()
+        vertices = np.intp(vertices)
+        if bg_color is not None:
+            cv2.drawContours(self.overlay, [vertices], 0, convert_color(bg_color), cv2.FILLED)
+        if line_color != bg_color:
+            cv2.drawContours(self.overlay, [vertices], 0, convert_color(line_color), line_width)
+
+    def blur(self, bbox: BBox):
+        """Apply gaussian blur to the specified ROI."""
+        gaussian_filter = cv2.cuda.createGaussianFilter(
+            cv2.CV_8UC4, cv2.CV_8UC4, (31, 31), 100, 100
+        )
+        roi = int(bbox.left), int(bbox.top), int(bbox.width), int(bbox.height)
+        roi_mat = cv2.cuda.GpuMat(self.frame, roi)
+        gaussian_filter.apply(roi_mat, roi_mat, stream=self.stream)
