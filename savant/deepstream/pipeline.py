@@ -134,12 +134,6 @@ class NvDsPipeline(GstPipeline):
         self._free_pad_indices: List[int] = []
 
         if source.element == 'zeromq_source_bin':
-            # TODO: nvjpegdec
-            # output_alpha_channel = self._output_frame_codec in [
-            #     Codec.PNG,
-            #     Codec.RAW_RGBA,
-            # ]
-            # source.properties['convert-jpeg-to-rgb'] = output_alpha_channel
             source.properties['max-parallel-streams'] = self._max_parallel_streams
 
         super().__init__(name=name, source=source, elements=elements, **kwargs)
