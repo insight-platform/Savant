@@ -277,9 +277,7 @@ class AvroVideoDecodeBin(LoggerMixin, Gst.Bin):
         )
 
         decoder: Gst.Bin = decodebin.get_parent()
-        decoder_pad: Gst.GhostPad = Gst.GhostPad.new(
-            new_pad.get_name(), new_pad
-        )
+        decoder_pad: Gst.GhostPad = Gst.GhostPad.new(new_pad.get_name(), new_pad)
         decoder.add_pad(decoder_pad)
         decoder_pad.set_active(True)
 
@@ -314,9 +312,7 @@ class AvroVideoDecodeBin(LoggerMixin, Gst.Bin):
         self.logger.debug('Removing pad %s', branch.src_pad.get_name())
         branch.decoder.set_locked_state(True)
         # do_handle_message deletes branch.decoder when its state changed to NULL
-        self.logger.debug(
-            'Setting element %s to state NULL', branch.decoder.get_name()
-        )
+        self.logger.debug('Setting element %s to state NULL', branch.decoder.get_name())
         branch.decoder.set_state(Gst.State.NULL)
 
         self.set_state(Gst.State.PLAYING)
@@ -362,6 +358,7 @@ class AvroVideoDecodeBin(LoggerMixin, Gst.Bin):
 
             # https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_FAQ.html#on-jetson-platform-i-get-same-output-when-multiple-jpeg-images-are-fed-to-nvv4l2decoder-using-multifilesrc-plugin-why-is-that
             if is_aarch64():
+
                 def on_add_element(
                     bin: Gst.Bin,
                     elem: Gst.Element,
