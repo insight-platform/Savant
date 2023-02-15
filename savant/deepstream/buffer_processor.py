@@ -34,7 +34,7 @@ from savant.deepstream.utils import (
 from savant.gstreamer import Gst  # noqa:F401
 from savant.gstreamer.buffer_processor import GstBufferProcessor
 from savant.gstreamer.codecs import CodecInfo, Codec
-from savant.gstreamer.metadata import metadata_get_frame_meta, metadata_pop_frame_meta
+from savant.gstreamer.metadata import get_source_frame_meta, metadata_pop_frame_meta
 from savant.meta.type import ObjectSelectionType
 from savant.utils.fps_meter import FPSMeter
 from savant.utils.model_registry import ModelObjectRegistry
@@ -101,8 +101,7 @@ class NvDsBufferProcessor(GstBufferProcessor):
                 nvds_frame_meta.buf_pts,
                 source_id,
             )
-            frame_meta = metadata_get_frame_meta(source_id, frame_idx, frame_pts)
-
+            frame_meta = get_source_frame_meta(source_id, frame_idx, frame_pts)
             # add external objects to nvds meta
             for obj_meta in frame_meta.metadata['objects']:
                 obj_key = self._model_object_registry.model_object_key(
@@ -114,55 +113,55 @@ class NvDsBufferProcessor(GstBufferProcessor):
                 # obj_key was only registered if
                 # it was required by the pipeline model elements (this case)
                 # or equaled the output object of one of the pipeline model elements
-                if self._model_object_registry.is_model_object_key_registered(obj_key):
-                    (
-                        model_uid,
-                        class_id,
-                    ) = self._model_object_registry.get_model_object_ids(obj_key)
-                    if obj_meta['bbox']['angle']:
-                        scaled_bbox = scale_rbbox(
-                            bboxes=np.array(
+                (
+                    model_uid,
+                    class_id,
+                ) = self._model_object_registry.get_model_object_ids(obj_key)
+                if obj_meta['bbox']['angle']:
+                    scaled_bbox = scale_rbbox(
+                        bboxes=np.array(
+                            [
                                 [
-                                    [
-                                        obj_meta['bbox']['xc'],
-                                        obj_meta['bbox']['yc'],
-                                        obj_meta['bbox']['width'],
-                                        obj_meta['bbox']['height'],
-                                        obj_meta['bbox']['angle'],
-                                    ]
+                                    obj_meta['bbox']['xc'],
+                                    obj_meta['bbox']['yc'],
+                                    obj_meta['bbox']['width'],
+                                    obj_meta['bbox']['height'],
+                                    obj_meta['bbox']['angle'],
                                 ]
-                            ),
-                            scale_factor_x=self._frame_params.width,
-                            scale_factor_y=self._frame_params.height,
-                        )[0]
-                        selection_type = ObjectSelectionType.ROTATED_BBOX
-                    else:
-                        scaled_bbox = (
-                            obj_meta['bbox']['xc'] * self._frame_params.width,
-                            obj_meta['bbox']['yc'] * self._frame_params.height,
-                            obj_meta['bbox']['width'] * self._frame_params.width,
-                            obj_meta['bbox']['height'] * self._frame_params.height,
-                            obj_meta['bbox']['angle'],
-                        )
-                        selection_type = ObjectSelectionType.REGULAR_BBOX
-                    if self._frame_params.padding:
-                        scaled_bbox = (
-                            scaled_bbox[0] + self._frame_params.padding.left,
-                            scaled_bbox[1] + self._frame_params.padding.top,
-                        ) + scaled_bbox[2:]
-
-                    nvds_add_obj_meta_to_frame(
-                        batch_meta=nvds_batch_meta,
-                        frame_meta=nvds_frame_meta,
-                        selection_type=selection_type,
-                        class_id=class_id,
-                        gie_uid=model_uid,
-                        bbox=scaled_bbox,
-                        object_id=obj_meta['object_id'],
-                        obj_label=obj_key,
-                        confidence=obj_meta['confidence'],
+                            ]
+                        ),
+                        scale_factor_x=self._frame_params.width,
+                        scale_factor_y=self._frame_params.height,
+                    )[0]
+                    selection_type = ObjectSelectionType.ROTATED_BBOX
+                else:
+                    scaled_bbox = (
+                        obj_meta['bbox']['xc'] * self._frame_params.width,
+                        obj_meta['bbox']['yc'] * self._frame_params.height,
+                        obj_meta['bbox']['width'] * self._frame_params.width,
+                        obj_meta['bbox']['height'] * self._frame_params.height,
+                        obj_meta['bbox']['angle'],
                     )
+                    selection_type = ObjectSelectionType.REGULAR_BBOX
+                if self._frame_params.padding:
+                    scaled_bbox = (
+                        scaled_bbox[0] + self._frame_params.padding.left,
+                        scaled_bbox[1] + self._frame_params.padding.top,
+                    ) + scaled_bbox[2:]
 
+                nvds_add_obj_meta_to_frame(
+                    batch_meta=nvds_batch_meta,
+                    frame_meta=nvds_frame_meta,
+                    selection_type=selection_type,
+                    class_id=class_id,
+                    gie_uid=model_uid,
+                    bbox=scaled_bbox,
+                    object_id=obj_meta['object_id'],
+                    obj_label=obj_key,
+                    confidence=obj_meta['confidence'],
+                )
+
+            frame_meta.metadata['objects'] = []
             # add primary frame object
             obj_label = 'frame'
             model_uid, class_id = self._model_object_registry.get_model_object_ids(
