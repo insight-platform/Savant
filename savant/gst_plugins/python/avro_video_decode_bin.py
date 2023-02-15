@@ -51,12 +51,6 @@ AVRO_VIDEO_DECODE_BIN_SRC_PAD_TEMPLATE = Gst.PadTemplate.new(
     Gst.PadPresence.SOMETIMES,
     OUT_CAPS,
 )
-NV_VIDEO_RGBA_CAPS: Gst.Caps = Gst.Caps.from_string(
-    'video/x-raw(memory:NVMM),format=RGBA'
-)
-NV_VIDEO_RGB_CAPS: Gst.Caps = Gst.Caps.from_string(
-    'video/x-raw(memory:NVMM),format=RGB'
-)
 
 
 @dataclass
@@ -69,7 +63,6 @@ class BranchInfo:
     codec: Optional[Codec] = None
     decoder: Optional[Gst.Element] = None
     src_pad: Optional[Gst.GhostPad] = None
-    last_frame_idx: int = 0
 
     @property
     def caps_name(self):
@@ -349,7 +342,7 @@ class AvroVideoDecodeBin(LoggerMixin, Gst.Bin):
         # there are problems with the plugin:
         # 1) https://forums.developer.nvidia.com/t/nvvideoconvert-memory-compatibility-error/226138;
         # 2) jpeg to png conversion gives incorrect alpha channel;
-        # 3) memory type configured mismatch, even though we use the same
+        # 3) memory type mismatch, even though we use the same
         #  nvbuf-memory-type for nvvideoconvert and nvstreammux downstream
         # Set the rank to NONE for the plugin to not use it.
         if branch.codec == Codec.JPEG:
@@ -379,7 +372,7 @@ class AvroVideoDecodeBin(LoggerMixin, Gst.Bin):
         else:
             decodebin.set_property('sink-caps', branch.caps)
         decodebin.set_property('caps', OUT_CAPS)
-        self.logger.debug('Built decoder for source %s', branch.source_id)
+        self.logger.debug('Built decoder for source %s.', branch.source_id)
 
         decodebin.connect('pad-added', self.on_decodebin_pad_added, branch)
 
