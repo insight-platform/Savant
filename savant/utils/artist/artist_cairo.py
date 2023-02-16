@@ -2,6 +2,7 @@
 from typing import Tuple, Optional, Union, List
 from contextlib import AbstractContextManager
 import numpy as np
+import cv2
 from cairo import Context, Format, ImageSurface
 from savant.meta.bbox import BBox, RBBox
 from .artist import Artist
@@ -16,16 +17,22 @@ class ArtistCairo(Artist, AbstractContextManager):
 
     def __init__(self, frame: np.ndarray):
         self.frame: np.ndarray = frame
+        self.height, self.width = self.frame.shape[:2]
+        self.max_col = self.width - 1
+        self.max_row = self.height - 1
         self.surface = None
         self.context = None
+        self.blur_kernel = (31, 31)
+        self.blur_sigma1 = 100
+        self.blur_sigma2 = 100
 
     def __enter__(self):
-        frame_height, frame_width, frame_channels = self.frame.shape
+
         self.surface = ImageSurface.create_for_data(
             self.frame,
             Format.ARGB32,
-            frame_width,
-            frame_height,
+            self.width,
+            self.height,
             self.frame.strides[0],
         )
         self.context = Context(self.surface)
@@ -67,7 +74,9 @@ class ArtistCairo(Artist, AbstractContextManager):
 
         self.context.set_font_size(size)
         (_, _, width, height, _, _) = self.context.text_extents(text)
-        text_x, text_y = get_text_origin(anchor_point, anchor_x, anchor_y, width, height)
+        text_x, text_y = get_text_origin(
+            anchor_point, anchor_x, anchor_y, width, height
+        )
         text_x -= padding
         text_y -= padding
         if bg_color or border_width:
@@ -174,6 +183,31 @@ class ArtistCairo(Artist, AbstractContextManager):
             self.context.fill()
             self.context.stroke()
 
-    def blur(self, bbox: BBox):
-        """Not implemented"""
-        raise NotImplementedError()
+    def blur(self, bbox: BBox, padding: int = 0):
+        """ """
+        left, top, right, bottom = self.convert_bbox_roi(bbox, padding, 0)
+
+        self.frame[top:bottom, left:right] = cv2.GaussianBlur(
+            self.frame[top:bottom, left:right],
+            self.blur_kernel,
+            self.blur_sigma1,
+            self.blur_sigma2,
+        )
+
+    def convert_bbox_roi(self, bbox: BBox, padding: int, border_width: int):
+        left = int(bbox.left) - padding - border_width
+        top = int(bbox.top) - padding - border_width
+
+        width = max(round(bbox.width) + 2 * (padding + border_width), 1)
+        height = max(round(bbox.height) + 2 * (padding + border_width), 1)
+
+        right = left + width
+        bottom = top + height
+
+        left = max(left - 1, 0)
+        top = max(top - 1, 0)
+        # numpy slice range does not include right limit point
+        right = min(right + 1, self.max_col)
+        bottom = min(bottom + 1, self.max_row)
+
+        return left, top, right, bottom

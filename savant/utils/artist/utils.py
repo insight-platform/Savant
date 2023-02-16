@@ -5,6 +5,7 @@ from typing import Tuple, List
 
 from savant.meta.bbox import RBBox
 
+
 class Position(Enum):
     """Start position of the element drawing relative to the box."""
 
@@ -18,7 +19,8 @@ class Position(Enum):
     CENTER_BOTTOM = 8
     RIGHT_BOTTOM = 9
 
-def get_text_origin(anchor_point:Position, anchor_x, anchor_y, text_w, text_h):
+
+def get_text_origin(anchor_point: Position, anchor_x, anchor_y, text_w, text_h):
     if anchor_point == Position.CENTER:
         return anchor_x - text_w / 2, anchor_y + text_h / 2
     if anchor_point == Position.LEFT_TOP:

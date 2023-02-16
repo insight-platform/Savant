@@ -7,6 +7,7 @@ import pyds
 from savant.base.pyfunc import BasePyFuncCallableImpl
 from savant.gstreamer import Gst  # noqa: F401
 
+
 class BaseNvDsDrawFunc(BasePyFuncCallableImpl):
     """Base PyFunc for drawing on frame.
 

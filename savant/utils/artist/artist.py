@@ -73,5 +73,5 @@ class Artist(ABC):
         """
 
     @abstractmethod
-    def blur(self, bbox: BBox):
+    def blur(self, bbox: BBox, padding: int = 0):
         """Apply gaussian blur to the specified ROI."""

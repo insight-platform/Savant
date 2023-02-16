@@ -11,6 +11,7 @@ from savant.gstreamer import Gst  # noqa: F401
 from savant.deepstream.utils import get_nvds_buf_surface
 from savant.deepstream.opencv_utils import nvds_to_gpu_mat
 
+
 class NvDsDrawFunc(BaseNvDsDrawFunc):
     """Default implementation of PyFunc for drawing on frame.
     Uses OpenCV GpuMat to work with frame data without mapping to CPU
