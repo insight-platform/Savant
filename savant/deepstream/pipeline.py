@@ -3,7 +3,7 @@ from collections import defaultdict
 from pathlib import Path
 from queue import Queue
 from threading import Lock
-from typing import List, Optional
+from typing import Any, List, Optional
 import time
 import pyds
 
@@ -134,11 +134,6 @@ class NvDsPipeline(GstPipeline):
         self._free_pad_indices: List[int] = []
 
         if source.element == 'zeromq_source_bin':
-            output_alpha_channel = self._output_frame_codec in [
-                Codec.PNG,
-                Codec.RAW_RGBA,
-            ]
-            source.properties['convert-jpeg-to-rgb'] = output_alpha_channel
             source.properties['max-parallel-streams'] = self._max_parallel_streams
 
         super().__init__(name=name, source=source, elements=elements, **kwargs)
@@ -176,7 +171,7 @@ class NvDsPipeline(GstPipeline):
             codec=self._output_frame_codec.value,
         )
 
-    def _add_element(
+    def add_element(
         self,
         element: PipelineElement,
         with_probes: bool = False,
@@ -192,12 +187,12 @@ class NvDsPipeline(GstPipeline):
                 for attr in element.model.output.attributes:
                     if attr.internal:
                         self._internal_attrs.add((element.name, attr.name))
-        return super()._add_element(element=element, with_probes=with_probes, link=link)
+        return super().add_element(element=element, with_probes=with_probes, link=link)
 
     # Source
     def _add_source(self, source: PipelineElement):
         source.name = 'source'
-        _source = self._add_element(source)
+        _source = self.add_element(source)
         _source.connect('pad-added', self.on_source_added)
 
         # Need to suppress EOS on nvstreammux sink pad
@@ -209,7 +204,7 @@ class NvDsPipeline(GstPipeline):
             'uri'
         ].startswith('rtsp://')
         if live_source:
-            self._add_element(PipelineElement('queue'))
+            self.add_element(PipelineElement('queue'))
         self._create_muxer(live_source)
 
     # Sink
@@ -217,7 +212,7 @@ class NvDsPipeline(GstPipeline):
         self,
         sink: Optional[PipelineElement] = None,
         link: bool = True,
-        *data,
+        probe_data: Any = None,
     ) -> Gst.Element:
         """Adds sink elements."""
 
@@ -382,7 +377,7 @@ class NvDsPipeline(GstPipeline):
 
         return capsfilter.get_static_pad('src')
 
-    def _remove_input_elems(
+    def _remove_input_elements(
         self,
         source_info: SourceInfo,
         sink_pad: Gst.Pad,
@@ -414,8 +409,8 @@ class NvDsPipeline(GstPipeline):
                     'enable-last-sample': 0,
                 },
             ),
-            False,
-            source_info,
+            link=False,
+            probe_data=source_info,
         )
         fakesink.sync_state_with_parent()
 
@@ -427,7 +422,7 @@ class NvDsPipeline(GstPipeline):
             source_info,
         )
 
-        output_queue = self._add_element(PipelineElement('queue'), link=False)
+        output_queue = self.add_element(PipelineElement('queue'), link=False)
         output_queue.sync_state_with_parent()
         source_info.after_demuxer.append(output_queue)
         self._link_demuxer_src_pad(output_queue.get_static_pad('sink'), source_info)
@@ -447,7 +442,7 @@ class NvDsPipeline(GstPipeline):
 
         source_info.after_demuxer.append(fakesink)
 
-    def _remove_output_elems(self, source_info: SourceInfo):
+    def _remove_output_elements(self, source_info: SourceInfo):
         """Process EOS on last pad."""
         self._logger.debug(
             'Removing output elements for source %s', source_info.source_id
@@ -478,7 +473,7 @@ class NvDsPipeline(GstPipeline):
         self._logger.debug(
             'Got EOS on pad %s.%s', pad.get_parent().get_name(), pad.get_name()
         )
-        GLib.idle_add(self._remove_output_elems, source_info)
+        GLib.idle_add(self._remove_output_elements, source_info)
 
         self._queue.put(SinkEndOfStream(source_info.source_id))
 
@@ -558,12 +553,18 @@ class NvDsPipeline(GstPipeline):
             # https://forums.developer.nvidia.com/t/nvstreammux-error-releasing-cuda-memory/219895/3
             'interpolation-method': 6,
         }
-        muxer = self._add_element(
+        if not is_aarch64():
+            frame_processing_parameters['nvbuf-memory-type'] = int(
+                pyds.NVBUF_MEM_CUDA_UNIFIED
+            )
+
+        muxer = self.add_element(
             PipelineElement(
                 element='nvstreammux',
                 name='muxer',
                 properties=frame_processing_parameters,
-            )
+            ),
+            link=False,
         )
         self._logger.info(
             'Pipeline frame processing parameters: %s.', frame_processing_parameters
@@ -639,7 +640,7 @@ class NvDsPipeline(GstPipeline):
             'Got EOS on pad %s.%s', pad.get_parent().get_name(), pad.get_name()
         )
         source_info = self._sources.get_source(source_id)
-        GLib.idle_add(self._remove_input_elems, source_info, pad)
+        GLib.idle_add(self._remove_input_elements, source_info, pad)
         return (
             Gst.PadProbeReturn.DROP if self._suppress_eos else Gst.PadProbeReturn.PASS
         )
@@ -669,7 +670,7 @@ class NvDsPipeline(GstPipeline):
         :param link: Whether to automatically link demuxer to the last pipeline element.
         """
 
-        demuxer = self._add_element(
+        demuxer = self.add_element(
             PipelineElement(
                 element='nvstreamdemux',
                 name='demuxer',

@@ -97,10 +97,12 @@ class NvDsBufferProcessor(GstBufferProcessor):
             frame_pts = nvds_frame_meta.buf_pts
 
             self._logger.debug(
-                'Preparing input for frame %s of source %s.',
-                nvds_frame_meta.buf_pts,
+                'Preparing input for frame of source %s with IDX %s and PTS %s.',
                 source_id,
+                frame_idx,
+                frame_pts,
             )
+
             frame_meta = metadata_get_frame_meta(source_id, frame_idx, frame_pts)
 
             # add external objects to nvds meta
@@ -214,10 +216,10 @@ class NvDsBufferProcessor(GstBufferProcessor):
         )
         for output_frame in self._iterate_output_frames(buffer):
             self._logger.debug(
-                'Preparing output for frame %s with PTS %s of source %s.',
+                'Preparing output for frame of source %s with IDX %s and PTS %s.',
+                source_info.source_id,
                 output_frame.idx,
                 output_frame.pts,
-                source_info.source_id,
             )
             frame_meta = metadata_pop_frame_meta(
                 source_info.source_id,

@@ -31,7 +31,7 @@ class GstBufferProcessor(ABC):
         """Pipeline input processor."""
 
     @abstractmethod
-    def prepare_output(self, buffer: Gst.Buffer, *data) -> Iterator[SinkMessage]:
+    def prepare_output(self, buffer: Gst.Buffer, user_data) -> Iterator[SinkMessage]:
         """Pipeline output processor."""
 
     @abstractmethod
@@ -58,12 +58,12 @@ class GstBufferProcessor(ABC):
         self,
         pad: Gst.Pad,
         info: Gst.PadProbeInfo,
-        *data,
+        user_data,
     ):
         """Attach pipeline output processor to pad."""
 
         buffer = info.get_buffer()
-        for sink_message in self.prepare_output(buffer, *data):
+        for sink_message in self.prepare_output(buffer, user_data):
             self._queue.put(sink_message)
             # measure and logging FPS
             if self._fps_meter():

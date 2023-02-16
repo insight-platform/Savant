@@ -16,7 +16,6 @@ from savant.utils.platform import is_aarch64
 
 OUT_CAPS = Gst.Caps.from_string('video/x-raw(memory:NVMM);video/x-raw')
 DEFAULT_PASS_EOS = True
-DEFAULT_CONVERT_TO_RGB = False
 NESTED_DEMUX_PROPERTIES = {
     k: v
     for k, v in AVRO_VIDEO_DEMUX_PROPERTIES.items()
@@ -38,14 +37,6 @@ AVRO_VIDEO_DECODE_BIN_PROPERTIES = {
         DEFAULT_PASS_EOS,
         GObject.ParamFlags.READWRITE,
     ),
-    'convert-jpeg-to-rgb': (
-        bool,
-        'Convert frames from JPEG source to RGB',
-        'Convert frames from JPEG source to RGB. '
-        'Need this since "nvjpegdec" outputs transparent RGBA frames',
-        DEFAULT_CONVERT_TO_RGB,
-        GObject.ParamFlags.READWRITE,
-    ),
     **NESTED_DEMUX_PROPERTIES,
 }
 AVRO_VIDEO_DECODE_BIN_SINK_PAD_TEMPLATE = Gst.PadTemplate.new(
@@ -60,12 +51,6 @@ AVRO_VIDEO_DECODE_BIN_SRC_PAD_TEMPLATE = Gst.PadTemplate.new(
     Gst.PadPresence.SOMETIMES,
     OUT_CAPS,
 )
-NV_VIDEO_RGBA_CAPS: Gst.Caps = Gst.Caps.from_string(
-    'video/x-raw(memory:NVMM),format=RGBA'
-)
-NV_VIDEO_RGB_CAPS: Gst.Caps = Gst.Caps.from_string(
-    'video/x-raw(memory:NVMM),format=RGB'
-)
 
 
 @dataclass
@@ -78,7 +63,6 @@ class BranchInfo:
     codec: Optional[Codec] = None
     decoder: Optional[Gst.Element] = None
     src_pad: Optional[Gst.GhostPad] = None
-    last_frame_idx: int = 0
 
     @property
     def caps_name(self):
@@ -115,7 +99,6 @@ class AvroVideoDecodeBin(LoggerMixin, Gst.Bin):
         # properties
         self._low_latency_decoding = False
         self._pass_eos = DEFAULT_PASS_EOS
-        self._convert_jpeg_to_rgb = DEFAULT_CONVERT_TO_RGB
 
         self._demuxer: Gst.Element = Gst.ElementFactory.make('avro_video_demux')
         self._demuxer.set_property('store-metadata', True)
@@ -142,8 +125,6 @@ class AvroVideoDecodeBin(LoggerMixin, Gst.Bin):
             return self._low_latency_decoding
         if prop.name == 'pass-eos':
             return self._pass_eos
-        if prop.name == 'convert-jpeg-to-rgb':
-            return self._convert_jpeg_to_rgb
         if prop.name == 'max-parallel-streams':
             return self._max_parallel_streams
         if prop.name in NESTED_DEMUX_PROPERTIES:
@@ -161,8 +142,6 @@ class AvroVideoDecodeBin(LoggerMixin, Gst.Bin):
             self._low_latency_decoding = value
         elif prop.name == 'pass-eos':
             self._pass_eos = value
-        elif prop.name == 'convert-jpeg-to-rgb':
-            self._convert_jpeg_to_rgb = value
         elif prop.name == 'max-parallel-streams':
             self._max_parallel_streams = value
             self._demuxer.set_property(prop.name, value)
@@ -238,10 +217,12 @@ class AvroVideoDecodeBin(LoggerMixin, Gst.Bin):
                     self._max_parallel_streams
                     and len(self._branches) >= self._max_parallel_streams
                 ):
-                    # Avro_video_demux already sent EOS for some stream and adding a new one,
-                    # but the former stream did not complete in avro_video_decode_bin yet.
+                    # Avro_video_demux already sent EOS for some stream
+                    # and adding a new one, but the former stream did not complete
+                    # in avro_video_decode_bin yet.
                     self.logger.warning(
-                        'Reached maximum number of streams: %s. Waiting resources for source %s.',
+                        'Reached maximum number of streams: %s. '
+                        'Waiting resources for source %s.',
                         self._max_parallel_streams,
                         source_id,
                     )
@@ -288,28 +269,8 @@ class AvroVideoDecodeBin(LoggerMixin, Gst.Bin):
             branch.src_pad.get_name(),
         )
 
-        new_pad_caps: Gst.Caps = new_pad.get_current_caps()
-        decoder_pad_target = new_pad
-        if (
-            self._convert_jpeg_to_rgb
-            and branch.codec == Codec.JPEG
-            and contains_nvjpegdec(decodebin)
-            and new_pad_caps is not None
-            and new_pad_caps.is_always_compatible(NV_VIDEO_RGBA_CAPS)
-        ):
-            # "nvjpegdec" outputs transparent RGBA frames. Converting to RGB to fix this.
-            # https://forums.developer.nvidia.com/t/nvjpegdec-produces-transparent-frames/223005
-            self.logger.debug('Converting %s to %s', new_pad_caps, NV_VIDEO_RGB_CAPS)
-            decoder_pad_target = add_nvvideoconvert(
-                branch.decoder,
-                new_pad,
-                NV_VIDEO_RGB_CAPS,
-            )
-
         decoder: Gst.Bin = decodebin.get_parent()
-        decoder_pad: Gst.GhostPad = Gst.GhostPad.new(
-            new_pad.get_name(), decoder_pad_target
-        )
+        decoder_pad: Gst.GhostPad = Gst.GhostPad.new(new_pad.get_name(), new_pad)
         decoder.add_pad(decoder_pad)
         decoder_pad.set_active(True)
 
@@ -343,16 +304,9 @@ class AvroVideoDecodeBin(LoggerMixin, Gst.Bin):
         self.logger.info('Removing branch with source %s', branch.source_id)
         self.logger.debug('Removing pad %s', branch.src_pad.get_name())
         branch.decoder.set_locked_state(True)
-        if branch.codec == Codec.JPEG and contains_nvjpegdec(branch.decoder):
-            # Setting state of nvjpegdec to NULL can cause segfault
-            self.logger.debug('Removing element %s', branch.decoder.get_name())
-            self.remove(branch.decoder)
-        else:
-            # do_handle_message deletes branch.decoder when its state changed to NULL
-            self.logger.debug(
-                'Setting element %s to state NULL', branch.decoder.get_name()
-            )
-            branch.decoder.set_state(Gst.State.NULL)
+        # do_handle_message deletes branch.decoder when its state changed to NULL
+        self.logger.debug('Setting element %s to state NULL', branch.decoder.get_name())
+        branch.decoder.set_state(Gst.State.NULL)
 
         self.set_state(Gst.State.PLAYING)
         self.logger.info('Branch with source %s removed', branch.source_id)
@@ -384,25 +338,29 @@ class AvroVideoDecodeBin(LoggerMixin, Gst.Bin):
         in_queue: Gst.Element = decoder.get_by_name(queue_name)
         decodebin: Gst.Element = decoder.get_by_name(decodebin_name)
 
-        # nvjpegdec decoder is selected in decodebin according to the rank.
-        # On dgpu all works fine, but version for Jetson does not work with
-        # some types of jpeg on hardware level
-        # https://forums.developer.nvidia.com/t/nvvideoconvert-memory-compatibility-error/226138,
-        # so for Jetson the rank of this decoder is set to 0.
-        # https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_FAQ.html#on-jetson-platform-i-get-same-output-when-multiple-jpeg-images-are-fed-to-nvv4l2decoder-using-multifilesrc-plugin-why-is-that
-        if branch.codec == Codec.JPEG and is_aarch64():
+        # nvjpegdec decoder is selected in decodebin according to the rank, but
+        # there are problems with the plugin:
+        # 1) https://forums.developer.nvidia.com/t/nvvideoconvert-memory-compatibility-error/226138;
+        # 2) jpeg to png conversion gives incorrect alpha channel;
+        # 3) memory type mismatch, even though we use the same
+        #  nvbuf-memory-type for nvvideoconvert and nvstreammux downstream
+        # Set the rank to NONE for the plugin to not use it.
+        if branch.codec == Codec.JPEG:
             factory = Gst.ElementFactory.find('nvjpegdec')
             factory.set_rank(Gst.Rank.NONE)
 
-            def on_add_element(
-                bin: Gst.Bin,
-                elem: Gst.Element,
-            ):
-                if elem.get_factory().get_name() == 'nvv4l2decoder':
-                    self.logger.debug('Added mjpeg=true for nvv4l2decoder element')
-                    elem.set_property('mjpeg', 1)
+            # https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_FAQ.html#on-jetson-platform-i-get-same-output-when-multiple-jpeg-images-are-fed-to-nvv4l2decoder-using-multifilesrc-plugin-why-is-that
+            if is_aarch64():
 
-            decodebin.connect('element-added', on_add_element)
+                def on_add_element(
+                    bin: Gst.Bin,
+                    elem: Gst.Element,
+                ):
+                    if elem.get_factory().get_name() == 'nvv4l2decoder':
+                        self.logger.debug('Added mjpeg=true for nvv4l2decoder element')
+                        elem.set_property('mjpeg', 1)
+
+                decodebin.connect('element-added', on_add_element)
 
         self.logger.debug('Configuring decodebin for source %s', branch.source_id)
         # TODO: configure low-latency decoding
@@ -414,7 +372,7 @@ class AvroVideoDecodeBin(LoggerMixin, Gst.Bin):
         else:
             decodebin.set_property('sink-caps', branch.caps)
         decodebin.set_property('caps', OUT_CAPS)
-        self.logger.debug('Built decoder for source %s', branch.source_id)
+        self.logger.debug('Built decoder for source %s.', branch.source_id)
 
         decodebin.connect('pad-added', self.on_decodebin_pad_added, branch)
 
@@ -425,37 +383,6 @@ class AvroVideoDecodeBin(LoggerMixin, Gst.Bin):
         sink_pad.set_active(True)
 
         return decoder
-
-
-def contains_nvjpegdec(bin_elem: Gst.Bin):
-    """Check if a bin contains nvjpegdec element."""
-    for elem in bin_elem.iterate_elements():
-        if elem.get_factory().get_name() == 'nvjpegdec':
-            return True
-        if isinstance(elem, Gst.Bin) and contains_nvjpegdec(elem):
-            return True
-    return False
-
-
-def add_nvvideoconvert(gst_bin: Gst.Bin, src_pad: Gst.Pad, caps: Gst.Caps):
-    nv_video_converter: Gst.Element = Gst.ElementFactory.make('nvvideoconvert')
-    if not is_aarch64():
-        nv_video_converter.set_property(
-            'nvbuf-memory-type', int(pyds.NVBUF_MEM_CUDA_UNIFIED)
-        )
-    gst_bin.add(nv_video_converter)
-
-    capsfilter: Gst.Element = Gst.ElementFactory.make('capsfilter')
-    capsfilter.set_property('caps', caps)
-    gst_bin.add(capsfilter)
-
-    assert (
-        src_pad.link(nv_video_converter.get_static_pad('sink')) == Gst.PadLinkReturn.OK
-    )
-    assert nv_video_converter.link(capsfilter)
-    nv_video_converter.sync_state_with_parent()
-    capsfilter.sync_state_with_parent()
-    return capsfilter.get_static_pad('src')
 
 
 # register plugin

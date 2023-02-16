@@ -55,7 +55,7 @@ def metadata_add_frame_meta(
     :param frame_meta: Frame metadata storage.
     """
     logger.debug(
-        'Add metadata for frame of source %s with IDX %s and PTS %s',
+        'Add metadata for frame of source %s with IDX %s and PTS %s.',
         source_id,
         frame_idx,
         frame_pts,
@@ -80,7 +80,7 @@ def metadata_get_frame_meta(
     :return: Metadata storage for the given frame.
     """
     logger.debug(
-        'Get metadata for frame of source %s with IDX %s and PTS %s',
+        'Get metadata for frame of source %s with IDX %s and PTS %s.',
         source_id,
         frame_idx,
         frame_pts,
@@ -108,7 +108,7 @@ def metadata_pop_frame_meta(
     :return: Metadata storage for the given frame.
     """
     logger.debug(
-        'Pop metadata for frame of source %s with IDX %s and PTS %s',
+        'Pop metadata for frame of source %s with IDX %s and PTS %s.',
         source_id,
         frame_idx,
         frame_pts,
@@ -135,7 +135,7 @@ def metadata_remove_frame_meta(
     :param frame_pts: Frame presentation timestamp.
     """
     logger.debug(
-        'Remove metadata for frame of source %s with IDX %s and PTS %s',
+        'Remove metadata for frame of source %s with IDX %s and PTS %s.',
         source_id,
         frame_idx,
         frame_pts,
