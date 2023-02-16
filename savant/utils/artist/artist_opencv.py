@@ -29,6 +29,7 @@ class ArtistOpenCV(Artist, AbstractContextManager):
         if self.overlay is not None:
             overlay = cv2.cuda.GpuMat(self.overlay)
             cv2.cuda.alphaComp(overlay, self.frame, self.alpha_op, self.frame, stream=self.stream)
+        self.stream.waitForCompletion()
 
     def __init_overlay(self):
         self.overlay = np.zeros((self.height, self.width, 4), dtype=np.uint8)
@@ -65,8 +66,8 @@ class ArtistOpenCV(Artist, AbstractContextManager):
         if self.overlay is None:
             self.__init_overlay()
 
-        font_scale = 0.7
-        font_thickness = 2
+        font_scale = 0.4
+        font_thickness = 1
 
         text_size, baseline = cv2.getTextSize(
             text, self.font_face, font_scale, font_thickness
@@ -85,7 +86,7 @@ class ArtistOpenCV(Artist, AbstractContextManager):
             rect_br = rect_right, rect_bottom
             if bg_color is not None:
                 cv2.rectangle(self.overlay, rect_tl, rect_br, convert_color(bg_color), cv2.FILLED)
-            if border_width > 0 and border_color != bg_color:
+            if border_width > 0:
                 cv2.rectangle(self.overlay, rect_tl, rect_br, convert_color(border_color), border_width)
 
         cv2.putText(
@@ -96,7 +97,6 @@ class ArtistOpenCV(Artist, AbstractContextManager):
             font_scale,
             convert_color(text_color),
             font_thickness,
-            cv2.LINE_AA,
         )
 
 
@@ -127,8 +127,7 @@ class ArtistOpenCV(Artist, AbstractContextManager):
             top = max(top, 0)
 
             if bg_color is not None:
-                color = convert_color(bg_color)
-                self.frame.colRange(left, right).rowRange(top, bottom).setTo(color, stream=self.stream)
+                self.frame.colRange(left, right).rowRange(top, bottom).setTo(convert_color(bg_color), stream=self.stream)
 
             if border_color != bg_color:
                 color = convert_color(border_color)
@@ -138,7 +137,11 @@ class ArtistOpenCV(Artist, AbstractContextManager):
                 self.frame.colRange(right - border_width, right).rowRange(top, bottom).setTo(color, stream=self.stream)
 
         elif isinstance(bbox, RBBox):
-            x_center, y_center, width, height, degrees = bbox
+            x_center = bbox.x_center
+            y_center = bbox.y_center
+            width = bbox.width
+            height = bbox.height
+            degrees = bbox.angle
             if padding:
                 width += 2 * padding
                 height += 2 * padding
@@ -172,10 +175,9 @@ class ArtistOpenCV(Artist, AbstractContextManager):
         vertices = np.intp(vertices)
         if bg_color is not None:
             cv2.drawContours(self.overlay, [vertices], 0, convert_color(bg_color), cv2.FILLED)
-        if line_color != bg_color:
-            cv2.drawContours(self.overlay, [vertices], 0, convert_color(line_color), line_width)
+        cv2.drawContours(self.overlay, [vertices], 0, convert_color(line_color), line_width)
 
-    def blur(self, bbox: BBox):
+    def blur(self, bbox: Union[BBox, RBBox]):
         """Apply gaussian blur to the specified ROI."""
         gaussian_filter = cv2.cuda.createGaussianFilter(
             cv2.CV_8UC4, cv2.CV_8UC4, (31, 31), 100, 100
