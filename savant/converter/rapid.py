@@ -47,22 +47,31 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
         :return: BBox tensor (class_id, confidence, xc, yc, width, height, angle)
             in roi scale
         """
-        _, _, roi_width, roi_height = roi
         if not output_layers[0].shape[0]:
             return np.empty((0, 7))
+
         bboxes = nms(
             output_layers[0],
             self.nms_iou_threshold,
             self.confidence_threshold,
             self.top_k,
         )
+
         if not bboxes.shape[0]:
             return np.empty((0, 7))
+
+        roi_left, roi_top, roi_width, roi_height = roi
+
         original_bboxes = scale_rbbox(
             bboxes[:, :5],
             roi_width,
             roi_height,
         )
+
+        # correct xc, yc
+        original_bboxes[:, 0] += roi_left
+        original_bboxes[:, 1] += roi_top
+
         return np.concatenate(
             [
                 np.zeros((original_bboxes.shape[0], 1), dtype=np.intc),

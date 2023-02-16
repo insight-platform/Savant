@@ -1,5 +1,5 @@
 """Default implementation PyFunc for drawing on frame."""
-
+from typing import Any, Dict, Optional
 import numpy as np
 import pyds
 from savant.deepstream.base_drawfunc import BaseNvDsDrawFunc
@@ -22,6 +22,7 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
     """
 
     def __init__(self, **kwargs):
+        self.rendered_objects: Optional[Dict[str, Dict[str, Any]]] = None
         super().__init__(**kwargs)
         if self.rendered_objects:
             for _, labels in self.rendered_objects.items():

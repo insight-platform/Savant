@@ -238,7 +238,8 @@ class AvroVideoDemux(LoggerMixin, Gst.Element):
                     and len(self.sources) >= self.max_parallel_streams
                 ):
                     self.logger.warning(
-                        'Reached maximum number of streams: %s. Skipping frame %s from source %s',
+                        'Reached maximum number of streams: %s. '
+                        'Skipping frame %s from source %s',
                         self.max_parallel_streams,
                         frame_pts,
                         source_id,

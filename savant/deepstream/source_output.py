@@ -111,7 +111,7 @@ class SourceOutputWithFrame(SourceOutput):
                 ]
             )
         self._logger.debug('Output converter properties: %s', output_converter_props)
-        output_converter = pipeline._add_element(
+        output_converter = pipeline.add_element(
             PipelineElement(
                 'nvvideoconvert',
                 properties=output_converter_props,
@@ -123,7 +123,7 @@ class SourceOutputWithFrame(SourceOutput):
 
         self._add_transform_elems(pipeline, source_info)
 
-        output_capsfilter = pipeline._add_element(PipelineElement('capsfilter'))
+        output_capsfilter = pipeline.add_element(PipelineElement('capsfilter'))
         output_caps = self._build_output_caps(source_info)
         output_capsfilter.set_property('caps', output_caps)
         source_info.after_demuxer.append(output_capsfilter)
@@ -183,7 +183,7 @@ class SourceOutputEncoded(SourceOutputWithFrame):
         self._params = params or {}
 
     def _add_transform_elems(self, pipeline: GstPipeline, source_info: SourceInfo):
-        encoder = pipeline._add_element(
+        encoder = pipeline.add_element(
             PipelineElement(self._codec.encoder, properties=self._params)
         )
         source_info.after_demuxer.append(encoder)
@@ -217,7 +217,7 @@ class SourceOutputH26X(SourceOutputEncoded):
         # to correct recording or playback not from the beginning
         # of the video stream.
         parser_params = {'config-interval': -1}
-        parser = pipeline._add_element(
+        parser = pipeline.add_element(
             PipelineElement(self._codec.parser, properties=parser_params)
         )
         source_info.after_demuxer.append(parser)
