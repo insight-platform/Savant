@@ -1,9 +1,7 @@
 """GStreamer utils."""
 import logging
-import os
 from contextlib import contextmanager
-from datetime import datetime
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict
 
 from gi.repository import Gst  # noqa:F401
 from savant.gstreamer.ffi import LIBGST, GstMapInfo
