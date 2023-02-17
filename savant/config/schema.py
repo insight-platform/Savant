@@ -268,7 +268,7 @@ class PyFuncElement(PipelineElement, PyFunc):
         if self.kwargs:
             kwargs.update(self.kwargs)
 
-        if 'name' in self.kwargs:
+        if self.kwargs and 'name' in self.kwargs:
             logging.warning("'name' is reserved name argument and will be replaced")
         if self.name:
             kwargs.update({'name': self.name})

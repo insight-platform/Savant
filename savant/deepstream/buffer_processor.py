@@ -149,7 +149,7 @@ class NvDsBufferProcessor(GstBufferProcessor):
                         scaled_bbox[1] + self._frame_params.padding.top,
                     ) + scaled_bbox[2:]
 
-                nvds_add_obj_meta_to_frame(
+                nvds_obj_meta = nvds_add_obj_meta_to_frame(
                     batch_meta=nvds_batch_meta,
                     frame_meta=nvds_frame_meta,
                     selection_type=selection_type,
@@ -160,6 +160,15 @@ class NvDsBufferProcessor(GstBufferProcessor):
                     obj_label=obj_key,
                     confidence=obj_meta['confidence'],
                 )
+                for attr in obj_meta["attributes"]:
+                    nvds_add_attr_meta_to_obj(
+                        frame_meta=nvds_frame_meta,
+                        obj_meta=nvds_obj_meta,
+                        element_name=attr["element_name"],
+                        name=attr["name"],
+                        value=attr["value"],
+                        confidence=attr["confidence"],
+                    )
 
             frame_meta.metadata['objects'] = []
             # add primary frame object

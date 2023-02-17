@@ -1,4 +1,7 @@
+import json
+from copy import deepcopy
 from fractions import Fraction
+from pathlib import Path
 from typing import Any, NamedTuple, Optional
 
 from savant.api import serialize, ENCODING_REGISTRY
@@ -81,6 +84,14 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
             True,
             GObject.ParamFlags.READWRITE,
         ),
+        'read-metadata': (
+            bool,
+            'Read metadata',
+            'Attempt to read the metadata of objects from the JSON file that has the identical name '
+            'as the source file with `json` extension, and then send it to the module.',
+            False,
+            GObject.ParamFlags.READWRITE,
+        ),
     }
 
     def __init__(self):
@@ -94,11 +105,13 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
         # will be set after caps negotiation
         self.frame_params: Optional[FrameParams] = None
         self.last_frame_params: Optional[FrameParams] = None
-        self.location: Optional[str] = None
-        self.last_location: Optional[str] = None
+        self.location: Optional[Path] = None
+        self.last_location: Optional[Path] = None
         self.default_framerate: str = DEFAULT_FRAMERATE
 
         self.stream_in_progress = False
+        self.read_metadata: bool = False
+        self.json_metadata = None
 
     def do_set_caps(  # pylint: disable=unused-argument
         self, in_caps: Gst.Caps, out_caps: Gst.Caps
@@ -142,6 +155,8 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
             return self.eos_on_location_change
         if prop.name == 'eos-on-frame-params-change':
             return self.eos_on_frame_params_change
+        if prop.name == 'read-metadata':
+            return self.read_metadata
         raise AttributeError(f'Unknown property {prop.name}.')
 
     def do_set_property(self, prop: GObject.GParamSpec, value: Any):
@@ -164,6 +179,8 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
             self.eos_on_location_change = value
         elif prop.name == 'eos-on-frame-params-change':
             self.eos_on_frame_params_change = value
+        elif prop.name == 'read-metadata':
+            self.read_metadata = value
         else:
             raise AttributeError(f'Unknown property {prop.name}.')
 
@@ -185,6 +202,7 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
                 or self.eos_on_frame_params_change
                 and self.frame_params != self.last_frame_params
             ):
+                self.json_metadata = self.read_json_metadata_file(self.location.parent / f"{self.location.stem}.json")
                 self.send_end_message()
         self.last_location = self.location
         self.last_frame_params = self.frame_params
@@ -216,10 +234,29 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
             has_location, location = tag_list.get_string(Gst.TAG_LOCATION)
             if has_location:
                 self.logger.info('Set location to %s', location)
-                self.location = location
+                self.location = Path(location)
+                self.json_metadata = self.read_json_metadata_file(self.location.parent / f"{self.location.stem}.json")
 
         # Cannot use `super()` since it is `self`
         return GstBase.BaseTransform.do_sink_event(self, event)
+
+    def read_json_metadata_file(self, location: Path):
+        json_metadata = None
+        if self.read_metadata:
+            if location.is_file():
+                with open(location, 'r') as fp:
+                    json_metadata = dict(
+                        map(
+                            lambda x: (x["pts"], x),
+                            filter(
+                                lambda x: x["schema"] == "VideoFrame",
+                                map(json.loads, fp.readlines())
+                            )
+                        )
+                    )
+            else:
+                self.logger.warning('JSON file `%s` not found', location.absolute())
+        return json_metadata
 
     def send_end_message(self):
         data = serialize(
@@ -241,6 +278,9 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
         if pts == Gst.CLOCK_TIME_NONE:
             # TODO: support CLOCK_TIME_NONE in schema
             pts = 0
+        frame_metadata = None
+        if self.read_metadata and self.json_metadata:
+            frame_metadata = self.json_metadata[pts]
         message = {
             'source_id': self.source_id,
             'framerate': self.frame_params.framerate,
@@ -251,6 +291,7 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
             'dts': dts,
             'duration': duration,
             'frame': frame,
+            'metadata': frame_metadata["metadata"] if self.read_metadata else None,
             **kwargs,
         }
         if self.location:

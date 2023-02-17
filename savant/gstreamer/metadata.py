@@ -12,14 +12,13 @@ DEFAULT_FRAMERATE = '30/1'
 
 class OnlyExtendedDict(UserDict):
     def __setitem__(self, key, value):
-        print(self.data)
         if key not in self.data:
             super().__setitem__(key, value)
         else:
             raise AttributeError(f"The key '{key}' already exists.")
 
 
-@dataclass(frozen=True)
+@dataclass
 class SourceFrameMeta:
     """Gst frame metadata."""
 
@@ -27,9 +26,12 @@ class SourceFrameMeta:
     pts: int
     duration: Optional[int] = None
     framerate: str = DEFAULT_FRAMERATE
-    # metadata: Dict[str, Any] = field(default=MappingProxyType(dict(objects=())))
     metadata: Dict[str, Any] = None
     tags: OnlyExtendedDict = field(default_factory=OnlyExtendedDict)
+
+    def __post_init__(self):
+        if self.metadata is None:
+            self.metadata = dict(objects=[])
 
 
 @dataclass
