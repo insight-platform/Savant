@@ -1,7 +1,9 @@
 """Deepstream bounding boxes."""
+import numpy as np
 import pyds
 from pysavantboost import get_rbbox
 
+from savant.converter.scale import scale_rbbox
 from savant.meta.errors import MetaValueError
 from savant.meta.bbox import BBox, RBBox
 
@@ -89,6 +91,17 @@ class NvDsBBox(BBox):
         self._nv_ds_bbox.left = value
         self._nv_ds_rect_meta.left = value
 
+    def scale(self, width: int, height: int):
+        """Scales BBox to specified width/height.
+
+        :param width:
+        :param height:
+        """
+        self.left /= width
+        self.top /= height
+        self.width /= width
+        self.height /= height
+
 
 class NvDsRBBox(RBBox):
     """Deepstream rotated bounding box wrapper.
@@ -147,3 +160,30 @@ class NvDsRBBox(RBBox):
     @angle.setter
     def angle(self, value: float):
         self._rbbox.angle = value
+
+    def scale(self, width: int, height: int):
+        """Scales BBox to specified width/height.
+
+        :param width:
+        :param height:
+        """
+        scaled_bbox = scale_rbbox(
+            bboxes=np.array(
+                [
+                    [
+                        self._rbbox.x_center,
+                        self._rbbox.y_center,
+                        self._rbbox.width,
+                        self._rbbox.height,
+                        self._rbbox.angle,
+                    ]
+                ]
+            ),
+            scale_factor_x=1 / width,
+            scale_factor_y=1 / height,
+        )[0]
+        self._rbbox.x_center = scaled_bbox[0]
+        self._rbbox.y_center = scaled_bbox[1]
+        self._rbbox.width = scaled_bbox[2]
+        self._rbbox.height = scaled_bbox[3]
+        self._rbbox.angle = scaled_bbox[4]

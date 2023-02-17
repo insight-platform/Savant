@@ -11,6 +11,7 @@ from pygstsavantframemeta import (
 from pysavantboost import ObjectsPreprocessing
 
 from savant.base.model import ObjectModel, ComplexModel
+from savant.meta.constants import PRIMARY_OBJECT_LABEL
 from savant.config.schema import PipelineElement, ModelElement, FrameParameters
 from savant.converter.scale import scale_rbbox
 from savant.deepstream.nvinfer.model import (
@@ -28,7 +29,7 @@ from savant.deepstream.utils import (
     nvds_infer_tensor_meta_to_outputs,
     nvds_add_obj_meta_to_frame,
     nvds_add_attr_meta_to_obj,
-    nvds_set_selection_type,
+    nvds_set_obj_selection_type,
     nvds_set_obj_uid,
 )
 from savant.gstreamer import Gst  # noqa:F401
@@ -111,7 +112,7 @@ class NvDsBufferProcessor(GstBufferProcessor):
                     obj_meta['model_name'], obj_meta['label']
                 )
                 # skip frame, will be added with proper width/height
-                if obj_key == 'frame':
+                if obj_key == PRIMARY_OBJECT_LABEL:
                     continue
                 # obj_key was only registered if
                 # it was required by the pipeline model elements (this case)
@@ -166,7 +167,7 @@ class NvDsBufferProcessor(GstBufferProcessor):
                     )
 
             # add primary frame object
-            obj_label = 'frame'
+            obj_label = PRIMARY_OBJECT_LABEL
             model_uid, class_id = self._model_object_registry.get_model_object_ids(
                 obj_label
             )
@@ -491,7 +492,7 @@ class NvDsBufferProcessor(GstBufferProcessor):
                     if nvds_obj_meta.unique_component_id == model_uid:
                         for obj in model.output.objects:
                             if nvds_obj_meta.class_id == obj.class_id:
-                                nvds_set_selection_type(
+                                nvds_set_obj_selection_type(
                                     obj_meta=nvds_obj_meta,
                                     selection_type=ObjectSelectionType.REGULAR_BBOX,
                                 )

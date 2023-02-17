@@ -47,7 +47,7 @@ from savant.deepstream.utils import (
     nvds_remove_obj_attrs,
     get_nvds_buf_surface,
 )
-from savant.meta.constants import UNTRACKED_OBJECT_ID
+from savant.meta.constants import UNTRACKED_OBJECT_ID, PRIMARY_OBJECT_LABEL
 from savant.utils.fps_meter import FPSMeter
 from savant.utils.model_registry import ModelObjectRegistry
 from savant.utils.source_info import SourceInfoRegistry, SourceInfo, Resolution
@@ -508,8 +508,10 @@ class NvDsPipeline(GstPipeline):
 
             # second iteration to collect module objects
             for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
+                # TODO add primary if it differs from default (frame)
                 # skip fake primary frame object
-                if nvds_obj_meta.obj_label == 'frame':
+                if nvds_obj_meta.obj_label == PRIMARY_OBJECT_LABEL:
+                    # bbox = ...
                     continue
 
                 obj_meta = nvds_obj_meta_output_converter(

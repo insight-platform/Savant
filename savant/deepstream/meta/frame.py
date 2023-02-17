@@ -1,5 +1,5 @@
 """Wrapper of deepstream frame meta information."""
-from typing import Iterator
+from typing import Iterator, Optional
 import pyds
 from savant.meta.errors import MetaValueError
 from savant.deepstream.meta.iterators import NvDsObjectMetaIterator
@@ -21,6 +21,7 @@ class NvDsFrameMeta:
         super().__init__()
         self.batch_meta = frame_meta.base_meta.batch_meta
         self.frame_meta = frame_meta
+        self._primary_object: Optional[ObjectMeta] = None
 
     @property
     def source_id(self) -> str:
@@ -39,6 +40,15 @@ class NvDsFrameMeta:
         :return: Iterator over object metas.
         """
         return NvDsObjectMetaIterator(self.frame_meta)
+
+    @property
+    def primary_object(self) -> ObjectMeta:
+        if not self._primary_object:
+            for obj_meta in self.objects:
+                if obj_meta.is_primary:
+                    self._primary_object = obj_meta
+                    break
+        return self._primary_object
 
     @property
     def objects_number(self) -> int:

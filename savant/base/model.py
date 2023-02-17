@@ -4,6 +4,7 @@ from enum import Enum
 from typing import List, Optional, Tuple
 from omegaconf import MISSING
 from savant.base.pyfunc import PyFunc
+from savant.meta.constants import PRIMARY_OBJECT_LABEL
 from savant.remote_file.schema import RemoteFile
 
 
@@ -74,7 +75,7 @@ class ModelInput:
                 maintain_aspect_ratio: True
     """
 
-    object: str = 'frame'
+    object: str = PRIMARY_OBJECT_LABEL
     """A text label in the form of ``model_name.object_label``.
     Indicates objects that will be used as input data.
     Special value `frame` is used to specify the entire frame as model input.
