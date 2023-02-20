@@ -1,5 +1,4 @@
 """Artists package."""
-from .artist import Artist
 from .artist_opencv import ArtistGPUMat
 from .position import Position
 
