@@ -1,8 +1,7 @@
 """Artists package."""
 from .artist import Artist
-from .artist_cairo import ArtistCairo
-from .artist_opencv import ArtistOpenCV
-from .utils import Position
+from .artist_opencv import ArtistGPUMat
+from .position import Position
 
 # BGR format
 COLOR = {

@@ -1,10 +1,10 @@
+"""Artist implementation using OpenCV GpuMat."""
 from typing import Tuple, Optional, Union, List
 from contextlib import AbstractContextManager
 import numpy as np
 import cv2
 from savant.meta.bbox import BBox, RBBox
-from .artist import Artist
-from .utils import Position, get_text_origin
+from .position import Position, get_text_origin
 
 
 def convert_color(color: Tuple[float, float, float], alpha: int = 255):
@@ -12,7 +12,12 @@ def convert_color(color: Tuple[float, float, float], alpha: int = 255):
     return int(color[2] * 255), int(color[1] * 255), int(color[0] * 255), alpha
 
 
-class ArtistOpenCV(Artist, AbstractContextManager):
+class ArtistGPUMat(AbstractContextManager):
+    """Artist implementation using OpenCV GpuMat.
+
+    :param frame: GpuMat header for allocated CUDA-memory of the frame.
+    """
+
     def __init__(self, frame: cv2.cuda.GpuMat) -> None:
         self.stream = cv2.cuda.Stream()
         self.frame: cv2.cuda.GpuMat = frame
@@ -37,20 +42,25 @@ class ArtistOpenCV(Artist, AbstractContextManager):
         self.stream.waitForCompletion()
 
     def __init_overlay(self):
-        self.overlay = np.zeros((self.height, self.width, 4), dtype=np.uint8)
+        """Init overlay image."""
+        if self.overlay is None:
+            self.overlay = np.zeros((self.height, self.width, 4), dtype=np.uint8)
 
     def __init_gaussian(self):
-        self.gaussian_filter = cv2.cuda.createGaussianFilter(
-            cv2.CV_8UC4, cv2.CV_8UC4, (31, 31), 100, 100
-        )
+        """Init Gaussian filter."""
+        if self.gaussian_filter is None:
+            self.gaussian_filter = cv2.cuda.createGaussianFilter(
+                cv2.CV_8UC4, cv2.CV_8UC4, (31, 31), 100, 100
+            )
 
     def add_text(
         self,
         text: str,
         anchor_x: int,
         anchor_y: int,
-        size: int = 13,
-        text_color: Tuple[float, float, float] = (1.0, 1.0, 1.0),
+        font_scale: float = 0.5,
+        font_thickness: int = 1,
+        font_color: Tuple[float, float, float] = (1.0, 1.0, 1.0),
         border_width: int = 0,
         border_color: Tuple[float, float, float] = (0.0, 0.0, 1.0),
         bg_color: Optional[Tuple[float, float, float]] = None,
@@ -59,25 +69,22 @@ class ArtistOpenCV(Artist, AbstractContextManager):
     ):
         """Add text on the frame.
 
-        :param text: display text.
-        :param anchor_x: x coordinate of text position.
-        :param anchor_y: y coordinate of text position.
-        :param size: font size.
-        :param text_color: font color.
-        :param border_width: border width around the text.
-        :param border_color: border color around the text.
-        :param bg_color: background color.
-        :param padding: increase the size of the rectangle around
+        :param text: Display text.
+        :param anchor_x: X coordinate of text position.
+        :param anchor_y: Y coordinate of text position.
+        :param font_scale: Font scale factor that is multiplied by the font-specific base size.
+        :param font_thickness: Thickness of the lines used to draw the text.
+        :param font_color: Font color, BGR, floats components in range [0;1.0]
+        :param border_width: Border width around the text.
+        :param border_color: Border color around the text.
+        :param bg_color: Background color.
+        :param padding: Increase the size of the rectangle around
             the text in each direction, in pixels.
         :param anchor_point: Anchor point of a  rectangle with text.
             For example, if you select Position.CENTER, the rectangle with the text
             will be drawn so that the center of the rectangle is at (x,y).
         """
-        if self.overlay is None:
-            self.__init_overlay()
-
-        font_scale = 0.4
-        font_thickness = 1
+        self.__init_overlay()
 
         text_size, baseline = cv2.getTextSize(
             text, self.font_face, font_scale, font_thickness
@@ -115,7 +122,7 @@ class ArtistOpenCV(Artist, AbstractContextManager):
             (text_x, text_y),
             self.font_face,
             font_scale,
-            convert_color(text_color),
+            convert_color(font_color),
             font_thickness,
         )
 
@@ -130,15 +137,15 @@ class ArtistOpenCV(Artist, AbstractContextManager):
     ):
         """Draw bbox on frame.
 
-        :param bbox: bounding box.
-        :param border_width:  border width.
-        :param border_color:  border color.
-        :param bg_color: background color. If None, the rectangle will be transparent.
-        :param padding: increase the size of the rectangle in each direction,
+        :param bbox: Bounding box.
+        :param border_width:  Border width.
+        :param border_color:  Border color.
+        :param bg_color: Background color. If None, the rectangle will be transparent.
+        :param padding: Increase the size of the rectangle in each direction,
             value in pixels.
         """
         if isinstance(bbox, BBox):
-            left, top, right, bottom, _, _ = self.convert_bbox(
+            left, top, right, bottom, _, _ = self.__convert_bbox(
                 bbox, padding, border_width
             )
 
@@ -190,13 +197,12 @@ class ArtistOpenCV(Artist, AbstractContextManager):
     ):
         """Draw polygon.
 
-        :param vertices: List of points
-        :param line_width: line width
-        :param line_color: line color
-        :param bg_color: background color
+        :param vertices: List of points.
+        :param line_width: Line width.
+        :param line_color: Line color.
+        :param bg_color: Background color.
         """
-        if self.overlay is None:
-            self.__init_overlay()
+        self.__init_overlay()
         vertices = np.intp(vertices)
         if bg_color is not None:
             cv2.drawContours(
@@ -207,17 +213,29 @@ class ArtistOpenCV(Artist, AbstractContextManager):
         )
 
     def blur(self, bbox: BBox, padding: int = 0):
-        """Apply gaussian blur to the specified ROI."""
+        """Apply gaussian blur to the specified ROI.
 
-        if self.gaussian_filter is None:
-            self.__init_gaussian()
+        :param bbox: ROI specified as Savant bbox.
+        :param padding: Increase the size of the rectangle in each direction,
+            value in pixels.
+        """
+        self.__init_gaussian()
 
-        left, top, _, _, width, height = self.convert_bbox(bbox, padding, 0)
+        left, top, _, _, width, height = self.__convert_bbox(bbox, padding, 0)
         roi_mat = cv2.cuda.GpuMat(self.frame, (left, top, width, height))
 
         self.gaussian_filter.apply(roi_mat, roi_mat, stream=self.stream)
 
-    def convert_bbox(self, bbox: BBox, padding: int, border_width: int):
+    def __convert_bbox(
+        self, bbox: BBox, padding: int, border_width: int
+    ) -> Tuple[int, int, int, int, int, int]:
+        """Convert Savant bbox to OpenCV format.
+
+        :param bbox: Savant BBox structure.
+        :param padding: Padding value.
+        :param border_width: Box border width.
+        :return: Left, top, right, bottom, width, height, clamped to frame dimensions.
+        """
         left = round(bbox.left) - padding - border_width
         top = round(bbox.top) - padding - border_width
 

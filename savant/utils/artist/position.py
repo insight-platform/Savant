@@ -1,9 +1,6 @@
-import math
+"""Anchor point position enum and utility."""
+from typing import Tuple
 from enum import Enum
-
-from typing import Tuple, List
-
-from savant.meta.bbox import RBBox
 
 
 class Position(Enum):
@@ -20,7 +17,19 @@ class Position(Enum):
     RIGHT_BOTTOM = 9
 
 
-def get_text_origin(anchor_point: Position, anchor_x, anchor_y, text_w, text_h):
+def get_text_origin(
+    anchor_point: Position, anchor_x: int, anchor_y: int, text_w: int, text_h: int
+) -> Tuple[int, int]:
+    """Calculate text origin coordinates.
+
+    :param anchor_point: Anchor point type of a rectangle with text.
+    :param anchor_x: Anchor point X coordinate.
+    :param anchor_y: Anchor point Y coordinate.
+    :param text_w: Text box width.
+    :param text_h: Text box height.
+    :return: Text origin X,Y.
+    """
+
     if anchor_point == Position.CENTER:
         return anchor_x - text_w / 2, anchor_y + text_h / 2
     if anchor_point == Position.LEFT_TOP:
@@ -39,26 +48,3 @@ def get_text_origin(anchor_point: Position, anchor_x, anchor_y, text_w, text_h):
         return anchor_x - text_w / 2, anchor_y
     if anchor_point == Position.RIGHT_BOTTOM:
         return anchor_x - text_w, anchor_y
-
-
-def bbox_to_vertices(rbbox: RBBox) -> List[Tuple[float, float]]:
-    """Convert rotated bounding boxes to list of 2D points."""
-    x_center, y_center, width, height, angle = (
-        rbbox.x_center,
-        rbbox.y_center,
-        rbbox.width,
-        rbbox.height,
-        rbbox.angle / 180 * math.pi,
-    )
-
-    width_sin = width / 2 * math.sin(angle)
-    width_cos = width / 2 * math.cos(angle)
-    height_sin = height / 2 * math.sin(angle)
-    height_cos = height / 2 * math.cos(angle)
-
-    return [
-        (x_center - width_cos + height_sin, y_center - width_sin - height_cos),
-        (x_center + width_cos + height_sin, y_center + width_sin - height_cos),
-        (x_center + width_cos - height_sin, y_center + width_sin + height_cos),
-        (x_center - width_cos - height_sin, y_center - width_sin + height_cos),
-    ]
