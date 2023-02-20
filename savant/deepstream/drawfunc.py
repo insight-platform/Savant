@@ -5,7 +5,7 @@ from savant.deepstream.base_drawfunc import BaseNvDsDrawFunc
 from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.meta.bbox import BBox, RBBox
 from savant.meta.constants import UNTRACKED_OBJECT_ID
-from savant.utils.artist import Position, Artist, ArtistGPUMat, COLOR
+from savant.utils.artist import Position, Artist, COLOR
 from savant.gstreamer import Gst  # noqa: F401
 from savant.deepstream.opencv_utils import nvds_to_gpu_mat
 
@@ -30,7 +30,7 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
     def __call__(self, nvds_frame_meta: pyds.NvDsFrameMeta, buffer: Gst.Buffer):
         frame_meta = NvDsFrameMeta(frame_meta=nvds_frame_meta)
         with nvds_to_gpu_mat(buffer, nvds_frame_meta) as frame_mat:
-            with ArtistGPUMat(frame_mat) as artist:
+            with Artist(frame_mat) as artist:
                 self.draw_on_frame(frame_meta, artist)
 
     def draw_on_frame(self, frame_meta: NvDsFrameMeta, artist: Artist):

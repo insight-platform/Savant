@@ -1,5 +1,5 @@
 """Artists package."""
-from .artist_opencv import ArtistGPUMat
+from .artist_opencv import ArtistGPUMat as Artist
 from .position import Position
 
 # BGR format
