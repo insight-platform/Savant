@@ -24,7 +24,7 @@ class ArtistGPUMat(AbstractContextManager):
         self.width, self.height = self.frame.size()
         self.max_col = self.width - 1
         self.max_row = self.height - 1
-        self.alpha_op = cv2.cuda.ALPHA_OVER_PREMUL
+        self.alpha_op = cv2.cuda.ALPHA_OVER
         self.overlay = None
         self.font_face = cv2.FONT_HERSHEY_SIMPLEX
         self.gaussian_filter = None
@@ -215,16 +215,35 @@ class ArtistGPUMat(AbstractContextManager):
         self.gaussian_filter.apply(roi_mat, roi_mat, stream=self.stream)
 
 
-    def add_overlay(self, img: np.ndarray, left: int, top: int):
+    def add_overlay(self, img: np.ndarray, origin: Tuple[int, int]):
         """Adds an image to the frame overlay, e.g. a logo.
-        Assumes image dimensions and origin point do not go out of frame bounds.
+        
         """
+        left, top = origin
+        if left >= self.width or top >= self.height:
+            return
+
+        img_h, img_w = img.shape[:2]
+        if left + img_w < 0 or top + img_h < 0:
+            return
 
         self.__init_overlay()
+
+        if left < 0:
+            img_inframe_left = abs(left)
+        else:
+            img_inframe_left = 0
+
+        if top < 0:
+            img_inframe_top = abs(top)
+        else:
+            img_inframe_top = 0
         
-        img_h, img_w = img.shape[:2]
+        
         right = left + img_w
         bottom = top + img_h
+
+
 
         self.overlay[top:bottom,left:right] = img
 
