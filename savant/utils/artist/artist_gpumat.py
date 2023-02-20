@@ -41,18 +41,6 @@ class ArtistGPUMat(AbstractContextManager):
             )
         self.stream.waitForCompletion()
 
-    def __init_overlay(self):
-        """Init overlay image."""
-        if self.overlay is None:
-            self.overlay = np.zeros((self.height, self.width, 4), dtype=np.uint8)
-
-    def __init_gaussian(self):
-        """Init Gaussian filter."""
-        if self.gaussian_filter is None:
-            self.gaussian_filter = cv2.cuda.createGaussianFilter(
-                cv2.CV_8UC4, cv2.CV_8UC4, (31, 31), 100, 100
-            )
-
     def add_text(
         self,
         text: str,
@@ -226,6 +214,33 @@ class ArtistGPUMat(AbstractContextManager):
 
         self.gaussian_filter.apply(roi_mat, roi_mat, stream=self.stream)
 
+
+    def add_overlay(self, img: np.ndarray, left: int, top: int):
+        """Adds an image to the frame overlay, e.g. a logo.
+        Assumes image dimensions and origin point do not go out of frame bounds.
+        """
+
+        self.__init_overlay()
+        
+        img_h, img_w = img.shape[:2]
+        right = left + img_w
+        bottom = top + img_h
+
+        self.overlay[top:bottom,left:right] = img
+
+    
+    def __init_overlay(self):
+        """Init overlay image."""
+        if self.overlay is None:
+            self.overlay = np.zeros((self.height, self.width, 4), dtype=np.uint8)
+
+    def __init_gaussian(self):
+        """Init Gaussian filter."""
+        if self.gaussian_filter is None:
+            self.gaussian_filter = cv2.cuda.createGaussianFilter(
+                cv2.CV_8UC4, cv2.CV_8UC4, (31, 31), 100, 100
+            )
+    
     def __convert_bbox(
         self, bbox: BBox, padding: int, border_width: int
     ) -> Tuple[int, int, int, int, int, int]:

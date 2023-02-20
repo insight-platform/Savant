@@ -28,10 +28,9 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
                     labels[label] = COLOR[color]
 
     def __call__(self, nvds_frame_meta: pyds.NvDsFrameMeta, buffer: Gst.Buffer):
-        frame_meta = NvDsFrameMeta(frame_meta=nvds_frame_meta)
         with nvds_to_gpu_mat(buffer, nvds_frame_meta) as frame_mat:
             with Artist(frame_mat) as artist:
-                self.draw_on_frame(frame_meta, artist)
+                self.draw_on_frame(NvDsFrameMeta(nvds_frame_meta), artist)
 
     def draw_on_frame(self, frame_meta: NvDsFrameMeta, artist: Artist):
         """Draws bounding boxes and labels for all objects in the frame.
