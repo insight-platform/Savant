@@ -13,7 +13,7 @@ from pysavantboost import ObjectsPreprocessing
 from savant.base.model import ObjectModel, ComplexModel
 from savant.meta.constants import PRIMARY_OBJECT_LABEL
 from savant.config.schema import PipelineElement, ModelElement, FrameParameters
-from savant.converter.scale import scale_rbbox
+from savant.meta.bbox import BBox, RBBox
 from savant.deepstream.nvinfer.model import (
     NvInferRotatedObjectDetector,
     NvInferDetector,
@@ -106,13 +106,33 @@ class NvDsBufferProcessor(GstBufferProcessor):
 
             frame_meta = metadata_get_frame_meta(source_id, frame_idx, frame_pts)
 
+            # full frame primary object by default
+            primary_bbox = BBox(
+                x_center=self._frame_params.width / 2,
+                y_center=self._frame_params.height / 2,
+                width=self._frame_params.width,
+                height=self._frame_params.height,
+            )
+
             # add external objects to nvds meta
             for obj_meta in frame_meta.metadata['objects']:
                 obj_key = self._model_object_registry.model_object_key(
                     obj_meta['model_name'], obj_meta['label']
                 )
-                # skip frame, will be added with proper width/height
+                # skip primary object for now, will be added later
                 if obj_key == PRIMARY_OBJECT_LABEL:
+                    bbox = (
+                        obj_meta['bbox']['xc'],
+                        obj_meta['bbox']['yc'],
+                        obj_meta['bbox']['width'],
+                        obj_meta['bbox']['height'],
+                    )
+                    # if not a full frame then correct primary object
+                    if bbox != (0.5, 0.5, 1, 1):
+                        primary_bbox = BBox(*bbox)
+                        primary_bbox.scale(
+                            self._frame_params.width, self._frame_params.height
+                        )
                     continue
                 # obj_key was only registered if
                 # it was required by the pipeline model elements (this case)
@@ -123,36 +143,27 @@ class NvDsBufferProcessor(GstBufferProcessor):
                         class_id,
                     ) = self._model_object_registry.get_model_object_ids(obj_key)
                     if obj_meta['bbox']['angle']:
-                        scaled_bbox = scale_rbbox(
-                            bboxes=np.array(
-                                [
-                                    [
-                                        obj_meta['bbox']['xc'],
-                                        obj_meta['bbox']['yc'],
-                                        obj_meta['bbox']['width'],
-                                        obj_meta['bbox']['height'],
-                                        obj_meta['bbox']['angle'],
-                                    ]
-                                ]
-                            ),
-                            scale_factor_x=self._frame_params.width,
-                            scale_factor_y=self._frame_params.height,
-                        )[0]
+                        bbox = RBBox(
+                            x_center=obj_meta['bbox']['xc'],
+                            y_center=obj_meta['bbox']['yc'],
+                            width=obj_meta['bbox']['width'],
+                            height=obj_meta['bbox']['height'],
+                            angle=obj_meta['bbox']['angle'],
+                        )
                         selection_type = ObjectSelectionType.ROTATED_BBOX
                     else:
-                        scaled_bbox = (
-                            obj_meta['bbox']['xc'] * self._frame_params.width,
-                            obj_meta['bbox']['yc'] * self._frame_params.height,
-                            obj_meta['bbox']['width'] * self._frame_params.width,
-                            obj_meta['bbox']['height'] * self._frame_params.height,
-                            obj_meta['bbox']['angle'],
+                        bbox = BBox(
+                            x_center=obj_meta['bbox']['xc'],
+                            y_center=obj_meta['bbox']['yc'],
+                            width=obj_meta['bbox']['width'],
+                            height=obj_meta['bbox']['height'],
                         )
                         selection_type = ObjectSelectionType.REGULAR_BBOX
+
+                    bbox.scale(self._frame_params.width, self._frame_params.height)
                     if self._frame_params.padding:
-                        scaled_bbox = (
-                            scaled_bbox[0] + self._frame_params.padding.left,
-                            scaled_bbox[1] + self._frame_params.padding.top,
-                        ) + scaled_bbox[2:]
+                        bbox.left += self._frame_params.padding.left
+                        bbox.top += self._frame_params.padding.top
 
                     nvds_add_obj_meta_to_frame(
                         batch_meta=nvds_batch_meta,
@@ -160,7 +171,15 @@ class NvDsBufferProcessor(GstBufferProcessor):
                         selection_type=selection_type,
                         class_id=class_id,
                         gie_uid=model_uid,
-                        bbox=scaled_bbox,
+                        bbox=(
+                            bbox.x_center,
+                            bbox.y_center,
+                            bbox.width,
+                            bbox.height,
+                            bbox.angle
+                            if selection_type == ObjectSelectionType.ROTATED_BBOX
+                            else 0.0,
+                        ),
                         object_id=obj_meta['object_id'],
                         obj_label=obj_key,
                         confidence=obj_meta['confidence'],
@@ -171,24 +190,21 @@ class NvDsBufferProcessor(GstBufferProcessor):
             model_uid, class_id = self._model_object_registry.get_model_object_ids(
                 obj_label
             )
-            xc = self._frame_params.width / 2
-            yc = self._frame_params.height / 2
             if self._frame_params.padding:
-                xc += self._frame_params.padding.left
-                yc += self._frame_params.padding.top
+                primary_bbox.x_center += self._frame_params.padding.left
+                primary_bbox.y_center += self._frame_params.padding.top
             nvds_add_obj_meta_to_frame(
                 batch_meta=nvds_batch_meta,
                 frame_meta=nvds_frame_meta,
                 selection_type=ObjectSelectionType.REGULAR_BBOX,
                 class_id=class_id,
                 gie_uid=model_uid,
-                # tuple(xc, yc, width, height, angle)
                 bbox=(
-                    xc,
-                    yc,
-                    self._frame_params.width,
-                    self._frame_params.height,
-                    0,
+                    primary_bbox.x_center,
+                    primary_bbox.y_center,
+                    primary_bbox.width,
+                    primary_bbox.height,
+                    0.0,
                 ),
                 obj_label=obj_label,
                 # confidence should be bigger than tracker minDetectorConfidence

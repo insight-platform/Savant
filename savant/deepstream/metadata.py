@@ -36,7 +36,10 @@ def nvds_obj_meta_output_converter(
         confidence = nvds_obj_meta.tracker_confidence
 
     nvds_bbox = nvds_get_obj_bbox(nvds_obj_meta)
-    nvds_bbox.scale(frame_width, frame_height)
+    if frame_params.padding and not frame_params.padding.keep:
+        nvds_bbox.x_center -= frame_params.padding.left
+        nvds_bbox.y_center -= frame_params.padding.top
+    nvds_bbox.scale(1 / frame_width, 1 / frame_height)
     bbox = dict(
         xc=nvds_bbox.x_center,
         yc=nvds_bbox.y_center,
@@ -44,10 +47,6 @@ def nvds_obj_meta_output_converter(
         height=nvds_bbox.height,
         angle=nvds_bbox.angle if isinstance(nvds_bbox, NvDsRBBox) else 0.0,
     )
-
-    if frame_params.padding and not frame_params.padding.keep:
-        bbox['xc'] -= frame_params.padding.left / frame_width
-        bbox['yc'] -= frame_params.padding.top / frame_height
 
     # parse parent object
     parent_model_name, parent_label, parent_object_id = None, None, None

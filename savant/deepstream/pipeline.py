@@ -508,12 +508,6 @@ class NvDsPipeline(GstPipeline):
 
             # second iteration to collect module objects
             for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
-                # TODO add primary if it differs from default (frame)
-                # skip fake primary frame object
-                if nvds_obj_meta.obj_label == PRIMARY_OBJECT_LABEL:
-                    # bbox = ...
-                    continue
-
                 obj_meta = nvds_obj_meta_output_converter(
                     nvds_obj_meta, self._frame_params
                 )
@@ -529,6 +523,18 @@ class NvDsPipeline(GstPipeline):
                                 nvds_attr_meta_output_converter(attr_meta)
                             )
                 nvds_remove_obj_attrs(nvds_frame_meta, nvds_obj_meta)
+
+                # skip empty primary object that equals to frame
+                if nvds_obj_meta.obj_label == PRIMARY_OBJECT_LABEL:
+                    bbox = (
+                        obj_meta['bbox']['xc'],
+                        obj_meta['bbox']['yc'],
+                        obj_meta['bbox']['width'],
+                        obj_meta['bbox']['height'],
+                    )
+                    if bbox == (0.5, 0.5, 1, 1) and not obj_meta['attributes']:
+                        continue
+
                 frame_meta.metadata['objects'].append(obj_meta)
 
             metadata_add_frame_meta(source_id, frame_idx, frame_pts, frame_meta)
