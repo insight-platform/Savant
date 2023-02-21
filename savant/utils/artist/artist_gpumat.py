@@ -214,40 +214,54 @@ class ArtistGPUMat(AbstractContextManager):
 
         self.gaussian_filter.apply(roi_mat, roi_mat, stream=self.stream)
 
-
     def add_overlay(self, img: np.ndarray, origin: Tuple[int, int]):
         """Adds an image to the frame overlay, e.g. a logo.
         
+        :param img: RGBA image.
+        :param origin: Coordinates of left top corner of img in frame space.
         """
-        left, top = origin
-        if left >= self.width or top >= self.height:
+        frame_left, frame_top = origin
+        if frame_left >= self.width or frame_top >= self.height:
             return
 
         img_h, img_w = img.shape[:2]
-        if left + img_w < 0 or top + img_h < 0:
+        if frame_left + img_w < 0 or frame_top + img_h < 0:
             return
 
         self.__init_overlay()
 
-        if left < 0:
-            img_inframe_left = abs(left)
+        if frame_left < 0:
+            img_left = abs(frame_left)
         else:
-            img_inframe_left = 0
+            img_left = None
 
-        if top < 0:
-            img_inframe_top = abs(top)
+        if frame_top < 0:
+            img_top = abs(frame_top)
         else:
-            img_inframe_top = 0
-        
-        
-        right = left + img_w
-        bottom = top + img_h
+            img_top = None
 
+        frame_right = frame_left + img_w
+        frame_bottom = frame_top + img_h
 
+        if frame_right >= self.width:
+            img_right = self.width - frame_left
+        else:
+            img_right = None
 
-        self.overlay[top:bottom,left:right] = img
+        if frame_bottom >= self.height:
+            img_bottom = self.height - frame_top
+        else:
+            img_bottom = None
 
-    
+        frame_left = max(frame_left, 0)
+        frame_top = max(frame_top, 0)
+        frame_right = min(frame_right, self.width)
+        frame_bottom = min(frame_bottom, self.height)
+
+        self.overlay[frame_top:frame_bottom, frame_left:frame_right] = img[
+            img_top:img_bottom, img_left:img_right
+        ]
+
     def __init_overlay(self):
         """Init overlay image."""
         if self.overlay is None:
@@ -259,7 +273,7 @@ class ArtistGPUMat(AbstractContextManager):
             self.gaussian_filter = cv2.cuda.createGaussianFilter(
                 cv2.CV_8UC4, cv2.CV_8UC4, (31, 31), 100, 100
             )
-    
+
     def __convert_bbox(
         self, bbox: BBox, padding: int, border_width: int
     ) -> Tuple[int, int, int, int, int, int]:
