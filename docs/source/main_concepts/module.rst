@@ -13,8 +13,8 @@ in the API reference :ref:`reference/api/module_config:Module configuration`.
 
 On the top level, every module should have a ``name``, which is an arbitrary string, a ``pipeline`` (pipeline definition is discussed in details in :doc:`pipeline`) and will probably have some ``parameters``.
 
-Module parameters
-^^^^^^^^^^^^^^^^^
+Module parameters overview
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Any number of :py:attr:`~savant.config.schema.Module.parameters` can be set in the ``parameters`` section of the module configuration file, including user-defined ones.
 
@@ -50,6 +50,46 @@ in dynamic parameter storage.
   Currently ``etcd`` is supported as dynamic parameter storage. Etcd connection requires
   parameter values under ``parameters.etcd_config`` to be valid.
 
+Configuring frame output
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+In case a Savant module is intended to run alongside **image-** or **video-files** sink :ref:`adapters <main_concepts/adapters:Adapters overview>` its ``output_frame`` parameter must be configured correctly in order to get frame data in the output messages.
+
+1. ``parameters.output_frame.codec`` config node determines which codec will be used to encode output frames. Possible values are **h264**, **h265**, **jpeg**, **png** and **raw-rgba** to skip encoding. For example:
+
+  .. code-block:: YAML
+
+    parameters:
+      output_frame:
+        codec: h264
+
+2. ``parameters.output_frame.encoder_params`` config node allows passing additional encoder-specific parameters to the encoder pipeline element. These are:
+
+  - **nvv4l2h264enc** for **h264** codec
+  - **nvv4l2h265enc** for **h265** codec
+  - **nvjpegenc** or **jpegenc** for **jpeg** codec
+  - **pngenc** for **png** codec
+
+  Example:
+
+  .. code-block:: YAML
+
+    parameters:
+      output_frame:
+        codec: h264
+        encoder_params:
+          bitrate: 4000000
+          profile: 4
+
+  .. code-block:: YAML
+
+    parameters:
+      output_frame:
+        codec: jpeg
+        encoder_params:
+          quality: 90
+
+**gst-inspect-1.0** utility inside the module container provides full list of properties for each encoder element.
 
 Module run environment
 ----------------------
