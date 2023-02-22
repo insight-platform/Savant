@@ -53,8 +53,8 @@ class BBox(BaseBBox):
     def scale(self, scale_x: float, scale_y: float):
         """Scales BBox.
 
-        :param scale_x:
-        :param scale_y:
+        :param scale_x: The scaling factor applied along the x-axis.
+        :param scale_y: The scaling factor applied along the y-axis.
         """
         self.left *= scale_x
         self.top *= scale_y
@@ -72,8 +72,8 @@ class RBBox(BaseBBox):
     def scale(self, scale_x: float, scale_y: float):
         """Scales BBox.
 
-        :param scale_x:
-        :param scale_y:
+        :param scale_x: The scaling factor applied along the x-axis.
+        :param scale_y: The scaling factor applied along the y-axis.
         """
         scaled_bbox = scale_rbbox(
             bboxes=np.array(
