@@ -189,7 +189,7 @@ class SourceOutputEncoded(SourceOutputWithFrame):
         source_info.after_demuxer.append(encoder)
         encoder.sync_state_with_parent()
         self._logger.debug(
-            'Added encoder %s with parms %s', self._codec.encoder, self._params
+            'Added encoder %s with params %s', self._codec.encoder, self._params
         )
 
     def _build_output_caps(self, source_info: SourceInfo) -> Gst.Caps:
@@ -223,7 +223,7 @@ class SourceOutputH26X(SourceOutputEncoded):
         source_info.after_demuxer.append(parser)
         parser.sync_state_with_parent()
         self._logger.debug(
-            'Added parser %s with parms %s', self._codec.parser, parser_params
+            'Added parser %s with params %s', self._codec.parser, parser_params
         )
 
 
