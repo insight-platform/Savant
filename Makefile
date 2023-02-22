@@ -28,7 +28,6 @@ build-samples:
 	DOCKER_BUILDKIT=1 docker build \
 	--target samples \
 	--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
-	--build-arg PYDS_TAG=v$(PYDS_VERSION)-unmap \
 	-f docker/$(DOCKER_FILE) \
 	-t savant-deepstream$(PLATFORM_SUFFIX):$(SAVANT_VERSION)-$(DEEPSTREAM_VERSION)-samples .
 
