@@ -53,10 +53,10 @@ class NvDsFrameMeta:
 
     @roi.setter
     def roi(self, value: BBox):
-        self._primary_obj.bbox.x_center = value.x_center
-        self._primary_obj.bbox.y_center = value.y_center
-        self._primary_obj.bbox.width = value.width
-        self._primary_obj.bbox.height = value.height
+        self.roi.x_center = value.x_center
+        self.roi.y_center = value.y_center
+        self.roi.width = value.width
+        self.roi.height = value.height
 
     @property
     def objects_number(self) -> int:
