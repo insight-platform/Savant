@@ -13,8 +13,8 @@ from savant.utils.version import version  # noqa: F401
 from savant.utils.platform import is_aarch64, get_l4t_version  # noqa: F401
 
 # docker registry to use with scripts, set to "None" to use local images
-# DOCKER_REGISTRY = 'ghcr.io/insight-platform'
-DOCKER_REGISTRY = None
+DOCKER_REGISTRY = 'ghcr.io/insight-platform'
+# DOCKER_REGISTRY = None
 
 
 def docker_image_option(default_docker_image_name: str, tag: Optional[str] = None):
