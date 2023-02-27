@@ -1,9 +1,10 @@
 """Wrapper of deepstream frame meta information."""
-from typing import Iterator
+from typing import Iterator, Optional
 import pyds
 from savant.meta.errors import MetaValueError
 from savant.deepstream.meta.iterators import NvDsObjectMetaIterator
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
+from savant.meta.bbox import BBox
 from savant.meta.object import ObjectMeta
 from savant.utils.source_info import SourceInfoRegistry
 
@@ -21,6 +22,7 @@ class NvDsFrameMeta:
         super().__init__()
         self.batch_meta = frame_meta.base_meta.batch_meta
         self.frame_meta = frame_meta
+        self._primary_obj: Optional[ObjectMeta] = None
 
     @property
     def source_id(self) -> str:
@@ -39,6 +41,22 @@ class NvDsFrameMeta:
         :return: Iterator over object metas.
         """
         return NvDsObjectMetaIterator(self.frame_meta)
+
+    @property
+    def roi(self) -> BBox:
+        if not self._primary_obj:
+            for obj_meta in self.objects:
+                if obj_meta.is_primary:
+                    self._primary_obj = obj_meta
+                    break
+        return self._primary_obj.bbox
+
+    @roi.setter
+    def roi(self, value: BBox):
+        self.roi.x_center = value.x_center
+        self.roi.y_center = value.y_center
+        self.roi.width = value.width
+        self.roi.height = value.height
 
     @property
     def objects_number(self) -> int:

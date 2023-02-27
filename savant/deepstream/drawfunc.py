@@ -39,7 +39,7 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
         :param artist: Cairo context drawer to drawing primitives and directly on frame.
         """
         for obj_meta in frame_meta.objects:
-            if not obj_meta.element_name and obj_meta.label == 'frame':
+            if obj_meta.is_primary:
                 continue
 
             if self.rendered_objects is None or (
