@@ -696,8 +696,7 @@ class NvDsPipeline(GstPipeline):
         buffer: Gst.Buffer = info.get_buffer()
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
-            with get_nvds_buf_surface(buffer, nvds_frame_meta) as frame:
-                self._draw_func(nvds_frame_meta, frame)
+            self._draw_func(nvds_frame_meta, buffer)
         return Gst.PadProbeReturn.OK
 
     def _allocate_demuxer_pads(self, demuxer: Gst.Element, n_pads: int):
