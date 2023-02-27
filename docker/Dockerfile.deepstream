@@ -7,6 +7,11 @@ RUN mkdir -p /tmp/cmake \
     && wget --progress=bar:force:noscroll https://github.com/Kitware/CMake/releases/download/v3.23.2/cmake-3.23.2-linux-x86_64.sh \
     && sh cmake-3.23.2-linux-x86_64.sh --skip-license --prefix=/usr/local/
 
+# need python headers
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y \
+    python3-dev
+
 # python to python3 by default
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 10
 
@@ -30,35 +35,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY libs/savantboost .
 RUN python setup.py bdist_wheel && rm -rf _skbuild
-
-
-FROM base_builder AS pyds_build
-
-RUN apt-get update \
-    && apt-get install -y \
-        python-gi-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-ARG PYDS_TAG
-RUN git clone https://github.com/tomskikh/deepstream_python_apps.git /deepstream_python_apps \
-    && cd /deepstream_python_apps \
-    && git checkout $PYDS_TAG \
-    && git submodule init \
-    && git submodule update \
-    && cd 3rdparty/gst-python \
-    && git submodule init \
-    && git submodule update
-
-WORKDIR /deepstream_python_apps/3rdparty/gst-python
-RUN ./autogen.sh \
-    && make \
-    && make install
-
-WORKDIR /deepstream_python_apps/bindings/build
-RUN cmake -DPIP_PLATFORM=linux_x86_64 .. \
-    && make \
-    && mkdir /dist \
-    && mv *.whl /dist/
 
 
 FROM base_builder AS opencv_build
@@ -122,7 +98,7 @@ ENV APP_PATH=$APP_PATH
 ENV PYTHONPATH=$APP_PATH
 WORKDIR $APP_PATH
 
-# add deepstream libs to path, so that ctypes can load libnvbufsurface.so
+# add deepstream libs to path, so that ctypes can load them
 ENV LD_LIBRARY_PATH=/opt/nvidia/deepstream/deepstream/lib/:$LD_LIBRARY_PATH
 
 # install requirements
@@ -134,9 +110,6 @@ RUN python -m pip install --no-cache-dir \
     -r requirements-deepstream.txt \
     && rm requirements-base.txt \
     && rm requirements-deepstream.txt
-
-COPY --from=pyds_build /dist /libs/pyds/dist
-RUN python -m pip install --no-cache-dir /libs/pyds/dist/*.whl
 
 COPY --from=pygstsavantframemeta_build /libs/gstsavantframemeta/dist /libs/gstsavantframemeta/dist
 RUN python -m pip install --no-cache-dir /libs/gstsavantframemeta/dist/*.whl

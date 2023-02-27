@@ -1,4 +1,4 @@
-# Savant - High-Performance Streaming Inference Framework for Humans
+# Savant: High-Performance Streaming Inference Framework With Batteries Included
 
 Savant is an open-source, high-level framework for building real-time, streaming, highly efficient multimedia AI
 applications on the Nvidia stack. It makes it possible to develop dynamic, fault-tolerant inference pipelines
@@ -19,12 +19,12 @@ Savant is not for AI model training; it's for building fast streaming inference 
 
 The one, who wants:
 
-- to get the maximum performance of Nvidia equipment on streaming inference tasks either on edge or in core;
-- to decrease time to market when building dynamic pipelines with DeepStream technology without extra hassle.
+- get the maximum performance of Nvidia equipment on streaming inference tasks either on edge or in core;
+- decrease time to market when building dynamic pipelines with DeepStream technology without extra hassle.
 
 ## Runs On
 
-- Nvidia Jetson Nano, NX Xavier, Xavier AGX;
+- Nvidia Jetson NX, Xavier AGX;
 - Nvidia Turing GPU;
 - Nvidia Ampere GPU;
 - Nvidia Hopper, hopefully - haven't chance to get it yet :-)

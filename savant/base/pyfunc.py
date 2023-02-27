@@ -31,6 +31,10 @@ class BasePyFuncPlugin(BasePyFuncImpl):
     :py:class:`.PyFunc` structure.
     """
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.gst_element: Optional[Gst.Element] = None
+
     def on_start(self) -> bool:
         """Do on plugin start."""
         return True

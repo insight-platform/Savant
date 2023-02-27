@@ -40,37 +40,6 @@ COPY libs/savantboost .
 RUN python setup.py bdist_wheel && rm -rf _skbuild
 
 
-FROM base_builder AS pyds_build
-
-RUN apt-get update \
-    && apt-get install -y \
-        automake \
-        libtool \
-        python-gi-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-ARG PYDS_TAG
-RUN git clone https://github.com/tomskikh/deepstream_python_apps.git /deepstream_python_apps \
-    && cd /deepstream_python_apps \
-    && git checkout $PYDS_TAG \
-    && git submodule init \
-    && git submodule update \
-    && cd 3rdparty/gst-python \
-    && git submodule init \
-    && git submodule update
-
-WORKDIR /deepstream_python_apps/3rdparty/gst-python
-RUN ./autogen.sh \
-    && make \
-    && make install
-
-WORKDIR /deepstream_python_apps/bindings/build
-RUN cmake -DPIP_PLATFORM=linux_aarch64 .. \
-    && make \
-    && mkdir /dist \
-    && mv *.whl /dist/
-
-
 FROM base_builder AS opencv_build
 
 WORKDIR /opencv
@@ -129,7 +98,7 @@ ENV APP_PATH=$APP_PATH
 ENV PYTHONPATH=$APP_PATH
 WORKDIR $APP_PATH
 
-# add deepstream libs to path, so that ctypes can load libnvbufsurface.so
+# add deepstream libs to path, so that ctypes can load them
 ENV LD_LIBRARY_PATH=/opt/nvidia/deepstream/deepstream/lib/:$LD_LIBRARY_PATH
 
 # install requirements
@@ -141,9 +110,6 @@ RUN python -m pip install --no-cache-dir \
     -r requirements-deepstream-l4t.txt \
     && rm requirements-base.txt \
     && rm requirements-deepstream-l4t.txt
-
-COPY --from=pyds_build /dist /libs/pyds/dist
-RUN python -m pip install --no-cache-dir /libs/pyds/dist/*.whl
 
 COPY --from=pygstsavantframemeta_build /libs/gstsavantframemeta/dist /libs/gstsavantframemeta/dist
 RUN python -m pip install --no-cache-dir /libs/gstsavantframemeta/dist/*.whl

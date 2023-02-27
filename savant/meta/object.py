@@ -4,7 +4,11 @@ from typing import Optional, Any, List, Union
 
 from savant.meta.bbox import BBox, RBBox
 from savant.meta.attribute import AttributeMeta
-from savant.meta.constants import UNTRACKED_OBJECT_ID, DEFAULT_CONFIDENCE
+from savant.meta.constants import (
+    UNTRACKED_OBJECT_ID,
+    DEFAULT_CONFIDENCE,
+    PRIMARY_OBJECT_LABEL,
+)
 
 
 class BaseObjectMetaImpl(ABC):
@@ -230,6 +234,10 @@ class ObjectMeta:
         if self.object_meta_impl:
             self.object_meta_impl = value
         self._element_name = value
+
+    @property
+    def is_primary(self) -> bool:
+        return not self.element_name and self.label == PRIMARY_OBJECT_LABEL
 
     @property
     def confidence(self) -> float:

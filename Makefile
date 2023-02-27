@@ -6,7 +6,6 @@ SAVANT_VERSION := $(shell cat savant/VERSION | awk -F= '$$1=="SAVANT"{print $$2}
 DEEPSTREAM_VERSION := $(shell cat savant/VERSION | awk -F= '$$1=="DEEPSTREAM"{print $$2}' | sed 's/"//g')
 DOCKER_FILE := Dockerfile.deepstream
 PLATFORM_SUFFIX :=
-PYDS_VERSION := 1.1.4
 
 ifeq ("$(shell uname -m)", "aarch64")
     PLATFORM_SUFFIX := -l4t
@@ -15,7 +14,6 @@ ifeq ("$(shell uname -m)", "aarch64")
     ifeq ($(L4T_MAJOR_VERSION), 32)
         DEEPSTREAM_VERSION := 6.0.1
         DOCKER_FILE := Dockerfile.deepstream-l4t-6.0.1
-        PYDS_VERSION := 1.1.1
     endif
 endif
 
@@ -23,7 +21,6 @@ build:
 	DOCKER_BUILDKIT=1 docker build \
 	--target base \
 	--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
-	--build-arg PYDS_TAG=v$(PYDS_VERSION)-unmap \
 	-f docker/$(DOCKER_FILE) \
 	-t savant-deepstream$(PLATFORM_SUFFIX):$(SAVANT_VERSION)-$(DEEPSTREAM_VERSION)-base .
 

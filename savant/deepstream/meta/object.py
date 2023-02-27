@@ -8,11 +8,11 @@ from savant.meta.errors import MetaValueError
 from savant.deepstream.meta.bbox import NvDsBBox, NvDsRBBox
 from savant.deepstream.meta.constants import MAX_LABEL_SIZE
 from savant.deepstream.utils import (
-    nvds_get_selection_type,
+    nvds_get_obj_selection_type,
     nvds_get_obj_attr_meta,
     nvds_get_obj_attr_meta_list,
     nvds_add_attr_meta_to_obj,
-    nvds_set_selection_type,
+    nvds_set_obj_selection_type,
     nvds_set_obj_uid,
     nvds_get_obj_uid,
 )
@@ -96,7 +96,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
             rect_params.top = bbox.top
             rect_params.width = bbox.width
             rect_params.height = bbox.height
-            nvds_set_selection_type(
+            nvds_set_obj_selection_type(
                 obj_meta=self.ds_object_meta,
                 selection_type=ObjectSelectionType.REGULAR_BBOX,
             )
@@ -111,7 +111,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
             add_rbbox_to_object_meta(
                 self._frame_meta.batch_meta, self.ds_object_meta, rbbox_coords
             )
-            nvds_set_selection_type(
+            nvds_set_obj_selection_type(
                 obj_meta=self.ds_object_meta,
                 selection_type=ObjectSelectionType.ROTATED_BBOX,
             )
@@ -136,7 +136,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
             It can be :py:class:`~savant.meta.bbox.RegularBoundingBox` or
             :py:class:`~savant.meta.bbox.RotatedBoundingBox`.
         """
-        bbox_type = nvds_get_selection_type(self.ds_object_meta)
+        bbox_type = nvds_get_obj_selection_type(self.ds_object_meta)
         if bbox_type == ObjectSelectionType.REGULAR_BBOX:
             return NvDsBBox(self.ds_object_meta)
         if bbox_type == ObjectSelectionType.ROTATED_BBOX:
