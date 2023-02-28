@@ -202,7 +202,9 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
                 or self.eos_on_frame_params_change
                 and self.frame_params != self.last_frame_params
             ):
-                self.json_metadata = self.read_json_metadata_file(self.location.parent / f"{self.location.stem}.json")
+                self.json_metadata = self.read_json_metadata_file(
+                    self.location.parent / f"{self.location.stem}.json"
+                )
                 self.send_end_message()
         self.last_location = self.location
         self.last_frame_params = self.frame_params
@@ -235,7 +237,9 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
             if has_location:
                 self.logger.info('Set location to %s', location)
                 self.location = Path(location)
-                self.json_metadata = self.read_json_metadata_file(self.location.parent / f"{self.location.stem}.json")
+                self.json_metadata = self.read_json_metadata_file(
+                    self.location.parent / f"{self.location.stem}.json"
+                )
 
         # Cannot use `super()` since it is `self`
         return GstBase.BaseTransform.do_sink_event(self, event)
@@ -250,8 +254,8 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
                             lambda x: (x["pts"], x),
                             filter(
                                 lambda x: x["schema"] == "VideoFrame",
-                                map(json.loads, fp.readlines())
-                            )
+                                map(json.loads, fp.readlines()),
+                            ),
                         )
                     )
             else:

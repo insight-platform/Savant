@@ -183,14 +183,14 @@ class NvDsBufferProcessor(GstBufferProcessor):
                     obj_label=obj_key,
                     confidence=obj_meta['confidence'],
                 )
-                for attr in obj_meta["attributes"]:
+                for attr in obj_meta['attributes']:
                     nvds_add_attr_meta_to_obj(
                         frame_meta=nvds_frame_meta,
                         obj_meta=nvds_obj_meta,
-                        element_name=attr["element_name"],
-                        name=attr["name"],
-                        value=attr["value"],
-                        confidence=attr["confidence"],
+                        element_name=attr['element_name'],
+                        name=attr['name'],
+                        value=attr['value'],
+                        confidence=attr['confidence'],
                     )
 
             frame_meta.metadata['objects'] = []

@@ -1,4 +1,6 @@
 """Deepstream bounding boxes."""
+import logging
+
 import pyds
 from pysavantboost import get_rbbox
 
@@ -88,6 +90,17 @@ class NvDsBBox(BBox):
     def left(self, value: float):
         self._nv_ds_bbox.left = value
         self._nv_ds_rect_meta.left = value
+
+    def scale(self, scale_x: float, scale_y: float):
+        """Scales BBox.
+
+        :param scale_x: The scaling factor applied along the x-axis.
+        :param scale_y: The scaling factor applied along the y-axis.
+        """
+        self.left *= scale_x
+        self.top *= scale_y
+        self.width *= scale_x
+        self.height *= scale_y
 
 
 class NvDsRBBox(RBBox):

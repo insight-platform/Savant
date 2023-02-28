@@ -2,7 +2,11 @@
 from typing import Iterator, Any, Dict, Optional
 import pyds
 
-from savant.gstreamer.metadata import get_source_frame_meta, SourceFrameMeta, OnlyExtendedDict
+from savant.gstreamer.metadata import (
+    get_source_frame_meta,
+    SourceFrameMeta,
+    OnlyExtendedDict,
+)
 from savant.meta.errors import MetaValueError
 from savant.deepstream.meta.iterators import NvDsObjectMetaIterator
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
@@ -86,9 +90,7 @@ class NvDsFrameMeta:
 
         :return: None
         """
-        savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(
-            self.frame_meta
-        )
+        savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(self.frame_meta)
         self._source_frame_meta = get_source_frame_meta(
             source_id=self.source_id,
             frame_idx=savant_frame_meta.idx if savant_frame_meta else None,

@@ -156,7 +156,7 @@ def files_source(
     default=False,
     is_flag=True,
     help='Attempt to read the metadata of objects from the JSON file that has the identical name '
-         'as the source file with `json` extension, and then send it to the module.',
+    'as the source file with `json` extension, and then send it to the module.',
     show_default=True,
 )
 @common_options
@@ -175,7 +175,7 @@ def videos_source(
     fps_output: str,
     location: str,
     sort_by_time: bool,
-    read_metadata: bool
+    read_metadata: bool,
 ):
     """Read video files from LOCATION.
     LOCATION can be single file, directory or HTTP URL.

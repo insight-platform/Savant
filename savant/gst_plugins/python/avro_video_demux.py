@@ -14,7 +14,8 @@ from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
 from savant.gstreamer.metadata import (
     DEFAULT_FRAMERATE,
     SourceFrameMeta,
-    metadata_add_frame_meta, OnlyExtendedDict,
+    metadata_add_frame_meta,
+    OnlyExtendedDict,
 )
 from savant.gstreamer.utils import LoggerMixin
 

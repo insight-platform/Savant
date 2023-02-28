@@ -56,8 +56,8 @@ class BBox(BaseBBox):
         :param scale_x: The scaling factor applied along the x-axis.
         :param scale_y: The scaling factor applied along the y-axis.
         """
-        self.left *= scale_x
-        self.top *= scale_y
+        self.x_center *= scale_x
+        self.y_center *= scale_y
         self.width *= scale_x
         self.height *= scale_y
 
