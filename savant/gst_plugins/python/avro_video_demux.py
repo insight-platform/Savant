@@ -65,6 +65,15 @@ AVRO_VIDEO_DEMUX_PROPERTIES = {
         0,
         GObject.ParamFlags.READWRITE,
     ),
+    # TODO: filter frames by source id in zeromq_src
+    #       https://github.com/insight-platform/Savant/issues/59
+    'source-id': (
+        str,
+        'Source ID filter.',
+        'Filter frames by source ID.',
+        None,
+        GObject.ParamFlags.READWRITE,
+    ),
 }
 
 
@@ -130,6 +139,7 @@ class AvroVideoDemux(LoggerMixin, Gst.Element):
         self.expiration_thread = Thread(target=self.eviction_job, daemon=True)
         self.store_metadata = False
         self.max_parallel_streams: int = 0
+        self.source_id: Optional[str] = None
 
         self._frame_idx_gen = itertools.count()
 
@@ -166,6 +176,8 @@ class AvroVideoDemux(LoggerMixin, Gst.Element):
             return self.eos_on_timestamps_reset
         if prop.name == 'max-parallel-streams':
             return self.max_parallel_streams
+        if prop.name == 'source-id':
+            return self.source_id
         raise AttributeError(f'Unknown property {prop.name}')
 
     def do_set_property(self, prop, value):
@@ -180,6 +192,8 @@ class AvroVideoDemux(LoggerMixin, Gst.Element):
             self.eos_on_timestamps_reset = value
         elif prop.name == 'max-parallel-streams':
             self.max_parallel_streams = value
+        elif prop.name == 'source-id':
+            self.source_id = value
         else:
             raise AttributeError(f'Unknown property {prop.name}')
 
@@ -200,6 +214,9 @@ class AvroVideoDemux(LoggerMixin, Gst.Element):
         # TODO: Pipeline message types might be extended beyond only VideoFrame
         # Additional checks for audio/raw_tensors/etc. may be required
         schema_name, message = deserialize(message_bin)
+        if self.source_id is not None and message['source_id'] != self.source_id:
+            self.logger.debug('Skipping message from source %s', message['source_id'])
+            return Gst.FlowReturn.OK
         if schema_name == 'VideoFrame':
             return self.handle_video_frame(message)
         if schema_name == 'EndOfStream':

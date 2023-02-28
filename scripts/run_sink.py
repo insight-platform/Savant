@@ -1,10 +1,18 @@
 #!/usr/bin/env python3
 """Run sink adapter."""
 import os
+from typing import Optional
 
 import click
 
-from common import build_docker_run_command, adapter_docker_image_option, run_command
+from common import (
+    build_docker_run_command,
+    adapter_docker_image_option,
+    run_command,
+    source_id_option,
+    fps_meter_options,
+    build_common_envs,
+)
 
 
 @click.group()
@@ -225,6 +233,137 @@ def video_files_sink(
             f'CHUNK_SIZE={chunk_size}',
         ],
         volumes=[f'{location}:{location}'],
+        docker_image=docker_image,
+    )
+    run_command(cmd)
+
+
+@cli.command('always-on-rtsp')
+@source_id_option
+@click.option(
+    '--stub-file-location',
+    required=True,
+    help='Location of the stub image file. Image file must be in JPEG format.',
+)
+@click.option(
+    '--max-delay-ms',
+    type=click.INT,
+    default=1000,
+    help='Maximum delay for the last frame in milliseconds.',
+    show_default=True,
+)
+@click.option(
+    '--transfer-mode',
+    default='scale-to-fit',
+    help='Transfer mode. One of: "scale-to-fit", "crop-to-fit".',
+    show_default=True,
+)
+@click.option(
+    '--protocols',
+    default='tcp',
+    help='Allowed lower transport protocols, e.g. "tcp+udp-mcast+udp".',
+    show_default=True,
+)
+@click.option(
+    '--latency-ms',
+    type=click.INT,
+    default=100,
+    help='Amount of ms to buffer RTSP stream.',
+    show_default=True,
+)
+@click.option(
+    '--keep-alive',
+    type=click.BOOL,
+    default=True,
+    help='Send RTSP keep alive packets, disable for old incompatible server.',
+    show_default=True,
+)
+@click.option(
+    '--profile',
+    default='High',
+    help='H264 encoding profile. One of: "Baseline", "Main", "High".',
+    show_default=True,
+)
+@click.option(
+    '--bitrate',
+    type=click.INT,
+    default=4000000,
+    help='H264 encoding bitrate.',
+    show_default=True,
+)
+@click.option(
+    '--framerate',
+    default='30/1',
+    help='Frame rate of the output stream.',
+    show_default=True,
+)
+@click.option(
+    '--metadata-output',
+    help='Where to dump metadata (stdout or logger).',
+)
+@fps_meter_options
+@common_options
+@adapter_docker_image_option('deepstream')
+@click.argument('rtsp_uri', required=True)
+def always_on_rtsp_sink(
+    in_endpoint: str,
+    in_type: str,
+    in_bind: bool,
+    docker_image: str,
+    source_id: str,
+    stub_file_location: str,
+    max_delay_ms: int,
+    transfer_mode: str,
+    protocols: str,
+    latency_ms: int,
+    keep_alive: bool,
+    profile: str,
+    bitrate: int,
+    framerate: str,
+    fps_period_frames: Optional[int],
+    fps_period_seconds: Optional[float],
+    fps_output: Optional[str],
+    metadata_output: Optional[str],
+    rtsp_uri: str,
+):
+    """Send video stream from specific source to RTSP server.
+
+    RTSP_URI - URI of the RTSP server.
+    """
+
+    assert os.path.exists(stub_file_location)
+    stub_file_location = os.path.abspath(stub_file_location)
+
+    envs = build_common_envs(
+        source_id=source_id,
+        fps_period_frames=fps_period_frames,
+        fps_period_seconds=fps_period_seconds,
+        fps_output=fps_output,
+    ) + [
+        f'STUB_FILE_LOCATION={stub_file_location}',
+        f'MAX_DELAY_MS={max_delay_ms}',
+        f'TRANSFER_MODE={transfer_mode}',
+        f'RTSP_URI={rtsp_uri}',
+        f'RTSP_PROTOCOLS={protocols}',
+        f'RTSP_LATENCY_MS={latency_ms}',
+        f'RTSP_KEEP_ALIVE={keep_alive}',
+        f'ENCODER_PROFILE={profile}',
+        f'ENCODER_BITRATE={bitrate}',
+        f'FRAMERATE={framerate}',
+    ]
+    if metadata_output:
+        envs.append(f'METADATA_OUTPUT={metadata_output}')
+
+    cmd = build_docker_run_command(
+        'sink-always-on-rtsp',
+        zmq_endpoint=in_endpoint,
+        zmq_type=in_type,
+        zmq_bind=in_bind,
+        entrypoint='python',
+        args=['-m', 'adapters.ds.sinks.always_on_rtsp'],
+        envs=envs,
+        volumes=[f'{stub_file_location}:{stub_file_location}:ro'],
+        with_gpu=True,
         docker_image=docker_image,
     )
     run_command(cmd)

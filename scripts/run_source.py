@@ -2,11 +2,17 @@
 """Run source adapter."""
 import os
 from typing import List, Optional
-import string
 
 import click
 
-from common import build_docker_run_command, adapter_docker_image_option, run_command
+from common import (
+    build_docker_run_command,
+    adapter_docker_image_option,
+    run_command,
+    source_id_option,
+    fps_meter_options,
+    build_common_envs,
+)
 
 
 @click.group()
@@ -21,14 +27,6 @@ sync_option = click.option(
     help='Send frames from source synchronously (i.e. at the source file rate).',
     show_default=True,
 )
-
-
-def validate_source_id(ctx, param, value):
-    safe_chars = set(string.ascii_letters + string.digits + '_.-')
-    invalid_chars = {char for char in value if char not in safe_chars}
-    if len(invalid_chars) > 0:
-        raise click.BadParameter(f'chars {invalid_chars} are not allowed.')
-    return value
 
 
 def common_options(func):
@@ -54,45 +52,9 @@ def common_options(func):
         ),
         show_default=True,
     )(func)
-    func = click.option(
-        '--fps-output',
-        help='Where to dump stats (stdout or logger).',
-    )(func)
-    func = click.option(
-        '--fps-period-frames',
-        type=int,
-        help='FPS measurement period, in frames.',
-    )(func)
-    func = click.option(
-        '--fps-period-seconds',
-        type=float,
-        help='FPS measurement period, in seconds.',
-    )(func)
-    func = click.option(
-        '--source-id',
-        required=True,
-        type=click.STRING,
-        callback=validate_source_id,
-        help='Source ID, e.g. "camera1".',
-    )(func)
+    func = fps_meter_options(func)
+    func = source_id_option(func)
     return func
-
-
-def build_common_envs(
-    source_id: str,
-    fps_period_frames: Optional[int],
-    fps_period_seconds: Optional[float],
-    fps_output: str,
-):
-    """Generate env var run options."""
-    envs = [f'SOURCE_ID={source_id}']
-    if fps_period_frames:
-        envs.append(f'FPS_PERIOD_FRAMES={fps_period_frames}')
-    if fps_period_seconds:
-        envs.append(f'FPS_PERIOD_SECONDS={fps_period_seconds}')
-    if fps_output:
-        envs.append(f'FPS_OUTPUT={fps_output}')
-    return envs
 
 
 def files_source(

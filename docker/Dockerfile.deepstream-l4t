@@ -130,7 +130,9 @@ COPY samples samples
 FROM base AS adapters
 
 COPY adapters/ds adapters/ds
-COPY adapters/gst/gst_plugins/python/adjust_timestamps.py adapters/ds/gst_plugins/python/adjust_timestamps.py
-ENV GST_PLUGIN_PATH=$GST_PLUGIN_PATH:$APP_PATH/adapters/ds/gst_plugins
+COPY adapters/gst/gst_plugins/python/adjust_timestamps.py \
+     adapters/gst/gst_plugins/python/fps_meter.py \
+     adapters/gst/gst_plugins/python/
+ENV GST_PLUGIN_PATH=$GST_PLUGIN_PATH:$APP_PATH/adapters/gst/gst_plugins:$APP_PATH/adapters/ds/gst_plugins
 
 ENTRYPOINT []

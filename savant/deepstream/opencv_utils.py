@@ -14,7 +14,8 @@ from savant.gstreamer import Gst
 @contextmanager
 def nvds_to_gpu_mat(
     buffer: Gst.Buffer,
-    nvds_frame_meta: pyds.NvDsFrameMeta,
+    nvds_frame_meta: pyds.NvDsFrameMeta = None,
+    batch_id: int = None,
 ) -> ContextManager[cv2.cuda.GpuMat]:
     """Build GpuMat header for allocated CUDA-memory of the frame.
 
@@ -29,10 +30,14 @@ def nvds_to_gpu_mat(
 
     :param buffer: Gstreamer buffer which contains NvBufSurface.
     :param nvds_frame_meta: NvDs frame metadata which contains frame info.
+    :param batch_id: Frame ID in a batch. Ignored when nvds_frame_meta is specified.
     :return: GpuMat header for allocated CUDA-memory of the frame.
     """
 
-    py_ds_cuda_memory = PyDSCudaMemory(hash(buffer), nvds_frame_meta.batch_id)
+    if nvds_frame_meta is not None:
+        batch_id = nvds_frame_meta.batch_id
+    assert batch_id is not None
+    py_ds_cuda_memory = PyDSCudaMemory(hash(buffer), batch_id)
     try:
         cuda_ptr = py_ds_cuda_memory.GetMapCudaPtr()
         yield cv2.savant.createGpuMat(
