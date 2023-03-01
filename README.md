@@ -196,10 +196,7 @@ Currently, the following source adapters are available:
 - Local image file;
 - URL Image;
 - Image directory;
-- USB cam;
-- Apache Kafka;
-- Elasticsearch;
-- MongoDB.
+- USB cam.
 
 There are basic sink adapters implemented:
 
