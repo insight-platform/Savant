@@ -299,7 +299,7 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
             **kwargs,
         }
         if self.location:
-            message['tags'] = {'location': self.location}
+            message['tags'] = {'location': str(self.location)}
         return message
 
 
