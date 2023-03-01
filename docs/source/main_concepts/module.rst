@@ -63,9 +63,9 @@ In case a Savant module is intended to run alongside **image-** or **video-files
       output_frame:
         codec: h264
 
-2. ``parameters.output_frame.encoder_params`` config node allows passing additional encoder-specific parameters to the encoder pipeline element. The encoder elements and their properties are:
+2. ``parameters.output_frame.encoder_params`` config node allows passing additional encoder-specific parameters to the encoder pipeline element. The available properties are:
 
-  - **nvv4l2h264enc** for **h264** codec
+  - For **h264** codec
 
     1. `bitrate`
 
@@ -123,7 +123,7 @@ In case a Savant module is intended to run alongside **image-** or **video-files
 
        (4): LosslessPreset   - Tuning Preset for Lossless
 
-  - **nvv4l2h265enc** for **h265** codec
+  - For **h265** codec
 
     1. `bitrate`
 
@@ -177,7 +177,7 @@ In case a Savant module is intended to run alongside **image-** or **video-files
 
        (4): LosslessPreset   - Tuning Preset for Lossless
      
-  - **jpegenc** for **jpeg** codec
+  - For **jpeg** codec
 
     1. `idct-method`
   
@@ -193,7 +193,7 @@ In case a Savant module is intended to run alongside **image-** or **video-files
 
        Quality of encoding. Integer. Range: 0 - 100. Default: 85 
 
-  - **pngenc** for **png** codec
+  - For **png** codec
 
     1. `compression-level`
       
@@ -217,8 +217,6 @@ Example:
         codec: jpeg
         encoder_params:
           quality: 90
-
-**gst-inspect-1.0** utility inside the module container provides full list of properties for each encoder element.
 
 Module run environment
 ----------------------
