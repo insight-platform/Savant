@@ -177,11 +177,6 @@ From a user perspective, the Savant pipeline is a self-contained service that ac
 API. It makes Savant ideal and ready for deployment within the systems. Whether developers use provided handy adapters 
 or send data into a pipeline directly, both cases use API provided by the Savant. 
 
-### Profiling Support
-
-Savant includes [VizTracer](https://github.com/gaogaotiantian/viztracer) support out of the box. 
-It helps understanding bottlenecks in real-life usage scenarios.
-
 ### Handy Source and Sink Adapters
 
 We have implemented several ready-to-use adapters, which you can utilize as is or use as a foundation to develop your
