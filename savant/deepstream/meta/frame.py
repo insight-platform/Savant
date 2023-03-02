@@ -1,12 +1,19 @@
 """Wrapper of deepstream frame meta information."""
-from typing import Iterator, Optional
+from typing import Iterator, Any, Dict, Optional
 import pyds
+
+from savant.gstreamer.metadata import (
+    get_source_frame_meta,
+    SourceFrameMeta,
+    OnlyExtendedDict,
+)
 from savant.meta.errors import MetaValueError
 from savant.deepstream.meta.iterators import NvDsObjectMetaIterator
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
 from savant.meta.bbox import BBox
 from savant.meta.object import ObjectMeta
 from savant.utils.source_info import SourceInfoRegistry
+from pygstsavantframemeta import nvds_frame_meta_get_nvds_savant_frame_meta
 
 
 class NvDsFrameMeta:
@@ -22,6 +29,7 @@ class NvDsFrameMeta:
         super().__init__()
         self.batch_meta = frame_meta.base_meta.batch_meta
         self.frame_meta = frame_meta
+        self._source_frame_meta: Optional[SourceFrameMeta] = None
         self._primary_obj: Optional[ObjectMeta] = None
 
     @property
@@ -65,6 +73,59 @@ class NvDsFrameMeta:
         :return: Objects number.
         """
         return self.frame_meta.num_obj_meta
+
+    @property
+    def tags(self) -> OnlyExtendedDict:
+        """Returns tags of frame. These tags are part of the meta information about
+        the frame that comes with the frames in the module.
+
+        :return: Dictionary with tags
+        """
+        if self._source_frame_meta is None:
+            self._set_source_frame_meta()
+        return self._source_frame_meta.tags
+
+    def _set_source_frame_meta(self):
+        """Set the source frame metadata.
+
+        :return: None
+        """
+        savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(self.frame_meta)
+        self._source_frame_meta = get_source_frame_meta(
+            source_id=self.source_id,
+            frame_idx=savant_frame_meta.idx if savant_frame_meta else None,
+            frame_pts=self.frame_meta.buf_pts,
+        )
+
+    @property
+    def pts(self) -> int:
+        """Get the presentation time stamp (PTS) of the current frame.
+
+        :return: The PTS of the current frame, if available; None otherwise.
+        """
+        if self._source_frame_meta is None:
+            self._set_source_frame_meta()
+        return self._source_frame_meta.pts
+
+    @property
+    def duration(self) -> Optional[int]:
+        """Get the duration of the current frame.
+
+        :returns: The duration of the current frame, if available; None otherwise.
+        """
+        if self._source_frame_meta is None:
+            self._set_source_frame_meta()
+        return self._source_frame_meta.duration
+
+    @property
+    def framerate(self) -> str:
+        """Get the framerate of the current frame.
+
+        returns: The framerate of the current frame as a string.
+        """
+        if self._source_frame_meta is None:
+            self._set_source_frame_meta()
+        return self._source_frame_meta.framerate
 
     def add_obj_meta(self, object_meta: ObjectMeta):
         """Add an object meta to frame meta.

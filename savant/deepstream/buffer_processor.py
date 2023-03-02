@@ -35,7 +35,7 @@ from savant.deepstream.utils import (
 from savant.gstreamer import Gst  # noqa:F401
 from savant.gstreamer.buffer_processor import GstBufferProcessor
 from savant.gstreamer.codecs import CodecInfo, Codec
-from savant.gstreamer.metadata import metadata_get_frame_meta, metadata_pop_frame_meta
+from savant.gstreamer.metadata import get_source_frame_meta, metadata_pop_frame_meta
 from savant.meta.type import ObjectSelectionType
 from savant.utils.fps_meter import FPSMeter
 from savant.utils.model_registry import ModelObjectRegistry
@@ -104,7 +104,7 @@ class NvDsBufferProcessor(GstBufferProcessor):
                 frame_pts,
             )
 
-            frame_meta = metadata_get_frame_meta(source_id, frame_idx, frame_pts)
+            frame_meta = get_source_frame_meta(source_id, frame_idx, frame_pts)
 
             # full frame primary object by default
             primary_bbox = BBox(
@@ -137,54 +137,63 @@ class NvDsBufferProcessor(GstBufferProcessor):
                 # obj_key was only registered if
                 # it was required by the pipeline model elements (this case)
                 # or equaled the output object of one of the pipeline model elements
-                if self._model_object_registry.is_model_object_key_registered(obj_key):
-                    (
-                        model_uid,
-                        class_id,
-                    ) = self._model_object_registry.get_model_object_ids(obj_key)
-                    if obj_meta['bbox']['angle']:
-                        bbox = RBBox(
-                            x_center=obj_meta['bbox']['xc'],
-                            y_center=obj_meta['bbox']['yc'],
-                            width=obj_meta['bbox']['width'],
-                            height=obj_meta['bbox']['height'],
-                            angle=obj_meta['bbox']['angle'],
-                        )
-                        selection_type = ObjectSelectionType.ROTATED_BBOX
-                    else:
-                        bbox = BBox(
-                            x_center=obj_meta['bbox']['xc'],
-                            y_center=obj_meta['bbox']['yc'],
-                            width=obj_meta['bbox']['width'],
-                            height=obj_meta['bbox']['height'],
-                        )
-                        selection_type = ObjectSelectionType.REGULAR_BBOX
+                (
+                    model_uid,
+                    class_id,
+                ) = self._model_object_registry.get_model_object_ids(obj_key)
+                if obj_meta['bbox']['angle']:
+                    bbox = RBBox(
+                        x_center=obj_meta['bbox']['xc'],
+                        y_center=obj_meta['bbox']['yc'],
+                        width=obj_meta['bbox']['width'],
+                        height=obj_meta['bbox']['height'],
+                        angle=obj_meta['bbox']['angle'],
+                    )
+                    selection_type = ObjectSelectionType.ROTATED_BBOX
+                else:
+                    bbox = BBox(
+                        x_center=obj_meta['bbox']['xc'],
+                        y_center=obj_meta['bbox']['yc'],
+                        width=obj_meta['bbox']['width'],
+                        height=obj_meta['bbox']['height'],
+                    )
+                    selection_type = ObjectSelectionType.REGULAR_BBOX
 
-                    bbox.scale(self._frame_params.width, self._frame_params.height)
-                    if self._frame_params.padding:
-                        bbox.left += self._frame_params.padding.left
-                        bbox.top += self._frame_params.padding.top
+                bbox.scale(self._frame_params.width, self._frame_params.height)
+                if self._frame_params.padding:
+                    bbox.left += self._frame_params.padding.left
+                    bbox.top += self._frame_params.padding.top
 
-                    nvds_add_obj_meta_to_frame(
-                        batch_meta=nvds_batch_meta,
+                nvds_obj_meta = nvds_add_obj_meta_to_frame(
+                    batch_meta=nvds_batch_meta,
+                    frame_meta=nvds_frame_meta,
+                    selection_type=selection_type,
+                    class_id=class_id,
+                    gie_uid=model_uid,
+                    bbox=(
+                        bbox.x_center,
+                        bbox.y_center,
+                        bbox.width,
+                        bbox.height,
+                        bbox.angle
+                        if selection_type == ObjectSelectionType.ROTATED_BBOX
+                        else 0.0,
+                    ),
+                    object_id=obj_meta['object_id'],
+                    obj_label=obj_key,
+                    confidence=obj_meta['confidence'],
+                )
+                for attr in obj_meta['attributes']:
+                    nvds_add_attr_meta_to_obj(
                         frame_meta=nvds_frame_meta,
-                        selection_type=selection_type,
-                        class_id=class_id,
-                        gie_uid=model_uid,
-                        bbox=(
-                            bbox.x_center,
-                            bbox.y_center,
-                            bbox.width,
-                            bbox.height,
-                            bbox.angle
-                            if selection_type == ObjectSelectionType.ROTATED_BBOX
-                            else 0.0,
-                        ),
-                        object_id=obj_meta['object_id'],
-                        obj_label=obj_key,
-                        confidence=obj_meta['confidence'],
+                        obj_meta=nvds_obj_meta,
+                        element_name=attr['element_name'],
+                        name=attr['name'],
+                        value=attr['value'],
+                        confidence=attr['confidence'],
                     )
 
+            frame_meta.metadata['objects'] = []
             # add primary frame object
             obj_label = PRIMARY_OBJECT_LABEL
             model_uid, class_id = self._model_object_registry.get_model_object_ids(

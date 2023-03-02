@@ -13,8 +13,9 @@ from savant.gstreamer import GObject, Gst
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
 from savant.gstreamer.metadata import (
     DEFAULT_FRAMERATE,
-    GstFrameMeta,
+    SourceFrameMeta,
     metadata_add_frame_meta,
+    OnlyExtendedDict,
 )
 from savant.gstreamer.utils import LoggerMixin
 
@@ -421,13 +422,13 @@ class AvroVideoDemux(LoggerMixin, Gst.Element):
 
             source_id = message['source_id']
             pts = message['pts']
-            frame_meta = GstFrameMeta(
+            frame_meta = SourceFrameMeta(
                 source_id=source_id,
                 pts=pts,
                 duration=message['duration'],
                 framerate=message['framerate'],
                 metadata=message['metadata'],
-                tags=message['tags'],
+                tags=OnlyExtendedDict(message['tags']),
             )
             metadata_add_frame_meta(source_id, idx, pts, frame_meta)
             gst_buffer_add_savant_frame_meta(frame_buf, idx)

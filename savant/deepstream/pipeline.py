@@ -33,7 +33,7 @@ from savant.deepstream.metadata import (
     nvds_obj_meta_output_converter,
     nvds_attr_meta_output_converter,
 )
-from savant.gstreamer.metadata import metadata_add_frame_meta, metadata_get_frame_meta
+from savant.gstreamer.metadata import metadata_add_frame_meta, get_source_frame_meta
 from savant.gstreamer.utils import on_pad_event, pad_to_source_id
 from savant.deepstream.utils import (
     gst_nvevent_new_stream_eos,
@@ -504,7 +504,7 @@ class NvDsPipeline(GstPipeline):
             )
             frame_idx = savant_frame_meta.idx if savant_frame_meta else None
             frame_pts = nvds_frame_meta.buf_pts
-            frame_meta = metadata_get_frame_meta(source_id, frame_idx, frame_pts)
+            frame_meta = get_source_frame_meta(source_id, frame_idx, frame_pts)
 
             # second iteration to collect module objects
             for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):

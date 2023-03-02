@@ -1,7 +1,8 @@
 """Gstreamer metadata."""
 import logging
-from collections import defaultdict
+from collections import defaultdict, UserDict
 from dataclasses import dataclass, field
+from types import MappingProxyType
 from typing import Any, Dict, Optional, Union
 
 logger = logging.getLogger(__name__)
@@ -9,8 +10,47 @@ logger = logging.getLogger(__name__)
 DEFAULT_FRAMERATE = '30/1'
 
 
+class OnlyExtendedDict(UserDict):
+    """A dictionary-like object that only allows new keys to be added,
+    and raises an error if an attempt is made to delete an existing key.
+    Inherits from UserDict, which provides a dictionary-like interface.
+    """
+
+    def __setitem__(self, key, value):
+        """Set the value for the given key.
+        If the key already exists in the dictionary, raise an AttributeError.
+
+        :param key: The key to set.
+        :param value: The value to set for the key.
+        """
+        if key not in self.data:
+            super().__setitem__(key, value)
+        else:
+            raise AttributeError(f"The key '{key}' already exists.")
+
+    def __delitem__(self, key):
+        raise RuntimeError(
+            'You cannot delete an item. The OnlyExtendedDict can only be extended.'
+        )
+
+    def pop(self, key):
+        raise RuntimeError(
+            'You cannot delete an item. The OnlyExtendedDict can only be extended.'
+        )
+
+    def popitem(self):
+        raise RuntimeError(
+            'You cannot delete an item. The OnlyExtendedDict can only be extended.'
+        )
+
+    def clear(self) -> None:
+        raise RuntimeError(
+            'You cannot delete an item. The OnlyExtendedDict can only be extended.'
+        )
+
+
 @dataclass
-class GstFrameMeta:
+class SourceFrameMeta:
     """Gst frame metadata."""
 
     source_id: str
@@ -18,7 +58,7 @@ class GstFrameMeta:
     duration: Optional[int] = None
     framerate: str = DEFAULT_FRAMERATE
     metadata: Dict[str, Any] = None
-    tags: Dict[str, Union[str, bool, int, float]] = field(default_factory=dict)
+    tags: OnlyExtendedDict = field(default_factory=OnlyExtendedDict)
 
     def __post_init__(self):
         if self.metadata is None:
@@ -26,33 +66,33 @@ class GstFrameMeta:
 
 
 @dataclass
-class GstSourceMeta:
-    """Gst source metadata."""
+class SourceMetadataStorage:
+    """Source frames metadata storage."""
 
-    by_idx: Dict[int, GstFrameMeta] = field(default_factory=dict)
-    """Frame IDX -> frame metadata."""
-    by_pts: Dict[int, GstFrameMeta] = field(default_factory=dict)
-    """Frame PTS -> frame metadata. For cases when frame doesn't have IDX."""
+    by_idx: Dict[int, SourceFrameMeta] = field(default_factory=dict)
+    """Frame IDX -> source frame metadata."""
+    by_pts: Dict[int, SourceFrameMeta] = field(default_factory=dict)
+    """Frame PTS -> source frame metadata. For cases when frame doesn't have IDX."""
 
 
 # metadata storage, workaround
 # a way to pass metadata from src to output converter
 # {source_id: {pts: metadata}}
-METADATA_STORAGE: Dict[str, GstSourceMeta] = defaultdict(GstSourceMeta)
+METADATA_STORAGE: Dict[str, SourceMetadataStorage] = defaultdict(SourceMetadataStorage)
 
 
 def metadata_add_frame_meta(
     source_id: str,
     frame_idx: Optional[int],
     frame_pts: int,
-    frame_meta: GstFrameMeta,
+    source_frame_meta: SourceFrameMeta,
 ) -> None:
     """Add metadata to frame.
 
     :param source_id: Source identifier.
     :param frame_idx: Frame index.
     :param frame_pts: Frame presentation timestamp.
-    :param frame_meta: Frame metadata storage.
+    :param source_frame_meta: Frame metadata storage.
     """
     logger.debug(
         'Add metadata for frame of source %s with IDX %s and PTS %s.',
@@ -62,17 +102,17 @@ def metadata_add_frame_meta(
     )
     source_meta = METADATA_STORAGE[source_id]
     if frame_idx is not None:
-        source_meta.by_idx[frame_idx] = frame_meta
+        source_meta.by_idx[frame_idx] = source_frame_meta
     else:
-        source_meta.by_pts[frame_pts] = frame_meta
+        source_meta.by_pts[frame_pts] = source_frame_meta
 
 
-def metadata_get_frame_meta(
+def get_source_frame_meta(
     source_id: str,
     frame_idx: Optional[int],
     frame_pts: int,
-) -> GstFrameMeta:
-    """Get metadata from frame.
+) -> SourceFrameMeta:
+    """Source metadata from frame.
 
     :param source_id: Source identifier.
     :param frame_idx: Frame index.
@@ -91,7 +131,7 @@ def metadata_get_frame_meta(
     else:
         frame_meta = source_meta.by_pts.get(frame_pts)
     if frame_meta is None:
-        frame_meta = GstFrameMeta(source_id, frame_pts)
+        frame_meta = SourceFrameMeta(source_id, frame_pts)
     return frame_meta
 
 
@@ -99,7 +139,7 @@ def metadata_pop_frame_meta(
     source_id: str,
     frame_idx: Optional[int],
     frame_pts: int,
-) -> GstFrameMeta:
+) -> SourceFrameMeta:
     """Get metadata from frame and remove it.
 
     :param source_id: Source identifier.
@@ -119,7 +159,7 @@ def metadata_pop_frame_meta(
     else:
         frame_meta = source_meta.by_pts.pop(frame_pts, None)
     if frame_meta is None:
-        frame_meta = GstFrameMeta(source_id, frame_pts)
+        frame_meta = SourceFrameMeta(source_id, frame_pts)
     return frame_meta
 
 

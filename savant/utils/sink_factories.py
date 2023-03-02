@@ -10,7 +10,7 @@ import zmq
 from savant.api import ENCODING_REGISTRY, serialize
 from savant.config.schema import PipelineElement
 from savant.gstreamer.codecs import CodecInfo
-from savant.gstreamer.metadata import GstFrameMeta
+from savant.gstreamer.metadata import SourceFrameMeta
 from savant.utils.registry import Registry
 from savant.utils.zeromq import (
     Defaults,
@@ -32,7 +32,7 @@ class SinkVideoFrame(SinkMessage, NamedTuple):
     """Message for VideoFrame message schema."""
 
     source_id: str
-    frame_meta: GstFrameMeta
+    frame_meta: SourceFrameMeta
     frame_width: int
     frame_height: int
     frame: Optional[bytes]

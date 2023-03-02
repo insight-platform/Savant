@@ -151,6 +151,14 @@ def files_source(
     help='Sort files by modification time.',
     show_default=True,
 )
+@click.option(
+    '--read-metadata',
+    default=False,
+    is_flag=True,
+    help='Attempt to read the metadata of objects from the JSON file that has the identical name '
+    'as the source file with `json` extension, and then send it to the module.',
+    show_default=True,
+)
 @common_options
 @sync_option
 @adapter_docker_image_option('gstreamer')
@@ -167,11 +175,11 @@ def videos_source(
     fps_output: str,
     location: str,
     sort_by_time: bool,
+    read_metadata: bool,
 ):
     """Read video files from LOCATION.
     LOCATION can be single file, directory or HTTP URL.
     """
-
     files_source(
         source_id=source_id,
         out_endpoint=out_endpoint,
@@ -184,7 +192,7 @@ def videos_source(
         fps_output=fps_output,
         location=location,
         file_type='video',
-        envs=[f'SORT_BY_TIME={sort_by_time}'],
+        envs=[f'SORT_BY_TIME={sort_by_time}', f'READ_METADATA={read_metadata}'],
     )
 
 
