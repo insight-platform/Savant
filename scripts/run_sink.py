@@ -6,12 +6,13 @@ from typing import Optional
 import click
 
 from common import (
-    build_docker_run_command,
     adapter_docker_image_option,
+    build_common_envs,
+    build_docker_run_command,
+    fps_meter_options,
     run_command,
     source_id_option,
-    fps_meter_options,
-    build_common_envs,
+    validate_source_id,
 )
 
 
@@ -44,6 +45,27 @@ def common_options(func):
         show_default=True,
     )(func)
     return func
+
+
+def source_id_prefix_option(func):
+    return click.option(
+        '--source-id-prefix',
+        callback=validate_source_id,
+        help='Filter frames by source ID prefix.',
+    )(func)
+
+
+def build_common_sink_envs(
+    source_id: Optional[str],
+    source_id_prefix: Optional[str],
+):
+    """Generate env var run options."""
+    envs = []
+    if source_id:
+        envs.append(f'SOURCE_ID={source_id}')
+    if source_id_prefix:
+        envs.append(f'SOURCE_ID_PREFIX={source_id_prefix}')
+    return envs
 
 
 skip_frames_without_objects_option = click.option(
@@ -81,6 +103,8 @@ def chunk_size_option(default=10000):
     show_default=True,
 )
 @common_options
+@source_id_option(required=False)
+@source_id_prefix_option
 @adapter_docker_image_option('deepstream')
 def display_sink(
     in_endpoint: str,
@@ -89,6 +113,8 @@ def display_sink(
     sync: bool,
     docker_image: str,
     closing_delay: int,
+    source_id: Optional[str],
+    source_id_prefix: Optional[str],
 ):
     """Show video on display, one window per source."""
 
@@ -108,6 +134,15 @@ def display_sink(
         ]
     )
 
+    envs = build_common_sink_envs(
+        source_id=source_id,
+        source_id_prefix=source_id_prefix,
+    ) + [
+        'DISPLAY',
+        f'XAUTHORITY={xauth}',
+        f'CLOSING_DELAY={closing_delay}',
+    ]
+
     cmd = build_docker_run_command(
         'sink-display',
         zmq_endpoint=in_endpoint,
@@ -115,7 +150,7 @@ def display_sink(
         zmq_bind=in_bind,
         sync=sync,
         entrypoint='/opt/app/adapters/ds/sinks/display.sh',
-        envs=['DISPLAY', f'XAUTHORITY={xauth}', f'CLOSING_DELAY={closing_delay}'],
+        envs=envs,
         volumes=[f'{xsock}:{xsock}', f'{xauth}:{xauth}'],
         with_gpu=True,
         docker_image=docker_image,
@@ -127,6 +162,8 @@ def display_sink(
 @skip_frames_without_objects_option
 @chunk_size_option(0)
 @common_options
+@source_id_option(required=False)
+@source_id_prefix_option
 @adapter_docker_image_option('py')
 @click.argument('location', required=True)
 def meta_json_sink(
@@ -137,6 +174,8 @@ def meta_json_sink(
     skip_frames_without_objects: bool,
     chunk_size: int,
     location: str,
+    source_id: Optional[str],
+    source_id_prefix: Optional[str],
 ):
     """Write metadata to streaming JSON files.
 
@@ -148,17 +187,22 @@ def meta_json_sink(
     location = os.path.abspath(location)
     target_dir = os.path.dirname(location.split('%', 1)[0])
 
+    envs = build_common_sink_envs(
+        source_id=source_id,
+        source_id_prefix=source_id_prefix,
+    ) + [
+        f'LOCATION={location}',
+        f'SKIP_FRAMES_WITHOUT_OBJECTS={skip_frames_without_objects}',
+        f'CHUNK_SIZE={chunk_size}',
+    ]
+
     cmd = build_docker_run_command(
         'sink-meta-json',
         zmq_endpoint=in_endpoint,
         zmq_type=in_type,
         zmq_bind=in_bind,
         entrypoint='/opt/app/adapters/python/sinks/metadata_json.py',
-        envs=[
-            f'LOCATION={location}',
-            f'SKIP_FRAMES_WITHOUT_OBJECTS={skip_frames_without_objects}',
-            f'CHUNK_SIZE={chunk_size}',
-        ],
+        envs=envs,
         volumes=[f'{target_dir}:{target_dir}'],
         docker_image=docker_image,
     )
@@ -169,6 +213,8 @@ def meta_json_sink(
 @skip_frames_without_objects_option
 @chunk_size_option()
 @common_options
+@source_id_option(required=False)
+@source_id_prefix_option
 @adapter_docker_image_option('py')
 @click.argument('location', required=True)
 def image_files_sink(
@@ -179,6 +225,8 @@ def image_files_sink(
     skip_frames_without_objects: bool,
     chunk_size: int,
     location: str,
+    source_id: Optional[str],
+    source_id_prefix: Optional[str],
 ):
     """Write metadata to image files.
 
@@ -188,17 +236,22 @@ def image_files_sink(
     location = os.path.abspath(location)
     target_dir = os.path.dirname(location.split('%', 1)[0])
 
+    envs = build_common_sink_envs(
+        source_id=source_id,
+        source_id_prefix=source_id_prefix,
+    ) + [
+        f'DIR_LOCATION={location}',
+        f'SKIP_FRAMES_WITHOUT_OBJECTS={skip_frames_without_objects}',
+        f'CHUNK_SIZE={chunk_size}',
+    ]
+
     cmd = build_docker_run_command(
         'sink-image-files',
         zmq_endpoint=in_endpoint,
         zmq_type=in_type,
         zmq_bind=in_bind,
         entrypoint='/opt/app/adapters/python/sinks/image_files.py',
-        envs=[
-            f'DIR_LOCATION={location}',
-            f'SKIP_FRAMES_WITHOUT_OBJECTS={skip_frames_without_objects}',
-            f'CHUNK_SIZE={chunk_size}',
-        ],
+        envs=envs,
         volumes=[f'{target_dir}:{target_dir}'],
         docker_image=docker_image,
     )
@@ -208,6 +261,8 @@ def image_files_sink(
 @cli.command('video-files')
 @chunk_size_option()
 @common_options
+@source_id_option(required=False)
+@source_id_prefix_option
 @adapter_docker_image_option('gstreamer')
 @click.argument('location', required=True)
 def video_files_sink(
@@ -217,10 +272,20 @@ def video_files_sink(
     docker_image: str,
     chunk_size: int,
     location: str,
+    source_id: Optional[str],
+    source_id_prefix: Optional[str],
 ):
     """Write video to files at directory LOCATION."""
 
     location = os.path.abspath(location)
+
+    envs = build_common_sink_envs(
+        source_id=source_id,
+        source_id_prefix=source_id_prefix,
+    ) + [
+        f'DIR_LOCATION={location}',
+        f'CHUNK_SIZE={chunk_size}',
+    ]
 
     cmd = build_docker_run_command(
         'sink-video-files',
@@ -228,10 +293,7 @@ def video_files_sink(
         zmq_type=in_type,
         zmq_bind=in_bind,
         entrypoint='/opt/app/adapters/gst/sinks/video_files.sh',
-        envs=[
-            f'DIR_LOCATION={location}',
-            f'CHUNK_SIZE={chunk_size}',
-        ],
+        envs=envs,
         volumes=[f'{location}:{location}'],
         docker_image=docker_image,
     )
@@ -239,7 +301,7 @@ def video_files_sink(
 
 
 @cli.command('always-on-rtsp')
-@source_id_option
+@source_id_option(required=True)
 @click.option(
     '--stub-file-location',
     required=True,

@@ -78,6 +78,8 @@ def get_ipc_mounts(zmq_sockets: Iterable[str]) -> List[str]:
 
 
 def validate_source_id(ctx, param, value):
+    if value is None:
+        return value
     safe_chars = set(string.ascii_letters + string.digits + '_.-')
     invalid_chars = {char for char in value if char not in safe_chars}
     if len(invalid_chars) > 0:
@@ -85,14 +87,14 @@ def validate_source_id(ctx, param, value):
     return value
 
 
-def source_id_option(func):
+def source_id_option(required: bool):
     return click.option(
         '--source-id',
-        required=True,
+        required=required,
         type=click.STRING,
         callback=validate_source_id,
         help='Source ID, e.g. "camera1".',
-    )(func)
+    )
 
 
 def fps_meter_options(func):

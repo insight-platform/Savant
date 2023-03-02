@@ -128,6 +128,7 @@ class ZeroMQSinkFactory(SinkFactory):
             msg: SinkMessage,
             **kwargs,
         ):
+            zmq_topic = f'{msg.source_id}/'.encode()
             if isinstance(msg, SinkVideoFrame):
                 logger.debug(
                     'Sending frame of source %s with PTS %s to ZeroMQ sink',
@@ -148,12 +149,14 @@ class ZeroMQSinkFactory(SinkFactory):
                     'keyframe': msg.keyframe,
                 }
                 message_bin = serialize(schema, message)
-                output_zmq_socket.send(message_bin)
             elif isinstance(msg, SinkEndOfStream):
                 logger.debug('Sending EOS of source %s to ZeroMQ sink', msg.source_id)
                 message = {'source_id': msg.source_id}
                 message_bin = serialize(eos_schema, message)
-                output_zmq_socket.send(message_bin)
+            else:
+                logger.warning('Unknown message type %s', type(msg))
+                return
+            output_zmq_socket.send_multipart([zmq_topic, message_bin])
 
         return send_message
 

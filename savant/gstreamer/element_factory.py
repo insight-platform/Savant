@@ -40,7 +40,8 @@ class GstElementFactory:
             raise CreateElementException(f'Unable to create element {element}.')
 
         for prop_name, prop_value in element.properties.items():
-            gst_element.set_property(prop_name, prop_value)
+            if prop_value is not None:
+                gst_element.set_property(prop_name, prop_value)
 
         for prop_name, dyn_gst_prop in element.dynamic_properties.items():
 

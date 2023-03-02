@@ -64,7 +64,7 @@ gst-launch-1.0 --eos-on-shutdown \
   video_to_avro_serializer source-id="${SOURCE_ID}" ! \
   queue max-size-buffers=1 ! \
   fps_meter "${FPS_PERIOD}" output="${FPS_OUTPUT}" ! \
-  zeromq_sink socket="${ZMQ_ENDPOINT}" socket-type="${ZMQ_SOCKET_TYPE}" bind="${ZMQ_SOCKET_BIND}" sync="${SYNC_OUTPUT}" \
+  zeromq_sink socket="${ZMQ_ENDPOINT}" socket-type="${ZMQ_SOCKET_TYPE}" bind="${ZMQ_SOCKET_BIND}" sync="${SYNC_OUTPUT}" source-id="${SOURCE_ID}" \
   &
 
 child_pid="$!"
