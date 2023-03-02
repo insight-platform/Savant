@@ -11,11 +11,42 @@ DEFAULT_FRAMERATE = '30/1'
 
 
 class OnlyExtendedDict(UserDict):
+    """A dictionary-like object that only allows new keys to be added,
+    and raises an error if an attempt is made to delete an existing key.
+    Inherits from UserDict, which provides a dictionary-like interface.
+    """
+
     def __setitem__(self, key, value):
+        """Set the value for the given key.
+        If the key already exists in the dictionary, raise an AttributeError.
+
+        :param key: The key to set.
+        :param value: The value to set for the key.
+        """
         if key not in self.data:
             super().__setitem__(key, value)
         else:
             raise AttributeError(f"The key '{key}' already exists.")
+
+    def __delitem__(self, key):
+        raise RuntimeError(
+            'You cannot delete an item. The OnlyExtendedDict can only be extended.'
+        )
+
+    def pop(self, key):
+        raise RuntimeError(
+            'You cannot delete an item. The OnlyExtendedDict can only be extended.'
+        )
+
+    def popitem(self):
+        raise RuntimeError(
+            'You cannot delete an item. The OnlyExtendedDict can only be extended.'
+        )
+
+    def clear(self) -> None:
+        raise RuntimeError(
+            'You cannot delete an item. The OnlyExtendedDict can only be extended.'
+        )
 
 
 @dataclass
