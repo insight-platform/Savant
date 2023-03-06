@@ -2,8 +2,7 @@
 import logging
 from collections import defaultdict, UserDict
 from dataclasses import dataclass, field
-from types import MappingProxyType
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
