@@ -15,6 +15,7 @@ from pygstsavantframemeta import gst_buffer_get_savant_frame_meta
 from adapters.ds.sinks.always_on_rtsp.last_frame import LastFrame
 from savant.config.schema import PipelineElement
 from savant.gstreamer import Gst
+from savant.gstreamer.codecs import CODEC_BY_CAPS_NAME, Codec
 from savant.gstreamer.element_factory import GstElementFactory
 from savant.gstreamer.metadata import metadata_pop_frame_meta
 from savant.gstreamer.runner import GstPipelineRunner
@@ -100,12 +101,52 @@ def log_frame_metadata(pad: Gst.Pad, info: Gst.PadProbeInfo, config: Config):
     return Gst.PadProbeReturn.OK
 
 
-def on_input_pad_added(
+def link_added_pad(
     element: Gst.Element,
     src_pad: Gst.Pad,
     sink_pad: Gst.Pad,
 ):
     assert src_pad.link(sink_pad) == Gst.PadLinkReturn.OK
+
+
+def on_demuxer_pad_added(
+    element: Gst.Element,
+    src_pad: Gst.Pad,
+    config: Config,
+    pipeline: Gst.Pipeline,
+    factory: GstElementFactory,
+    sink_pad: Gst.Pad,
+):
+    caps: Gst.Caps = src_pad.get_pad_template_caps()
+    logger.debug(
+        'Added pad %s on element %s. Caps: %s.',
+        src_pad.get_name(),
+        element.get_name(),
+        caps,
+    )
+    codec = CODEC_BY_CAPS_NAME[caps[0].get_name()]
+    if config.metadata_output:
+        src_pad.add_probe(Gst.PadProbeType.BUFFER, log_frame_metadata, config)
+
+    if codec == Codec.RAW_RGBA:
+        capsfilter = factory.create(
+            PipelineElement(
+                'capsfilter',
+                properties={'caps': caps},
+            )
+        )
+        pipeline.add(capsfilter)
+        assert capsfilter.get_static_pad('src').link(sink_pad) == Gst.PadLinkReturn.OK
+        assert src_pad.link(capsfilter.get_static_pad('sink')) == Gst.PadLinkReturn.OK
+        capsfilter.sync_state_with_parent()
+    else:
+        decodebin = factory.create(PipelineElement('decodebin'))
+        pipeline.add(decodebin)
+        decodebin_sink_pad: Gst.Pad = decodebin.get_static_pad('sink')
+        decodebin.connect('pad-added', link_added_pad, sink_pad)
+        assert src_pad.link(decodebin_sink_pad) == Gst.PadLinkReturn.OK
+        decodebin.sync_state_with_parent()
+        logger.debug('Added decoder %s.', decodebin.get_name())
 
 
 def build_input_pipeline(
@@ -164,21 +205,18 @@ def build_input_pipeline(
     )
 
     gst_source_elements = add_elements(pipeline, source_elements, factory)
-    decodebin = factory.create(PipelineElement('decodebin'))
-    pipeline.add(decodebin)
     gst_sink_elements = add_elements(pipeline, sink_elements, factory)
     avro_video_demux = gst_source_elements[-1]
     nvvideoconvert = gst_sink_elements[0]
 
-    decodebin.connect(
-        'pad-added', on_input_pad_added, nvvideoconvert.get_static_pad('sink')
+    avro_video_demux.connect(
+        'pad-added',
+        on_demuxer_pad_added,
+        config,
+        pipeline,
+        factory,
+        nvvideoconvert.get_static_pad('sink'),
     )
-    decodebin_sink_pad: Gst.Pad = decodebin.get_static_pad('sink')
-    if config.metadata_output:
-        decodebin_sink_pad.add_probe(
-            Gst.PadProbeType.BUFFER, log_frame_metadata, config
-        )
-    avro_video_demux.connect('pad-added', on_input_pad_added, decodebin_sink_pad)
 
     return pipeline
 
