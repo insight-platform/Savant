@@ -1,4 +1,5 @@
 """Common utilities for run scripts."""
+import string
 from pathlib import Path
 from typing import List, Iterable, Optional
 import sys
@@ -76,6 +77,59 @@ def get_ipc_mounts(zmq_sockets: Iterable[str]) -> List[str]:
     return list(set(ipc_mounts))
 
 
+def validate_source_id(ctx, param, value):
+    safe_chars = set(string.ascii_letters + string.digits + '_.-')
+    invalid_chars = {char for char in value if char not in safe_chars}
+    if len(invalid_chars) > 0:
+        raise click.BadParameter(f'chars {invalid_chars} are not allowed.')
+    return value
+
+
+def source_id_option(func):
+    return click.option(
+        '--source-id',
+        required=True,
+        type=click.STRING,
+        callback=validate_source_id,
+        help='Source ID, e.g. "camera1".',
+    )(func)
+
+
+def fps_meter_options(func):
+    func = click.option(
+        '--fps-output',
+        help='Where to dump stats (stdout or logger).',
+    )(func)
+    func = click.option(
+        '--fps-period-frames',
+        type=int,
+        help='FPS measurement period, in frames.',
+    )(func)
+    func = click.option(
+        '--fps-period-seconds',
+        type=float,
+        help='FPS measurement period, in seconds.',
+    )(func)
+    return func
+
+
+def build_common_envs(
+    source_id: str,
+    fps_period_frames: Optional[int],
+    fps_period_seconds: Optional[float],
+    fps_output: str,
+):
+    """Generate env var run options."""
+    envs = [f'SOURCE_ID={source_id}']
+    if fps_period_frames:
+        envs.append(f'FPS_PERIOD_FRAMES={fps_period_frames}')
+    if fps_period_seconds:
+        envs.append(f'FPS_PERIOD_SECONDS={fps_period_seconds}')
+    if fps_output:
+        envs.append(f'FPS_OUTPUT={fps_output}')
+    return envs
+
+
 def build_docker_run_command(
     container_name: str,
     zmq_endpoint: str,
@@ -89,6 +143,7 @@ def build_docker_run_command(
     devices: List[str] = None,
     with_gpu: bool = False,
     host_network: bool = False,
+    args: List[str] = None,
 ) -> List[str]:
     """Build docker run command for an adapter container.
 
@@ -107,6 +162,7 @@ def build_docker_run_command(
     :param devices: add ``--devices`` parameters
     :param with_gpu: add ``--gpus=all`` parameter
     :param host_network: add ``--network=host`` parameter
+    :param args: add command line arguments to the entrypoint
     """
     gst_debug = os.environ.get('GST_DEBUG', '2')
     # fmt: off
@@ -149,6 +205,8 @@ def build_docker_run_command(
         command.append('--network=host')
 
     command.append(docker_image)
+    if args:
+        command.extend(args)
 
     return command
 

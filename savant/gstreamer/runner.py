@@ -1,7 +1,7 @@
 """GStreamer pipeline runner class."""
 from datetime import timedelta
 from time import time
-from typing import Optional
+from typing import Optional, Union
 import logging
 import os
 import threading
@@ -18,10 +18,10 @@ class StateChangeError(Exception):
 class GstPipelineRunner:
     """Manages running Gstreamer pipeline.
 
-    :param pipeline: GstPipeline to run.
+    :param pipeline: GstPipeline or Gst.Pipeline to run.
     """
 
-    def __init__(self, pipeline: GstPipeline):
+    def __init__(self, pipeline: Union[GstPipeline, Gst.Pipeline]):
         # pipeline error storage
         self._error: Optional[str] = None
 
@@ -39,7 +39,10 @@ class GstPipelineRunner:
         self._main_loop = GLib.MainLoop()
         self._main_loop_thread = threading.Thread(target=self._main_loop_run)
 
-        self._pipeline: GstPipeline = pipeline
+        self._pipeline: Union[GstPipeline, Gst.Pipeline] = pipeline
+        self._gst_pipeline: Gst.Pipeline = (
+            pipeline.pipeline if isinstance(pipeline, GstPipeline) else pipeline
+        )
 
     def __enter__(self):
         self.startup()
@@ -75,8 +78,9 @@ class GstPipelineRunner:
         logger.debug('Setting pipeline to PLAYING...')
         self._pipeline.set_state(Gst.State.PLAYING)
 
-        logger.debug('Calling pipeline.on_startup()...')
-        self._pipeline.on_startup()
+        if isinstance(self._pipeline, GstPipeline):
+            logger.debug('Calling pipeline.on_startup()...')
+            self._pipeline.on_startup()
 
         logger.debug('Starting main loop thread...')
         self._is_running = True
@@ -110,8 +114,9 @@ class GstPipelineRunner:
             'Pipeline execution ended after %s.', timedelta(seconds=exec_seconds)
         )
 
-        logger.debug('Calling pipeline.on_shutdown()...')
-        self._pipeline.on_shutdown()
+        if isinstance(self._pipeline, GstPipeline):
+            logger.debug('Calling pipeline.on_shutdown()...')
+            self._pipeline.on_shutdown()
 
     def on_error(  # pylint: disable=unused-argument
         self, bus: Gst.Bus, message: Gst.Message
@@ -145,7 +150,7 @@ class GstPipelineRunner:
         """Change state callback."""
         old_state, new_state, _ = msg.parse_state_changed()
 
-        if not msg.src == self._pipeline.pipeline:
+        if not msg.src == self._gst_pipeline:
             # not from the pipeline, ignore
             return
 
@@ -158,5 +163,5 @@ class GstPipelineRunner:
         if old_state != new_state and os.getenv('GST_DEBUG_DUMP_DOT_DIR'):
             file_name = f'pipeline.{old_state_name}_{new_state_name}'
             Gst.debug_bin_to_dot_file_with_ts(
-                self._pipeline.pipeline, Gst.DebugGraphDetails.ALL, file_name
+                self._gst_pipeline, Gst.DebugGraphDetails.ALL, file_name
             )

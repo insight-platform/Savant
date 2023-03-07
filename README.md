@@ -191,10 +191,7 @@ Currently, the following source adapters are available:
 - Local image file;
 - URL Image;
 - Image directory;
-- USB cam;
-- Apache Kafka;
-- Elasticsearch;
-- MongoDB.
+- USB cam.
 
 There are basic sink adapters implemented:
 
@@ -202,19 +199,19 @@ There are basic sink adapters implemented:
 - Resulting video overlay displayed on a screen (per source);
 - MP4 file (per source);
 - image directory (per source);
+- Always-On RTSP Stream Sink.
 
 The framework uses an established protocol based on Apache Avro, both for sources and sinks. The sources and sinks talk
 to Savant through ZeroMQ sockets.
 
 ### Easy to Deploy
 
-The framework and adapters are delivered as a Docker image. To implement the pipeline, you take the base image, add AI
+The framework and the adapters are delivered as Docker images. To implement the pipeline, you take the base image, add AI
 models and a custom code with extra dependencies, then build the resulting image. Some pipelines which don't require
 additional dependencies can be implemented just by mapping directories with models and user functions into the docker
 image.
 
-As for now, we provide images for conventional PC architecture based on Intel or AMD CPU and discrete GPUs and for
-Jetson ARM-based devices.
+As for now, we provide images for x86 architecture and for Jetson hardware.
 
 ## What's Next
 
