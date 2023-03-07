@@ -112,6 +112,7 @@ class ZeroMQSinkFactory(SinkFactory):
         self.socket = get_socket_endpoint(socket)
         self.socket_type = get_socket_type(socket_type, SenderSocketTypes)
         self.send_hwm = send_hwm
+        self.wait_response = self.socket_type == SenderSocketTypes.REQ
 
     def get_sink(self) -> SinkCallable:
         schema = ENCODING_REGISTRY['VideoFrame']
@@ -157,6 +158,11 @@ class ZeroMQSinkFactory(SinkFactory):
                 logger.warning('Unknown message type %s', type(msg))
                 return
             output_zmq_socket.send_multipart([zmq_topic, message_bin])
+            if self.wait_response:
+                resp = output_zmq_socket.recv()
+                logger.debug(
+                    'Received %s bytes from socket %s.', len(resp), self.socket
+                )
 
         return send_message
 

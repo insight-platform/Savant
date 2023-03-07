@@ -37,8 +37,8 @@ defines the following **default connection pattern**:
 
 .. _default_connection_pattern:
 
-- Module binds the source endpoint to a pull socket.
-- Source adapters are assumed to connect push sockets to the source endpoint.
+- Module binds the source endpoint to a router socket.
+- Source adapters are assumed to connect dealer sockets to the source endpoint.
 - Module binds the sink endpoint to a publisher socket.
 - Sink adapters are assumed to connect subscriber sockets to the sink endpoint.
 
