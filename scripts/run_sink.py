@@ -301,6 +301,16 @@ def video_files_sink(
     '--metadata-output',
     help='Where to dump metadata (stdout or logger).',
 )
+@click.option(
+    '--sync',
+    is_flag=True,
+    default=False,
+    help=(
+        'Show frames on sink synchronously (i.e. at the source file rate). '
+        'Note: inbound stream is not stable with this flag, try to avoid it.'
+    ),
+    show_default=True,
+)
 @fps_meter_options
 @common_options
 @adapter_docker_image_option('deepstream')
@@ -324,11 +334,15 @@ def always_on_rtsp_sink(
     fps_period_seconds: Optional[float],
     fps_output: Optional[str],
     metadata_output: Optional[str],
+    sync: bool,
     rtsp_uri: str,
 ):
     """Send video stream from specific source to RTSP server.
 
     RTSP_URI - URI of the RTSP server.
+
+    Note: it is advisable to use --sync flag on source adapter or use a live
+    source adapter (e.g. rtsp or usb-cam).
     """
 
     assert os.path.exists(stub_file_location)
@@ -359,6 +373,7 @@ def always_on_rtsp_sink(
         zmq_endpoint=in_endpoint,
         zmq_type=in_type,
         zmq_bind=in_bind,
+        sync=sync,
         entrypoint='python',
         args=['-m', 'adapters.ds.sinks.always_on_rtsp'],
         envs=envs,

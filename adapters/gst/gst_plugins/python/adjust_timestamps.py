@@ -1,3 +1,5 @@
+from typing import Any
+
 from savant.gstreamer import GObject, Gst, GstBase
 from savant.gstreamer.utils import LoggerMixin
 
@@ -29,13 +31,44 @@ class AdjustTimestamps(LoggerMixin, GstBase.BaseTransform):
         ),
     )
 
+    __gproperties__ = {
+        'adjust-first-frame': (
+            bool,
+            'Adjust timestamp for the first frame.',
+            'Adjust timestamp for the first frame.',
+            False,
+            GObject.ParamFlags.READWRITE,
+        ),
+    }
+
     def __init__(self):
         super().__init__()
         self.offset = 0
         self.max_pts = 0
         self.max_dts = 0
+        self.adjust_first_frame = False
         self.new_segment = True
         self.set_in_place(True)
+
+    def do_get_property(self, prop: GObject.GParamSpec):
+        """Gst plugin get property function.
+
+        :param prop: structure that encapsulates the parameter info
+        """
+        if prop.name == 'adjust-first-frame':
+            return self.adjust_first_frame
+        raise AttributeError(f'Unknown property {prop.name}.')
+
+    def do_set_property(self, prop: GObject.GParamSpec, value: Any):
+        """Gst plugin set property function.
+
+        :param prop: structure that encapsulates the parameter info
+        :param value: new value for parameter, type dependents on parameter
+        """
+        if prop.name == 'adjust-first-frame':
+            self.adjust_first_frame = value
+        else:
+            raise AttributeError(f'Unknown property {prop.name}.')
 
     def do_transform_ip(self, buffer: Gst.Buffer):
         if self.new_segment:
@@ -55,6 +88,10 @@ class AdjustTimestamps(LoggerMixin, GstBase.BaseTransform):
             buffer.dts,
             buffer.duration,
         )
+        if self.adjust_first_frame:
+            current_running_time = self.get_clock().get_time() - self.get_base_time()
+            self.max_pts = max(self.max_pts, current_running_time)
+            self.max_dts = max(self.max_dts, current_running_time)
         delta = 0
         if buffer.dts != Gst.CLOCK_TIME_NONE and buffer.dts < self.max_dts:
             self.logger.info('Buffer DTS is %s, expected: %s', buffer.dts, self.max_dts)

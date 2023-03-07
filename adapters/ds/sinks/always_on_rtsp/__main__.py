@@ -67,6 +67,7 @@ class Config:
         self.metadata_output = opt_config('METADATA_OUTPUT')
 
         self.framerate = opt_config('FRAMERATE', '30/1')
+        self.sync = opt_config('SYNC_OUTPUT', False, strtobool)
 
     @property
     def fps_meter_properties(self):
@@ -144,13 +145,23 @@ def build_input_pipeline(
             'fps_meter',
             properties=config.fps_meter_properties,
         ),
+    ]
+    if config.sync:
+        sink_elements.append(
+            PipelineElement(
+                'adjust_timestamps',
+                properties={'adjust-first-frame': True},
+            )
+        )
+    sink_elements.append(
         PipelineElement(
             'always_on_rtsp_frame_sink',
             properties={
                 'last-frame': last_frame,
+                'sync': config.sync,
             },
-        ),
-    ]
+        )
+    )
 
     gst_source_elements = add_elements(pipeline, source_elements, factory)
     decodebin = factory.create(PipelineElement('decodebin'))
