@@ -60,7 +60,7 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
     def __init__(self):
         GstBase.BaseSink.__init__(self)
         self.socket: str = None
-        self.socket_type: SenderSocketTypes = SenderSocketTypes.REQ
+        self.socket_type: SenderSocketTypes = SenderSocketTypes.DEALER
         self.bind: bool = True
         self.zmq_context: zmq.Context = None
         self.sender: zmq.Socket = None

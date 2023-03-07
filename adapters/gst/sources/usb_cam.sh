@@ -11,7 +11,7 @@ required_env SOURCE_ID
 required_env DEVICE
 required_env ZMQ_ENDPOINT
 
-ZMQ_SOCKET_TYPE="${ZMQ_TYPE:="REQ"}"
+ZMQ_SOCKET_TYPE="${ZMQ_TYPE:="DEALER"}"
 ZMQ_SOCKET_BIND="${ZMQ_BIND:="false"}"
 SYNC_OUTPUT="${SYNC_OUTPUT:="false"}"
 FRAMERATE="${FRAMERATE:="15/1"}"
