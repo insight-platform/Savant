@@ -505,11 +505,12 @@ class NvDsPipeline(GstPipeline):
             frame_idx = savant_frame_meta.idx if savant_frame_meta else None
             frame_pts = nvds_frame_meta.buf_pts
             frame_meta = get_source_frame_meta(source_id, frame_idx, frame_pts)
+            source_info = self._sources.get_source(source_id)
 
             # second iteration to collect module objects
             for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
                 obj_meta = nvds_obj_meta_output_converter(
-                    nvds_obj_meta, self._frame_params
+                    nvds_obj_meta, self._frame_params, source_info.dest_resolution
                 )
                 for attr_meta_list in nvds_attr_meta_iterator(
                     frame_meta=nvds_frame_meta, obj_meta=nvds_obj_meta
@@ -532,7 +533,16 @@ class NvDsPipeline(GstPipeline):
                         obj_meta['bbox']['width'],
                         obj_meta['bbox']['height'],
                     )
-                    if bbox == (0.5, 0.5, 1, 1) and not obj_meta['attributes']:
+                    if (
+                        bbox
+                        == (
+                            source_info.dest_resolution.width / 2,
+                            source_info.dest_resolution.height / 2,
+                            source_info.dest_resolution.width,
+                            source_info.dest_resolution.height,
+                        )
+                        and not obj_meta['attributes']
+                    ):
                         continue
 
                 frame_meta.metadata['objects'].append(obj_meta)

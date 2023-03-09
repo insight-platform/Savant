@@ -8,17 +8,20 @@ from savant.deepstream.utils import nvds_get_obj_bbox
 from savant.meta.attribute import AttributeMeta
 from savant.meta.constants import PRIMARY_OBJECT_LABEL
 from savant.utils.model_registry import ModelObjectRegistry
+from savant.utils.source_info import Resolution
 
 
 def nvds_obj_meta_output_converter(
     nvds_obj_meta: pyds.NvDsObjectMeta,
     frame_params: FrameParameters,
+    output_resolution: Resolution,
 ) -> Dict[str, Any]:
     """Convert object meta to output format.
 
     :param nvds_obj_meta: NvDsObjectMeta
     :param frame_params: Frame parameters (width/height, to scale to [0..1]
-    :return: dict
+    :param output_resolution: SourceInfo value associated with given source id
+    :return: resolution of output frame
     """
     model_name, label = ModelObjectRegistry.parse_model_object_key(
         nvds_obj_meta.obj_label
@@ -39,7 +42,9 @@ def nvds_obj_meta_output_converter(
     if frame_params.padding and not frame_params.padding.keep:
         nvds_bbox.x_center -= frame_params.padding.left
         nvds_bbox.y_center -= frame_params.padding.top
-    nvds_bbox.scale(1 / frame_width, 1 / frame_height)
+    nvds_bbox.scale(
+        output_resolution.width / frame_width, output_resolution.height / frame_height
+    )
     bbox = dict(
         xc=nvds_bbox.x_center,
         yc=nvds_bbox.y_center,

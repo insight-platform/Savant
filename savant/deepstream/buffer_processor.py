@@ -107,6 +107,11 @@ class NvDsBufferProcessor(GstBufferProcessor):
             frame_meta = get_source_frame_meta(source_id, frame_idx, frame_pts)
 
             # full frame primary object by default
+            source_info = self._sources.get_source(source_id)
+            scale_factor_x = self._frame_params.width / source_info.src_resolution.width
+            scale_factor_y = (
+                self._frame_params.height / source_info.src_resolution.height
+            )
             primary_bbox = BBox(
                 x_center=self._frame_params.width / 2,
                 y_center=self._frame_params.height / 2,
@@ -128,11 +133,14 @@ class NvDsBufferProcessor(GstBufferProcessor):
                         obj_meta['bbox']['height'],
                     )
                     # if not a full frame then correct primary object
-                    if bbox != (0.5, 0.5, 1, 1):
+                    if bbox != (
+                        primary_bbox.x_center,
+                        primary_bbox.y_center,
+                        primary_bbox.width,
+                        primary_bbox.height,
+                    ):
                         primary_bbox = BBox(*bbox)
-                        primary_bbox.scale(
-                            self._frame_params.width, self._frame_params.height
-                        )
+                        primary_bbox.scale(scale_factor_x, scale_factor_y)
                     continue
                 # obj_key was only registered if
                 # it was required by the pipeline model elements (this case)
@@ -159,7 +167,7 @@ class NvDsBufferProcessor(GstBufferProcessor):
                     )
                     selection_type = ObjectSelectionType.REGULAR_BBOX
 
-                bbox.scale(self._frame_params.width, self._frame_params.height)
+                bbox.scale(scale_factor_x, scale_factor_y)
                 if self._frame_params.padding:
                     bbox.left += self._frame_params.padding.left
                     bbox.top += self._frame_params.padding.top
