@@ -451,7 +451,12 @@ class NvDsBufferProcessor(GstBufferProcessor):
 
                                 # add 0 angle
                                 bbox_tensor = np.concatenate(
-                                    [bbox_tensor, np.zeros((bbox_tensor.shape[0], 1))],
+                                    [
+                                        bbox_tensor,
+                                        np.zeros(
+                                            (bbox_tensor.shape[0], 1), dtype=np.float32
+                                        ),
+                                    ],
                                     axis=1,
                                 )
 
@@ -459,7 +464,9 @@ class NvDsBufferProcessor(GstBufferProcessor):
                             bbox_tensor = np.concatenate(
                                 [
                                     bbox_tensor,
-                                    np.arange(bbox_tensor.shape[0]).reshape(-1, 1),
+                                    np.arange(
+                                        bbox_tensor.shape[0], dtype=np.float32
+                                    ).reshape(-1, 1),
                                 ],
                                 axis=1,
                             )
