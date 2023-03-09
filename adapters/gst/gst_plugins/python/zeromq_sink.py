@@ -1,5 +1,7 @@
 """ZeroMQ sink."""
 import inspect
+from typing import List
+
 import zmq
 
 from savant.gst_plugins.python.zeromq_properties import (
@@ -138,18 +140,31 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
         self.logger.debug(
             'Processing frame %s of size %s', buffer.pts, buffer.get_size()
         )
+        message: List[bytes] = [self.zmq_topic]
+        mapinfo_list: List[Gst.MapInfo] = []
         mapinfo: Gst.MapInfo
-        result, mapinfo = buffer.map(Gst.MapFlags.READ)
+        result, mapinfo = buffer.map_range(0, 1, Gst.MapFlags.READ)
         assert result, 'Cannot read buffer.'
-        data = mapinfo.data
-        self.logger.debug('Sending %s bytes to socket %s.', len(data), self.socket)
-        self.sender.send_multipart([self.zmq_topic, data])
+        mapinfo_list.append(mapinfo)
+        message.append(mapinfo.data)
+        if buffer.n_memory() > 1:
+            # TODO: Use Gst.Meta to check where to split buffer to ZeroMQ message parts
+            result, mapinfo = buffer.map_range(1, -1, Gst.MapFlags.READ)
+            assert result, 'Cannot read buffer.'
+            mapinfo_list.append(mapinfo)
+            message.append(mapinfo.data)
+        self.logger.debug(
+            'Sending %s bytes to socket %s.', sum(len(x) for x in message), self.socket
+        )
+        self.sender.send_multipart(message)
         if self.wait_response:
             resp = self.sender.recv()
             self.logger.debug(
                 'Received %s bytes from socket %s.', len(resp), self.socket
             )
-        buffer.unmap(mapinfo)
+        for mapinfo in mapinfo_list:
+            buffer.unmap(mapinfo)
+
         return Gst.FlowReturn.OK
 
     def do_stop(self):

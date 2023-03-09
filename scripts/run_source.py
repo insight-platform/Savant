@@ -172,6 +172,14 @@ def videos_source(
     help='Sort files by modification time.',
     show_default=True,
 )
+@click.option(
+    '--read-metadata',
+    default=False,
+    is_flag=True,
+    help='Attempt to read the metadata of objects from the JSON file that has the identical name '
+    'as the source file with `json` extension, and then send it to the module.',
+    show_default=True,
+)
 @common_options
 @sync_option
 @adapter_docker_image_option('gstreamer')
@@ -189,6 +197,7 @@ def pictures_source(
     location: str,
     framerate: str,
     sort_by_time: bool,
+    read_metadata: bool,
 ):
     """Read picture files from LOCATION.
     LOCATION can be single file, directory or HTTP URL.
@@ -209,6 +218,7 @@ def pictures_source(
         envs=[
             f'FRAMERATE={framerate}',
             f'SORT_BY_TIME={sort_by_time}',
+            f'READ_METADATA={read_metadata}',
         ],
     )
 

@@ -9,6 +9,7 @@ from typing import Dict, NamedTuple, Optional
 from dataclasses import dataclass
 
 from savant.api import deserialize
+from savant.api.enums import ExternalFrameType
 from savant.gstreamer import GObject, Gst
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
 from savant.gstreamer.metadata import (
@@ -210,22 +211,28 @@ class AvroVideoDemux(LoggerMixin, Gst.Element):
             buffer.get_size(),
             buffer.pts,
         )
-        message_bin = buffer.extract_dup(0, buffer.get_size())
+        frame_meta_mapinfo: Gst.MapInfo
+        result, frame_meta_mapinfo = buffer.map_range(0, 1, Gst.MapFlags.READ)
+        assert result, 'Cannot read buffer.'
 
         # TODO: Pipeline message types might be extended beyond only VideoFrame
         # Additional checks for audio/raw_tensors/etc. may be required
-        schema_name, message = deserialize(message_bin)
+        schema_name, message = deserialize(frame_meta_mapinfo.data)
         if self.source_id is not None and message['source_id'] != self.source_id:
             self.logger.debug('Skipping message from source %s', message['source_id'])
-            return Gst.FlowReturn.OK
-        if schema_name == 'VideoFrame':
-            return self.handle_video_frame(message)
-        if schema_name == 'EndOfStream':
-            return self.handle_eos(message)
-        self.logger.error('Unknown schema "%s"', schema_name)
-        return Gst.FlowReturn.ERROR
+            result = Gst.FlowReturn.OK
+        elif schema_name == 'VideoFrame':
+            result = self.handle_video_frame(message, buffer)
+        elif schema_name == 'EndOfStream':
+            result = self.handle_eos(message)
+        else:
+            self.logger.error('Unknown schema "%s"', schema_name)
+            result = Gst.FlowReturn.ERROR
 
-    def handle_video_frame(self, message: Dict) -> Gst.FlowReturn:
+        buffer.unmap(frame_meta_mapinfo)
+        return result
+
+    def handle_video_frame(self, message: Dict, buffer: Gst.Buffer) -> Gst.FlowReturn:
         """Handle VideoFrame message."""
         source_id = message['source_id']
         frame_params = FrameParams(
@@ -276,7 +283,22 @@ class AvroVideoDemux(LoggerMixin, Gst.Element):
             self.add_source(source_id, source_info)
 
         if frame:
-            frame_buf = Gst.Buffer.new_wrapped(frame)
+            if isinstance(frame, bytes):
+                frame_buf: Gst.Buffer = Gst.Buffer.new_wrapped(frame)
+            else:
+                frame_type = ExternalFrameType(frame['type'])
+                if frame_type != ExternalFrameType.ZEROMQ:
+                    self.logger.error('Unsupported frame type "%s".', frame_type.value)
+                    return Gst.FlowReturn.ERROR
+                if buffer.n_memory() < 2:
+                    self.logger.error(
+                        'Buffer has %s regions of memory, expected at least 2.',
+                        buffer.n_memory(),
+                    )
+                    return Gst.FlowReturn.ERROR
+
+                frame_buf: Gst.Buffer = Gst.Buffer.new()
+                frame_buf.append_memory(buffer.get_memory_range(1, -1))
             frame_buf.pts = frame_pts
             frame_buf.dts = frame_dts
             frame_buf.duration = (
