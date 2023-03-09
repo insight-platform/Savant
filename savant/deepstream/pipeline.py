@@ -689,9 +689,9 @@ class NvDsPipeline(GstPipeline):
             demuxer, self._max_parallel_streams
         )
         sink_peer_pad: Gst.Pad = demuxer.get_static_pad('sink').get_peer()
-        sink_peer_pad.add_probe(Gst.PadProbeType.BUFFER, self.update_frame_meta)
         if self._draw_func and self._output_frame_codec:
             sink_peer_pad.add_probe(Gst.PadProbeType.BUFFER, self._draw_on_frame_probe)
+        sink_peer_pad.add_probe(Gst.PadProbeType.BUFFER, self.update_frame_meta)
         return demuxer
 
     def _draw_on_frame_probe(

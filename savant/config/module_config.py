@@ -198,6 +198,7 @@ class ModuleConfig(metaclass=SingletonMeta):
             del self._default_cfg.pipeline.source
 
         logger.debug('Default conf\n%s', self._default_cfg)
+        logger.debug('Module conf\n%s', module_cfg)
         module_cfg = OmegaConf.unsafe_merge(
             self._config_schema, self._default_cfg, module_cfg
         )
