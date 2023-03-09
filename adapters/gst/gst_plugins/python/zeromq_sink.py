@@ -48,6 +48,13 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
             Defaults.SEND_HWM,
             GObject.ParamFlags.READWRITE,
         ),
+        'source-id': (
+            str,
+            'Source ID',
+            'Source ID, e.g. "camera1".',
+            None,
+            GObject.ParamFlags.READWRITE,
+        ),
     }
 
     def __init__(self):
@@ -59,6 +66,8 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
         self.sender: zmq.Socket = None
         self.wait_response = False
         self.send_hwm = Defaults.SEND_HWM
+        self.source_id: str = None
+        self.zmq_topic: bytes = None
         self.set_sync(False)
 
     def do_get_property(self, prop):
@@ -75,6 +84,8 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
             return self.bind
         if prop.name == 'send-hwm':
             return self.send_hwm
+        if prop.name == 'source-id':
+            return self.source_id
         raise AttributeError(f'Unknown property {prop.name}.')
 
     def do_set_property(self, prop, value):
@@ -93,11 +104,15 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
             self.bind = value
         elif prop.name == 'send-hwm':
             self.send_hwm = value
+        elif prop.name == 'source-id':
+            self.source_id = value
+            self.zmq_topic = f'{value}/'.encode()
         else:
             raise AttributeError(f'Unknown property {prop.name}.')
 
     def do_start(self):
         """Start source."""
+        assert self.source_id, 'Source ID is required.'
         try:
             self.socket = get_socket_endpoint(self.socket)
             self.socket_type = get_socket_type(self.socket_type, SenderSocketTypes)
@@ -128,7 +143,7 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
         assert result, 'Cannot read buffer.'
         data = mapinfo.data
         self.logger.debug('Sending %s bytes to socket %s.', len(data), self.socket)
-        self.sender.send(data)
+        self.sender.send_multipart([self.zmq_topic, data])
         if self.wait_response:
             resp = self.sender.recv()
             self.logger.debug(

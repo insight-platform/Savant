@@ -13,7 +13,7 @@ from adapters.python.sinks.metadata_json import (
     Patterns,
 )
 from savant.api import deserialize
-from savant.utils.zeromq import ZeroMQSource
+from savant.utils.zeromq import ZeroMQSource, build_topic_prefix
 
 DEFAULT_CHUNK_SIZE = 10000
 
@@ -130,10 +130,19 @@ def main():
         os.environ.get('SKIP_FRAMES_WITHOUT_OBJECTS', 'false')
     )
     chunk_size = int(os.environ.get('CHUNK_SIZE', DEFAULT_CHUNK_SIZE))
+    topic_prefix = build_topic_prefix(
+        source_id=os.environ.get('SOURCE_ID'),
+        source_id_prefix=os.environ.get('SOURCE_ID_PREFIX'),
+    )
 
     # possible exceptions will cause app to crash and log error by default
     # no need to handle exceptions here
-    source = ZeroMQSource(zmq_endpoint, zmq_socket_type, zmq_bind)
+    source = ZeroMQSource(
+        zmq_endpoint,
+        zmq_socket_type,
+        zmq_bind,
+        topic_prefix=topic_prefix,
+    )
 
     image_sink = ImageFilesSink(dir_location, chunk_size, skip_frames_without_objects)
     logging.info('Image files sink started')

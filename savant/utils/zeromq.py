@@ -80,6 +80,7 @@ class ZeroMQSource:
     :param bind: zmq socket mode (bind or connect)
     :param receive_timeout: receive timeout socket option
     :param receive_hwm: high watermark for inbound messages
+    :param topic_prefix: filter inbound messages by topic prefix
     """
 
     def __init__(
@@ -89,6 +90,7 @@ class ZeroMQSource:
         bind: bool = True,
         receive_timeout: int = Defaults.RECEIVE_TIMEOUT,
         receive_hwm: int = Defaults.RECEIVE_HWM,
+        topic_prefix: Optional[str] = None,
     ):
         logger.debug(
             'Initializing ZMQ source: socket %s, type %s, bind %s.',
@@ -96,6 +98,8 @@ class ZeroMQSource:
             socket_type,
             bind,
         )
+
+        self.topic_prefix = topic_prefix.encode() if topic_prefix else b''
 
         # might raise exceptions
         # will be handled in ZeromqSrc element
@@ -112,7 +116,7 @@ class ZeroMQSource:
         else:
             self.receiver.connect(socket)
         if self.socket_type == ReceiverSocketTypes.SUB:
-            self.receiver.setsockopt_string(zmq.SUBSCRIBE, '')
+            self.receiver.setsockopt(zmq.SUBSCRIBE, self.topic_prefix)
         self.receiver.setsockopt(zmq.RCVTIMEO, self.receive_timeout)
         self.is_alive = True
         if self.socket_type == ReceiverSocketTypes.REP:
@@ -123,13 +127,24 @@ class ZeroMQSource:
     def next_message(self) -> Optional[bytes]:
         """Try to receive next message."""
         try:
-            message = self.receiver.recv()
+            message = self.receiver.recv_multipart()
         except zmq.Again:
             logger.debug('Timeout exceeded when receiving the next frame')
-            return None
+            return
+        if not len(message) == 2:
+            raise RuntimeError(
+                f'Invalid number of ZeroMQ message parts: got {len(message)} expected 2.'
+            )
         if self._response is not None:
             self.receiver.send(self._response)
-        return message
+        if self.topic_prefix and not message[0].startswith(self.topic_prefix):
+            logger.debug(
+                'Skipping message from topic %s, expected prefix %s',
+                message[0],
+                self.topic_prefix,
+            )
+            return
+        return message[1]
 
     def __iter__(self):
         return self
@@ -150,3 +165,14 @@ class ZeroMQSource:
         logger.info('Terminating ZeroMQ context.')
         self.zmq_context.term()
         logger.info('ZeroMQ context terminated')
+
+
+def build_topic_prefix(
+    source_id: Optional[str],
+    source_id_prefix: Optional[str],
+) -> Optional[str]:
+    """Build topic prefix based on source ID or its prefix."""
+    if source_id:
+        return f'{source_id}/'
+    elif source_id_prefix:
+        return source_id_prefix

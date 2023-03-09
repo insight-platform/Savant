@@ -6,12 +6,12 @@ from typing import List, Optional
 import click
 
 from common import (
-    build_docker_run_command,
     adapter_docker_image_option,
+    build_common_envs,
+    build_docker_run_command,
+    fps_meter_options,
     run_command,
     source_id_option,
-    fps_meter_options,
-    build_common_envs,
 )
 
 
@@ -53,7 +53,7 @@ def common_options(func):
         show_default=True,
     )(func)
     func = fps_meter_options(func)
-    func = source_id_option(func)
+    func = source_id_option(required=True)(func)
     return func
 
 

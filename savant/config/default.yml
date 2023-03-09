@@ -79,6 +79,10 @@ pipeline:
       socket: ${oc.env:ZMQ_SRC_ENDPOINT}
       socket_type: ${oc.env:ZMQ_SRC_TYPE, REP}
       bind: ${oc.decode:${oc.env:ZMQ_SRC_BIND, True}}
+      # Filter inbound frames by source ID.
+      source_id: ${oc.decode:${oc.env:SOURCE_ID, null}}
+      # Filter inbound frames by source ID prefix.
+      source_id_prefix: ${oc.decode:${oc.env:SOURCE_ID_PREFIX, null}}
 
 # elements:
 # elements should be defined here

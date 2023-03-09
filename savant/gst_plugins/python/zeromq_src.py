@@ -1,5 +1,7 @@
 """ZeroMQ src."""
 import inspect
+from typing import Optional
+
 import zmq
 
 from savant.gst_plugins.python.zeromq_properties import (
@@ -13,6 +15,7 @@ from savant.utils.zeromq import (
     ReceiverSocketTypes,
     ZeroMQSource,
     ZMQException,
+    build_topic_prefix,
 )
 
 ZEROMQ_SRC_PROPERTIES = {
@@ -25,6 +28,20 @@ ZEROMQ_SRC_PROPERTIES = {
         1,
         GObject.G_MAXINT,
         Defaults.RECEIVE_HWM,
+        GObject.ParamFlags.READWRITE,
+    ),
+    'source-id': (
+        str,
+        'Source ID filter.',
+        'Filter frames by source ID.',
+        None,
+        GObject.ParamFlags.READWRITE,
+    ),
+    'source-id-prefix': (
+        str,
+        'Source ID prefix filter.',
+        'Filter frames by source ID prefix.',
+        None,
         GObject.ParamFlags.READWRITE,
     ),
 }
@@ -61,6 +78,8 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
         self.receiver = None
         self.receive_timeout: int = Defaults.RECEIVE_TIMEOUT
         self.receive_hwm: int = Defaults.RECEIVE_HWM
+        self.source_id: Optional[str] = None
+        self.source_id_prefix: Optional[str] = None
         self.source: ZeroMQSource = None
         self.set_live(True)
 
@@ -77,6 +96,10 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
             return self.bind
         if prop.name == 'receive-hwm':
             return self.receive_hwm
+        if prop.name == 'source-id':
+            return self.source_id
+        if prop.name == 'source-id-prefix':
+            return self.source_id_prefix
         # if prop.name == 'zmq-context':
         #     return self.zmq_context
         raise AttributeError(f'Unknown property {prop.name}.')
@@ -96,6 +119,10 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
             self.bind = value
         elif prop.name == 'receive-hwm':
             self.receive_hwm = value
+        elif prop.name == 'source-id':
+            self.source_id = value
+        elif prop.name == 'source-id-prefix':
+            self.source_id_prefix = value
         # elif prop.name == 'zmq-context':
         #     self.zmq_context = value
         else:
@@ -104,6 +131,7 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
     def do_start(self):
         """Start source."""
         self.logger.debug('Called do_start().')
+        topic_prefix = build_topic_prefix(self.source_id, self.source_id_prefix)
 
         try:
             self.source = ZeroMQSource(
@@ -112,6 +140,7 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
                 bind=self.bind,
                 receive_timeout=self.receive_timeout,
                 receive_hwm=self.receive_hwm,
+                topic_prefix=topic_prefix,
             )
         except ZMQException:
             self.logger.exception('Element start error.')

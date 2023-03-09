@@ -47,7 +47,7 @@ gst-launch-1.0 --eos-on-shutdown \
     adjust_timestamps ! \
     video_to_avro_serializer source-id="${SOURCE_ID}" eos-on-location-change="${EOS_ON_LOCATION_CHANGE}" \
     eos-on-frame-params-change=true read-metadata="${READ_METADATA}" ! \
-    zeromq_sink socket="${ZMQ_ENDPOINT}" socket-type="${ZMQ_SOCKET_TYPE}" bind="${ZMQ_SOCKET_BIND}" sync="${SYNC_OUTPUT}" \
+    zeromq_sink socket="${ZMQ_ENDPOINT}" socket-type="${ZMQ_SOCKET_TYPE}" bind="${ZMQ_SOCKET_BIND}" sync="${SYNC_OUTPUT}" source-id="${SOURCE_ID}" \
     &
 
 child_pid="$!"
