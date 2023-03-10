@@ -3,7 +3,16 @@ name: ${oc.env:MODULE_NAME, 'demo'}
 parameters:
   output_frame:
     codec: jpeg
-  draw_func: {}
+  draw_func:
+    module: samples.peoplenet_detector.overlay
+    class_name: Overlay
+  padding:
+    keep: true
+    left: 0
+    right: 0
+    top: 74
+    bottom: 0
+
 
 pipeline:
   source:

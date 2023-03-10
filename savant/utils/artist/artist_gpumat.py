@@ -79,18 +79,18 @@ class ArtistGPUMat(AbstractContextManager):
         )
 
         text_x, text_y = get_text_origin(
-            anchor_point, anchor_x, anchor_y, text_size[0], text_size[1]
+            anchor_point, anchor_x, anchor_y, text_size[0], text_size[1], baseline
         )
-        text_x = int(text_x) - padding
-        text_y = int(text_y) - padding
 
         if bg_color or border_width:
-            rect_left = text_x - border_width
-            rect_top = text_y + baseline
-            rect_right = text_x - border_width + text_size[0]
-            rect_bottom = text_y - text_size[1]
+            rect_left = text_x - border_width - padding
+            rect_top = text_y - text_size[1] - border_width - padding
+            rect_right = text_x + text_size[0] + border_width + padding
+            rect_bottom = text_y + baseline + border_width + padding
+
             rect_tl = rect_left, rect_top
             rect_br = rect_right, rect_bottom
+
             if bg_color is not None:
                 cv2.rectangle(
                     self.overlay, rect_tl, rect_br, convert_color(bg_color), cv2.FILLED
