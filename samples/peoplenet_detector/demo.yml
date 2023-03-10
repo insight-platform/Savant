@@ -1,0 +1,62 @@
+name: ${oc.env:MODULE_NAME, 'demo'}
+
+parameters:
+  output_frame:
+    codec: jpeg
+  draw_func: {}
+
+pipeline:
+  source:
+    element: uridecodebin
+    properties:
+      uri: ${oc.env:URI_INPUT, file:///opt/app/samples/peoplenet_detector/Free_City_Street_Footage.mp4}
+
+  elements:
+    - element: nvinfer@detector
+      name: peoplenet
+      model:
+        format: etlt
+        remote:
+          url: s3://savant-data/models/peoplenet/peoplenet_pruned_v2.0.zip
+          checksum_url: s3://savant-data/models/peoplenet/peoplenet_pruned_v2.0.md5
+          parameters:
+            endpoint: https://eu-central-1.linodeobjects.com
+          # or get the model directly from NGC API
+          # peoplenet v2.0
+          # url: "https://api.ngc.nvidia.com/v2/models/nvidia/tao/peoplenet/versions/pruned_v2.0/zip"
+          # peoplenet v2.6
+          # url: "https://api.ngc.nvidia.com/v2/models/nvidia/tao/peoplenet/versions/deployable_quantized_v2.6/zip"
+
+        model_file: resnet34_peoplenet_pruned.etlt  # v2.0 Accuracy: 84.3 Size 20.9 MB
+        # model_file: resnet34_peoplenet_int8.etlt  # v2.6 Accuracy: 86.0 Size: 85.03 MB
+
+        # default fp16
+        # precision: int8
+        # int8_calib_file: resnet34_peoplenet_int8.txt
+        # interval: 1
+        input:
+          layer_name: input_1
+          shape: [3, 544, 960]
+          scale_factor: 0.0039215697906911373
+        output:
+          layer_names: [output_bbox/BiasAdd, output_cov/Sigmoid]
+          num_detected_classes: 3
+          objects:
+            - class_id: 0
+              label: person
+            - class_id: 2
+              label: face
+              selector:
+                kwargs:
+                  confidence_threshold: 0.1
+
+    # tracker
+    - element: nvtracker
+      properties:
+        tracker-width: 640
+        tracker-height: 384
+        ll-lib-file: /opt/nvidia/deepstream/deepstream/lib/libnvds_nvmultiobjecttracker.so
+        ll-config-file: ${oc.env:APP_PATH}/samples/peoplenet_detector/config_tracker_NvDCF_perf.yml
+        #enable_past_frame: 1
+        enable_batch_process: 1
+        #display-tracking-id: 0
