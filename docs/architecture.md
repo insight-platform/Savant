@@ -62,9 +62,10 @@ In Savant, real-life sources are never directly bound to the Gstreamer graph, so
 
 ![Savant Virtual Sources](https://user-images.githubusercontent.com/15047882/168033994-0da8304f-cb02-4fd0-a9c2-5c8636367a4e.png)
 
-Muxed Virtual Stream block accepts the streaming data from the outside world via [ZeroMQ](https://zeromq.org/) socket. The framework supports two kinds of sockets:
-- Pub/Sub - when you would like to drop the excessive input data but run the inference in real-time;
-- Push/Pull - when you would like to use back-pressure to stop the source from injecting the data too fast but don't care about real-time processing.
+Muxed Virtual Stream block accepts the streaming data from the outside world via [ZeroMQ](https://zeromq.org/) socket. The framework supports three kinds of sockets:
+- Pub/Sub - when one needs to drop the excessive input data but run the inference in real-time (fits for processing of already-decoded, raw streams);
+- Dealer/Router - when one needs to utilize back-pressure to stop the source from injecting the data too fast but don't care about real-time processing;
+- Req/Rep - when one needs to ensure that every frame passed is loaded into the pipeline before the following frame from the same source can be passed.
 
 Virtual Stream Manager investigates the packets from the Muxed Virtual Stream and dynamically manages corresponding Gstreamer elements to integrate streams into the pipeline.
 
@@ -79,8 +80,9 @@ As an example of decoupling, you can imagine a pipeline that requires enriching 
 ![metadata](https://user-images.githubusercontent.com/15047882/168040020-e87f288d-8cad-4b6c-8ec7-a27dc4b649f5.png)
 
 Sink streams are also muxed and virtualized. The data is in AVRO format and is sent to a single ZeroMQ socket, which also can be:
-- Pub/Sub - when you would like to drop the excessive output data but continue running the inference in real-time;
-- Push/Pull - when you would like to use back-pressure to stop the pipeline from sending the data too fast because receiving part is too slow to keep up.
+- Pub/Sub - when one needs to drop the excessive output data but continue running the inference in real-time (fits for processing of already-decoded, raw streams);
+- Dealer/Router - when one needs to use back-pressure to stop the pipeline from sending the data too fast because receiving part is too slow to keep up;
+- Req/Rep - when one needs to ensure that the packet is delivered to the receiver before the next one is transferred.
 
 ## Source Adapters
 
