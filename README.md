@@ -185,13 +185,14 @@ own.
 Currently, the following source adapters are available:
 
 - Local video file;
-- URL video;
 - Local directory of video files;
-- RTSP;
 - Local image file;
-- URL Image;
-- Image directory;
-- USB cam.
+- Local directory of image files;
+- Image URL;
+- Video URL;
+- RTSP stream;
+- USB/CSI camera;
+- GigE (Genicam) industrial cam.
 
 There are basic sink adapters implemented:
 
