@@ -226,3 +226,10 @@ As for now, we provide images for x86 architecture and for Jetson hardware.
 ## Contribution
 
 We welcome anyone who wishes to contribute, report, and learn.
+
+## About Us
+
+The In-Sight team is a ML/AI department of Bitworks Software. We develop custom high performance CV applications for various industries providing full-cycle process, which includes but not limited to data labeling, model evaluation, training, pruning, quantization, validation, and verification, pipelines development, CI/CD. We are mostly focused on Nvidia hardware (both datacenter and edge).
+
+Contact us: info@bw-sw.com
+
