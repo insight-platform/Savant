@@ -60,16 +60,7 @@ like to utilize most of the CUDA runtime).
 
 ## Features
 
-### Dynamic Runtime Parameters Configuration
-
-Sophisticated ML pipelines can use external knowledge, which helps optimize the results based on additional knowledge
-from the environment.
-
-The framework enables dynamic configuration of the pipeline operational parameters with:
-
-- ingested frame parameters passed in per-frame metadata;
-- Etcd parameters watched and instantly applied;
-- 3rd-party parameters, which are received through user-defined functions.
+Savant is packed with several killer features which skyrocket the development of Deepstream applications.
 
 ### Dynamic Sources Management
 
@@ -112,6 +103,17 @@ simple and utilizes standard open source tools.
 
 The decoupled nature of adapters also provides better reliability because the failed data source affects the adapter
 operation, not a framework operation.
+
+### Dynamic Runtime Parameters Configuration
+
+Sophisticated ML pipelines can use external knowledge, which helps optimize the results based on additional knowledge
+from the environment.
+
+The framework enables dynamic configuration of the pipeline operational parameters with:
+
+- ingested frame parameters passed in per-frame metadata;
+- Etcd parameters watched and instantly applied;
+- 3rd-party parameters, which are received through user-defined functions.
 
 ### OpenCV CUDA Integration
 
