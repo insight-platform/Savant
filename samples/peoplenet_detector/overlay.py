@@ -2,7 +2,7 @@ import numpy as np
 import cv2
 
 from savant.deepstream.drawfunc import NvDsDrawFunc
-from savant.deepstream.meta.frame import NvDsFrameMeta
+from savant.deepstream.meta.frame import NvDsFrameMeta, BBox
 from savant.utils.artist import Artist
 from savant.utils.artist import Position, Artist
 
@@ -89,7 +89,14 @@ class Overlay(NvDsDrawFunc):
     def draw_on_frame(self, frame_meta: NvDsFrameMeta, artist: Artist):
         """
         """
-
+        # manually refresh padding used for drawing
+        # workaround, avoids layered rendering problem because of padding memory being shared for all frames
+        artist.add_bbox(
+            BBox(x_center=640,y_center=90,width=1280,height=180),
+            border_width=0,
+            bg_color=(0,0,0),
+            padding=0
+        )
         artist.add_overlay(self.logo, self.logo_pos)
         artist.add_overlay(self.green_sprite, self.green_sprite_tl)
         artist.add_overlay(self.blue_sprite, self.blue_sprite_tl)

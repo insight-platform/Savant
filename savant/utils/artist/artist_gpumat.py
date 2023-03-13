@@ -142,7 +142,7 @@ class ArtistGPUMat(AbstractContextManager):
                     convert_color(bg_color), stream=self.stream
                 )
 
-            if border_color != bg_color:
+            if border_width and border_color != bg_color:
                 color = convert_color(border_color)
                 self.frame.colRange(left, right).rowRange(
                     top, top + border_width
@@ -196,9 +196,10 @@ class ArtistGPUMat(AbstractContextManager):
             cv2.drawContours(
                 self.overlay, [vertices], 0, convert_color(bg_color), cv2.FILLED
             )
-        cv2.drawContours(
-            self.overlay, [vertices], 0, convert_color(line_color), line_width
-        )
+        if line_width:
+            cv2.drawContours(
+                self.overlay, [vertices], 0, convert_color(line_color), line_width
+            )
 
     def blur(self, bbox: BBox, padding: int = 0):
         """Apply gaussian blur to the specified ROI.
