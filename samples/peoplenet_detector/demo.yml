@@ -1,24 +1,27 @@
 name: ${oc.env:MODULE_NAME, 'demo'}
 
 parameters:
+  frame:
+    width: 1280
+    height: 720
+    padding:
+      keep: true
+      left: 0
+      right: 0
+      top: 180
+      bottom: 0
   output_frame:
-    codec: jpeg
+    codec: h264
   draw_func:
     module: samples.peoplenet_detector.overlay
     class_name: Overlay
-  padding:
-    keep: true
-    left: 0
-    right: 0
-    top: 74
-    bottom: 0
 
 
 pipeline:
-  source:
-    element: uridecodebin
-    properties:
-      uri: ${oc.env:URI_INPUT, file:///opt/app/samples/peoplenet_detector/Free_City_Street_Footage.mp4}
+  # source:
+  #   element: uridecodebin
+  #   properties:
+  #     uri: ${oc.env:URI_INPUT, file:///opt/app/samples/peoplenet_detector/Free_City_Street_Footage.mp4}
 
   elements:
     - element: nvinfer@detector
