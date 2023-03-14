@@ -205,19 +205,28 @@ class ArtistGPUMat(AbstractContextManager):
                 self.overlay, [vertices], 0, convert_color(line_color), line_width
             )
 
-    def blur(self, bbox: BBox, padding: int = 0):
+    def blur(self, bbox: BBox, padding: int = 0, sigma: Optional[float] = None):
         """Apply gaussian blur to the specified ROI.
 
         :param bbox: ROI specified as Savant bbox.
         :param padding: Increase the size of the rectangle in each direction,
             value in pixels.
         """
-        self.__init_gaussian()
+        if sigma is None:
+            sigma = min(bbox.width, bbox.height) / 10
+
+        radius = int(sigma * 4 + 0.5)
+        if radius % 2 == 0:
+            radius += 1
+        
+        gaussian_filter = cv2.cuda.createGaussianFilter(
+            cv2.CV_8UC4, cv2.CV_8UC4, (radius, radius), sigma
+        )
 
         left, top, _, _, width, height = self.__convert_bbox(bbox, padding, 0)
         roi_mat = cv2.cuda.GpuMat(self.frame, (left, top, width, height))
 
-        self.gaussian_filter.apply(roi_mat, roi_mat, stream=self.stream)
+        gaussian_filter.apply(roi_mat, roi_mat, stream=self.stream)
 
     def add_graphic(self, img: cv2.cuda.GpuMat, origin: Tuple[int, int]):
         """Overlays an image onto the frame, e.g. a logo.
@@ -272,16 +281,6 @@ class ArtistGPUMat(AbstractContextManager):
         """Init overlay image."""
         if self.overlay is None:
             self.overlay = np.zeros((self.height, self.width, 4), dtype=np.uint8)
-
-    def __init_gaussian(self, sigma: float = 3):
-        """Init Gaussian filter."""
-        if self.gaussian_filter is None:
-            radius = int(sigma * 4 + 0.5)
-            if radius % 2 == 0:
-                radius += 1
-            self.gaussian_filter = cv2.cuda.createGaussianFilter(
-                cv2.CV_8UC4, cv2.CV_8UC4, (radius, radius), sigma
-            )
 
     def __convert_bbox(
         self, bbox: BBox, padding: int, border_width: int
