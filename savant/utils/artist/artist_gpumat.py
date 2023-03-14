@@ -273,11 +273,14 @@ class ArtistGPUMat(AbstractContextManager):
         if self.overlay is None:
             self.overlay = np.zeros((self.height, self.width, 4), dtype=np.uint8)
 
-    def __init_gaussian(self):
+    def __init_gaussian(self, sigma: float = 3):
         """Init Gaussian filter."""
         if self.gaussian_filter is None:
+            radius = int(sigma * 4 + 0.5)
+            if radius % 2 == 0:
+                radius += 1
             self.gaussian_filter = cv2.cuda.createGaussianFilter(
-                cv2.CV_8UC4, cv2.CV_8UC4, (31, 31), 100, 100
+                cv2.CV_8UC4, cv2.CV_8UC4, (radius, radius), sigma
             )
 
     def __convert_bbox(
