@@ -1,3 +1,8 @@
+numpy~=1.22.4
+numba~=0.56.4
+
+pycairo~=1.21.0
+
 fastavro~=1.4.4
 pyzmq~=22.2.1
 
