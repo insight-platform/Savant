@@ -27,6 +27,7 @@ class Overlay(NvDsDrawFunc):
         self.logo_height = 120
         self.sprite_heigth = 120
         self.letter_height = 85
+        self.counters_smoothing_period = 0.25
 
         self.font_thickness = 5
         self.font_face = cv2.FONT_HERSHEY_SIMPLEX
@@ -34,8 +35,8 @@ class Overlay(NvDsDrawFunc):
             self.letter_height, self.font_thickness, self.font_face
         )
 
-        self.persons_with_face_counter = SmoothedCounter(1)
-        self.persons_no_face_counter = SmoothedCounter(1)
+        self.persons_with_face_counter = SmoothedCounter(self.counters_smoothing_period)
+        self.persons_no_face_counter = SmoothedCounter(self.counters_smoothing_period)
 
         self.logo = load_sprite(
             '/opt/app/samples/peoplenet_detector/sprites/logo_insight.png',
