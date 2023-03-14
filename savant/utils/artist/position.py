@@ -18,7 +18,12 @@ class Position(Enum):
 
 
 def get_text_origin(
-    anchor_point: Position, anchor_x: int, anchor_y: int, text_w: int, text_h: int, baseline: int
+    anchor_point: Position,
+    anchor_x: int,
+    anchor_y: int,
+    text_w: int,
+    text_h: int,
+    baseline: int,
 ) -> Tuple[int, int]:
     """Calculate text origin coordinates.
 

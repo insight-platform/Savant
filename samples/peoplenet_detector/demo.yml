@@ -18,11 +18,6 @@ parameters:
 
 
 pipeline:
-  # source:
-  #   element: uridecodebin
-  #   properties:
-  #     uri: ${oc.env:URI_INPUT, file:///opt/app/samples/peoplenet_detector/Free_City_Street_Footage.mp4}
-
   elements:
     - element: nvinfer@detector
       name: peoplenet

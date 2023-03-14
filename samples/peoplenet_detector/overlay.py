@@ -1,3 +1,4 @@
+from typing import Tuple
 import numpy as np
 import cv2
 
@@ -7,21 +8,37 @@ from savant.utils.artist import Artist
 from savant.utils.artist import Position, Artist
 
 
-def load_sprite(path:str, target_height:int) -> cv2.cuda.GpuMat:
+def load_sprite(path: str, target_height: int) -> cv2.cuda.GpuMat:
+    """Read from file, resize according to target height, move to GPU."""
     sprite = cv2.imread(path, cv2.IMREAD_UNCHANGED)
     sprite = cv2.cvtColor(sprite, cv2.COLOR_BGRA2RGBA)
     resize_coeff = target_height / sprite.shape[0]
-    sprite = cv2.resize(sprite, dsize=None, fx=resize_coeff, fy=resize_coeff, interpolation=cv2.INTER_CUBIC)
+    sprite = cv2.resize(
+        sprite,
+        dsize=None,
+        fx=resize_coeff,
+        fy=resize_coeff,
+        interpolation=cv2.INTER_CUBIC,
+    )
     return cv2.cuda.GpuMat(sprite)
 
 
-def get_font_scale(target_height_px: int, font_thickness:float=1, font_face:int = cv2.FONT_HERSHEY_SIMPLEX, sample_text='0123456789') -> float:
-    font_scale = 0.5
-    text_size, _ = cv2.getTextSize(
-        sample_text, font_face, font_scale, font_thickness
-    )
+def get_font_scale(
+    target_height_px: int,
+    font_thickness: float = 1,
+    font_face: int = cv2.FONT_HERSHEY_SIMPLEX,
+    sample_text: str = '0123456789',
+    font_scale_range: Tuple[float, float] = (0.1, 5),
+    font_scale_step: float = 0.1,
+) -> float:
+    """Find a font scale for OpenCV's text according to target text height in pixels."""
+
+    font_scale = font_scale_range[0]
+    text_size, _ = cv2.getTextSize(sample_text, font_face, font_scale, font_thickness)
     min_delta = abs(target_height_px - text_size[1])
-    for scale in np.linspace(0.6, 5, 45):
+
+    scale_range_start = font_scale + font_scale_step
+    for scale in np.arange(scale_range_start, font_scale_range[1], font_scale_step):
         text_size, baseline = cv2.getTextSize(
             sample_text, font_face, scale, font_thickness
         )
@@ -34,7 +51,6 @@ def get_font_scale(target_height_px: int, font_thickness:float=1, font_face:int 
 
 
 class Overlay(NvDsDrawFunc):
-
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.face_bbox_border_color = (1, 0.5, 0.5)
@@ -49,7 +65,9 @@ class Overlay(NvDsDrawFunc):
 
         self.font_thickness = 5
         self.font_face = cv2.FONT_HERSHEY_SIMPLEX
-        self.font_scale = get_font_scale(self.letter_height, self.font_thickness, self.font_face)
+        self.font_scale = get_font_scale(
+            self.letter_height, self.font_thickness, self.font_face
+        )
 
         text_w = cv2.getTextSize(
             '99', self.font_face, self.font_scale, self.font_thickness
@@ -57,9 +75,17 @@ class Overlay(NvDsDrawFunc):
         narrow_sep_w = 15
         sep_w = 60
 
-        self.logo = load_sprite('/opt/app/samples/peoplenet_detector/logo_insight.png', self.logo_height)
-        self.green_sprite = load_sprite('/opt/app/samples/peoplenet_detector/animation/1/1_001.png', self.sprite_heigth)
-        self.blue_sprite = load_sprite('/opt/app/samples/peoplenet_detector/animation/2/2_001.png', self.sprite_heigth)
+        self.logo = load_sprite(
+            '/opt/app/samples/peoplenet_detector/logo_insight.png', self.logo_height
+        )
+        self.green_sprite = load_sprite(
+            '/opt/app/samples/peoplenet_detector/animation/1/1_001.png',
+            self.sprite_heigth,
+        )
+        self.blue_sprite = load_sprite(
+            '/opt/app/samples/peoplenet_detector/animation/2/2_001.png',
+            self.sprite_heigth,
+        )
 
         logo_w = self.logo.size()[0]
         sprite_w = self.green_sprite.size()[0]
@@ -85,17 +111,22 @@ class Overlay(NvDsDrawFunc):
         self.current_frame_i = 1
         self.ts = 0
 
-
     def draw_on_frame(self, frame_meta: NvDsFrameMeta, artist: Artist):
-        """
-        """
+        """ """
+        frame_w, _ = artist.frame_wh
         # manually refresh padding used for drawing
-        # workaround, avoids layered rendering problem because of padding memory being shared for all frames
+        # workaround, avoids rendering problem where drawings from previous frames
+        # are persisted on the padding area in the next frame
         artist.add_bbox(
-            BBox(x_center=640,y_center=90,width=1280,height=180),
+            BBox(
+                x_center=frame_w // 2,
+                y_center=self.overlay_height // 2,
+                width=frame_w,
+                height=self.overlay_height,
+            ),
             border_width=0,
-            bg_color=(0,0,0),
-            padding=0
+            bg_color=(0, 0, 0),
+            padding=0,
         )
         artist.add_overlay(self.logo, self.logo_pos)
         artist.add_overlay(self.green_sprite, self.green_sprite_tl)
@@ -106,9 +137,9 @@ class Overlay(NvDsDrawFunc):
             self.green_text_tl[1],
             self.font_scale,
             self.font_thickness,
-            (1,1,1),
+            (1, 1, 1),
             padding=0,
-            anchor_point=Position.LEFT_TOP
+            anchor_point=Position.LEFT_TOP,
         )
         artist.add_text(
             f'{self.current_frame_i}',
@@ -116,9 +147,9 @@ class Overlay(NvDsDrawFunc):
             self.blue_text_tl[1],
             self.font_scale,
             self.font_thickness,
-            (1,1,1),
+            (1, 1, 1),
             padding=0,
-            anchor_point=Position.LEFT_TOP
+            anchor_point=Position.LEFT_TOP,
         )
         if frame_meta.pts - self.ts >= self.frame_period:
             self.current_frame_i += 1

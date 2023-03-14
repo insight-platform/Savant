@@ -41,6 +41,10 @@ class ArtistGPUMat(AbstractContextManager):
             )
         self.stream.waitForCompletion()
 
+    @property
+    def frame_wh(self):
+        return self.width, self.height
+
     def add_text(
         self,
         text: str,
@@ -217,7 +221,7 @@ class ArtistGPUMat(AbstractContextManager):
 
     def add_overlay(self, img: cv2.cuda.GpuMat, origin: Tuple[int, int]):
         """Adds an image to the frame overlay, e.g. a logo.
-        
+
         :param img: RGBA image in GPU memory
         :param origin: Coordinates of left top corner of img in frame space. (left, top)
         """
@@ -257,12 +261,12 @@ class ArtistGPUMat(AbstractContextManager):
         frame_right = min(frame_right, self.width)
         frame_bottom = min(frame_bottom, self.height)
 
-        frame_roi = self.frame.colRange(frame_left, frame_right).rowRange(frame_top, frame_bottom)
+        frame_roi = self.frame.colRange(frame_left, frame_right).rowRange(
+            frame_top, frame_bottom
+        )
         img_roi = img.colRange(img_left, img_right).rowRange(img_top, img_bottom)
 
-        # non-blocking version does not work
-        # https://github.com/opencv/opencv/issues/23345
-        img_roi.copyTo(frame_roi)
+        img_roi.copyTo(self.stream, frame_roi)
 
     def __init_overlay(self):
         """Init overlay image."""
