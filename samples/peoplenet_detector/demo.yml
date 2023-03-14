@@ -51,6 +51,10 @@ pipeline:
           objects:
             - class_id: 0
               label: person
+              selector:
+                kwargs:
+                  min_width: 32
+                  min_height: 32
             - class_id: 2
               label: face
               selector:
@@ -63,7 +67,7 @@ pipeline:
         tracker-width: 640
         tracker-height: 384
         ll-lib-file: /opt/nvidia/deepstream/deepstream/lib/libnvds_nvmultiobjecttracker.so
-        ll-config-file: ${oc.env:APP_PATH}/samples/peoplenet_detector/config_tracker_NvDCF_perf.yml
+        ll-config-file: ${oc.env:APP_PATH}/samples/peoplenet_detector/config_tracker_NvSORT.yml
         #enable_past_frame: 1
         enable_batch_process: 1
         #display-tracking-id: 0
