@@ -219,8 +219,8 @@ class ArtistGPUMat(AbstractContextManager):
 
         self.gaussian_filter.apply(roi_mat, roi_mat, stream=self.stream)
 
-    def add_overlay(self, img: cv2.cuda.GpuMat, origin: Tuple[int, int]):
-        """Adds an image to the frame overlay, e.g. a logo.
+    def add_graphic(self, img: cv2.cuda.GpuMat, origin: Tuple[int, int]):
+        """Overlays an image onto the frame, e.g. a logo.
 
         :param img: RGBA image in GPU memory
         :param origin: Coordinates of left top corner of img in frame space. (left, top)
