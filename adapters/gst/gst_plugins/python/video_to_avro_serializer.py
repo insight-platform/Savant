@@ -1,14 +1,16 @@
 import json
-from copy import deepcopy
 from fractions import Fraction
 from pathlib import Path
-from typing import Any, NamedTuple, Optional
+from typing import Any, Dict, NamedTuple, Optional, Union
 
 from savant.api import serialize, ENCODING_REGISTRY
+from savant.api.enums import ExternalFrameType
 from savant.gstreamer import GObject, Gst, GstBase
 from savant.gstreamer.codecs import CODEC_BY_CAPS_NAME, Codec
 from savant.gstreamer.metadata import DEFAULT_FRAMERATE
 from savant.gstreamer.utils import LoggerMixin
+
+EMBEDDED_FRAME_TYPE = 'embedded'
 
 
 class FrameParams(NamedTuple):
@@ -92,6 +94,14 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
             False,
             GObject.ParamFlags.READWRITE,
         ),
+        'frame-type': (
+            str,
+            'Frame type.',
+            'Frame type (allowed: '
+            f'{", ".join([EMBEDDED_FRAME_TYPE] + [enum_member.value for enum_member in ExternalFrameType])})',
+            None,
+            GObject.ParamFlags.READWRITE,
+        ),
     }
 
     def __init__(self):
@@ -108,6 +118,7 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
         self.location: Optional[Path] = None
         self.last_location: Optional[Path] = None
         self.default_framerate: str = DEFAULT_FRAMERATE
+        self.frame_type: Optional[ExternalFrameType] = ExternalFrameType.ZEROMQ
 
         self.stream_in_progress = False
         self.read_metadata: bool = False
@@ -157,6 +168,10 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
             return self.eos_on_frame_params_change
         if prop.name == 'read-metadata':
             return self.read_metadata
+        if prop.name == 'frame-type':
+            if self.frame_type is None:
+                return EMBEDDED_FRAME_TYPE
+            return self.frame_type.value
         raise AttributeError(f'Unknown property {prop.name}.')
 
     def do_set_property(self, prop: GObject.GParamSpec, value: Any):
@@ -181,6 +196,11 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
             self.eos_on_frame_params_change = value
         elif prop.name == 'read-metadata':
             self.read_metadata = value
+        elif prop.name == 'frame-type':
+            if value == EMBEDDED_FRAME_TYPE:
+                self.frame_type = None
+            else:
+                self.frame_type = ExternalFrameType(value)
         else:
             raise AttributeError(f'Unknown property {prop.name}.')
 
@@ -194,7 +214,6 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
         self.logger.debug(
             'Processing frame %s of size %s', in_buf.pts, in_buf.get_size()
         )
-        frame = in_buf.extract_dup(0, in_buf.get_size())
         if self.stream_in_progress:
             if (
                 self.eos_on_location_change
@@ -209,16 +228,30 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
         self.last_location = self.location
         self.last_frame_params = self.frame_params
 
+        frame_mapinfo: Optional[Gst.MapInfo] = None
+        if self.frame_type is None:
+            result, frame_mapinfo = in_buf.map(Gst.MapFlags.READ)
+            assert result, 'Cannot read buffer.'
+            frame = frame_mapinfo.data
+        elif self.frame_type == ExternalFrameType.ZEROMQ:
+            frame = {'type': self.frame_type.value}
+        else:
+            self.logger.error('Unsupported frame type "%s".', self.frame_type.value)
+            return Gst.FlowReturn.ERROR
         message = self.build_message(
             in_buf.pts,
             in_buf.dts if in_buf.dts != Gst.CLOCK_TIME_NONE else None,
             in_buf.duration if in_buf.duration != Gst.CLOCK_TIME_NONE else None,
-            frame,
+            frame=frame,
             keyframe=not in_buf.has_flags(Gst.BufferFlags.DELTA_UNIT),
         )
-        data = serialize(self.schema, message)
+        frame_meta = serialize(self.schema, message)
 
-        out_buf = Gst.Buffer.new_wrapped(data)
+        out_buf: Gst.Buffer = Gst.Buffer.new_wrapped(frame_meta)
+        if frame_mapinfo is not None:
+            in_buf.unmap(frame_mapinfo)
+        else:
+            out_buf.append_memory(in_buf.get_memory_range(0, -1))
         out_buf.pts = in_buf.pts
         out_buf.dts = in_buf.dts
         out_buf.duration = in_buf.duration
@@ -276,7 +309,7 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
         pts: int,
         dts: Optional[int],
         duration: Optional[int],
-        frame: Optional[bytes],
+        frame: Optional[Union[bytes, Dict[str, Any]]],
         **kwargs,
     ):
         if pts == Gst.CLOCK_TIME_NONE:

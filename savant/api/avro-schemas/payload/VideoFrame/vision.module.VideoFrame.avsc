@@ -65,9 +65,10 @@
             "name": "frame",
             "type": [
                 "null",
-                "bytes"
+                "bytes",
+                "vision.module.ExternalFrame"
             ],
-            "doc": "Representation of the encoded frame in bytes.",
+            "doc": "Representation of the encoded frame in bytes. Can be embedded (bytes), external or absent.",
             "default": null
         },
         {

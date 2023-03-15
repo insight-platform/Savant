@@ -1,0 +1,27 @@
+{
+    "name": "ExternalFrame",
+    "namespace": "vision.module",
+    "type": "record",
+    "fields": [
+        {
+            "name": "type",
+            "type": {
+                "type": "enum",
+                "name": "ExternalFrameType",
+                "symbols": [
+                    "zeromq"
+                ]
+            },
+            "doc": "External frame type, e.g. 'zeromq'."
+        },
+        {
+            "name": "location",
+            "type": [
+                "null",
+                "string"
+            ],
+            "doc": "Frame location.",
+            "default": null
+        }
+    ]
+}

@@ -1,7 +1,7 @@
 """ZeroMQ utilities."""
 import logging
 from enum import Enum
-from typing import Optional, Type, Union
+from typing import List, Optional, Type, Union
 
 import zmq
 from cachetools import LRUCache
@@ -130,23 +130,23 @@ class ZeroMQSource:
         else:
             self._response = None
 
-    def next_message(self) -> Optional[bytes]:
+    def next_message(self) -> Optional[List[bytes]]:
         """Try to receive next message."""
         try:
             message = self.receiver.recv_multipart()
         except zmq.Again:
             logger.debug('Timeout exceeded when receiving the next frame')
             return
-        if not len(message) == self.message_len:
+        if len(message) < self.message_len:
             raise RuntimeError(
-                f'Invalid number of ZeroMQ message parts: got {len(message)} expected {self.message_len}.'
+                f'Invalid number of ZeroMQ message parts: got {len(message)} expected at least {self.message_len}.'
             )
         if self._response is not None:
             self.receiver.send(self._response)
         if self.socket_type == ReceiverSocketTypes.ROUTER:
-            routing_id, topic, data = message
+            routing_id, topic, *data = message
         else:
-            topic, data = message
+            topic, *data = message
             routing_id = None
 
         if self.topic_prefix and not topic.startswith(self.topic_prefix):
