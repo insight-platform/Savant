@@ -117,6 +117,14 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
         """Do on plugin stop."""
         return self.pyfunc.on_stop()
 
+    def do_sink_event(self, event: Gst.Event) -> bool:
+        """Do on sink event."""
+        return self.pyfunc.on_sink_event(event)
+
+    def do_src_event(self, event: Gst.Event) -> bool:
+        """Do on src event."""
+        return self.pyfunc.on_src_event(event)
+
     def do_transform_ip(self, buffer: Gst.Buffer):
         """Transform buffer in-place function."""
         try:

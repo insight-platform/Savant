@@ -26,7 +26,7 @@ class SourceInfo:
 
 
 class SourceInfoRegistry(metaclass=SingletonMeta):
-    """Source info regsitry, provides access to
+    """Source info registry, provides access to
     ``{source_id : SourceInfo}`` map and ``{pad_index : source_id}`` map.
     """
 

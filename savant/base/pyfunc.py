@@ -43,6 +43,14 @@ class BasePyFuncPlugin(BasePyFuncImpl):
         """Do on plugin stop."""
         return True
 
+    def on_sink_event(self, event: Gst.Event) -> bool:
+        """Do on sink event."""
+        return True
+
+    def on_src_event(self, event: Gst.Event) -> bool:
+        """Do on src event."""
+        return True
+
     @abstractmethod
     def process_buffer(self, buffer: Gst.Buffer):
         """Process gstreamer buffer. Throws an exception if fatal error has
