@@ -43,13 +43,11 @@ class BasePyFuncPlugin(BasePyFuncImpl):
         """Do on plugin stop."""
         return True
 
-    def on_sink_event(self, event: Gst.Event) -> bool:
+    def on_sink_event(self, event: Gst.Event):
         """Do on sink event."""
-        return True
 
-    def on_src_event(self, event: Gst.Event) -> bool:
+    def on_src_event(self, event: Gst.Event):
         """Do on src event."""
-        return True
 
     @abstractmethod
     def process_buffer(self, buffer: Gst.Buffer):

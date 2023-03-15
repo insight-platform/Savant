@@ -119,11 +119,13 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
 
     def do_sink_event(self, event: Gst.Event) -> bool:
         """Do on sink event."""
-        return self.pyfunc.on_sink_event(event)
+        self.pyfunc.on_sink_event(event)
+        return GstBase.BaseTransform.do_sink_event(self, event)
 
     def do_src_event(self, event: Gst.Event) -> bool:
         """Do on src event."""
-        return self.pyfunc.on_src_event(event)
+        self.pyfunc.on_src_event(event)
+        return GstBase.BaseTransform.do_src_event(self, event)
 
     def do_transform_ip(self, buffer: Gst.Buffer):
         """Transform buffer in-place function."""

@@ -22,19 +22,16 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
         super().__init__(**kwargs)
         self._sources = SourceInfoRegistry()
 
-    def on_sink_event(self, event: Gst.Event) -> bool:
+    def on_sink_event(self, event: Gst.Event):
         """Add stream event callbacks."""
         if event.type == GST_NVEVENT_STREAM_EOS:
             pad_idx = gst_nvevent_parse_stream_eos(event)
             source_id = self._sources.get_id_by_pad_index(pad_idx)
-            return self.on_source_eos(source_id)
+            self.on_source_eos(source_id)
 
-        return True
-
-    def on_source_eos(self, source_id: str) -> bool:
+    def on_source_eos(self, source_id: str):
         """On source EOS event callback."""
         # self.logger.debug('Got GST_NVEVENT_STREAM_EOS for source %s.', source_id)
-        return True
 
     def process_buffer(self, buffer: Gst.Buffer):
         """Process gstreamer buffer directly. Throws an exception if fatal
