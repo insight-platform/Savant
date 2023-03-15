@@ -182,17 +182,28 @@ class ZeroMQSource:
 
 
 class RoutingIdFilter:
+    """Cache for routing IDs to filter out old connections.
+
+    Some ZeroMQ sockets have buffer on the receiver side (PUSH/PULL, DEALER/ROUTER).
+    ZeroMQ processes messages in round-robin manner. When a sender reconnects
+    with the same source ID ZeroMQ mixes up messages from old and new connections.
+    This causes decoder to fail and the module freezes. To avoid this we are
+    caching all routing IDs and ignoring messages from the old ones.
+    """
+
     def __init__(self, cache_size: int):
         self.routing_ids = {}
         self.routing_ids_cache = LRUCache(cache_size)
 
     def filter(self, routing_id: Optional[bytes], topic: bytes):
+        """Decide whether we need to accept of ignore the message from that routing ID."""
+
         if not routing_id:
             return True
 
         if topic not in self.routing_ids:
             self.routing_ids[topic] = routing_id
-            self.routing_ids_cache[(topic, routing_id)] = None
+            self.routing_ids_cache[routing_id] = None
 
         elif self.routing_ids[topic] != routing_id:
             if routing_id in self.routing_ids_cache:
