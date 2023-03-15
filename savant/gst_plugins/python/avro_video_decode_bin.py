@@ -338,29 +338,17 @@ class AvroVideoDecodeBin(LoggerMixin, Gst.Bin):
         in_queue: Gst.Element = decoder.get_by_name(queue_name)
         decodebin: Gst.Element = decoder.get_by_name(decodebin_name)
 
-        # nvjpegdec decoder is selected in decodebin according to the rank, but
-        # there are problems with the plugin:
-        # 1) https://forums.developer.nvidia.com/t/nvvideoconvert-memory-compatibility-error/226138;
-        # 2) jpeg to png conversion gives incorrect alpha channel;
-        # 3) memory type mismatch, even though we use the same
-        #  nvbuf-memory-type for nvvideoconvert and nvstreammux downstream
-        # Set the rank to NONE for the plugin to not use it.
-        if branch.codec == Codec.JPEG:
-            factory = Gst.ElementFactory.find('nvjpegdec')
-            factory.set_rank(Gst.Rank.NONE)
+        # https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_FAQ.html#on-jetson-platform-i-get-same-output-when-multiple-jpeg-images-are-fed-to-nvv4l2decoder-using-multifilesrc-plugin-why-is-that
+        if branch.codec == Codec.JPEG and is_aarch64():
+            def on_add_element(
+                bin: Gst.Bin,
+                elem: Gst.Element,
+            ):
+                if elem.get_factory().get_name() == 'nvv4l2decoder':
+                    self.logger.debug('Added mjpeg=true for nvv4l2decoder element')
+                    elem.set_property('mjpeg', 1)
 
-            # https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_FAQ.html#on-jetson-platform-i-get-same-output-when-multiple-jpeg-images-are-fed-to-nvv4l2decoder-using-multifilesrc-plugin-why-is-that
-            if is_aarch64():
-
-                def on_add_element(
-                    bin: Gst.Bin,
-                    elem: Gst.Element,
-                ):
-                    if elem.get_factory().get_name() == 'nvv4l2decoder':
-                        self.logger.debug('Added mjpeg=true for nvv4l2decoder element')
-                        elem.set_property('mjpeg', 1)
-
-                decodebin.connect('element-added', on_add_element)
+            decodebin.connect('element-added', on_add_element)
 
         self.logger.debug('Configuring decodebin for source %s', branch.source_id)
         # TODO: configure low-latency decoding
