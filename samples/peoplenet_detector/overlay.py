@@ -1,9 +1,9 @@
+from collections import defaultdict
 import numpy as np
 import cv2
 
 from savant.deepstream.drawfunc import NvDsDrawFunc
 from savant.deepstream.meta.frame import NvDsFrameMeta, BBox
-from savant.utils.artist import Artist
 from savant.utils.artist import Position, Artist
 from samples.peoplenet_detector.animation import Animation
 from samples.peoplenet_detector.utils import load_sprite, get_font_scale
@@ -35,8 +35,7 @@ class Overlay(NvDsDrawFunc):
             self.letter_height, self.font_thickness, self.font_face
         )
 
-        self.persons_with_face_counter = SmoothedCounter(self.counters_smoothing_period)
-        self.persons_no_face_counter = SmoothedCounter(self.counters_smoothing_period)
+        self.person_counters = defaultdict(lambda:SmoothedCounter(self.counters_smoothing_period))
 
         self.logo = load_sprite(
             '/opt/app/samples/peoplenet_detector/sprites/logo_insight.png',
@@ -121,11 +120,12 @@ class Overlay(NvDsDrawFunc):
             )
 
         pts = frame_meta.pts
+        src_id = frame_meta.source_id
 
-        n_persons_with_face = self.persons_with_face_counter.get_value(
+        n_persons_with_face = self.person_counters[(src_id, 'face')].get_value(
             pts, len(person_with_face_idxs)
         )
-        n_persons_no_face = self.persons_no_face_counter.get_value(
+        n_persons_no_face = self.person_counters[(src_id, 'noface')].get_value(
             pts, len(person_bboxes) - len(person_with_face_idxs)
         )
 
