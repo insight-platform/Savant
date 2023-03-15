@@ -30,7 +30,7 @@ def get_models_mount(
 )
 @click.option(
     '--in-type',
-    default='REP',
+    default='ROUTER',
     help='Input ZeroMQ socket type',
     show_default=True,
 )

@@ -39,7 +39,7 @@ def common_options(func):
     )(func)
     func = click.option(
         '--out-type',
-        default='REQ',
+        default='DEALER',
         help='Adapter output (module input) ZeroMQ socket type.',
         show_default=True,
     )(func)

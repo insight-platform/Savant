@@ -77,7 +77,7 @@ pipeline:
     element: zeromq_source_bin
     properties:
       socket: ${oc.env:ZMQ_SRC_ENDPOINT}
-      socket_type: ${oc.env:ZMQ_SRC_TYPE, REP}
+      socket_type: ${oc.env:ZMQ_SRC_TYPE, ROUTER}
       bind: ${oc.decode:${oc.env:ZMQ_SRC_BIND, True}}
       # Filter inbound frames by source ID.
       source_id: ${oc.decode:${oc.env:SOURCE_ID, null}}
