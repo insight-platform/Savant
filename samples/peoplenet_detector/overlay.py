@@ -1,5 +1,3 @@
-from collections import defaultdict
-import numpy as np
 import cv2
 
 from savant.deepstream.drawfunc import NvDsDrawFunc
@@ -7,8 +5,6 @@ from savant.deepstream.meta.frame import NvDsFrameMeta, BBox
 from savant.utils.artist import Position, Artist
 from samples.peoplenet_detector.animation import Animation
 from samples.peoplenet_detector.utils import load_sprite, get_font_scale
-from samples.peoplenet_detector.person_face_matching import match_person_faces
-from samples.peoplenet_detector.smoothed_counter import SmoothedCounter
 
 
 class Overlay(NvDsDrawFunc):
@@ -27,15 +23,12 @@ class Overlay(NvDsDrawFunc):
         self.logo_height = 120
         self.sprite_heigth = 120
         self.letter_height = 85
-        self.counters_smoothing_period = 0.25
 
         self.font_thickness = 5
         self.font_face = cv2.FONT_HERSHEY_SIMPLEX
         self.font_scale = get_font_scale(
             self.letter_height, self.font_thickness, self.font_face
         )
-
-        self.person_counters = defaultdict(lambda:SmoothedCounter(self.counters_smoothing_period))
 
         self.logo = load_sprite(
             '/opt/app/samples/peoplenet_detector/sprites/logo_insight.png',
@@ -79,27 +72,20 @@ class Overlay(NvDsDrawFunc):
         """ """
         person_bboxes = []
         person_track_ids = []
-        face_bboxes = []
         for obj_meta in frame_meta.objects:
             if obj_meta.is_primary:
-                continue
+                person_w_face_idxs = obj_meta.get_attr_meta('analytics', 'person_w_face_idxs')
+                n_persons_w_face = obj_meta.get_attr_meta('analytics', 'n_persons_w_face')
+                n_persons_no_face = obj_meta.get_attr_meta('analytics', 'n_persons_no_face')
             if obj_meta.label == 'person':
                 person_bboxes.append(obj_meta.bbox)
                 person_track_ids.append(obj_meta.track_id)
+
             elif obj_meta.label == 'face':
-                face_bboxes.append(obj_meta.bbox)
                 artist.blur(obj_meta.bbox)
 
-        if len(person_bboxes) > 0 and len(face_bboxes) > 0:
-            person_with_face_idxs = match_person_faces(
-                np.array([bbox.tlbr for bbox in person_bboxes]),
-                np.array([bbox.tlbr for bbox in face_bboxes]),
-            )
-        else:
-            person_with_face_idxs = []
-
         for i, (bbox, track_id) in enumerate(zip(person_bboxes, person_track_ids)):
-            if i in person_with_face_idxs:
+            if i in person_w_face_idxs:
                 color = self.person_with_face_bbox_color
             else:
                 color = self.person_no_face_bbox_color
@@ -120,14 +106,6 @@ class Overlay(NvDsDrawFunc):
             )
 
         pts = frame_meta.pts
-        src_id = frame_meta.source_id
-
-        n_persons_with_face = self.person_counters[(src_id, 'face')].get_value(
-            pts, len(person_with_face_idxs)
-        )
-        n_persons_no_face = self.person_counters[(src_id, 'noface')].get_value(
-            pts, len(person_bboxes) - len(person_with_face_idxs)
-        )
 
         frame_w, _ = artist.frame_wh
         # manually refresh frame padding used for drawing
@@ -148,7 +126,7 @@ class Overlay(NvDsDrawFunc):
         artist.add_graphic(self.green_man.get_frame(pts), self.green_sprite_tl)
         artist.add_graphic(self.blue_man.get_frame(pts), self.blue_sprite_tl)
         artist.add_text(
-            f'{n_persons_with_face}',
+            f'{n_persons_w_face}',
             self.green_text_tl[0],
             self.green_text_tl[1],
             self.font_scale,

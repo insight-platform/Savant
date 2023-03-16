@@ -71,3 +71,7 @@ pipeline:
         #enable_past_frame: 1
         enable_batch_process: 1
         #display-tracking-id: 0
+    
+    - element: pyfunc
+      module: samples.peoplenet_detector.overlay.analytics
+      class_name: Analytics
