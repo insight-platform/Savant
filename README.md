@@ -60,16 +60,7 @@ like to utilize most of the CUDA runtime).
 
 ## Features
 
-### Dynamic Runtime Parameters Configuration
-
-Sophisticated ML pipelines can use external knowledge, which helps optimize the results based on additional knowledge
-from the environment.
-
-The framework enables dynamic configuration of the pipeline operational parameters with:
-
-- ingested frame parameters passed in per-frame metadata;
-- Etcd parameters watched and instantly applied;
-- 3rd-party parameters, which are received through user-defined functions.
+Savant is packed with several killer features which skyrocket the development of Deepstream applications.
 
 ### Dynamic Sources Management
 
@@ -112,6 +103,17 @@ simple and utilizes standard open source tools.
 
 The decoupled nature of adapters also provides better reliability because the failed data source affects the adapter
 operation, not a framework operation.
+
+### Dynamic Runtime Parameters Configuration
+
+Sophisticated ML pipelines can use external knowledge, which helps optimize the results based on additional knowledge
+from the environment.
+
+The framework enables dynamic configuration of the pipeline operational parameters with:
+
+- ingested frame parameters passed in per-frame metadata;
+- Etcd parameters watched and instantly applied;
+- 3rd-party parameters, which are received through user-defined functions.
 
 ### OpenCV CUDA Integration
 
@@ -185,13 +187,14 @@ own.
 Currently, the following source adapters are available:
 
 - Local video file;
-- URL video;
 - Local directory of video files;
-- RTSP;
 - Local image file;
-- URL Image;
-- Image directory;
-- USB cam.
+- Local directory of image files;
+- Image URL;
+- Video URL;
+- RTSP stream;
+- USB/CSI camera;
+- GigE (Genicam) industrial cam.
 
 There are basic sink adapters implemented:
 
@@ -223,3 +226,10 @@ As for now, we provide images for x86 architecture and for Jetson hardware.
 ## Contribution
 
 We welcome anyone who wishes to contribute, report, and learn.
+
+## About Us
+
+The In-Sight team is a ML/AI department of Bitworks Software. We develop custom high performance CV applications for various industries providing full-cycle process, which includes but not limited to data labeling, model evaluation, training, pruning, quantization, validation, and verification, pipelines development, CI/CD. We are mostly focused on Nvidia hardware (both datacenter and edge).
+
+Contact us: info@bw-sw.com
+

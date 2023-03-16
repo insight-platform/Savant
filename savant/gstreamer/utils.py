@@ -1,7 +1,7 @@
 """GStreamer utils."""
 import logging
 from contextlib import contextmanager
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, List
 
 from gi.repository import Gst  # noqa:F401
 from savant.gstreamer.ffi import LIBGST, GstMapInfo
@@ -123,3 +123,12 @@ def propagate_gst_setting_error(gst_element: Gst.Element, frame, file_path):
         function=frame.f_code.co_name,
         line=frame.f_code.co_firstlineno,
     )
+
+
+def gst_buffer_from_list(data: List[bytes]) -> Gst.Buffer:
+    """Wrap list of data to GStreamer buffer."""
+
+    buffer: Gst.Buffer = Gst.Buffer.new()
+    for x in data:
+        buffer = buffer.append(Gst.Buffer.new_wrapped(x))
+    return buffer

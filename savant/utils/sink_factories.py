@@ -8,6 +8,7 @@ import logging
 import zmq
 
 from savant.api import ENCODING_REGISTRY, serialize
+from savant.api.enums import ExternalFrameType
 from savant.config.schema import PipelineElement
 from savant.gstreamer.codecs import CodecInfo
 from savant.gstreamer.metadata import SourceFrameMeta
@@ -112,6 +113,7 @@ class ZeroMQSinkFactory(SinkFactory):
         self.socket = get_socket_endpoint(socket)
         self.socket_type = get_socket_type(socket_type, SenderSocketTypes)
         self.send_hwm = send_hwm
+        self.wait_response = self.socket_type == SenderSocketTypes.REQ
 
     def get_sink(self) -> SinkCallable:
         schema = ENCODING_REGISTRY['VideoFrame']
@@ -129,12 +131,17 @@ class ZeroMQSinkFactory(SinkFactory):
             **kwargs,
         ):
             zmq_topic = f'{msg.source_id}/'.encode()
+            zmq_message = [zmq_topic]
             if isinstance(msg, SinkVideoFrame):
                 logger.debug(
                     'Sending frame of source %s with PTS %s to ZeroMQ sink',
                     msg.source_id,
                     msg.frame_meta.pts,
                 )
+                if msg.frame:
+                    frame = {'type': ExternalFrameType.ZEROMQ.value}
+                else:
+                    frame = None
                 message = {
                     'source_id': msg.frame_meta.source_id,
                     'pts': msg.frame_meta.pts,
@@ -143,20 +150,27 @@ class ZeroMQSinkFactory(SinkFactory):
                     'width': msg.frame_width,
                     'height': msg.frame_height,
                     'codec': msg.frame_codec.name if msg.frame_codec else None,
-                    'frame': msg.frame,
+                    'frame': frame,
                     'metadata': msg.frame_meta.metadata,
                     'tags': msg.frame_meta.tags,
                     'keyframe': msg.keyframe,
                 }
-                message_bin = serialize(schema, message)
+                zmq_message.append(serialize(schema, message))
+                if msg.frame:
+                    zmq_message.append(msg.frame)
             elif isinstance(msg, SinkEndOfStream):
                 logger.debug('Sending EOS of source %s to ZeroMQ sink', msg.source_id)
                 message = {'source_id': msg.source_id}
-                message_bin = serialize(eos_schema, message)
+                zmq_message.append(serialize(eos_schema, message))
             else:
                 logger.warning('Unknown message type %s', type(msg))
                 return
-            output_zmq_socket.send_multipart([zmq_topic, message_bin])
+            output_zmq_socket.send_multipart(zmq_message)
+            if self.wait_response:
+                resp = output_zmq_socket.recv()
+                logger.debug(
+                    'Received %s bytes from socket %s.', len(resp), self.socket
+                )
 
         return send_message
 

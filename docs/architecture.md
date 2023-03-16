@@ -1,5 +1,7 @@
 # Architecture Overview
 
+THIS IS WIP SECTION. DON'T BELIEVE 100% TO WHAT YOU SEE HERE.
+
 Savant is built on top of DeepStream SDK - state-of-the-art Nvidia framework for streaming AI applications. DeepStream is the core framework of the Nvidia ecosystem because it unleashes the power of Nvidia accelerators in inference tasks. 
 
 No other general-purpose framework is able to reach performance comparable to DeepStream in inference tasks for video processing. There is a reason for that: popular frameworks like PyTorch, TensorFlow, OpenCV, and FFmpeg are bound to the CPU when doing the operations, while DeepStream uses the CPU only to control the flow. It's not obvious, but moving image frames between CPU and GPU takes a lot of time and decreases the performance dramatically.
@@ -62,9 +64,10 @@ In Savant, real-life sources are never directly bound to the Gstreamer graph, so
 
 ![Savant Virtual Sources](https://user-images.githubusercontent.com/15047882/168033994-0da8304f-cb02-4fd0-a9c2-5c8636367a4e.png)
 
-Muxed Virtual Stream block accepts the streaming data from the outside world via [ZeroMQ](https://zeromq.org/) socket. The framework supports two kinds of sockets:
-- Pub/Sub - when you would like to drop the excessive input data but run the inference in real-time;
-- Push/Pull - when you would like to use back-pressure to stop the source from injecting the data too fast but don't care about real-time processing.
+Muxed Virtual Stream block accepts the streaming data from the outside world via [ZeroMQ](https://zeromq.org/) socket. The framework supports three kinds of sockets:
+- Pub/Sub - when one needs to drop the excessive input data but run the inference in real-time (fits for processing of already-decoded, raw streams);
+- Dealer/Router - when one needs to utilize back-pressure to stop the source from injecting the data too fast but don't care about real-time processing;
+- Req/Rep - when one needs to ensure that every frame passed is loaded into the pipeline before the following frame from the same source can be passed.
 
 Virtual Stream Manager investigates the packets from the Muxed Virtual Stream and dynamically manages corresponding Gstreamer elements to integrate streams into the pipeline.
 
@@ -79,23 +82,26 @@ As an example of decoupling, you can imagine a pipeline that requires enriching 
 ![metadata](https://user-images.githubusercontent.com/15047882/168040020-e87f288d-8cad-4b6c-8ec7-a27dc4b649f5.png)
 
 Sink streams are also muxed and virtualized. The data is in AVRO format and is sent to a single ZeroMQ socket, which also can be:
-- Pub/Sub - when you would like to drop the excessive output data but continue running the inference in real-time;
-- Push/Pull - when you would like to use back-pressure to stop the pipeline from sending the data too fast because receiving part is too slow to keep up.
+- Pub/Sub - when one needs to drop the excessive output data but continue running the inference in real-time (fits for processing of already-decoded, raw streams);
+- Dealer/Router - when one needs to use back-pressure to stop the pipeline from sending the data too fast because receiving part is too slow to keep up;
+- Req/Rep - when one needs to ensure that the packet is delivered to the receiver before the next one is transferred.
 
 ## Source Adapters
 
 We developed several data source adapters that fit daily development and production use cases. The developers can also use them as a source base for creating custom adapters - the apparent scenario is implementing an adapter that mixes external data into frames providing additional data to the AI pipeline. 
 
 Every adapter is designed for use with a particular data source: 
-- local or remote video file; 
-- directory of video files, 
-- local or remote image file;
-- directory of images;
+- Local video file;
+- Local directory of video files;
+- Local image file;
+- Local directory of image files;
+- Image URL;
+- Video URL;
 - RTSP stream;
-- USB/CSI camera stream;
-- Image/Video Stream in Apache Kafka.
+- USB/CSI camera;
+- GigE (Genicam) industrial cam.
 
-Since the adapter is decoupled from the pipeline, its launch is not expensive. Adapter crash also doesn't affect the pipeline execution. Local and remote adapters for video files support both sync and as-fast-as-possible models of data injection. 
+Since the adapter module is decoupled from the pipeline, its launch is not expensive. Adapter crash also doesn't affect the pipeline execution. Local and remote adapters for video files support both sync and as-fast-as-possible models of data injection. 
 
 The first mode sends data in the pipeline with the FPS specified in the file - it's convenient when testing real-time execution GPU utilization or visual inspection. The second mode is used when the purpose is to process as much data as possible utilizing all available GPU resources.
 
@@ -104,14 +110,12 @@ The first mode sends data in the pipeline with the FPS specified in the file - i
 Sink adapters send inference data and(or) generated multi-media data into external storage for future use. Unfortunately, there are many such storages, and schemes of stored data may vary even within a single system. That's why it's impossible to build universal sink adapters that fit all needs. So instead, we developed several sinks which can be easily modified to create the one you need in your system:
 
 A developer would be especially interested in the following sinks:
-- JSON metadata sink saves inference results into JSON records in a file;
-- video file sink saves the resulting video or image set into a video file;
-- video play sink displays video or pictures on screen;
 
-Following sinks can be used in production as-is:
-- Elasticsearch sink writes resulting inference data into Elasticsearch index;
-- MongoDB sink writes resulting inference data into MongoDB document index;
-- Kafka sink writes resulting inference data into metadata Kafka topic and resulting video into video Kafka topic.
+- Inference results are placed into JSON file stream;
+- Resulting video overlay displayed on a screen (per source);
+- MP4 file (per source);
+- Image directory (per source);
+- Always-On RTSP Stream Sink.
 
 ## Pipeline Configurator
 

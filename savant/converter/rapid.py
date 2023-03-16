@@ -48,7 +48,7 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
             in roi scale
         """
         if not output_layers[0].shape[0]:
-            return np.empty((0, 7))
+            return np.empty((0, 7), dtype=np.float32)
 
         bboxes = nms(
             output_layers[0],
@@ -58,7 +58,7 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
         )
 
         if not bboxes.shape[0]:
-            return np.empty((0, 7))
+            return np.empty((0, 7), dtype=np.float32)
 
         roi_left, roi_top, roi_width, roi_height = roi
 
@@ -74,7 +74,7 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
 
         return np.concatenate(
             [
-                np.zeros((original_bboxes.shape[0], 1), dtype=np.intc),
+                np.zeros((original_bboxes.shape[0], 1), dtype=np.float32),
                 np.expand_dims(bboxes[:, 5], 1),
                 original_bboxes[:, :],
             ],

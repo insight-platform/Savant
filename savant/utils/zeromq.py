@@ -1,9 +1,10 @@
 """ZeroMQ utilities."""
 import logging
 from enum import Enum
-from typing import Optional, Type, Union
+from typing import List, Optional, Type, Union
 
 import zmq
+from cachetools import LRUCache
 
 logger = logging.getLogger(__name__)
 
@@ -23,17 +24,17 @@ class ZMQSocketTypeException(ZMQException):
 class ReceiverSocketTypes(Enum):
     """Receiver socket types."""
 
-    PULL = zmq.PULL
     SUB = zmq.SUB
     REP = zmq.REP
+    ROUTER = zmq.ROUTER
 
 
 class SenderSocketTypes(Enum):
     """Sender socket types."""
 
-    PUSH = zmq.PUSH
     PUB = zmq.PUB
     REQ = zmq.REQ
+    DEALER = zmq.DEALER
 
 
 class Defaults:
@@ -86,11 +87,12 @@ class ZeroMQSource:
     def __init__(
         self,
         socket: str,
-        socket_type: str = ReceiverSocketTypes.PULL.name,
+        socket_type: str = ReceiverSocketTypes.ROUTER.name,
         bind: bool = True,
         receive_timeout: int = Defaults.RECEIVE_TIMEOUT,
         receive_hwm: int = Defaults.RECEIVE_HWM,
         topic_prefix: Optional[str] = None,
+        routing_ids_cache_size: int = 1000,
     ):
         logger.debug(
             'Initializing ZMQ source: socket %s, type %s, bind %s.',
@@ -106,6 +108,7 @@ class ZeroMQSource:
         # or image_files.py / metadata_json.py Python sinks
         socket = get_socket_endpoint(socket)
         self.socket_type = get_socket_type(socket_type, ReceiverSocketTypes)
+        self.message_len = 2  # source_id, data
 
         self.receive_timeout = receive_timeout
         self.zmq_context = zmq.Context()
@@ -117,6 +120,9 @@ class ZeroMQSource:
             self.receiver.connect(socket)
         if self.socket_type == ReceiverSocketTypes.SUB:
             self.receiver.setsockopt(zmq.SUBSCRIBE, self.topic_prefix)
+        elif self.socket_type == ReceiverSocketTypes.ROUTER:
+            self.message_len += 1  # routing_id, ...
+        self.routing_id_filter = RoutingIdFilter(routing_ids_cache_size)
         self.receiver.setsockopt(zmq.RCVTIMEO, self.receive_timeout)
         self.is_alive = True
         if self.socket_type == ReceiverSocketTypes.REP:
@@ -124,27 +130,35 @@ class ZeroMQSource:
         else:
             self._response = None
 
-    def next_message(self) -> Optional[bytes]:
+    def next_message(self) -> Optional[List[bytes]]:
         """Try to receive next message."""
         try:
             message = self.receiver.recv_multipart()
         except zmq.Again:
             logger.debug('Timeout exceeded when receiving the next frame')
             return
-        if not len(message) == 2:
+        if len(message) < self.message_len:
             raise RuntimeError(
-                f'Invalid number of ZeroMQ message parts: got {len(message)} expected 2.'
+                f'Invalid number of ZeroMQ message parts: got {len(message)} expected at least {self.message_len}.'
             )
         if self._response is not None:
             self.receiver.send(self._response)
-        if self.topic_prefix and not message[0].startswith(self.topic_prefix):
+        if self.socket_type == ReceiverSocketTypes.ROUTER:
+            routing_id, topic, *data = message
+        else:
+            topic, *data = message
+            routing_id = None
+
+        if self.topic_prefix and not topic.startswith(self.topic_prefix):
             logger.debug(
                 'Skipping message from topic %s, expected prefix %s',
-                message[0],
+                topic,
                 self.topic_prefix,
             )
             return
-        return message[1]
+
+        if self.routing_id_filter.filter(routing_id, topic):
+            return data
 
     def __iter__(self):
         return self
@@ -165,6 +179,53 @@ class ZeroMQSource:
         logger.info('Terminating ZeroMQ context.')
         self.zmq_context.term()
         logger.info('ZeroMQ context terminated')
+
+
+class RoutingIdFilter:
+    """Cache for routing IDs to filter out old connections.
+
+    Some ZeroMQ sockets have buffer on the receiver side (PUSH/PULL, DEALER/ROUTER).
+    ZeroMQ processes messages in round-robin manner. When a sender reconnects
+    with the same source ID ZeroMQ mixes up messages from old and new connections.
+    This causes decoder to fail and the module freezes. To avoid this we are
+    caching all routing IDs and ignoring messages from the old ones.
+    """
+
+    def __init__(self, cache_size: int):
+        self.routing_ids = {}
+        self.routing_ids_cache = LRUCache(cache_size)
+
+    def filter(self, routing_id: Optional[bytes], topic: bytes):
+        """Decide whether we need to accept of ignore the message from that routing ID."""
+
+        if not routing_id:
+            return True
+
+        if topic not in self.routing_ids:
+            self.routing_ids[topic] = routing_id
+            self.routing_ids_cache[routing_id] = None
+
+        elif self.routing_ids[topic] != routing_id:
+            if routing_id in self.routing_ids_cache:
+                logger.debug(
+                    'Skipping message from topic %s: routing ID %s, expected %s.',
+                    topic,
+                    routing_id,
+                    self.routing_ids[topic],
+                )
+                return False
+
+            else:
+                logger.debug(
+                    'Routing ID for topic %s changed from %s to %s.',
+                    topic,
+                    self.routing_ids[topic],
+                    routing_id,
+                )
+                self.routing_ids[topic] = routing_id
+                self.routing_ids_cache[routing_id] = None
+
+        return True
 
 
 def build_topic_prefix(

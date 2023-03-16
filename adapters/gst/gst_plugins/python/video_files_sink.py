@@ -1,9 +1,10 @@
 import os
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 from adapters.python.sinks.chunk_writer import ChunkWriter, CompositeChunkWriter
 from adapters.python.sinks.metadata_json import MetadataJsonWriter, Patterns
 from savant.api import deserialize
+from savant.api.enums import ExternalFrameType
 from savant.gst_plugins.python.avro_video_demux import build_caps, FrameParams
 from savant.gstreamer import GLib, GObject, Gst, GstApp
 from savant.gstreamer.codecs import Codec, CODEC_BY_NAME
@@ -28,8 +29,12 @@ class VideoFilesWriter(ChunkWriter):
         self.caps = build_caps(frame_params)
         super().__init__(chunk_size)
 
-    def _write(self, message: Dict, frame_num: Optional[int]) -> bool:
-        frame = message.pop('frame', None)
+    def _write(
+        self,
+        message: Dict,
+        data: Union[bytes, Gst.Memory],
+        frame_num: Optional[int],
+    ) -> bool:
         if 'pts' not in message:
             return True
         frame_pts = message['pts']
@@ -38,8 +43,12 @@ class VideoFilesWriter(ChunkWriter):
         if frame_num is None:
             # frame_num should not be None, but we don't use it here anyway
             self.logger.warning('Frame_num is None for frame with PTS %s.', frame_pts)
-        if frame:
-            frame_buf: Gst.Buffer = Gst.Buffer.new_wrapped(frame)
+        if data:
+            if isinstance(data, bytes):
+                frame_buf: Gst.Buffer = Gst.Buffer.new_wrapped(data)
+            else:
+                frame_buf: Gst.Buffer = Gst.Buffer.new()
+                frame_buf.append_memory(data)
             frame_buf.pts = frame_pts
             frame_buf.dts = Gst.CLOCK_TIME_NONE if frame_dts is None else frame_dts
             frame_buf.duration = (
@@ -230,20 +239,26 @@ class VideoFilesSink(LoggerMixin, Gst.Bin):
             buffer.get_size(),
             buffer.pts,
         )
-        message_bin = buffer.extract_dup(0, buffer.get_size())
+        frame_meta_mapinfo: Gst.MapInfo
+        result, frame_meta_mapinfo = buffer.map_range(0, 1, Gst.MapFlags.READ)
+        assert result, 'Cannot read buffer.'
 
         # TODO: Pipeline message types might be extended beyond only VideoFrame
         # Additional checks for audio/raw_tensors/etc. may be required
-        schema_name, message = deserialize(message_bin)
+        schema_name, message = deserialize(frame_meta_mapinfo.data)
         message_with_schema = {**message, 'schema': schema_name}
         if schema_name == 'VideoFrame':
-            return self.handle_video_frame(message_with_schema)
-        if schema_name == 'EndOfStream':
-            return self.handle_eos(message_with_schema)
-        self.logger.error('Unknown schema "%s"', schema_name)
-        return Gst.FlowReturn.ERROR
+            result = self.handle_video_frame(message_with_schema, buffer)
+        elif schema_name == 'EndOfStream':
+            result = self.handle_eos(message_with_schema)
+        else:
+            self.logger.error('Unknown schema "%s"', schema_name)
+            result = Gst.FlowReturn.ERROR
 
-    def handle_video_frame(self, message: Dict) -> Gst.FlowReturn:
+        buffer.unmap(frame_meta_mapinfo)
+        return result
+
+    def handle_video_frame(self, message: Dict, buffer: Gst.Buffer) -> Gst.FlowReturn:
         source_id = message['source_id']
         frame_params = FrameParams(
             codec=CODEC_BY_NAME[message['codec']],
@@ -254,12 +269,31 @@ class VideoFilesSink(LoggerMixin, Gst.Bin):
         assert frame_params.codec in [Codec.H264, Codec.HEVC, Codec.JPEG, Codec.PNG]
         frame_pts = message['pts']
         frame = message['frame']
-        self.logger.debug(
-            'Received frame %s from source %s, size: %s bytes',
-            frame_pts,
-            source_id,
-            len(frame) if frame else 0,
-        )
+        if isinstance(frame, bytes):
+            self.logger.debug(
+                'Received frame %s from source %s, size: %s bytes',
+                frame_pts,
+                source_id,
+                len(frame) if frame else 0,
+            )
+        else:
+            frame_type = ExternalFrameType(frame['type'])
+            if frame_type != ExternalFrameType.ZEROMQ:
+                self.logger.error('Unsupported frame type "%s".', frame_type.value)
+                return Gst.FlowReturn.ERROR
+            if buffer.n_memory() < 2:
+                self.logger.error(
+                    'Buffer has %s regions of memory, expected at least 2.',
+                    buffer.n_memory(),
+                )
+                return Gst.FlowReturn.ERROR
+            frame = buffer.get_memory_range(1, -1)
+            self.logger.debug(
+                'Received frame %s from source %s, size: %s bytes',
+                frame_pts,
+                source_id,
+                frame.size,
+            )
 
         writer = self.writers.get(source_id)
         if writer is None:
@@ -283,7 +317,7 @@ class VideoFilesSink(LoggerMixin, Gst.Bin):
             self.writers[source_id] = writer
             self.add(video_writer.bin)
             video_writer.bin.sync_state_with_parent()
-        if writer.write(message, message['keyframe']):
+        if writer.write(message, frame, message['keyframe']):
             return Gst.FlowReturn.OK
         return Gst.FlowReturn.ERROR
 
@@ -292,7 +326,7 @@ class VideoFilesSink(LoggerMixin, Gst.Bin):
         self.logger.info('Received EOS from source %s.', source_id)
         writer = self.writers.get(source_id)
         if writer is not None:
-            writer.write(message, can_start_new_chunk=False, is_frame=False)
+            writer.write(message, None, can_start_new_chunk=False, is_frame=False)
             writer.close()
         return Gst.FlowReturn.OK
 

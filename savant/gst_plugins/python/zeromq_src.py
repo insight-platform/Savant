@@ -9,7 +9,11 @@ from savant.gst_plugins.python.zeromq_properties import (
     ZEROMQ_PROPERTIES,
 )
 from savant.gstreamer import GObject, Gst, GstBase
-from savant.gstreamer.utils import LoggerMixin, propagate_gst_setting_error
+from savant.gstreamer.utils import (
+    gst_buffer_from_list,
+    LoggerMixin,
+    propagate_gst_setting_error,
+)
 from savant.utils.zeromq import (
     Defaults,
     ReceiverSocketTypes,
@@ -71,7 +75,7 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
     def __init__(self):
         GstBase.BaseSrc.__init__(self)
         self.socket: str = None
-        self.socket_type: ReceiverSocketTypes = ReceiverSocketTypes.REP
+        self.socket_type: ReceiverSocketTypes = ReceiverSocketTypes.ROUTER
         self.bind: bool = True
         self.zmq_context: zmq.Context = None
         self.context = None
@@ -164,8 +168,8 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
                 self.logger.info('Returning %s', flow_return)
                 return flow_return, None
             message = self.source.next_message()
-        self.logger.debug('Received message of size %s', len(message))
-        buffer: Gst.Buffer = Gst.Buffer.new_wrapped(message)
+        self.logger.debug('Received message of sizes %s', [len(x) for x in message])
+        buffer = gst_buffer_from_list(message)
 
         return Gst.FlowReturn.OK, buffer
 
