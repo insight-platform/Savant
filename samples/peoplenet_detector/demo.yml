@@ -73,5 +73,5 @@ pipeline:
         #display-tracking-id: 0
     
     - element: pyfunc
-      module: samples.peoplenet_detector.overlay.analytics
+      module: samples.peoplenet_detector.analytics
       class_name: Analytics
