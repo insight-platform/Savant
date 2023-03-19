@@ -218,6 +218,8 @@ class ArtistGPUMat(AbstractContextManager):
         radius = int(sigma * 4 + 0.5)
         if radius % 2 == 0:
             radius += 1
+        radius = max(radius, 1)
+        radius = min(radius, 31)
         
         gaussian_filter = cv2.cuda.createGaussianFilter(
             cv2.CV_8UC4, cv2.CV_8UC4, (radius, radius), sigma
