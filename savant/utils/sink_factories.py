@@ -208,7 +208,9 @@ class ConsoleSinkFactory(SinkFactory):
                                 attr['confidence'] = round(
                                     attr['confidence'], ndigits=5
                                 )
-                print(json.dumps(asdict(msg.frame_meta), indent=4))
+                frame_meta_out = asdict(msg.frame_meta)
+                frame_meta_out['tags'] = dict(frame_meta_out['tags'])
+                print(json.dumps(frame_meta_out, indent=4))
 
         else:
 
