@@ -69,7 +69,7 @@ def run_module(
     out_bind: bool,
     docker_image: Optional[str],
 ):
-    """Run sample MODULE_NAME."""
+    """Run sample module."""
     repo_root_dir = pathlib.Path(__file__).parent.parent
 
     gst_debug = os.environ.get('GST_DEBUG', '2')
