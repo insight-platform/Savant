@@ -10,24 +10,9 @@ from samples.peoplenet_detector.utils import load_sprite, get_font_scale
 class Overlay(NvDsDrawFunc):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        # Colors are BGR
-        self.face_bbox_border_color = (1, 0.5, 0.5)
-        self.person_with_face_bbox_color = (0, 1, 0)
-        self.person_no_face_bbox_color = (1, 0, 0)
-
-        self.person_label_bg_color = (1, 0.9, 0.85)
-        self.person_label_font_color = (0, 0, 0)
-
-        self.bbox_border_width = 3
-        self.overlay_height = 180
-        self.logo_height = 120
-        self.sprite_heigth = 120
-        self.letter_height = 85
-
-        self.font_thickness = 5
         self.font_face = cv2.FONT_HERSHEY_SIMPLEX
         self.font_scale = get_font_scale(
-            self.letter_height, self.font_thickness, self.font_face
+            self.counters_height, self.counters_font_thickness, self.font_face
         )
 
         self.logo = load_sprite(
@@ -48,7 +33,7 @@ class Overlay(NvDsDrawFunc):
         narrow_sep_w = 15
         sep_w = 60
         text_w = cv2.getTextSize(
-            '99', self.font_face, self.font_scale, self.font_thickness
+            '99', self.font_face, self.font_scale, self.counters_font_thickness
         )[0][0]
         logo_w = self.logo.size()[0]
         sprite_w = self.green_man.width
@@ -60,13 +45,13 @@ class Overlay(NvDsDrawFunc):
         self.green_sprite_tl = cum_left, (self.overlay_height - self.sprite_heigth) // 2
 
         cum_left += sprite_w + narrow_sep_w
-        self.green_text_tl = cum_left, (self.overlay_height - self.letter_height) // 2
+        self.green_text_tl = cum_left, (self.overlay_height - self.counters_height) // 2
 
         cum_left += text_w + sep_w
         self.blue_sprite_tl = cum_left, (self.overlay_height - self.sprite_heigth) // 2
 
         cum_left += sprite_w + narrow_sep_w
-        self.blue_text_tl = cum_left, (self.overlay_height - self.letter_height) // 2
+        self.blue_text_tl = cum_left, (self.overlay_height - self.counters_height) // 2
 
     def draw_on_frame(self, frame_meta: NvDsFrameMeta, artist: Artist):
         """ """
@@ -136,7 +121,7 @@ class Overlay(NvDsDrawFunc):
             self.green_text_tl[0],
             self.green_text_tl[1],
             self.font_scale,
-            self.font_thickness,
+            self.counters_font_thickness,
             (1, 1, 1),
             padding=0,
             anchor_point=Position.LEFT_TOP,
@@ -146,7 +131,7 @@ class Overlay(NvDsDrawFunc):
             self.blue_text_tl[0],
             self.blue_text_tl[1],
             self.font_scale,
-            self.font_thickness,
+            self.counters_font_thickness,
             (1, 1, 1),
             padding=0,
             anchor_point=Position.LEFT_TOP,

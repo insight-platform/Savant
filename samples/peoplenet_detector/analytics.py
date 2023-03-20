@@ -10,7 +10,6 @@ from samples.peoplenet_detector.person_face_matching import match_person_faces
 class Analytics(NvDsPyFuncPlugin):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.counters_smoothing_period = 0.25
         self.person_counters = defaultdict(lambda:SmoothedCounter(self.counters_smoothing_period))
 
     def on_source_eos(self, source_id: str):

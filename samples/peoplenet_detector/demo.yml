@@ -15,7 +15,18 @@ parameters:
   draw_func:
     module: samples.peoplenet_detector.overlay
     class_name: Overlay
-
+    kwargs:
+      face_bbox_border_color: [1, 0.5, 0.5]
+      person_with_face_bbox_color: [0, 1, 0]
+      person_no_face_bbox_color: [1, 0, 0]
+      person_label_bg_color: [1, 0.9, 0.85]
+      person_label_font_color: [0, 0, 0]
+      bbox_border_width: 3
+      overlay_height: 180
+      logo_height: 120
+      sprite_heigth: 120
+      counters_height: 85
+      counters_font_thickness: 5
 
 pipeline:
   elements:
@@ -31,16 +42,9 @@ pipeline:
           # or get the model directly from NGC API
           # peoplenet v2.0
           # url: "https://api.ngc.nvidia.com/v2/models/nvidia/tao/peoplenet/versions/pruned_v2.0/zip"
-          # peoplenet v2.6
-          # url: "https://api.ngc.nvidia.com/v2/models/nvidia/tao/peoplenet/versions/deployable_quantized_v2.6/zip"
 
         model_file: resnet34_peoplenet_pruned.etlt  # v2.0 Accuracy: 84.3 Size 20.9 MB
-        # model_file: resnet34_peoplenet_int8.etlt  # v2.6 Accuracy: 86.0 Size: 85.03 MB
 
-        # default fp16
-        # precision: int8
-        # int8_calib_file: resnet34_peoplenet_int8.txt
-        # interval: 1
         input:
           layer_name: input_1
           shape: [3, 544, 960]
@@ -61,17 +65,16 @@ pipeline:
                 kwargs:
                   confidence_threshold: 0.1
 
-    # tracker
     - element: nvtracker
       properties:
         tracker-width: 640
         tracker-height: 384
         ll-lib-file: /opt/nvidia/deepstream/deepstream/lib/libnvds_nvmultiobjecttracker.so
         ll-config-file: ${oc.env:APP_PATH}/samples/peoplenet_detector/config_tracker_NvSORT.yml
-        #enable_past_frame: 1
         enable_batch_process: 1
-        #display-tracking-id: 0
     
     - element: pyfunc
       module: samples.peoplenet_detector.analytics
       class_name: Analytics
+      kwargs:
+        counters_smoothing_period: 0.25
