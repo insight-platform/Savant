@@ -120,6 +120,7 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
     def do_sink_event(self, event: Gst.Event) -> bool:
         """Do on sink event."""
         self.pyfunc.on_sink_event(event)
+        # return self.srcpad.push_event(event)
         return GstBase.BaseTransform.do_sink_event(self, event)
 
     def do_src_event(self, event: Gst.Event) -> bool:

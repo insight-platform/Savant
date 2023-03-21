@@ -194,7 +194,7 @@ class ModuleConfig(metaclass=SingletonMeta):
 
         # if source for module is specified,
         # it should be used instead of default source (not merged)
-        if 'source' in module_cfg.pipeline:
+        if 'pipeline' in module_cfg and 'source' in module_cfg.pipeline:
             del self._default_cfg.pipeline.source
 
         logger.debug('Default conf\n%s', self._default_cfg)
