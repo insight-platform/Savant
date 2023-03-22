@@ -211,6 +211,7 @@ class ArtistGPUMat(AbstractContextManager):
         :param bbox: ROI specified as Savant bbox.
         :param padding: Increase the size of the rectangle in each direction,
             value in pixels.
+        :param sigma: gaussian blur stddev.
         """
         if sigma is None:
             sigma = min(bbox.width, bbox.height) / 10
