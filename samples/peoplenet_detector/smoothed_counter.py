@@ -20,7 +20,7 @@ class SmoothedCounter:
         return median value of the previous update period.
 
         :param time: new measurement's time in nanoseconds.
-        :new_value: the value of the new measurement.
+        :param new_value: the value of the new measurement.
         :return: median value of the previous update period.
         """
         self.values.append(new_value)
