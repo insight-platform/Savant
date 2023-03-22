@@ -18,7 +18,12 @@ class Position(Enum):
 
 
 def get_text_origin(
-    anchor_point: Position, anchor_x: int, anchor_y: int, text_w: int, text_h: int
+    anchor_point: Position,
+    anchor_x: int,
+    anchor_y: int,
+    text_w: int,
+    text_h: int,
+    baseline: int,
 ) -> Tuple[int, int]:
     """Calculate text origin coordinates.
 
@@ -27,24 +32,27 @@ def get_text_origin(
     :param anchor_y: Anchor point Y coordinate.
     :param text_w: Text box width.
     :param text_h: Text box height.
+    :param baseline: y-coordinate of the baseline relative to the bottom-most text point.
     :return: Text origin X,Y.
     """
 
     if anchor_point == Position.CENTER:
-        return anchor_x - text_w / 2, anchor_y + text_h / 2
+        text_x, text_y = anchor_x - text_w / 2, anchor_y + text_h / 2
     if anchor_point == Position.LEFT_TOP:
-        return anchor_x, anchor_y + text_h
+        text_x, text_y = anchor_x, anchor_y + text_h
     if anchor_point == Position.CENTER_TOP:
-        return anchor_x - text_w / 2, anchor_y + text_h
+        text_x, text_y = anchor_x - text_w / 2, anchor_y + text_h
     if anchor_point == Position.RIGHT_TOP:
-        return anchor_x - text_w, anchor_y + text_h
+        text_x, text_y = anchor_x - text_w, anchor_y + text_h - baseline / 2
     if anchor_point == Position.LEFT_CENTER:
-        return anchor_x, anchor_y + text_h / 2
+        text_x, text_y = anchor_x, anchor_y + text_h / 2 - baseline / 2
     if anchor_point == Position.RIGHT_CENTER:
-        return anchor_x - text_w, anchor_y + text_h / 2
+        text_x, text_y = anchor_x - text_w, anchor_y + text_h / 2 - baseline / 2
     if anchor_point == Position.LEFT_BOTTOM:
-        return anchor_x, anchor_y
+        text_x, text_y = anchor_x, anchor_y - baseline
     if anchor_point == Position.CENTER_BOTTOM:
-        return anchor_x - text_w / 2, anchor_y
+        text_x, text_y = anchor_x - text_w / 2, anchor_y - baseline
     if anchor_point == Position.RIGHT_BOTTOM:
-        return anchor_x - text_w, anchor_y
+        text_x, text_y = anchor_x - text_w, anchor_y - baseline
+
+    return int(text_x), int(text_y)

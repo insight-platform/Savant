@@ -1,4 +1,5 @@
 """Bounding box metadata."""
+from typing import Tuple
 from dataclasses import dataclass
 import numpy as np
 from savant.converter.scale import scale_rbbox
@@ -50,6 +51,16 @@ class BBox(BaseBBox):
         left corner."""
         self.x_center = value + 0.5 * self.width
 
+    @property
+    def bottom(self) -> float:
+        """y coordinate of the bbox bottom edge."""
+        return self.y_center + 0.5 * self.height
+
+    @property
+    def right(self) -> float:
+        """x coordinate of the bbox right edge."""
+        return self.x_center + 0.5 * self.width
+
     def scale(self, scale_x: float, scale_y: float):
         """Scales BBox.
 
@@ -60,6 +71,11 @@ class BBox(BaseBBox):
         self.y_center *= scale_y
         self.width *= scale_x
         self.height *= scale_y
+
+    @property
+    def tlbr(self) -> Tuple[float, float, float, float]:
+        """[x_min, y_min, x_max, y_max] representation of the bbox."""
+        return self.left, self.top, self.right, self.bottom
 
 
 @dataclass

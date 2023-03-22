@@ -80,7 +80,7 @@ def main(config_file_path: str):
 
 
 if __name__ == '__main__':
-    try:
+    if len(sys.argv) >= 2:
         main(sys.argv[1])
-    except IndexError:
+    else:
         print('Module config file path is expected as a CLI argument.')

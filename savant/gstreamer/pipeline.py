@@ -177,13 +177,14 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
         """
         return self._pipeline.get_bus()
 
-    def set_state(self, state: Gst.State) -> None:
+    def set_state(self, state: Gst.State) -> Gst.StateChangeReturn:
         """Set underlying Gst.Pipeline state.
 
         :param state: One of Gst element States (READY, PLAYING etc.)
             to set in underlying pipeline
+        :return: Result of the state change using Gst.StateChangeReturn
         """
-        self._pipeline.set_state(state)
+        return self._pipeline.set_state(state)
 
     def stream(self, timeout: float = 0.1) -> Generator[SinkMessage, None, None]:
         """Fetches messages from queue using specified timeout (sec).
