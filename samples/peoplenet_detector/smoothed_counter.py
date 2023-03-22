@@ -19,7 +19,7 @@ class SmoothedCounter:
         """Receive new measurement value, update smoothed value if necessary,
         return median value of the previous update period.
 
-        :param pts: new measurement's time in nanoseconds.
+        :param time: new measurement's time in nanoseconds.
         :new_value: the value of the new measurement.
         :return: median value of the previous update period.
         """
