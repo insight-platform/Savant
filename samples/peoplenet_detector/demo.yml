@@ -16,7 +16,6 @@ parameters:
     module: samples.peoplenet_detector.overlay
     class_name: Overlay
     kwargs:
-      face_bbox_border_color: [1, 0.5, 0.5]
       person_with_face_bbox_color: [0, 1, 0]
       person_no_face_bbox_color: [1, 0, 0]
       person_label_bg_color: [1, 0.9, 0.85]

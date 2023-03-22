@@ -36,9 +36,10 @@ class Analytics(NvDsPyFuncPlugin):
         """
         person_bboxes = []
         face_bboxes = []
+        primary_meta_object = None
         for obj_meta in frame_meta.objects:
             if obj_meta.is_primary:
-                continue
+                primary_meta_object = obj_meta
             if obj_meta.label == 'person':
                 person_bboxes.append(obj_meta.bbox)
             elif obj_meta.label == 'face':
@@ -62,15 +63,12 @@ class Analytics(NvDsPyFuncPlugin):
             pts, len(person_bboxes) - len(person_w_face_idxs)
         )
 
-        for obj_meta in frame_meta.objects:
-            if obj_meta.is_primary:
-                obj_meta.add_attr_meta(
-                    'analytics', 'person_w_face_idxs', person_w_face_idxs
-                )
-                obj_meta.add_attr_meta(
-                    'analytics', 'n_persons_w_face', n_persons_w_face
-                )
-                obj_meta.add_attr_meta(
-                    'analytics', 'n_persons_no_face', n_persons_no_face
-                )
-                break
+        primary_meta_object.add_attr_meta(
+            'analytics', 'person_w_face_idxs', person_w_face_idxs
+        )
+        primary_meta_object.add_attr_meta(
+            'analytics', 'n_persons_w_face', n_persons_w_face
+        )
+        primary_meta_object.add_attr_meta(
+            'analytics', 'n_persons_no_face', n_persons_no_face
+        )
