@@ -63,12 +63,16 @@ class Analytics(NvDsPyFuncPlugin):
             pts, len(person_bboxes) - len(person_w_face_idxs)
         )
 
-        primary_meta_object.add_attr_meta(
-            'analytics', 'person_w_face_idxs', person_w_face_idxs
-        )
-        primary_meta_object.add_attr_meta(
-            'analytics', 'n_persons_w_face', n_persons_w_face
-        )
-        primary_meta_object.add_attr_meta(
-            'analytics', 'n_persons_no_face', n_persons_no_face
-        )
+        # there can be no objects due to the track validation period
+        # (the tracker removes all objects it considers invalid),
+        # see tracker config probationAge parameter
+        if primary_meta_object:
+            primary_meta_object.add_attr_meta(
+                'analytics', 'person_w_face_idxs', person_w_face_idxs
+            )
+            primary_meta_object.add_attr_meta(
+                'analytics', 'n_persons_w_face', n_persons_w_face
+            )
+            primary_meta_object.add_attr_meta(
+                'analytics', 'n_persons_no_face', n_persons_no_face
+            )

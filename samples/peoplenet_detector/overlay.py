@@ -15,16 +15,16 @@ class Overlay(NvDsDrawFunc):
     (person with visible face, person with no visible face).
 
     :key person_with_face_bbox_color: the BGR color value for
-        bboxes of persons with face accociated.
+        bboxes of persons with face associated.
     :key person_no_face_bbox_color: the BGR color value for
-        bboxes of persons with no face accociated.
-    :key person_label_bg_color: the BGR color value person label's background.
+        bboxes of persons with no face associated.
+    :key person_label_bg_color: the BGR color value for person label's background.
     :key person_label_font_color: the BGR color value for person label's font.
     :key bbox_border_width: the width of person's bboxes in pixels.
     :key overlay_height: the height of overlay dashboard in pixels.
         Keep in mind no to exceed module frame top padding value.
     :key logo_height: the height of logo image in pixels.
-    :key sprite_heigth: the height of animation's sprites in pixels.
+    :key sprite_height: the height of animation's sprites in pixels.
     :key counters_height: the height of counter's numbers in pixels.
     :key counters_font_thickness: the thickness of counter's font.
     """
@@ -43,12 +43,12 @@ class Overlay(NvDsDrawFunc):
         self.green_man = Animation(
             '/opt/app/samples/peoplenet_detector/sprites/green_man/',
             10,
-            self.sprite_heigth,
+            self.sprite_height,
         )
         self.blue_man = Animation(
             '/opt/app/samples/peoplenet_detector/sprites/blue_man/',
             10,
-            self.sprite_heigth,
+            self.sprite_height,
         )
 
         narrow_sep_w = 15
@@ -63,13 +63,13 @@ class Overlay(NvDsDrawFunc):
         self.logo_pos = cum_left, (self.overlay_height - self.logo_height) // 2
 
         cum_left += logo_w + sep_w
-        self.green_sprite_tl = cum_left, (self.overlay_height - self.sprite_heigth) // 2
+        self.green_sprite_tl = cum_left, (self.overlay_height - self.sprite_height) // 2
 
         cum_left += sprite_w + narrow_sep_w
         self.green_text_tl = cum_left, (self.overlay_height - self.counters_height) // 2
 
         cum_left += text_w + sep_w
-        self.blue_sprite_tl = cum_left, (self.overlay_height - self.sprite_heigth) // 2
+        self.blue_sprite_tl = cum_left, (self.overlay_height - self.sprite_height) // 2
 
         cum_left += sprite_w + narrow_sep_w
         self.blue_text_tl = cum_left, (self.overlay_height - self.counters_height) // 2

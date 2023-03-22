@@ -4,7 +4,7 @@ import numpy as np
 from scipy.optimize import linear_sum_assignment
 
 
-def __calc_intersection_areas(boxes_a: np.ndarray, boxes_b: np.ndarray) -> np.ndarray:
+def _calc_intersection_areas(boxes_a: np.ndarray, boxes_b: np.ndarray) -> np.ndarray:
     """Calculates intersection areas for two sets of boxes.
 
     :param boxes_a: Bbox array shape (n,4), coordinates [x_min, y_min, x_max, y_max]
@@ -29,7 +29,7 @@ def __calc_intersection_areas(boxes_a: np.ndarray, boxes_b: np.ndarray) -> np.nd
     return intersections_widths * intersections_heights
 
 
-def __iou(boxes_a: np.ndarray, boxes_b: np.ndarray) -> np.ndarray:
+def _iou(boxes_a: np.ndarray, boxes_b: np.ndarray) -> np.ndarray:
     """Calculates IoU coefficients for two sets of boxes.
 
     :param boxes_a: Bbox array shape (n,4), coordinates [x_min, y_min, x_max, y_max]
@@ -37,7 +37,7 @@ def __iou(boxes_a: np.ndarray, boxes_b: np.ndarray) -> np.ndarray:
     :return: np.ndarray shape (n,m), rows for boxes a, cols for boxes b
     """
 
-    inter_areas = __calc_intersection_areas(boxes_a, boxes_b)
+    inter_areas = _calc_intersection_areas(boxes_a, boxes_b)
 
     wh_a = boxes_a[:, 2:] - boxes_a[:, :2]
     wh_b = boxes_b[:, 2:] - boxes_b[:, :2]
@@ -57,7 +57,7 @@ def match_person_faces(person_boxes: np.ndarray, face_boxes: np.ndarray) -> List
     :param face_boxes: Bbox array shape (n,4), coordinates [x_min, y_min, x_max, y_max]
     :return: indexes of persons that were successfully matched with a face.
     """
-    iou_matrix = __iou(person_boxes, face_boxes)
+    iou_matrix = _iou(person_boxes, face_boxes)
     row_idxs, col_idxs = linear_sum_assignment(iou_matrix, maximize=True)
 
     person_with_face_idxs = [
