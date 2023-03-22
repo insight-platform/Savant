@@ -32,6 +32,7 @@ def get_text_origin(
     :param anchor_y: Anchor point Y coordinate.
     :param text_w: Text box width.
     :param text_h: Text box height.
+    :param baseline: y-coordinate of the baseline relative to the bottom-most text point.
     :return: Text origin X,Y.
     """
 
