@@ -1,9 +1,12 @@
+"""Person-face matching module."""
+from typing import List
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 
 
-def calc_intersection_areas(boxes_a: np.ndarray, boxes_b: np.ndarray):
+def __calc_intersection_areas(boxes_a: np.ndarray, boxes_b: np.ndarray) -> np.ndarray:
     """Calculates intersection areas for two sets of boxes.
+
     :param boxes_a: Bbox array shape (n,4), coordinates order [x_min, y_min, x_max, y_max]
     :param boxes_b: Bbox array shape (m,4), coordinates order [x_min, y_min, x_max, y_max]
     :return: np.ndarray shape (n,m), rows for boxes a, cols for boxes b
@@ -26,14 +29,15 @@ def calc_intersection_areas(boxes_a: np.ndarray, boxes_b: np.ndarray):
     return intersections_widths * intersections_heights
 
 
-def iou(boxes_a: np.ndarray, boxes_b: np.ndarray):
+def __iou(boxes_a: np.ndarray, boxes_b: np.ndarray) -> np.ndarray:
     """Calculates IoU coefficients for two sets of boxes.
+
     :param boxes_a: Bbox array shape (n,4), coordinates order [x_min, y_min, x_max, y_max]
     :param boxes_b: Bbox array shape (m,4), coordinates order [x_min, y_min, x_max, y_max]
     :return: np.ndarray shape (n,m), rows for boxes a, cols for boxes b
     """
 
-    inter_areas = calc_intersection_areas(boxes_a, boxes_b)
+    inter_areas = __calc_intersection_areas(boxes_a, boxes_b)
 
     wh_a = boxes_a[:, 2:] - boxes_a[:, :2]
     wh_b = boxes_b[:, 2:] - boxes_b[:, :2]
@@ -46,8 +50,14 @@ def iou(boxes_a: np.ndarray, boxes_b: np.ndarray):
     return inter_areas / union_areas
 
 
-def match_person_faces(person_boxes: np.ndarray, face_boxes: np.ndarray):
-    iou_matrix = iou(person_boxes, face_boxes)
+def match_person_faces(person_boxes: np.ndarray, face_boxes: np.ndarray) -> List[int]:
+    """Matches persons and faces based on their bounding boxes' IOU coefficients.
+
+    :param person_boxes: Bbox array shape (n,4), coordinates order [x_min, y_min, x_max, y_max]
+    :param face_boxes: Bbox array shape (n,4), coordinates order [x_min, y_min, x_max, y_max]
+    :return: indexes of persons that were successfully matched with a face.
+    """
+    iou_matrix = __iou(person_boxes, face_boxes)
     row_idxs, col_idxs = linear_sum_assignment(iou_matrix, maximize=True)
 
     person_with_face_idxs = [

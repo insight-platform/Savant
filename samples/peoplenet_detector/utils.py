@@ -1,3 +1,4 @@
+"""Utilies module."""
 from typing import Tuple
 import numpy as np
 import cv2

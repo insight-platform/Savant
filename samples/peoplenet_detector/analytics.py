@@ -1,3 +1,4 @@
+"""Analytics module."""
 from collections import defaultdict
 import numpy as np
 from savant.gstreamer import Gst
@@ -8,6 +9,14 @@ from samples.peoplenet_detector.person_face_matching import match_person_faces
 
 
 class Analytics(NvDsPyFuncPlugin):
+    """Analytics pyfunc.
+    On each frame associates detected persons to detected faces, keeps track of
+    source-specific amount of persons with and without a faces on a frame.
+    Attaches these counters as meta information to be used in drawing overlay.
+
+    :key counters_smoothing_period: float, smoothing period in seconds.
+    """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.person_counters = defaultdict(
@@ -20,6 +29,11 @@ class Analytics(NvDsPyFuncPlugin):
         del self.person_counters[(source_id, 'noface')]
 
     def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
+        """Process frame metadata.
+
+        :param buffer: Gstreamer buffer with this frame's data.
+        :param frame_meta: This frame's metadata.
+        """
         person_bboxes = []
         face_bboxes = []
         for obj_meta in frame_meta.objects:
