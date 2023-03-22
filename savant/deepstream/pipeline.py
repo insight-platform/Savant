@@ -36,16 +36,12 @@ from savant.deepstream.metadata import (
 from savant.gstreamer.metadata import metadata_add_frame_meta, get_source_frame_meta
 from savant.gstreamer.utils import on_pad_event, pad_to_source_id
 from savant.deepstream.utils import (
-    gst_nvevent_new_stream_eos,
-    GST_NVEVENT_PAD_DELETED,
-    gst_nvevent_parse_pad_deleted,
     gst_nvevent_parse_stream_eos,
     GST_NVEVENT_STREAM_EOS,
     nvds_frame_meta_iterator,
     nvds_obj_meta_iterator,
     nvds_attr_meta_iterator,
     nvds_remove_obj_attrs,
-    get_nvds_buf_surface,
 )
 from savant.meta.constants import UNTRACKED_OBJECT_ID, PRIMARY_OBJECT_LABEL
 from savant.utils.fps_meter import FPSMeter
@@ -132,6 +128,7 @@ class NvDsPipeline(GstPipeline):
 
         self._demuxer_src_pads: List[Gst.Pad] = []
         self._free_pad_indices: List[int] = []
+        self._muxer: Optional[Gst.Element] = None
 
         if source.element == 'zeromq_source_bin':
             source.properties['max-parallel-streams'] = self._max_parallel_streams
@@ -198,6 +195,13 @@ class NvDsPipeline(GstPipeline):
                     if attr.internal:
                         self._internal_attrs.add((element.name, attr.name))
         return super().add_element(element=element, with_probes=with_probes, link=link)
+
+    def before_shutdown(self):
+        super().before_shutdown()
+        self._logger.debug(
+            'Turning off "drop-pipeline-eos" of %s', self._muxer.get_name()
+        )
+        self._muxer.set_property('drop-pipeline-eos', False)
 
     # Source
     def _add_source(self, source: PipelineElement):
@@ -580,13 +584,14 @@ class NvDsPipeline(GstPipeline):
             # TODO: remove when the bug with odd will be fixed
             # https://forums.developer.nvidia.com/t/nvstreammux-error-releasing-cuda-memory/219895/3
             'interpolation-method': 6,
+            'drop-pipeline-eos': self._suppress_eos,
         }
         if not is_aarch64():
             frame_processing_parameters['nvbuf-memory-type'] = int(
                 pyds.NVBUF_MEM_CUDA_UNIFIED
             )
 
-        muxer = self.add_element(
+        self._muxer = self.add_element(
             PipelineElement(
                 element='nvstreammux',
                 name='muxer',
@@ -598,19 +603,13 @@ class NvDsPipeline(GstPipeline):
             'Pipeline frame processing parameters: %s.', frame_processing_parameters
         )
         # input processor (post-muxer)
-        muxer_src_pad: Gst.Pad = muxer.get_static_pad('src')
+        muxer_src_pad: Gst.Pad = self._muxer.get_static_pad('src')
         muxer_src_pad.add_probe(
             Gst.PadProbeType.BUFFER,
             self._buffer_processor.input_probe,
         )
-        if self._suppress_eos:
-            muxer_src_pad.add_probe(
-                Gst.PadProbeType.EVENT_DOWNSTREAM,
-                on_pad_event,
-                {GST_NVEVENT_PAD_DELETED: self._on_muxer_sink_pad_deleted},
-            )
 
-        return muxer
+        return self._muxer
 
     def _link_to_muxer(self, pad: Gst.Pad, source_info: SourceInfo):
         """Link src pad to muxer.
@@ -628,15 +627,16 @@ class NvDsPipeline(GstPipeline):
         :param source_info: Video source info.
         """
 
-        muxer: Gst.Element = self._pipeline.get_by_name('muxer')
         # sink_N == NvDsFrameMeta.pad_index
         sink_pad_name = f'sink_{source_info.pad_idx}'
-        sink_pad: Gst.Pad = muxer.get_static_pad(sink_pad_name)
+        sink_pad: Gst.Pad = self._muxer.get_static_pad(sink_pad_name)
         if sink_pad is None:
             self._logger.debug(
-                'Requesting new sink pad on %s: %s', muxer.get_name(), sink_pad_name
+                'Requesting new sink pad on %s: %s',
+                self._muxer.get_name(),
+                sink_pad_name,
             )
-            sink_pad: Gst.Pad = muxer.get_request_pad(sink_pad_name)
+            sink_pad: Gst.Pad = self._muxer.get_request_pad(sink_pad_name)
             sink_pad.add_probe(
                 Gst.PadProbeType.EVENT_DOWNSTREAM,
                 on_pad_event,
@@ -652,14 +652,14 @@ class NvDsPipeline(GstPipeline):
         :param pad: Sink pad to release.
         """
 
-        muxer: Gst.Element = pad.get_parent()
+        element: Gst.Element = pad.get_parent()
         self._logger.debug(
             'Releasing pad %s.%s',
-            pad.get_parent().get_name(),
+            element.get_name(),
             pad.get_name(),
         )
         # Releasing muxer.sink pad to trigger nv-pad-deleted event on muxer.src pad
-        muxer.release_request_pad(pad)
+        element.release_request_pad(pad)
 
     def _on_muxer_sink_pad_eos(self, pad: Gst.Pad, event: Gst.Event, source_id: str):
         """Processes EOS event on muxer sink pad."""
@@ -669,26 +669,6 @@ class NvDsPipeline(GstPipeline):
         )
         source_info = self._sources.get_source(source_id)
         GLib.idle_add(self._remove_input_elements, source_info, pad)
-        return (
-            Gst.PadProbeReturn.DROP if self._suppress_eos else Gst.PadProbeReturn.PASS
-        )
-
-    def _on_muxer_sink_pad_deleted(self, pad: Gst.Pad, event: Gst.Event):
-        """Send GST_NVEVENT_STREAM_EOS event before GST_NVEVENT_PAD_DELETED.
-
-        GST_NVEVENT_STREAM_EOS is needed to flush data on downstream
-        elements.
-        """
-
-        pad_idx = gst_nvevent_parse_pad_deleted(event)
-        self._logger.debug(
-            'Got GST_NVEVENT_PAD_DELETED with source-id %s on %s.%s',
-            pad_idx,
-            pad.get_parent().get_name(),
-            pad.get_name(),
-        )
-        nv_eos_event = gst_nvevent_new_stream_eos(pad_idx)
-        pad.push_event(nv_eos_event)
         return Gst.PadProbeReturn.PASS
 
     # Demuxer

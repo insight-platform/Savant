@@ -98,9 +98,14 @@ class GstPipelineRunner:
         """Stops pipeline."""
         logger.debug('shutdown() called.')
         if not self._is_running:
+            logger.debug('Pipeline is shut down already.')
             return
 
         self._is_running = False
+
+        if isinstance(self._pipeline, GstPipeline):
+            logger.debug('Calling pipeline.before_shutdown()...')
+            self._pipeline.before_shutdown()
 
         if self._main_loop.is_running():
             logger.debug('Quitting main loop...')
