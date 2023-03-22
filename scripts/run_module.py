@@ -69,7 +69,7 @@ def run_module(
     out_bind: bool,
     docker_image: Optional[str],
 ):
-    """Run sample MODULE_NAME."""
+    """Run sample module."""
     repo_root_dir = pathlib.Path(__file__).parent.parent
 
     gst_debug = os.environ.get('GST_DEBUG', '2')
@@ -104,7 +104,7 @@ def run_module(
         )
 
     module_name = module_config_path.parent.stem
-    volumes = [f'{repo_root_dir / "samples"}:/opt/app/samples']
+    volumes = [f'{(repo_root_dir / "samples").resolve()}:/opt/app/samples']
     volumes += get_ipc_mounts((in_endpoint, out_endpoint))
     volumes.append(
         get_downloads_mount(repo_root_dir, module_name, container_downloads_dir)

@@ -41,6 +41,10 @@ class ArtistGPUMat(AbstractContextManager):
             )
         self.stream.waitForCompletion()
 
+    @property
+    def frame_wh(self):
+        return self.width, self.height
+
     def add_text(
         self,
         text: str,
@@ -79,18 +83,18 @@ class ArtistGPUMat(AbstractContextManager):
         )
 
         text_x, text_y = get_text_origin(
-            anchor_point, anchor_x, anchor_y, text_size[0], text_size[1]
+            anchor_point, anchor_x, anchor_y, text_size[0], text_size[1], baseline
         )
-        text_x = int(text_x) - padding
-        text_y = int(text_y) - padding
 
         if bg_color or border_width:
-            rect_left = text_x - border_width
-            rect_top = text_y + baseline
-            rect_right = text_x - border_width + text_size[0]
-            rect_bottom = text_y - text_size[1]
+            rect_left = text_x - border_width - padding
+            rect_top = text_y - text_size[1] - border_width - padding
+            rect_right = text_x + text_size[0] + border_width + padding
+            rect_bottom = text_y + baseline + border_width + padding
+
             rect_tl = rect_left, rect_top
             rect_br = rect_right, rect_bottom
+
             if bg_color is not None:
                 cv2.rectangle(
                     self.overlay, rect_tl, rect_br, convert_color(bg_color), cv2.FILLED
@@ -142,7 +146,7 @@ class ArtistGPUMat(AbstractContextManager):
                     convert_color(bg_color), stream=self.stream
                 )
 
-            if border_color != bg_color:
+            if border_width and border_color != bg_color:
                 color = convert_color(border_color)
                 self.frame.colRange(left, right).rowRange(
                     top, top + border_width
@@ -196,49 +200,60 @@ class ArtistGPUMat(AbstractContextManager):
             cv2.drawContours(
                 self.overlay, [vertices], 0, convert_color(bg_color), cv2.FILLED
             )
-        cv2.drawContours(
-            self.overlay, [vertices], 0, convert_color(line_color), line_width
-        )
+        if line_width:
+            cv2.drawContours(
+                self.overlay, [vertices], 0, convert_color(line_color), line_width
+            )
 
-    def blur(self, bbox: BBox, padding: int = 0):
+    def blur(self, bbox: BBox, padding: int = 0, sigma: Optional[float] = None):
         """Apply gaussian blur to the specified ROI.
 
         :param bbox: ROI specified as Savant bbox.
         :param padding: Increase the size of the rectangle in each direction,
             value in pixels.
+        :param sigma: gaussian blur stddev.
         """
-        self.__init_gaussian()
+        if sigma is None:
+            sigma = min(bbox.width, bbox.height) / 10
+
+        radius = int(sigma * 4 + 0.5)
+        if radius % 2 == 0:
+            radius += 1
+        radius = max(radius, 1)
+        radius = min(radius, 31)
+
+        gaussian_filter = cv2.cuda.createGaussianFilter(
+            cv2.CV_8UC4, cv2.CV_8UC4, (radius, radius), sigma
+        )
 
         left, top, _, _, width, height = self.__convert_bbox(bbox, padding, 0)
         roi_mat = cv2.cuda.GpuMat(self.frame, (left, top, width, height))
 
-        self.gaussian_filter.apply(roi_mat, roi_mat, stream=self.stream)
+        gaussian_filter.apply(roi_mat, roi_mat, stream=self.stream)
 
-    def add_overlay(self, img: np.ndarray, origin: Tuple[int, int]):
-        """Adds an image to the frame overlay, e.g. a logo.
-        
-        :param img: RGBA image.
-        :param origin: Coordinates of left top corner of img in frame space.
+    def add_graphic(self, img: cv2.cuda.GpuMat, origin: Tuple[int, int]):
+        """Overlays an image onto the frame, e.g. a logo.
+
+        :param img: RGBA image in GPU memory
+        :param origin: Coordinates of left top corner of img in frame space. (left, top)
         """
         frame_left, frame_top = origin
         if frame_left >= self.width or frame_top >= self.height:
             return
 
-        img_h, img_w = img.shape[:2]
+        img_w, img_h = img.size()
         if frame_left + img_w < 0 or frame_top + img_h < 0:
             return
-
-        self.__init_overlay()
 
         if frame_left < 0:
             img_left = abs(frame_left)
         else:
-            img_left = None
+            img_left = 0
 
         if frame_top < 0:
             img_top = abs(frame_top)
         else:
-            img_top = None
+            img_top = 0
 
         frame_right = frame_left + img_w
         frame_bottom = frame_top + img_h
@@ -246,33 +261,29 @@ class ArtistGPUMat(AbstractContextManager):
         if frame_right >= self.width:
             img_right = self.width - frame_left
         else:
-            img_right = None
+            img_right = img_w
 
         if frame_bottom >= self.height:
             img_bottom = self.height - frame_top
         else:
-            img_bottom = None
+            img_bottom = img_h
 
         frame_left = max(frame_left, 0)
         frame_top = max(frame_top, 0)
         frame_right = min(frame_right, self.width)
         frame_bottom = min(frame_bottom, self.height)
 
-        self.overlay[frame_top:frame_bottom, frame_left:frame_right] = img[
-            img_top:img_bottom, img_left:img_right
-        ]
+        frame_roi = self.frame.colRange(frame_left, frame_right).rowRange(
+            frame_top, frame_bottom
+        )
+        img_roi = img.colRange(img_left, img_right).rowRange(img_top, img_bottom)
+
+        img_roi.copyTo(self.stream, frame_roi)
 
     def __init_overlay(self):
         """Init overlay image."""
         if self.overlay is None:
             self.overlay = np.zeros((self.height, self.width, 4), dtype=np.uint8)
-
-    def __init_gaussian(self):
-        """Init Gaussian filter."""
-        if self.gaussian_filter is None:
-            self.gaussian_filter = cv2.cuda.createGaussianFilter(
-                cv2.CV_8UC4, cv2.CV_8UC4, (31, 31), 100, 100
-            )
 
     def __convert_bbox(
         self, bbox: BBox, padding: int, border_width: int

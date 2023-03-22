@@ -2,6 +2,7 @@
 """Run sink adapter."""
 import os
 from typing import Optional
+import uuid
 
 import click
 
@@ -197,7 +198,7 @@ def meta_json_sink(
     ]
 
     cmd = build_docker_run_command(
-        'sink-meta-json',
+        f'sink-meta-json-{uuid.uuid4().hex}',
         zmq_endpoint=in_endpoint,
         zmq_type=in_type,
         zmq_bind=in_bind,
@@ -246,7 +247,7 @@ def image_files_sink(
     ]
 
     cmd = build_docker_run_command(
-        'sink-image-files',
+        f'sink-image-files-{uuid.uuid4().hex}',
         zmq_endpoint=in_endpoint,
         zmq_type=in_type,
         zmq_bind=in_bind,
@@ -288,7 +289,7 @@ def video_files_sink(
     ]
 
     cmd = build_docker_run_command(
-        'sink-video-files',
+        f'sink-video-files-{uuid.uuid4().hex}',
         zmq_endpoint=in_endpoint,
         zmq_type=in_type,
         zmq_bind=in_bind,
@@ -431,7 +432,7 @@ def always_on_rtsp_sink(
         envs.append(f'METADATA_OUTPUT={metadata_output}')
 
     cmd = build_docker_run_command(
-        'sink-always-on-rtsp',
+        f'sink-always-on-rtsp-{uuid.uuid4().hex}',
         zmq_endpoint=in_endpoint,
         zmq_type=in_type,
         zmq_bind=in_bind,
