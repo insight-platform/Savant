@@ -5,7 +5,6 @@ from samples.peoplenet_detector.utils import load_sprite
 
 class Animation:
     def __init__(self, sprites_dir: str, fps: int, sprite_height: int) -> None:
-
         self.fps = fps
         self.frame_period_ns = 10**9 // self.fps
         self.sprites = [

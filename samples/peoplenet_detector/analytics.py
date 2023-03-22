@@ -10,7 +10,9 @@ from samples.peoplenet_detector.person_face_matching import match_person_faces
 class Analytics(NvDsPyFuncPlugin):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.person_counters = defaultdict(lambda:SmoothedCounter(self.counters_smoothing_period))
+        self.person_counters = defaultdict(
+            lambda: SmoothedCounter(self.counters_smoothing_period)
+        )
 
     def on_source_eos(self, source_id: str):
         """On source EOS event callback."""
@@ -48,7 +50,13 @@ class Analytics(NvDsPyFuncPlugin):
 
         for obj_meta in frame_meta.objects:
             if obj_meta.is_primary:
-                obj_meta.add_attr_meta('analytics', 'person_w_face_idxs', person_w_face_idxs)
-                obj_meta.add_attr_meta('analytics', 'n_persons_w_face', n_persons_w_face)
-                obj_meta.add_attr_meta('analytics', 'n_persons_no_face', n_persons_no_face)
+                obj_meta.add_attr_meta(
+                    'analytics', 'person_w_face_idxs', person_w_face_idxs
+                )
+                obj_meta.add_attr_meta(
+                    'analytics', 'n_persons_w_face', n_persons_w_face
+                )
+                obj_meta.add_attr_meta(
+                    'analytics', 'n_persons_no_face', n_persons_no_face
+                )
                 break

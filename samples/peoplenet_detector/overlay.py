@@ -64,9 +64,15 @@ class Overlay(NvDsDrawFunc):
 
         for obj_meta in frame_meta.objects:
             if obj_meta.is_primary:
-                person_w_face_idxs = obj_meta.get_attr_meta('analytics', 'person_w_face_idxs').value
-                n_persons_w_face = obj_meta.get_attr_meta('analytics', 'n_persons_w_face').value
-                n_persons_no_face = obj_meta.get_attr_meta('analytics', 'n_persons_no_face').value
+                person_w_face_idxs = obj_meta.get_attr_meta(
+                    'analytics', 'person_w_face_idxs'
+                ).value
+                n_persons_w_face = obj_meta.get_attr_meta(
+                    'analytics', 'n_persons_w_face'
+                ).value
+                n_persons_no_face = obj_meta.get_attr_meta(
+                    'analytics', 'n_persons_no_face'
+                ).value
 
             elif obj_meta.label == 'person':
                 person_bboxes.append(obj_meta.bbox)
