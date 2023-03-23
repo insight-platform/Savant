@@ -32,6 +32,7 @@ trap handler SIGINT SIGTERM
 gst-launch-1.0 --eos-on-shutdown \
     rtspsrc protocols=tcp location="${RTSP_URI}" ! \
     parsebin ! \
+    'video/x-h264,stream-format=byte-stream,alignment=au;video/x-h265,stream-format=byte-stream,alignment=au' ! \
     fps_meter "${FPS_PERIOD}" output="${FPS_OUTPUT}" ! \
     video_to_avro_serializer source-id="${SOURCE_ID}" ! \
     zeromq_sink socket="${ZMQ_ENDPOINT}" socket-type="${ZMQ_SOCKET_TYPE}" bind="${ZMQ_SOCKET_BIND}" sync="${SYNC_OUTPUT}" source-id="${SOURCE_ID}" \
