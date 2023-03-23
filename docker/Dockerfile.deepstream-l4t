@@ -125,6 +125,10 @@ ENTRYPOINT ["python", "-m", "savant.entrypoint"]
 
 
 FROM base as samples
+COPY requirements/samples.txt requirements-samples.txt
+RUN python -m pip install --no-cache-dir \
+    -r requirements-samples.txt \
+    && rm requirements-samples.txt
 COPY samples samples
 
 FROM base AS adapters
