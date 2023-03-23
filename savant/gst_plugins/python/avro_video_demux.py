@@ -270,6 +270,14 @@ class AvroVideoDemux(LoggerMixin, Gst.Element):
                         source_id,
                     )
                     return Gst.FlowReturn.OK
+                if not message['keyframe']:
+                    self.logger.warning(
+                        'Frame %s from source %s is not a keyframe, skipping it. '
+                        'Stream should start with a keyframe.',
+                        frame_pts,
+                        source_id,
+                    )
+                    return Gst.FlowReturn.OK
                 source_info = SourceInfo(source_id, frame_params)
                 self.sources[source_id] = source_info
             source_info.timestamp = time.time()
