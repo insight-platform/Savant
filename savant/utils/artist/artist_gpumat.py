@@ -116,6 +116,7 @@ class ArtistGPUMat(AbstractContextManager):
             font_scale,
             convert_color(font_color),
             font_thickness,
+            cv2.LINE_AA,
         )
 
     # pylint:disable=too-many-arguments
@@ -179,6 +180,77 @@ class ArtistGPUMat(AbstractContextManager):
                 line_color=border_color,
                 bg_color=bg_color,
             )
+
+    def add_rounded_rect(
+        self,
+        bbox: BBox,
+        radius: int,
+        bg_color: Tuple[float, float, float],  # BGR
+    ):
+        self.__init_overlay()
+
+        cv2.rectangle(
+            self.overlay,
+            (int(bbox.left), int(bbox.top + radius)),
+            (int(bbox.right), int(bbox.bottom - radius)),
+            convert_color(bg_color),
+            -1
+        )
+        cv2.rectangle(
+            self.overlay,
+            (int(bbox.left + radius), int(bbox.top)),
+            (int(bbox.right - radius), int(bbox.bottom)),
+            convert_color(bg_color),
+            -1
+        )
+        # top-left
+        cv2.ellipse(
+            self.overlay,
+            (int(bbox.left + radius), int(bbox.top + radius)),
+            (radius, radius),
+            180,
+            0,
+            90,
+            convert_color(bg_color),
+            -1,
+            cv2.LINE_AA,
+        )
+        # top-right
+        cv2.ellipse(
+            self.overlay,
+            (int(bbox.right - radius), int(bbox.top + radius)),
+            (radius, radius),
+            270,
+            0,
+            90,
+            convert_color(bg_color),
+            -1,
+            cv2.LINE_AA,
+        )
+        # bottom-left
+        cv2.ellipse(
+            self.overlay,
+            (int(bbox.left + radius), int(bbox.bottom - radius)),
+            (radius - 1, radius - 1),
+            90,
+            0,
+            90,
+            convert_color(bg_color),
+            -1,
+            cv2.LINE_AA,
+        )
+        # bottom-right
+        cv2.ellipse(
+            self.overlay,
+            (int(bbox.right - radius), int(bbox.bottom - radius)),
+            (radius - 1, radius - 1),
+            0,
+            0,
+            90,
+            convert_color(bg_color),
+            -1,
+            cv2.LINE_AA,
+        )
 
     def add_polygon(
         self,

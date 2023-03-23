@@ -1,6 +1,7 @@
 """Default implementation PyFunc for drawing on frame."""
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 import pyds
+from savant.meta.object import ObjectMeta
 from savant.deepstream.base_drawfunc import BaseNvDsDrawFunc
 from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.meta.bbox import BBox, RBBox
@@ -32,27 +33,39 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
             with Artist(frame_mat) as artist:
                 self.draw_on_frame(NvDsFrameMeta(nvds_frame_meta), artist)
 
-    def draw_on_frame(self, frame_meta: NvDsFrameMeta, artist: Artist):
-        """Draws bounding boxes and labels for all objects in the frame.
+    def get_bbox_border_color(
+        self, obj_meta: ObjectMeta
+    ) -> Optional[Tuple[float, float, float]]:
+        """Get object's bbox color.
+        Draw only objects in rendered_objects if set.
 
-        :param frame_meta: Frame metadata for a frame in a batch.
-        :param artist: Cairo context drawer to drawing primitives and directly on frame.
+        :param obj_meta: Object's meta
+        :return: None, if there is no need to draw the object, otherwise color in BGR
+        """
+        if self.rendered_objects is None:
+            return 0.0, 1.0, 0.0  # BGR
+        # draw only rendered_objects if set
+        if (
+            obj_meta.element_name in self.rendered_objects
+            and obj_meta.label in self.rendered_objects[obj_meta.element_name]
+        ):
+            return self.rendered_objects[obj_meta.element_name][obj_meta.label]
+
+    def draw_on_frame(self, frame_meta: NvDsFrameMeta, artist: Artist):
+        """Draws bounding boxes and labels for all objects in the frame's metadata.
+
+        :param frame_meta: Frame metadata.
+        :param artist: Artist to draw on the frame.
         """
         for obj_meta in frame_meta.objects:
             if obj_meta.is_primary:
                 continue
 
-            if self.rendered_objects is None or (
-                obj_meta.element_name in self.rendered_objects
-                and obj_meta.label in self.rendered_objects[obj_meta.element_name]
-            ):
+            bbox_border_color = self.get_bbox_border_color(obj_meta)
+            if bbox_border_color:
                 artist.add_bbox(
                     bbox=obj_meta.bbox,
-                    border_color=self.rendered_objects[obj_meta.element_name][
-                        obj_meta.label
-                    ]
-                    if self.rendered_objects
-                    else (0.0, 1.0, 0.0),
+                    border_color=bbox_border_color,
                 )
 
                 label = obj_meta.label
