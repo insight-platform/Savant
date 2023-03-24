@@ -26,7 +26,7 @@ YouTube Video:
 
 [![Watch the video](https://img.youtube.com/vi/YCvT3XbiSik/default.jpg)](https://youtu.be/YCvT3XbiSik)
 
-A step-by-step [tutuorial](#).
+A step-by-step [tutorial](#).
 
 Code and simple instructions in the [Demo Directory](../samples/peoplenet_detector).
 
