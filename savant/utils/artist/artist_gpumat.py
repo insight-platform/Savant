@@ -116,6 +116,7 @@ class ArtistGPUMat(AbstractContextManager):
             font_scale,
             convert_color(font_color),
             font_thickness,
+            cv2.LINE_AA,
         )
 
     # pylint:disable=too-many-arguments
@@ -178,6 +179,55 @@ class ArtistGPUMat(AbstractContextManager):
                 line_width=border_width,
                 line_color=border_color,
                 bg_color=bg_color,
+            )
+
+    def add_rounded_rect(
+        self,
+        bbox: BBox,
+        radius: int,
+        bg_color: Tuple[float, float, float],  # BGR
+    ):
+        """Draw rounded rect.
+
+        :param bbox: Bounding box.
+        :param radius: Border radius, in px.
+        :param bg_color: Background color, BGR.
+        """
+        self.__init_overlay()
+
+        cv2.rectangle(
+            self.overlay,
+            (int(bbox.left), int(bbox.top + radius)),
+            (int(bbox.right), int(bbox.bottom - radius)),
+            convert_color(bg_color),
+            -1
+        )
+        cv2.rectangle(
+            self.overlay,
+            (int(bbox.left + radius), int(bbox.top)),
+            (int(bbox.right - radius), int(bbox.bottom)),
+            convert_color(bg_color),
+            -1
+        )
+
+        # rounded corners: center(x, y), rotation angle
+        rounded_corners = [
+            ((int(bbox.left + radius), int(bbox.top + radius)), 180),  # left-top
+            ((int(bbox.right - radius), int(bbox.top + radius)), 270),  # right-top
+            ((int(bbox.left + radius), int(bbox.bottom - radius)), 90),  # left-bottom
+            ((int(bbox.right - radius), int(bbox.bottom - radius)), 0),  # right-bottom
+        ]
+        for center, angle in rounded_corners:
+            cv2.ellipse(
+                self.overlay,
+                center,
+                (radius, radius),
+                angle,
+                0,
+                90,
+                convert_color(bg_color),
+                -1,
+                cv2.LINE_AA,
             )
 
     def add_polygon(
