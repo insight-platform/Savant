@@ -10,11 +10,6 @@ PLATFORM_SUFFIX :=
 ifeq ("$(shell uname -m)", "aarch64")
     PLATFORM_SUFFIX := -l4t
     DOCKER_FILE := Dockerfile.deepstream-l4t
-    L4T_MAJOR_VERSION := $(shell dpkg-query --showformat='$${Version}' --show nvidia-l4t-core | cut -f 1 -d '-' | cut -f 1 -d '.')
-    ifeq ($(L4T_MAJOR_VERSION), 32)
-        DEEPSTREAM_VERSION := 6.0.1
-        DOCKER_FILE := Dockerfile.deepstream-l4t-6.0.1
-    endif
 endif
 
 build:

@@ -223,11 +223,10 @@ Module run environment
 
 Modules are run in docker containers. If the module does not require any additional dependencies
 base Savant docker image can be used to run it. Otherwise custom run environment must be provided by
-extending base Savant docker image. There are three base images:
+extending base Savant docker image. There are base images:
 
 #. For Nvidia DGPUs on x86 architecture
 #. For Deepstream 6.1+ capable Nvidia edge devices (Jetson Xavier/Orin)
-#. For Deepstream 6.0.1 capped Nvidia edge devices (Jetson Nano/TX)
 
 since module execution is provided for three families of target devices
 (`docker registry <https://github.com/orgs/insight-platform/packages?repo_name=savant>`_).
