@@ -187,6 +187,12 @@ class ArtistGPUMat(AbstractContextManager):
         radius: int,
         bg_color: Tuple[float, float, float],  # BGR
     ):
+        """Draw rounded rect.
+
+        :param bbox: Bounding box.
+        :param radius: Border radius, in px.
+        :param bg_color: Background color, BGR.
+        """
         self.__init_overlay()
 
         cv2.rectangle(
@@ -203,54 +209,26 @@ class ArtistGPUMat(AbstractContextManager):
             convert_color(bg_color),
             -1
         )
-        # top-left
-        cv2.ellipse(
-            self.overlay,
-            (int(bbox.left + radius), int(bbox.top + radius)),
-            (radius, radius),
-            180,
-            0,
-            90,
-            convert_color(bg_color),
-            -1,
-            cv2.LINE_AA,
-        )
-        # top-right
-        cv2.ellipse(
-            self.overlay,
-            (int(bbox.right - radius), int(bbox.top + radius)),
-            (radius, radius),
-            270,
-            0,
-            90,
-            convert_color(bg_color),
-            -1,
-            cv2.LINE_AA,
-        )
-        # bottom-left
-        cv2.ellipse(
-            self.overlay,
-            (int(bbox.left + radius), int(bbox.bottom - radius)),
-            (radius - 1, radius - 1),
-            90,
-            0,
-            90,
-            convert_color(bg_color),
-            -1,
-            cv2.LINE_AA,
-        )
-        # bottom-right
-        cv2.ellipse(
-            self.overlay,
-            (int(bbox.right - radius), int(bbox.bottom - radius)),
-            (radius - 1, radius - 1),
-            0,
-            0,
-            90,
-            convert_color(bg_color),
-            -1,
-            cv2.LINE_AA,
-        )
+
+        # rounded corners: center(x, y), rotation angle
+        rounded_corners = [
+            ((int(bbox.left + radius), int(bbox.top + radius)), 180),  # left-top
+            ((int(bbox.right - radius), int(bbox.top + radius)), 270),  # right-top
+            ((int(bbox.left + radius), int(bbox.bottom - radius)), 90),  # left-bottom
+            ((int(bbox.right - radius), int(bbox.bottom - radius)), 0),  # right-bottom
+        ]
+        for center, angle in rounded_corners:
+            cv2.ellipse(
+                self.overlay,
+                center,
+                (radius, radius),
+                angle,
+                0,
+                90,
+                convert_color(bg_color),
+                -1,
+                cv2.LINE_AA,
+            )
 
     def add_polygon(
         self,
