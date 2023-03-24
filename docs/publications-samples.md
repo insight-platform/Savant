@@ -19,8 +19,10 @@ how-to guides published on the Medium portal, where one can study them step-by-s
 
 A simple pipeline that uses standard [Nvidia Peoplenet]([https://github.com/pjreddie/darknet](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/peoplenet)) to detect persons and their faces in the video. Then the faces are matched versus bodies and blurred with the integrated OpenCV CUDA functionality. There is also a simple not reliable tracker that helps reduce flickering of boxes.
 
-YouTube Video:
+The **Green** Icon represents how many people with blurred faces in the scene. 
+The **Blue** Icon represents how many people with blurred faces in the scene.
 
+YouTube Video:
 [![Watch the video](https://img.youtube.com/vi/YCvT3XbiSik/default.jpg)](https://youtu.be/YCvT3XbiSik)
 
 
