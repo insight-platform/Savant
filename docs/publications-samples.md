@@ -15,21 +15,26 @@ how-to guides published on the Medium portal, where one can study them step-by-s
 
 ### People Detecting, Tracking and Anonymizing (Peoplenet, Nvidia Tracker, OpenCV-CUDA)
 
-![features](https://user-images.githubusercontent.com/15047882/227521582-49ce7c8b-3b67-4524-a298-da8aab7110ef.png)
+![demo-0 2 0](https://user-images.githubusercontent.com/15047882/227522688-72613142-4fdf-4019-b31d-7c7a72fc64d3.png)
 
 A simple pipeline that uses standard [Nvidia Peoplenet]([https://github.com/pjreddie/darknet](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/peoplenet)) to detect persons and their faces in the video. Then the faces are matched versus bodies and blurred with the integrated OpenCV CUDA functionality. There is also a simple not reliable tracker that helps reduce flickering of boxes.
 
+A step-by-step guide published on the Medium Portal is also [available](#).
 
-Please find the code and instructions in the [Demo Directory](../samples/peoplenet_detector).
-In addition, a step-by-step guide published on the Medium Portal is also [available](#).
+Code and simple instructions in the [Demo Directory](../samples/peoplenet_detector).
 
-Tested Platforms are:
+Tested on platforms:
 
 - Xavier NX, Xavier AGX;
 - Nvidia Ampere.
 
-Operational Modes are:
+Demonstrated operational modes:
 
-- real-time processing: fake RTSP stream;
-- capacity processing: directory of files.
+- real-time processing: RTSP streams (multiple sources at once);
+- capacity processing: directory of files (FPS).
 
+Demonstrated adapters:
+- RTSP source adapter;
+- video file source adapter;
+- Always-ON RTSP sink adapter;
+- Video/Metadata sink adapter.
