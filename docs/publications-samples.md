@@ -23,6 +23,7 @@ The **Green** Icon represents how many people with blurred faces in the scene.
 The **Blue** Icon represents how many people with blurred faces in the scene.
 
 YouTube Video:
+
 [![Watch the video](https://img.youtube.com/vi/YCvT3XbiSik/default.jpg)](https://youtu.be/YCvT3XbiSik)
 
 
