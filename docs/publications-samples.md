@@ -27,7 +27,7 @@ In addition, a step-by-step guide published on the Medium Portal is also [availa
 
 Tested Platforms are:
 
-- Jetson Nano, Xavier NX, Xavier AGX;
+- Jetson Xavier NX, Xavier AGX;
 - Nvidia Turing;
 - Nvidia Ampere.
 
@@ -48,7 +48,7 @@ In addition, a step-by-step guide published on the Medium Portal is also [availa
 
 Tested Platforms are:
 
-- Jetson Nano, Xavier NX, Xavier AGX;
+- Jetson Xavier NX, Xavier AGX;
 - Nvidia Turing;
 - Nvidia Ampere.
 
@@ -67,7 +67,7 @@ In addition, a step-by-step guide published on the Medium Portal is also [availa
 
 Tested Platforms are:
 
-- Jetson Nano, Xavier NX, Xavier AGX;
+- Jetson Xavier NX, Xavier AGX;
 - Nvidia Turing;
 - Nvidia Ampere.
 
@@ -89,7 +89,7 @@ In addition, a step-by-step guide published on the Medium Portal is also [availa
 
 Tested Platforms are:
 
-- Jetson Nano, Xavier NX, Xavier AGX;
+- Jetson Xavier NX, Xavier AGX;
 - Nvidia Turing;
 - Nvidia Ampere.
 
