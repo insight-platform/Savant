@@ -17,7 +17,7 @@ how-to guides published on the Medium portal, where one can study them step-by-s
 
 ![demo-0 2 0](https://user-images.githubusercontent.com/15047882/227565100-4fa945cb-da15-48ea-8ed5-536955ab47dc.png)
 
-A simple pipeline that uses standard [Nvidia Peoplenet]([https://github.com/pjreddie/darknet](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/peoplenet)) to detect persons and their faces in the video. Then the faces are matched versus bodies and blurred with the integrated OpenCV CUDA functionality. There is also a simple not reliable tracker that helps reduce flickering of boxes.
+A simple pipeline that uses standard [Nvidia Peoplenet]([https://github.com/pjreddie/darknet](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/peoplenet)) to detect persons and their faces in the video. The faces are matched versus bodies and blurred with the integrated OpenCV CUDA functionality. There is also a simple unreliable tracker that helps reduce flickering of boxes.
 
 GPU-accelerated blurring made with OpenCV is a killer feature of this demonstration. It enables very fast and efficient face blurring without CPU utilization.
 
