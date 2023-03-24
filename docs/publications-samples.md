@@ -1,4 +1,4 @@
-# Publications And Samples
+# Savant Demos, Samples and Education Materials
 
 On this page, you can find practical examples, how-tos, publications, and other non-formal documentation links that can
 help you dive into Savant.
