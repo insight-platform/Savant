@@ -26,8 +26,7 @@ YouTube Video:
 
 [![Watch the video](https://img.youtube.com/vi/YCvT3XbiSik/default.jpg)](https://youtu.be/YCvT3XbiSik)
 
-
-A step-by-step guide published on the Medium Portal is also [available](#).
+A step-by-step [tutuorial](#).
 
 Code and simple instructions in the [Demo Directory](../samples/peoplenet_detector).
 
