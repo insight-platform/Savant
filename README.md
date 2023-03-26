@@ -9,7 +9,7 @@ that utilize the best Nvidia approaches for data center and edge accelerators ve
 ## Quick Links
 
 - [Getting Started](https://insight-platform.github.io/Savant/getting_started/intro.html)
-- [Publications and Samples](docs/publications-samples.md)
+- [Publications and Samples](samples)
 - [Architecture](docs/architecture.md)
 - [API Documentation](https://insight-platform.github.io/Savant/reference/api/index.html)
 
