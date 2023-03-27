@@ -1,4 +1,4 @@
-# Savant: High-Performance Streaming Inference Framework With Batteries Included
+# Savant: Supercharged Video Analytics Framework With Batteries Included
 
 Savant is an open-source, high-level framework for building real-time, streaming, highly efficient multimedia AI
 applications on the Nvidia stack. It makes it possible to develop dynamic, fault-tolerant inference pipelines
