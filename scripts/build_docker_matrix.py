@@ -7,6 +7,9 @@ import sys
 sys.path.append(str(Path(__file__).parent.parent))
 from savant.utils.version import version  # noqa: F401
 
+# Jetson Nano/TX support
+DEEPSTREAM_L4T_32 = '6.0.1'
+
 ARCH_OPTIONS = ['linux/amd64', 'linux/arm64']  # dGPU/L4T
 
 IMAGE_OPTIONS = [
@@ -17,7 +20,7 @@ IMAGE_OPTIONS = [
 ]
 
 DEEPSTREAM_OPTIONS = [version.DEEPSTREAM]
-DEEPSTREAM_L4T_OPTIONS = [version.DEEPSTREAM]
+DEEPSTREAM_L4T_OPTIONS = [version.DEEPSTREAM, DEEPSTREAM_L4T_32]
 
 TAG_SUFFIX_OPTIONS = ['base', 'samples']
 
@@ -66,6 +69,9 @@ for arch in ARCH_OPTIONS:
                         target = 'base'
 
                 deepstream_version = version.DEEPSTREAM
+                if DEEPSTREAM_L4T_32 in tag:
+                    docker_file += '-' + DEEPSTREAM_L4T_32
+                    deepstream_version = DEEPSTREAM_L4T_32
 
                 items.append(
                     {
