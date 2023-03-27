@@ -1,5 +1,7 @@
 # Savant: High-Performance Streaming Inference Framework With Batteries Included
 
+:star: Star us on GitHub — it motivates us a lot!
+
 Savant is an open-source, high-level framework for building real-time, streaming, highly efficient multimedia AI
 applications on the Nvidia stack. It makes it possible to develop dynamic, fault-tolerant inference pipelines
 that utilize the best Nvidia approaches for data center and edge accelerators very quickly.
@@ -7,7 +9,7 @@ that utilize the best Nvidia approaches for data center and edge accelerators ve
 ## Quick Links
 
 - [Getting Started](https://insight-platform.github.io/Savant/getting_started/intro.html)
-- [Publications and Samples](docs/publications-samples.md)
+- [Publications and Samples](samples)
 - [Architecture](docs/architecture.md)
 - [API Documentation](https://insight-platform.github.io/Savant/reference/api/index.html)
 
@@ -186,23 +188,23 @@ own.
 
 Currently, the following source adapters are available:
 
-- Local video file;
+- [Local video file](docs/adapters.md#video-file-source-adapter);
 - Local directory of video files;
 - Local image file;
 - Local directory of image files;
 - Image URL;
 - Video URL;
-- RTSP stream;
+- [RTSP stream](docs/adapters.md#rtsp-source-adapter);
 - USB/CSI camera;
 - GigE (Genicam) industrial cam.
 
 There are basic sink adapters implemented:
 
-- Inference results are placed into JSON file stream;
+- [JSON file stream](docs/adapters.md#metadata-sink-adapter);
 - Resulting video overlay displayed on a screen (per source);
 - MP4 file (per source);
 - image directory (per source);
-- Always-On RTSP Stream Sink.
+- [Always-On RTSP Stream Sink](docs/adapters.md#always-on-rtsp-sink-adapter).
 
 The framework uses an established protocol based on Apache Avro, both for sources and sinks. The sources and sinks talk
 to Savant through ZeroMQ sockets.
