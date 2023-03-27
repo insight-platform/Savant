@@ -55,10 +55,10 @@ building highly-efficient streaming applications. It makes developing more or le
 very difficult because the developer must understand how the Gstreamer processes the data, making the learning curve
 steep and almost unreachable for ML engineers focused on model training.
 
-Savant is a very high-level framework over the DeepStream, which hides all the Gstreamer internals from the developer
-and provides practical tools for implementing real-life streaming AI applications. So, you implement your inference
-pipeline as a set of declarative (YAML) blocks with several user-defined functions in Python (and C/C++ if you would
-like to utilize most of the CUDA runtime).
+Savant is a very high-level framework over the DeepStream, which hides all the Gstreamer internals from the developer and 
+provides practical tools for implementing real-life streaming AI applications. So, you implement your inference pipeline 
+as a set of declarative (YAML) blocks with several user-defined functions in Python (and C/C++ if you want to get the most 
+of the CUDA runtime).
 
 ## Features
 
