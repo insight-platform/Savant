@@ -22,8 +22,6 @@ def docker_image_option(default_docker_image_name: str, tag: Optional[str] = Non
     """Click option for docker image."""
     SAVANT_VERSION = version.SAVANT
     DEEPSTREAM_VERSION = version.DEEPSTREAM
-    if is_aarch64() and get_l4t_version()[0] == 32:
-        DEEPSTREAM_VERSION = '6.0.1'
 
     if is_aarch64():
         default_docker_image_name += '-l4t'
