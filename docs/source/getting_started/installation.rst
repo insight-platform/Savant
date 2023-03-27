@@ -19,7 +19,8 @@ Platform and OS compatibility
 
 :repo-link:`Savant` builds on top of Deepstream ecosystem, therefore, it currently requires
 
-* R525+ display driver for dGPU platform
-* Jetpack 5.1 GA on Jetson AGX Xavier / NX / Orin
+* R515.65.01 display driver for dGPU platform
+* Jetpack 5.0.2 GA on Jetson AGX Xavier / NX / Orin
+* Jetpack 4.6.1 GA on Jetson Nano
 
 You can look for detailed environment setup instructions in the Nvidia `Quickstart Guide <https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_Quickstart.html#quickstart-guide>`_.
