@@ -91,8 +91,8 @@ Sink streams are also muxed and virtualized. The data is in AVRO format and is s
 We developed several data source adapters that fit daily development and production use cases. The developers can also use them as a source base for creating custom adapters - the apparent scenario is implementing an adapter that mixes external data into frames providing additional data to the AI pipeline. 
 
 Every adapter is designed for use with a particular data source: 
-- Local video file, local directory of video files or image URL ([Image file source adapter ](adapters.md#image-file-source-adapter));
-- Local image file, local directory of image files or Video URL ([Video file source adapter](adapters.md#video-file-source-adapter));
+- Local image file, local directory with image files or image file URL ([Image file source adapter ](adapters.md#image-file-source-adapter));
+- Local video file, local directory with video files or video file URL ([Video file source adapter](adapters.md#video-file-source-adapter));
 - RTSP stream ([RTSP source adapter](adapters.md#rtsp-source-adapter));
 - USB/CSI camera ([Usb-cam source adapter](adapters.md#usb-cam-source-adapter));
 - GigE (Genicam) industrial cam ([GigE source adapter](adapters.md#gige-source-adapter)).
@@ -103,7 +103,7 @@ The first mode sends data in the pipeline with the FPS specified in the file - i
 
 ## Sink Adapters
 
-Sink adapters send inference data and(or) generated multi-media data into external storage for future use. Unfortunately, there are many such storages, and schemes of stored data may vary even within a single system. That's why it's impossible to build universal sink adapters that fit all needs. So instead, we developed several sinks which can be easily modified to create the one you need in your system:
+Sink adapters send inference data and(or) generated multimedia data into external storage for future use. Unfortunately, there are many such storages, and schemes of stored data may vary even within a single system. That's why it's impossible to build universal sink adapters that fit all needs. So instead, we developed several sinks which can be easily modified to create the one you need in your system:
 
 A developer would be especially interested in the following sinks:
 
