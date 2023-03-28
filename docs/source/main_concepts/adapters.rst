@@ -2,7 +2,8 @@ Adapters overview
 =================
 
 We call an adapter an independent process that either reads (source adapter) or writes (sink adapter) data from/to some location,
-thus decoupling input/output operations from the main processing.
+thus decoupling input/output operations from the main processing. All adapters are implemented as Docker images, and
+Python scripts have been developed to simplify the process of running and using source and sink adapters.
 
 A savant module is able to interface with any number of both source and sink adapters at the same time by using ZeroMQ sockets.
 
@@ -42,115 +43,12 @@ defines the following **default connection pattern**:
 - Module binds the sink endpoint to a publisher socket.
 - Sink adapters are assumed to connect subscriber sockets to the sink endpoint.
 
-:repo-link:`Savant` already includes several containerized :ref:`adapter_sources` and :ref:`adapter_sinks`
-adapters that are ready-to-use with any Savant module.
+:repo-link:`Savant` already includes several containerized `adapters <https://github.com/insight-platform/Savant/blob/develop/docs/adapters.md>`_ that are ready-to-use with any Savant module.
 
 Each Savant adapter has a number of parameters which can be set through environment variables.
 Learn more about general ZMQ parameters that are required for running a Savant module in combination
 with Savant adapters in :doc:`../getting_started/running` or
-read below for specific Savant adapters descriptions and parameters.
-
-.. _adapter_sources:
-
-Sources
--------
-
-These adapters should help the user with the most basic and widespread input data formats.
-
-pictures
-^^^^^^^^
-
-Pictures source adapter reads ``image/jpeg`` or ``image/png`` files from ``LOCATION``, which can be:
-
-- Local path to a single file
-- Local path to a directory with one or more files (not necessarily with the same encoding)
-- HTTP URL to a single file
-
-Additional pictures source adapter parameters:
-
-- ``FRAMERATE`` is the desired framerate for the video stream formed from the input image files.
-- ``SORT_BY_TIME`` is a flag that indicates whether files from ``LOCATION`` should be sorted by modification time (ascending order).
-  By default it is **False**  and files are sorted lexicographically.
-
-videos
-^^^^^^
-
-Videos source adapter reads ``video/*`` files from ``LOCATION``, which can be:
-
-- Local path to a single file
-- Local path to a directory with one or more files (not necessarily with the same encoding)
-- HTTP URL to a single file
-
-Additional videos source adapter parameters:
-
-- ``SORT_BY_TIME`` is a flag that indicates whether files from ``LOCATION`` should be sorted by modification time (ascending order).
-  By default it is **False**  and files are sorted lexicographically.
-
-.. note::
-
-  Resulting video stream framerate is fixed to be equal to the framerate of the first encountered video file,
-  possibly overriding the framerate of the rest of input.
-
-rtsp
-^^^^
-
-RTSP source adapter reads RTSP stream from ``RTSP_URI``.
-
-usb-cam
-^^^^^^^
-
-Usb-cam source adapter capture video from a v4l2 device specified in ``DEVICE`` parameter.
-
-Additional usb-cam source adapter parameters:
-
-- ``FRAMERATE`` is the desired framerate for the video stream formed from the captured video.
-  Note that if input video framerate is not in accordance with ``FRAMERATE`` parameter value, results may be unexpected.
-
-.. _adapter_sinks:
-
-Sinks
------
-
-These adapters should help the user with the most basic and widespread output data formats.
-
-meta-json
-^^^^^^^^^
-
-Meta-json sink adapter writes received messages as newline-delimited JSON streaming file to ``LOCATION``, which can be:
-
-- Local path to a single file
-- Local path with substitution patterns:
-  - ``%source_id`` will insert ``SOURCE_ID`` value into resulting filename
-  - ``%src_filename`` will insert source filename into resulting filename
-
-Additional meta-json sink adapter parameters:
-
-- ``SKIP_FRAMES_WITHOUT_OBJECTS`` is a flag that indicates whether frames with 0 objects should be skipped in output
-- ``CHUNK_SIZE`` specifies the number of frames that the sink will put in a single chunk. Value of 0 disables chunking.
-
-image-files
-^^^^^^^^^^^
-
-Image-files sink adapter writes received messages as separate image files into directory, specified in ``DIR_LOCATION`` parameter.
-
-Additional image-files sink adapter parameters:
-
-- ``SKIP_FRAMES_WITHOUT_OBJECTS`` is a flag that indicates whether frames with 0 objects should be skipped in output
-- ``CHUNK_SIZE`` specifies the number of frames that the sink will put in a single chunk. Value of 0 disables chunking.
-
-video-files
-^^^^^^^^^^^
-
-Video-files sink adapter writes received messages as video files into directory, specified in ``DIR_LOCATION`` parameter.
-
-Additional video-files sink adapter parameters:
-
-- ``CHUNK_SIZE`` specifies the number of frames that the sink will put in a single chunk. Value of 0 disables chunking.
-
-display
-^^^^^^^
-
-Display sink adapter sends received frames to a window output.
+read `adapters documentation <https://github.com/insight-platform/Savant/blob/develop/docs/adapters.md>`_ for specific Savant adapters descriptions and parameters.
 
 Custom adapters
 ---------------

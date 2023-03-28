@@ -36,9 +36,9 @@ Savant introduces valuable extensions to the DeepStream framework through the ab
 
 **Pipeline Configurator**. The subsystem translates processing blocks specified with YAML to the Gstreamer graph that does the work. Those blocks include standard model interfaces, custom preprocessing and postprocessing invocations, data selectors, and user-defined code in Python.
 
-**Source Adapters**. Set of data adapters that can inject frames from various media sources into the framework. Source adapters are also excellent examples of how to build your adapter. Decoupling source adapters from the framework increases the stability and reliability of the processing.
+**Source Adapters**. Set of data adapters that can inject frames from various media sources into the framework. Source adapters are also excellent examples of how to build your adapter. Decoupling source adapters from the framework increases the stability and reliability of the processing. [Source adapters](adapters.md#source-adapters).
 
-**Sink Adapters**. After being processed by the framework, the data is injected into an external system. The framework provides the unified interface for that. With sink adapters framework converts and sends the data into external systems safely. Decoupling sink adapters from the framework also increases the stability and reliability of the processing.
+**Sink Adapters**. After being processed by the framework, the data is injected into an external system. The framework provides the unified interface for that. With sink adapters framework converts and sends the data into external systems safely. Decoupling sink adapters from the framework also increases the stability and reliability of the processing. [Sink adapters](adapters.md#sink-adapters).
 
 ## Virtual Streams Architecture
 
@@ -91,15 +91,11 @@ Sink streams are also muxed and virtualized. The data is in AVRO format and is s
 We developed several data source adapters that fit daily development and production use cases. The developers can also use them as a source base for creating custom adapters - the apparent scenario is implementing an adapter that mixes external data into frames providing additional data to the AI pipeline. 
 
 Every adapter is designed for use with a particular data source: 
-- Local video file;
-- Local directory of video files;
-- Local image file;
-- Local directory of image files;
-- Image URL;
-- Video URL;
-- RTSP stream;
-- USB/CSI camera;
-- GigE (Genicam) industrial cam.
+- Local image file, local directory with image files or image file URL ([Image file source adapter ](adapters.md#image-file-source-adapter));
+- Local video file, local directory with video files or video file URL ([Video file source adapter](adapters.md#video-file-source-adapter));
+- RTSP stream ([RTSP source adapter](adapters.md#rtsp-source-adapter));
+- USB/CSI camera ([Usb-cam source adapter](adapters.md#usb-cam-source-adapter));
+- GigE (Genicam) industrial cam ([GigE source adapter](adapters.md#gige-source-adapter)).
 
 Since the adapter module is decoupled from the pipeline, its launch is not expensive. Adapter crash also doesn't affect the pipeline execution. Local and remote adapters for video files support both sync and as-fast-as-possible models of data injection. 
 
@@ -107,15 +103,15 @@ The first mode sends data in the pipeline with the FPS specified in the file - i
 
 ## Sink Adapters
 
-Sink adapters send inference data and(or) generated multi-media data into external storage for future use. Unfortunately, there are many such storages, and schemes of stored data may vary even within a single system. That's why it's impossible to build universal sink adapters that fit all needs. So instead, we developed several sinks which can be easily modified to create the one you need in your system:
+Sink adapters send inference data and(or) generated multimedia data into external storage for future use. Unfortunately, there are many such storages, and schemes of stored data may vary even within a single system. That's why it's impossible to build universal sink adapters that fit all needs. So instead, we developed several sinks which can be easily modified to create the one you need in your system:
 
 A developer would be especially interested in the following sinks:
 
-- Inference results are placed into JSON file stream;
-- Resulting video overlay displayed on a screen (per source);
-- MP4 file (per source);
-- Image directory (per source);
-- Always-On RTSP Stream Sink.
+- Inference results are placed into JSON file stream ([Metadata Sink Adapter](adapters.md#metadata-sink-adapter));
+- Resulting video overlay displayed on a screen (per source) ([Display sink adapter](adapters.md#display-sink-adapter));
+- MP4 file (per source) ([Video file sink adapter](adapters.md#video-file-sink-adapter));
+- Image directory (per source) ([Image file sink adapter](adapters.md#image-file-sink-adapter));
+- Always-On RTSP Stream Sink ([Always-On RTSP sink adapter](adapters.md#always-on-rtsp-sink-adapter)).
 
 ## Pipeline Configurator
 
