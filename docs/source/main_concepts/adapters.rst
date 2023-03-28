@@ -5,7 +5,7 @@ We call an adapter an independent process that either reads (source adapter) or 
 thus decoupling input/output operations from the main processing. All adapters are implemented as Docker images, and
 Python scripts have been developed to simplify the process of running and using source and sink adapters.
 The following section outlines the different parameters for each adapter and provides examples of how
-to run them using the Python scripts.
+to run them using the Python scripts and there are also direct docker run examples.
 A savant module is able to interface with any number of both source and sink adapters at the same time by using ZeroMQ sockets.
 
 .. note::
@@ -68,7 +68,7 @@ Pictures source adapter reads ``image/jpeg`` or ``image/png`` files from ``LOCAT
 - Local path to a directory with one or more files (not necessarily with the same encoding)
 - HTTP URL to a single file
 
-Pictures source adapter parameters:
+Pictures source adapter parameters. These parameters are set as environment variables in the docker run command:
 
 - ``SOURCE_ID`` set unique identifier for the source adapter. This option is required.
 - ``FRAMERATE`` is the desired framerate for the video stream formed from the input image files.
@@ -82,9 +82,9 @@ Pictures source adapter parameters:
 - ``OUT_TYPE`` set adapter output ZeroMQ socket type. Default is DEALER.
 - ``OUT_BIND`` set adapter output ZeroMQ socket bind/connect mode (bind if True). Default is False.
 - ``SYNC`` send frames from source synchronously (i.e. with the frame rate set via the FRAMERATE parameter). Default is False.
-- ``FPS_PERIOD_PERIOD_FRAMES`` set number of frames between FPS reports. Default is None.
+- ``FPS_PERIOD_FRAMES`` set number of frames between FPS reports. Default is 1000.
 - ``FPS_PERIOD_SECONDS`` set number of seconds between FPS reports. Default is None.
-- ``FPS_OUTPUT`` set path to the file where the FPS reports will be written. Default is ''.
+- ``FPS_OUTPUT`` set path to the file where the FPS reports will be written. Default is 'stdout'.
 
 Example
 
@@ -98,7 +98,7 @@ Example
     -e ZMQ_BIND=False \
     -e SOURCE_ID=test \
     -e LOCATION=/path/to/images \
-    -e FILE_TYPE=video \
+    -e FILE_TYPE=picture \
     -e SORT_BY_TIME=False \
     -e READ_METADATA=False \
     -v /path/to/images:/path/to/images:ro \
@@ -121,7 +121,7 @@ Videos source adapter reads ``video/*`` files from ``LOCATION``, which can be:
 - Local path to a directory with one or more files (not necessarily with the same encoding)
 - HTTP URL to a single file
 
-Videos source adapter parameters. This parameters is set as environment variables:
+Videos source adapter parameters. These parameters are set as environment variables in the docker run command:
 
 - ``SOURCE_ID`` set unique identifier for the source adapter. This option is required.
 - ``SORT_BY_TIME`` is a flag that indicates whether files from ``LOCATION`` should be sorted by modification time (ascending order).
@@ -131,10 +131,10 @@ Videos source adapter parameters. This parameters is set as environment variable
   Default is **False**.
 - ``OUT_ENDPOINT`` set adapter output (should be equal to module input) ZeroMQ socket endpoint.
   Default is ipc:///tmp/zmq-sockets/input-video.ipc.
-- ``OUT_TYPE`` set Adapter output ZeroMQ socket type. Default is DEALER.
+- ``OUT_TYPE`` set adapter output ZeroMQ socket type. Default is DEALER.
 - ``OUT_BIND`` set adapter output ZeroMQ socket bind/connect mode (bind if True). Default is False.
 - ``SYNC`` set send frames from source synchronously (i.e. at the source file rate). Default is False.
-- ``FPS_PERIOD_PERIOD_FRAMES`` set number of frames between FPS reports. Default is None.
+- ``FPS_PERIOD_FRAMES`` set number of frames between FPS reports. Default is 1000.
 - ``FPS_PERIOD_SECONDS`` set number of seconds between FPS reports. Default is None.
 - ``FPS_OUTPUT`` set path to the file where the FPS reports will be written. Default is ''.
 
@@ -173,7 +173,7 @@ rtsp
 
 RTSP source adapter reads RTSP stream from rtsp uri.
 
-RTSP source adapter parameters. This parameters is set as environment variables:
+RTSP source adapter parameters. These parameters are set as environment variables in the docker run command:
 
 - ``RTSP_URI`` specifies the RTSP URI for rtsp_source adapter. This option is required.
 - ``SOURCE_ID`` set unique identifier for the source adapter. This option is required.
@@ -181,7 +181,7 @@ RTSP source adapter parameters. This parameters is set as environment variables:
   Default is ipc:///tmp/zmq-sockets/input-video.ipc.
 - ``OUT_TYPE`` set Adapter output ZeroMQ socket type. Default is DEALER.
 - ``OUT_BIND`` set adapter output ZeroMQ socket bind/connect mode (bind if True). Default is False.
-- ``FPS_PERIOD_PERIOD_FRAMES`` set number of frames between FPS reports. Default is None.
+- ``FPS_PERIOD_FRAMES`` set number of frames between FPS reports. Default is 1000.
 - ``FPS_PERIOD_SECONDS`` set number of seconds between FPS reports. Default is None.
 - ``FPS_OUTPUT`` set path to the file where the FPS reports will be written. Default is ''.
 
@@ -211,7 +211,7 @@ usb-cam
 
 Usb-cam source adapter capture video from a v4l2 device specified in ``DEVICE`` parameter.
 
-Usb-cam source adapter parameters:
+Usb-cam source adapter parameters. These parameters are set as environment variables in the docker run command:
 
 - ``DEVICE`` is the device file of the USB camera (default value is /dev/video0).
 - ``FRAMERATE`` is the desired framerate for the video stream formed from the captured video.
@@ -221,7 +221,7 @@ Usb-cam source adapter parameters:
   Default is ipc:///tmp/zmq-sockets/input-video.ipc.
 - ``OUT_TYPE`` set Adapter output ZeroMQ socket type. Default is DEALER.
 - ``OUT_BIND`` set adapter output ZeroMQ socket bind/connect mode (bind if True). Default is False.
-- ``FPS_PERIOD_PERIOD_FRAMES`` set number of frames between FPS reports. Default is None.
+- ``FPS_PERIOD_FRAMES`` set number of frames between FPS reports. Default is 1000.
 - ``FPS_PERIOD_SECONDS`` set number of seconds between FPS reports. Default is None.
 - ``FPS_OUTPUT`` set path to the file where the FPS reports will be written. Default is ''.
 
@@ -251,7 +251,7 @@ gige
 
 It is designed to take video streams from GigE cameras and send them into a module for processing.
 
-Usb-cam source adapter parameters:
+Usb-cam source adapter parameters. These parameters are set as environment variables in the docker run command:
 
 - ``WIDTH`` the width of the video stream, in pixels
 - ``HEIGHT`` the height of the video stream, in pixels
@@ -271,7 +271,7 @@ Usb-cam source adapter parameters:
   Default is ipc:///tmp/zmq-sockets/input-video.ipc.
 - ``OUT_TYPE`` set Adapter output ZeroMQ socket type. Default is DEALER.
 - ``OUT_BIND`` set adapter output ZeroMQ socket bind/connect mode (bind if True). Default is False.
-- ``FPS_PERIOD_PERIOD_FRAMES`` set number of frames between FPS reports. Default is None.
+- ``FPS_PERIOD_FRAMES`` set number of frames between FPS reports. Default is 1000.
 - ``FPS_PERIOD_SECONDS`` set number of seconds between FPS reports. Default is None.
 - ``FPS_OUTPUT`` set path to the file where the FPS reports will be written. Default is ''.
 
@@ -311,9 +311,9 @@ Meta-json sink adapter writes received messages as newline-delimited JSON stream
 - Local path to a single file
 - Local path with substitution patterns:
   - ``%source_id`` will insert ``SOURCE_ID`` value into resulting filename
-  - ``%src_filename`` will insert source filename into resulting filename. This option is available only when using the standard source-adapters or adding the necessary filename information to the custom adapter.
+  - ``%src_filename`` will insert source filename into resulting filename.
 
-Meta-json sink adapter parameters:
+Meta-json sink adapter parameters. These parameters are set as environment variables in the docker run command:
 
 - ``LOCATION`` the location of the file to write metadata to. Can be a plain location or a pattern.
     Allowed substitution parameters are %source_id and %src_filename.
@@ -359,7 +359,7 @@ image-files
 Image-files sink adapter writes received messages as separate image files and json files into directory,
 specified in ``DIR_LOCATION`` parameter.
 
-Image-files sink adapter parameters:
+Image-files sink adapter parameters. These parameters are set as environment variables in the docker run command:
 
 - ``DIR_LOCATION`` the location of the file to write metadata to. Can be a plain location or a pattern.
     Allowed substitution parameters are %source_id and %src_filename.
@@ -405,7 +405,7 @@ video-files
 
 Video-files sink adapter writes received messages as video files into directory, specified in ``DIR_LOCATION`` parameter.
 
-Video-files sink adapter parameters:
+Video-files sink adapter parameters. These parameters are set as environment variables in the docker run command:
 
 - ``DIR_LOCATION`` the location of the file to write metadata to. Can be a plain location or a pattern.
     Allowed substitution parameters are %source_id and %src_filename.
@@ -449,7 +449,7 @@ display
 
 Display sink adapter sends received frames to a window output.
 
-Display sink adapter parameters:
+Display sink adapter parameters. These parameters are set as environment variables in the docker run command:
 
 - ``CLOSING-DELAY`` he delay in seconds before closing the window after the video stream has finished.
 - ``SYNC`` whether to show the frames on the sink synchronously with the source (i.e., at the source file rate).
@@ -492,7 +492,7 @@ always-on-rtsp
 
 Always-on-rtsp sink adapter sends video stream from a specific source to an RTSP server.
 
-Video-files sink adapter parameters:
+Video-files sink adapter parameters. These parameters are set as environment variables in the docker run command:
 
 - ``RTSP_URI``: The URI of the RTSP server, this parameter is required.
 - ``STUB_FILE_LOCATION`` The location of the stub image file. Image file must be in JPEG format, this parameter is required.
