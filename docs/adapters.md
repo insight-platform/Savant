@@ -22,7 +22,7 @@ Adapter parameters are set trough environment variables:
 - `SOURCE_ID` - Unique identifier for the source. This option is required.
 - `FRAMERATE` - Desired framerate for the video stream formed from the input image files.
 - `SORT_BY_TIME` - Flag indicates whether files from `LOCATION` should be sorted by modification time (ascending order). By default, it is False  and files are sorted lexicographically.
-- `READ_METADATA` - Flag indicates the need to read and send the object's metadata from a JSON file that has the identical name as the source file. Default is **False**.
+- `READ_METADATA` - Flag indicates the need to read and send the object's metadata from a JSON file that has the identical name as the source file. Default is False.
 - `OUT_ENDPOINT` - Adapter output (should be equal to module input) ZeroMQ socket endpoint. Default is ipc:///tmp/zmq-sockets/input-video.ipc.
 - `OUT_TYPE` - Adapter output ZeroMQ socket type. Default is DEALER.
 - `OUT_BIND` - Adapter output ZeroMQ socket bind/connect mode (bind if True). Default is False.
