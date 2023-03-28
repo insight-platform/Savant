@@ -7,15 +7,15 @@ in the [documentation](https://insight-platform.github.io/Savant/main_concepts/a
 
 ## Source adapters
 
-### Picture files source adapter 
+### Image file source adapter 
 
-Pictures source adapter reads ``image/jpeg`` or ``image/png`` files from ``LOCATION``, which can be:
+Image file source adapter reads ``image/jpeg`` or ``image/png`` files from ``LOCATION``, which can be:
 
 - Local path to a single file
 - Local path to a directory with one or more files (not necessarily with the same encoding)
 - HTTP URL to a single file
 
-Pictures source adapter parameters. These parameters are set as environment variables in the docker run command:
+Image file source adapter parameters. These parameters are set as environment variables in the docker run command:
 
 - ``SOURCE_ID`` set unique identifier for the source adapter. This option is required.
 - ``FRAMERATE`` is the desired framerate for the video stream formed from the input image files.
@@ -59,13 +59,13 @@ The same adapter can be run using an auxiliary python script
 
 ### Video file source adapter
 
-Videos source adapter reads ``video/*`` files from ``LOCATION``, which can be:
+Video file source adapter reads ``video/*`` files from ``LOCATION``, which can be:
 
 - Local path to a single file
 - Local path to a directory with one or more files (not necessarily with the same encoding)
 - HTTP URL to a single file
 
-Videos source adapter parameters. These parameters are set as environment variables in the docker run command:
+Video file source adapter parameters. These parameters are set as environment variables in the docker run command:
 
 - ``SOURCE_ID`` set unique identifier for the source adapter. This option is required.
 - ``SORT_BY_TIME`` is a flag that indicates whether files from ``LOCATION`` should be sorted by modification time (ascending order).
@@ -285,12 +285,12 @@ The same adapter can be run using an auxiliary python script
     python3 scripts/run_sink.py meta-json /path/to/output/%source_id-%src_filename
 ```
 
-### Image files sink adapter
+### Image file sink adapter
 
-Image-files sink adapter writes received messages as separate image files and json files into directory,
+Image file sink adapter writes received messages as separate image files and json files to a directory,
 specified in ``DIR_LOCATION`` parameter.
 
-Image-files sink adapter parameters. These parameters are set as environment variables in the docker run command:
+Image file sink adapter parameters. These parameters are set as environment variables in the docker run command:
 
 - ``DIR_LOCATION`` the location of the file to write metadata to. Can be a plain location or a pattern.
     Allowed substitution parameters are %source_id and %src_filename.
@@ -329,11 +329,11 @@ The same adapter can be run using an auxiliary python script
     python3 scripts/run_sink.py image-files  /path/to/output/%source_id-%src_filename
 ```
 
-### Video files sink adapter
+### Video file sink adapter
 
-Video-files sink adapter writes received messages as video files into directory, specified in ``DIR_LOCATION`` parameter.
+Video file sink adapter writes received messages as video files to a directory, specified in ``DIR_LOCATION`` parameter.
 
-Video-files sink adapter parameters. These parameters are set as environment variables in the docker run command:
+Video file sink adapter parameters. These parameters are set as environment variables in the docker run command:
 
 - ``DIR_LOCATION`` the location of the file to write metadata to. Can be a plain location or a pattern.
     Allowed substitution parameters are %source_id and %src_filename.
@@ -413,9 +413,9 @@ The same adapter can be run using an auxiliary python script
 
 ### Always-On RTSP sink adapter
 
-Always-on-rtsp sink adapter sends video stream from a specific source to an RTSP server.
+Always-on RTSP sink adapter sends video stream from a specific source to an RTSP server.
 
-Video-files sink adapter parameters. These parameters are set as environment variables in the docker run command:
+Always-on RTSP sink adapter parameters. These parameters are set as environment variables in the docker run command:
 
 - ``RTSP_URI``: The URI of the RTSP server, this parameter is required.
 - ``STUB_FILE_LOCATION`` The location of the stub image file. Image file must be in JPEG format, this parameter is required.

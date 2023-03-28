@@ -59,16 +59,16 @@ Sources
 
 These adapters should help the user with the most basic and widespread input data formats.
 
-pictures
-^^^^^^^^
+image
+^^^^^
 
-Pictures source adapter reads ``image/jpeg`` or ``image/png`` files from ``LOCATION``, which can be:
+Image source adapter reads ``image/jpeg`` or ``image/png`` files from ``LOCATION``, which can be:
 
 - Local path to a single file
 - Local path to a directory with one or more files (not necessarily with the same encoding)
 - HTTP URL to a single file
 
-Pictures source adapter parameters. These parameters are set as environment variables in the docker run command:
+Image source adapter parameters. These parameters are set as environment variables in the docker run command:
 
 - ``SOURCE_ID`` set unique identifier for the source adapter. This option is required.
 - ``FRAMERATE`` is the desired framerate for the video stream formed from the input image files.
@@ -109,19 +109,19 @@ The same adapter can be run using an auxiliary python script
 
 .. code-block:: python
 
-    python scripts/run_source.py pictures /path/to/images --source-id test
+    python3 scripts/run_source.py pictures --source-id test /path/to/images
 
 
 videos
 ^^^^^^
 
-Videos source adapter reads ``video/*`` files from ``LOCATION``, which can be:
+Video source adapter reads ``video/*`` files from ``LOCATION``, which can be:
 
 - Local path to a single file
 - Local path to a directory with one or more files (not necessarily with the same encoding)
 - HTTP URL to a single file
 
-Videos source adapter parameters. These parameters are set as environment variables in the docker run command:
+Video source adapter parameters. These parameters are set as environment variables in the docker run command:
 
 - ``SOURCE_ID`` set unique identifier for the source adapter. This option is required.
 - ``SORT_BY_TIME`` is a flag that indicates whether files from ``LOCATION`` should be sorted by modification time (ascending order).
@@ -161,7 +161,7 @@ The same adapter can be run using an auxiliary python script
 
 .. code-block:: python
 
-    python scripts/run_source.py videos /home/data/bitworks/vlf-pipelines/data/bottle_defect_detector/test_big.mp4 --source-id test
+    python3 scripts/run_source.py videos --source-id test /path/to/data/test.mp4
 
 .. note::
 
@@ -204,7 +204,7 @@ The same adapter can be run using an auxiliary python script
 
 .. code-block:: python
 
-    python scripts/run_source.py rtsp --source-id test rtsp://192.168.1.1
+    python3 scripts/run_source.py rtsp --source-id test rtsp://192.168.1.1
 
 usb-cam
 ^^^^^^^
@@ -353,13 +353,13 @@ The same adapter can be run using an auxiliary python script
 
     python3 scripts/run_sink.py meta-json /path/to/output/%source_id-%src_filename
 
-image-files
-^^^^^^^^^^^
+image-file
+^^^^^^^^^^
 
-Image-files sink adapter writes received messages as separate image files and json files into directory,
+Image file sink adapter writes received messages as separate image files and json files to a directory,
 specified in ``DIR_LOCATION`` parameter.
 
-Image-files sink adapter parameters. These parameters are set as environment variables in the docker run command:
+Image file sink adapter parameters. These parameters are set as environment variables in the docker run command:
 
 - ``DIR_LOCATION`` the location of the file to write metadata to. Can be a plain location or a pattern.
     Allowed substitution parameters are %source_id and %src_filename.
@@ -400,12 +400,12 @@ The same adapter can be run using an auxiliary python script
     python3 scripts/run_sink.py image-files  /path/to/output/%source_id-%src_filename
 
 
-video-files
+video-file
 ^^^^^^^^^^^
 
-Video-files sink adapter writes received messages as video files into directory, specified in ``DIR_LOCATION`` parameter.
+Video file sink adapter writes received messages as video files to directory, specified in ``DIR_LOCATION`` parameter.
 
-Video-files sink adapter parameters. These parameters are set as environment variables in the docker run command:
+Video file sink adapter parameters. These parameters are set as environment variables in the docker run command:
 
 - ``DIR_LOCATION`` the location of the file to write metadata to. Can be a plain location or a pattern.
     Allowed substitution parameters are %source_id and %src_filename.
@@ -490,9 +490,9 @@ The same adapter can be run using an auxiliary python script
 always-on-rtsp
 ^^^^^^^^^^^^^^
 
-Always-on-rtsp sink adapter sends video stream from a specific source to an RTSP server.
+Always-on RTSP sink adapter sends video stream from a specific source to an RTSP server.
 
-Video-files sink adapter parameters. These parameters are set as environment variables in the docker run command:
+Always-on RTSP sink adapter parameters. These parameters are set as environment variables in the docker run command:
 
 - ``RTSP_URI``: The URI of the RTSP server, this parameter is required.
 - ``STUB_FILE_LOCATION`` The location of the stub image file. Image file must be in JPEG format, this parameter is required.
