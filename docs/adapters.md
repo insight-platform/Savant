@@ -1,35 +1,33 @@
 # Adapters Manual
 
-We call an adapter an independent process that either reads (source adapter) or writes (sink adapter) data from/to some location, thus decoupling input/output operations from the main processing.
+The adapter is an independent process that either reads (source adapter) or writes (sink adapter) data from/to some location, thus decoupling input/output operations from the main processing.
 
-Savant provides several source and sink adapters. All adapters are implemented as Docker images, and Python scripts have been developed to simplify the process of running and using source and sink adapters.
+Savant provides several ready-to-use source and sink adapters. All adapters are implemented as Docker images, and Python helper scripts have been developed to simplify the process of running and using source and sink adapters. However, scripts are optional, so you can launch adapters directly as docker commands.
 
-A Savant module is able to interface with any number of both source and sink adapters at the same time by using ZeroMQ sockets and Avro protocol.
-
-Below are descriptions of all adapters provided in the repository and examples of how to run them.
+The framework can communicate with both source and sink adapters via a protocol implemented with ZeroMQ sockets Apache AVRO. Below you will find descriptions for all adapters provided and examples of how to run them.
 
 ## Source adapters
 
 ### Image file source adapter 
 
-Image file source adapter reads `image/jpeg` and `image/png` files from `LOCATION`, which can be:
-- Local path to a single file
-- Local path to a directory with one or more files (not necessarily with the same encoding)
-- HTTP URL to a single file
+Image file source adapter reads `image/jpeg` or `image/png` files from `LOCATION`, which can be:
+- Local path to a single file;
+- Local path to a directory with files (not necessarily in the same encoding);
+- HTTP URL to a single file.
 
-Adapter parameters are set trough environment variables:
-- `LOCATION` - Image file(s) location.
-- `SOURCE_ID` - Unique identifier for the source. This option is required.
-- `FRAMERATE` - Desired framerate for the video stream formed from the input image files.
-- `SORT_BY_TIME` - Flag indicates whether files from `LOCATION` should be sorted by modification time (ascending order). By default, it is False  and files are sorted lexicographically.
-- `READ_METADATA` - Flag indicates the need to read and send the object's metadata from a JSON file that has the identical name as the source file. Default is False.
-- `OUT_ENDPOINT` - Adapter output (should be equal to module input) ZeroMQ socket endpoint. Default is ipc:///tmp/zmq-sockets/input-video.ipc.
-- `OUT_TYPE` - Adapter output ZeroMQ socket type. Default is DEALER.
-- `OUT_BIND` - Adapter output ZeroMQ socket bind/connect mode (bind if True). Default is False.
-- `SYNC` - Flag indicates the need to send frames from source synchronously (i.e. with the frame rate set via the FRAMERATE parameter). Default is False.
-- `FPS_PERIOD_FRAMES` - Number of frames between FPS reports. Default is 1000.
-- `FPS_PERIOD_SECONDS` - Number of seconds between FPS reports. Default is None.
-- `FPS_OUTPUT` - Path to the file where the FPS reports will be written. Default is 'stdout'.
+The adapter parameters are set with environment variables:
+- `LOCATION` - image file(s) location or URL;
+- `SOURCE_ID` - unique identifier for the source; this option is required;
+- `FRAMERATE` - desired framerate for the video stream formed from the input image files (if sync mode is chosen);
+- `SORT_BY_TIME` - flag indicates whether the files from `LOCATION` should be sorted by modification time (ascending order); by default, it is `False`  and the files are sorted lexicographically.
+- `READ_METADATA` - flag indicates the need to read and send the object's metadata from a JSON file that has the identical name as the source file; default is `False`.
+- `OUT_ENDPOINT` - adapter output (should be equal to the configured framework input) ZeroMQ socket endpoint; default is `ipc:///tmp/zmq-sockets/input-video.ipc`.
+- `OUT_TYPE` - adapter output ZeroMQ socket type; default is `DEALER`, can be `PUB` or `REQ`;
+- `OUT_BIND` - adapter output ZeroMQ socket bind/connect mode (the bind mode is when set to `True`); default is `False`.
+- `SYNC` - flag indicates the need to send frames from source synchronously (i.e. with the frame rate set via the `FRAMERATE` parameter); default is `False`;
+- `FPS_PERIOD_FRAMES` - number of frames between FPS reports; default is `1000`;
+- `FPS_PERIOD_SECONDS` - number of seconds between FPS reports; default is `None`;
+- `FPS_OUTPUT` - path to the file where the FPS reports will be written; default is `stdout`.
 
 Example
 ```bash
