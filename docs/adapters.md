@@ -27,6 +27,12 @@ You usually want using combinations, which are marked with Green color:
 
 ![image](https://user-images.githubusercontent.com/15047882/228468880-878857cc-2262-498c-a647-51e669a45b4b.png)
 
+### The Rule of Thumb
+
+1. The part which delivers multiplexed stream is usually the **bind** type. The part which whants to work with a single (unmultiplexed) stream 
+is usually the **connect** type.
+
+2. Try to use the framework in **bind** mode, adapters in **connect** mode. Change only if it does not work for you.
 
 ### PUB/SUB Explanation
 
@@ -66,6 +72,11 @@ Pattern example: Always-On RTSP Sink Adapter when multiple streams are casted.
 ### DEALER/ROUTER
 
 This is a generally recommended pair to use when you don't need multiple subscribers or can implement such duplication somehow. It is reliable socket pair: the `DEALER` will block if `ROUTER`'s queue is full.
+
+Source-to-Framework communication (connect/bind). This is a typical scheme of communication.
+
+![Savant socket pairs (4)](https://user-images.githubusercontent.com/15047882/228478831-af9032c7-50e2-4f6a-84d4-9583b609dd96.png)
+
 
 ### REQ/REP
 
