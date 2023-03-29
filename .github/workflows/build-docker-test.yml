@@ -10,7 +10,7 @@ on:
 
 jobs:
 
-  build-docker:
+  build-docker-test:
 #    needs: build-matrix
 #    runs-on: ubuntu-latest
     runs-on: self-hosted
