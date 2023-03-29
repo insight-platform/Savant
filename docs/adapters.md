@@ -4,6 +4,8 @@ The adapter is an independent process that either reads (source adapter) or writ
 
 The framework can communicate with both source and sink adapters via a protocol implemented with ZeroMQ sockets Apache AVRO. Below you will find descriptions for all adapters provided and examples of how to run them.
 
+[TOC]
+
 ## Socket Types
 
 Savant supports three kinds of sockets for communications with the framework:
