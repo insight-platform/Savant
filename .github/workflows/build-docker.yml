@@ -1,4 +1,4 @@
-name: TEST Build and publish docker images
+name: Build and publish docker images
 
 on:
   push:
@@ -23,14 +23,12 @@ jobs:
       run: echo "matrix=$(python3 ./scripts/build_docker_matrix.py)" >> $GITHUB_OUTPUT
 
   build-docker:
-#    needs: build-matrix
+    needs: build-matrix
 #    runs-on: ubuntu-latest
     runs-on: self-hosted
     strategy:
-      fail-fast: true
-        version: [ 10, 12, 14 ]
-        os: [ ubuntu-latest, windows-latest ]
-
+      fail-fast: false
+      matrix: ${{ fromJson(needs.build-matrix.outputs.matrix) }}
     permissions:
       contents: read
       packages: write
