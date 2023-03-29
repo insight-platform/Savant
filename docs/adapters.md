@@ -36,7 +36,7 @@ You usually want to use combinations, which are marked with Green color:
 
 ### DEALER/ROUTER
 
-This is a generally recommended pair to use when you don't need multiple subscribers or can implement such duplication somehow. It is reliable socket pair: the `DEALER` will block if `ROUTER`'s queue is full.
+This is a recommended pair to use when you don't need to duplicate the messages to multiple subscribers or can implement such duplication programmatically. It is a reliable socket pair: the `DEALER` will block if the `ROUTER`'s queue is full.
 
 Source-to-Framework communication (connect/bind). This is a typical scheme of communication.
 
@@ -56,7 +56,7 @@ Framework-to-Sink communication (bind/connect). This is a valid pattern, when si
 
 ### REQ/REP
 
-The `REQ/REP` works the same way as `DEALER/ROUTER` except that the `REQ` part receives replies from the `REP` part every time the `REP` part handle the message. It can be useful to modidy the pace of injecting on the `REQ` part. This is a generally recommended pair to use when you don't need multiple subscribers or can implement such duplication somehow. It is reliable socket pair: the `REQ` sends the next frame only when received the response for previously sent from `REP`.
+The `REQ/REP` pair works the same way as the `DEALER/ROUTER` except that the `REQ` part receives replies from the REP part every time the REP part handles the message. It can be useful to modify the injecting pace on the `REQ` part. This is a generally recommended pair to use when you don't need multiple subscribers or can implement such duplication somehow. It is reliable socket pair: the `REQ` sends the next frame only when received the response previously sent from `REP`.
 
 ### PUB/SUB Explanation
 
