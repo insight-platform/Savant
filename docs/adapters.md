@@ -15,15 +15,23 @@ Savant supports three kinds of sockets to communicate with the framework:
 
 You have to carefully decide what socket pair to use when building the pipeline.
 
+The sockets can be in either `bind` or `connect` modes. If the socket is configured as `bind` it listens the address, if it is configured as `connect` it connects to the address. 
+
+There are two URL schemes supported:
+- Unix domain sockets;
+- TCP sockets.
+
+Read more about 0MQ socket pairs on 0MQ [website](https://zeromq.org/socket-api/).
+
 ### PUB/SUB
 
 The `PUB/SUB` is convenient to use when you need to handle the same data by multiple subscribers. 
 
-Source to Framework communication:
+Source-to-Framework communication:
 
 ![Pub/Sub for Source-Framework communication](https://user-images.githubusercontent.com/15047882/228461503-0e93cd62-986d-43b2-b309-5f905b6f873a.png)
 
-Framework to Sink communication:
+Framework-to-Sink communication:
 
 ![PubSub for Framework-Sink communication](https://user-images.githubusercontent.com/15047882/228462824-a615e635-b795-44a9-8680-072b53936a5e.png)
 
@@ -37,7 +45,6 @@ The `PUB/SUB` is not a reliable communication pair, which means that if the subs
 Generally we recommend using the `PUB/SUB` in the following scenarious:
 - you work with raw frames from CAM (MJPEG, RGB, etc) and if the processing is slow you can afford dropping frames;
 - you implemented the adapter in the way to read frames from the socket fast and know how to queue them internally.
-
 
 ## Source Adapters
 
