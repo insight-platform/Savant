@@ -62,7 +62,7 @@ jobs:
         target: ${{ matrix.target }}
         push: false
         cache-from: type=local,src=/tmp/.buildx-cache
-        cache-to: type=local,mode=max,dest=/tmp/.buildx-cache-new
+        cache-to: type=local,mode=max,dest=/tmp/.buildx-cache-new,compression=uncompressed
 
     - name: Move cache
       run: |
