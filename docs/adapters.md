@@ -57,7 +57,7 @@ The same adapter can be run using a script:
     ./scripts/run_source.py pictures --source-id=test /path/to/images
 ```
 
-# The Video File Source Adapter
+## The Video File Source Adapter
 
 The video file source adapter reads `video/*` files from `LOCATION`, which can be:
 
