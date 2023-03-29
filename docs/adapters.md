@@ -4,7 +4,25 @@ The adapter is an independent process that either reads (source adapter) or writ
 
 The framework can communicate with both source and sink adapters via a protocol implemented with ZeroMQ sockets Apache AVRO. Below you will find descriptions for all adapters provided and examples of how to run them.
 
-[TOC]
+    - [Socket Types](#socket-types)
+      - [The Rule of Thumb](#the-rule-of-thumb)
+      - [DEALER/ROUTER](#dealer/router)
+      - [REQ/REP](#req/rep)
+      - [PUB/SUB Explanation](#pub/sub-explanation)
+    - [Source Adapters](#source-adapters)
+      - [The Image File Source Adapter](#the-image-file-source-adapter)
+    - [The Video File Source Adapter](#the-video-file-source-adapter)
+    - [Example](#example)
+      - [The RTSP Source Adapter](#the-rtsp-source-adapter)
+      - [The USB Cam Source Adapter](#the-usb-cam-source-adapter)
+      - [The GigE Source Adapter](#the-gige-source-adapter)
+    - [Sink Adapters](#sink-adapters)
+      - [The JSON Meta Sink Adapter](#the-json-meta-sink-adapter)
+      - [The Image File Sink Adapter](#the-image-file-sink-adapter)
+      - [The Video File Sink Adapter](#the-video-file-sink-adapter)
+      - [The Display Sink Adapter](#the-display-sink-adapter)
+      - [The Always-On RTSP Sink Adapter](#the-always-on-rtsp-sink-adapter)
+
 
 ## Socket Types
 
