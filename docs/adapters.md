@@ -348,7 +348,7 @@ The same adapter can be run using a script:
 
 ### The Display Sink Adapter
 
-The display sink adapter opens player windows where displays every processed stream:
+The Display Sink Adapter is a debugging adapter designed for development purposes. To use this adapter, you need a working X server and monitor. The adapter is intended for use with synchronous streams, so for optimal performance, the data source on the adapter side should use the SYNC=True mode. The adapter also allows you to specify the SYNC flag, but it is better to configure this on the source side.
 
 The adapter parameters are set with environment variables:
 
