@@ -27,7 +27,7 @@ jobs:
             docker_image: savant-test:sample
             docker_file: docker/Dockerfile.test
             deepstream_version: 6.2
-            target: sample
+            target: samples
     permissions:
       contents: read
       packages: write

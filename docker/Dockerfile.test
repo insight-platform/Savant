@@ -3,5 +3,5 @@ ARG DEEPSTREAM_VERSION
 FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-base AS base
 COPY savant savant
 
-FROM base as samples
+FROM base AS samples
 COPY samples samples
