@@ -19,7 +19,11 @@ You have to carefully decide what socket pair to use when building the pipeline.
 
 The `PUB/SUB` is convenient to use when you need to handle the same data by multiple subscribers. 
 
-![Savant socket pairs](https://user-images.githubusercontent.com/15047882/228461503-0e93cd62-986d-43b2-b309-5f905b6f873a.png)
+Source to Framework communication:
+![Pub/Sub for Source-Framework communication](https://user-images.githubusercontent.com/15047882/228461503-0e93cd62-986d-43b2-b309-5f905b6f873a.png)
+
+Framework to Sink communication:
+![PubSub for Framework-Sink communication](https://user-images.githubusercontent.com/15047882/228462824-a615e635-b795-44a9-8680-072b53936a5e.png)
 
 E.g.:
 
