@@ -29,10 +29,9 @@ You usually want using combinations, which are marked with Green color:
 
 ### The Rule of Thumb
 
-1. The part which delivers multiplexed stream is usually the **bind** type. The part which whants to work with a single (unmultiplexed) stream 
+1. Try to use the framework in **bind** mode, adapters in **connect** mode. Change only if it does not work for you.
+2. The part which delivers multiplexed stream is usually the **bind** type. The part which whants to work with a single (unmultiplexed) stream 
 is usually the **connect** type.
-
-2. Try to use the framework in **bind** mode, adapters in **connect** mode. Change only if it does not work for you.
 
 ### PUB/SUB Explanation
 
