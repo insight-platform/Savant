@@ -180,14 +180,14 @@ The same adapter can be run using a script:
 
 ### The GigE Source Adapter
 
-The adapter is designed to take video streams from GigE cameras.
+The adapter is designed to take video streams from GigE/Genicam industrial cameras. It passes the frames captured from the camera to the framework without encoding (https://github.com/insight-platform/Savant/issues/18) which may introduce significant network payload. We recommend using it locally with the framework deployed at the same host.
 
 The adapter parameters are set with environment variables:
 
 - `WIDTH` - the width of the video frame, in pixels;
 - `HEIGHT` - the height of the video frame, in pixels;
 - `FRAMERATE` - the framerate of the video stream, in frames per second;
-- `INPUT_CAPS` - the format of the video stream, in GStreamer caps format (e.g. "video/x-raw,format=RGB");
+- `INPUT_CAPS` - the format of the video stream, in GStreamer caps format (e.g. `video/x-raw,format=RGB`);
 - `PACKET_SIZE` - the packet size for GigEVision cameras, in bytes;
 - `AUTO_PACKET_SIZE` - whether to negotiate the packet size automatically for GigEVision cameras;
 - `EXPOSURE` - the exposure time for the camera, in microseconds;
