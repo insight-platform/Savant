@@ -8,9 +8,6 @@ on:
   # to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-env:
-  REGISTRY: ghcr.io
-
 jobs:
 
   build-docker:
@@ -20,17 +17,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-      include:
-        - arch: linux/amd64
-          docker_image: savant-test:base
-          docker_file: docker/Dockerfile.test
-          deepstream_version: 6.2
-          target: base
-        - arch: linux/amd64
-          docker_image: savant-test:sample
-          docker_file: docker/Dockerfile.test
-          deepstream_version: 6.2
-          target: sample
+        include:
+          - arch: linux/amd64
+            docker_image: savant-test:base
+            docker_file: docker/Dockerfile.test
+            deepstream_version: 6.2
+            target: base
+          - arch: linux/amd64
+            docker_image: savant-test:sample
+            docker_file: docker/Dockerfile.test
+            deepstream_version: 6.2
+            target: sample
     permissions:
       contents: read
       packages: write
@@ -39,7 +36,7 @@ jobs:
     - run: |
         echo ${{ matrix.arch }}
         echo ${{ matrix.docker_file }}
-        echo ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.docker_image }}
+        echo ${{ matrix.docker_image }}
 
     - uses: actions/checkout@v3
 
