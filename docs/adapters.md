@@ -389,6 +389,10 @@ The same adapter can be run using a script:
 
 The Always-on RTSP sink adapter casts the video stream from a specific source to an RTSP server.
 
+The Always-On RTSP Adapter is designed for low-latency streaming of a single RTSP stream. The adapter accepts only one input stream, so if you plan to stream multiple streams from the framework, you should use a `PUB` socket type on the framework side and a `SUB` socket type on the adapter side. However, if the framework serves a single stream, you can use either `REQ/REP` or `DEALER/ROUTER` pairs.
+
+This adapter is implemented using the DeepStream SDK and performs hardware re-encoding of streams to ensure stable streaming even when the data source stops streaming. In this case, the adapter will continue to stream a static image until the source resumes sending data.
+
 The adapter parameters are set with environment variables:
 
 - `RTSP_URI` - URI of the RTSP server, this parameter is required;
