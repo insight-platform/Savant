@@ -348,12 +348,12 @@ The same adapter can be run using a script:
 
 ### The Display Sink Adapter
 
-The Display Sink Adapter is a debugging adapter designed for development purposes. To use this adapter, you need a working X server and monitor. The adapter is intended for use with synchronous streams, so for optimal performance, the data source on the adapter side should use the SYNC=True mode. The adapter also allows you to specify the SYNC flag, but it is better to configure this on the source side.
+The Display Sink Adapter is a debugging adapter designed for development purposes. To use this adapter, you need a working X server and monitor. The adapter is intended for use with synchronous streams, so for optimal performance, the data source on the adapter side should use the `SYNC=True` mode. The adapter also allows you to specify the `SYNC` flag, but it is better to configure this on the source side also.
 
 The adapter parameters are set with environment variables:
 
 - `CLOSING-DELAY` - delay in seconds before closing the window after the video stream has finished;
-- `SYNC` - flag indicates whether to show the frames on the sink synchronously with the source (i.e., at the source file rate);
+- `SYNC` - flag indicates whether to show the frames on the sink synchronously with the source (i.e., at the source file rate); if you are intending to use `SYNC` processing, consider `DEALER/ROUTER` or `REQ/REP` sockets, because `PUB/SUB` may drop packets when queues are overflown; 
 - `SOURCE_ID` - optional filter to filter out frames with a specific source ID only;
 - `SOURCE_ID_PREFIX` - optional filter to filter out frames with a source ID prefix only;
 - `IN-ENDPOINT` - ZeroMQ socket endpoint for the adapter's input, i.e., the framework output; the default value is `ipc:///tmp/zmq-sockets/output-video.ipc`;
