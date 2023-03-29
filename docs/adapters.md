@@ -6,6 +6,33 @@ Savant provides several ready-to-use source and sink adapters. All adapters are 
 
 The framework can communicate with both source and sink adapters via a protocol implemented with ZeroMQ sockets Apache AVRO. Below you will find descriptions for all adapters provided and examples of how to run them.
 
+## Socket Types
+
+Savant supports three kinds of sockets to communicate with the framework:
+- PUB/SUB - unsafe socket pair, supporting single publisher, multiple subscribers;
+- DEALER/ROUTER - safe asynchronous socket pair, supporting multiple publishers, single subscriber;
+- REQ/REP - safe synchronous socket pair, supporting multiple publishers, single subscriber.
+
+You have to carefully decide what socket pair to use when building the pipeline.
+
+### PUB/SUB
+
+The `PUB/SUB` is convenient to use when you need to handle the same data by multiple subscribers. 
+
+![Savant socket pairs](https://user-images.githubusercontent.com/15047882/228461503-0e93cd62-986d-43b2-b309-5f905b6f873a.png)
+
+E.g.:
+
+- you want to pass frames from a single camera to two different pipelines;
+- you want to pass resulting video analytics to two different adapters (e.g. RTSP streaming and somewhere else).
+
+The `PUB/SUB` is not a reliable communication pair, which means that if the subscriber is slow the frames will be dropped. To overcome that the adapter must handle incoming frames in a sophisticated way (e.g. using internal queueing).
+
+Generally we recommend using the `PUB/SUB` in the following scenarious:
+- you work with raw frames from CAM (MJPEG, RGB, etc) and if the processing is slow you can afford dropping frames;
+- you implemented the adapter in the way to read frames from the socket fast and know how to queue them internally.
+
+
 ## Source Adapters
 
 ### The Image File Source Adapter
