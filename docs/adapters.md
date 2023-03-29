@@ -17,12 +17,12 @@ The image file source adapter reads `image/jpeg` or `image/png` files from `LOCA
 
 The adapter parameters are set with environment variables:
 - `LOCATION` - image file(s) location or URL;
-- `SOURCE_ID` - unique identifier for the source; this option is required;
+- `SOURCE_ID` - unique identifier for the source stream; this option is required;
 - `FRAMERATE` - desired framerate for the video stream formed from the input image files (if sync mode is chosen);
 - `SORT_BY_TIME` - flag indicates whether the files from `LOCATION` are sorted by modification time (ascending order); by default, it is `False`  and the files are sorted lexicographically.
 - `READ_METADATA` - flag indicates the need to read and send the object's metadata from a JSON file that has the identical name as the source file; default is `False`.
 - `OUT_ENDPOINT` - adapter output (should be equal to the configured framework input) ZeroMQ socket endpoint; default is `ipc:///tmp/zmq-sockets/input-video.ipc`.
-- `OUT_TYPE` - adapter output ZeroMQ socket type; default is `DEALER`, can be `PUB` or `REQ` as well;
+- `OUT_TYPE` - adapter output ZeroMQ socket type; default is `DEALER`, also can be set to `PUB` or `REQ` as well;
 - `OUT_BIND` - adapter output ZeroMQ socket bind/connect mode (the bind mode is when set to `True`); default is `False`.
 - `SYNC` - flag indicates the need to send frames from source synchronously (i.e. with the frame rate set via the `FRAMERATE` parameter); default is `False`;
 - `FPS_PERIOD_FRAMES` - number of frames between FPS reports; default is `1000`;
@@ -63,11 +63,11 @@ The video file source adapter reads `video/*` files from `LOCATION`, which can b
 
 The adapter parameters are set with environment variables:
 - `LOCATION` - video file(s) location or URL;
-- `SOURCE_ID` - unique identifier for the source; this option is required;
+- `SOURCE_ID` - unique identifier for the source stream; this option is required;
 - `SORT_BY_TIME` - flag indicates whether files from `LOCATION` are sorted by modification time (ascending order); by default, it is `False` and files are sorted lexicographically.
 - `READ_METADATA` - flag indicates the need to read the object's metadata from a JSON file that has the identical name as the source file; default is `False`;
 - `OUT_ENDPOINT` - adapter output (should be equal to the configured framework input) ZeroMQ socket endpoint; default is `ipc:///tmp/zmq-sockets/input-video.ipc`;
-- `OUT_TYPE` - adapter output ZeroMQ socket type; default is `DEALER`, can be `PUB` or `REQ` as well;
+- `OUT_TYPE` - adapter output ZeroMQ socket type; default is `DEALER`, also can be set to `PUB` or `REQ` as well;
 - `OUT_BIND` - adapter output ZeroMQ socket bind/connect mode (the bind mode is when set to `True`); default is `False`;
 - `SYNC` - flag indicates the need to send frames from source synchronously (i.e. at the source file rate); default is `False`;
 - `FPS_PERIOD_FRAMES` - number of frames between FPS reports; default is `1000`;
@@ -103,19 +103,20 @@ The same adapter can be run using a script:
 
 ### RTSP Source Adapter
 
-RTSP source adapter reads RTSP stream from specified `RTSP_URI`.
+The RTSP source adapter reads RTSP stream from specified `RTSP_URI`.
 
-Adapter parameters are set through environment variables:
-- `RTSP_URI` - RTSP URI of the stream. This option is required.
-- `SOURCE_ID` - Unique identifier for the source adapter. This option is required.
-- `OUT_ENDPOINT` - Adapter output (should be equal to module input) ZeroMQ socket endpoint. Default is ipc:///tmp/zmq-sockets/input-video.ipc.
-- `OUT_TYPE` - Adapter output ZeroMQ socket type. Default is DEALER.
-- `OUT_BIND` - Adapter output ZeroMQ socket bind/connect mode (bind if True). Default is False.
-- `FPS_PERIOD_FRAMES` - Number of frames between FPS reports. Default is 1000.
-- `FPS_PERIOD_SECONDS` - Number of seconds between FPS reports. Default is None.
-- `FPS_OUTPUT` - Path to the file where the FPS reports will be written. Default is 'stdout'.
+The adapter parameters are set through environment variables:
+- `RTSP_URI` - RTSP URI of the stream; this option is required;
+- `SOURCE_ID` - unique identifier for the source stream; this option is required;
+- `OUT_ENDPOINT` - adapter output (should be equal to the configured framework input) ZeroMQ socket endpoint; default is `ipc:///tmp/zmq-sockets/input-video.ipc`;
+- `OUT_TYPE` - adapter output ZeroMQ socket type; default is `DEALER`.
+- `OUT_BIND` - adapter output ZeroMQ socket bind/connect mode (the bind mode is when set to `True`); default is `False`;
+- `FPS_PERIOD_FRAMES` - number of frames between FPS reports; default is `1000`;
+- `FPS_PERIOD_SECONDS` - number of seconds between FPS reports; default is `None`;
+- `FPS_OUTPUT` - path to the file where the FPS reports will be written; default is `stdout`.
 
-Example
+Example:
+
 ```bash
     docker run --rm -it --name source-video-files-test \
     --entrypoint /opt/app/adapters/gst/sources/rtsp.sh \
@@ -129,17 +130,18 @@ Example
     ghcr.io/insight-platform/savant-adapters-gstreamer:0.2.0
 ```
 
-The same adapter can be run using a script
+The same adapter can be run using a script:
+
 ```bash
     ./scripts/run_source.py rtsp --source-id=test rtsp://192.168.1.1
 ```
 
-### Usb-cam source adapter
+### Usb-cam Source Adapter
 
-Usb-cam source adapter captures video from a v4l2 device specified in `DEVICE` parameter.
+The usb-cam source adapter captures video from a v4l2 device specified in `DEVICE` parameter.
 
-Adapter parameters are set trough environment variables:
-- `DEVICE` - USB camera device. Default value is /dev/video0.
+The adapter parameters are set through environment variables:
+- `DEVICE` - USB camera device; default value is `/dev/video0`;
 - `FRAMERATE` - Desired framerate for the video stream formed from the captured video. Note that if input video framerate is not in accordance with `FRAMERATE` parameter value, results may be unexpected.
 - `SOURCE_ID` - Unique identifier for the source adapter. This option is required.
 - `OUT_ENDPOINT` - Adapter output (should be equal to module input) ZeroMQ socket endpoint. Default is ipc:///tmp/zmq-sockets/input-video.ipc.
