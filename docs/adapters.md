@@ -8,9 +8,9 @@ The framework can communicate with both source and sink adapters via a protocol 
 
 Savant supports three kinds of sockets for communications with the framework:
 
-- PUB/SUB - unsafe socket pair, supporting single publisher, multiple subscribers;
 - DEALER/ROUTER - safe asynchronous socket pair, supporting multiple publishers, single subscriber;
-- REQ/REP - safe synchronous socket pair, supporting multiple publishers, single subscriber.
+- REQ/REP - safe synchronous socket pair, supporting multiple publishers, single subscriber;
+- PUB/SUB - unsafe socket pair, supporting single publisher, multiple subscribers.
 
 You have to carefully decide what socket pair to use when building the pipeline based on your needs and socket features.
 
@@ -29,26 +29,27 @@ You usually want to use combinations, which are marked with Green color:
 
 ### The Rule of Thumb
 
-1. Try to use the framework in **bind** mode, adapters in **connect** mode. Change only if it does not work for you.
-2. The part which delivers multiplexed stream is usually the **bind** type. The part which wants to work with a single (unmultiplexed) stream is usually the **connect** type.
+1. Try to use the framework in **bind** mode, and adapters in **connect** mode first; change only if it does not work for you.
+2. The part which delivers multiplexed stream usually has the **bind** type; the part which handles a single (non-multiplexed) stream usually has the **connect** type.
+3. Use the `PUB/SUB` pair only when the pipeline or adapter is capable to handle the traffic in real-time.
 
 ### PUB/SUB Explanation
 
 The `PUB/SUB` is convenient to use when you need to handle the same data by multiple subscribers. 
 
-Source-to-Framework communication (bind/connect). The source is initialized as a server (bind), the framework connects to it as a client. This scheme is typically can be used when the source already delivers multiple streams or the frameworks handles a single stream provided by the source. In this scenario the source can duplicate the same stream to multiple frameworks simultaneously.
+**Source/BIND-to-Framework/CONNECT communication**. The source is initialized as a server (bind), the framework connects to it as a client. This scheme is typically can be used when the source already delivers multiple streams or the frameworks handles a single stream provided by the source. In this scenario the source can duplicate the same stream to multiple frameworks simultaneously.
 
 ![Pub/Sub for Source-Framework communication](https://user-images.githubusercontent.com/15047882/228461503-0e93cd62-986d-43b2-b309-5f905b6f873a.png)
 
-Framework-to-Sink communication (bind/connect). This is a typical schene which can be used widely. The framework as a server can stream results to multiple sink adapters. Every such adapter can filter out only required information.
+**Framework/BIND-to-Sink/CONNECT communication**. This is a typical schene which can be used widely. The framework as a server can stream results to multiple sink adapters. Every such adapter can filter out only required information.
 
 ![PubSub for Framework-Sink communication](https://user-images.githubusercontent.com/15047882/228462824-a615e635-b795-44a9-8680-072b53936a5e.png)
 
-Source-to-Framework communication (connect/bind). This is a typical when the framework handles multiple streams. The framework binds to a socket and clients connect to that socket.
+**Source/CONNECT-to-Framework/BIND communication**. This is a typical when the framework handles multiple streams. The framework binds to a socket and clients connect to that socket.
 
 ![Savant socket pairs (2)](https://user-images.githubusercontent.com/15047882/228470309-e6dd2746-457f-409c-8eb0-514870dda011.png)
 
-Framework-to-Sink communication (connect/bind). This is not typical by legal scheme. The sink handles multiple outputs from frameworks to deliver them some storage, e.g. Kafka or ClickHouse.
+**Framework/CONNECT-to-Sink/BIND communication**. This is not a typical but a legal scheme. The sink handles multiple outputs from frameworks to deliver them some storage, e.g. Kafka or ClickHouse.
 
 ![Savant socket pairs (3)](https://user-images.githubusercontent.com/15047882/228470669-47e76e52-a8a4-4055-869a-a2ce405b4319.png)
 
