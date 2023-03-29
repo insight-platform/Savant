@@ -398,7 +398,6 @@ The adapter parameters are set with environment variables:
 - `METADATA_OUTPUT` - where to dump metadata (stdout or logger);
 - `SYNC` - flag indicates whether to show frames on sink synchronously (i.e. at the source rate); the streaming may be not stable with this flag, try to avoid it; the default value is `False`;
 - `SOURCE_ID` - optional filter to receive frames with a specific source ID only;
-- `SOURCE_ID_PREFIX` - optional filter to receive frames with a source ID prefix only;
 - `IN-ENDPOINT` - ZeroMQ socket endpoint for the adapter's input, i.e., the framework output; the default value is `ipc:///tmp/zmq-sockets/output-video.ipc`;
 - `IN_TYPE` - ZeroMQ socket type for the adapter's input; the default value is `SUB`, can also be set to `ROUTER` or `REP`;
 - `IN_BIND` - flag specifies whether the adapter's input should be bound or connected to the specified endpoint; If `True`, the input is bound; otherwise, it's connected; the default value is `False`.
