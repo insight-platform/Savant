@@ -32,13 +32,21 @@ You usually want using combinations, which are marked with Green color:
 
 The `PUB/SUB` is convenient to use when you need to handle the same data by multiple subscribers. 
 
-Source-to-Framework communication:
+Source-to-Framework communication (bind/connect):
 
 ![Pub/Sub for Source-Framework communication](https://user-images.githubusercontent.com/15047882/228461503-0e93cd62-986d-43b2-b309-5f905b6f873a.png)
 
-Framework-to-Sink communication:
+Framework-to-Sink communication (bind/connect):
 
 ![PubSub for Framework-Sink communication](https://user-images.githubusercontent.com/15047882/228462824-a615e635-b795-44a9-8680-072b53936a5e.png)
+
+Source-to-Framework communication (connect/bind):
+
+![Savant socket pairs (2)](https://user-images.githubusercontent.com/15047882/228470309-e6dd2746-457f-409c-8eb0-514870dda011.png)
+
+Framework-to-Sink communication (connect/bind):
+
+![Savant socket pairs (3)](https://user-images.githubusercontent.com/15047882/228470669-47e76e52-a8a4-4055-869a-a2ce405b4319.png)
 
 E.g.:
 
