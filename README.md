@@ -186,23 +186,23 @@ own.
 
 Currently, the following source adapters are available:
 
-- Local video file;
-- Local directory of video files;
-- Local image file;
-- Local directory of image files;
-- Image URL;
-- Video URL;
-- RTSP stream;
-- USB/CSI camera;
-- GigE (Genicam) industrial cam.
+- [Local video file](docs/adapters.md#the-video-file-source-adapter);
+- [Local directory of video files](docs/adapters.md#the-video-file-source-adapter);
+- [Local image file](docs/adapters.md#the-image-file-source-adapter);
+- [Local directory of image files](docs/adapters.md#the-image-file-source-adapter);
+- [Image URL](docs/adapters.md#the-image-file-source-adapter);
+- [Video URL](docs/adapters.md#the-video-file-source-adapter);
+- [RTSP stream](docs/adapters.md#the-rtsp-source-adapter);
+- [USB/CSI camera](docs/adapters.md#the-usb-cam-source-adapter);
+- [GigE (Genicam) industrial cam](docs/adapters.md#the-gige-source-adapter).
 
 There are basic sink adapters implemented:
 
-- Inference results are placed into JSON file stream;
-- Resulting video overlay displayed on a screen (per source);
-- MP4 file (per source);
-- image directory (per source);
-- Always-On RTSP Stream Sink.
+- [Inference results are placed into JSON file stream](docs/adapters.md#the-json-meta-sink-adapter);
+- [Resulting video overlay displayed on a screen (per source)](docs/adapters.md#the-display-sink-adapter);
+- [MP4 file (per source)](docs/adapters.md#the-video-file-sink-adapter);
+- [image directory (per source)](docs/adapters.md#the-image-file-sink-adapter);
+- [Always-On RTSP Stream Sink](docs/adapters.md#the-always-on-rtsp-sink-adapter).
 
 The framework uses an established protocol based on Apache Avro, both for sources and sinks. The sources and sinks talk
 to Savant through ZeroMQ sockets.
