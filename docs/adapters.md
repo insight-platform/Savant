@@ -33,9 +33,34 @@ You usually want to use combinations, which are marked with Green color:
 2. The part which delivers multiplexed stream usually has the **bind** type; the part which handles a single (non-multiplexed) stream usually has the **connect** type.
 3. Use the `PUB/SUB` pair only when the pipeline or adapter is capable to handle the traffic in real-time.
 
+
+### DEALER/ROUTER
+
+This is a generally recommended pair to use when you don't need multiple subscribers or can implement such duplication somehow. It is reliable socket pair: the `DEALER` will block if `ROUTER`'s queue is full.
+
+Source-to-Framework communication (connect/bind). This is a typical scheme of communication.
+
+![Savant socket pairs (4)](https://user-images.githubusercontent.com/15047882/228478831-af9032c7-50e2-4f6a-84d4-9583b609dd96.png)
+
+Framework-to-Sink communication (connect/bind). This is a normal pattern, when you have the sink adapter communicating with the external system like Kafka and wish to send data from multiple framework instances.
+
+![Savant socket pairs (5)](https://user-images.githubusercontent.com/15047882/228480218-b222776c-baa2-4342-8c1b-0133e256bd40.png)
+
+Source-to-Framework communication (bind/connect). This is an exotic pattern. It can work, however when you work with raw frames or isolated image streams and don't care about order. In this scheme, the source will distribute data berween connected frameworks according to LRU strategy, so it is impossible to use the scheme when you work with video.
+
+![Savant socket pairs (6)](https://user-images.githubusercontent.com/15047882/228480906-b74ca06a-3f48-4a8b-b4cc-18bad4fc2565.png)
+
+Framework-to-Sink communication (bind/connect). This is a valid pattern, when sinks communicating with an external system are slow or require multiple operations and the order of data appending is not critical.
+
+![Savant socket pairs (7)](https://user-images.githubusercontent.com/15047882/228481469-c11c8d53-9244-4dfb-8071-c042197b716a.png)
+
+### REQ/REP
+
+The `REQ/REP` works the same way as `DEALER/ROUTER` except that the `REQ` part can receive replies from the `REP` part to modidy its behavior somehow. This is a generally recommended pair to use when you don't need multiple subscribers or can implement such duplication somehow. It is reliable socket pair: the `REQ` sends the next frame only when received the response for previously sent from `REP`.
+
 ### PUB/SUB Explanation
 
-The `PUB/SUB` is convenient to use when you need to handle the same data by multiple subscribers. 
+The `PUB/SUB` is convenient to use when you need to handle the same data by multiple subscribers. Another use case for `PUB/SUB` is when you are processing the real-time data: when excessive elements are silently dropped if the pipeline or adapter is unable to handle the traffic burst.
 
 **Source/BIND-to-Framework/CONNECT communication**. The source is initialized as a server (bind), the framework connects to it as a client. This scheme is typically can be used when the source already delivers multiple streams or the frameworks handles a single stream provided by the source. In this scenario the source can duplicate the same stream to multiple frameworks simultaneously.
 
@@ -68,29 +93,6 @@ Antipattern example: passing video files to the framework with no `SYNC` mode se
 
 Pattern example: Always-On RTSP Sink Adapter when multiple streams are cast.
 
-### DEALER/ROUTER
-
-This is a generally recommended pair to use when you don't need multiple subscribers or can implement such duplication somehow. It is reliable socket pair: the `DEALER` will block if `ROUTER`'s queue is full.
-
-Source-to-Framework communication (connect/bind). This is a typical scheme of communication.
-
-![Savant socket pairs (4)](https://user-images.githubusercontent.com/15047882/228478831-af9032c7-50e2-4f6a-84d4-9583b609dd96.png)
-
-Framework-to-Sink communication (connect/bind). This is a normal pattern, when you have the sink adapter communicating with the external system like Kafka and wish to send data from multiple framework instances.
-
-![Savant socket pairs (5)](https://user-images.githubusercontent.com/15047882/228480218-b222776c-baa2-4342-8c1b-0133e256bd40.png)
-
-Source-to-Framework communication (bind/connect). This is an exotic pattern. It can work, however when you work with raw frames or isolated image streams and don't care about order. In this scheme, the source will distribute data berween connected frameworks according to LRU strategy, so it is impossible to use the scheme when you work with video.
-
-![Savant socket pairs (6)](https://user-images.githubusercontent.com/15047882/228480906-b74ca06a-3f48-4a8b-b4cc-18bad4fc2565.png)
-
-Framework-to-Sink communication (bind/connect). This is a valid pattern, when sinks communicating with an external system are slow or require multiple operations and the order of data appending is not critical.
-
-![Savant socket pairs (7)](https://user-images.githubusercontent.com/15047882/228481469-c11c8d53-9244-4dfb-8071-c042197b716a.png)
-
-### REQ/REP
-
-This is a generally recommended pair to use when you don't need multiple subscribers or can implement such duplication somehow. It is reliable socket pair: the `REQ` sends the next frame only when received the response for previously sent from `REP`.
 
 ## Source Adapters
 
