@@ -2,9 +2,6 @@ name: TEST Build and publish docker images
 
 on:
   push:
-    tags:
-      - 'v*'
-
   # to run this workflow manually from the Actions tab
   workflow_dispatch:
 
