@@ -21,17 +21,16 @@ There are two URL schemes supported:
 - Unix domain sockets;
 - TCP sockets.
 
-Read more about 0MQ socket pairs on 0MQ [website](https://zeromq.org/socket-api/).
+Read more about ZeroMQ socket pairs on ZeroMQ [website](https://zeromq.org/socket-api/).
 
-You usually want using combinations, which are marked with Green color:
+You usually want to use combinations, which are marked with Green color:
 
 ![image](https://user-images.githubusercontent.com/15047882/228468880-878857cc-2262-498c-a647-51e669a45b4b.png)
 
 ### The Rule of Thumb
 
 1. Try to use the framework in **bind** mode, adapters in **connect** mode. Change only if it does not work for you.
-2. The part which delivers multiplexed stream is usually the **bind** type. The part which whants to work with a single (unmultiplexed) stream 
-is usually the **connect** type.
+2. The part which delivers multiplexed stream is usually the **bind** type. The part which wants to work with a single (unmultiplexed) stream is usually the **connect** type.
 
 ### PUB/SUB Explanation
 
@@ -60,13 +59,13 @@ E.g.:
 
 The `PUB/SUB` is not a reliable communication pair, which means that if the subscriber is slow the frames will be dropped; the `PUB` part never blocks. To overcome that the adapter must handle incoming frames in a sophisticated way (e.g. using internal queueing).
 
-Generally we recommend using the `PUB/SUB` in the following scenarious:
-- you work with raw frames from CAM (MJPEG, RGB, etc) and if the processing is slow you can afford dropping frames;
+Generally we recommend using the `PUB/SUB` in the following scenarios:
+- you work with raw frames from CAM (MJPEG, RGB, etc.) and if the processing is slow you can afford dropping frames;
 - you implemented the adapter in the way to read frames from the socket fast and know how to queue them internally.
 
 Antipattern example: passing video files to the framework with no `SYNC` mode set.
 
-Pattern example: Always-On RTSP Sink Adapter when multiple streams are casted.
+Pattern example: Always-On RTSP Sink Adapter when multiple streams are cast.
 
 ### DEALER/ROUTER
 
@@ -88,11 +87,9 @@ Framework-to-Sink communication (bind/connect). This is a valid pattern, when si
 
 ![Savant socket pairs (7)](https://user-images.githubusercontent.com/15047882/228481469-c11c8d53-9244-4dfb-8071-c042197b716a.png)
 
-
-
 ### REQ/REP
 
-This is a generally recommended pair to use when you don't need multiple subscribers or can implement such duplication somehow. It is reliable socket pair: the `REQ` sends the next frame only when received the resonse for previously sent from `REP`.
+This is a generally recommended pair to use when you don't need multiple subscribers or can implement such duplication somehow. It is reliable socket pair: the `REQ` sends the next frame only when received the response for previously sent from `REP`.
 
 ## Source Adapters
 
@@ -113,9 +110,9 @@ The adapter parameters are set with environment variables:
 - `FRAMERATE` - desired framerate for the video stream formed from the input image files (if sync mode is chosen);
 - `SORT_BY_TIME` - flag indicates whether the files from `LOCATION` are sorted by modification time (ascending order); by default, it is `False` and the files are sorted lexicographically.
 - `READ_METADATA` - flag indicates the need to read and send the object's metadata from a JSON file that has the identical name as the source file; default is `False`.
-- `OUT_ENDPOINT` - adapter output (should be equal to the configured framework input) ZeroMQ socket endpoint; default is `ipc:///tmp/zmq-sockets/input-video.ipc`.
-- `OUT_TYPE` - adapter output ZeroMQ socket type; default is `DEALER`, also can be set to `PUB` or `REQ` as well;
-- `OUT_BIND` - adapter output ZeroMQ socket bind/connect mode (the bind mode is when set to `True`); default is `False`.
+- `ZMQ_ENDPOINT` - adapter output (should be equal to the configured framework input) ZeroMQ socket endpoint; default is `ipc:///tmp/zmq-sockets/input-video.ipc`.
+- `ZMQ_TYPE` - adapter output ZeroMQ socket type; default is `DEALER`, also can be set to `PUB` or `REQ` as well;
+- `ZMQ_BIND` - adapter output ZeroMQ socket bind/connect mode (the bind mode is when set to `True`); default is `False`.
 - `SYNC` - flag indicates the need to send frames from source synchronously (i.e. with the frame rate set via the `FRAMERATE` parameter); default is `False`;
 - `FPS_PERIOD_FRAMES` - number of frames between FPS reports; default is `1000`;
 - `FPS_PERIOD_SECONDS` - number of seconds between FPS reports; default is `None`;
@@ -160,9 +157,9 @@ The adapter parameters are set with environment variables:
 - `SOURCE_ID` - unique identifier for the source stream; this option is required;
 - `SORT_BY_TIME` - flag indicates whether files from `LOCATION` are sorted by modification time (ascending order); by default, it is `False` and files are sorted lexicographically;
 - `READ_METADATA` - flag indicates the need to read the object's metadata from a JSON file that has the identical name as the source file; default is `False`;
-- `OUT_ENDPOINT` - adapter output (should be equal to the configured framework input) ZeroMQ socket endpoint; default is `ipc:///tmp/zmq-sockets/input-video.ipc`;
-- `OUT_TYPE` - adapter output ZeroMQ socket type; default is `DEALER`, also can be set to `PUB` or `REQ` as well;
-- `OUT_BIND` - adapter output ZeroMQ socket bind/connect mode (the bind mode is when set to `True`); default is `False`;
+- `ZMQ_ENDPOINT` - adapter output (should be equal to the configured framework input) ZeroMQ socket endpoint; default is `ipc:///tmp/zmq-sockets/input-video.ipc`;
+- `ZMQ_TYPE` - adapter output ZeroMQ socket type; default is `DEALER`, also can be set to `PUB` or `REQ` as well;
+- `ZMQ_BIND` - adapter output ZeroMQ socket bind/connect mode (the bind mode is when set to `True`); default is `False`;
 - `SYNC` - flag indicates the need to send frames from source synchronously (i.e. at the source file rate); default is `False`;
 - `FPS_PERIOD_FRAMES` - number of frames between FPS reports; default is `1000`;
 - `FPS_PERIOD_SECONDS` - number of seconds between FPS reports; default is `None`;
@@ -202,9 +199,9 @@ The RTSP source adapter reads RTSP stream from specified `RTSP_URI`.
 The adapter parameters are set with environment variables:
 - `RTSP_URI` - RTSP URI of the stream; this option is required;
 - `SOURCE_ID` - unique identifier for the source stream; this option is required;
-- `OUT_ENDPOINT` - adapter output (should be equal to the configured framework input) ZeroMQ socket endpoint; default is `ipc:///tmp/zmq-sockets/input-video.ipc`;
-- `OUT_TYPE` - adapter output ZeroMQ socket type; default is `DEALER`, also can be set to `PUB` or `REQ` as well;
-- `OUT_BIND` - adapter output ZeroMQ socket bind/connect mode (the bind mode is when set to `True`); default is `False`;
+- `ZMQ_ENDPOINT` - adapter output (should be equal to the configured framework input) ZeroMQ socket endpoint; default is `ipc:///tmp/zmq-sockets/input-video.ipc`;
+- `ZMQ_TYPE` - adapter output ZeroMQ socket type; default is `DEALER`, also can be set to `PUB` or `REQ` as well;
+- `ZMQ_BIND` - adapter output ZeroMQ socket bind/connect mode (the bind mode is when set to `True`); default is `False`;
 - `FPS_PERIOD_FRAMES` - number of frames between FPS reports; default is `1000`;
 - `FPS_PERIOD_SECONDS` - number of seconds between FPS reports; default is `None`;
 - `FPS_OUTPUT` - path to the file where the FPS reports will be written; default is `stdout`.
@@ -238,9 +235,9 @@ The adapter parameters are set with environment variables:
 - `DEVICE` - USB camera device; default value is `/dev/video0`;
 - `FRAMERATE` - desired framerate for the video stream captured from the device; note that if the input device does not support specified video framerate, results may be unexpected;
 - `SOURCE_ID` - unique identifier for the source adapter; this option is required;
-- `OUT_ENDPOINT` - adapter output (should be equal to module input) ZeroMQ socket endpoint; default is `ipc:///tmp/zmq-sockets/input-video.ipc`;
-- `OUT_TYPE` - adapter output ZeroMQ socket type; default is `DEALER`, also can be set to `PUB` or `REQ` as well;
-- `OUT_BIND` - adapter output ZeroMQ socket bind/connect mode (the bind mode is when set to `True`); default is `False`;
+- `ZMQ_ENDPOINT` - adapter output (should be equal to module input) ZeroMQ socket endpoint; default is `ipc:///tmp/zmq-sockets/input-video.ipc`;
+- `ZMQ_TYPE` - adapter output ZeroMQ socket type; default is `DEALER`, also can be set to `PUB` or `REQ` as well;
+- `ZMQ_BIND` - adapter output ZeroMQ socket bind/connect mode (the bind mode is when set to `True`); default is `False`;
 - `FPS_PERIOD_FRAMES` - number of frames between FPS reports; default is `1000`;
 - `FPS_PERIOD_SECONDS` - Number of seconds between FPS reports; default is `None`;
 - `FPS_OUTPUT` - path to the file where the FPS reports will be written; Default is `stdout`.
@@ -286,9 +283,9 @@ The adapter parameters are set with environment variables:
 - `HOST_NETWORK` - host network to use;
 - `CAMERA_NAME` - name of the camera, in the format specified in the command description; 
 - `SOURCE_ID` - unique identifier for the source stream; this option is required;
-- `OUT_ENDPOINT` - adapter output (should be equal to module input) ZeroMQ socket endpoint; default is `ipc:///tmp/zmq-sockets/input-video.ipc`;
-- `OUT_TYPE` - adapter output ZeroMQ socket type; default is `DEALER`, also can be set to `PUB` or `REQ` as well;
-- `OUT_BIND` - adapter output ZeroMQ socket bind/connect mode (the bind mode is when set to `True`); default is `False`;
+- `ZMQ_ENDPOINT` - adapter output (should be equal to module input) ZeroMQ socket endpoint; default is `ipc:///tmp/zmq-sockets/input-video.ipc`;
+- `ZMQ_TYPE` - adapter output ZeroMQ socket type; default is `DEALER`, also can be set to `PUB` or `REQ` as well;
+- `ZMQ_BIND` - adapter output ZeroMQ socket bind/connect mode (the bind mode is when set to `True`); default is `False`;
 - `FPS_PERIOD_FRAMES` - number of frames between FPS reports; default is `1000`;
 - `FPS_PERIOD_SECONDS` - Number of seconds between FPS reports; default is `None`;
 - `FPS_OUTPUT` - path to the file where the FPS reports will be written; Default is `stdout`.
@@ -334,9 +331,9 @@ The adapter parameters are set with environment variables:
 - `SKIP_FRAMES_WITHOUT_OBJECTS` - flag that indicates whether frames with `0` objects should be ignored in output; the default value is `False`;
 - `SOURCE_ID` - optional filter to filter out frames with a specific source ID only;
 - `SOURCE_ID_PREFIX` - optional filter to filter out frames with a source ID prefix only;
-- `IN-ENDPOINT` - ZeroMQ socket endpoint for the adapter's input, i.e., the framework output; the default value is `ipc:///tmp/zmq-sockets/output-video.ipc`;
-- `IN_TYPE` - ZeroMQ socket type for the adapter's input; the default value is `SUB`, can also be set to `ROUTER` or `REP`;
-- `IN_BIND` - flag specifies whether the adapter's input should be bound or connected to the specified endpoint; If `True`, the input is bound; otherwise, it's connected; the default value is `False`.
+- `ZMQ_ENDPOINT` - ZeroMQ socket endpoint for the adapter's input, i.e., the framework output; the default value is `ipc:///tmp/zmq-sockets/output-video.ipc`;
+- `ZMQ_TYPE` - ZeroMQ socket type for the adapter's input; the default value is `SUB`, can also be set to `ROUTER` or `REP`;
+- `ZMQ_BIND` - flag specifies whether the adapter's input should be bound or connected to the specified endpoint; If `True`, the input is bound; otherwise, it's connected; the default value is `False`.
 
 Example:
 
@@ -367,13 +364,13 @@ The image file sink adapter extends the JSON meta adapter by writing image files
 The adapter parameters are set trough environment variables:
 
 - `DIR_LOCATION` - location to write files to; can be a plain location or a pattern; allowed substitution parameters are `%source_id` and `%src_filename`;
-- `CHUNK_SIZE` - chunk size in frames; the whole stream of incoming frames with meta data is split into separate parts and written to separate folders with consecutive numbering; default value is `10000`. A value of `0` disables chunking within one continuous stream of frames by `source_id`;
+- `CHUNK_SIZE` - chunk size in frames; the whole stream of incoming frames with metadata is split into separate parts and written to separate folders with consecutive numbering; default value is `10000`. A value of `0` disables chunking within one continuous stream of frames by `source_id`;
 - `SKIP_FRAMES_WITHOUT_OBJECTS` - flag that indicates whether frames with `0` objects should be ignored in output; the default value is `False`;
 - `SOURCE_ID` - optional filter to filter out frames with a specific source ID only;
 - `SOURCE_ID_PREFIX` - optional filter to filter out frames with a source ID prefix only;
-- `IN-ENDPOINT` - ZeroMQ socket endpoint for the adapter's input, i.e., the framework output; the default value is `ipc:///tmp/zmq-sockets/output-video.ipc`;
-- `IN_TYPE` - ZeroMQ socket type for the adapter's input; the default value is `SUB`, can also be set to `ROUTER` or `REP`;
-- `IN_BIND` - flag specifies whether the adapter's input should be bound or connected to the specified endpoint; If `True`, the input is bound; otherwise, it's connected; the default value is `False`.
+- `ZMQ_ENDPOINT` - ZeroMQ socket endpoint for the adapter's input, i.e., the framework output; the default value is `ipc:///tmp/zmq-sockets/output-video.ipc`;
+- `ZMQ_TYPE` - ZeroMQ socket type for the adapter's input; the default value is `SUB`, can also be set to `ROUTER` or `REP`;
+- `ZMQ_BIND` - flag specifies whether the adapter's input should be bound or connected to the specified endpoint; If `True`, the input is bound; otherwise, it's connected; the default value is `False`.
 
 Example:
 
@@ -408,9 +405,9 @@ The adapter parameters are set with environment variables:
 - `SKIP_FRAMES_WITHOUT_OBJECTS` - flag that indicates whether frames with `0` objects should be ignored in output; the default value is `False`;
 - `SOURCE_ID` - optional filter to filter out frames with a specific source ID only;
 - `SOURCE_ID_PREFIX` - optional filter to filter out frames with a source ID prefix only;
-- `IN-ENDPOINT` - ZeroMQ socket endpoint for the adapter's input, i.e., the framework output; the default value is `ipc:///tmp/zmq-sockets/output-video.ipc`;
-- `IN_TYPE` - ZeroMQ socket type for the adapter's input; the default value is `SUB`, can also be set to `ROUTER` or `REP`;
-- `IN_BIND` - flag specifies whether the adapter's input should be bound or connected to the specified endpoint; If `True`, the input is bound; otherwise, it's connected; the default value is `False`.
+- `ZMQ_ENDPOINT` - ZeroMQ socket endpoint for the adapter's input, i.e., the framework output; the default value is `ipc:///tmp/zmq-sockets/output-video.ipc`;
+- `ZMQ_TYPE` - ZeroMQ socket type for the adapter's input; the default value is `SUB`, can also be set to `ROUTER` or `REP`;
+- `ZMQ_BIND` - flag specifies whether the adapter's input should be bound or connected to the specified endpoint; If `True`, the input is bound; otherwise, it's connected; the default value is `False`.
 
 Example:
 
@@ -440,13 +437,13 @@ The Display Sink Adapter is a debugging adapter designed for development purpose
 
 The adapter parameters are set with environment variables:
 
-- `CLOSING-DELAY` - delay in seconds before closing the window after the video stream has finished;
-- `SYNC` - flag indicates whether to show the frames on the sink synchronously with the source (i.e., at the source file rate); if you are intending to use `SYNC` processing, consider `DEALER/ROUTER` or `REQ/REP` sockets, because `PUB/SUB` may drop packets when queues are overflown; 
+- `CLOSING_DELAY` - delay in seconds before closing the window after the video stream has finished, the default value is 0;
+- `SYNC_OUTPUT` - flag indicates whether to show the frames on the sink synchronously with the source (i.e., at the source file rate); if you are intending to use `SYNC` processing, consider `DEALER/ROUTER` or `REQ/REP` sockets, because `PUB/SUB` may drop packets when queues are overflown; 
 - `SOURCE_ID` - optional filter to filter out frames with a specific source ID only;
 - `SOURCE_ID_PREFIX` - optional filter to filter out frames with a source ID prefix only;
-- `IN-ENDPOINT` - ZeroMQ socket endpoint for the adapter's input, i.e., the framework output; the default value is `ipc:///tmp/zmq-sockets/output-video.ipc`;
-- `IN_TYPE` - ZeroMQ socket type for the adapter's input; the default value is `SUB`, can also be set to `ROUTER` or `REP`;
-- `IN_BIND` - flag specifies whether the adapter's input should be bound or connected to the specified endpoint; If `True`, the input is bound; otherwise, it's connected; the default value is `False`.
+- `ZMQ_ENDPOINT` - ZeroMQ socket endpoint for the adapter's input, i.e., the framework output; the default value is `ipc:///tmp/zmq-sockets/output-video.ipc`;
+- `ZMQ_TYPE` - ZeroMQ socket type for the adapter's input; the default value is `SUB`, can also be set to `ROUTER` or `REP`;
+- `ZMQ_BIND` - flag specifies whether the adapter's input should be bound or connected to the specified endpoint; If `True`, the input is bound; otherwise, it's connected; the default value is `False`.
 
 Example:
 
@@ -494,16 +491,17 @@ The adapter parameters are set with environment variables:
 - `BITRATE` - H264 encoding bitrate; the default value is `4000000`;
 - `FRAMERATE` - frame rate for the output stream; the default value is `30/1`;
 - `METADATA_OUTPUT` - where to dump metadata (stdout or logger);
-- `SYNC` - flag indicates whether to show frames on sink synchronously (i.e. at the source rate); the streaming may be not stable with this flag, try to avoid it; the default value is `False`;
+- `SYNC_OUTPUT` - flag indicates whether to show frames on sink synchronously (i.e. at the source rate); the streaming may be not stable with this flag, try to avoid it; the default value is `False`;
 - `SOURCE_ID` - optional filter to receive frames with a specific source ID only;
-- `IN-ENDPOINT` - ZeroMQ socket endpoint for the adapter's input, i.e., the framework output; the default value is `ipc:///tmp/zmq-sockets/output-video.ipc`;
-- `IN_TYPE` - ZeroMQ socket type for the adapter's input; the default value is `SUB`, can also be set to `ROUTER` or `REP`;
-- `IN_BIND` - flag specifies whether the adapter's input should be bound or connected to the specified endpoint; If `True`, the input is bound; otherwise, it's connected; the default value is `False`.
+- `ZMQ_ENDPOINT` - ZeroMQ socket endpoint for the adapter's input, i.e., the framework output; the default value is `ipc:///tmp/zmq-sockets/output-video.ipc`;
+- `ZMQ_TYPE` - ZeroMQ socket type for the adapter's input; the default value is `SUB`, can also be set to `ROUTER` or `REP`;
+- `ZMQ_BIND` - flag specifies whether the adapter's input should be bound or connected to the specified endpoint; If `True`, the input is bound; otherwise, it's connected; the default value is `False`.
 
 Example:
 
 ```bash
     docker run --rm -it --name sink-always-on-rtsp \
+    --gpus=all \
     --entrypoint python \
     -e SYNC_OUTPUT=False \
     -e ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/output-video.ipc \
@@ -522,7 +520,6 @@ Example:
     -e FRAMERATE=30/1 \
     -v /path/to/stub_file/test.jpg:/path/to/stub_file/test.jpg:ro \
     -v /tmp/zmq-sockets:/tmp/zmq-sockets \
-    --gpus=all \
     ghcr.io/insight-platform/savant-adapters-deepstream:0.2.0-6.2 \
     -m adapters.ds.sinks.always_on_rtsp
 ```

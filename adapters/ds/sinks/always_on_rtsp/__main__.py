@@ -46,11 +46,11 @@ class Config:
 
         self.zmq_endpoint = os.environ['ZMQ_ENDPOINT']
         self.zmq_socket_type = opt_config(
-            'ZMQ_SOCKET_TYPE',
+            'ZMQ_TYPE',
             ReceiverSocketTypes.SUB,
             ReceiverSocketTypes.__getitem__,
         )
-        self.zmq_socket_bind = opt_config('ZMQ_SOCKET_BIND', False, strtobool)
+        self.zmq_socket_bind = opt_config('ZMQ_BIND', False, strtobool)
 
         self.rtsp_uri = os.environ['RTSP_URI']
         self.rtsp_protocols = opt_config('RTSP_PROTOCOLS', 'tcp')
