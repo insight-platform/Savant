@@ -16,15 +16,8 @@ jobs:
       matrix:
         include:
           - arch: linux/amd64
-            docker_image: savant-test:base
             docker_file: docker/Dockerfile.test
             deepstream_version: 6.2
-            target: base
-          - arch: linux/amd64
-            docker_image: savant-test:sample
-            docker_file: docker/Dockerfile.test
-            deepstream_version: 6.2
-            target: samples
     permissions:
       contents: read
       packages: write
@@ -33,7 +26,6 @@ jobs:
     - run: |
         echo ${{ matrix.arch }}
         echo ${{ matrix.docker_file }}
-        echo ${{ matrix.docker_image }}
 
     - uses: actions/checkout@v3
 
@@ -43,28 +35,24 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
 
-    - name: Cache Docker layers
-      uses: actions/cache@v2
-      with:
-        path: /tmp/.buildx-cache
-        key: ${{ runner.os }}-multi-buildx-${{ github.sha }}
-        restore-keys: |
-          ${{ runner.os }}-multi-buildx
-
-    - name: Build and push Docker image
+    - name: Build and push base
       uses: docker/build-push-action@v4
       with:
         file: ${{ matrix.docker_file }}
-        tags: ${{ matrix.docker_image }}
+        tags: savant-test:base
         build-args: |
           DEEPSTREAM_VERSION=${{ matrix.deepstream_version }}
         platforms: ${{ matrix.arch }}
-        target: ${{ matrix.target }}
+        target: base
         push: false
-        cache-from: type=local,src=/tmp/.buildx-cache
-        cache-to: type=local,mode=max,dest=/tmp/.buildx-cache-new,compression=uncompressed
 
-    - name: Move cache
-      run: |
-        rm -rf /tmp/.buildx-cache
-        mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+    - name: Build and push samples
+      uses: docker/build-push-action@v4
+      with:
+        file: ${{ matrix.docker_file }}
+        tags: savant-test:samples
+        build-args: |
+          DEEPSTREAM_VERSION=${{ matrix.deepstream_version }}
+        platforms: ${{ matrix.arch }}
+        target: samples
+        push: false
