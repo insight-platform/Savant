@@ -84,7 +84,7 @@ Source-to-Framework communication (bind/connect). This is an exotic pattern. It 
 
 ![Savant socket pairs (6)](https://user-images.githubusercontent.com/15047882/228480906-b74ca06a-3f48-4a8b-b4cc-18bad4fc2565.png)
 
-Framework-to-Sink communication (bind/connect). This is normal pattern, when sinks communicating with an external system are slow or require multiple operations and the order of data appending is not critical.
+Framework-to-Sink communication (bind/connect). This is a valid pattern, when sinks communicating with an external system are slow or require multiple operations and the order of data appending is not critical.
 
 ![Savant socket pairs (7)](https://user-images.githubusercontent.com/15047882/228481469-c11c8d53-9244-4dfb-8071-c042197b716a.png)
 
