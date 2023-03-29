@@ -12,18 +12,18 @@ that utilize the best Nvidia approaches for data center and edge accelerators ve
 - [API Documentation](https://insight-platform.github.io/Savant/reference/api/index.html)
 - [Adapters Guide](docs/adapters.md)
 
-## What it's not
+## What It Is Not
 
 Savant is not for AI model training; it's for building fast streaming inference applications working on Edge and Core Nvidia equipment.
 
-## Who would love it?
+## Who Would Love Savant?
 
 The one, who wants:
 
 - get the maximum performance of Nvidia equipment on streaming inference tasks either on edge or in core;
 - decrease time to market when building dynamic pipelines with DeepStream technology without extra hassle.
 
-## Runs On
+## Runs On Nvidia Hardware
 
 - Nvidia Jetson NX, Xavier AGX;
 - Nvidia Turing GPU;
@@ -44,7 +44,7 @@ without excessive data transfers into CPU RAM and back. It also stands on a high
 stack ([TensorRT](https://developer.nvidia.com/tensorrt)) that optimizes inference operations to get the best of the
 hardware used.
 
-## Why was Savant developed?
+## Why Was Savant Developed?
 
 Why do we develop Savant if DeepStream solves the problem? Because DeepStream is a very tough and challenging to use
 technology.
