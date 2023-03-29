@@ -23,6 +23,11 @@ There are two URL schemes supported:
 
 Read more about 0MQ socket pairs on 0MQ [website](https://zeromq.org/socket-api/).
 
+You usually want using combinations, which are marked with Green color:
+
+![image](https://user-images.githubusercontent.com/15047882/228468880-878857cc-2262-498c-a647-51e669a45b4b.png)
+
+
 ### PUB/SUB
 
 The `PUB/SUB` is convenient to use when you need to handle the same data by multiple subscribers. 
@@ -40,11 +45,21 @@ E.g.:
 - you want to pass frames from a single camera to two different pipelines;
 - you want to pass resulting video analytics to two different adapters (e.g. RTSP streaming and somewhere else).
 
-The `PUB/SUB` is not a reliable communication pair, which means that if the subscriber is slow the frames will be dropped. To overcome that the adapter must handle incoming frames in a sophisticated way (e.g. using internal queueing).
+The `PUB/SUB` is not a reliable communication pair, which means that if the subscriber is slow the frames will be dropped; the `PUB` part never blocks. To overcome that the adapter must handle incoming frames in a sophisticated way (e.g. using internal queueing).
 
 Generally we recommend using the `PUB/SUB` in the following scenarious:
 - you work with raw frames from CAM (MJPEG, RGB, etc) and if the processing is slow you can afford dropping frames;
 - you implemented the adapter in the way to read frames from the socket fast and know how to queue them internally.
+
+Antipattern example: passing video files to the framework with no `SYNC` mode set.
+
+Pattern example: Always-On RTSP Sink Adapter when multiple streams are casted.
+
+
+### DEALER/ROUTER
+
+This is a generally recommended pair to use when you don't need multiple subscribers or can implement such duplication somehow. It is reliable socket pair.
+
 
 ## Source Adapters
 
