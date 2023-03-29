@@ -55,11 +55,13 @@ Antipattern example: passing video files to the framework with no `SYNC` mode se
 
 Pattern example: Always-On RTSP Sink Adapter when multiple streams are casted.
 
-
 ### DEALER/ROUTER
 
-This is a generally recommended pair to use when you don't need multiple subscribers or can implement such duplication somehow. It is reliable socket pair.
+This is a generally recommended pair to use when you don't need multiple subscribers or can implement such duplication somehow. It is reliable socket pair: the `DEALER` will block if `ROUTER`'s queue is full.
 
+### REQ/REP
+
+This is a generally recommended pair to use when you don't need multiple subscribers or can implement such duplication somehow. It is reliable socket pair: the `REQ` sends the next frame only when received the resonse for previously sent from `REP`.
 
 ## Source Adapters
 
