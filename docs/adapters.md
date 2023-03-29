@@ -56,7 +56,7 @@ Framework-to-Sink communication (bind/connect). This is a valid pattern, when si
 
 ### REQ/REP
 
-The `REQ/REP` works the same way as `DEALER/ROUTER` except that the `REQ` part can receive replies from the `REP` part to modidy its behavior somehow. This is a generally recommended pair to use when you don't need multiple subscribers or can implement such duplication somehow. It is reliable socket pair: the `REQ` sends the next frame only when received the response for previously sent from `REP`.
+The `REQ/REP` works the same way as `DEALER/ROUTER` except that the `REQ` part receives replies from the `REP` part every time the `REP` part handle the message. It can be useful to modidy the pace of injecting on the `REQ` part. This is a generally recommended pair to use when you don't need multiple subscribers or can implement such duplication somehow. It is reliable socket pair: the `REQ` sends the next frame only when received the response for previously sent from `REP`.
 
 ### PUB/SUB Explanation
 
