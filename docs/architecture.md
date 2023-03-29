@@ -91,11 +91,16 @@ Sink streams are also muxed and virtualized. The data is in AVRO format and is s
 We developed several data source adapters that fit daily development and production use cases. The developers can also use them as a source base for creating custom adapters - the apparent scenario is implementing an adapter that mixes external data into frames providing additional data to the AI pipeline. 
 
 Every adapter is designed for use with a particular data source: 
-- Local image file, local directory with image files or image file URL ([Image file source adapter ](adapters.md#image-file-source-adapter));
-- Local video file, local directory with video files or video file URL ([Video file source adapter](adapters.md#video-file-source-adapter));
-- RTSP stream ([RTSP source adapter](adapters.md#rtsp-source-adapter));
-- USB/CSI camera ([Usb-cam source adapter](adapters.md#usb-cam-source-adapter));
-- GigE (Genicam) industrial cam ([GigE source adapter](adapters.md#gige-source-adapter)).
+
+- [Local video file](docs/adapters.md#the-video-file-source-adapter);
+- [Local directory of video files](docs/adapters.md#the-video-file-source-adapter);
+- [Local image file](docs/adapters.md#the-image-file-source-adapter);
+- [Local directory of image files](docs/adapters.md#the-image-file-source-adapter);
+- [Image URL](docs/adapters.md#the-image-file-source-adapter);
+- [Video URL](docs/adapters.md#the-video-file-source-adapter);
+- [RTSP stream](docs/adapters.md#the-rtsp-source-adapter);
+- [USB/CSI camera](docs/adapters.md#the-usb-cam-source-adapter);
+- [GigE (Genicam) industrial cam](docs/adapters.md#the-gige-source-adapter).
 
 Since the adapter module is decoupled from the pipeline, its launch is not expensive. Adapter crash also doesn't affect the pipeline execution. Local and remote adapters for video files support both sync and as-fast-as-possible models of data injection. 
 
@@ -107,11 +112,11 @@ Sink adapters send inference data and(or) generated multimedia data into externa
 
 A developer would be especially interested in the following sinks:
 
-- Inference results are placed into JSON file stream ([Metadata Sink Adapter](adapters.md#metadata-sink-adapter));
-- Resulting video overlay displayed on a screen (per source) ([Display sink adapter](adapters.md#display-sink-adapter));
-- MP4 file (per source) ([Video file sink adapter](adapters.md#video-file-sink-adapter));
-- Image directory (per source) ([Image file sink adapter](adapters.md#image-file-sink-adapter));
-- Always-On RTSP Stream Sink ([Always-On RTSP sink adapter](adapters.md#always-on-rtsp-sink-adapter)).
+- [Inference results are placed into JSON file stream](docs/adapters.md#the-json-meta-sink-adapter);
+- [Resulting video overlay displayed on a screen (per source)](docs/adapters.md#the-display-sink-adapter);
+- [MP4 file (per source)](docs/adapters.md#the-video-file-sink-adapter);
+- [image directory (per source)](docs/adapters.md#the-image-file-sink-adapter);
+- [Always-On RTSP Stream Sink](docs/adapters.md#the-always-on-rtsp-sink-adapter).
 
 ## Pipeline Configurator
 
