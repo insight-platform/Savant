@@ -1,0 +1,61 @@
+name: TEST Build and publish docker images
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+  # to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+
+  build-docker:
+#    needs: build-matrix
+#    runs-on: ubuntu-latest
+    runs-on: self-hosted
+    strategy:
+      fail-fast: false
+      matrix:
+      include:
+        - arch: linux/amd64
+          docker_image: savant-test:base
+          docker_file: docker/Dockerfile.test
+          deepstream_version: 6.2
+          target: base
+        - arch: linux/amd64
+          docker_image: savant-test:sample
+          docker_file: docker/Dockerfile.test
+          deepstream_version: 6.2
+          target: sample
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - run: |
+        echo ${{ matrix.arch }}
+        echo ${{ matrix.docker_file }}
+        echo ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.docker_image }}
+
+    - uses: actions/checkout@v3
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v2
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v4
+      with:
+        file: ${{ matrix.docker_file }}
+        tags: ${{ matrix.docker_image }}
+        build-args: |
+          DEEPSTREAM_VERSION=${{ matrix.deepstream_version }}
+        platforms: ${{ matrix.arch }}
+        target: ${{ matrix.target }}
+        push: false
