@@ -16,6 +16,8 @@ The image file source adapter reads `image/jpeg` or `image/png` files from `LOCA
 - a local path to a directory with files (not necessarily in the same encoding);
 - HTTP URL to a single file.
 
+The adapter is useful for development purposes. It also can be used to process image streams efficiently in production.
+
 The adapter parameters are set with environment variables:
 
 - `LOCATION` - image file(s) location or URL;
@@ -30,7 +32,6 @@ The adapter parameters are set with environment variables:
 - `FPS_PERIOD_FRAMES` - number of frames between FPS reports; default is `1000`;
 - `FPS_PERIOD_SECONDS` - number of seconds between FPS reports; default is `None`;
 - `FPS_OUTPUT` - path to the file where the FPS reports will be written; default is `stdout`.
-
 
 Example:
 
@@ -104,9 +105,9 @@ The same adapter can be run using a script:
     ./scripts/run_source.py videos --source-id=test /path/to/data/test.mp4
 ```
 
-*Note: Resulting video stream framerate will be equal to the framerate of the first encountered video file, possibly overriding the framerate of the rest of input files.
+**Note**: Resulting video stream framerate will be equal to the framerate of the first encountered video file, possibly overriding the framerate of the rest of input files.
 
-### RTSP Source Adapter
+### The RTSP Source Adapter
 
 The RTSP source adapter reads RTSP stream from specified `RTSP_URI`.
 
@@ -141,7 +142,7 @@ The same adapter can be run using a script:
     ./scripts/run_source.py rtsp --source-id=test rtsp://192.168.1.1
 ```
 
-### Usb Cam Source Adapter
+### The USB Cam Source Adapter
 
 The USB cam source adapter captures video from a V4L2 device specified in `DEVICE` parameter.
 
@@ -177,7 +178,7 @@ The same adapter can be run using a script:
     ./scripts/run_source.py usb-cam --source-id=test --framerate=30/1 /dev/video1
 ```
 
-### GigE Source Adapter
+### The GigE Source Adapter
 
 The adapter is designed to take video streams from GigE cameras.
 
@@ -229,7 +230,7 @@ The same adapter can be run using a script:
 
 These adapters should help the user with the most basic and widespread output data formats.
 
-### JSON Meta Sink Adapter
+### The JSON Meta Sink Adapter
 
 The JSON meta sink adapter writes received messages as newline-delimited JSON streaming file to a `LOCATION`, which can be:
 
@@ -271,7 +272,7 @@ The same adapter can be run using a script:
     ./scripts/run_sink.py meta-json /path/to/output/%source_id-%src_filename
 ```
 
-### Image File Sink Adapter
+### The Image File Sink Adapter
 
 The image file sink adapter extends the JSON meta adapter by writing image files along with meta JSON files to a specified in `DIR_LOCATION` parameter directory.
 
@@ -308,7 +309,7 @@ The same adapter can be run using a script:
     ./scripts/run_sink.py image-files /path/to/output/%source_id-%src_filename
 ```
 
-### Video File Sink Adapter
+### The Video File Sink Adapter
 
 The video file sink adapter extends the JSON meta adapter by writing video files along with meta JSON files to a specified in `DIR_LOCATION` parameter directory.
 
@@ -345,7 +346,7 @@ The same adapter can be run using a script:
     ./scripts/run_sink.py video-files /path/to/output/%source_id-%src_filename
 ```
 
-### Display Sink Adapter
+### The Display Sink Adapter
 
 The display sink adapter opens player windows where displays every processed stream:
 
@@ -384,7 +385,7 @@ The same adapter can be run using a script:
     ./scripts/run_sink.py display
 ```
 
-### Always-On RTSP Sink Adapter
+### The Always-On RTSP Sink Adapter
 
 The Always-on RTSP sink adapter casts the video stream from a specific source to an RTSP server.
 
