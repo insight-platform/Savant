@@ -57,17 +57,19 @@ The same adapter can be run using a script:
     ./scripts/run_source.py pictures --source-id=test /path/to/images
 ```
 
-### Video File Source Adapter
+# The Video File Source Adapter
 
 The video file source adapter reads `video/*` files from `LOCATION`, which can be:
+
 - a local path to a single file;
 - a local path to a directory with one or more files;
 - HTTP URL to a single file;
 
 The adapter parameters are set with environment variables:
+
 - `LOCATION` - video file(s) location or URL;
 - `SOURCE_ID` - unique identifier for the source stream; this option is required;
-- `SORT_BY_TIME` - flag indicates whether files from `LOCATION` are sorted by modification time (ascending order); by default, it is `False` and files are sorted lexicographically.
+- `SORT_BY_TIME` - flag indicates whether files from `LOCATION` are sorted by modification time (ascending order); by default, it is `False` and files are sorted lexicographically;
 - `READ_METADATA` - flag indicates the need to read the object's metadata from a JSON file that has the identical name as the source file; default is `False`;
 - `OUT_ENDPOINT` - adapter output (should be equal to the configured framework input) ZeroMQ socket endpoint; default is `ipc:///tmp/zmq-sockets/input-video.ipc`;
 - `OUT_TYPE` - adapter output ZeroMQ socket type; default is `DEALER`, also can be set to `PUB` or `REQ` as well;
@@ -77,10 +79,10 @@ The adapter parameters are set with environment variables:
 - `FPS_PERIOD_SECONDS` - number of seconds between FPS reports; default is `None`;
 - `FPS_OUTPUT` - path to the file where the FPS reports will be written; default is `stdout`.
 
-Example:
+## Example
 
 ```bash
-    docker run --rm -it --name source-video-files-test \
+docker run --rm -it --name source-video-files-test \
     --entrypoint /opt/app/adapters/gst/sources/media_files.sh \
     -e SYNC_OUTPUT=False \
     -e ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/input-video.ipc \
