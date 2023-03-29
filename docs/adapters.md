@@ -342,7 +342,7 @@ The same adapter can be run using a script:
 
 ### Display Sink Adapter
 
-Display sink adapter opens a window to play every processed stream:
+The display sink adapter opens player windows where displays every processed stream:
 
 The adapter parameters are set with environment variables:
 
@@ -381,29 +381,30 @@ The same adapter can be run using a script:
 
 ### Always-On RTSP Sink Adapter
 
-Always-on RTSP sink adapter sends video stream from a specific source to an RTSP server.
+The Always-on RTSP sink adapter casts the video stream from a specific source to an RTSP server.
 
-Adapter parameters are set trough environment variables:
-- `RTSP_URI` - URI of the RTSP server, this parameter is required.
-- `STUB_FILE_LOCATION` - Location of the stub image file. Image file must be in JPEG format, this parameter is required. The stub image file is shown when there is no input stream.
-- `MAX_DELAY_MS` - Maximum delay for the last frame in milliseconds, default value is 1000.
-- `TRANSFER_MODE` - Transfer mode specification. One of: "scale-to-fit", "crop-to-fit", default value is "scale-to-fit".
-- `PROTOCOLS` - Allowed lower transport protocols, e.g. "tcp+udp-mcast+udp", default value is "tcp".
-- `LATENCY_MS` - Amount of ms to buffer RTSP stream, default value is 100.
-- `KEEP_ALIVE` - Send RTSP keep alive packets, disable for old incompatible server, default value is True.
-- `PROFILE` - H264 encoding profile. One of: "Baseline", "Main", "High", default value is "High".
-- `BITRATE` - H264 encoding bitrate, default value is 4000000.
-- `FRAMERATE` - Frame rate of the output stream, default value is "30/1".
-- `METADATA_OUTPUT` - Where to dump metadata (stdout or logger).
-- `SYNC` - Flag indicates the need to show frames on sink synchronously (i.e. at the source file rate). Inbound stream is not stable with this flag, try to avoid it. Default value is False.
-- `SOURCE_ID` - Optional filter to receive frames with a specific source ID only.
-- `SOURCE_ID_PREFIX` - Optional filter to receive frames with a source ID prefix only.
-- `IN-ENDPOINT` - ZeroMQ socket endpoint for the adapter's input, i.e., the module output. Default value is 'ipc:///tmp/zmq-sockets/output-video.ipc'.
-- `IN_TYPE` - ZeroMQ socket type for the adapter's input. Default value is 'SUB'.
-- `IN_BIND` - Flag specifies whether the adapter's input should be bound or connected to the specified endpoint. If True, the input is bound; otherwise, it's connected. Default value is False.
+The adapter parameters are set with environment variables:
 
+- `RTSP_URI` - URI of the RTSP server, this parameter is required;
+- `STUB_FILE_LOCATION` - location of the stub image file; the image file must be in JPEG format, this parameter is required; the stub image file is shown when there is no input data;
+- `MAX_DELAY_MS` - maximum delay for the last frame in milliseconds, default value is `1000`; after the delay the stub image will be displayed;
+- `TRANSFER_MODE` - transfer mode specification; one of: `scale-to-fit`, `crop-to-fit`; the default value is "scale-to-fit";
+- `PROTOCOLS` - allowed lower transport protocols, e.g. `tcp+udp-mcast+udp`; the default value is `tcp`;
+- `LATENCY_MS` - amount of ms to buffer for the RTSP stream, default value is `100`;
+- `KEEP_ALIVE` - whether to send RTSP keep alive packets, disable for old incompatible server, default value is `True`;
+- `PROFILE` - H264 encoding profile; one of: `Baseline`, `Main`, `High`; the default value is `High`;
+- `BITRATE` - H264 encoding bitrate; the default value is `4000000`;
+- `FRAMERATE` - frame rate for the output stream; the default value is `30/1`;
+- `METADATA_OUTPUT` - where to dump metadata (stdout or logger);
+- `SYNC` - flag indicates whether to show frames on sink synchronously (i.e. at the source rate); the streaming may be not stable with this flag, try to avoid it; the default value is `False`;
+- `SOURCE_ID` - optional filter to receive frames with a specific source ID only;
+- `SOURCE_ID_PREFIX` - optional filter to receive frames with a source ID prefix only;
+- `IN-ENDPOINT` - ZeroMQ socket endpoint for the adapter's input, i.e., the framework output; the default value is `ipc:///tmp/zmq-sockets/output-video.ipc`;
+- `IN_TYPE` - ZeroMQ socket type for the adapter's input; the default value is `SUB`, can also be set to `ROUTER` or `REP`;
+- `IN_BIND` - flag specifies whether the adapter's input should be bound or connected to the specified endpoint; If `True`, the input is bound; otherwise, it's connected; the default value is `False`.
 
-Example
+Example:
+
 ```bash
     docker run --rm -it --name sink-always-on-rtsp \
     --entrypoint python \
@@ -429,7 +430,8 @@ Example
     -m adapters.ds.sinks.always_on_rtsp
 ```
 
-The same adapter can be run using a script
+The same adapter can be run using a script:
+
 ```bash
     ./scripts/run_sink.py always-on-rtsp --source-id=test --stub-file-location=/path/to/stub_file/test.jpg rtsp://192.168.1.1
 ```
