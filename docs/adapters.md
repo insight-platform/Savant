@@ -8,14 +8,16 @@ The framework can communicate with both source and sink adapters via a protocol 
 
 ## Socket Types
 
-Savant supports three kinds of sockets to communicate with the framework:
+Savant supports three kinds of sockets for communications with the framework:
+
 - PUB/SUB - unsafe socket pair, supporting single publisher, multiple subscribers;
 - DEALER/ROUTER - safe asynchronous socket pair, supporting multiple publishers, single subscriber;
 - REQ/REP - safe synchronous socket pair, supporting multiple publishers, single subscriber.
 
-You have to carefully decide what socket pair to use when building the pipeline.
+You have to carefully decide what socket pair to use when building the pipeline based on your needs and socket features.
 
-The sockets can be in either `bind` or `connect` modes. If the socket is configured as `bind` it listens the address, if it is configured as `connect` it connects to the address. 
+The sockets can be in either `bind` or `connect` modes. If the socket is configured as `bind` it listens the address, 
+if it is configured as `connect` it connects to the address. 
 
 There are two URL schemes supported:
 - Unix domain sockets;
@@ -28,23 +30,23 @@ You usually want using combinations, which are marked with Green color:
 ![image](https://user-images.githubusercontent.com/15047882/228468880-878857cc-2262-498c-a647-51e669a45b4b.png)
 
 
-### PUB/SUB
+### PUB/SUB Explanation
 
 The `PUB/SUB` is convenient to use when you need to handle the same data by multiple subscribers. 
 
-Source-to-Framework communication (bind/connect):
+Source-to-Framework communication (bind/connect). The source is initialized as a server (bind), the framework connects to it as a client. This scheme is typically can be used when the source already delivers multiple streams or the frameworks handles a single stream provided by the source. In this scenario the source can duplicate the same stream to multiple frameworks simultaneously.
 
 ![Pub/Sub for Source-Framework communication](https://user-images.githubusercontent.com/15047882/228461503-0e93cd62-986d-43b2-b309-5f905b6f873a.png)
 
-Framework-to-Sink communication (bind/connect):
+Framework-to-Sink communication (bind/connect). This is a typical schene which can be used widely. The framework as a server can stream results to multiple sink adapters. Every such adapter can filter out only required information.
 
 ![PubSub for Framework-Sink communication](https://user-images.githubusercontent.com/15047882/228462824-a615e635-b795-44a9-8680-072b53936a5e.png)
 
-Source-to-Framework communication (connect/bind):
+Source-to-Framework communication (connect/bind). This is a typical when the framework handles multiple streams. The framework binds to a socket and clients connect to that socket.
 
 ![Savant socket pairs (2)](https://user-images.githubusercontent.com/15047882/228470309-e6dd2746-457f-409c-8eb0-514870dda011.png)
 
-Framework-to-Sink communication (connect/bind):
+Framework-to-Sink communication (connect/bind). This is not typical by legal scheme. The sink handles multiple outputs from frameworks to deliver them some storage, e.g. Kafka or ClickHouse.
 
 ![Savant socket pairs (3)](https://user-images.githubusercontent.com/15047882/228470669-47e76e52-a8a4-4055-869a-a2ce405b4319.png)
 
