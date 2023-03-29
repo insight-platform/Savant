@@ -105,7 +105,7 @@ The same adapter can be run using a script:
 
 The RTSP source adapter reads RTSP stream from specified `RTSP_URI`.
 
-The adapter parameters are set through environment variables:
+The adapter parameters are set with environment variables:
 - `RTSP_URI` - RTSP URI of the stream; this option is required;
 - `SOURCE_ID` - unique identifier for the source stream; this option is required;
 - `OUT_ENDPOINT` - adapter output (should be equal to the configured framework input) ZeroMQ socket endpoint; default is `ipc:///tmp/zmq-sockets/input-video.ipc`;
@@ -140,7 +140,7 @@ The same adapter can be run using a script:
 
 The USB cam source adapter captures video from a V4L2 device specified in `DEVICE` parameter.
 
-The adapter parameters are set through environment variables:
+The adapter parameters are set with environment variables:
 - `DEVICE` - USB camera device; default value is `/dev/video0`;
 - `FRAMERATE` - desired framerate for the video stream captured from the device; note that if the input device does not support specified video framerate, results may be unexpected;
 - `SOURCE_ID` - unique identifier for the source adapter; this option is required;
@@ -172,34 +172,35 @@ The same adapter can be run using a script:
     ./scripts/run_source.py usb-cam --source-id=test --framerate=30/1 /dev/video1
 ```
 
-### GigE source adapter
+### GigE Source Adapter
 
 The adapter is designed to take video streams from GigE cameras.
 
-Adapter parameters are set trough environment variables:
+The adapter parameters are set with environment variables:
 
-- `WIDTH` the width of the video stream, in pixels
-- `HEIGHT` the height of the video stream, in pixels
-- `FRAMERATE` the framerate of the video stream, in frames per second
-- `INPUT_CAPS` the format of the video stream, in GStreamer caps format (e.g. "video/x-raw,format=RGB")
-- `PACKET_SIZE` the packet size for GigEVision cameras, in bytes
-- `AUTO_PACKET_SIZE` whether to negotiate the packet size automatically for GigEVision cameras
-- `EXPOSURE` the exposure time for the camera, in microseconds
-- `EXPOSURE_AUTO` the auto exposure mode for the camera, one of "off", "once", or "on"
-- `GAIN` the gain for the camera, in decibels
-- `GAIN_AUTO` the auto gain mode for the camera, one of "off", "once", or "on"
-- `FEATURES` additional configuration parameters for the camera, as a space-separated list of feature assignations
-- `HOST_NETWORK` - Host network to use.
-- `CAMERA_NAME` - Name of the camera, in the format specified in the command description. 
-- `SOURCE_ID` - Unique identifier for the source adapter. This option is required.
-- `OUT_ENDPOINT` - Adapter output (should be equal to module input) ZeroMQ socket endpoint. Default is ipc:///tmp/zmq-sockets/input-video.ipc.
-- `OUT_TYPE` - Adapter output ZeroMQ socket type. Default is DEALER.
-- `OUT_BIND` - Adapter output ZeroMQ socket bind/connect mode (bind if True). Default is False.
-- `FPS_PERIOD_FRAMES` - Number of frames between FPS reports. Default is 1000.
-- `FPS_PERIOD_SECONDS` - Number of seconds between FPS reports. Default is None.
-- `FPS_OUTPUT` - Path to the file where the FPS reports will be written. Default is 'stdout'.
+- `WIDTH` - the width of the video frame, in pixels;
+- `HEIGHT` - the height of the video frame, in pixels;
+- `FRAMERATE` - the framerate of the video stream, in frames per second;
+- `INPUT_CAPS` - the format of the video stream, in GStreamer caps format (e.g. "video/x-raw,format=RGB");
+- `PACKET_SIZE` - the packet size for GigEVision cameras, in bytes;
+- `AUTO_PACKET_SIZE` - whether to negotiate the packet size automatically for GigEVision cameras;
+- `EXPOSURE` - the exposure time for the camera, in microseconds;
+- `EXPOSURE_AUTO` - the auto exposure mode for the camera, one of `off`, `once`, or `on`;
+- `GAIN` - the gain for the camera, in decibels;
+- `GAIN_AUTO` - the auto gain mode for the camera, one of `off`, `once`, or `on`;
+- `FEATURES` - additional configuration parameters for the camera, as a space-separated list of features;
+- `HOST_NETWORK` - host network to use;
+- `CAMERA_NAME` - name of the camera, in the format specified in the command description; 
+- `SOURCE_ID` - unique identifier for the source stream; this option is required;
+- `OUT_ENDPOINT` - adapter output (should be equal to module input) ZeroMQ socket endpoint; default is `ipc:///tmp/zmq-sockets/input-video.ipc`;
+- `OUT_TYPE` - adapter output ZeroMQ socket type; default is `DEALER`, also can be set to `PUB` or `REQ` as well;
+- `OUT_BIND` - adapter output ZeroMQ socket bind/connect mode (the bind mode is when set to `True`); default is `False`;
+- `FPS_PERIOD_FRAMES` - number of frames between FPS reports; default is `1000`;
+- `FPS_PERIOD_SECONDS` - Number of seconds between FPS reports; default is `None`;
+- `FPS_OUTPUT` - path to the file where the FPS reports will be written; Default is `stdout`.
 
-Example
+Example:
+
 ```bash
     docker run --rm -it --name source-video-files-test \
     --entrypoint /opt/app/adapters/gst/sources/gige_cam.sh \
@@ -212,35 +213,38 @@ Example
     ghcr.io/insight-platform/savant-adapters-gstreamer:0.2.0
 ```
 
-The same adapter can be run using a script
+The same adapter can be run using a script:
+
 ```bash
     ./scripts/run_source.py gige --source-id=test test-camera
 ```
 
 
-## Sink adapters
+## Sink Adapters
 
 These adapters should help the user with the most basic and widespread output data formats.
 
 ### Metadata Sink Adapter
 
 Meta-json sink adapter writes received messages as newline-delimited JSON streaming file to a `LOCATION`, which can be:
-- Local path to a single file
+
+- Local path to a single file;
 - Local path with substitution patterns:
-  - `%source_id` will insert `SOURCE_ID` value into resulting filename
+  - `%source_id` will insert `SOURCE_ID` value into resulting filename;
   - `%src_filename` will insert source filename into resulting filename.
 
-Adapter parameters are set trough environment variables:
-- `LOCATION` - Output metadata file path.
-- `CHUNK_SIZE` - Chunk size in frames. The whole stream of incoming frames with meta-data is split into separate parts and written to separate files with consecutive numbering. If a message about the end of the data stream (generated by the module or source-adapter) comes, the recording to a new file starts, even if there are less than the specified number of frames. Default value is 10000. A value of 0 disables chunking within one continuous stream of frames by source_id.
-- `SKIP_FRAMES_WITHOUT_OBJECTS` - Flag that indicates whether frames with 0 objects should be skipped in output. Default value is False.
-- `SOURCE_ID` - Optional filter to receive frames with a specific source ID only.
-- `SOURCE_ID_PREFIX` - Optional filter to receive frames with a source ID prefix only.
-- `IN-ENDPOINT` - ZeroMQ socket endpoint for the adapter's input, i.e., the module output. Default value is 'ipc:///tmp/zmq-sockets/output-video.ipc'.
-- `IN_TYPE` - ZeroMQ socket type for the adapter's input. Default value is 'SUB'.
-- `IN_BIND` - Flag specifies whether the adapter's input should be bound or connected to the specified endpoint. If True, the input is bound; otherwise, it's connected. Default value is False.
+The adapter parameters are set with environment variables:
+- `LOCATION` - output metadata file path;
+- `CHUNK_SIZE` - chunk size in frames; the whole stream of incoming frames with meta-data is split into separate parts and written to separate files with consecutive numbering; If a message about the end of the data stream (generated by the module or source-adapter) comes, the recording to a new file starts, even if there are less than the specified number of frames; default value is `10000`, a value of `0` disables chunking resulting to a continuous stream of frames by source_id;
+- `SKIP_FRAMES_WITHOUT_OBJECTS` - flag that indicates whether frames with `0` objects should be removed from output; the default value is `False`.
+- `SOURCE_ID` - optional filter to filter out frames with a specific source ID only;
+- `SOURCE_ID_PREFIX` - optional filter to filter out frames with a source ID prefix only;
+- `IN-ENDPOINT` - ZeroMQ socket endpoint for the adapter's input, i.e., the framework output; the default value is `ipc:///tmp/zmq-sockets/output-video.ipc`;
+- `IN_TYPE` - ZeroMQ socket type for the adapter's input; the default value is `SUB`.
+- `IN_BIND` - flag specifies whether the adapter's input should be bound or connected to the specified endpoint; If `True`, the input is bound; otherwise, it's connected; the default value is `False`.
 
-Example
+Example:
+
 ```bash
     docker run --rm -it --name sink-meta-json \
     --entrypoint /opt/app/adapters/python/sinks/metadata_json.py \
@@ -255,12 +259,13 @@ Example
     ghcr.io/insight-platform/savant-adapters-py:0.2.0
 ```
 
-The same adapter can be run using a script
+The same adapter can be run using a script:
+
 ```bash
     ./scripts/run_sink.py meta-json /path/to/output/%source_id-%src_filename
 ```
 
-### Image file sink adapter
+### Image File Sink Adapter
 
 Image file sink adapter enhances the meta-json adapter and writes received messages as separate image files along with meta-json files to a specified in `DIR_LOCATION` parameter directory.
 
@@ -269,7 +274,7 @@ Adapter parameters are set trough environment variables:
 - `CHUNK_SIZE` - Chunk size in frames. The whole stream of incoming frames with meta-data is split into separate parts and written to separate folders with consecutive numbering. If a message about the end of the data stream (generated by the module or source-adapter) comes, the recording to a new folder starts, even if there are less than the specified number of frames. Default value is 10000. A value of 0 disables chunking within one continuous stream of frames by source_id.
 - `SKIP_FRAMES_WITHOUT_OBJECTS` - Flag that indicates whether frames with 0 objects should be skipped in output. Default value is False.
 - `SOURCE_ID` - Optional filter to receive frames with a specific source ID only.
-- `SOURCE_ID_PREFIX` - Optional filter to receive frames with a source ID prefix only.
+- `SOURCE_ID_PREFIX` - Optional filter to receive frames with a source ID prefix only;
 - `IN-ENDPOINT` - ZeroMQ socket endpoint for the adapter's input, i.e., the module output. Default value is 'ipc:///tmp/zmq-sockets/output-video.ipc'.
 - `IN_TYPE` - ZeroMQ socket type for the adapter's input. Default value is 'SUB'.
 - `IN_BIND` - Flag specifies whether the adapter's input should be bound or connected to the specified endpoint. If True, the input is bound; otherwise, it's connected. Default value is False.
