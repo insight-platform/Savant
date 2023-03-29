@@ -77,6 +77,19 @@ Source-to-Framework communication (connect/bind). This is a typical scheme of co
 
 ![Savant socket pairs (4)](https://user-images.githubusercontent.com/15047882/228478831-af9032c7-50e2-4f6a-84d4-9583b609dd96.png)
 
+Framework-to-Sink communication (connect/bind). This is a normal pattern, when you have the sink adapter communicating with the external system like Kafka and wish to send data from multiple framework instances.
+
+![Savant socket pairs (5)](https://user-images.githubusercontent.com/15047882/228480218-b222776c-baa2-4342-8c1b-0133e256bd40.png)
+
+Source-to-Framework communication (bind/connect). This is an exotic pattern. It can work, however when you work with raw frames or isolated image streams and don't care about order. In this scheme, the source will distribute data berween connected frameworks according to LRU strategy, so it is impossible to use the scheme when you work with video.
+
+![Savant socket pairs (6)](https://user-images.githubusercontent.com/15047882/228480906-b74ca06a-3f48-4a8b-b4cc-18bad4fc2565.png)
+
+Framework-to-Sink communication (bind/connect). This is normal pattern, when sinks communicating with an external system are slow or require multiple operations and the order of data appending is not critical.
+
+![Savant socket pairs (7)](https://user-images.githubusercontent.com/15047882/228481469-c11c8d53-9244-4dfb-8071-c042197b716a.png)
+
+
 
 ### REQ/REP
 
