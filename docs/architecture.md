@@ -40,6 +40,14 @@ Savant introduces valuable extensions to the DeepStream framework through the ab
 
 **Sink Adapters**. After being processed by the framework, the data is injected into an external system. The framework provides the unified interface for that. With sink adapters framework converts and sends the data into external systems safely. Decoupling sink adapters from the framework also increases the stability and reliability of the processing. [Sink adapters](adapters.md#sink-adapters).
 
+## Pipeline Architecture
+
+Every pipeline developed with Savant in the end looks like it is depicted on the following diagram:
+
+![Savant Pipeline Architecture](https://user-images.githubusercontent.com/15047882/228788117-d8875670-ba7a-4468-b39e-6c699ae0d8dc.png)
+
+Yellow blocks represent user-defined elements, while blue boxes represent everything framework provides the the developer.
+
 ## Virtual Streams Architecture
 
 The Gstreamer and DeepStream stream is bound to a single data source. E.g., a stream can represent an RTSP camera. Therefore, that stream is a part of the Gstreamer processing graph. For example, when dealing with a simple Gstreamer pipeline, it looks like shown on the left side of the picture:
