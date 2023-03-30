@@ -97,7 +97,7 @@ This is a recommended pair to use when you don't need to duplicate the messages 
 
 ![Savant socket pairs (5)](https://user-images.githubusercontent.com/15047882/228480218-b222776c-baa2-4342-8c1b-0133e256bd40.png)
 
-**Source/BIND-to-Framework/CONNECT communication**. This is an exotic pattern. It can work, however when you work with raw frames or isolated image streams and don't care about order. In this scheme, the source will distribute data berween connected frameworks according to LRU strategy, so it is impossible to use the scheme when you work with video.
+**Source/BIND-to-Framework/CONNECT communication**. This is an exotic pattern. Although, It may do the job when you handle raw frames or isolated image streams and don't care about per-stream order. In this scheme, the source will distribute data berween connected frameworks according to LRU strategy, so it is impossible to use the scheme when you work with video.
 
 ![Savant socket pairs (6)](https://user-images.githubusercontent.com/15047882/228480906-b74ca06a-3f48-4a8b-b4cc-18bad4fc2565.png)
 
