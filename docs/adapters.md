@@ -6,6 +6,9 @@ The framework can communicate with both source and sink adapters via a protocol 
 
 - [Socket Types](#socket-types)
   - [The Rule of Thumb](#the-rule-of-thumb)
+  - [Typical Patterns](#typical-patterns)
+    - [Data-Center Patterns](#data-center-patterns)
+    - [Edge Patterns](#edge-patterns)
   - [DEALER/ROUTER](#dealer/router)
   - [REQ/REP](#req/rep)
   - [PUB/SUB Explanation](#pub/sub-explanation)
@@ -22,6 +25,7 @@ The framework can communicate with both source and sink adapters via a protocol 
   - [The Video File Sink Adapter](#the-video-file-sink-adapter)
   - [The Display Sink Adapter](#the-display-sink-adapter)
   - [The Always-On RTSP Sink Adapter](#the-always-on-rtsp-sink-adapter)
+
 
 ## Socket Types
 
