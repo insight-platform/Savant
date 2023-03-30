@@ -2,7 +2,7 @@
 
 The adapter is an independent process that either reads (source adapter) or writes (sink adapter) data from/to some location, thus decoupling input/output operations from the main processing. Adapters are implemented as Docker images, and Python helper scripts have been developed to simplify the process of running and using source and sink adapters. However, scripts are optional so that you can launch adapters directly as docker commands.
 
-The framework can communicate with both source and sink adapters via a protocol implemented with ZeroMQ sockets Apache AVRO. Below you will find descriptions for all adapters provided and examples of how to run them.
+The framework can communicate with both source and sink adapters via a protocol implemented with ZeroMQ sockets and Apache AVRO. Below you will find descriptions for all adapters provided and examples of how to run them.
 
 - [Socket Types](#socket-types)
   - [The Rule of Thumb](#the-rule-of-thumb)
