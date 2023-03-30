@@ -52,6 +52,17 @@ You usually want to use combinations, which are marked with Green color:
 2. The part which delivers multiplexed stream usually has the **bind** type; the part which handles a single (non-multiplexed) stream usually has the **connect** type.
 3. Use the `PUB/SUB` pair only when the pipeline or adapter is capable to handle the traffic in real-time.
 
+### Typical Patterns
+
+There are typical patterns widely used, try to start from them when designing pipelines.
+
+#### Data-center Patterns
+
+![Savant socket pairs (9)](https://user-images.githubusercontent.com/15047882/228735991-21b9d2c2-64bf-4c5e-838c-2c0c62ca12ed.png)
+
+The first one is a typical scenario when the adapter reads multiplexed streams from an external queue system (like Kafka) and passes them to the framework instance. The framework, in turn, transfers analytics results (and video) to the adapter, which places the results into a database or another queue system.
+
+The second is typical when adapters are used to aggregate data from multiple streams (e.g. RTSP cams) into the framework instance. The right side of the pipeline stays the same as in the previous case.
 
 ### DEALER/ROUTER
 
