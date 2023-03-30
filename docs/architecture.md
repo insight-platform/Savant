@@ -2,43 +2,43 @@
 
 **THIS IS WIP SECTION**
 
-Savant is built on top of DeepStream SDK - state-of-the-art Nvidia framework for streaming AI applications. DeepStream is the core framework of the Nvidia ecosystem because it unleashes the power of Nvidia accelerators in inference tasks. 
+avant is a cutting-edge platform that leverages the power of DeepStream SDK, an advanced Nvidia framework designed for streaming AI applications. DeepStream is a cornerstone of the Nvidia ecosystem, unleashing the full potential of Nvidia accelerators in inference tasks.
 
-No other general-purpose framework is able to reach performance comparable to DeepStream in inference tasks for video processing. There is a reason for that: popular frameworks like PyTorch, TensorFlow, OpenCV, and FFmpeg are bound to the CPU when doing the operations, while DeepStream uses the CPU only to control the flow. It's not obvious, but moving image frames between CPU and GPU takes a lot of time and decreases the performance dramatically.
+DeepStream is unrivaled in its ability to deliver exceptional performance in video processing inference tasks. This is because traditional frameworks such as PyTorch, TensorFlow, OpenCV, and FFmpeg are limited by the CPU when performing operations. In contrast, DeepStream utilizes the CPU solely for flow control, while video frames are processed within the GPU memory, thereby eliminating the significant performance drop associated with transferring image frames between the CPU and GPU.
 
-In the DeepStream, operations like video decoding, frame transformations, inference, and finally encoding (if necessary) run in GPU memory and use GPU hardware features to speed up the process reaching the limits of the accelerator card. Building such kind of a framework is a very sophisticated task that requires a broad knowledge of Nvidia hardware and low-level tools like CUDA and TensorRT.
+DeepStream is specifically optimized for tasks such as video decoding, frame transformations, inference, and encoding, all of which are executed within the GPU memory utilizing GPU hardware features, maximizing the potential of the accelerator card. Developing such a powerful framework requires extensive knowledge of Nvidia hardware and low-level tools such as CUDA and TensorRT, making DeepStream a highly sophisticated and advanced platform.
 
 ![Nvidia DeepStream Architecture](https://user-images.githubusercontent.com/15047882/167308102-eea0915d-e1e5-4924-bd4c-69da34d47fc7.png)
 
-Unfortunately, DeepStream has a very steep learning curve which is a showstopper for most ML engineers because it introduces a very advanced knowledge domain - Gstreamer programming. Gstreamer is very sophisticated software with a pretty low-level API that is developed to build high-performance, reliable streaming applications.
+Although DeepStream offers unparalleled performance, it can be daunting for many ML engineers due to its steep learning curve and advanced knowledge domain, specifically Gstreamer programming. Gstreamer is a highly sophisticated software with a low-level API, specifically designed for building high-performance and reliable streaming applications.
 
-So, to build your software on top of DeepStream, you have to have:
-1. machine-learning expertise (probably you have);
-2. TensorRT expertise;
-3. Video processing expertise;
-4. Gstreamer expertise;
-
-That sounds tricky. Savant is designed to address the last two points with a very high-level and robust architecture built on top of Gstreamer/DeepStream. As a framework user, you no longer care about Gstreamer programming because the framework solves most typical problems in its architecture.
+To develop software using DeepStream, you would require expertise in machine learning, TensorRT, video processing, and Gstreamer. This can be a challenging task. However, Savant has been designed to address the last two points and provide a high-level, robust architecture built on top of Gstreamer/DeepStream. As a Savant user, you no longer need to be proficient in Gstreamer programming, as the framework's architecture solves most typical problems, simplifying the development process.
 
 ## Savant Architecture
 
-Savant introduces valuable extensions to the DeepStream framework through the abstraction level built above DeepStream and Gstreamer. The purpose of that layer is to hide all the complexity of Gstreamer with handy abstractions, tools, and automation. One can see the most important logical elements in the picture:
+Savant adds significant value to the DeepStream framework by introducing a higher level of abstraction built on top of DeepStream and Gstreamer. This layer is designed to simplify the development process by providing convenient abstractions, tools, and automation, which abstract away the underlying complexity of Gstreamer.
+
+The picture illustrates the most important logical elements of Savant:
 
 ![Savant Architecture](https://user-images.githubusercontent.com/15047882/168019278-f75e5653-4332-4cd9-a54b-fa9e57902d26.png)
 
-**Framework Core**. The framework's engine integrates with Gstreamer and DeepStream, allowing developers to create extensions and programmatic implementations of customized pipelines without use of Savant's declarative YAML architecture.
+Some of the key components of the framework include:
 
-**Dynamic Configuration Manager**. The subsystem fetches parameters from the outer space to configure pipeline elements during the pipeline launch and execution.
+**Framework Core**: The engine of the framework integrates with Gstreamer and DeepStream, enabling developers to create customized pipelines using YAML configuration and Python.
 
-**Libraries**. We have developed custom preprocessing and postprocessing functions for efficient computations delivered with the framework.
+**Dynamic Configuration Manager**: This subsystem fetches parameters from external sources to configure pipeline elements during pipeline launch and execution.
 
-**Virtual Streams Subsystem**. One of the most valuable parts of the framework which doing magic. We will cover it in depth later. But, to get an idea, the subsystem represents any external media or sensor data in a unified format; automatically configures necessary Gstreamer elements that handle dynamic data streams, and collects the garbage when they are no longer needed.
+**Libraries**: Savant provides custom preprocessing and postprocessing functions that are optimized for efficient computations within the framework.
 
-**Pipeline Configurator**. The subsystem translates processing blocks specified with YAML to the Gstreamer graph that does the work. Those blocks include standard model interfaces, custom preprocessing and postprocessing invocations, data selectors, and user-defined code in Python.
+**Virtual Streams Subsystem**: This subsystem is a critical component of the framework, representing external streams and auxiliary data in a unified format. It automatically configures necessary Gstreamer elements that handle dynamic data streams, optimizing performance, and collecting garbage when they are no longer needed.
 
-**Source Adapters**. Set of data adapters that can inject frames from various media sources into the framework. Source adapters are also excellent examples of how to build your adapter. Decoupling source adapters from the framework increases the stability and reliability of the processing. [Source adapters](adapters.md#source-adapters).
+**Pipeline Configurator**: This subsystem translates processing blocks specified with YAML to the Gstreamer graph that does the work. It includes standard model interfaces, custom preprocessing and postprocessing invocations, data selectors, and user-defined code in Python.
 
-**Sink Adapters**. After being processed by the framework, the data is injected into an external system. The framework provides the unified interface for that. With sink adapters framework converts and sends the data into external systems safely. Decoupling sink adapters from the framework also increases the stability and reliability of the processing. [Sink adapters](adapters.md#sink-adapters).
+**Source Adapters**: Savant provides a set of data adapters that can inject frames from various media sources into the framework, increasing stability and reliability of the processing.
+
+**Sink Adapters**: After being processed by the framework, the data is injected into an external system using a unified interface provided by the framework. With sink adapters, the framework converts and sends data into external systems safely, increasing stability and reliability.
+
+In summary, Savant provides a comprehensive set of tools and subsystems that simplify the development of optimized video processing pipelines, making it an invaluable framework for developers working in this field.
 
 ## Pipeline Architecture
 
