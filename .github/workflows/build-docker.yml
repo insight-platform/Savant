@@ -2,8 +2,8 @@ name: Build and publish docker images
 
 on:
   push:
-    tags:
-      - 'v*'
+#    tags:
+#      - 'v*'
 
   # to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -13,68 +13,122 @@ env:
 
 jobs:
 
-  build-matrix:
+  get-version:
     runs-on: ubuntu-latest
     outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      savant_version: ${{ steps.get-savant-version.outputs.savant_version }}
+      deepstream_version: ${{ steps.get-deepstream-version.outputs.deepstream_version }}
     steps:
     - uses: actions/checkout@v3
-    - id: set-matrix
-      run: echo "matrix=$(python3 ./scripts/build_docker_matrix.py)" >> $GITHUB_OUTPUT
+    - id: get-savant-version
+      run: echo "savant_version=$(cat savant/VERSION | awk -F= '$1=="SAVANT"{print $2}' | sed 's/"//g')" >> $GITHUB_OUTPUT
+    - id: get-deepstream-version
+      run: echo "deepstream_version=$(cat savant/VERSION | awk -F= '$1=="DEEPSTREAM"{print $2}' | sed 's/"//g')" >> $GITHUB_OUTPUT
+    - run: |
+        echo Savant version: ${{ steps.get-savant-version.outputs.savant_version }}
+        echo DeepStream version: ${{ steps.get-deepstream-version.outputs.deepstream_version }}
 
-  build-docker:
-    needs: build-matrix
+#  build-matrix:
 #    runs-on: ubuntu-latest
-    runs-on: self-hosted
-    strategy:
-      fail-fast: false
-      matrix: ${{ fromJson(needs.build-matrix.outputs.matrix) }}
+#    outputs:
+#      matrix: ${{ steps.set-matrix.outputs.matrix }}
+#    steps:
+#    - uses: actions/checkout@v3
+#    - id: set-matrix
+#      run: echo "matrix=$(python3 ./scripts/build_docker_matrix.py)" >> $GITHUB_OUTPUT
+#
+#  build-docker:
+#    needs: build-matrix
+##    runs-on: ubuntu-latest
+#    runs-on: self-hosted
+#    strategy:
+#      fail-fast: false
+#      matrix: ${{ fromJson(needs.build-matrix.outputs.matrix) }}
+#    permissions:
+#      contents: read
+#      packages: write
+#
+#    steps:
+#    - run: |
+#        echo ${{ matrix.arch }}
+#        echo ${{ matrix.docker_file }}
+#        echo ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.docker_image }}
+#
+#    - uses: actions/checkout@v3
+#
+##    - name: Check if tag matches project version
+##      run: |
+##        PROJECT_VERSION=v$(cat VERSION)
+##        TAG=$(git describe HEAD --tags --abbrev=0)
+##        echo $TAG
+##        echo $PROJECT_VERSION
+##        if [[ "$TAG" != "$PROJECT_VERSION" ]]; then exit 1; fi
+#
+#    - name: Log in to the Container registry
+#      uses: docker/login-action@v2
+#      with:
+#        registry: ${{ env.REGISTRY }}
+#        username: ${{ github.actor }}
+#        password: ${{ secrets.GITHUB_TOKEN }}
+#
+##    - name: Extract metadata (tags, labels) for Docker
+##      id: meta
+##      uses: docker/metadata-action@v4
+##      with:
+##        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+#
+#    - name: Set up QEMU
+#      uses: docker/setup-qemu-action@v2
+#
+#    - name: Set up Docker Buildx
+#      uses: docker/setup-buildx-action@v2
+#
+#    - name: Build and push Docker image
+#      uses: docker/build-push-action@v4
+#      with:
+#        file: ${{ matrix.docker_file }}
+#        tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.docker_image }}
+#        build-args: |
+#          DEEPSTREAM_VERSION=${{ matrix.deepstream_version }}
+#        platforms: ${{ matrix.arch }}
+#        target: ${{ matrix.target }}
+#        push: true
+
+  # build adapter's dockers (except deepstream adapters)
+  build-adapters:
+    needs: get-version
+
+    runs-on: ubuntu-latest
+
     permissions:
       contents: read
       packages: write
 
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - docker_file: docker/Dockerfile.adapters-gstreamer
+            docker_image: savant-adapters-gstreamer
+            arch: linux/amd64
+          - docker_file: docker/Dockerfile.adapters-gstreamer
+            docker_image: savant-adapters-gstreamer-l4t
+            arch: linux/arm64
+          - docker_file: docker/Dockerfile.adapters-py
+            docker_image: savant-adapters-py
+            arch: linux/amd64
+          - docker_file: docker/Dockerfile.adapters-py
+            docker_image: savant-adapters-py-l4t
+            arch: linux/arm64
+# savant-adapters-gstreamer:0.2.0
+# savant-adapters-gstreamer-l4t:0.2.0
+# savant-adapters-py:0.2.0
+# savant-adapters-py-l4t:0.2.0
     steps:
+
+    - run: echo "docker_image=${{ matrix.docker_image }}:${{ needs.get-version.outputs.savant_version }}" >> $GITHUB_ENV
+
     - run: |
         echo ${{ matrix.arch }}
-        echo ${{ matrix.docker_file }}
-        echo ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.docker_image }}
-
-    - uses: actions/checkout@v3
-
-#    - name: Check if tag matches project version
-#      run: |
-#        PROJECT_VERSION=v$(cat VERSION)
-#        TAG=$(git describe HEAD --tags --abbrev=0)
-#        echo $TAG
-#        echo $PROJECT_VERSION
-#        if [[ "$TAG" != "$PROJECT_VERSION" ]]; then exit 1; fi
-
-    - name: Log in to the Container registry
-      uses: docker/login-action@v2
-      with:
-        registry: ${{ env.REGISTRY }}
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-
-#    - name: Extract metadata (tags, labels) for Docker
-#      id: meta
-#      uses: docker/metadata-action@v4
-#      with:
-#        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v2
-
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
-
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v4
-      with:
-        file: ${{ matrix.docker_file }}
-        tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.docker_image }}
-        build-args: |
-          DEEPSTREAM_VERSION=${{ matrix.deepstream_version }}
-        platforms: ${{ matrix.arch }}
-        target: ${{ matrix.target }}
-        push: true
+        echo ${{ env.docker_file }}
+        echo ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.docker_image }}
