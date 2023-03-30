@@ -1,6 +1,6 @@
 # Architecture Overview
 
-THIS IS WIP SECTION. DON'T BELIEVE 100% TO WHAT YOU SEE HERE.
+**THIS IS WIP SECTION**
 
 Savant is built on top of DeepStream SDK - state-of-the-art Nvidia framework for streaming AI applications. DeepStream is the core framework of the Nvidia ecosystem because it unleashes the power of Nvidia accelerators in inference tasks. 
 
