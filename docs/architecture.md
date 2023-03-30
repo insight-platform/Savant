@@ -50,25 +50,25 @@ Yellow blocks represent user-defined elements, while blue boxes represent everyt
 
 ## Virtual Streams Architecture
 
-The Gstreamer and DeepStream stream is bound to a single data source. E.g., a stream can represent an RTSP camera. Therefore, that stream is a part of the Gstreamer processing graph. For example, when dealing with a simple Gstreamer pipeline, it looks like shown on the left side of the picture:
+In Gstreamer and DeepStream, a stream is typically bound to a single data source, such as an RTSP camera. This stream is then integrated into the Gstreamer processing graph to perform specific processing tasks. For example, a simple Gstreamer pipeline may look like the one shown on the left side of the picture:
 
 ![image](https://user-images.githubusercontent.com/15047882/168025015-d49c4978-4b21-4170-ad2f-123a8d0bbc90.png)
 
-It works well for static pipelines, which process "reliable" data sources like files located in a filesystem. In the scenario, the pipeline is launched for a particular file, processes it, and finally exits at the end of the processing.
+In this pipeline, the file source represents the stream, and it is connected to a series of processing elements that perform specific tasks on the data. However, when dealing with more complex pipelines that involve multiple data sources and processing elements, it can become difficult to manage the pipeline efficiently.
 
-However, the above example is very primitive and has many drawbacks. Let's look at them. 
+Savant addresses this issue through its Virtual Streams Subsystem, which automatically represents any external media or sensor data in a unified format. This subsystem dynamically configures the necessary Gstreamer elements that handle dynamic data streams, optimizing performance and increasing stability. Additionally, it collects garbage when data is no longer needed, further optimizing the processing pipeline.
 
-The first obvious drawback is that loading AI models in GPU takes some time, and thus it's impossible to utilize 100% of GPU when reloading the pipeline after each file.
+Savant's Virtual Streams Subsystem provides a high level of abstraction that simplifies the development of complex video processing pipelines, enabling developers to focus on their core tasks without the need for in-depth knowledge of Gstreamer programming.
 
-The second one happens when you use an unreliable data source that flaps from time to time (e.g., RTSP camera). To handle it correctly, you have to create custom Gstreamer code that watches signals from the Gstreamer event bus, handles such disconnect events, dynamically reconstruct the pipeline, and resume the operation after.
+When working with real-world dynamic sources, a naive approach to video processing can lead to multiple problems. One of the most significant drawbacks is the time it takes to load AI models into the GPU, making it impossible to utilize 100% of the GPU when reloading the pipeline after each file.
 
-Without coding such processing, Gstreamer will crash even if it's OK to restart; it takes some time to load AI models in GPU RAM.
+Another obstacle arises when dealing with unreliable data sources that may experience intermittent outages, such as an RTSP camera. To handle such events correctly, developers must create custom Gstreamer code that watches signals from the Gstreamer event bus, handles disconnect events, and dynamically reconstructs the pipeline to resume operation after an outage.
 
-Finally, we face the real problem when multiple data sources are processed in a multiplexed way within a single DeepStream/Gstreamer pipeline. Practically it's a commonplace scenario: the DeepStream is blazing fast, so it can process a lot of data. Users inject data from multiple sources into a single pipeline to load it well. That leads to a growth of outages because if a single source is out of order, the whole pipeline crashes without proper signal processing.
+Additionally, when multiple data sources are processed in a multiplexed way within a single DeepStream/Gstreamer pipeline, a single source outage can cause the entire pipeline to crash, resulting in significant downtime and lost data.
 
-Savant handles all such cases by providing a virtual stream abstraction. That abstraction introduces Gstreamer sources that are "always-on" because they are decoupled from real-life sources. The framework spawns those virtual streams, switches data flow to them, determines when they are no longer in use, and wipes them, detaching them from the pipeline.
+Savant addresses these challenges by introducing a virtual stream abstraction. This abstraction decouples the Gstreamer sources from real-life sources, providing "always-on" virtual streams that are spawned by the framework, and data flow is switched to them. The framework then determines when these virtual streams are no longer in use and removes them, detaching them from the pipeline.
 
-In Savant, real-life sources are never directly bound to the Gstreamer graph, so they affect only corresponding adapters. Meanwhile, the pipeline is kept in memory and can process data from stable sources.
+Real-life sources are never directly bound to the Gstreamer graph in Savant, so they only affect the corresponding adapters, while the pipeline is kept in memory and can process data from stable sources. This approach enables developers to handle dynamic sources and unreliable data without downtime or data loss, improving the overall efficiency and reliability of the video processing pipeline.
 
 ![Savant Virtual Sources](https://user-images.githubusercontent.com/15047882/168033994-0da8304f-cb02-4fd0-a9c2-5c8636367a4e.png)
 
