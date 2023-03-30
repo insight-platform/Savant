@@ -56,6 +56,13 @@ You usually want to use combinations, which are marked with Green color:
 
 There are typical patterns widely used, try to start from them when designing pipelines.
 
+- `D` - dealer;
+- `R` - router;
+- `P` - publisher (PUB);
+- `S` - subscriber (SUB).
+
+The pairs are explained after the patterns section in detail.
+
 #### Data-Center Patterns
 
 Data-center patterns are designed to reliably process video streams with increased latency in situations when the pipeline is overwhelmed with data. 0MQ socket pairs used in data-center patterns are `DEALER/ROUTER` (default recommended) or `REQ/REP`. These pairs implement a backpressure mechanism which causes the processing to be delayed when watermarks are reached.
@@ -68,9 +75,11 @@ The second is typical when adapters are used to aggregate data from multiple str
 
 #### Edge Patterns
 
-Edge patterns are often aim to provide real-time operations for data-sources with lowest latency possible. To implement that, you may utilize the `PUB/SUB` socket pair because it drops the packets which cannot be timely processed by the `SUB` part. This mechanism works absolutely greate when used with streams delivering `MJPEG`, `RAW`, `JPEG`, `PNG` and other independent video-frames. It is troublesome to use the pattern with video-encoded streams because drops causes video corruption.
+Edge patterns often aim to provide real-time operations for data sources with the lowest latency possible. To implement that, you may utilize the `PUB/SUB` socket pair because it drops the packets that the `SUB` part cannot process in a timely manner. This mechanism works absolutely great when used with streams delivering `MJPEG`, `RAW`, `JPEG`, `PNG`, and other independent video frames. Using the pattern with video-encoded streams is troublesome because drops cause video corruption.
 
 ![Savant socket pairs (11)](https://user-images.githubusercontent.com/15047882/228739197-fe5289b8-ff2e-47ea-95e8-39eea1adaeb2.png)
+
+The first pattern may be used when neither adapters nor framework must be frozen because of the sink stalling. The second pattern is beneficial when the sink guarantees the processing, and you do not concern that it can be overwhelmed, causing the framework pipeline to stall too.
 
 ### DEALER/ROUTER
 
