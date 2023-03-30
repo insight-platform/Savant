@@ -58,6 +58,8 @@ There are typical patterns widely used, try to start from them when designing pi
 
 #### Data-center Patterns
 
+Data-center patterns designed to reliably process video-streams with the increased latency in situations when the pipeline is overwhelmed with data. 0MQ socket pairs used in data-center patterns are `DEALER/ROUTER` (default recommended) or `REQ/REP`. These pairs implement backpressure mechanism which causes the processing is delayed when watermarks are reached. 
+
 ![Savant socket pairs (9)](https://user-images.githubusercontent.com/15047882/228735991-21b9d2c2-64bf-4c5e-838c-2c0c62ca12ed.png)
 
 The first one is a typical scenario when the adapter reads multiplexed streams from an external queue system (like Kafka) and passes them to the framework instance. The framework, in turn, transfers analytics results (and video) to the adapter, which places the results into a database or another queue system.
