@@ -28,7 +28,8 @@ jobs:
         echo Savant version: ${{ steps.get-savant-version.outputs.savant_version }}
         echo DeepStream version: ${{ steps.get-deepstream-version.outputs.deepstream_version }}
 
-  build-docker:
+  # build deepstream dockers
+  build-deepstream:
     needs: get-version
 
 #    runs-on: ubuntu-latest
@@ -48,65 +49,73 @@ jobs:
           - docker_file: docker/Dockerfile.deepstream-l4t
             docker_suffix: deepstream-l4t
             arch: linux/arm64
-#      savant-deepstream-l4t:0.2.0-6.2-base
-#      savant-deepstream-l4t:0.2.0-6.2-samples
-#      savant-adapters-deepstream-l4t:0.2.0-6.2
 
     steps:
-    - run: |
-        echo ${{ matrix.arch }}
-        echo ${{ matrix.docker_file }}
-        echo ${{ env.REGISTRY }}/${{ github.repository_owner }}/savant-${{ matrix.docker_suffix }}:${{ needs.get-version.outputs.savant_version }}-${{ needs.get-version.outputs.deepstream_version }}-base
 
-    - run: |
-        echo ${{ matrix.arch }}
-        echo ${{ matrix.docker_file }}
-        echo ${{ env.REGISTRY }}/${{ github.repository_owner }}/savant-${{ matrix.docker_suffix }}:${{ needs.get-version.outputs.savant_version }}-${{ needs.get-version.outputs.deepstream_version }}-samples
+    - uses: actions/checkout@v3
 
-    - run: |
-        echo ${{ matrix.arch }}
-        echo ${{ matrix.docker_file }}
-        echo ${{ env.REGISTRY }}/${{ github.repository_owner }}/savant-adapters-${{ matrix.docker_suffix }}:${{ needs.get-version.outputs.savant_version }}-${{ needs.get-version.outputs.deepstream_version }}
+#    - name: Check if tag matches project version
+#      run: |
+#        PROJECT_VERSION=v$(cat VERSION)
+#        TAG=$(git describe HEAD --tags --abbrev=0)
+#        echo $TAG
+#        echo $PROJECT_VERSION
+#        if [[ "$TAG" != "$PROJECT_VERSION" ]]; then exit 1; fi
 
-#    - uses: actions/checkout@v3
-#
-##    - name: Check if tag matches project version
-##      run: |
-##        PROJECT_VERSION=v$(cat VERSION)
-##        TAG=$(git describe HEAD --tags --abbrev=0)
-##        echo $TAG
-##        echo $PROJECT_VERSION
-##        if [[ "$TAG" != "$PROJECT_VERSION" ]]; then exit 1; fi
-#
-#    - name: Log in to the Container registry
-#      uses: docker/login-action@v2
+    - name: Log in to the container registry
+      uses: docker/login-action@v2
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+#    - name: Extract metadata (tags, labels) for docker
+#      id: meta
+#      uses: docker/metadata-action@v4
 #      with:
-#        registry: ${{ env.REGISTRY }}
-#        username: ${{ github.actor }}
-#        password: ${{ secrets.GITHUB_TOKEN }}
-#
-##    - name: Extract metadata (tags, labels) for Docker
-##      id: meta
-##      uses: docker/metadata-action@v4
-##      with:
-##        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-#
-#    - name: Set up QEMU
-#      uses: docker/setup-qemu-action@v2
-#
-#    - name: Set up Docker Buildx
-#      uses: docker/setup-buildx-action@v2
-#
-#    - name: Build and push Docker image
-#      uses: docker/build-push-action@v4
-#      with:
-#        file: ${{ matrix.docker_file }}
-#        tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.docker_image }}
-#        build-args: |
-#          DEEPSTREAM_VERSION=${{ matrix.deepstream_version }}
-#        platforms: ${{ matrix.arch }}
-#        target: ${{ matrix.target }}
-#        push: true
+#        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v2
+
+    - name: Set up docker buildx
+      uses: docker/setup-buildx-action@v2
+
+    # base image
+    - name: Build and push savant-deepstream:base docker image
+      uses: docker/build-push-action@v4
+      with:
+        file: ${{ matrix.docker_file }}
+        tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/savant-${{ matrix.docker_suffix }}:${{ needs.get-version.outputs.savant_version }}-${{ needs.get-version.outputs.deepstream_version }}-base
+        build-args: |
+          DEEPSTREAM_VERSION=${{ needs.get-version.outputs.deepstream_version }}
+        platforms: ${{ matrix.arch }}
+        target: base
+        push: true
+
+    # samples image
+    - name: Build and push savant-deepstream:samples docker image
+      uses: docker/build-push-action@v4
+      with:
+        file: ${{ matrix.docker_file }}
+        tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/savant-${{ matrix.docker_suffix }}:${{ needs.get-version.outputs.savant_version }}-${{ needs.get-version.outputs.deepstream_version }}-samples
+        build-args: |
+          DEEPSTREAM_VERSION=${{ needs.get-version.outputs.deepstream_version }}
+        platforms: ${{ matrix.arch }}
+        target: samples
+        push: true
+
+    # adapters image
+    - name: Build and push savant-adapters-deepstream docker image
+      uses: docker/build-push-action@v4
+      with:
+        file: ${{ matrix.docker_file }}
+        tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/savant-adapters-${{ matrix.docker_suffix }}:${{ needs.get-version.outputs.savant_version }}-${{ needs.get-version.outputs.deepstream_version }}
+        build-args: |
+          DEEPSTREAM_VERSION=${{ needs.get-version.outputs.deepstream_version }}
+        platforms: ${{ matrix.arch }}
+        target: adapters
+        push: true
 
   # build adapter's dockers (except deepstream adapters)
   build-adapters:
@@ -144,25 +153,25 @@ jobs:
         echo ${{ matrix.docker_file }}
         echo ${{ env.docker_image_tag }}
 
-#    - uses: actions/checkout@v3
-#
-#    - name: Log in to the Container registry
-#      uses: docker/login-action@v2
-#      with:
-#        registry: ${{ env.REGISTRY }}
-#        username: ${{ github.actor }}
-#        password: ${{ secrets.GITHUB_TOKEN }}
-#
-#    - name: Set up QEMU
-#      uses: docker/setup-qemu-action@v2
-#
-#    - name: Set up Docker Buildx
-#      uses: docker/setup-buildx-action@v2
-#
-#    - name: Build and push Docker image
-#      uses: docker/build-push-action@v4
-#      with:
-#        file: ${{ matrix.docker_file }}
-#        tags: ${{ env.docker_image_tag }}
-#        platforms: ${{ matrix.arch }}
-#        push: true
+    - uses: actions/checkout@v3
+
+    - name: Log in to the container registry
+      uses: docker/login-action@v2
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v2
+
+    - name: Set up docker buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Build and push docker image
+      uses: docker/build-push-action@v4
+      with:
+        file: ${{ matrix.docker_file }}
+        tags: ${{ env.docker_image_tag }}
+        platforms: ${{ matrix.arch }}
+        push: true
