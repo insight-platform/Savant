@@ -56,7 +56,7 @@ You usually want to use combinations, which are marked with Green color:
 
 There are typical patterns widely used, try to start from them when designing pipelines.
 
-#### Data-center Patterns
+#### Data-Center Patterns
 
 Data-center patterns are designed to reliably process video streams with increased latency in situations when the pipeline is overwhelmed with data. 0MQ socket pairs used in data-center patterns are DEALER/ROUTER (default recommended) or REQ/REP. These pairs implement a backpressure mechanism which causes the processing to be delayed when watermarks are reached.
 
@@ -65,6 +65,10 @@ Data-center patterns are designed to reliably process video streams with increas
 The first one is a typical scenario when the adapter reads multiplexed streams from an external queue system (like Kafka) and passes them to the framework instance. The framework, in turn, transfers analytics results (and video) to the adapter, which places the results into a database or another queue system.
 
 The second is typical when adapters are used to aggregate data from multiple streams (e.g. RTSP cams) into the framework instance. The right side of the pipeline stays the same as in the previous case.
+
+#### Edge Patterns
+
+
 
 ### DEALER/ROUTER
 
