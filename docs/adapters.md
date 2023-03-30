@@ -58,9 +58,9 @@ There are typical patterns widely used, try to start from them when designing pi
 
 #### Data-Center Patterns
 
-Data-center patterns are designed to reliably process video streams with increased latency in situations when the pipeline is overwhelmed with data. 0MQ socket pairs used in data-center patterns are DEALER/ROUTER (default recommended) or REQ/REP. These pairs implement a backpressure mechanism which causes the processing to be delayed when watermarks are reached.
+Data-center patterns are designed to reliably process video streams with increased latency in situations when the pipeline is overwhelmed with data. 0MQ socket pairs used in data-center patterns are `DEALER/ROUTER` (default recommended) or `REQ/REP`. These pairs implement a backpressure mechanism which causes the processing to be delayed when watermarks are reached.
 
-![Savant socket pairs (9)](https://user-images.githubusercontent.com/15047882/228735991-21b9d2c2-64bf-4c5e-838c-2c0c62ca12ed.png)
+![Savant socket pairs (10)](https://user-images.githubusercontent.com/15047882/228738612-43251848-c6fe-478d-98ae-fdca7192696d.png)
 
 The first one is a typical scenario when the adapter reads multiplexed streams from an external queue system (like Kafka) and passes them to the framework instance. The framework, in turn, transfers analytics results (and video) to the adapter, which places the results into a database or another queue system.
 
@@ -68,7 +68,9 @@ The second is typical when adapters are used to aggregate data from multiple str
 
 #### Edge Patterns
 
+Edge patterns are often aim to provide real-time operations for data-sources with lowest latency possible. To implement that, you may utilize the `PUB/SUB` socket pair because it drops the packets which cannot be timely processed by the `SUB` part. This mechanism works absolutely greate when used with streams delivering `MJPEG`, `RAW`, `JPEG`, `PNG` and other independent video-frames. It is troublesome to use the pattern with video-encoded streams because drops causes video corruption.
 
+![Savant socket pairs (11)](https://user-images.githubusercontent.com/15047882/228739197-fe5289b8-ff2e-47ea-95e8-39eea1adaeb2.png)
 
 ### DEALER/ROUTER
 
