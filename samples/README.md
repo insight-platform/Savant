@@ -4,7 +4,7 @@ On this page, you can find practical examples, how-tos, publications, and other 
 help you dive into Savant.
 
 - [ML/AI Examples](#mlai-examples)
-- [Utility And Coding Examples](#utility-and-coding-examples | width=981)
+- [Utility And Coding Examples](#utility-and-coding-examples)
 
 ## ML/AI Examples
 
@@ -17,7 +17,7 @@ how-to guides published on the Medium portal, where one can study them step-by-s
 
 Preview:
 
-![](peoplenet-blur-demo-loop.webp)
+![](peoplenet-blur-demo-loop.webp | width=981)
 
 Features:
 
