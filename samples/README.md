@@ -15,6 +15,12 @@ how-to guides published on the Medium portal, where one can study them step-by-s
 
 ### People Detecting, Tracking and Anonymizing (Peoplenet, Nvidia Tracker, OpenCV-CUDA)
 
+Preview:
+
+![](peoplenet-blur-demo.webp)
+
+Features:
+
 ![demo-0 2 0-dia](https://user-images.githubusercontent.com/15047882/227759448-3cd7e2e1-1dd8-4329-8c67-ee1ee61513e1.png)
 
 A simple pipeline that uses standard [Nvidia PeopleNet](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/peoplenet) model to detect persons and their faces in the video. The faces are matched versus bodies and blurred with the integrated OpenCV CUDA functionality. There is also a simple unreliable tracker that helps reduce flickering of boxes.
