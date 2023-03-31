@@ -17,7 +17,7 @@ how-to guides published on the Medium portal, where one can study them step-by-s
 
 Preview:
 
-![](peoplenet-blur-demo.webp)
+![](peoplenet-blur-demo-loop.webp)
 
 Features:
 
