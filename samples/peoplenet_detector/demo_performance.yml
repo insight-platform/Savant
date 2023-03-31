@@ -1,5 +1,5 @@
 # module name, required
-name: ${oc.env:MODULE_NAME, 'demo'}
+name: ${oc.env:MODULE_NAME, 'demo_performance'}
 
 # base module parameters
 parameters:
@@ -17,9 +17,10 @@ parameters:
       top: 180
       bottom: 0
   output_frame:
-    # Frame is output without any encoding
-    # this is to circumvent 3 hardware decoding processes limit on NVIDIA consumer hardware
-    codec: raw-rgba
+    # Frame is output with h264 encoding
+    # this gives more performance than raw-rgba
+    # as frames don't need to be copied to CPU
+    codec: h264
   # PyFunc for drawing on frames
   draw_func:
     # specify the drawfunc's python module
@@ -52,7 +53,11 @@ parameters:
 
 # pipeline definition
 pipeline:
-  # source definition is skipped, zeromq source is used by default to connect with source adapters
+  # local video file source, not using source adapter
+  source:
+    element: uridecodebin
+    properties:
+      uri: file:///data/Free_City_Street_Footage.mp4
 
   # define pipeline's main elements
   elements:
@@ -121,8 +126,8 @@ pipeline:
         ll-lib-file: /opt/nvidia/deepstream/deepstream/lib/libnvds_nvmultiobjecttracker.so
         # specify tracking config file
         ll-config-file: ${oc.env:APP_PATH}/samples/peoplenet_detector/config_tracker_NvSORT.yml
-        enable_batch_process: 1
-    
+        enable_batch_process: 0
+
     # analytics element realized in custom pyfunc
     - element: pyfunc
       # specify the pyfunc's python module
@@ -134,4 +139,6 @@ pipeline:
       kwargs:
         counters_smoothing_period: 0.25
 
-  # sink definition is skipped, zeromq sink is used by default to connect with sink adapters
+  # noop pipeline sink, not using sink adapter
+  sink:
+    - element: devnull_sink
