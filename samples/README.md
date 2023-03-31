@@ -15,6 +15,8 @@ how-to guides published on the Medium portal, where one can study them step-by-s
 
 ### People Detecting, Tracking and Anonymizing (Peoplenet, Nvidia Tracker, OpenCV-CUDA)
 
+Sample Location: [peoplenet_detector](./peoplenet_detector)
+
 Preview:
 
 ![](peoplenet-blur-demo-loop.webp)
