@@ -4,7 +4,7 @@ On this page, you can find practical examples, how-tos, publications, and other 
 help you dive into Savant.
 
 - [ML/AI Examples](#mlai-examples)
-- [Utility And Coding Examples](#utility-and-coding-examples)
+- [Utility And Coding Examples](#utility-and-coding-examples | width=981)
 
 ## ML/AI Examples
 
