@@ -124,19 +124,18 @@ ENV GST_PLUGIN_PATH=$APP_PATH/savant/gst_plugins:$APP_PATH/savant/utils/gst_plug
 ENTRYPOINT ["python", "-m", "savant.entrypoint"]
 
 
-FROM base as samples
+FROM base AS samples
 COPY requirements/samples.txt requirements-samples.txt
 RUN python -m pip install --no-cache-dir \
     -r requirements-samples.txt \
     && rm requirements-samples.txt
 COPY samples samples
 
-FROM base AS adapters
 
+FROM base AS adapters
 COPY adapters/ds adapters/ds
 COPY adapters/gst/gst_plugins/python/adjust_timestamps.py \
      adapters/gst/gst_plugins/python/fps_meter.py \
      adapters/gst/gst_plugins/python/
 ENV GST_PLUGIN_PATH=$GST_PLUGIN_PATH:$APP_PATH/adapters/gst/gst_plugins:$APP_PATH/adapters/ds/gst_plugins
-
 ENTRYPOINT []
