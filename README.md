@@ -1,8 +1,12 @@
 # Savant: Supercharged Video Analytics Framework With Batteries Included
 
+:star: Star us on GitHub — it motivates us a lot and helps the project become more visible to developers.
+
 Savant is an open-source, high-level framework for building real-time, streaming, highly efficient multimedia AI
 applications on the Nvidia stack. It makes it possible to develop dynamic, fault-tolerant inference pipelines
 that utilize the best Nvidia approaches for data center and edge accelerators very quickly.
+
+Let's discuss anything. [Reach](https://discord.gg/JH2RddHM) us on Discord.
 
 ## Quick Links
 
