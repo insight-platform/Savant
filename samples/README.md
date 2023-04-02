@@ -19,7 +19,7 @@ Sample Location: [peoplenet_detector](./peoplenet_detector)
 
 Preview:
 
-![](peoplenet-blur-demo-loop.webp)
+![](https://hello.savant.video/peoplenet-blur-demo-loop.webp)
 
 Features:
 
