@@ -25,6 +25,8 @@ Features:
 
 ![demo-0 2 0-dia](https://user-images.githubusercontent.com/15047882/227759448-3cd7e2e1-1dd8-4329-8c67-ee1ee61513e1.png)
 
+![](https://hello.savant.video/peoplenet-demo.png)
+
 A simple pipeline that uses standard [Nvidia PeopleNet](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/peoplenet) model to detect persons and their faces in the video. The faces are matched versus bodies and blurred with the integrated OpenCV CUDA functionality. There is also a simple unreliable tracker that helps reduce flickering of boxes.
 
 GPU-accelerated blurring made with OpenCV is a killer feature of this demonstration. It enables very fast and efficient face blurring without CPU utilization.
