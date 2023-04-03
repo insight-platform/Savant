@@ -1,13 +1,13 @@
 #!/bin/bash
 
 # check docker engine & nvidia-container-runtime
-#docker_run=`docker run --rm --gpus all ubuntu`
-#retVal=$?
-#if [ $retVal -ne 0 ]; then
-#    echo "Docker run failed"
-#    echo "Environment is not configured properly"
-#    exit 1
-#fi
+docker_run=`docker run --rm --gpus all ubuntu`
+retVal=$?
+if [ $retVal -ne 0 ]; then
+    echo "Docker run failed"
+    echo "Environment is not configured properly"
+    exit 1
+fi
 
 platform=$(uname -m)
 
