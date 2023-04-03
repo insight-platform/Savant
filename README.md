@@ -19,7 +19,6 @@ that utilize the best Nvidia approaches for data center and edge accelerators ve
 ## Quick Start
 
 ```bash
-```bash
 git clone https://github.com/insight-platform/Savant.git
 cd Savant/samples/peoplenet_detector
 
