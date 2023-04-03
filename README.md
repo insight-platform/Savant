@@ -40,7 +40,6 @@ curl --silent -O -- https://hello.savant.video/peoplenet.html
 # to get back to project root
 cd ../..
 ```
-```
 
 ## What It Is Not
 
