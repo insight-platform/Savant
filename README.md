@@ -28,17 +28,11 @@ cd Savant/samples/peoplenet_detector
 curl --silent -O -- https://hello.savant.video/peoplenet.html
 
 # if x86
-../../utils/check-environment-compatible && \
-   docker compose -f docker-compose.x86.yml up
+../../utils/check-environment-compatible && docker compose -f docker-compose.x86.yml up
 
 # if Jetson
-../../utils/check-environment-compatible && \
-   docker compose -f docker-compose.l4t.yml up
+../../utils/check-environment-compatible && docker compose -f docker-compose.l4t.yml up
 
-# Ctrl+C to stop the running compose bundle
-
-# to get back to project root
-cd ../..
 ```
 
 ## What It Is Not
