@@ -16,7 +16,7 @@ that utilize the best Nvidia approaches for data center and edge accelerators ve
 - [Documentation](https://insight-platform.github.io/Savant/getting_started/intro.html)
 - [Adapters Guide](docs/adapters.md)
 
-## Quick Start
+## 5-Minute Quick Start
 
 ```bash
 git clone https://github.com/insight-platform/Savant.git
