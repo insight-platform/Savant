@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# check docker engine & nvidia-container-runtime
+docker_run=`docker run --rm --gpus all ubuntu`
+retVal=$?
+if [ $retVal -ne 0 ]; then
+    echo "Docker run failed"
+    echo "Environment is not configured properly"
+    exit 1
+fi
+
+platform=$(uname -m)
+
+if [[ $platform == "x86_64" ]]; then
+    echo "PC platform"
+    # check driver version
+    driver_version=`nvidia-smi --query-gpu=driver_version --format=csv,noheader --id=0 | cut -d'.' -f 1`
+    if (( driver_version < 525 )); then
+        echo "Driver ver >= 525 is required"
+        echo "Environment is not configured properly"
+        exit 1
+    fi
+
+elif [[ $platform == "aarch64" ]]; then
+    echo "Jetson platform"
+    # check L4T ver
+    l4t_ver=`dpkg-query --showformat=\$\{Version\} --show nvidia-l4t-core | cut -d'-' -f 1`
+    IFS='.' read -ra l4t_split_ver <<< "$l4t_ver"
+    if (( l4t_split_ver[0] < 35)); then
+        echo "L4T ver >= 35 is required"
+        echo "Environment is not configured properly"
+        exit 1
+    fi
+
+else
+  echo "Unsupported platform"
+  exit 1
+fi
+
+echo "Environment is OK"
+exit 0
