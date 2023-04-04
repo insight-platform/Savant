@@ -1,4 +1,4 @@
-# Savant: Python Streaming Video Analytics Framework With Batteries Included
+# Savant: Supercharged Video Analytics Framework With Batteries Included
 
 :star: Star us on GitHub — it motivates us a lot and helps the project become more visible to developers.
 
