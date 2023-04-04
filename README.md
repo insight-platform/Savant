@@ -40,6 +40,10 @@ curl --silent -O -- https://hello.savant.video/peoplenet.html
 # if Jetson
 ../../utils/check-environment-compatible && docker compose -f docker-compose.l4t.yml up
 
+# Ctrl+C to stop running the compose bundle
+
+# to get back to project root
+cd ../..
 ```
 
 
