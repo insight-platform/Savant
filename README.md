@@ -22,6 +22,11 @@ If you are acquainted with running dockerized applications using Nvidia GPUs:
 - **X86 & Volta/Turing/Ampere/Ada Lovelace**: Linux, Drivers 525+, Docker with Compose, Nvidia Container Runtime,
 - **Nvidia Jetson NX/AGX+**: JetPack 5.1+, Docker with Compose, Nvidia Container Runtime
 
+What you are expected to see:
+<details>
+![](samples/peoplenet-blur-demo-loop.webp)
+</details>
+
 ```bash
 git clone https://github.com/insight-platform/Savant.git
 cd Savant/samples/peoplenet_detector
@@ -38,9 +43,7 @@ curl --silent -O -- https://hello.savant.video/peoplenet.html
 
 ```
 
-<details>
-here
-</details>
+
 
 ## What It Is Not
 
