@@ -15,6 +15,10 @@ services:
     depends_on:
       - rtsp-server
     command: -re -stream_loop -1 -i https://eu-central-1.linodeobjects.com/savant-data/demo/Free_City_Street_Footage.mp4 -c copy -bsf:v h264_mp4toannexb -f rtsp rtsp://rtsp-server:8554/city-traffic
+    healthcheck:
+      test: ["CMD", "ffprobe", "rtsp://rtsp-server:8554/city-traffic"]
+      interval: 5s
+      start_period: 5s
   module:
     image: ghcr.io/insight-platform/savant-deepstream:0.2.0-6.2-samples
     volumes:
@@ -44,7 +48,8 @@ services:
     links:
       - "rtsp-server:rtsp-server"
     depends_on:
-      - rtsp-server
+      city-traffic:
+        condition: service_healthy
     environment:
       - ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_TYPE=DEALER
