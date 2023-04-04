@@ -9,12 +9,12 @@ services:
     environment:
       - RTSP_PROTOCOLS=tcp
   city-traffic:
-    image: linuxserver/ffmpeg
+    image: linuxserver/ffmpeg:version-4.4-cli
     links:
       - "rtsp-server:rtsp-server"
     depends_on:
       - rtsp-server
-    command: -re -i https://eu-central-1.linodeobjects.com/savant-data/demo/Free_City_Street_Footage.mp4 -c:v h264 -filter_complex "loop=loop=-1:size=8340:start=0" -bsf:v h264_mp4toannexb -f rtsp rtsp://rtsp-server:8554/city-traffic
+    command: -re -stream_loop -1 -i https://eu-central-1.linodeobjects.com/savant-data/demo/Free_City_Street_Footage.mp4 -c copy -bsf:v h264_mp4toannexb -f rtsp rtsp://rtsp-server:8554/city-traffic
   module:
     image: ghcr.io/insight-platform/savant-deepstream:0.2.0-6.2-samples
     volumes:
@@ -41,11 +41,15 @@ services:
     image: ghcr.io/insight-platform/savant-adapters-gstreamer:0.2.0
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
+    links:
+      - "rtsp-server:rtsp-server"
+    depends_on:
+      - rtsp-server
     environment:
-      - RTSP_URI=
       - ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_TYPE=DEALER
       - ZMQ_BIND=False
+      - RTSP_URI=rtsp://rtsp-server:8554/city-traffic
       - SOURCE_ID=city-traffic-processed
       - SYNC_OUTPUT=True
     entrypoint: /opt/app/adapters/gst/sources/rtsp.sh
@@ -56,6 +60,8 @@ services:
       - ./sprites:/stub_img
     links:
       - "rtsp-server:rtsp-server"
+    depends_on:
+      - rtsp-server
     environment:
       - ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/output-video.ipc
       - ZMQ_TYPE=SUB
