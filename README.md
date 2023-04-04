@@ -23,6 +23,7 @@ If you are acquainted with running dockerized applications using Nvidia GPUs:
 - **Nvidia Jetson NX/AGX+**: JetPack 5.1+, Docker with Compose, Nvidia Container Runtime.
 
 Trying the demo you will find how to craft the following showcase:
+
 ![](samples/peoplenet-blur-demo-loop-400.webp)
 
 ```bash
