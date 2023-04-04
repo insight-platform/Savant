@@ -1,8 +1,19 @@
 #!/bin/bash
 
+test_img=ubuntu
+# remember if image existed locally
+docker_run=`docker inspect --type=image $test_img`
+image_exists=$?
+
 # check docker engine & nvidia-container-runtime
-docker_run=`docker run --rm --gpus all ubuntu`
+docker_run=`docker run --rm --gpus all $test_img`
 retVal=$?
+
+# delete only if the test image did not exist locally
+if [ $image_exists -eq 1 ]; then
+    image_rm=$(docker image rm $test_img)
+fi
+
 if [ $retVal -ne 0 ]; then
     echo "Docker run failed"
     echo "Environment is not configured properly"
