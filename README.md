@@ -20,11 +20,7 @@ that utilize the best Nvidia approaches for data center and edge accelerators ve
 
 If you are acquainted with running dockerized applications using Nvidia GPUs:
 - **X86 & Volta/Turing/Ampere/Ada Lovelace**: Linux, Drivers 525+, Docker with Compose, Nvidia Container Runtime,
-- **Nvidia Jetson NX/AGX+**: JetPack 5.1+, Docker with Compose, Nvidia Container Runtime
-
-<details>
-  <summary>Look what you'll see launching the demo...</summary>
-<iframe width="560" height="315" src="https://www.youtube.com/embed/YCvT3XbiSik" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></details>
+- **Nvidia Jetson NX/AGX+**: JetPack 5.1+, Docker with Compose, Nvidia Container Runtime.
 
 ```bash
 git clone https://github.com/insight-platform/Savant.git
