@@ -22,7 +22,7 @@ If you are acquainted with running dockerized applications using Nvidia GPUs:
 - **X86 & Volta/Turing/Ampere/Ada Lovelace**: Linux, Drivers 525+, Docker with Compose, Nvidia Container Runtime,
 - **Nvidia Jetson NX/AGX+**: JetPack 5.1+, Docker with Compose, Nvidia Container Runtime.
 
-![](samples/peoplenet-blur-demo-400-loop.webp)
+![](samples/peoplenet-blur-demo-loop-400.webp)
 
 ```bash
 git clone https://github.com/insight-platform/Savant.git
