@@ -22,9 +22,9 @@ If you are acquainted with running dockerized applications using Nvidia GPUs:
 - **X86 & Volta/Turing/Ampere/Ada Lovelace**: Linux, Drivers 525+, Docker with Compose, Nvidia Container Runtime,
 - **Nvidia Jetson NX/AGX+**: JetPack 5.1+, Docker with Compose, Nvidia Container Runtime
 
-What you are expected to see:
 <details>
-  <summary>![](samples/peoplenet-blur-demo-loop.webp)</summary>
+  <summary>Look what you'll see launching the demo...</summary>
+  ![](samples/peoplenet-blur-demo-loop.webp)
 </details>
 
 ```bash
