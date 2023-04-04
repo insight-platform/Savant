@@ -38,6 +38,10 @@ curl --silent -O -- https://hello.savant.video/peoplenet.html
 
 ```
 
+<details>
+here
+</details>
+
 ## What It Is Not
 
 Savant is not for AI model training; it's for building fast streaming inference applications working on Edge and Core Nvidia equipment.
