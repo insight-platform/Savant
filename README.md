@@ -24,8 +24,7 @@ If you are acquainted with running dockerized applications using Nvidia GPUs:
 
 <details>
   <summary>Look what you'll see launching the demo...</summary>
-  <img src="https://hello.savant.video/peoplenet-blur-demo-loop.webp">
-</details>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/YCvT3XbiSik" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></details>
 
 ```bash
 git clone https://github.com/insight-platform/Savant.git
