@@ -24,7 +24,7 @@ If you are acquainted with running dockerized applications using Nvidia GPUs:
 
 What you are expected to see:
 <details>
-![](samples/peoplenet-blur-demo-loop.webp)
+  <summary>![](samples/peoplenet-blur-demo-loop.webp)</summary>
 </details>
 
 ```bash
