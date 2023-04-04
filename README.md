@@ -24,7 +24,7 @@ If you are acquainted with running dockerized applications using Nvidia GPUs:
 
 <details>
   <summary>Look what you'll see launching the demo...</summary>
-  ![](samples/peoplenet-blur-demo-loop.webp)
+  <img src="https://hello.savant.video/peoplenet-blur-demo-loop.webp">
 </details>
 
 ```bash
