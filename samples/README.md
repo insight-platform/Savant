@@ -55,3 +55,27 @@ Demonstrated adapters:
 - video file source adapter;
 - Always-ON RTSP sink adapter;
 - Video/Metadata sink adapter.
+
+Run the demo:
+
+```bash
+git clone https://github.com/insight-platform/Savant.git
+cd Savant/samples/peoplenet_detector
+
+# if you want to share with us where are you from
+# run the following command, it is completely optional
+curl --silent -O -- https://hello.savant.video/peoplenet.html
+
+# if x86
+../../utils/check-environment-compatible && \
+   docker compose -f docker-compose.x86.yml up
+
+# if Jetson
+../../utils/check-environment-compatible && \
+   docker compose -f docker-compose.l4t.yml up
+
+# Ctrl+C to stop the running compose bundle
+
+# to get back to project root
+cd ../..
+```

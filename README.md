@@ -16,6 +16,24 @@ that utilize the best Nvidia approaches for data center and edge accelerators ve
 - [Documentation](https://insight-platform.github.io/Savant/getting_started/intro.html)
 - [Adapters Guide](docs/adapters.md)
 
+## 1-Minute Quick Start
+
+```bash
+git clone https://github.com/insight-platform/Savant.git
+cd Savant/samples/peoplenet_detector
+
+# if you want to share with us where are you from
+# run the following command, it is completely optional
+curl --silent -O -- https://hello.savant.video/peoplenet.html
+
+# if x86
+../../utils/check-environment-compatible && docker compose -f docker-compose.x86.yml up
+
+# if Jetson
+../../utils/check-environment-compatible && docker compose -f docker-compose.l4t.yml up
+
+```
+
 ## What It Is Not
 
 Savant is not for AI model training; it's for building fast streaming inference applications working on Edge and Core Nvidia equipment.
