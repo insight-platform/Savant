@@ -19,4 +19,4 @@ Sample Location: [peoplenet_detector](./peoplenet_detector)
 
 Preview:
 
-![](peoplenet-blur-demo-loop.webp)
+![](peoplenet-blur-demo-loop-400.webp)
