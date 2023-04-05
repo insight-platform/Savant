@@ -6,6 +6,7 @@
 
 ```bash
 sudo apt-get update
+sudo apt-get install git git-lfs -y
 ```
 
 ### Install Docker
