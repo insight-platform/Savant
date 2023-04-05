@@ -1,4 +1,4 @@
-# PeopleNet detection, tracking and face blurring
+# People detection, tracking and face blurring (PeopleNet, Nvidia Tracker, OpenCV CUDA)
 
 A simple pipeline that uses standard [Nvidia PeopleNet](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/peoplenet) model to detect persons and their faces in the video. The faces are matched versus bodies and blurred with the integrated OpenCV CUDA functionality. There is also a simple unreliable tracker that helps reduce flickering of boxes.
 
