@@ -39,6 +39,9 @@ Demonstrated adapters:
 - Always-ON RTSP sink adapter;
 - Video/Metadata sink adapter.
 
+
+**Note**: Ubuntu 22.04 runtime configuration [guide](../../docs/runtime-configuration.md) helps to configure the runtime to run Savant pipelines.
+
 Run the demo:
 
 ```bash
