@@ -2,7 +2,7 @@
 
 Preview:
 
-![](peoplenet-blur-demo-loop.webp)
+![](../peoplenet-blur-demo-loop.webp)
 
 Features:
 
