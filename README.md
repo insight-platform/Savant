@@ -31,6 +31,7 @@ Trying the demo you will find how to craft the following showcase:
 ```bash
 git clone https://github.com/insight-platform/Savant.git
 cd Savant/samples/peoplenet_detector
+git lfs pull
 
 # if you want to share with us where are you from
 # run the following command, it is completely optional
