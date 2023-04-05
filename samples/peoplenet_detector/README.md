@@ -1,5 +1,12 @@
 # PeopleNet detection, tracking and face blurring
 
+A simple pipeline that uses standard [Nvidia PeopleNet](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/peoplenet) model to detect persons and their faces in the video. The faces are matched versus bodies and blurred with the integrated OpenCV CUDA functionality. There is also a simple unreliable tracker that helps reduce flickering of boxes.
+
+GPU-accelerated blurring made with OpenCV is a killer feature of this demonstration. It enables very fast and efficient face blurring without CPU utilization.
+
+The **Green** Icon represents how many people with blurred faces in the scene. 
+The **Blue** Icon represents how many people with blurred faces in the scene.
+
 Preview:
 
 ![](../peoplenet-blur-demo-loop.webp)
@@ -7,13 +14,6 @@ Preview:
 Features:
 
 ![demo-0 2 0-dia](https://user-images.githubusercontent.com/15047882/229354155-f37ad24b-c0bd-4249-ba83-a53b3c1e053b.png)
-
-A simple pipeline that uses standard [Nvidia PeopleNet](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/peoplenet) model to detect persons and their faces in the video. The faces are matched versus bodies and blurred with the integrated OpenCV CUDA functionality. There is also a simple unreliable tracker that helps reduce flickering of boxes.
-
-GPU-accelerated blurring made with OpenCV is a killer feature of this demonstration. It enables very fast and efficient face blurring without CPU utilization.
-
-The **Green** Icon represents how many people with blurred faces in the scene. 
-The **Blue** Icon represents how many people with blurred faces in the scene.
 
 YouTube Video:
 
