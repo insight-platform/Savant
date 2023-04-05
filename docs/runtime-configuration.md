@@ -41,5 +41,5 @@ sudo systemctl restart docker
 ### Test It works
 
 ```bash
-docker run --rm --runtime=nvidia --gpus all nvidia/cuda:11.6.2-base-ubuntu20.04 nvidia-smi
+sudo docker run --rm --runtime=nvidia --gpus all nvidia/cuda:11.6.2-base-ubuntu20.04 nvidia-smi
 ```
