@@ -10,6 +10,7 @@ that utilize the best Nvidia approaches for data center and edge accelerators ve
 
 ## Quick Links
 
+- [Prepare OS Runtime](docs/runtime-configuration.md)
 - [Getting Started Tutorial](https://hello.savant.video/peoplenet-tutorial)
 - [Publications and Samples](https://hello.savant.video/samples)
 - [Architecture](docs/architecture.md) - DRAFT
@@ -261,6 +262,7 @@ As for now, we provide images for x86 architecture and for Jetson hardware.
 
 ## What's Next
 
+- [Prepare OS Runtime](docs/runtime-configuration.md)
 - [Getting Started Tutorial](https://hello.savant.video/peoplenet-tutorial)
 - [Publications and Samples](https://hello.savant.video/samples)
 - [Architecture](docs/architecture.md) - DRAFT
