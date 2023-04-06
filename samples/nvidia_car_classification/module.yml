@@ -2,6 +2,7 @@ name: ${oc.env:MODULE_NAME, 'deepstream_test2'}
 
 parameters:
   output_frame: ${json:${oc.env:OUTPUT_FRAME, '{"codec":"jpeg"}'}}
+  draw_func: {}
 
 pipeline:
 
