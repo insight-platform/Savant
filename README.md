@@ -10,6 +10,7 @@ that utilize the best Nvidia approaches for data center and edge accelerators ve
 
 ## Quick Links
 
+- [Prepare the OS Runtime](docs/runtime-configuration.md)
 - [Getting Started Tutorial](https://hello.savant.video/peoplenet-tutorial)
 - [Publications and Samples](https://hello.savant.video/samples)
 - [Architecture](docs/architecture.md) - DRAFT
@@ -17,6 +18,8 @@ that utilize the best Nvidia approaches for data center and edge accelerators ve
 - [Adapters Guide](docs/adapters.md)
 
 ## 1-Minute Quick Start
+
+**Note**: Ubuntu 22.04 runtime configuration [guide](docs/runtime-configuration.md) helps to configure the runtime to run Savant pipelines.
 
 If you are acquainted with running dockerized applications using Nvidia GPUs:
 - **X86 & Volta/Turing/Ampere/Ada Lovelace**: Linux, Drivers 525+, Docker with Compose, Nvidia Container Runtime,
@@ -29,6 +32,7 @@ Trying the demo you will find how to craft the following showcase:
 ```bash
 git clone https://github.com/insight-platform/Savant.git
 cd Savant/samples/peoplenet_detector
+git lfs pull
 
 # if you want to share with us where are you from
 # run the following command, it is completely optional
@@ -258,6 +262,7 @@ As for now, we provide images for x86 architecture and for Jetson hardware.
 
 ## What's Next
 
+- [Prepare the OS Runtime](docs/runtime-configuration.md)
 - [Getting Started Tutorial](https://hello.savant.video/peoplenet-tutorial)
 - [Publications and Samples](https://hello.savant.video/samples)
 - [Architecture](docs/architecture.md) - DRAFT
