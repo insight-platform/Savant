@@ -13,7 +13,6 @@ parameters:
       keep: true
       left: 0
       right: 1280
-      # Padding size is 180px on the top of the frame
       top: 0
       bottom: 0
   output_frame:
