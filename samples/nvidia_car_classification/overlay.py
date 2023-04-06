@@ -6,9 +6,6 @@ from savant.utils.artist import Position, Artist
 
 
 class Overlay(NvDsDrawFunc):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     def draw_on_frame(self, frame_meta: NvDsFrameMeta, artist: Artist):
         """DrawFunc's method where the drawing happens.
         Use artist's methods to add custom graphics to the frame.
