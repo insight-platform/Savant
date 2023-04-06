@@ -1,7 +1,7 @@
 name: ${oc.env:MODULE_NAME, 'nvidia_car_classification'}
 
 parameters:
-  output_frame: ${json:${oc.env:OUTPUT_FRAME, '{"codec":"jpeg"}'}}
+  output_frame: ${json:${oc.env:OUTPUT_FRAME, '{"codec":"raw-rgba"}'}}
   draw_func:
     module: samples.nvidia_car_classification.overlay
     # specify the drawfunc's python class from the module
