@@ -250,19 +250,22 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         return self._parent_object
 
     @parent.setter
-    def parent(self, value: Union['_NvDsObjectMetaImpl', ObjectMeta]):
+    def parent(self, value: Union['_NvDsObjectMetaImpl', ObjectMeta, None]):
         """Sets this object's parent.
 
         :param value: Parent object.
         """
         if value is None:
             self._parent_object = None
+            self.ds_object_meta.parent = None
         elif isinstance(value, ObjectMeta) and isinstance(
             value.object_meta_impl, _NvDsObjectMetaImpl
         ):
             self._parent_object = value.object_meta_impl
+            self.ds_object_meta.parent = value.object_meta_impl.ds_object_meta
         elif isinstance(value, _NvDsObjectMetaImpl):
             self._parent_object = value
+            self.ds_object_meta.parent = value.ds_object_meta
         else:
             raise MetaValueError(
                 f'{self.__class__.__name__} supports only '
