@@ -21,7 +21,6 @@ Preview:
 
 ![](peoplenet-blur-demo-loop-400.webp)
 
-
 ### Car Detection and Classification (Nvidia detectors and classifiers, Nvidia tracker)
 
 Sample Location: [nvidia_car_classification](./nvidia_car_classification)
