@@ -20,6 +20,19 @@ class BgRemover(NvDsPyFuncPlugin):
         self.stream = cv2.cuda.Stream_Null()
         self.back_subtractors = {}
 
+        sigma = 2
+
+        radius = int(sigma * 4 + 0.5)
+        if radius % 2 == 0:
+            radius += 1
+        radius = max(radius, 1)
+        radius = min(radius, 31)
+
+        self.gaussian_filter = cv2.cuda.createGaussianFilter(
+            cv2.CV_8UC4, cv2.CV_8UC4, (radius, radius), sigma
+        )
+
+
     def on_source_eos(self, source_id: str):
         """On source EOS event callback."""
         self.back_subtractors.pop(source_id)
@@ -39,7 +52,8 @@ class BgRemover(NvDsPyFuncPlugin):
                     back_sub = cv2.cuda.createBackgroundSubtractorMOG2()
                     self.back_subtractors[frame_meta.source_id] = back_sub
 
-                cropped = cv2.cuda_GpuMat(frame_mat, (0, 0, int(frame_meta.roi.width), int(frame_meta.roi.height)))
+                cropped = cv2.cuda_GpuMat(frame_mat, (0, 0, int(frame_meta.roi.width), int(frame_meta.roi.height))).clone()
+                self.gaussian_filter.apply(cropped, cropped, stream=self.stream)
                 cu_mat_fg = back_sub.apply(cropped, -1, self.stream)
                 res_image = cropped.copyTo(cu_mat_fg, self.stream)
                 artist.add_graphic(res_image, (int(frame_meta.roi.width), 0))
