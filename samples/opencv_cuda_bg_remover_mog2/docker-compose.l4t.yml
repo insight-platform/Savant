@@ -62,7 +62,7 @@ services:
     image: ghcr.io/insight-platform/savant-adapters-deepstream-l4t:0.2.0-6.2
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
-      - ./sprites:/stub_img
+      - ./stub_img:/stub_img
     links:
       - "rtsp-server:rtsp-server"
     depends_on:
