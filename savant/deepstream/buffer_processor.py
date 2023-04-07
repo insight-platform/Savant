@@ -119,6 +119,8 @@ class NvDsBufferProcessor(GstBufferProcessor):
                 height=self._frame_params.height,
             )
 
+            all_nvds_obj_metas = {}
+            nvds_obj_metas_w_parent = {}
             # add external objects to nvds meta
             for obj_meta in frame_meta.metadata['objects']:
                 obj_key = self._model_object_registry.model_object_key(
@@ -172,6 +174,7 @@ class NvDsBufferProcessor(GstBufferProcessor):
                     bbox.left += self._frame_params.padding.left
                     bbox.top += self._frame_params.padding.top
 
+                # create nvds obj meta
                 nvds_obj_meta = nvds_add_obj_meta_to_frame(
                     batch_meta=nvds_batch_meta,
                     frame_meta=nvds_frame_meta,
@@ -191,6 +194,25 @@ class NvDsBufferProcessor(GstBufferProcessor):
                     obj_label=obj_key,
                     confidence=obj_meta['confidence'],
                 )
+
+                # save nvds obj meta ref in case it is some other obj's parent
+                # and save nvds obj meta ref in case it has a parent
+                # this is done to avoid one more full iteration of frame's objects
+                # because the parent meta may be created after the child
+                all_nvds_obj_metas[
+                    obj_meta['model_name'], obj_meta['label'], obj_meta['object_id']
+                ] = nvds_obj_meta
+                if (
+                    obj_meta['parent_model_name'] is not None
+                    and obj_meta['parent_label'] is not None
+                    and obj_meta['parent_object_id'] is not None
+                ):
+                    nvds_obj_metas_w_parent[
+                        obj_meta['parent_model_name'],
+                        obj_meta['parent_label'],
+                        obj_meta['parent_object_id'],
+                    ] = nvds_obj_meta
+
                 for attr in obj_meta['attributes']:
                     nvds_add_attr_meta_to_obj(
                         frame_meta=nvds_frame_meta,
@@ -200,6 +222,10 @@ class NvDsBufferProcessor(GstBufferProcessor):
                         value=attr['value'],
                         confidence=attr['confidence'],
                     )
+
+            # finish configuring obj metas by assigning the parents
+            for parent_key, nvds_obj_meta in nvds_obj_metas_w_parent.items():
+                nvds_obj_meta.parent = all_nvds_obj_metas[parent_key]
 
             frame_meta.metadata['objects'] = []
             # add primary frame object
