@@ -8,6 +8,16 @@ Preview:
 
 ![](../opencv_cuda_bg_remover_mog2.webp)
 
+Features:
+
+![demo-0 2 1-mog2 (2)](https://user-images.githubusercontent.com/15047882/230607388-febddb9b-c5da-417d-a563-4a56829c82ab.png)
+
+YouTube Video:
+
+[![Watch the video](https://img.youtube.com/vi/P9w-WS6HLew/default.jpg)](https://youtu.be/P9w-WS6HLew)
+
+A step-by-step [tutorial](https://hello.savant.video/opencv-cuda-bg-remover-mog2-tutorial).
+
 Tested on platforms:
 
 - Xavier NX, Xavier AGX;
@@ -16,8 +26,8 @@ Tested on platforms:
 Demonstrated operational modes:
 
 - real-time processing: RTSP streams (multiple sources at once);
-- capacity processing: directory of files (FPS).
-- use of computer vision methods from OpenCV
+- capacity processing: directory of files (FPS);
+- classical computer vision algorithms (OpenCV CUDA).
 
 Demonstrated adapters:
 - RTSP source adapter;
