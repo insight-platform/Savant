@@ -25,6 +25,8 @@ Preview:
 
 ### Removing the background on a video frame using MOG2 from OpenCV CUDA
 
-Sample Location: [peoplenet_detector](./opencv_cuda_bg_remover_mog2)
+Sample Location: [opencv_cuda_bg_remover_mog2](./opencv_cuda_bg_remover_mog2)
 
 Preview:
+
+![](opencv_cuda_bg_remover_mog2-800.webp)

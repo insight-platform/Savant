@@ -9,6 +9,8 @@ The right part represents video without background.
 
 Preview:
 
+![](../opencv_cuda_bg_remover_mog2.webp)
+
 Tested on platforms:
 
 - Xavier NX, Xavier AGX;
