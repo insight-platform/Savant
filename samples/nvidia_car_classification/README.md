@@ -1,4 +1,4 @@
-# Deepstream-test2 app
+# NVIDIA Car Classification app
 
 ## Reproduce [deepstream-test2 app](https://github.com/NVIDIA-AI-IOT/deepstream_python_apps/tree/master/apps/deepstream-test2)
 
@@ -22,7 +22,7 @@ An example of minimal module configuration is provided in the [module.yml](modul
 Run this sample config with
 
 ```bash
-python scripts/run_module.py samples/deepstream_test2/module.yml
+python scripts/run_module.py samples/nvidia_car_classification/module.yml
 ```
 
 #### Detector
@@ -32,7 +32,7 @@ python scripts/run_module.py samples/deepstream_test2/module.yml
       name: Primary_Detector
       model:
         format: caffe
-        config_file: ${oc.env:APP_PATH}/samples/deepstream_test2/dstest2_pgie_config.txt
+        config_file: ${oc.env:APP_PATH}/samples/nvidia_car_classification/dstest2_pgie_config.txt
 ```
 
 #### Tracker
@@ -45,7 +45,7 @@ Configuration properties copied from [dstest2_tracker_config.txt](https://github
         tracker-width: 640
         tracker-height: 384
         ll-lib-file: /opt/nvidia/deepstream/deepstream/lib/libnvds_nvmultiobjecttracker.so
-        ll-config-file: ${oc.env:APP_PATH}/samples/deepstream_test2/config_tracker_NvDCF_perf.yml
+        ll-config-file: ${oc.env:APP_PATH}/samples/nvidia_car_classification/config_tracker_NvDCF_perf.yml
         enable_batch_process: 1
 ```
 
@@ -58,7 +58,7 @@ For `Secondary_CarColor` classifier use `dstest2_sgie1_config.txt`
       name: Secondary_CarColor
       model:
         format: caffe
-        config_file: ${oc.env:APP_PATH}/samples/deepstream_test2/dstest2_sgie1_config.txt
+        config_file: ${oc.env:APP_PATH}/samples/nvidia_car_classification/dstest2_sgie1_config.txt
         input:
           object: Primary_Detector.Car
         output:
@@ -90,7 +90,7 @@ An example of TRT engines usage is provided in the [module-engines-config.yml](m
 Run this sample config with
 
 ```bash
-python scripts/run_module.py samples/deepstream_test2/module-engines-config.yml
+python scripts/run_module.py samples/nvidia_car_classification/module-engines-config.yml
 ```
 
 ## Full configuration using only Savant config parameters
@@ -105,7 +105,7 @@ is provided in the [module-full-savant-config.yml](module-full-savant-config.yml
 Run this sample config with
 
 ```bash
-python scripts/run_module.py samples/deepstream_test2/module-full-savant-config.yml
+python scripts/run_module.py samples/nvidia_car_classification/module-full-savant-config.yml
 ```
 
 ## Module configuration using etlt models
@@ -120,5 +120,5 @@ Config file that uses etlt models for this sample is provided in the [module-etl
 Run this sample config with
 
 ```bash
-python scripts/run_module.py samples/deepstream_test2/module-etlt-config.yml
+python scripts/run_module.py samples/nvidia_car_classification/module-etlt-config.yml
 ```

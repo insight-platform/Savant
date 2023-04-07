@@ -22,6 +22,13 @@ Preview:
 ![](peoplenet-blur-demo-loop-400.webp)
 
 
+### Car Detection and Classification (Nvidia detectors and classifiers, Nvidia tracker)
+
+Sample Location: [nvidia_car_classification](./nvidia_car_classification)
+
+Preview:
+
+![](nvidia-car-classification-loop-400.webp)
 
 ### Removing the background on a video frame using MOG2 from OpenCV CUDA
 
@@ -30,3 +37,4 @@ Sample Location: [opencv_cuda_bg_remover_mog2](./opencv_cuda_bg_remover_mog2)
 Preview:
 
 ![](opencv_cuda_bg_remover_mog2-800.webp)
+
