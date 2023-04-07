@@ -1,15 +1,22 @@
-# Removing the background on a video frame using MOG2 from OpenCV CUDA
+# OpenCV CUDA MOG2 Background Segmentation Demo
 
-A simple pipeline using MOG2 from OpenCV to remove the background from the frame. 
-The background removal acceleration is made by using OpenCV CUDA. 
-This allows very fast and efficient background removal.
+A simple pipeline demonstrates removing the background with accelerated MOG2 from OpenCV CUDA. The pipeline takes less than 2 ms to decode, remove the background, draw the background, and encode the frame to HEVC, which results in achieving 500+ FPS on modern hardware.
 
-The left part represents the reference video. 
-The right part represents video without background.
+The left side represents the orignial frame; the right side represents the framw without the background.
 
 Preview:
 
 ![](../opencv_cuda_bg_remover_mog2.webp)
+
+Features:
+
+![demo-0 2 1-mog2 (2)](https://user-images.githubusercontent.com/15047882/230607388-febddb9b-c5da-417d-a563-4a56829c82ab.png)
+
+YouTube Video:
+
+[![Watch the video](https://img.youtube.com/vi/P9w-WS6HLew/default.jpg)](https://youtu.be/P9w-WS6HLew)
+
+A step-by-step [tutorial](https://hello.savant.video/opencv-cuda-bg-remover-mog2-tutorial).
 
 Tested on platforms:
 
@@ -20,13 +27,10 @@ Demonstrated operational modes:
 
 - real-time processing: RTSP streams (multiple sources at once);
 - capacity processing: directory of files (FPS).
-- use of computer vision methods from OpenCV
 
 Demonstrated adapters:
 - RTSP source adapter;
-- video file source adapter;
 - Always-ON RTSP sink adapter;
-
 
 **Note**: Ubuntu 22.04 runtime configuration [guide](../../docs/runtime-configuration.md) helps to configure the runtime to run Savant pipelines.
 
@@ -39,7 +43,7 @@ git lfs pull
 
 # if you want to share with us where are you from
 # run the following command, it is completely optional
-curl --silent -O -- https://hello.savant.video/peoplenet.html
+curl --silent -O -- https://hello.savant.video/opencv_cuda_bg_remover_mog2.html
 
 # if x86
 ../../utils/check-environment-compatible && docker compose -f docker-compose.x86.yml up
@@ -57,10 +61,10 @@ cd ../..
 ```
 
 
-To measure performance:
+## Performance Measurement
 
-Download the file to your local folder. For example, create a data folder and download the video into it
-(all commands must be executed from the root directory of the project Savant)
+Download the video file to your local folder. For example, create a data folder and download the video into it (all commands must be executed from the root directory of the project Savant)
+
 ```bash
 # you are expected to be in Savant/ directory
 

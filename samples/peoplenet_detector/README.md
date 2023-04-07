@@ -21,8 +21,6 @@ YouTube Video:
 
 A step-by-step [tutorial](https://hello.savant.video/peoplenet-tutorial).
 
-Code and simple instructions in the [Demo Directory](../samples/peoplenet_detector).
-
 Tested on platforms:
 
 - Xavier NX, Xavier AGX;
