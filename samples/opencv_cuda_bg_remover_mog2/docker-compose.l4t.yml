@@ -42,7 +42,7 @@ services:
               count: 1
               capabilities: [gpu]
   rtsp-source:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer:0.2.0
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:0.2.0
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
     links:
