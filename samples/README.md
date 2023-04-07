@@ -20,3 +20,11 @@ Sample Location: [peoplenet_detector](./peoplenet_detector)
 Preview:
 
 ![](peoplenet-blur-demo-loop-400.webp)
+
+
+
+### Removing the background on a video frame using MOG2 from OpenCV CUDA
+
+Sample Location: [peoplenet_detector](./opencv_cuda_bg_remover_mog2)
+
+Preview:

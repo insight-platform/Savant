@@ -16,18 +16,17 @@ services:
       - "rtsp-server:rtsp-server"
     depends_on:
       - rtsp-server
-    command: -re -stream_loop -1 -i https://eu-central-1.linodeobjects.com/savant-data/demo/road_traffic.mp4  -c copy -bsf:v h264_mp4toannexb -f rtsp rtsp://rtsp-server:8554/road-traffic
-#    command: -re -stream_loop -1 -i /data/road_traffic.mp4 -c copy -bsf:v h264_mp4toannexb -f rtsp rtsp://rtsp-server:8554/road-traffic
+    command: -re -stream_loop -1 -i https://eu-central-1.linodeobjects.com/savant-data/opencv_cuda_bg_remover_mog2/road_traffic.mp4  -c copy -bsf:v h264_mp4toannexb -f rtsp rtsp://rtsp-server:8554/road-traffic
     healthcheck:
       test: ["CMD", "ffprobe", "rtsp://rtsp-server:8554/road-traffic"]
       interval: 5s
       start_period: 5s
   module:
-    image: ghcr.io/insight-platform/savant-deepstream:0.2.0-6.2-samples
+    image: ghcr.io/insight-platform/savant-deepstream-l4t:0.2.0-6.2-samples
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ..:/opt/app/samples
-    command: samples/background_remover/demo.yml
+    command: samples/opencv_cuda_bg_remover_mog2/demo.yml
     environment:
       - ZMQ_SRC_ENDPOINT=ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SRC_TYPE=ROUTER
@@ -60,7 +59,7 @@ services:
       - SYNC_OUTPUT=True
     entrypoint: /opt/app/adapters/gst/sources/rtsp.sh
   always-on-sink:
-    image: ghcr.io/insight-platform/savant-adapters-deepstream:0.2.0-6.2
+    image: ghcr.io/insight-platform/savant-adapters-deepstream-l4t:0.2.0-6.2
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ./sprites:/stub_img
@@ -74,7 +73,7 @@ services:
       - ZMQ_BIND=False
       - RTSP_URI=rtsp://rtsp-server:8554/road-traffic-processed
       - SOURCE_ID=road-traffic-processed
-      - STUB_FILE_LOCATION=/stub_img/smpte100_2560x720.jpeg
+      - STUB_FILE_LOCATION=/stub_img/smpte100_1280x900.jpeg
     command: python -m adapters.ds.sinks.always_on_rtsp
     deploy:
       resources:
