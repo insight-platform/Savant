@@ -8,25 +8,25 @@ services:
       - "8888:8888"
     environment:
       - RTSP_PROTOCOLS=tcp
-  city-traffic:
+  rtsp-stream:
     image: linuxserver/ffmpeg:version-4.4-cli
     links:
       - "rtsp-server:rtsp-server"
     depends_on:
       - rtsp-server
-    command: -re -stream_loop -1 -i https://eu-central-1.linodeobjects.com/savant-data/demo/Free_City_Street_Footage.mp4 -c copy -bsf:v h264_mp4toannexb -f rtsp rtsp://rtsp-server:8554/city-traffic
+    command: -re -stream_loop -1 -i https://eu-central-1.linodeobjects.com/savant-data/nvidia-car-classification/deepstream_sample_720p.mp4 -c copy -bsf:v h264_mp4toannexb -f rtsp rtsp://rtsp-server:8554/nvidia-sample
     healthcheck:
-      test: ["CMD", "ffprobe", "rtsp://rtsp-server:8554/city-traffic"]
+      test: ["CMD", "ffprobe", "rtsp://rtsp-server:8554/nvidia-sample"]
       interval: 5s
       start_period: 5s
   module:
     image: ghcr.io/insight-platform/savant-deepstream:0.2.0-6.2-samples
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
-      - ../../models/peoplenet_detector:/models
-      - ../../downloads/peoplenet_detector:/downloads
-      - ..:/opt/app/samples
-    command: samples/peoplenet_detector/demo.yml
+      - ../../models/nvidia_car_classification:/models
+      - ../../downloads/nvidia_car_classification:/downloads
+      - .:/opt/app/samples/nvidia_car_classification
+    command: samples/nvidia_car_classification/module.yml
     environment:
       - ZMQ_SRC_ENDPOINT=ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SRC_TYPE=ROUTER
@@ -48,14 +48,14 @@ services:
     links:
       - "rtsp-server:rtsp-server"
     depends_on:
-      city-traffic:
+      rtsp-stream:
         condition: service_healthy
     environment:
       - ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_TYPE=DEALER
       - ZMQ_BIND=False
-      - RTSP_URI=rtsp://rtsp-server:8554/city-traffic
-      - SOURCE_ID=city-traffic-processed
+      - RTSP_URI=rtsp://rtsp-server:8554/nvidia-sample
+      - SOURCE_ID=nvidia-sample-processed
       - SYNC_OUTPUT=True
     entrypoint: /opt/app/adapters/gst/sources/rtsp.sh
   always-on-sink:
@@ -71,9 +71,9 @@ services:
       - ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/output-video.ipc
       - ZMQ_TYPE=SUB
       - ZMQ_BIND=False
-      - RTSP_URI=rtsp://rtsp-server:8554/city-traffic-processed
-      - SOURCE_ID=city-traffic-processed
-      - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x900.jpeg
+      - RTSP_URI=rtsp://rtsp-server:8554/nvidia-sample-processed
+      - SOURCE_ID=nvidia-sample-processed
+      - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x720.jpeg
     command: python -m adapters.ds.sinks.always_on_rtsp
     deploy:
       resources:
