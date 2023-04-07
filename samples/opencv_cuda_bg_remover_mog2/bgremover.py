@@ -17,7 +17,6 @@ class BgRemover(NvDsPyFuncPlugin):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.stream = cv2.cuda.Stream_Null()
         self.back_subtractors = {}
 
         self.gaussian_filter = cv2.cuda.createGaussianFilter(
@@ -36,7 +35,6 @@ class BgRemover(NvDsPyFuncPlugin):
         :param buffer: Gstreamer buffer with this frame's data.
         :param frame_meta: This frame's metadata.
         """
-        pass
         with nvds_to_gpu_mat(buffer, frame_meta.frame_meta) as frame_mat:
             with Artist(frame_mat) as artist:
                 if frame_meta.source_id in self.back_subtractors:
@@ -46,7 +44,7 @@ class BgRemover(NvDsPyFuncPlugin):
                     self.back_subtractors[frame_meta.source_id] = back_sub
                 ref_frame = cv2.cuda_GpuMat(frame_mat, (0, 0, int(frame_meta.roi.width), int(frame_meta.roi.height)))
                 cropped = ref_frame.clone()
-                self.gaussian_filter.apply(cropped, cropped, stream=self.stream)
-                cu_mat_fg = back_sub.apply(cropped, -1, self.stream)
-                res_image = ref_frame.copyTo(cu_mat_fg, self.stream)
+                self.gaussian_filter.apply(cropped, cropped, stream=artist.stream)
+                cu_mat_fg = back_sub.apply(cropped, -1, artist.stream)
+                res_image = ref_frame.copyTo(cu_mat_fg, artist.stream)
                 artist.add_graphic(res_image, (int(frame_meta.roi.width), 0))
