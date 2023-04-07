@@ -32,7 +32,7 @@ Run the demo:
 
 ```bash
 git clone https://github.com/insight-platform/Savant.git
-cd Savant/samples/background_remover
+cd Savant/samples/opencv_cuda_bg_remover_mog2
 git lfs pull
 
 # if you want to share with us where are you from
