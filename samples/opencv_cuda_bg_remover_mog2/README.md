@@ -26,8 +26,7 @@ Tested on platforms:
 Demonstrated operational modes:
 
 - real-time processing: RTSP streams (multiple sources at once);
-- capacity processing: directory of files (FPS);
-- classical computer vision algorithms (OpenCV CUDA).
+- capacity processing: directory of files (FPS).
 
 Demonstrated adapters:
 - RTSP source adapter;
