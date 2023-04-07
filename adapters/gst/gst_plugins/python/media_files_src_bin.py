@@ -69,6 +69,13 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
             False,
             GObject.ParamFlags.READWRITE,
         ),
+        'loop-file': (
+            bool,
+            'Loop single video file',
+            'Loop single video file',
+            False,
+            GObject.ParamFlags.READWRITE,
+        ),
     }
 
     def __init__(self, *args, **kwargs):
@@ -80,6 +87,7 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
         self.framerate = Fraction(DEFAULT_FRAMERATE)
         self.frame_duration = int(Gst.SECOND / self.framerate)
         self.sort_by_time = False
+        self.loop_file = False
 
         self.pending_locations: List[str] = []
         self.source: Gst.Element = None
@@ -111,6 +119,10 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
         if self.current_state == Gst.State.NULL and state != Gst.State.NULL:
             assert self.location is not None, '"location" property is required'
             assert self.file_type is not None, '"file-type" property is required'
+            if self.loop_file:
+                assert (
+                    self.file_type == FileType.VIDEO
+                ), f'Only "fil-type={FileType.VIDEO.value}" is allowed when "loop-file" is enabled'
 
             if self.file_type == FileType.PICTURE:
                 self.src_pad.add_probe(Gst.PadProbeType.BUFFER, self.set_frame_duration)
@@ -135,6 +147,9 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
     def list_files(self):
         assert self.location.exists(), f'No such file or directory "{self.location}"'
         if self.location.is_dir():
+            assert (
+                not self.loop_file
+            ), f'Specifying directory as location is not allowed when "loop-file" is enabled'
             all_files = sorted(
                 (f for f in self.location.iterdir() if f.is_file()),
                 key=(
@@ -281,6 +296,8 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
             return f'{self.framerate.numerator}/{self.framerate.denominator}'
         if prop.name == 'sort-by-time':
             return self.sort_by_time
+        if prop.name == 'loop-file':
+            return self.loop_file
         raise AttributeError(f'Unknown property {prop.name}')
 
     def do_set_property(self, prop, value):
@@ -305,6 +322,8 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
             self.frame_duration = int(Gst.SECOND / self.framerate)
         elif prop.name == 'sort-by-time':
             self.sort_by_time = value
+        elif prop.name == 'loop-file':
+            self.loop_file = value
         else:
             raise AttributeError(f'Unknown property {prop.name}')
 
@@ -342,7 +361,10 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
         return False
 
     def pop_next_location(self):
-        return self.pending_locations.pop(0)
+        if self.loop_file:
+            return self.pending_locations[0]
+        else:
+            return self.pending_locations.pop(0)
 
     def send_file_location(self, file_location: str):
         tag_list: Gst.TagList = Gst.TagList.new_empty()
