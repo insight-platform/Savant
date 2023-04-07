@@ -29,7 +29,9 @@ Preview:
 
 ![](nvidia-car-classification-loop-400.webp)
 
-### Removing the background on a video frame using MOG2 from OpenCV CUDA
+## Utility And Coding Examples 
+
+### OpenCV CUDA MOG2 Background Segmentation Demo
 
 Sample Location: [opencv_cuda_bg_remover_mog2](./opencv_cuda_bg_remover_mog2)
 
