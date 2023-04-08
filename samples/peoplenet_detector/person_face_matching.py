@@ -2,8 +2,10 @@
 from typing import List
 import numpy as np
 from scipy.optimize import linear_sum_assignment
+from numba import njit, uint8, uint16, float32
 
 
+@njit(float32[:,:](float32[:, :], float32[:]), nogil=True)
 def _calc_intersection_areas(boxes_a: np.ndarray, boxes_b: np.ndarray) -> np.ndarray:
     """Calculates intersection areas for two sets of boxes.
 
@@ -28,7 +30,7 @@ def _calc_intersection_areas(boxes_a: np.ndarray, boxes_b: np.ndarray) -> np.nda
 
     return intersections_widths * intersections_heights
 
-
+@njit(float32[:,:](float32[:, :], float32[:]), nogil=True)
 def _iou(boxes_a: np.ndarray, boxes_b: np.ndarray) -> np.ndarray:
     """Calculates IoU coefficients for two sets of boxes.
 
@@ -49,7 +51,7 @@ def _iou(boxes_a: np.ndarray, boxes_b: np.ndarray) -> np.ndarray:
 
     return inter_areas / union_areas
 
-
+@njit
 def match_person_faces(person_boxes: np.ndarray, face_boxes: np.ndarray) -> List[int]:
     """Matches persons and faces based on their bounding boxes' IOU coefficients.
 
