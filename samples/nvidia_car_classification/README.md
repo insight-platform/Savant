@@ -1,10 +1,22 @@
 # NVIDIA Car Classification app
 
-The app reproduces [deepstream-test2 app](https://github.com/NVIDIA-AI-IOT/deepstream_python_apps/tree/master/apps/deepstream-test2).
+The app reproduces [deepstream-test2 app](https://github.com/NVIDIA-AI-IOT/deepstream_python_apps/tree/master/apps/deepstream-test2) in the Savant framework. The pipeline detects and tracks cars, and applies car type, color and make classification models to detected cars. The results are displayed on the frames with bounding boxes, track ids and classification labels.
 
 Preview:
 
 ![](../nvidia-car-classification-loop.webp)
+
+Tested on platforms:
+
+- Xavier NX, Xavier AGX;
+- Nvidia Turing, Ampere.
+
+Demonstrated adapters:
+
+- RTSP source adapter;
+- Always-ON RTSP sink adapter.
+
+**Note**: Ubuntu 22.04 runtime configuration [guide](../../docs/runtime-configuration.md) helps to configure the runtime to run Savant pipelines.
 
 Run the demo:
 
