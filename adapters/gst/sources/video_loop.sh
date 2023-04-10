@@ -12,6 +12,7 @@ required_env() {
 required_env SOURCE_ID
 required_env LOCATION
 required_env ZMQ_ENDPOINT
+required_env DOWNLOAD_PATH
 
 ZMQ_SOCKET_TYPE="${ZMQ_TYPE:="DEALER"}"
 ZMQ_SOCKET_BIND="${ZMQ_BIND:="false"}"
@@ -35,7 +36,7 @@ handler() {
 trap handler SIGINT SIGTERM
 
 gst-launch-1.0 --eos-on-shutdown \
-    media_files_src_bin location="${LOCATION}" file-type=video loop-file=true ! \
+    media_files_src_bin location="${LOCATION}" file-type=video loop-file=true download-path="${DOWNLOAD_PATH}" ! \
     fps_meter "${FPS_PERIOD}" output="${FPS_OUTPUT}" measure-per-loop="${MEASURE_FPS_PER_LOOP}" ! \
     adjust_timestamps ! \
     video_to_avro_serializer source-id="${SOURCE_ID}" eos-on-loop-end="${EOS_ON_LOOP_END}" \

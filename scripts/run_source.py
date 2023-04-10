@@ -71,6 +71,7 @@ def files_source(
     file_type: str,
     envs: List[str],
     entrypoint: str = '/opt/app/adapters/gst/sources/media_files.sh',
+    extra_volumes: List[str] = None,
 ):
     """Read picture or video files from LOCATION.
     LOCATION can be single file, directory or HTTP URL.
@@ -82,6 +83,9 @@ def files_source(
         assert os.path.exists(location)
         location = os.path.abspath(location)
         volumes = [f'{location}:{location}:ro']
+
+    if extra_volumes:
+        volumes.extend(extra_volumes)
 
     cmd = build_docker_run_command(
         f'source-{file_type}-files-{source_id}',
@@ -193,11 +197,24 @@ def videos_source(
     help='Measure FPS per loop. FPS meter will dump statistics at the end of each loop.',
     show_default=True,
 )
+@click.option(
+    '--download-path',
+    default='/tmp/video-loop-source-downloads',
+    help='Path to download files from remote storage.',
+    show_default=True,
+)
+@click.option(
+    '--mount-download-path',
+    default=False,
+    is_flag=True,
+    help='Mount path to download files from remote storage to the container.',
+    show_default=True,
+)
 @common_options
 @sync_option
 @adapter_docker_image_option('gstreamer')
 @click.argument('location', required=True)
-def videos_source(
+def video_loop_source(
     source_id: str,
     out_endpoint: str,
     out_type: str,
@@ -209,12 +226,21 @@ def videos_source(
     fps_output: str,
     measure_fps_per_loop: bool,
     eos_on_loop_end: bool,
+    download_path: str,
+    mount_download_path: bool,
     location: str,
     read_metadata: bool,
 ):
     """Read a video file from LOCATION and loop it.
     LOCATION can be single file, directory or HTTP URL.
     """
+
+    download_path = os.path.abspath(download_path)
+    if mount_download_path:
+        volumes = [f'{download_path}:{download_path}']
+    else:
+        volumes = []
+
     files_source(
         source_id=source_id,
         out_endpoint=out_endpoint,
@@ -231,8 +257,10 @@ def videos_source(
             f'MEASURE_FPS_PER_LOOP={measure_fps_per_loop}',
             f'EOS_ON_LOOP_END={eos_on_loop_end}',
             f'READ_METADATA={read_metadata}',
+            f'DOWNLOAD_PATH={download_path}',
         ],
         entrypoint='/opt/app/adapters/gst/sources/video_loop.sh',
+        extra_volumes=volumes,
     )
 
 
