@@ -1,124 +1,44 @@
-# NVIDIA Car Classification app
+# Car Detection and Classification (Nvidia detectors and classifiers, Nvidia tracker)
 
-## Reproduce [deepstream-test2 app](https://github.com/NVIDIA-AI-IOT/deepstream_python_apps/tree/master/apps/deepstream-test2)
+The app reproduces [deepstream-test2 app](https://github.com/NVIDIA-AI-IOT/deepstream_python_apps/tree/master/apps/deepstream-test2) in the Savant framework. The pipeline detects and tracks cars, and applies car type, color and make classification models to detected cars. The results are displayed on the frames with bounding boxes, track ids and classification labels.
 
-The easiest way is to use the model configs provided in the source application repository.
+Preview:
 
-In order to prepare DS model config files from original repository it is necessary to cut relative path component from file paths, leaving only file name.
-E.g. in `dstest2_pgie_config.txt`:
+![](../nvidia-car-classification-loop.webp)
 
-* model-file `../../../../samples/models/Primary_Detector/resnet10.caffemodel` => `resnet10.caffemodel`
-* proto-file `../../../../samples/models/Primary_Detector/resnet10.prototxt` => `resnet10.prototxt`
-* model-engine-file `../../../../samples/models/Primary_Detector/resnet10.caffemodel_b1_gpu0_int8.engine` => `resnet10.caffemodel_b1_gpu0_int8.engine`
-* labelfile-path `../../../../samples/models/Primary_Detector/labels.txt` => `labels.txt`
-* int8-calib-file `../../../../samples/models/Primary_Detector/cal_trt.bin` => `cal_trt.bin`
+Tested on platforms:
 
-Resulting config files are provided in the samples directory.
+- Xavier NX, Xavier AGX;
+- Nvidia Turing, Ampere.
 
-### Module config file with DeepStream configs
+Demonstrated adapters:
 
-An example of minimal module configuration is provided in the [module.yml](module.yml).
+- RTSP source adapter;
+- Always-ON RTSP sink adapter.
 
-Run this sample config with
+**Note**: Ubuntu 22.04 runtime configuration [guide](../../docs/runtime-configuration.md) helps to configure the runtime to run Savant pipelines.
 
-```bash
-python scripts/run_module.py samples/nvidia_car_classification/module.yml
-```
-
-#### Detector
-
-```yaml
-    - element: nvinfer@detector
-      name: Primary_Detector
-      model:
-        format: caffe
-        config_file: ${oc.env:APP_PATH}/samples/nvidia_car_classification/dstest2_pgie_config.txt
-```
-
-#### Tracker
-
-Configuration properties copied from [dstest2_tracker_config.txt](https://github.com/NVIDIA-AI-IOT/deepstream_python_apps/blob/master/apps/deepstream-test2/dstest2_tracker_config.txt)
-
-```yaml
-    - element: nvtracker
-      properties:
-        tracker-width: 640
-        tracker-height: 384
-        ll-lib-file: /opt/nvidia/deepstream/deepstream/lib/libnvds_nvmultiobjecttracker.so
-        ll-config-file: ${oc.env:APP_PATH}/samples/nvidia_car_classification/config_tracker_NvDCF_perf.yml
-        enable_batch_process: 1
-```
-
-#### Classifiers
-
-For `Secondary_CarColor` classifier use `dstest2_sgie1_config.txt`
-
-```yaml
-    - element: nvinfer@classifier
-      name: Secondary_CarColor
-      model:
-        format: caffe
-        config_file: ${oc.env:APP_PATH}/samples/nvidia_car_classification/dstest2_sgie1_config.txt
-        input:
-          object: Primary_Detector.Car
-        output:
-          attributes:
-            - name: color
-```
-
-Likewise,
-
-* For `Secondary_CarMake` use `dstest2_sgie2_config.txt`
-* For `Secondary_VehicleTypes` use `dstest2_sgie3_config.txt`
-
-*Note: If you are using files from deepstream_python_apps repository, then check that
-there are no duplicate property values, otherwise the launch will fail - python configparser will produce an error.
-
-## Minimal configuration using prepared engines
-
-In case TRT engines for supported Deepstream version have already been prepared,
-it is possible to use them in the module configuration directly.
-The only difference from the previous configuration is to replace the
-`config_file` with the `engine_file` parameter for each model and specify the required pre/post processing parameters.
-
-For detector you can specify `label_file` instead of `output.objects`.
-
-### Module config file with prepared engines
-
-An example of TRT engines usage is provided in the [module-engines-config.yml](module-engines-config.yml).
-
-Run this sample config with
+Run the demo:
 
 ```bash
-python scripts/run_module.py samples/nvidia_car_classification/module-engines-config.yml
-```
+git clone https://github.com/insight-platform/Savant.git
+cd Savant/samples/nvidia_car_classification
 
-## Full configuration using only Savant config parameters
+# if you want to share with us where are you from
+# run the following command, it is completely optional
+curl --silent -O -- https://hello.savant.video/peoplenet.html
 
-Minimal changes are needed to create a module configuration without relying on nvinfer config files and/or generated TRT engines.
+# if x86
+../../utils/check-environment-compatible && docker compose -f docker-compose.x86.yml up
 
-### Module config file
+# if Jetson
+../../utils/check-environment-compatible && docker compose -f docker-compose.l4t.yml up
 
-An example of config file that will allows to convert caffe models into TRT engines using only Savant config parameters
-is provided in the [module-full-savant-config.yml](module-full-savant-config.yml).
+# open 'rtsp://127.0.0.1:8554/nvidia-sample-processed' in your player
+# or visit 'http://127.0.0.1:8888/nvidia-sample-processed/' (LL-HLS)
 
-Run this sample config with
+# Ctrl+C to stop running the compose bundle
 
-```bash
-python scripts/run_module.py samples/nvidia_car_classification/module-full-savant-config.yml
-```
-
-## Module configuration using etlt models
-
-It is also simple enough to swap the models in the pipeline for other ones. For example,
-replace the sample models from the DeepStream SDK with TAO models available from [Nvidia NGC](https://catalog.ngc.nvidia.com/).
-
-### Module config file with etlt models
-
-Config file that uses etlt models for this sample is provided in the [module-etlt-config.yml](module-etlt-config.yml).
-
-Run this sample config with
-
-```bash
-python scripts/run_module.py samples/nvidia_car_classification/module-etlt-config.yml
+# to get back to project root
+cd ../..
 ```

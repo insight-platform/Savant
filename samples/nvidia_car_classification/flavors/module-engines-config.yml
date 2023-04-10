@@ -1,0 +1,97 @@
+name: ${oc.env:MODULE_NAME, 'nvidia_car_classification'}
+
+parameters:
+  output_frame: ${json:${oc.env:OUTPUT_FRAME, '{"codec":"jpeg"}'}}
+
+pipeline:
+
+  elements:
+
+    # detector
+    - element: nvinfer@detector
+      name: Primary_Detector
+      model:
+        format: caffe
+        engine_file: resnet10.caffemodel_b1_gpu0_int8.engine
+        input:
+          scale_factor: 0.0039215697906911373
+        output:
+          num_detected_classes: 4
+          layer_names: [conv2d_bbox, conv2d_cov/Sigmoid]
+          objects:
+            - class_id: 0
+              label: Car
+#            - class_id: 1
+#              label: Bicycle
+#            - class_id: 2
+#              label: Person
+#            - class_id: 3
+#              label: Roadsign
+
+    # tracker
+    - element: nvtracker
+      properties:
+        tracker-width: 640
+        tracker-height: 384
+        ll-lib-file: /opt/nvidia/deepstream/deepstream/lib/libnvds_nvmultiobjecttracker.so
+        ll-config-file: ${oc.env:APP_PATH}/samples/nvidia_car_classification/config_tracker_NvDCF_perf.yml
+        #enable_past_frame: 1
+        enable_batch_process: 1
+        #display-tracking-id: 0
+
+    # Car Color classifier
+    - element: nvinfer@classifier
+      name: Secondary_CarColor
+      model:
+        format: caffe
+        engine_file: resnet18.caffemodel_b16_gpu0_int8.engine
+        mean_file: mean.ppm
+        label_file: labels.txt
+        input:
+          object: Primary_Detector.Car
+          object_min_width: 64
+          object_min_height: 64
+          color_format: bgr
+        output:
+          layer_names: [predictions/Softmax]
+          attributes:
+            - name: car_color
+              threshold: 0.51
+
+    # Car Make classifier
+    - element: nvinfer@classifier
+      name: Secondary_CarMake
+      model:
+        format: caffe
+        engine_file: resnet18.caffemodel_b16_gpu0_int8.engine
+        mean_file: mean.ppm
+        label_file: labels.txt
+        input:
+          object: Primary_Detector.Car
+          object_min_width: 64
+          object_min_height: 64
+          color_format: bgr
+        output:
+          layer_names: [predictions/Softmax]
+          attributes:
+            - name: car_make
+              threshold: 0.51
+
+    # Car Type classifier
+    - element: nvinfer@classifier
+      name: Secondary_VehicleTypes
+      model:
+        format: caffe
+        engine_file: resnet18.caffemodel_b16_gpu0_int8.engine
+        mean_file: mean.ppm
+        label_file: labels.txt
+        input:
+          object: Primary_Detector.Car
+          object_min_width: 64
+          object_min_height: 64
+          color_format: bgr
+        output:
+          layer_names: [predictions/Softmax]
+          attributes:
+            - name: car_type
+              threshold: 0.51
