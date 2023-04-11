@@ -140,6 +140,57 @@ Dive into :repo-link:`Savant` from :doc:`/getting_started/1_intro` and :doc:`/ma
 
    savant_101/0_streaming_model
    savant_101/1_adapters
+   savant_101/2_video_processing
+   savant_101/3_dm
+   savant_101/4_cm
+   savant_101/5_sm
+   savant_101/6_nv_trackers
+   savant_101/7_python
+   savant_101/8_opencv_cuda
+   savant_101/9_artist
+   savant_101/10_map
+
+.. toctree::
+   :maxdepth: 2
+   :hidden:
+   :caption: Detection
+
+   advanced_topics/0_supported_dm
+   advanced_topics/1_dm_selector
+   advanced_topics/2_dm_postprocessor
+
+.. toctree::
+   :maxdepth: 2
+   :hidden:
+   :caption: Classification
+
+   advanced_topics/0_supported_cm
+
+.. toctree::
+   :maxdepth: 2
+   :hidden:
+   :caption: Segmentation
+
+   advanced_topics/0_supported_sm
+
+.. toctree::
+   :maxdepth: 2
+   :hidden:
+   :caption: Tracking
+
+   advanced_topics/0_tracking
+
+.. toctree::
+   :maxdepth: 2
+   :hidden:
+   :caption: Advanced Topics
+
+   advanced_topics/0_remote_models
+   advanced_topics/3_custom_roi
+   advanced_topics/4_etcd
+   advanced_topics/5_env_vars_yml
+   advanced_topics/6_chaining
+   advanced_topics/7_rotated_boxes
 
 .. toctree::
    :maxdepth: 2
