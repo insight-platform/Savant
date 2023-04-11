@@ -142,10 +142,13 @@ Dive into :repo-link:`Savant` from :doc:`/getting_started/1_intro` and :doc:`/ma
    savant_101/10_adapters
    savant_101/20_video_processing
    savant_101/23_data_processing
-   savant_101/27_prepare_models
+   savant_101/27_working_with_models
    savant_101/30_dm
    savant_101/40_cm
+   savant_101/43_am
    savant_101/50_sm
+   savant_101/53_complexm
+   savant_101/55_rdm
    savant_101/60_nv_trackers
    savant_101/65_metadata
    savant_101/70_python
@@ -175,7 +178,6 @@ Dive into :repo-link:`Savant` from :doc:`/getting_started/1_intro` and :doc:`/ma
    advanced_topics/4_etcd
    advanced_topics/5_env_vars_yml
    advanced_topics/6_chaining
-   advanced_topics/7_rotated_boxes
 
 .. toctree::
    :maxdepth: 1
