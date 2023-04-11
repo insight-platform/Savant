@@ -15,7 +15,7 @@ The framework can communicate with both source and sink adapters via a protocol 
 - [Source Adapters](#source-adapters)
   - [The Image File Source Adapter](#the-image-file-source-adapter)
   - [The Video File Source Adapter](#the-video-file-source-adapter)
-  - [The Looped Video File Source Adapter](#the-looped-video-file-source-adapter)
+  - [The Video Loop File Source Adapter](#the-video-loop-file-source-adapter)
   - [The RTSP Source Adapter](#the-rtsp-source-adapter)
   - [The USB Cam Source Adapter](#the-usb-cam-source-adapter)
   - [The GigE Source Adapter](#the-gige-source-adapter)
@@ -248,9 +248,9 @@ The same adapter can be run using a script:
 
 **Note**: Resulting video stream framerate will be equal to the framerate of the first encountered video file, possibly overriding the framerate of the rest of input files.
 
-### The Looped Video File Source Adapter
+### The Video Loop File Source Adapter
 
-The looped video file source adapter reads a `video/*` file from `LOCATION` and loop it, which can be:
+The video loop file source adapter reads a `video/*` file from `LOCATION` and loop it, which can be:
 
 - a local path to a single file;
 - HTTP URL to a single file;
