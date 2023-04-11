@@ -102,10 +102,12 @@ Every adapter is designed for use with a particular data source:
 
 - [Local video file](docs/adapters.md#the-video-file-source-adapter);
 - [Local directory of video files](docs/adapters.md#the-video-file-source-adapter);
+- [Looped local video file](docs/adapters.md#the-looped-video-file-source-adapter);
 - [Local image file](docs/adapters.md#the-image-file-source-adapter);
 - [Local directory of image files](docs/adapters.md#the-image-file-source-adapter);
 - [Image URL](docs/adapters.md#the-image-file-source-adapter);
 - [Video URL](docs/adapters.md#the-video-file-source-adapter);
+- [Looped video URL](docs/adapters.md#the-looped-video-file-source-adapter);
 - [RTSP stream](docs/adapters.md#the-rtsp-source-adapter);
 - [USB/CSI camera](docs/adapters.md#the-usb-cam-source-adapter);
 - [GigE (Genicam) industrial cam](docs/adapters.md#the-gige-source-adapter).
