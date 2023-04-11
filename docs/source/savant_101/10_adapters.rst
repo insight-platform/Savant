@@ -51,6 +51,9 @@ Currently, the following `source <https://github.com/insight-platform/Savant/blo
 - USB/CSI camera;
 - GigE (Genicam) industrial cam.
 
+Sink Adapters
+^^^^^^^^^^^^^
+
 There are basic `sink <https://github.com/insight-platform/Savant/blob/develop/docs/adapters.md#sink-adapters>`_ adapters implemented:
 
 - Inference results are placed into JSON file stream;

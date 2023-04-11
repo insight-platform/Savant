@@ -1,4 +1,4 @@
-Supported Classification Models
-===============================
+Supported Tracking Algorithms
+=============================
 
 TODO

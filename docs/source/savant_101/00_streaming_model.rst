@@ -11,7 +11,7 @@ That's why you want to have sources decoupled from the pipeline - to increase th
 
 Another reason is dynamic source management which is a very difficult task when managed through the Gstreamer directly. You must implement the logic that attaches and detaches the sources and sinks when needed.
 
-The third problem is connected to media formats. You have to reconfigure GStremer pads setting proper capabilities when the data source changes the media format, e.g., switching from h.264 to HEVC codec. The simplest way to do that is to crash and recover, which causes significant unavailability time while AI models are compiled to TensorRT and loaded in GPU RAM. So, you want to avoid that as well.
+The third problem is connected to media formats. You have to reconfigure GStreamer pads setting proper capabilities when the data source changes the media format, e.g., switching from h.264 to HEVC codec. The simplest way to do that is to crash and recover, which causes significant unavailability time while AI models are compiled to TensorRT and loaded in GPU RAM. So, you want to avoid that as well.
 
 The framework implements the handlers, which magically address all the mentioned problems without needing to manage them explicitly. It helps the developer process streams of anything without restarting the pipeline. The video files, sets of video files, image collections, network video streams, and raw video frames (USB, GigE) are all processed universally (and can be mixed) without reloading the pipeline to attach or detach the stream.
 
