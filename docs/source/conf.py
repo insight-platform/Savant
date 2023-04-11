@@ -24,7 +24,7 @@ Gst.init(None)
 
 # -- Project information -----------------------------------------------------
 project = 'Savant'
-copyright = '2022 BWSoft Management, LLC'
+copyright = '2020-2023 BWSoft Management, LLC'
 # author = 'BWSoft'
 
 # The full version, including alpha/beta/rc tags
@@ -46,7 +46,7 @@ extensions = [
     'sphinx.ext.inheritance_diagram',
     'sphinx_rtd_theme',
     'sphinx.ext.autosectionlabel',
-    'repo_link',
+    'repo_link'
 ]
 
 repo_link = 'https://github.com/insight-platform/Savant'

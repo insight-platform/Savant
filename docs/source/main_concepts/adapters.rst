@@ -47,7 +47,7 @@ defines the following **default connection pattern**:
 
 Each Savant adapter has a number of parameters which can be set through environment variables.
 Learn more about general ZMQ parameters that are required for running a Savant module in combination
-with Savant adapters in :doc:`../getting_started/running` or
+with Savant adapters in :doc:`../getting_started/2_running` or
 read `adapters documentation <https://github.com/insight-platform/Savant/blob/develop/docs/adapters.md>`_ for specific Savant adapters descriptions and parameters.
 
 Custom adapters
