@@ -137,7 +137,7 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
             if self.loop_file:
                 assert (
                     self.file_type == FileType.VIDEO
-                ), f'Only "fil-type={FileType.VIDEO.value}" is allowed when "loop-file" is enabled'
+                ), f'Only "file-type={FileType.VIDEO.value}" is allowed when "loop-file" is enabled'
 
             if self.file_type == FileType.PICTURE:
                 self.src_pad.add_probe(Gst.PadProbeType.BUFFER, self.set_frame_duration)
