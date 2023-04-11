@@ -121,6 +121,12 @@ def files_source(
     'as the source file with `json` extension, and then send it to the module.',
     show_default=True,
 )
+@click.option(
+    '--eos-on-file-end',
+    help='Send EOS at the end of each file.',
+    default=True,
+    show_default=True,
+)
 @common_options
 @sync_option
 @adapter_docker_image_option('gstreamer')
@@ -138,6 +144,7 @@ def videos_source(
     location: str,
     sort_by_time: bool,
     read_metadata: bool,
+    eos_on_file_end: bool,
 ):
     """Read video files from LOCATION.
     LOCATION can be single file, directory or HTTP URL.
@@ -154,7 +161,11 @@ def videos_source(
         fps_output=fps_output,
         location=location,
         file_type='video',
-        envs=[f'SORT_BY_TIME={sort_by_time}', f'READ_METADATA={read_metadata}'],
+        envs=[
+            f'SORT_BY_TIME={sort_by_time}',
+            f'READ_METADATA={read_metadata}',
+            f'EOS_ON_FILE_END={eos_on_file_end}',
+        ],
     )
 
 
@@ -180,6 +191,12 @@ def videos_source(
     'as the source file with `json` extension, and then send it to the module.',
     show_default=True,
 )
+@click.option(
+    '--eos-on-file-end',
+    help='Send EOS at the end of each file.',
+    default=False,
+    show_default=True,
+)
 @common_options
 @sync_option
 @adapter_docker_image_option('gstreamer')
@@ -198,6 +215,7 @@ def pictures_source(
     framerate: str,
     sort_by_time: bool,
     read_metadata: bool,
+    eos_on_file_end: bool,
 ):
     """Read picture files from LOCATION.
     LOCATION can be single file, directory or HTTP URL.
@@ -219,6 +237,7 @@ def pictures_source(
             f'FRAMERATE={framerate}',
             f'SORT_BY_TIME={sort_by_time}',
             f'READ_METADATA={read_metadata}',
+            f'EOS_ON_FILE_END={eos_on_file_end}',
         ],
     )
 

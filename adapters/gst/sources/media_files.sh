@@ -28,10 +28,10 @@ else
 fi
 if [[ "${FILE_TYPE}" == "picture" ]]; then
     MEASURE_PER_FILE=false
-    EOS_ON_LOCATION_CHANGE=false
+    EOS_ON_FILE_END="${EOS_ON_FILE_END:="false"}"
 else
     MEASURE_PER_FILE=true
-    EOS_ON_LOCATION_CHANGE=true
+    EOS_ON_FILE_END="${EOS_ON_FILE_END:="true"}"
 fi
 SORT_BY_TIME="${SORT_BY_TIME:="false"}"
 
@@ -45,7 +45,7 @@ gst-launch-1.0 --eos-on-shutdown \
     media_files_src_bin location="${LOCATION}" file-type="${FILE_TYPE}" framerate="${FRAMERATE}" sort-by-time="${SORT_BY_TIME}" ! \
     fps_meter "${FPS_PERIOD}" output="${FPS_OUTPUT}" measure-per-file="${MEASURE_PER_FILE}" ! \
     adjust_timestamps ! \
-    video_to_avro_serializer source-id="${SOURCE_ID}" eos-on-location-change="${EOS_ON_LOCATION_CHANGE}" \
+    video_to_avro_serializer source-id="${SOURCE_ID}" eos-on-file-end="${EOS_ON_FILE_END}" \
     eos-on-frame-params-change=true read-metadata="${READ_METADATA}" ! \
     zeromq_sink socket="${ZMQ_ENDPOINT}" socket-type="${ZMQ_SOCKET_TYPE}" bind="${ZMQ_SOCKET_BIND}" sync="${SYNC_OUTPUT}" source-id="${SOURCE_ID}" \
     &
