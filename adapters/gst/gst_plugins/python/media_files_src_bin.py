@@ -128,6 +128,9 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
         if self.current_state == Gst.State.NULL and state != Gst.State.NULL:
             self.validate_properties()
 
+            if self.file_type == FileType.PICTURE:
+                self.src_pad.add_probe(Gst.PadProbeType.BUFFER, self.set_frame_duration)
+
             # TODO: check file type for HTTP location
             if isinstance(self.location, Path):
                 self.pending_locations = self.list_files()
