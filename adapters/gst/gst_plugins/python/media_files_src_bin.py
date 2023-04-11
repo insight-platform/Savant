@@ -126,21 +126,7 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
     def do_set_state(self, state: Gst.State):
         self.logger.info('Changing state from %s to %s', self.current_state, state)
         if self.current_state == Gst.State.NULL and state != Gst.State.NULL:
-            assert self.location is not None, '"location" property is required'
-            assert self.file_type is not None, '"file-type" property is required'
-            if self.download_path.exists():
-                assert (
-                    self.download_path.is_dir()
-                ), '"download-path" must be a directory'
-            else:
-                self.download_path.mkdir(parents=True)
-            if self.loop_file:
-                assert (
-                    self.file_type == FileType.VIDEO
-                ), f'Only "file-type={FileType.VIDEO.value}" is allowed when "loop-file" is enabled'
-
-            if self.file_type == FileType.PICTURE:
-                self.src_pad.add_probe(Gst.PadProbeType.BUFFER, self.set_frame_duration)
+            self.validate_properties()
 
             # TODO: check file type for HTTP location
             if isinstance(self.location, Path):
@@ -170,9 +156,6 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
                         download_file,
                     )
             else:
-                assert (
-                    self.loop_file is not None
-                ), '"download-path" property is required when "loop-file" is enabled'
                 self.pending_locations = [self.location]
                 self.source: Gst.Element = Gst.ElementFactory.make('souphttpsrc')
 
@@ -184,6 +167,23 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
             assert self.source.link(self.typefind)
 
         return Gst.Bin.do_set_state(self, state)
+
+    def validate_properties(self):
+        assert self.location is not None, '"location" property is required'
+        assert self.file_type is not None, '"file-type" property is required'
+        if self.download_path is not None:
+            if self.download_path.exists():
+                assert (
+                    self.download_path.is_dir()
+                ), '"download-path" must be a directory'
+        if self.loop_file:
+            assert (
+                self.file_type == FileType.VIDEO
+            ), f'Only "file-type={FileType.VIDEO.value}" is allowed when "loop-file" is enabled'
+            if not isinstance(self.location, Path):
+                assert (
+                    self.download_path is not None
+                ), '"download-path" property is required when "loop-file" is enabled'
 
     def get_download_filepath(self, location: str):
         parsed_location = urlparse(location)
