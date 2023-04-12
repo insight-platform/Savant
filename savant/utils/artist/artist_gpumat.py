@@ -230,6 +230,17 @@ class ArtistGPUMat(AbstractContextManager):
                 cv2.LINE_AA,
             )
 
+    def add_circle(self, center, radius, color, thickness, line_type=cv2.LINE_AA):
+        self.__init_overlay()
+        cv2.circle(
+            self.overlay,
+            center,
+            radius,
+            convert_color(color),
+            thickness,
+            line_type
+        )
+
     def add_polygon(
         self,
         vertices: List[Tuple[float, float]],
