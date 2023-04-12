@@ -244,6 +244,23 @@ def pictures_source(
 
 @cli.command('rtsp')
 @common_options
+@sync_option
+@click.option(
+    '--sync-delay',
+    type=click.INT,
+    help=(
+        'Delay in seconds before sending frames. '
+        'Useful when the source has B-frames to avoid sending frames in batches. '
+        'Ignored when synchronous frames sending is turned off (i.e. no --sync flag).'
+    ),
+)
+@click.option(
+    '--calculate-dts',
+    is_flag=True,
+    default=False,
+    help='Calculate DTS for frames. Set this flag when the source has B-frames.',
+    show_default=True,
+)
 @adapter_docker_image_option('gstreamer')
 @click.argument('rtsp_uri', required=True)
 def rtsp_source(
@@ -251,6 +268,9 @@ def rtsp_source(
     out_endpoint: str,
     out_type: str,
     out_bind: bool,
+    sync: bool,
+    sync_delay: Optional[int],
+    calculate_dts: bool,
     docker_image: str,
     fps_period_frames: Optional[int],
     fps_period_seconds: Optional[float],
@@ -259,21 +279,26 @@ def rtsp_source(
 ):
     """Read video stream from RTSP_URI."""
 
+    envs = build_common_envs(
+        source_id=source_id,
+        fps_period_frames=fps_period_frames,
+        fps_period_seconds=fps_period_seconds,
+        fps_output=fps_output,
+    ) + [
+        f'RTSP_URI={rtsp_uri}',
+        f'CALCULATE_DTS={calculate_dts}',
+    ]
+    if sync and sync_delay is not None:
+        envs.append(f'SYNC_DELAY={sync_delay}')
+
     cmd = build_docker_run_command(
         f'source-rtsp-{source_id}',
         zmq_endpoint=out_endpoint,
         zmq_type=out_type,
         zmq_bind=out_bind,
+        sync=sync,
         entrypoint='/opt/app/adapters/gst/sources/rtsp.sh',
-        envs=(
-            build_common_envs(
-                source_id=source_id,
-                fps_period_frames=fps_period_frames,
-                fps_period_seconds=fps_period_seconds,
-                fps_output=fps_output,
-            )
-            + [f'RTSP_URI={rtsp_uri}']
-        ),
+        envs=envs,
         docker_image=docker_image,
     )
     run_command(cmd)
