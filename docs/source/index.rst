@@ -159,18 +159,11 @@ Dive into :repo-link:`Savant` from :doc:`/getting_started/1_intro` and :doc:`/ma
 .. toctree::
    :maxdepth: 1
    :hidden:
-   :caption: Detection
-
-   advanced_topics/1_dm_selector
-   advanced_topics/2_dm_postprocessor
-
-.. toctree::
-   :maxdepth: 1
-   :hidden:
    :caption: Advanced Topics
 
-   advanced_topics/0_supported_models
    advanced_topics/0_remote_models
+   advanced_topics/0_dm_selector
+   advanced_topics/0_custom_postprocessing
    advanced_topics/0_tracking
    advanced_topics/1_custom_tracking
    advanced_topics/3_custom_roi
@@ -178,6 +171,8 @@ Dive into :repo-link:`Savant` from :doc:`/getting_started/1_intro` and :doc:`/ma
    advanced_topics/4_etcd
    advanced_topics/5_env_vars_yml
    advanced_topics/6_chaining
+   advanced_topics/7_python_only
+   advanced_topics/8_ext_systems
 
 .. toctree::
    :maxdepth: 1

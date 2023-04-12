@@ -1,4 +1,4 @@
-Overriding Output Selector
+Python-Only Pipeline Initialization
 ===================================
 
 TODO

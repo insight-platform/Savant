@@ -1,4 +1,0 @@
-Supported Detection Models
-==========================
-
-TODO
