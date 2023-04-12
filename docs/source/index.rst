@@ -143,6 +143,7 @@ Dive into :repo-link:`Savant` from :doc:`/getting_started/1_intro` and :doc:`/ma
    savant_101/20_video_processing
    savant_101/23_data_processing
    savant_101/27_working_with_models
+   savant_101/29_top_level_roi
    savant_101/30_dm
    savant_101/40_cm
    savant_101/43_am

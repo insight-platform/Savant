@@ -18,7 +18,7 @@ Is It Legal?
 
 Yes, it is the encoding and decoding are almost free on Nvidia GPUs, you usually don't care about additional operations like that.
 
-The drawbacks
--------------
+Drawbacks
+---------
 
 The most significant drawback is the increased latency of a chain. Every decoding/encoding adds about 10 ms when processing a 30 FPS stream; so chaining multiplies the delay.
