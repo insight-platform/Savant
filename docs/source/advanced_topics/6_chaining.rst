@@ -13,8 +13,8 @@ Let us provide you with several:
 3. Access to ready-to-use module you cannot change or incorporate in your pipeline, e.g., because of IP/license restrictions;
 4. You would like to build a routed network of processing where data flow according to specific rules.
 
-Is It Legal?
-------------
+Efficiency
+----------
 
 Yes, it is the encoding and decoding are almost free on Nvidia GPUs, you usually don't care about additional operations like that.
 

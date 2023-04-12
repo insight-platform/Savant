@@ -1,4 +1,9 @@
 Defining a Custom ROI
 =====================
 
-TODO
+Create ROI
+----------
+
+Delete Default ROI
+------------------
+

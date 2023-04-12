@@ -166,6 +166,7 @@ Dive into :repo-link:`Savant` from :doc:`/getting_started/1_intro` and :doc:`/ma
    advanced_topics/0_custom_postprocessing
    advanced_topics/1_custom_tracking
    advanced_topics/3_custom_roi
+   advanced_topics/3_skipping_frames
    advanced_topics/3_hybrid_pipelines
    advanced_topics/4_etcd
    advanced_topics/5_env_vars_yml
