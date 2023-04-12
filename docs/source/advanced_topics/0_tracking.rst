@@ -1,4 +1,0 @@
-Supported Tracking Algorithms
-=============================
-
-TODO
