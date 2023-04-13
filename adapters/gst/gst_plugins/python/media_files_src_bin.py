@@ -3,7 +3,8 @@ import subprocess
 from enum import Enum
 from fractions import Fraction
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import BinaryIO, List, Optional, Union
+from urllib.parse import urlparse
 
 from savant.gstreamer import GLib, GObject, Gst
 from savant.gstreamer.codecs import Codec, CODEC_BY_CAPS_NAME
@@ -69,6 +70,20 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
             False,
             GObject.ParamFlags.READWRITE,
         ),
+        'loop-file': (
+            bool,
+            'Loop single video file',
+            'Loop single video file',
+            False,
+            GObject.ParamFlags.READWRITE,
+        ),
+        'download-path': (
+            str,
+            'Path to download files from remote storage',
+            'Path to download files from remote storage',
+            None,
+            GObject.ParamFlags.READWRITE,
+        ),
     }
 
     def __init__(self, *args, **kwargs):
@@ -80,6 +95,8 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
         self.framerate = Fraction(DEFAULT_FRAMERATE)
         self.frame_duration = int(Gst.SECOND / self.framerate)
         self.sort_by_time = False
+        self.loop_file = False
+        self.download_path: Optional[Path] = None
 
         self.pending_locations: List[str] = []
         self.source: Gst.Element = None
@@ -109,17 +126,39 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
     def do_set_state(self, state: Gst.State):
         self.logger.info('Changing state from %s to %s', self.current_state, state)
         if self.current_state == Gst.State.NULL and state != Gst.State.NULL:
-            assert self.location is not None, '"location" property is required'
-            assert self.file_type is not None, '"file-type" property is required'
+            self.validate_properties()
 
             if self.file_type == FileType.PICTURE:
                 self.src_pad.add_probe(Gst.PadProbeType.BUFFER, self.set_frame_duration)
 
+            # TODO: check file type for HTTP location
             if isinstance(self.location, Path):
                 self.pending_locations = self.list_files()
                 self.source: Gst.Element = Gst.ElementFactory.make('filesrc')
+            elif self.download_path:
+                download_filepath = self.get_download_filepath(self.location)
+                if download_filepath.exists():
+                    self.logger.info(
+                        '%r already downloaded to %r', self.location, download_filepath
+                    )
+                    self.pending_locations = [str(download_filepath)]
+                    self.source: Gst.Element = Gst.ElementFactory.make('filesrc')
+                else:
+                    self.logger.info(
+                        'Downloading %r to %r', self.location, download_filepath
+                    )
+                    download_filepath.parent.mkdir(parents=True, exist_ok=True)
+                    download_file = open(download_filepath, 'wb')
+                    self.pending_locations = [self.location]
+                    if self.loop_file:
+                        self.pending_locations.append(str(download_filepath))
+                    self.source: Gst.Element = Gst.ElementFactory.make('souphttpsrc')
+                    self.source.get_static_pad('src').add_probe(
+                        Gst.PadProbeType.BUFFER | Gst.PadProbeType.EVENT_DOWNSTREAM,
+                        self.download_file_probe,
+                        download_file,
+                    )
             else:
-                # TODO: check file type
                 self.pending_locations = [self.location]
                 self.source: Gst.Element = Gst.ElementFactory.make('souphttpsrc')
 
@@ -132,9 +171,68 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
 
         return Gst.Bin.do_set_state(self, state)
 
+    def validate_properties(self):
+        assert self.location is not None, '"location" property is required'
+        assert self.file_type is not None, '"file-type" property is required'
+        if self.download_path is not None:
+            if self.download_path.exists():
+                assert (
+                    self.download_path.is_dir()
+                ), '"download-path" must be a directory'
+        if self.loop_file:
+            assert (
+                self.file_type == FileType.VIDEO
+            ), f'Only "file-type={FileType.VIDEO.value}" is allowed when "loop-file" is enabled'
+            if not isinstance(self.location, Path):
+                assert (
+                    self.download_path is not None
+                ), '"download-path" property is required when "loop-file" is enabled'
+
+    def get_download_filepath(self, location: str):
+        parsed_location = urlparse(location)
+        return (self.download_path / parsed_location.path.lstrip('/')).absolute()
+
+    def download_file_probe(
+        self,
+        pad: Gst.Pad,
+        info: Gst.PadProbeInfo,
+        file: BinaryIO,
+    ):
+        if info.type & Gst.PadProbeType.BUFFER:
+            buffer: Gst.Buffer = info.get_buffer()
+            mapinfo: Gst.MapInfo
+            mapped, mapinfo = buffer.map(Gst.MapFlags.READ)
+            assert mapped, f'Failed to map buffer {buffer}'
+            try:
+                self.logger.debug(
+                    'Writing %s bytes at offset %s to %r',
+                    mapinfo.size,
+                    buffer.offset,
+                    file.name,
+                )
+                file.seek(buffer.offset)
+                file.write(mapinfo.data)
+            finally:
+                buffer.unmap(mapinfo)
+
+            return Gst.PadProbeReturn.OK
+
+        if info.type & Gst.PadProbeType.EVENT_DOWNSTREAM:
+            event: Gst.Event = info.get_event()
+            if event.type == Gst.EventType.EOS:
+                self.logger.info('Flushing %r', file.name)
+                file.flush()
+                file.close()
+                return Gst.PadProbeReturn.REMOVE
+
+        return Gst.PadProbeReturn.PASS
+
     def list_files(self):
         assert self.location.exists(), f'No such file or directory "{self.location}"'
         if self.location.is_dir():
+            assert (
+                not self.loop_file
+            ), f'Specifying directory as location is not allowed when "loop-file" is enabled'
             all_files = sorted(
                 (f for f in self.location.iterdir() if f.is_file()),
                 key=(
@@ -281,6 +379,10 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
             return f'{self.framerate.numerator}/{self.framerate.denominator}'
         if prop.name == 'sort-by-time':
             return self.sort_by_time
+        if prop.name == 'loop-file':
+            return self.loop_file
+        if prop.name == 'download-path':
+            return str(self.download_path)
         raise AttributeError(f'Unknown property {prop.name}')
 
     def do_set_property(self, prop, value):
@@ -305,6 +407,10 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
             self.frame_duration = int(Gst.SECOND / self.framerate)
         elif prop.name == 'sort-by-time':
             self.sort_by_time = value
+        elif prop.name == 'loop-file':
+            self.loop_file = value
+        elif prop.name == 'download-path':
+            self.download_path = Path(value)
         else:
             raise AttributeError(f'Unknown property {prop.name}')
 
@@ -334,6 +440,17 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
             self.remove(elem)
         self._elements = []
 
+        if self.source.get_factory().get_name() != 'filesrc':
+            # To change "souphttpsrc" to "filesrc" after the first loop
+            self.logger.info('Remove element %r', self.source.get_name())
+            self.source.set_locked_state(True)
+            self.source.set_state(Gst.State.NULL)
+            self.remove(self.source)
+            self.source: Gst.Element = Gst.ElementFactory.make('filesrc')
+            self.logger.info('Add element %r', self.source.get_name())
+            self.add(self.source)
+            assert self.source.link(self.typefind)
+
         self.logger.info('Set location %s', file_location)
         self.source.set_property('location', file_location)
         self.typefind.sync_state_with_parent()
@@ -342,7 +459,14 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
         return False
 
     def pop_next_location(self):
-        return self.pending_locations.pop(0)
+        if self.loop_file and len(self.pending_locations) == 1:
+            # When "self.loop_file=True" and "self.location" is HTTP URL
+            # "self.pending_locations" contains 2 locations: the URL and
+            # the locations of downloaded file.
+            # The URL is used only for the first loop.
+            return self.pending_locations[0]
+        else:
+            return self.pending_locations.pop(0)
 
     def send_file_location(self, file_location: str):
         tag_list: Gst.TagList = Gst.TagList.new_empty()

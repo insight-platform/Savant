@@ -133,7 +133,7 @@ loaded in GPU RAM. So, you want to avoid that as well.
 
 The framework implements the handlers, which address all the mentioned problems magically without the need to manage
 them someway explicitly. It helps the developer to process streams of anything without restarting the pipeline. The
-video files, sets of video files, image collections, network video streams, and raw video frames (USB, GigE) - all is
+video files, sets of video files, video loop file, image collections, network video streams, and raw video frames (USB, GigE) - all is
 processed universally (and can be mixed together) without the need to reload the pipeline to attach or detach the
 stream.
 
@@ -232,10 +232,12 @@ Currently, the following source adapters are available:
 
 - [Local video file](docs/adapters.md#the-video-file-source-adapter);
 - [Local directory of video files](docs/adapters.md#the-video-file-source-adapter);
+- [Loop local video file](docs/adapters.md#the-video-loop-file-source-adapter);
 - [Local image file](docs/adapters.md#the-image-file-source-adapter);
 - [Local directory of image files](docs/adapters.md#the-image-file-source-adapter);
 - [Image URL](docs/adapters.md#the-image-file-source-adapter);
 - [Video URL](docs/adapters.md#the-video-file-source-adapter);
+- [Video loop URL](docs/adapters.md#the-video-loop-file-source-adapter);
 - [RTSP stream](docs/adapters.md#the-rtsp-source-adapter);
 - [USB/CSI camera](docs/adapters.md#the-usb-cam-source-adapter);
 - [GigE (Genicam) industrial cam](docs/adapters.md#the-gige-source-adapter).
@@ -278,4 +280,3 @@ We welcome anyone who wishes to contribute, report, and learn.
 The In-Sight team is a ML/AI department of Bitworks Software. We develop custom high performance CV applications for various industries providing full-cycle process, which includes but not limited to data labeling, model evaluation, training, pruning, quantization, validation, and verification, pipelines development, CI/CD. We are mostly focused on Nvidia hardware (both datacenter and edge).
 
 Contact us: info@bw-sw.com
-
