@@ -266,6 +266,7 @@ The adapter parameters are set with environment variables:
 - `ZMQ_BIND` - adapter output ZeroMQ socket bind/connect mode (the bind mode is when set to `True`); default is `False`;
 - `SYNC_OUTPUT` - flag indicates the need to send frames from source synchronously (i.e. at the source file rate); default is `False`;
 - `DOWNLOAD_PATH` - target directory to download files from remote storage in the first loop and reuse it in the next loops;
+- `LOSS_RATE` - probability to drop the frames;
 - `FPS_PERIOD_FRAMES` - number of frames between FPS reports; default is `1000`;
 - `FPS_PERIOD_SECONDS` - number of seconds between FPS reports; default is `None`;
 - `FPS_OUTPUT` - path to the file where the FPS reports will be written; default is `stdout`;

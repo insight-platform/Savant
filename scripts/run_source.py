@@ -210,6 +210,11 @@ def videos_source(
     help='Mount path to download files from remote storage to the container.',
     show_default=True,
 )
+@click.option(
+    '--loss-rate',
+    type=click.FLOAT,
+    help='Probability to drop the frames.',
+)
 @common_options
 @sync_option
 @adapter_docker_image_option('gstreamer')
@@ -228,6 +233,7 @@ def video_loop_source(
     eos_on_loop_end: bool,
     download_path: str,
     mount_download_path: bool,
+    loss_rate: float,
     location: str,
     read_metadata: bool,
 ):
@@ -241,6 +247,15 @@ def video_loop_source(
     else:
         volumes = []
 
+    envs = [
+        f'MEASURE_FPS_PER_LOOP={measure_fps_per_loop}',
+        f'EOS_ON_LOOP_END={eos_on_loop_end}',
+        f'READ_METADATA={read_metadata}',
+        f'DOWNLOAD_PATH={download_path}',
+    ]
+    if loss_rate is not None:
+        envs.append(f'LOSS_RATE={loss_rate}')
+
     files_source(
         source_id=source_id,
         out_endpoint=out_endpoint,
@@ -253,12 +268,7 @@ def video_loop_source(
         fps_output=fps_output,
         location=location,
         file_type='video',
-        envs=[
-            f'MEASURE_FPS_PER_LOOP={measure_fps_per_loop}',
-            f'EOS_ON_LOOP_END={eos_on_loop_end}',
-            f'READ_METADATA={read_metadata}',
-            f'DOWNLOAD_PATH={download_path}',
-        ],
+        envs=envs,
         entrypoint='/opt/app/adapters/gst/sources/video_loop.sh',
         extra_volumes=volumes,
     )

@@ -29,20 +29,27 @@ MEASURE_FPS_PER_LOOP="${MEASURE_FPS_PER_LOOP:="false"}"
 EOS_ON_LOOP_END="${EOS_ON_LOOP_END:="false"}"
 READ_METADATA="${READ_METADATA:="false"}"
 
+PIPELINE=(
+    media_files_src_bin location="${LOCATION}" file-type=video loop-file=true download-path="${DOWNLOAD_PATH}" !
+    fps_meter "${FPS_PERIOD}" output="${FPS_OUTPUT}" measure-per-loop="${MEASURE_FPS_PER_LOOP}" !
+    adjust_timestamps !
+)
+if [[ -n "${LOSS_RATE}" ]]; then
+    PIPELINE+=(identity drop-probability="${LOSS_RATE}" !)
+fi
+PIPELINE+=(
+    video_to_avro_serializer source-id="${SOURCE_ID}" eos-on-loop-end="${EOS_ON_LOOP_END}"
+    read-metadata="${READ_METADATA}" !
+    zeromq_sink socket="${ZMQ_ENDPOINT}" socket-type="${ZMQ_SOCKET_TYPE}" bind="${ZMQ_SOCKET_BIND}" sync="${SYNC_OUTPUT}" source-id="${SOURCE_ID}"
+)
+
 handler() {
     kill -s SIGINT "${child_pid}"
     wait "${child_pid}"
 }
 trap handler SIGINT SIGTERM
 
-gst-launch-1.0 --eos-on-shutdown \
-    media_files_src_bin location="${LOCATION}" file-type=video loop-file=true download-path="${DOWNLOAD_PATH}" ! \
-    fps_meter "${FPS_PERIOD}" output="${FPS_OUTPUT}" measure-per-loop="${MEASURE_FPS_PER_LOOP}" ! \
-    adjust_timestamps ! \
-    video_to_avro_serializer source-id="${SOURCE_ID}" eos-on-loop-end="${EOS_ON_LOOP_END}" \
-    read-metadata="${READ_METADATA}" ! \
-    zeromq_sink socket="${ZMQ_ENDPOINT}" socket-type="${ZMQ_SOCKET_TYPE}" bind="${ZMQ_SOCKET_BIND}" sync="${SYNC_OUTPUT}" source-id="${SOURCE_ID}" \
-    &
+gst-launch-1.0 --eos-on-shutdown "${PIPELINE[@]}" &
 
 child_pid="$!"
 wait "${child_pid}"
