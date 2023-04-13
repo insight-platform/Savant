@@ -1,4 +1,94 @@
 Detection Model Unit
 ====================
 
-TODO
+To create an detector unit the developer have to create the ``nvinfer@detector`` declaration like it shown in the following listing:
+
+.. code-block:: yaml
+
+    - element: nvinfer@detector
+      name: Primary_Detector
+      model:
+        format: caffe
+        model_file: resnet10.caffemodel
+        batch_size: 1
+        precision: int8
+        int8_calib_file: cal_trt.bin
+        label_file: labels.txt
+        input:
+          scale_factor: 0.0039215697906911373
+        output:
+          num_detected_classes: 4
+          layer_names: [conv2d_bbox, conv2d_cov/Sigmoid]
+
+Full documentation for the detector unit is located on the unit page:
+:py:class:`~savant.deepstream.nvinfer.model.NvInferRotatedObjectDetector`.
+
+You must configure model parameters, input and output.
+
+Unit Input
+----------
+
+The ``input`` block describes how the unit preprocesses the data and selects objects which are the subject of operation. All the ``input`` parameters can be found in the specification for :py:class:`~savant.deepstream.nvinfer.model.NvInferModelInput`.
+
+``Input`` defines several parameters which are important to understand. However, here we would like to highlight the ``object`` parameter which specifies a label for objects selected for inference. If the ``object`` parameter is not set, it is assumed to be equal to ``frame``: default object with ROI covering the whole frame (without paddings added).
+
+The primary detectors usually work with the default ``object: frame``, while secondary detectors specify labels to select objects of interest.
+
+There are other parameters in the ``input`` section which select objects, like ``object_min_width``, ``object_min_height`` and others. Please, keep in mind that the selected objects are passed to the model, while not selected just ignored, they continue to persist in metadata, so other elements can consume them further.
+
+Imagine the situation when you have 2 models: the first one works well with medium-size objects but is very heavyweight while the second works perfectly with large objects and is lightweight. To efficiently utilize resources you may place two inference elements with properly defined input blocks:
+
+.. code-block:: yaml
+
+    - element: nvinfer@detector
+      name: Primary_Detector_Small
+      model:
+        format: caffe
+        model_file: model1
+        input:
+          object_min_height: 30
+          object_max_height: 100
+        ...
+
+    - element: nvinfer@detector
+      name: Primary_Detector_Large
+      model:
+        format: caffe
+        model_file: model2
+        input:
+          object_min_height: 101
+
+
+``Input`` also allows for making custom preprocessing with ``preprocess_object_meta`` and ``preprocess_object_tensor``. To use the former, you have to implement code with the interface :py:class:`~savant.base.input_preproc.BasePreprocessObjectMeta`, the later is an advanced topic which is not covered here. Keep in mind, that all modifications made in preprocess are restored after the unit is completed.
+
+Unit Output
+-----------
+
+The ``output`` section describes how the unit processes metadata before passing them to the following unit. The parameters of ``output`` may be found in the specification for :py:class:`~savant.deepstream.nvinfer.model.NvInferObjectModelOutput`.
+
+``Output`` defines an important parameter ``converter`` which is basically a method which makes  bounding boxes from a raw tensor. For "standard" detection models supported by DeepStream ``converter`` parameter is not required, however if the model's output cannot be parsed automatically, you have to provide an implementation of :py:class:`~savant.base.converter.BaseObjectModelOutputConverter` to produce boxes for detected objects.
+
+Within ``output`` you may also select only necessary objects by specifying their IDs and labels:
+
+.. code-block:: yaml
+
+    output:
+      layer_names: [output_bbox/BiasAdd, output_cov/Sigmoid]
+      num_detected_classes: 3
+      objects:
+        - class_id: 0
+          label: person
+          selector:
+            kwargs:
+              min_width: 32
+              min_height: 32
+        - class_id: 2
+          label: face
+          selector:
+            kwargs:
+              confidence_threshold: 0.1
+
+In that case all skipped classes will be permanently missing in the next steps of the pipeline. The ``selector`` block allows defining a filter to eliminate unnecessary objects.
+
+The default selector implementation runs NMS and allows selecting objects by specifying ``min_width``, ``min_height``, and ``confidence_threshold``. To create a custom ``selector`` you have to implement :py:class:`~savant.base.selector.BaseSelector`. You may take a look at :py:class:`~savant.selector.BBoxSelector` to get an idea of how to craft it.
+
