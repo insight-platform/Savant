@@ -1,5 +1,5 @@
-Detection Model Unit
-====================
+Regular Detection Unit
+======================
 
 To create an detector unit the developer have to create the ``nvinfer@detector`` declaration like it shown in the following listing:
 
@@ -30,6 +30,9 @@ Unit Input
 
 The ``input`` block describes how the unit preprocesses the data and selects objects which are the subject of operation. All the ``input`` parameters can be found in the specification for :py:class:`~savant.deepstream.nvinfer.model.NvInferModelInput`.
 
+Object Selection
+^^^^^^^^^^^^^^^^
+
 ``Input`` defines several parameters which are important to understand. However, here we would like to highlight the ``object`` parameter which specifies a label for objects selected for inference. If the ``object`` parameter is not set, it is assumed to be equal to ``frame``: default object with ROI covering the whole frame (without paddings added).
 
 The primary detectors usually work with the default ``object: frame``, while secondary detectors specify labels to select objects of interest.
@@ -58,15 +61,64 @@ Imagine the situation when you have 2 models: the first one works well with medi
         input:
           object_min_height: 101
 
+Custom Preprocessing
+^^^^^^^^^^^^^^^^^^^^
 
 ``Input`` also allows for making custom preprocessing with ``preprocess_object_meta`` and ``preprocess_object_tensor``. To use the former, you have to implement code with the interface :py:class:`~savant.base.input_preproc.BasePreprocessObjectMeta`, the later is an advanced topic which is not covered here. Keep in mind, that all modifications made in preprocess are restored after the unit is completed.
+
+Example of preprocess_object_meta:
+
+.. code-block:: yaml
+
+    input:
+      object: object_detector.something
+      preprocess_object_meta:
+        module: something_detector.input_preproc
+        class_name: TopCrop
+
+.. code-block:: python
+
+    from savant.base.input_preproc import BasePreprocessObjectMeta
+
+    class TopCrop(BasePreprocessObjectMeta):
+        def __call__(self, bbox: pyds.NvBbox_Coords, **kwargs) -> pyds.NvBbox_Coords:
+
+            bbox.top -= bbox.width * 0.05
+            if bbox.top < 0:
+                bbox.top = 0
+
+            bbox_height = bbox.width * 1.05
+            if bbox_height > bbox.height:
+                bbox_height = bbox.height
+            bbox.height = bbox_height
+
+            return bbox
+
 
 Unit Output
 -----------
 
 The ``output`` section describes how the unit processes metadata before passing them to the following unit. The parameters of ``output`` may be found in the specification for :py:class:`~savant.deepstream.nvinfer.model.NvInferObjectModelOutput`.
 
+Converter
+^^^^^^^^^
+
 ``Output`` defines an important parameter ``converter`` which is basically a method which makes  bounding boxes from a raw tensor. For "standard" detection models supported by DeepStream ``converter`` parameter is not required, however if the model's output cannot be parsed automatically, you have to provide an implementation of :py:class:`~savant.base.converter.BaseObjectModelOutputConverter` to produce boxes for detected objects.
+
+Example:
+
+.. code-block:: yaml
+
+      converter:
+        module: savant.converter.yolo_x
+        class_name: TensorToBBoxConverter
+        kwargs:
+          decode: true
+
+The converter implementation can be found in the class :py:class:`~savant.converter.yolo_x.TensorToBBoxConverter`.
+
+Object Filtering
+^^^^^^^^^^^^^^^^
 
 Within ``output`` you may also select only necessary objects by specifying their IDs and labels:
 
@@ -88,7 +140,9 @@ Within ``output`` you may also select only necessary objects by specifying their
             kwargs:
               confidence_threshold: 0.1
 
-In that case all skipped classes will be permanently missing in the next steps of the pipeline. The ``selector`` block allows defining a filter to eliminate unnecessary objects.
+All skipped classes will be permanently excluded from the next steps of the pipeline. The ``selector`` block also allows defining a filter to eliminate unnecessary objects.
+
+If unit name is ``Primary_Detector``, then to address selected objects in the following units use ``Primary_Detector.person`` and ``Primary_Detector.face`` labels.
 
 The default selector implementation runs NMS and allows selecting objects by specifying ``min_width``, ``min_height``, and ``confidence_threshold``. To create a custom ``selector`` you have to implement :py:class:`~savant.base.selector.BaseSelector`. You may take a look at :py:class:`~savant.selector.BBoxSelector` to get an idea of how to craft it.
 
