@@ -1,4 +1,0 @@
-Per-Frame Metadata
-==================
-
-TODO

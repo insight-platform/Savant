@@ -142,6 +142,7 @@ Dive into :repo-link:`Savant` from :doc:`/getting_started/1_intro` and :doc:`/ma
    savant_101/10_adapters
    savant_101/20_video_processing
    savant_101/23_data_processing
+   savant_101/24_metadata
    savant_101/27_working_with_models
    savant_101/29_top_level_roi
    savant_101/30_dm
@@ -151,7 +152,7 @@ Dive into :repo-link:`Savant` from :doc:`/getting_started/1_intro` and :doc:`/ma
    savant_101/53_complexm
    savant_101/55_rdm
    savant_101/60_nv_trackers
-   savant_101/65_metadata
+   savant_101/65_extended_metadata
    savant_101/70_python
    savant_101/80_opencv_cuda
    savant_101/90_artist
