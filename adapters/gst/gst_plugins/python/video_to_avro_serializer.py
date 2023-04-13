@@ -72,11 +72,18 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
             DEFAULT_FRAMERATE,
             GObject.ParamFlags.READWRITE,
         ),
-        'eos-on-location-change': (
+        'eos-on-file-end': (
             bool,
-            'Send EOS when location changed',
-            'Send EOS when location changed',
+            'Send EOS at the end of each file',
+            'Send EOS at the end of each file',
             True,
+            GObject.ParamFlags.READWRITE,
+        ),
+        'eos-on-loop-end': (
+            bool,
+            'Send EOS on a loop end',
+            'Send EOS on a loop end',
+            False,
             GObject.ParamFlags.READWRITE,
         ),
         'eos-on-frame-params-change': (
@@ -110,13 +117,15 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
         self.eos_schema = ENCODING_REGISTRY["EndOfStream"]
         # properties
         self.source_id: Optional[str] = None
-        self.eos_on_location_change: bool = True
+        self.eos_on_file_end: bool = True
+        self.eos_on_loop_end: bool = False
         self.eos_on_frame_params_change: bool = True
         # will be set after caps negotiation
         self.frame_params: Optional[FrameParams] = None
         self.last_frame_params: Optional[FrameParams] = None
         self.location: Optional[Path] = None
         self.last_location: Optional[Path] = None
+        self.new_loop: bool = False
         self.default_framerate: str = DEFAULT_FRAMERATE
         self.frame_type: Optional[ExternalFrameType] = ExternalFrameType.ZEROMQ
 
@@ -162,8 +171,10 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
             return self.location
         if prop.name == 'framerate':
             return self.default_framerate
-        if prop.name == 'eos-on-location-change':
-            return self.eos_on_location_change
+        if prop.name == 'eos-on-file-end':
+            return self.eos_on_file_end
+        if prop.name == 'eos-on-loop-end':
+            return self.eos_on_loop_end
         if prop.name == 'eos-on-frame-params-change':
             return self.eos_on_frame_params_change
         if prop.name == 'read-metadata':
@@ -190,8 +201,10 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
             except (ZeroDivisionError, ValueError) as e:
                 raise AttributeError(f'Invalid property {prop.name}: {e}.') from e
             self.default_framerate = value
-        elif prop.name == 'eos-on-location-change':
-            self.eos_on_location_change = value
+        elif prop.name == 'eos-on-file-end':
+            self.eos_on_file_end = value
+        elif prop.name == 'eos-on-loop-end':
+            self.eos_on_loop_end = value
         elif prop.name == 'eos-on-frame-params-change':
             self.eos_on_frame_params_change = value
         elif prop.name == 'read-metadata':
@@ -216,10 +229,12 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
         )
         if self.stream_in_progress:
             if (
-                self.eos_on_location_change
+                self.eos_on_file_end
                 and self.location != self.last_location
                 or self.eos_on_frame_params_change
                 and self.frame_params != self.last_frame_params
+                or self.eos_on_loop_end
+                and self.new_loop
             ):
                 self.json_metadata = self.read_json_metadata_file(
                     self.location.parent / f"{self.location.stem}.json"
@@ -227,6 +242,7 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
                 self.send_end_message()
         self.last_location = self.location
         self.last_frame_params = self.frame_params
+        self.new_loop = False
 
         frame_mapinfo: Optional[Gst.MapInfo] = None
         if self.frame_type is None:
@@ -270,6 +286,7 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
             if has_location:
                 self.logger.info('Set location to %s', location)
                 self.location = Path(location)
+                self.new_loop = True
                 self.json_metadata = self.read_json_metadata_file(
                     self.location.parent / f"{self.location.stem}.json"
                 )
@@ -296,6 +313,7 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
         return json_metadata
 
     def send_end_message(self):
+        self.logger.info('Sending serialized EOS message')
         data = serialize(
             self.eos_schema,
             {'source_id': self.source_id},
