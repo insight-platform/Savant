@@ -16,8 +16,7 @@ from savant.utils.registry import Registry
 from savant.utils.zeromq import (
     Defaults,
     SenderSocketTypes,
-    get_socket_type,
-    get_socket_endpoint,
+    parse_zmq_socket_uri,
 )
 
 logger = logging.getLogger(__name__)
@@ -107,11 +106,15 @@ class ZeroMQSinkFactory(SinkFactory):
             bind,
         )
 
-        self.bind = bind
         # might raise exceptions
         # will be handled in savant.entrypoint
-        self.socket = get_socket_endpoint(socket)
-        self.socket_type = get_socket_type(socket_type, SenderSocketTypes)
+        self.socket_type, self.bind, self.socket = parse_zmq_socket_uri(
+            uri=socket,
+            socket_type_name=socket_type,
+            socket_type_enum=SenderSocketTypes,
+            bind=bind,
+        )
+
         self.send_hwm = send_hwm
         self.wait_response = self.socket_type == SenderSocketTypes.REQ
 

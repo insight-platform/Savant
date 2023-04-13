@@ -75,7 +75,7 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
     def __init__(self):
         GstBase.BaseSrc.__init__(self)
         self.socket: str = None
-        self.socket_type: ReceiverSocketTypes = ReceiverSocketTypes.ROUTER
+        self.socket_type: str = ReceiverSocketTypes.ROUTER.name
         self.bind: bool = True
         self.zmq_context: zmq.Context = None
         self.context = None
@@ -95,7 +95,7 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
         if prop.name == 'socket':
             return self.socket
         if prop.name == 'socket-type':
-            return self.socket_type.name
+            return self.socket_type
         if prop.name == 'bind':
             return self.bind
         if prop.name == 'receive-hwm':

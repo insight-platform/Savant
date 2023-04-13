@@ -41,6 +41,8 @@ Connecting containers through ZMQ sources/sinks requires specifying the followin
     - ``LOCATION`` is a required env var for ``json`` sink that specifies the output json files or files
     - ``DIR_LOCATION`` is a required env var for ``image_files`` and ``video_files`` sink that specifies the directory for output files inside the container
 
+``ZMQ_TYPE`` and ``ZMQ_BIND`` can be embedded in ``ZMQ_ENDPOINT`` (`[<socket_type>+(bind|connect):]<endpoint>`). In that case ``ZMQ_TYPE`` and ``ZMQ_BIND`` are ignored. E.g. ``dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc``, ``pub+bind:tcp://1.1.1.1:3333``.
+
 .. note::
 
     Description of ZMQ related parameters is available in ZMQ documentation:
