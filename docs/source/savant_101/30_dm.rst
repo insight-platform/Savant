@@ -25,6 +25,11 @@ Full documentation for the detector unit is located on the unit page:
 
 You must configure model parameters, input and output.
 
+Batch Size
+----------
+
+The batch size is directly connected with inference performance. When handling multiple streams consider setting ``batch_size`` equal to maximum expected number of streams. For Jetson family Nvidia often uses the batch size equal to ``32`` in their benchmarks.
+
 Unit Input
 ----------
 
