@@ -1,17 +1,16 @@
-
 from itertools import chain
+from collections import defaultdict
 import cv2
 from savant.deepstream.drawfunc import NvDsDrawFunc
 from savant.deepstream.meta.frame import NvDsFrameMeta, BBox
 from savant.utils.artist import Position, Artist
 from samples.line_crossing.utils import Direction, RandColorIterator
-from savant.meta.constants import UNTRACKED_OBJECT_ID
+
 
 class Overlay(NvDsDrawFunc):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.rand_colors = RandColorIterator()
-        self.obj_colors = {}
+        self.obj_colors = defaultdict(lambda: next(RandColorIterator()))
 
     def draw_on_frame(self, frame_meta: NvDsFrameMeta, artist: Artist):
         line_to = None
@@ -20,52 +19,21 @@ class Overlay(NvDsDrawFunc):
         exits_n = None
         for obj_meta in frame_meta.objects:
             if obj_meta.is_primary:
-                line_from = obj_meta.get_attr_meta(
-                    'analytics', 'line_from'
-                )
-                line_to = obj_meta.get_attr_meta(
-                    'analytics', 'line_to'
-                )
-                entries_n = obj_meta.get_attr_meta(
-                    'analytics', 'entries_n'
-                )
-                exits_n = obj_meta.get_attr_meta(
-                    'analytics', 'exits_n'
-                )
+                line_from = obj_meta.get_attr_meta('analytics', 'line_from')
+                line_to = obj_meta.get_attr_meta('analytics', 'line_to')
+                entries_n = obj_meta.get_attr_meta('analytics', 'entries_n')
+                exits_n = obj_meta.get_attr_meta('analytics', 'exits_n')
             else:
                 # mark obj center as it is used for entry/exit detection
-                if (frame_meta.source_id, obj_meta.track_id) not in self.obj_colors:
-                    self.obj_colors[(frame_meta.source_id, obj_meta.track_id)] = next(self.rand_colors)
                 color = self.obj_colors[(frame_meta.source_id, obj_meta.track_id)]
                 center = round(obj_meta.bbox.x_center), round(obj_meta.bbox.y_center)
                 artist.add_circle(center, 3, color, cv2.FILLED)
-
-                # default object visualisation
-                # bbox + label + track id
-                # artist.add_bbox(
-                #     obj_meta.bbox,1,
-                #     padding=0,
-                # )
-                # label = obj_meta.label
-                # if obj_meta.track_id != UNTRACKED_OBJECT_ID:
-                #     label += f' #{obj_meta.track_id}'
-                # if isinstance(obj_meta.bbox, BBox):
-                #     artist.add_text(
-                #         text=label,
-                #         anchor_x=int(obj_meta.bbox.left),
-                #         anchor_y=int(obj_meta.bbox.top),
-                #         bg_color=(0.0, 0.0, 0.0),
-                #         anchor_point=Position.LEFT_TOP,
-                #         padding=0
-                #     )
 
                 # add entry/exit label if detected
                 entries = obj_meta.get_attr_meta_list(
                     'lc_tracker', Direction.entry.name
                 )
-                exits = obj_meta.get_attr_meta_list(
-                    'lc_tracker', Direction.exit.name
-                )
+                exits = obj_meta.get_attr_meta_list('lc_tracker', Direction.exit.name)
                 entry_events_meta = entries if entries is not None else []
                 exit_events_meta = exits if exits is not None else []
                 offset = 20
@@ -85,16 +53,10 @@ class Overlay(NvDsDrawFunc):
         if line_from and line_to:
             pt1 = line_from.value[:2]
             pt2 = line_from.value[2:]
-            artist.add_polygon(
-                [pt1, pt2],
-                line_color=(0,0,1)
-            )
+            artist.add_polygon([pt1, pt2], line_color=(0, 0, 1))
             pt1 = line_to.value[:2]
             pt2 = line_to.value[2:]
-            artist.add_polygon(
-                [pt1, pt2],
-                line_color=(1,0,0)
-            )
+            artist.add_polygon([pt1, pt2], line_color=(1, 0, 0))
 
         # manually refresh (by filling with black) frame padding used for drawing
         # this workaround avoids rendering problem where drawings from previous frames

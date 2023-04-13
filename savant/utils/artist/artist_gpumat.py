@@ -200,14 +200,14 @@ class ArtistGPUMat(AbstractContextManager):
             (int(bbox.left), int(bbox.top + radius)),
             (int(bbox.right), int(bbox.bottom - radius)),
             convert_color(bg_color),
-            -1
+            -1,
         )
         cv2.rectangle(
             self.overlay,
             (int(bbox.left + radius), int(bbox.top)),
             (int(bbox.right - radius), int(bbox.bottom)),
             convert_color(bg_color),
-            -1
+            -1,
         )
 
         # rounded corners: center(x, y), rotation angle
@@ -233,12 +233,7 @@ class ArtistGPUMat(AbstractContextManager):
     def add_circle(self, center, radius, color, thickness, line_type=cv2.LINE_AA):
         self.__init_overlay()
         cv2.circle(
-            self.overlay,
-            center,
-            radius,
-            convert_color(color),
-            thickness,
-            line_type
+            self.overlay, center, radius, convert_color(color), thickness, line_type
         )
 
     def add_polygon(

@@ -13,7 +13,7 @@ parameters:
       top: 180
       bottom: 0
   output_frame:
-    codec: h264
+    codec: jpeg
   draw_func:
     module: samples.line_crossing.overlay
     # specify the drawfunc's python class from the module
@@ -24,6 +24,12 @@ parameters:
 pipeline:
 
   elements:
+    - element: pyfunc
+      module: samples.line_crossing.line_crossing
+      class_name: ConditionalDetectorSkip
+      kwargs:
+        config_path: ${oc.env:APP_PATH}/samples/line_crossing/line_config.yml
+
     # person detector
     - element: nvinfer@detector
       name: peoplenet
@@ -58,3 +64,5 @@ pipeline:
     - element: pyfunc
       module: samples.line_crossing.line_crossing
       class_name: LineCrossing
+      kwargs:
+        config_path: ${oc.env:APP_PATH}/samples/line_crossing/line_config.yml

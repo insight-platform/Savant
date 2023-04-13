@@ -145,23 +145,21 @@ def hsv_to_rgb(h, s, v):
     """HSV values in [0..1]
     returns [r, g, b] values in [0..1]
     """
-    h_i = int(h*6)
-    f = h*6 - h_i
+    h_i = int(h * 6)
+    f = h * 6 - h_i
     p = v * (1 - s)
-    q = v * (1 - f*s)
+    q = v * (1 - f * s)
     t = v * (1 - (1 - f) * s)
-    if h_i==0:
+    if h_i == 0:
         r, g, b = v, t, p
-    elif h_i==1:
+    elif h_i == 1:
         r, g, b = q, v, p
-    elif h_i==2:
+    elif h_i == 2:
         r, g, b = p, v, t
-    elif h_i==3:
+    elif h_i == 3:
         r, g, b = p, q, v
-    elif h_i==4:
+    elif h_i == 4:
         r, g, b = t, p, v
-    elif h_i==5:
-        r, g, b = v, p, q 
+    elif h_i == 5:
+        r, g, b = v, p, q
     return r, g, b
-
-
