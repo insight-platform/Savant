@@ -72,10 +72,10 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
             DEFAULT_FRAMERATE,
             GObject.ParamFlags.READWRITE,
         ),
-        'eos-on-location-change': (
+        'eos-on-file-end': (
             bool,
-            'Send EOS when location changed',
-            'Send EOS when location changed',
+            'Send EOS at the end of each file',
+            'Send EOS at the end of each file',
             True,
             GObject.ParamFlags.READWRITE,
         ),
@@ -110,7 +110,7 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
         self.eos_schema = ENCODING_REGISTRY["EndOfStream"]
         # properties
         self.source_id: Optional[str] = None
-        self.eos_on_location_change: bool = True
+        self.eos_on_file_end: bool = True
         self.eos_on_frame_params_change: bool = True
         # will be set after caps negotiation
         self.frame_params: Optional[FrameParams] = None
@@ -162,8 +162,8 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
             return self.location
         if prop.name == 'framerate':
             return self.default_framerate
-        if prop.name == 'eos-on-location-change':
-            return self.eos_on_location_change
+        if prop.name == 'eos-on-file-end':
+            return self.eos_on_file_end
         if prop.name == 'eos-on-frame-params-change':
             return self.eos_on_frame_params_change
         if prop.name == 'read-metadata':
@@ -190,8 +190,8 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
             except (ZeroDivisionError, ValueError) as e:
                 raise AttributeError(f'Invalid property {prop.name}: {e}.') from e
             self.default_framerate = value
-        elif prop.name == 'eos-on-location-change':
-            self.eos_on_location_change = value
+        elif prop.name == 'eos-on-file-end':
+            self.eos_on_file_end = value
         elif prop.name == 'eos-on-frame-params-change':
             self.eos_on_frame_params_change = value
         elif prop.name == 'read-metadata':
@@ -216,7 +216,7 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
         )
         if self.stream_in_progress:
             if (
-                self.eos_on_location_change
+                self.eos_on_file_end
                 and self.location != self.last_location
                 or self.eos_on_frame_params_change
                 and self.frame_params != self.last_frame_params

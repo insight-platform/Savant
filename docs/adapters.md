@@ -164,6 +164,7 @@ The adapter parameters are set with environment variables:
 - `FRAMERATE` - desired framerate for the video stream formed from the input image files (if sync mode is chosen);
 - `SORT_BY_TIME` - flag indicates whether the files from `LOCATION` are sorted by modification time (ascending order); by default, it is `False` and the files are sorted lexicographically.
 - `READ_METADATA` - flag indicates the need to read and send the object's metadata from a JSON file that has the identical name as the source file; default is `False`.
+- `EOS_ON_FILE_END` - flag indicates whether to send EOS message at the end of each file; default is `False`;
 - `ZMQ_ENDPOINT` - adapter output (should be equal to the configured framework input) ZeroMQ socket endpoint; default is `ipc:///tmp/zmq-sockets/input-video.ipc`.
 - `ZMQ_TYPE` - adapter output ZeroMQ socket type; default is `DEALER`, also can be set to `PUB` or `REQ` as well;
 - `ZMQ_BIND` - adapter output ZeroMQ socket bind/connect mode (the bind mode is when set to `True`); default is `False`.
@@ -211,6 +212,7 @@ The adapter parameters are set with environment variables:
 - `SOURCE_ID` - unique identifier for the source stream; this option is required;
 - `SORT_BY_TIME` - flag indicates whether files from `LOCATION` are sorted by modification time (ascending order); by default, it is `False` and files are sorted lexicographically;
 - `READ_METADATA` - flag indicates the need to read the object's metadata from a JSON file that has the identical name as the source file; default is `False`;
+- `EOS_ON_FILE_END` - flag indicates whether to send EOS message at the end of each file; default is `True`;
 - `ZMQ_ENDPOINT` - adapter output (should be equal to the configured framework input) ZeroMQ socket endpoint; default is `ipc:///tmp/zmq-sockets/input-video.ipc`;
 - `ZMQ_TYPE` - adapter output ZeroMQ socket type; default is `DEALER`, also can be set to `PUB` or `REQ` as well;
 - `ZMQ_BIND` - adapter output ZeroMQ socket bind/connect mode (the bind mode is when set to `True`); default is `False`;
