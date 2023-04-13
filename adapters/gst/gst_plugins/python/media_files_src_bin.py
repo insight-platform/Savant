@@ -441,6 +441,7 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
         self._elements = []
 
         if self.source.get_factory().get_name() != 'filesrc':
+            # To change "souphttpsrc" to "filesrc" after the first loop
             self.logger.info('Remove element %r', self.source.get_name())
             self.source.set_locked_state(True)
             self.source.set_state(Gst.State.NULL)
@@ -459,6 +460,10 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
 
     def pop_next_location(self):
         if self.loop_file and len(self.pending_locations) == 1:
+            # When "self.loop_file=True" and "self.location" is HTTP URL
+            # "self.pending_locations" contains 2 locations: the URL and
+            # the locations of downloaded file.
+            # The URL is used only for the first loop.
             return self.pending_locations[0]
         else:
             return self.pending_locations.pop(0)
