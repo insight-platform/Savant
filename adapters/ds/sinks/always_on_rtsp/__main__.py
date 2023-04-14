@@ -6,6 +6,7 @@ from dataclasses import asdict
 from datetime import datetime
 from distutils.util import strtobool
 from pathlib import Path
+from subprocess import Popen
 from threading import Thread
 from typing import Callable, List, Optional
 
@@ -34,6 +35,8 @@ def opt_config(name, default=None, convert=None):
 
 class Config:
     def __init__(self):
+        self.dev_mode = opt_config('DEV_MODE', False, strtobool)
+
         self.stub_file_location = Path(os.environ['STUB_FILE_LOCATION'])
         if not self.stub_file_location.exists():
             raise RuntimeError(f'File {self.stub_file_location} does not exist.')
@@ -52,7 +55,12 @@ class Config:
         )
         self.zmq_socket_bind = opt_config('ZMQ_BIND', False, strtobool)
 
-        self.rtsp_uri = os.environ['RTSP_URI']
+        self.rtsp_uri = opt_config('RTSP_URI')
+        if self.dev_mode:
+            assert (
+                self.rtsp_uri is None
+            ), '"RTSP_URI" cannot be set when "DEV_MODE=True"'
+            self.rtsp_uri = 'rtsp://localhost:554/stream'
         self.rtsp_protocols = opt_config('RTSP_PROTOCOLS', 'tcp')
         self.rtsp_latency_ms = opt_config('RTSP_LATENCY_MS', 100, int)
         self.rtsp_keep_alive = opt_config('RTSP_KEEP_ALIVE', True, strtobool)
@@ -359,6 +367,21 @@ def main():
     )
 
     config = Config()
+
+    if config.dev_mode:
+        mediamtx_process = Popen(
+            [
+                '/opt/app/mediamtx/mediamtx',
+                str((Path(__file__).parent / 'mediamtx.yml').absolute()),
+            ]
+        )
+        logger.info('Started MediaMTX, PID: %s', mediamtx_process.pid)
+        assert (
+            mediamtx_process.returncode is None
+        ), f'Failed to start MediaMTX. Exit code: {mediamtx_process.returncode}.'
+    else:
+        mediamtx_process = None
+
     last_frame = LastFrame(timestamp=datetime.utcfromtimestamp(0))
 
     Gst.init(None)
@@ -380,18 +403,34 @@ def main():
     )
     output_pipeline_thread.start()
     try:
-        while output_pipeline_thread.is_running:
-            input_pipeline_thread.start()
-            while (
-                input_pipeline_thread.is_running and output_pipeline_thread.is_running
-            ):
-                time.sleep(1)
+        main_loop(output_pipeline_thread, input_pipeline_thread, mediamtx_process)
     except KeyboardInterrupt:
         pass
     logger.info('Stopping Always-On-RTSP sink')
     input_pipeline_thread.stop()
     output_pipeline_thread.stop()
+    if mediamtx_process is not None:
+        if mediamtx_process.returncode is None:
+            logger.info('Terminating MediaMTX')
+            mediamtx_process.terminate()
+        logger.info('MediaMTX terminated. Exit code: %s.', mediamtx_process.returncode)
     logger.info('Always-On-RTSP sink stopped')
+
+
+def main_loop(
+    output_pipeline_thread: PipelineThread,
+    input_pipeline_thread: PipelineThread,
+    mediamtx_process: Optional[Popen],
+):
+    while output_pipeline_thread.is_running:
+        input_pipeline_thread.start()
+        while input_pipeline_thread.is_running and output_pipeline_thread.is_running:
+            if mediamtx_process is not None and mediamtx_process.returncode is not None:
+                logger.error(
+                    'MediaMTX exited. Exit code: %s.', mediamtx_process.returncode
+                )
+                return
+            time.sleep(1)
 
 
 if __name__ == '__main__':

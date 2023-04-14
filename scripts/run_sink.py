@@ -374,10 +374,28 @@ def video_files_sink(
     ),
     show_default=True,
 )
+@click.option(
+    '--dev-mode',
+    default=False,
+    is_flag=True,
+    help='Use embedded MediaMTX to publish RTSP stream.',
+    show_default=True,
+)
+@click.option(
+    '--publish-ports',
+    default=False,
+    is_flag=True,
+    help=(
+        'Publish container ports for embedded MediaMTX to the host. '
+        'Published ports: 554 (RTSP), 1935 (RTMP), 888 (HLS), 8889 (WebRTC). '
+        'Ignored when --dev-mode is not set.'
+    ),
+    show_default=True,
+)
 @fps_meter_options
 @common_options
 @adapter_docker_image_option('deepstream')
-@click.argument('rtsp_uri', required=True)
+@click.argument('rtsp_uri', required=False)
 def always_on_rtsp_sink(
     in_endpoint: str,
     in_type: str,
@@ -398,17 +416,34 @@ def always_on_rtsp_sink(
     fps_output: Optional[str],
     metadata_output: Optional[str],
     sync: bool,
-    rtsp_uri: str,
+    dev_mode: bool,
+    publish_ports: bool,
+    rtsp_uri: Optional[str],
 ):
     """Send video stream from specific source to RTSP server.
 
     RTSP_URI - URI of the RTSP server.
+    Exactly one of --dev-mode flag and RTSP_URI argument must be used.
+
+    When --dev-mode flag is used the stream is available at:
+
+        - RTSP: rtsp://<container-host>:554/stream
+
+        - RTMP: rtmp://<container-host>:1935/stream
+
+        - HLS: http://<container-host>:888/stream
+
+        - WebRTC: http://<container-host>:8889/stream
+
 
     Note: it is advisable to use --sync flag on source adapter or use a live
     source adapter (e.g. rtsp or usb-cam).
     """
 
     assert os.path.exists(stub_file_location)
+    assert dev_mode == (
+        rtsp_uri is None
+    ), 'Must be specified one of "--dev-mode" flag or "RTSP_URI" argument.'
     stub_file_location = os.path.abspath(stub_file_location)
 
     envs = build_common_envs(
@@ -420,7 +455,6 @@ def always_on_rtsp_sink(
         f'STUB_FILE_LOCATION={stub_file_location}',
         f'MAX_DELAY_MS={max_delay_ms}',
         f'TRANSFER_MODE={transfer_mode}',
-        f'RTSP_URI={rtsp_uri}',
         f'RTSP_PROTOCOLS={protocols}',
         f'RTSP_LATENCY_MS={latency_ms}',
         f'RTSP_KEEP_ALIVE={keep_alive}',
@@ -430,6 +464,15 @@ def always_on_rtsp_sink(
     ]
     if metadata_output:
         envs.append(f'METADATA_OUTPUT={metadata_output}')
+    if dev_mode:
+        envs.append(f'DEV_MODE={dev_mode}')
+    else:
+        envs.append(f'RTSP_URI={rtsp_uri}')
+
+    if publish_ports:
+        ports = [(x, x) for x in [554, 1935, 888, 8889]]
+    else:
+        ports = None
 
     cmd = build_docker_run_command(
         f'sink-always-on-rtsp-{uuid.uuid4().hex}',
@@ -443,6 +486,7 @@ def always_on_rtsp_sink(
         volumes=[f'{stub_file_location}:{stub_file_location}:ro'],
         with_gpu=True,
         docker_image=docker_image,
+        ports=ports,
     )
     run_command(cmd)
 

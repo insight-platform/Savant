@@ -588,7 +588,8 @@ This adapter is implemented using the DeepStream SDK and performs hardware re-en
 
 The adapter parameters are set with environment variables:
 
-- `RTSP_URI` - URI of the RTSP server, this parameter is required;
+- `RTSP_URI` - URI of the RTSP server, this parameter is required when `DEV_MODE=False`;
+- `DEV_MODE` - use embedded MediaMTX to publish RTSP stream; default value is `False`;
 - `STUB_FILE_LOCATION` - location of the stub image file; the image file must be in JPEG format, this parameter is required; the stub image file is shown when there is no input data;
 - `MAX_DELAY_MS` - maximum delay for the last frame in milliseconds, default value is `1000`; after the delay the stub image will be displayed;
 - `TRANSFER_MODE` - transfer mode specification; one of: `scale-to-fit`, `crop-to-fit`; the default value is "scale-to-fit";
@@ -604,6 +605,12 @@ The adapter parameters are set with environment variables:
 - `ZMQ_ENDPOINT` - ZeroMQ socket endpoint for the adapter's input, i.e., the framework output; the default value is `ipc:///tmp/zmq-sockets/output-video.ipc`;
 - `ZMQ_TYPE` - ZeroMQ socket type for the adapter's input; the default value is `SUB`, can also be set to `ROUTER` or `REP`;
 - `ZMQ_BIND` - flag specifies whether the adapter's input should be bound or connected to the specified endpoint; If `True`, the input is bound; otherwise, it's connected; the default value is `False`.
+
+**Note**: When `DEV_MODE=False` the stream is available at:
+- RTSP - `rtsp://<container-host>:554/stream`;
+- RTMP - `rtmp://<container-host>:1935/stream`;
+- HLS - `http://<container-host>:888/stream`;
+- WebRTC - `http://<container-host>:8889/stream`.
 
 Example:
 

@@ -1,7 +1,7 @@
 """Common utilities for run scripts."""
 import string
 from pathlib import Path
-from typing import List, Iterable, Optional
+from typing import List, Iterable, Optional, Tuple
 import sys
 import os
 import pathlib
@@ -144,6 +144,7 @@ def build_docker_run_command(
     with_gpu: bool = False,
     host_network: bool = False,
     args: List[str] = None,
+    ports: List[Tuple[int, int]] = None,
 ) -> List[str]:
     """Build docker run command for an adapter container.
 
@@ -163,6 +164,7 @@ def build_docker_run_command(
     :param with_gpu: add ``--gpus=all`` parameter
     :param host_network: add ``--network=host`` parameter
     :param args: add command line arguments to the entrypoint
+    :param ports: add ``-p`` parameters
     """
     gst_debug = os.environ.get('GST_DEBUG', '2')
     # fmt: off
@@ -203,6 +205,10 @@ def build_docker_run_command(
 
     if host_network:
         command.append('--network=host')
+
+    if ports:
+        for host_port, container_port in ports:
+            command += ['-p', f'{host_port}:{container_port}']
 
     command.append(docker_image)
     if args:
