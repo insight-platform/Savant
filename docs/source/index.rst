@@ -25,7 +25,7 @@ In DeepStream, the sources and sinks are an integral part of the Gstreamer pipel
 
 There are reasons for that. The first one is low reliability. The source and sink are external entities that, being coupled into the pipeline, make it crash when they are failed or are no longer available. E.g., when the RTSP camera is not available, the corresponding RTSP Gstreamer source signals the pipeline to terminate.
 
-The problem becomes more serious when multiple sources ingest data into a single pipeline - a natural case in the real world. You don't want to load multiple instances of the same AI models into the GPU because of RAM limitations and overall resource overutilization. So, following the natural Gstreamer approach, you have a muxer scheme with a high chance of failing if any source fails.
+The problem becomes more serious when multiple sources ingest data into a single pipeline - a natural case in the real world. You don't want to load multiple instances of the same AI models into the GPU because of RAM limitations and overall resource over-utilization. So, following the natural Gstreamer approach, you have a muxer scheme with a high chance of failing if any source fails.
 
 That's why you want to have sources decoupled from the pipeline - to increase the stability of the pipeline and avoid unnecessarily reloads in case of source failure.
 
