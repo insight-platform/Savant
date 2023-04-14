@@ -1,6 +1,7 @@
-test_linecross:
-  from: [325, 580, 705, 680]
-  to: [305, 600, 685, 700]
-# test_linecross_full:
-#   from: [325, 400, 705, 500]
-#   to: [305, 420, 685, 520]
+town-centre-processed:
+  from: [305, 600, 685, 700]
+  to: [325, 580, 705, 680]
+# add other source ids like so
+# town-centre-processed-2:
+#   from: [325, 580, 705, 680]
+#   to: [305, 600, 685, 700]

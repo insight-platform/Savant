@@ -1,5 +1,6 @@
 from collections import defaultdict
 import yaml
+from statsd import StatsClient
 from savant.gstreamer import Gst
 from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.deepstream.pyfunc import NvDsPyFuncPlugin
@@ -42,6 +43,11 @@ class LineCrossing(NvDsPyFuncPlugin):
         self.entry_count = defaultdict(int)
         self.exit_count = defaultdict(int)
         self.cross_events = defaultdict(lambda: defaultdict(list))
+
+        # metrics namescheme
+        # savant.module.line_crossing.exit.source_id.track_id
+        # savant.module.line_crossing.entry.source_id.track_id
+        self.stats_client = StatsClient('graphite', 8125, prefix='savant.line_crossing')
 
     def on_source_eos(self, source_id: str):
         """On source EOS event callback."""
@@ -95,6 +101,17 @@ class LineCrossing(NvDsPyFuncPlugin):
                         obj_meta.track_id
                     ]
                     if direction is not None:
+                        # send to graphite
+                        self.stats_client.incr(
+                            '.'.join(
+                                (
+                                    direction.name,
+                                    frame_meta.source_id,
+                                    f'track{obj_meta.track_id}',
+                                )
+                            )
+                        )
+
                         obj_events.append((direction.name, frame_meta.pts))
 
                         if direction == Direction.entry:

@@ -1,1 +1,2 @@
 scipy~=1.10
+statsd~=4.0
