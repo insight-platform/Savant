@@ -2,6 +2,7 @@ version: "3.3"
 services:
   rtsp-server:
     image: aler9/rtsp-simple-server
+    restart: unless-stopped
     ports:
       - "1935:1935"
       - "8554:8554"
@@ -10,6 +11,7 @@ services:
       - RTSP_PROTOCOLS=tcp
   city-traffic:
     image: linuxserver/ffmpeg:version-4.4-cli
+    restart: unless-stopped
     links:
       - "rtsp-server:rtsp-server"
     depends_on:
@@ -21,6 +23,7 @@ services:
       start_period: 5s
   module:
     image: ghcr.io/insight-platform/savant-deepstream-l4t:0.2.0-6.2-samples
+    restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../models/peoplenet_detector:/models
@@ -43,6 +46,7 @@ services:
               capabilities: [gpu]
   rtsp-source:
     image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:0.2.0
+    restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
     links:
@@ -60,6 +64,7 @@ services:
     entrypoint: /opt/app/adapters/gst/sources/rtsp.sh
   always-on-sink:
     image: ghcr.io/insight-platform/savant-adapters-deepstream-l4t:0.2.0-6.2
+    restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../stub_imgs:/stub_imgs
