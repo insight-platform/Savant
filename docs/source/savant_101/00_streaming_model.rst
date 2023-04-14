@@ -1,5 +1,5 @@
-Savant Streaming Model
-======================
+Streaming Model
+===============
 
 In vanilla DeepStream, the sources and sinks are integral to the GStreamer pipeline because it's by design. However, such a design makes it difficult to create reliable applications in the real world.
 

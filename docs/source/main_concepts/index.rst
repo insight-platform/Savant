@@ -42,7 +42,7 @@ Green box denotes the entire pipeline and blue one highlights the user-cutomizab
 
 .. _fig-1-general:
 
-.. figure:: images/pic1.png
+.. figure:: ../_static/img/29_pipeline.png
    :width: 600
    :align: center
 
@@ -51,7 +51,5 @@ Green box denotes the entire pipeline and blue one highlights the user-cutomizab
 
 Learn more about:
 
-* Module and its configuration in :doc:`module`.
-* Pipeline and its contents in :doc:`pipeline`.
 * The most important type of pipeline element in :doc:`model_elements`.
 * Adapter details in :doc:`adapters`

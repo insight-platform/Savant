@@ -1,5 +1,5 @@
-Video Processing
-================
+Video Processing Workflow
+=========================
 
 In Savant every frame passes certain processing stages which you have to understand. These stages are inspired by DeepStream's internals and there is no simple way to hack them in a different way. Those stages are:
 
@@ -172,14 +172,169 @@ We highly advise using hardware NVENC-assisted codecs. The only caveat is to ste
       output_frame:
         codec: h264
 
-Every codec has its own configuration parameters related to a corresponding GStreamer plugin:
+Every codec has its own configuration parameters related to a corresponding GStreamer plugin. Those parameters are defined in ``output_frame.encoder_params``:
 
 .. code-block:: yaml
 
     parameters:
       output_frame:
         codec: h264
-        bitrate: 4000000
-        iframeinterval: 10
-        profile: High
+        encoder_params:
+          bitrate: 4000000
+          iframeinterval: 10
+          profile: High
 
+Available properties are:
+
+  - For **h264** codec
+
+    1. `bitrate`
+
+       Set bitrate for v4l2 encode. Unsigned Integer. Range: 0 - 4294967295. Default: 4000000
+
+    2. `control-rate`
+
+       Set control rate for v4l2 encode. Default: 1, "constant_bitrate"
+
+       (0): variable_bitrate - GST_V4L2_VIDENC_VARIABLE_BITRATE
+
+       (1): constant_bitrate - GST_V4L2_VIDENC_CONSTANT_BITRATE
+
+    3. `extended-colorformat`
+
+       Set Extended ColorFormat pixel values 0 to 255 in VUI info. Boolean. Default: false
+
+    4. `force-idr`
+
+       Force an IDR frame. Boolean. Default: false
+
+    5. `force-intra`
+
+       Force an INTRA frame. Boolean. Default: false
+
+    6. `iframeinterval`
+
+       Encoding Intra Frame occurance frequency. Unsigned Integer. Range: 0 - 4294967295. Default: 30
+
+    7. `preset-id`
+
+       Set CUVID Preset ID for Encoder. Unsigned Integer. Range: 1 - 7. Default: 1
+
+    8. `profile`
+
+       Set profile for v4l2 encode. Default: 0, "Baseline"
+
+       (0): Baseline         - GST_V4L2_H264_VIDENC_BASELINE_PROFILE
+
+       (2): Main             - GST_V4L2_H264_VIDENC_MAIN_PROFILE
+
+       (4): High             - GST_V4L2_H264_VIDENC_HIGH_PROFILE
+
+       (7): High444          - GST_V4L2_H264_VIDENC_HIGH_444_PREDICTIVE
+
+    9. `tuning-info-id`
+
+       Tuning Info Preset for encoder. Default: 2, "LowLatencyPreset"
+
+       (1): HighQualityPreset - Tuning Preset for High Quality
+
+       (2): LowLatencyPreset - Tuning Preset for Low Latency
+
+       (3): UltraLowLatencyPreset - Tuning Preset for Low Latency
+
+       (4): LosslessPreset   - Tuning Preset for Lossless
+
+  - For **h265** codec
+
+    1. `bitrate`
+
+       Set bitrate for v4l2 encode. Unsigned Integer. Range: 0 - 4294967295. Default: 4000000
+
+    2. `control-rate`
+
+       Set control rate for v4l2 encode. Default: 1, "constant_bitrate"
+
+       (0): variable_bitrate - GST_V4L2_VIDENC_VARIABLE_BITRATE
+
+       (1): constant_bitrate - GST_V4L2_VIDENC_CONSTANT_BITRATE
+
+    3. `extended-colorformat`
+
+       Set Extended ColorFormat pixel values 0 to 255 in VUI info. Boolean. Default: false
+
+    4. `force-idr`
+
+       Force an IDR frame. Boolean. Default: false
+
+    5. `force-intra`
+
+       Force an INTRA frame. Boolean. Default: false
+
+    6. `iframeinterval`
+
+       Encoding Intra Frame occurance frequency. Unsigned Integer. Range: 0 - 4294967295. Default: 30
+
+    7. `preset-id`
+
+       Set CUVID Preset ID for Encoder. Unsigned Integer. Range: 1 - 7. Default: 1
+
+    8. `profile`
+
+       Set profile for v4l2 encode. Default: 0, "Main"
+
+       (0): Main             - GST_V4L2_H265_VIDENC_MAIN_PROFILE
+
+       (1): Main10           - GST_V4L2_H265_VIDENC_MAIN10_PROFILE
+
+    9. `tuning-info-id`
+
+       Tuning Info Preset for encoder. Default: 2, "LowLatencyPreset"
+
+       (1): HighQualityPreset - Tuning Preset for High Quality
+
+       (2): LowLatencyPreset - Tuning Preset for Low Latency
+
+       (3): UltraLowLatencyPreset - Tuning Preset for Low Latency
+
+       (4): LosslessPreset   - Tuning Preset for Lossless
+
+  - For **jpeg** codec
+
+    1. `idct-method`
+
+       The IDCT algorithm to use. Default: 1, "ifast"
+
+       (0): islow - Slow but accurate integer algorithm
+
+       (1): ifast - Faster, less accurate integer method
+
+       (2): float - Floating-point: accurate, fast on fast HW
+
+    2. `quality`
+
+       Quality of encoding. Integer. Range: 0 - 100. Default: 85
+
+  - For **png** codec
+
+    1. `compression-level`
+
+       PNG compression level. Unsigned Integer. Range: 0 - 9. Default: 6
+
+Example:
+
+  .. code-block:: YAML
+
+    parameters:
+      output_frame:
+        codec: h264
+        encoder_params:
+          bitrate: 4000000
+          profile: 4
+
+  .. code-block:: YAML
+
+    parameters:
+      output_frame:
+        codec: jpeg
+        encoder_params:
+          quality: 90

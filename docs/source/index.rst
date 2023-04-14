@@ -140,11 +140,12 @@ Dive into :repo-link:`Savant` from :doc:`/getting_started/1_intro` and :doc:`/ma
 
    savant_101/00_streaming_model
    savant_101/10_adapters
+   savant_101/12_module_definition
    savant_101/20_video_processing
-   savant_101/23_data_processing
    savant_101/24_metadata
    savant_101/25_top_level_roi
    savant_101/27_working_with_models
+   savant_101/29_pipeline
    savant_101/30_dm
    savant_101/32_rdm
    savant_101/40_cm
@@ -163,8 +164,6 @@ Dive into :repo-link:`Savant` from :doc:`/getting_started/1_intro` and :doc:`/ma
    :hidden:
    :caption: Advanced Topics
 
-   advanced_topics/0_dm_selector
-   advanced_topics/0_custom_postprocessing
    advanced_topics/1_custom_tracking
    advanced_topics/3_custom_roi
    advanced_topics/3_skipping_frames
@@ -174,6 +173,8 @@ Dive into :repo-link:`Savant` from :doc:`/getting_started/1_intro` and :doc:`/ma
    advanced_topics/6_chaining
    advanced_topics/7_python_only
    advanced_topics/8_ext_systems
+   advanced_topics/9_advanced_image_modifications
+
 
 .. toctree::
    :maxdepth: 1
@@ -181,8 +182,6 @@ Dive into :repo-link:`Savant` from :doc:`/getting_started/1_intro` and :doc:`/ma
    :caption: Main Concepts
 
    main_concepts/index
-   main_concepts/module
-   main_concepts/pipeline
    main_concepts/model_elements
    main_concepts/adapters
 
