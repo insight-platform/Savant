@@ -113,7 +113,7 @@
             },
             "refCount": 0,
             "refId": "A",
-            "target": "sum(stats.savant.line_crossing.entry.town-centre-processed.*)"
+            "target": "stats.savant.line_crossing.town-centre-processed.entry"
           },
           {
             "datasource": {
@@ -123,7 +123,7 @@
             "hide": false,
             "refCount": 0,
             "refId": "B",
-            "target": "sum(stats.savant.line_crossing.exit.town-centre-processed.*)"
+            "target": "stats.savant.line_crossing.town-centre-processed.exit"
           }
         ],
         "title": "Entries and exits",
