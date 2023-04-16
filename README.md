@@ -6,7 +6,7 @@ Savant is an open-source, high-level framework for building real-time, streaming
 applications on the Nvidia stack. It makes it possible to develop dynamic, fault-tolerant inference pipelines
 that utilize the best Nvidia approaches for data center and edge accelerators very quickly.
 
-[![discord](https://user-images.githubusercontent.com/15047882/229273271-d033e597-06d3-4aeb-b93d-1217e95ca07e.png)](https://discord.gg/JH2RddHM)
+[![discord](https://user-images.githubusercontent.com/15047882/229273271-d033e597-06d3-4aeb-b93d-1217e95ca07e.png)](https://discord.gg/KVAfGBsZGd)
 
 ## Quick Links
 
