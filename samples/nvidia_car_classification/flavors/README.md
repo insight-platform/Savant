@@ -15,7 +15,7 @@ Resulting config files are provided in the samples directory.
 
 ## Module config file with DeepStream configs
 
-An example of minimal module configuration is provided in the [module.yml](../module.yml).
+An example of minimal module configuration is provided in the [module-remote-ds-config.yml](module-remote-ds-config.yml).
 
 Run this sample config with
 
@@ -94,7 +94,7 @@ python scripts/run_module.py samples/nvidia_car_classification/module-engines-co
 Minimal changes are needed to create a module configuration without relying on nvinfer config files and/or generated TRT engines.
 
 An example of config file that will allows to convert caffe models into TRT engines using only Savant config parameters
-is provided in the [module-full-savant-config.yml](module-full-savant-config.yml).
+is provided in the [module.yml](../module.yml).
 
 Run this sample config with
 
