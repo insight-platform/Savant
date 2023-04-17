@@ -20,7 +20,9 @@ services:
       interval: 5s
       start_period: 5s
   module:
-    image: ghcr.io/insight-platform/savant-deepstream:0.2.0-6.2-samples
+    build: 
+      context: .
+      dockerfile: docker/Dockerfile.x86
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../models/line_crossing:/models
