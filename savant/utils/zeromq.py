@@ -1,12 +1,16 @@
 """ZeroMQ utilities."""
 import logging
+import re
 from enum import Enum
-from typing import List, Optional, Type, Union
+from typing import List, Optional, Tuple, Type, Union
 
 import zmq
 from cachetools import LRUCache
 
 logger = logging.getLogger(__name__)
+
+socket_uri_pattern = re.compile('([a-z]+\\+[a-z]+:)?([a-z]+://.*)')
+socket_options_pattern = re.compile('([a-z]+)\\+([a-z]+):')
 
 
 class ZMQException(Exception):
@@ -19,6 +23,10 @@ class ZMQSocketEndpointException(ZMQException):
 
 class ZMQSocketTypeException(ZMQException):
     """Error in ZMQ socket type."""
+
+
+class ZMQSocketUriParsingException(ZMQException):
+    """Error in ZMQ socket URI."""
 
 
 class ReceiverSocketTypes(Enum):
@@ -106,8 +114,12 @@ class ZeroMQSource:
         # might raise exceptions
         # will be handled in ZeromqSrc element
         # or image_files.py / metadata_json.py Python sinks
-        socket = get_socket_endpoint(socket)
-        self.socket_type = get_socket_type(socket_type, ReceiverSocketTypes)
+        self.socket_type, bind, socket = parse_zmq_socket_uri(
+            uri=socket,
+            socket_type_name=socket_type,
+            socket_type_enum=ReceiverSocketTypes,
+            bind=bind,
+        )
         self.message_len = 2  # source_id, data
 
         self.receive_timeout = receive_timeout
@@ -237,3 +249,53 @@ def build_topic_prefix(
         return f'{source_id}/'
     elif source_id_prefix:
         return source_id_prefix
+
+
+def parse_zmq_socket_uri(
+    uri: str,
+    socket_type_name: Optional[str],
+    socket_type_enum: Union[Type[ReceiverSocketTypes], Type[SenderSocketTypes]],
+    bind: Optional[bool],
+) -> Tuple[Union[ReceiverSocketTypes, SenderSocketTypes], bool, str]:
+    """Parse ZMQ socket URI.
+
+    Socket type and binding flag can be embedded into URI or passed as separate arguments.
+
+    URI schema: [<socket_type>+(bind|connect):]<endpoint>.
+
+    Examples:
+        - ipc:///tmp/zmq-sockets/input-video.ipc
+        - dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc:source
+        - tcp://1.1.1.1:3333
+        - pub+bind:tcp://1.1.1.1:3333:source
+
+    :param uri: ZMQ socket URI.
+    :param socket_type_name: Name of a socket type. Ignored when specified in URI.
+    :param socket_type_enum: Enum for a socket type.
+    :param bind: Whether to bind or connect ZMQ socket. Ignored when in URI.
+    """
+
+    options, endpoint = socket_uri_pattern.fullmatch(uri).groups()
+    if options:
+        socket_type_name, bind_str = socket_options_pattern.fullmatch(options).groups()
+        if bind_str == 'bind':
+            bind = True
+        elif bind_str == 'connect':
+            bind = False
+        else:
+            raise ZMQSocketUriParsingException(
+                f'Incorrect socket bind options in socket URI {uri!r}'
+            )
+    if socket_type_name is None:
+        raise ZMQSocketUriParsingException(
+            f'Socket type is not specified for URI {uri!r}'
+        )
+    if bind is None:
+        raise ZMQSocketUriParsingException(
+            f'Socket binding flag is not specified for URI {uri!r}'
+        )
+
+    endpoint = get_socket_endpoint(endpoint)
+    socket_type = get_socket_type(socket_type_name, socket_type_enum)
+
+    return socket_type, bind, endpoint
