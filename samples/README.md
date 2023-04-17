@@ -45,5 +45,5 @@ Sample Location: [line_crossing](./line_crossing)
 
 Preview:
 
-![](line-crossing-loop-400.webp.webp)
+![](line-crossing-loop-400.webp)
 
