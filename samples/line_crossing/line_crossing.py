@@ -40,6 +40,7 @@ class LineCrossing(NvDsPyFuncPlugin):
             self.line_config = yaml.safe_load(stream)
 
         self.lc_trackers = {}
+        self.track_last_frame_num = defaultdict(lambda: defaultdict(int))
         self.entry_count = defaultdict(int)
         self.exit_count = defaultdict(int)
         self.cross_events = defaultdict(lambda: defaultdict(list))
@@ -47,14 +48,21 @@ class LineCrossing(NvDsPyFuncPlugin):
         # metrics namescheme
         # savant.module.line_crossing.source_id.exit
         # savant.module.line_crossing.source_id.entry
-        self.stats_client = StatsClient('graphite', 8125, prefix='savant.line_crossing')
+        self.stats_client = StatsClient(
+            'graphite', 8125, prefix='savant.module.line_crossing'
+        )
 
     def on_source_eos(self, source_id: str):
         """On source EOS event callback."""
         if source_id in self.lc_trackers:
             del self.lc_trackers[source_id]
+        if source_id in self.track_last_frame_num:
+            del self.track_last_frame_num[source_id]
+        if source_id in self.cross_events:
             del self.cross_events[source_id]
+        if source_id in self.entry_count:
             del self.entry_count[source_id]
+        if source_id in self.exit_count:
             del self.exit_count[source_id]
 
     def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
@@ -93,8 +101,9 @@ class LineCrossing(NvDsPyFuncPlugin):
                             obj_meta.bbox.top + obj_meta.bbox.height / 2,
                         ),
                     )
-                    # TODO: Add cleaning for stale tracks?
-                    # self.track_last_frame_num[track_id] = nvds_frame_meta.frame_num
+                    self.track_last_frame_num[frame_meta.source_id][
+                        obj_meta.track_id
+                    ] = frame_meta.frame_num
                     direction = lc_tracker.check_track(obj_meta.track_id)
 
                     obj_events = self.cross_events[frame_meta.source_id][
@@ -129,3 +138,18 @@ class LineCrossing(NvDsPyFuncPlugin):
             )
             primary_meta_object.add_attr_meta('analytics', 'line_from', line_from)
             primary_meta_object.add_attr_meta('analytics', 'line_to', line_to)
+
+        # periodically remove stale tracks
+        if not (frame_meta.frame_num % self.stale_track_del_period):
+            last_frames = self.track_last_frame_num[frame_meta.source_id]
+
+            to_delete = [
+                track_id
+                for track_id, last_frame in last_frames.items()
+                if frame_meta.frame_num - last_frame > self.stale_track_del_period
+            ]
+            if to_delete:
+                for track_id in to_delete:
+                    lc_tracker = self.lc_trackers[frame_meta.source_id]
+                    del last_frames[track_id]
+                    lc_tracker.remove_track(track_id)

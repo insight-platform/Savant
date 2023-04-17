@@ -1,0 +1,100 @@
+version: "3.3"
+services:
+  rtsp-server:
+    image: aler9/rtsp-simple-server
+    ports:
+      - "1935:1935"
+      - "8554:8554"
+      - "8888:8888"
+    environment:
+      - RTSP_PROTOCOLS=tcp
+  rtsp-stream:
+    image: linuxserver/ffmpeg:version-4.4-cli
+    links:
+      - "rtsp-server:rtsp-server"
+    depends_on:
+      - rtsp-server
+    command: -re -stream_loop -1 -i https://eu-central-1.linodeobjects.com/savant-data/line-crossing/AVG-TownCentre.mp4 -c copy -bsf:v h264_mp4toannexb -f rtsp rtsp://rtsp-server:8554/town-centre
+    healthcheck:
+      test: ["CMD", "ffprobe", "rtsp://rtsp-server:8554/town-centre"]
+      interval: 5s
+      start_period: 5s
+  module:
+    image: ghcr.io/insight-platform/savant-deepstream-l4t:0.2.0-6.2-samples
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ../../models/line_crossing:/models
+      - ../../downloads/line_crossing:/downloads
+      - .:/opt/app/samples/line_crossing
+    command: samples/line_crossing/module.yml
+    environment:
+      - ZMQ_SRC_ENDPOINT=ipc:///tmp/zmq-sockets/input-video.ipc
+      - ZMQ_SRC_TYPE=ROUTER
+      - ZMQ_SRC_BIND=True
+      - ZMQ_SINK_ENDPOINT=ipc:///tmp/zmq-sockets/output-video.ipc
+      - ZMQ_SINK_TYPE=PUB
+      - ZMQ_SINK_BIND=True
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+  rtsp-source:
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:0.2.0
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+    links:
+      - "rtsp-server:rtsp-server"
+    depends_on:
+      rtsp-stream:
+        condition: service_healthy
+    environment:
+      - ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/input-video.ipc
+      - ZMQ_TYPE=DEALER
+      - ZMQ_BIND=False
+      - RTSP_URI=rtsp://rtsp-server:8554/town-centre
+      - SOURCE_ID=town-centre-processed
+      - SYNC_OUTPUT=True
+    entrypoint: /opt/app/adapters/gst/sources/rtsp.sh
+  always-on-sink:
+    image: ghcr.io/insight-platform/savant-adapters-deepstream-l4t:0.2.0-6.2
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ../stub_imgs:/stub_imgs
+    links:
+      - "rtsp-server:rtsp-server"
+    depends_on:
+      - rtsp-server
+    environment:
+      - ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/output-video.ipc
+      - ZMQ_TYPE=SUB
+      - ZMQ_BIND=False
+      - RTSP_URI=rtsp://rtsp-server:8554/town-centre-processed
+      - SOURCE_ID=town-centre-processed
+      - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x720.jpeg
+    command: python -m adapters.ds.sinks.always_on_rtsp
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+  graphite:
+    image: graphiteapp/graphite-statsd
+  graphana:
+    image: grafana/grafana-oss
+    volumes:
+      - ./graphana_datasources:/etc/grafana/provisioning/datasources/
+      - ./graphana_dashboards:/etc/grafana/provisioning/dashboards/
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_NAME=Main Org.
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+
+volumes:
+  zmq_sockets:

@@ -13,7 +13,7 @@ parameters:
       top: 180
       bottom: 0
   output_frame:
-    codec: jpeg
+    codec: h264
   draw_func:
     module: samples.line_crossing.overlay
     # specify the drawfunc's python class from the module
@@ -66,3 +66,4 @@ pipeline:
       class_name: LineCrossing
       kwargs:
         config_path: ${oc.env:APP_PATH}/samples/line_crossing/line_config.yml
+        stale_track_del_period: 5000
