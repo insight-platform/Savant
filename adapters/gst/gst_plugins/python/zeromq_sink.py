@@ -1,6 +1,6 @@
 """ZeroMQ sink."""
 import inspect
-from typing import List
+from typing import List, Union
 
 import zmq
 
@@ -14,8 +14,7 @@ from savant.utils.zeromq import (
     Defaults,
     SenderSocketTypes,
     ZMQException,
-    get_socket_type,
-    get_socket_endpoint,
+    parse_zmq_socket_uri,
 )
 
 
@@ -62,7 +61,7 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
     def __init__(self):
         GstBase.BaseSink.__init__(self)
         self.socket: str = None
-        self.socket_type: SenderSocketTypes = SenderSocketTypes.DEALER
+        self.socket_type: Union[str, SenderSocketTypes] = SenderSocketTypes.DEALER
         self.bind: bool = True
         self.zmq_context: zmq.Context = None
         self.sender: zmq.Socket = None
@@ -81,7 +80,11 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
         if prop.name == 'socket':
             return self.socket
         if prop.name == 'socket-type':
-            return self.socket_type.name
+            return (
+                self.socket_type.name
+                if isinstance(self.socket_type, SenderSocketTypes)
+                else self.socket_type
+            )
         if prop.name == 'bind':
             return self.bind
         if prop.name == 'send-hwm':
@@ -116,8 +119,12 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
         """Start source."""
         assert self.source_id, 'Source ID is required.'
         try:
-            self.socket = get_socket_endpoint(self.socket)
-            self.socket_type = get_socket_type(self.socket_type, SenderSocketTypes)
+            self.socket_type, self.bind, self.socket = parse_zmq_socket_uri(
+                uri=self.socket,
+                socket_type_name=self.socket_type,
+                socket_type_enum=SenderSocketTypes,
+                bind=self.bind,
+            )
         except ZMQException:
             self.logger.exception('Element start error.')
             frame = inspect.currentframe()
