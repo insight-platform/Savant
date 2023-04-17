@@ -135,7 +135,19 @@ RUN python -m pip install --no-cache-dir \
 COPY samples samples
 
 
+FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-devel AS mediamtx
+
+ARG MEDIAMTX_VERSION="v0.22.1"
+WORKDIR /mediamtx
+RUN wget --progress=bar:force:noscroll \
+        "https://github.com/aler9/mediamtx/releases/download/${MEDIAMTX_VERSION}/mediamtx_${MEDIAMTX_VERSION}_linux_amd64.tar.gz" \
+    && tar -xvzf "mediamtx_${MEDIAMTX_VERSION}_linux_amd64.tar.gz" \
+    && rm -f "mediamtx_${MEDIAMTX_VERSION}_linux_amd64.tar.gz"
+
+
 FROM base AS adapters
+
+COPY --from=mediamtx /mediamtx/mediamtx /opt/app/mediamtx/mediamtx
 COPY adapters/ds adapters/ds
 COPY adapters/gst/gst_plugins/python/adjust_timestamps.py \
      adapters/gst/gst_plugins/python/fps_meter.py \
