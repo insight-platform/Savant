@@ -20,7 +20,7 @@ An example of minimal module configuration is provided in the [module-remote-ds-
 Run this sample config with
 
 ```bash
-python scripts/run_module.py samples/nvidia_car_classification/module.yml
+python scripts/run_module.py samples/nvidia_car_classification/flavors/module-remote-ds-config.yml
 ```
 
 #### Detector
@@ -86,7 +86,7 @@ An example of TRT engines usage is provided in the [module-engines-config.yml](m
 Run this sample config with
 
 ```bash
-python scripts/run_module.py samples/nvidia_car_classification/module-engines-config.yml
+python scripts/run_module.py samples/nvidia_car_classification/flavors/module-engines-config.yml
 ```
 
 ## Full configuration using only Savant config parameters
@@ -99,7 +99,7 @@ is provided in the [module.yml](../module.yml).
 Run this sample config with
 
 ```bash
-python scripts/run_module.py samples/nvidia_car_classification/module-full-savant-config.yml
+python scripts/run_module.py samples/nvidia_car_classification/module.yml
 ```
 
 ## Module configuration using etlt models
@@ -112,5 +112,5 @@ Config file that uses etlt models for this sample is provided in the [module-etl
 Run this sample config with
 
 ```bash
-python scripts/run_module.py samples/nvidia_car_classification/module-etlt-config.yml
+python scripts/run_module.py samples/nvidia_car_classification/flavors/module-etlt-config.yml
 ```
