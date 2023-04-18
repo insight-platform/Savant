@@ -1,0 +1,2 @@
+FROM ghcr.io/insight-platform/savant-deepstream:0.2.0-6.2-base
+RUN python -m pip install statsd~=4.0
