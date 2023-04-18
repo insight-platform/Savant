@@ -1,12 +1,14 @@
 name: ${oc.env:MODULE_NAME, 'nvidia_car_classification'}
 
 parameters:
-  output_frame: ${json:${oc.env:OUTPUT_FRAME, '{"codec":"jpeg"}'}}
+  output_frame:
+    codec: raw-rgba
+  draw_func:
+    module: samples.nvidia_car_classification.overlay
+    class_name: Overlay
 
 pipeline:
-
   elements:
-
     # detector
     - element: nvinfer@detector
       name: DashCamNet
