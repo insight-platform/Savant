@@ -15,12 +15,12 @@ Resulting config files are provided in the samples directory.
 
 ## Module config file with DeepStream configs
 
-An example of minimal module configuration is provided in the [module-remote-ds-config.yml](module-remote-ds-config.yml).
+An example of minimal module configuration is provided in the [module-ds-config.yml](module-ds-config.yml).
 
 Run this sample config with
 
 ```bash
-python scripts/run_module.py samples/nvidia_car_classification/flavors/module-remote-ds-config.yml
+python scripts/run_module.py samples/nvidia_car_classification/flavors/module-ds-config.yml
 ```
 
 #### Detector
