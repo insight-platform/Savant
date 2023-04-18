@@ -164,6 +164,7 @@ Dive into :repo-link:`Savant` from :doc:`/getting_started/1_intro` and :doc:`/ma
    :hidden:
    :caption: Advanced Topics
 
+   advanced_topics/0_batching
    advanced_topics/1_custom_tracking
    advanced_topics/3_custom_roi
    advanced_topics/3_skipping_frames
