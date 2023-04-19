@@ -29,6 +29,14 @@ Preview:
 
 ![](nvidia-car-classification-loop-400.webp)
 
+### Line crossing demo
+
+Sample Location: [line_crossing](./line_crossing)
+
+Preview:
+
+![](line-crossing-loop-400.webp)
+
 ## Utility And Coding Examples 
 
 ### OpenCV CUDA MOG2 Background Segmentation Demo
@@ -39,11 +47,4 @@ Preview:
 
 ![](opencv_cuda_bg_remover_mog2-800.webp)
 
-### Line crossing demo
-
-Sample Location: [line_crossing](./line_crossing)
-
-Preview:
-
-![](line-crossing-loop-400.webp)
 
