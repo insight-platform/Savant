@@ -132,7 +132,7 @@ If you have a model trained using the Caffe framework, then you can save your mo
 This format will no longer be supported by future releases of TensorRT (`Tensor RT release notes <https://docs.nvidia.com/deeplearning/tensorrt/release-notes/index.html#rel_7-0-0>`_).
 
 
-Nvidia TAO toolkit
+Nvidia TAO Toolkit
 ------------------
 
 The NVIDIA TAO Toolkit is a set of training tools that requires minimal effort to create computer vision neural models based on user's own data. Using the TAO toolkit, users can perform transfer learning from pre-trained NVIDIA models to create their own model.
@@ -152,7 +152,7 @@ After training the model, you can download it in the ``etlt`` format and use thi
       output:
         layer_names: [output_	cov/Sigmoid, output_bbox/BiasAdd]
 
-Custom CUDA engine
+Custom CUDA Engine
 ------------------
 
 For all the above-mentioned variants of specifying the model, during the first launch, an engine file will be generated using TensorRT with automatic parsing of the model. When the model is very complex or requires some custom plugins or layers, you can generate the engine file yourself using the TensorRT API and specifying the library and the name of the function that generates the engine (`Using custom model with deepstream <https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_using_custom_model.html>`_).

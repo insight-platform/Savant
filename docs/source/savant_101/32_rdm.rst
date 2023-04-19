@@ -1,4 +1,0 @@
-Rotated Detection Unit
-======================
-
-TODO
