@@ -8,24 +8,24 @@ The listing below represents a typical Savant inference node:
 .. code-block:: yaml
 
     - element: nvinfer@detector
-        name: DetectionModel
-        model:
-          format: etlt
-          remote:
-            url: "https:/127.0.0.1/models/detection_model.zip"
-          local_path: /opt/aispp/models/detection_model
-          model_file: resnet18_dashcamnet_pruned.etlt
-          engine_file: resnet18.etlt_b1_gpu0_int8.engine
-          batch_size: 1
-          precision: int8
-          int8_calib_file: dashcamnet_int8.txt
-          mean_file: mean.ppm
-          input:
-            layer_name: input_1
-            shape: [3, 544, 960]
-            scale_factor: 0.00392156862745098
-          output:
-            layer_names: [output_cov/Sigmoid, output_bbox/BiasAdd]
+      name: DetectionModel
+      model:
+        format: etlt
+        remote:
+          url: "https:/127.0.0.1/models/detection_model.zip"
+        local_path: /opt/aispp/models/detection_model
+        model_file: resnet18_dashcamnet_pruned.etlt
+        engine_file: resnet18.etlt_b1_gpu0_int8.engine
+        batch_size: 1
+        precision: int8
+        int8_calib_file: dashcamnet_int8.txt
+        mean_file: mean.ppm
+        input:
+          layer_name: input_1
+          shape: [3, 544, 960]
+          scale_factor: 0.00392156862745098
+        output:
+          layer_names: [output_cov/Sigmoid, output_bbox/BiasAdd]
 
 The ``element`` section specifies the type of a pipeline unit. There are 4 types of units for defining models: detector, classifier, attribute_model, instance_segmentation, and complex_model.
 
@@ -73,22 +73,22 @@ Usage example:
 .. code-block:: yaml
 
   - element: nvinfer@detector
-      name: DetectionModel
-      model:
-        format: onnx
-        model_file: detection_model.onnx
+    name: DetectionModel
+    model:
+      format: onnx
+      model_file: detection_model.onnx
 
 If the model has non-standard outputs (outputs that cannot be automatically converted by DeepStream into meta information), then it is also necessary to specify the name or names of the output layers in the output section.
 
 .. code-block:: yaml
 
   - element: nvinfer@detector
-      name: DetectionModel
-      model:
-        format: onnx
-        model_file: detection_model.onnx
-          output:
-            layer_names: [output]
+    name: DetectionModel
+    model:
+      format: onnx
+      model_file: detection_model.onnx
+      output:
+        layer_names: [output]
 
 
 UFF
@@ -99,15 +99,15 @@ UFF is an intermediate format for representing a model between TensorFlow and Te
 .. code-block:: yaml
 
   - element: nvinfer@detector
-      name: DetectionModel
-      model:
-        format: uff
-        model_file: detection_model.uff
-        input:
-          layer_name: input_1
-          shape: [3, 544, 960]
-        output:
-         layer_names: [output_	cov/Sigmoid, output_bbox/BiasAdd]
+    name: DetectionModel
+    model:
+      format: uff
+      model_file: detection_model.uff
+      input:
+        layer_name: input_1
+        shape: [3, 544, 960]
+      output:
+        layer_names: [output_cov/Sigmoid, output_bbox/BiasAdd]
 
 
 This format will no longer be supported by future releases of TensorRT (`Tensor RT release notes <https://docs.nvidia.com/deeplearning/tensorrt/release-notes/index.html#rel_7-0-0>`_).
@@ -120,13 +120,13 @@ If you have a model trained using the Caffe framework, then you can save your mo
 .. code-block:: yaml
 
   - element: nvinfer@detector
-      name: DetectionModel
-      model:
-        format: caffe
-        model_file: detection_model.caffemodel
-	    proto_file:
-        output:
-          layer_names: [output_	cov/Sigmoid, output_bbox/BiasAdd]
+    name: DetectionModel
+    model:
+      format: caffe
+      model_file: detection_model.caffemodel
+      proto_file: resnet.prototxt
+      output:
+        layer_names: [output_cov/Sigmoid, output_bbox/BiasAdd]
 
 
 This format will no longer be supported by future releases of TensorRT (`Tensor RT release notes <https://docs.nvidia.com/deeplearning/tensorrt/release-notes/index.html#rel_7-0-0>`_).
@@ -142,15 +142,15 @@ After training the model, you can download it in the ``etlt`` format and use thi
 .. code-block:: yaml
 
   - element: nvinfer@detector
-      name: DetectionModel
-      model:
-        format: etlt
-        model_file: detection_model.etlt
+    name: DetectionModel
+    model:
+      format: etlt
+      model_file: detection_model.etlt
       input:
         layer_name: input_1
         shape: [3, 544, 960]
       output:
-        layer_names: [output_	cov/Sigmoid, output_bbox/BiasAdd]
+        layer_names: [output_cov/Sigmoid, output_bbox/BiasAdd]
 
 Custom CUDA Engine
 ------------------
@@ -160,12 +160,12 @@ For all the above-mentioned variants of specifying the model, during the first l
 .. code-block:: yaml
 
   - element: nvinfer@detector
-     name: DetectionModel
-     model:
-       format: custom
-       custom_config_file: yolov2-tiny.cfg
-	   custom_lib_path: libnvdsinfer_custom_impl_Yolo.so
-       engine_create_func_name: NvDsInferYoloCudaEngineGet
+    name: DetectionModel
+    model:
+      format: custom
+      custom_config_file: yolov2-tiny.cfg
+      custom_lib_path: libnvdsinfer_custom_impl_Yolo.so
+      engine_create_func_name: NvDsInferYoloCudaEngineGet
 
 
 Working With Remote Models
@@ -176,15 +176,15 @@ Currently, there are three data transfer protocols supported: S3, HTTP(S), and F
 .. code-block:: yaml
 
   - element: nvinfer@detector
-      name: Primary_Detector
-      model:
-        format: caffe
-        config_file:  ${oc.env:APP_PATH}/samples/nvidia_car_classification/dstest2_pgie_config.txt
-        remote:
-          url: s3://savant-data/models/Primary_Detector/Primary_Detector.zip
-   		  checksum_url: s3://savant-data/models/Primary_Detector/Primary_Detector.md5
-          parameters:
-            endpoint: https://eu-central-1.linodeobjects.com
+    name: Primary_Detector
+    model:
+      format: caffe
+      config_file:  ${oc.env:APP_PATH}/samples/nvidia_car_classification/dstest2_pgie_config.txt
+      remote:
+        url: s3://savant-data/models/Primary_Detector/Primary_Detector.zip
+        checksum_url: s3://savant-data/models/Primary_Detector/Primary_Detector.md5
+        parameters:
+          endpoint: https://eu-central-1.linodeobjects.com
 
 In this example, in the remote section, we specify:
 
