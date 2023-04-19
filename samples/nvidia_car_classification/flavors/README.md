@@ -15,12 +15,12 @@ Resulting config files are provided in the samples directory.
 
 ## Module config file with DeepStream configs
 
-An example of minimal module configuration is provided in the [module.yml](../module.yml).
+An example of minimal module configuration is provided in the [module-ds-config.yml](module-ds-config.yml).
 
 Run this sample config with
 
 ```bash
-python scripts/run_module.py samples/nvidia_car_classification/module.yml
+python scripts/run_module.py samples/nvidia_car_classification/flavors/module-ds-config.yml
 ```
 
 #### Detector
@@ -86,7 +86,7 @@ An example of TRT engines usage is provided in the [module-engines-config.yml](m
 Run this sample config with
 
 ```bash
-python scripts/run_module.py samples/nvidia_car_classification/module-engines-config.yml
+python scripts/run_module.py samples/nvidia_car_classification/flavors/module-engines-config.yml
 ```
 
 ## Full configuration using only Savant config parameters
@@ -94,12 +94,12 @@ python scripts/run_module.py samples/nvidia_car_classification/module-engines-co
 Minimal changes are needed to create a module configuration without relying on nvinfer config files and/or generated TRT engines.
 
 An example of config file that will allows to convert caffe models into TRT engines using only Savant config parameters
-is provided in the [module-full-savant-config.yml](module-full-savant-config.yml).
+is provided in the [module.yml](../module.yml).
 
 Run this sample config with
 
 ```bash
-python scripts/run_module.py samples/nvidia_car_classification/module-full-savant-config.yml
+python scripts/run_module.py samples/nvidia_car_classification/module.yml
 ```
 
 ## Module configuration using etlt models
@@ -112,5 +112,5 @@ Config file that uses etlt models for this sample is provided in the [module-etl
 Run this sample config with
 
 ```bash
-python scripts/run_module.py samples/nvidia_car_classification/module-etlt-config.yml
+python scripts/run_module.py samples/nvidia_car_classification/flavors/module-etlt-config.yml
 ```

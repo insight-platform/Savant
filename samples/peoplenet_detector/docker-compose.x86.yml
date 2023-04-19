@@ -32,7 +32,7 @@ services:
     command: samples/peoplenet_detector/demo.yml
     environment:
       - ZMQ_SRC_ENDPOINT=ipc:///tmp/zmq-sockets/input-video.ipc
-      - ZMQ_SRC_TYPE=ROUTER
+      - ZMQ_SRC_TYPE=SUB
       - ZMQ_SRC_BIND=True
       - ZMQ_SINK_ENDPOINT=ipc:///tmp/zmq-sockets/output-video.ipc
       - ZMQ_SINK_TYPE=PUB
@@ -56,7 +56,7 @@ services:
         condition: service_healthy
     environment:
       - ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/input-video.ipc
-      - ZMQ_TYPE=DEALER
+      - ZMQ_TYPE=PUB
       - ZMQ_BIND=False
       - RTSP_URI=rtsp://rtsp-server:8554/city-traffic
       - SOURCE_ID=city-traffic-processed

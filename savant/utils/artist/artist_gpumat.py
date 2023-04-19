@@ -66,10 +66,10 @@ class ArtistGPUMat(AbstractContextManager):
         :param anchor_y: Y coordinate of text position.
         :param font_scale: Font scale factor that is multiplied by the font-specific base size.
         :param font_thickness: Thickness of the lines used to draw the text.
-        :param font_color: Font color, BGR, floats components in range [0;1.0]
+        :param font_color: Font color, BGR, floats in range [0;1.0].
         :param border_width: Border width around the text.
         :param border_color: Border color around the text.
-        :param bg_color: Background color.
+        :param bg_color: Background color, BGR, floats in range [0;1.0].
         :param padding: Increase the size of the rectangle around
             the text in each direction, in pixels.
         :param anchor_point: Anchor point of a  rectangle with text.
@@ -132,8 +132,9 @@ class ArtistGPUMat(AbstractContextManager):
 
         :param bbox: Bounding box.
         :param border_width:  Border width.
-        :param border_color:  Border color.
-        :param bg_color: Background color. If None, the rectangle will be transparent.
+        :param border_color:  Border color, BGR, floats in range [0;1.0].
+        :param bg_color: Background color, BGR, floats in range [0;1.0].
+            If None, the rectangle will be transparent.
         :param padding: Increase the size of the rectangle in each direction,
             value in pixels.
         """
@@ -191,7 +192,7 @@ class ArtistGPUMat(AbstractContextManager):
 
         :param bbox: Bounding box.
         :param radius: Border radius, in px.
-        :param bg_color: Background color, BGR.
+        :param bg_color: Background color, BGR, floats in range [0;1.0].
         """
         self.__init_overlay()
 
@@ -200,14 +201,14 @@ class ArtistGPUMat(AbstractContextManager):
             (int(bbox.left), int(bbox.top + radius)),
             (int(bbox.right), int(bbox.bottom - radius)),
             convert_color(bg_color),
-            -1
+            -1,
         )
         cv2.rectangle(
             self.overlay,
             (int(bbox.left + radius), int(bbox.top)),
             (int(bbox.right - radius), int(bbox.bottom)),
             convert_color(bg_color),
-            -1
+            -1,
         )
 
         # rounded corners: center(x, y), rotation angle
@@ -230,6 +231,27 @@ class ArtistGPUMat(AbstractContextManager):
                 cv2.LINE_AA,
             )
 
+    def add_circle(
+        self,
+        center: Tuple[int, int],
+        radius: int,
+        color: Tuple[float, float, float],
+        thickness: int,
+        line_type: int = cv2.LINE_AA,
+    ):
+        """Draw circle.
+
+        :param center: Circle center.
+        :param radius: Circle radius.
+        :param color: Circle line color, BGR, floats in range [0;1.0].
+        :param thickness: Circle line thickness.
+        :param line_type: Circle line type.
+        """
+        self.__init_overlay()
+        cv2.circle(
+            self.overlay, center, radius, convert_color(color), thickness, line_type
+        )
+
     def add_polygon(
         self,
         vertices: List[Tuple[float, float]],
@@ -241,8 +263,8 @@ class ArtistGPUMat(AbstractContextManager):
 
         :param vertices: List of points.
         :param line_width: Line width.
-        :param line_color: Line color.
-        :param bg_color: Background color.
+        :param line_color: Line color, BGR, floats in range [0;1.0].
+        :param bg_color: Background color, BGR, floats in range [0;1.0].
         """
         self.__init_overlay()
         vertices = np.intp(vertices)
