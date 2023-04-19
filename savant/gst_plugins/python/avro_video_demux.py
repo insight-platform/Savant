@@ -248,10 +248,11 @@ class AvroVideoDemux(LoggerMixin, Gst.Element):
         frame_duration = message['duration']
         frame = message['frame']
         self.logger.debug(
-            'Received frame %s from source %s, size: %s bytes',
+            'Received frame %s from source %s; size: %s bytes; frame %s a keyframe',
             frame_pts,
             source_id,
             len(frame) if frame else 0,
+            'is' if message['keyframe'] else 'is not',
         )
         frame_idx = next(self._frame_idx_gen)
 
@@ -288,7 +289,16 @@ class AvroVideoDemux(LoggerMixin, Gst.Element):
         source_info.last_pts = frame_pts
         source_info.last_dts = frame_dts
         if source_info.src_pad is None:
-            self.add_source(source_id, source_info)
+            if message['keyframe']:
+                self.add_source(source_id, source_info)
+            else:
+                self.logger.warning(
+                    'Frame %s from source %s is not a keyframe, skipping it. '
+                    'Stream should start with a keyframe.',
+                    frame_pts,
+                    source_id,
+                )
+                return Gst.FlowReturn.OK
 
         if frame:
             if isinstance(frame, bytes):
