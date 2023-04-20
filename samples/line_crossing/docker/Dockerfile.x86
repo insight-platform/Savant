@@ -17,7 +17,7 @@ RUN cd $NVDSINFER_PATH && \
     patch nvdsinfer_model_builder.cpp < nvdsinfer_model_builder.patch && \
     make
 
-FROM savant-deepstream:0.2.0-6.2-base
+FROM ghcr.io/insight-platform/savant-deepstream:0.2.0-6.2-base
 
 ARG DS_YOLO_PATH=/opt/yolo
 ARG NVDSINFER_PATH=/opt/nvidia/deepstream/deepstream/sources/libs/nvdsinfer
