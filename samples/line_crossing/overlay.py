@@ -77,7 +77,7 @@ class Overlay(NvDsDrawFunc):
         entries_n = entries_n.value if entries_n is not None else 0
         exits_n = exits_n.value if exits_n is not None else 0
         artist.add_text(
-            f'entries {entries_n}',
+            f'Entries: {entries_n}',
             50,
             50,
             2.5,
@@ -87,7 +87,7 @@ class Overlay(NvDsDrawFunc):
             anchor_point=Position.LEFT_TOP,
         )
         artist.add_text(
-            f'exits {exits_n}',
+            f'Exits: {exits_n}',
             600,
             50,
             2.5,
