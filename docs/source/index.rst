@@ -150,7 +150,6 @@ Dive into :repo-link:`Savant` from :doc:`/getting_started/1_intro` and :doc:`/ma
    savant_101/30_dm
    savant_101/40_cm
    savant_101/43_am
-   savant_101/50_sm
    savant_101/53_complexm
    savant_101/60_nv_trackers
    savant_101/65_extended_metadata
