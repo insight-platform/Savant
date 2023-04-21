@@ -96,6 +96,14 @@ class LineCrossingTracker:
         return None
 
 
+def point_line_distance(point: Point, line: Tuple[Point, Point]):
+    """Calculate distance between a point and a line defined by two points."""
+    pt_a = np.asarray(line[0])
+    pt_b = np.asarray(line[1])
+    pt_c = np.asarray(point)
+    return np.abs(np.cross(pt_b - pt_a, pt_a - pt_c)) / np.linalg.norm(pt_b - pt_a)
+
+
 class TwoLinesCrossingTracker(LineCrossingTracker):
     """Determines the direction based on the order in which two lines are crossed.
     This is more reliable method in the case of a line at the frame boundary due to
@@ -109,23 +117,44 @@ class TwoLinesCrossingTracker(LineCrossingTracker):
         self._line_crossings = defaultdict(lambda: deque(maxlen=2))
 
     def check_track(self, track_id: int) -> Optional[Direction]:
-        if len(self._track_last_points[track_id]) > 1:
-            for num, line in enumerate(self._lines):
-                intersection_point = get_segment_intersection_point(
-                    *line, *self._track_last_points[track_id]
-                )
-                if intersection_point:
-                    self._line_crossings[track_id].append(num)
-                    line_crossings = self._line_crossings[track_id]
-                    if (
-                        len(line_crossings) > 1
-                        and line_crossings[0] != line_crossings[1]
-                    ):
-                        return (
-                            Direction.entry
-                            if line_crossings[0] < line_crossings[1]
-                            else Direction.exit
+        track_points = self._track_last_points[track_id]
+        if len(track_points) != 2:
+            return None
+
+        step_intersections = 0
+        for line_idx, line in enumerate(self._lines):
+            inter_pt = get_segment_intersection_point(*line, *track_points)
+            if inter_pt:
+                self._line_crossings[track_id].append(line_idx)
+                step_intersections += 1
+
+                track_line_crossings = self._line_crossings[track_id]
+                if len(track_line_crossings) == 2:
+                    first_cross_line_idx = track_line_crossings[0]
+                    second_cross_line_idx = track_line_crossings[1]
+                    if first_cross_line_idx == second_cross_line_idx:
+                        return None
+
+                    if step_intersections == 2:
+                        prev_position = track_points[0]
+                        dist_first_cross = point_line_distance(
+                            prev_position, self._lines[first_cross_line_idx]
                         )
+                        dist_second_cross = point_line_distance(
+                            prev_position, self._lines[second_cross_line_idx]
+                        )
+                        if dist_first_cross > dist_second_cross:
+                            first_cross_line_idx, second_cross_line_idx = (
+                                second_cross_line_idx,
+                                first_cross_line_idx,
+                            )
+
+                    return (
+                        Direction.entry
+                        if first_cross_line_idx < second_cross_line_idx
+                        else Direction.exit
+                    )
+
         return None
 
 
