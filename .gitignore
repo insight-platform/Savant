@@ -35,7 +35,6 @@ _skbuild/
 *.egg
 
 # Environments
-.env
 .venv
 env/
 venv/

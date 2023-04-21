@@ -92,7 +92,7 @@ class LineCrossing(NvDsPyFuncPlugin):
             lc_tracker = self.lc_trackers[frame_meta.source_id]
 
             for obj_meta in frame_meta.objects:
-                if obj_meta.label == 'person':
+                if obj_meta.label == self.target_obj_label:
                     lc_tracker.add_track_point(
                         obj_meta.track_id,
                         # center point

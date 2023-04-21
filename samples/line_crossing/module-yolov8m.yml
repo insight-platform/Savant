@@ -20,6 +20,11 @@ parameters:
     class_name: Overlay
     kwargs:
       overlay_height: 180
+  detected_object:
+    id: 0
+    label: person
+    # id: 2
+    # label: car
 
 pipeline:
 
@@ -30,27 +35,21 @@ pipeline:
       kwargs:
         config_path: ${oc.env:APP_PATH}/samples/line_crossing/line_config.yml
 
-    # person detector
+    # detector
     - element: nvinfer@detector
-      name: peoplenet
+      name: yolov8m
       model:
-        format: etlt
         remote:
-          url: s3://savant-data/models/peoplenet/peoplenet_pruned_v2.0.zip
-          checksum_url: s3://savant-data/models/peoplenet/peoplenet_pruned_v2.0.md5
+          url: s3://savant-data/models/yolov8m/yolov8m.zip
+          checksum_url: s3://savant-data/models/yolov8m/yolov8m.md5
           parameters:
             endpoint: https://eu-central-1.linodeobjects.com
-        model_file: resnet34_peoplenet_pruned.etlt
-        input:
-            layer_name: input_1
-            shape: [3, 544, 960]
-            scale_factor: 0.0039215697906911373
+        format: custom
+        config_file: config_infer_primary_yoloV8.txt
         output:
-          layer_names: [output_bbox/BiasAdd, output_cov/Sigmoid]
-          num_detected_classes: 3
           objects:
-            - class_id: 0
-              label: person
+            - class_id: ${parameters.detected_object.id}
+              label: ${parameters.detected_object.label}
 
     # person tracker
     - element: nvtracker
@@ -67,3 +66,4 @@ pipeline:
       kwargs:
         config_path: ${oc.env:APP_PATH}/samples/line_crossing/line_config.yml
         stale_track_del_period: 5000
+        target_obj_label: ${parameters.detected_object.label}

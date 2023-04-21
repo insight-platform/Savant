@@ -28,7 +28,7 @@ services:
       - ../../models/line_crossing:/models
       - ../../downloads/line_crossing:/downloads
       - .:/opt/app/samples/line_crossing
-    command: samples/line_crossing/module.yml
+    command: samples/line_crossing/module-${DETECTOR}.yml
     environment:
       - ZMQ_SRC_ENDPOINT=ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SRC_TYPE=SUB
