@@ -98,7 +98,7 @@ ENV PYTHONPATH=$PROJECT_PATH
 WORKDIR $PROJECT_PATH
 
 # add deepstream libs to path, so that ctypes can load them
-ENV LD_LIBRARY_PATH=/opt/nvidia/deepstream/deepstream/lib/:$LD_LIBRARY_PATH
+ENV LD_LIBRARY_PATH=/opt/nvidia/deepstream/deepstream/lib:$LD_LIBRARY_PATH
 
 # install requirements
 COPY requirements/base.txt requirements-base.txt

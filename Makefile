@@ -18,24 +18,27 @@ build:
 	--target base \
 	--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
 	-f docker/$(DOCKER_FILE) \
-	-t savant-deepstream$(PLATFORM_SUFFIX):$(SAVANT_VERSION)-$(DEEPSTREAM_VERSION) \
-	-t savant-deepstream$(PLATFORM_SUFFIX):latest .
+	-t savant-deepstream$(PLATFORM_SUFFIX) \
+	-t savant-deepstream$(PLATFORM_SUFFIX):$(SAVANT_VERSION)-$(DEEPSTREAM_VERSION) .
 
 build-adapters-deepstream:
 	DOCKER_BUILDKIT=1 docker build \
 	--target adapters \
 	--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
 	-f docker/$(DOCKER_FILE) \
+	-t savant-deepstream$(PLATFORM_SUFFIX) \
 	-t savant-adapters-deepstream$(PLATFORM_SUFFIX):$(SAVANT_VERSION)-$(DEEPSTREAM_VERSION) .
 
 build-adapters-gstreamer:
 	DOCKER_BUILDKIT=1 docker build \
 	-f docker/Dockerfile.adapters-gstreamer \
+	-t savant-adapters-gstreamer$(PLATFORM_SUFFIX) \
 	-t savant-adapters-gstreamer$(PLATFORM_SUFFIX):$(SAVANT_VERSION) .
 
 build-adapters-py:
 	DOCKER_BUILDKIT=1 docker build \
 	-f docker/Dockerfile.adapters-py \
+	-t savant-adapters-py$(PLATFORM_SUFFIX) \
 	-t savant-adapters-py$(PLATFORM_SUFFIX):$(SAVANT_VERSION) .
 
 build-adapters-all: build-adapters-py build-adapters-gstreamer build-adapters-deepstream
@@ -65,8 +68,9 @@ run-dev:
 		-v /tmp/.X11-unix:/tmp/.X11-unix \
 		-v /tmp/.docker.xauth:/tmp/.docker.xauth \
 		-v `pwd`/var:$(PROJECT_PATH)/var \
+		-v `pwd`/samples:$(PROJECT_PATH)/samples \
 		--entrypoint /bin/bash \
-		savant-deepstream$(PLATFORM_SUFFIX):$(SAVANT_VERSION)-$(DEEPSTREAM_VERSION)-base
+		savant-deepstream$(PLATFORM_SUFFIX)
 
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} \+
