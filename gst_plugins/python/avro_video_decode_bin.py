@@ -6,9 +6,7 @@ from typing import Dict, Optional
 
 from dataclasses import dataclass
 
-import pyds
-
-from savant.gst_plugins.python.avro_video_demux import AVRO_VIDEO_DEMUX_PROPERTIES
+from gst_plugins.python.avro_video_demux import AVRO_VIDEO_DEMUX_PROPERTIES
 from savant.gstreamer import GLib, GObject, Gst  # noqa:F401
 from savant.gstreamer.codecs import Codec, CODEC_BY_CAPS_NAME
 from savant.gstreamer.utils import LoggerMixin, on_pad_event, pad_to_source_id

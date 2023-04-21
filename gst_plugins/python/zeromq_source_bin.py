@@ -1,9 +1,9 @@
 """ZeroMQ src bin."""
-from savant.gst_plugins.python.avro_video_decode_bin import (
+from gst_plugins.python.avro_video_decode_bin import (
     AVRO_VIDEO_DECODE_BIN_PROPERTIES,
     AVRO_VIDEO_DECODE_BIN_SRC_PAD_TEMPLATE,
 )
-from savant.gst_plugins.python.zeromq_src import ZEROMQ_SRC_PROPERTIES
+from gst_plugins.python.zeromq_src import ZEROMQ_SRC_PROPERTIES
 from savant.gstreamer import GObject, Gst
 from savant.gstreamer.utils import LoggerMixin
 

@@ -371,7 +371,7 @@ def main():
     if config.dev_mode:
         mediamtx_process = Popen(
             [
-                '/opt/app/mediamtx/mediamtx',
+                '/opt/savant/mediamtx/mediamtx',
                 str((Path(__file__).parent / 'mediamtx.yml').absolute()),
             ]
         )

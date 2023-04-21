@@ -10,8 +10,8 @@ import subprocess
 import click
 
 sys.path.append(str(Path(__file__).parent.parent))
-from savant.utils.version import version  # noqa: F401
-from savant.utils.platform import is_aarch64, get_l4t_version  # noqa: F401
+from savant.utils.version import version
+from savant.utils.platform import is_aarch64
 
 # docker registry to use with scripts, set to "None" to use local images
 DOCKER_REGISTRY = 'ghcr.io/insight-platform'

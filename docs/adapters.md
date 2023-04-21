@@ -195,7 +195,7 @@ Example:
 
 ```bash
     docker run --rm -it --name source-pictures-files-test \
-    --entrypoint /opt/app/adapters/gst/sources/media_files.sh \
+    --entrypoint /opt/savant/adapters/gst/sources/media_files.sh \
     -e SYNC_OUTPUT=False \
     -e ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/input-video.ipc \
     -e ZMQ_TYPE=DEALER \
@@ -243,7 +243,7 @@ Example:
 
 ```bash
 docker run --rm -it --name source-video-files-test \
-    --entrypoint /opt/app/adapters/gst/sources/media_files.sh \
+    --entrypoint /opt/savant/adapters/gst/sources/media_files.sh \
     -e SYNC_OUTPUT=False \
     -e ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/input-video.ipc \
     -e ZMQ_TYPE=DEALER \
@@ -294,7 +294,7 @@ Example:
 
 ```bash
 docker run --rm -it --name source-video-loop-test \
-    --entrypoint /opt/app/adapters/gst/sources/video_loop.sh \
+    --entrypoint /opt/savant/adapters/gst/sources/video_loop.sh \
     -e SYNC_OUTPUT=False \
     -e ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/input-video.ipc \
     -e ZMQ_TYPE=DEALER \
@@ -336,7 +336,7 @@ Example:
 
 ```bash
     docker run --rm -it --name source-video-files-test \
-    --entrypoint /opt/app/adapters/gst/sources/rtsp.sh \
+    --entrypoint /opt/savant/adapters/gst/sources/rtsp.sh \
     -e SYNC_OUTPUT=False \
     -e ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/input-video.ipc \
     -e ZMQ_TYPE=DEALER \
@@ -372,7 +372,7 @@ Example:
 
 ```bash
     docker run --rm -it --name source-video-files-test \
-    --entrypoint /opt/app/adapters/gst/sources/rtsp.sh \
+    --entrypoint /opt/savant/adapters/gst/sources/rtsp.sh \
     -e ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/input-video.ipc \
     -e ZMQ_TYPE=DEALER \
     -e ZMQ_BIND=False \
@@ -420,7 +420,7 @@ Example:
 
 ```bash
     docker run --rm -it --name source-video-files-test \
-    --entrypoint /opt/app/adapters/gst/sources/gige_cam.sh \
+    --entrypoint /opt/savant/adapters/gst/sources/gige_cam.sh \
     -e ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/input-video.ipc \
     -e ZMQ_TYPE=DEALER \
     -e ZMQ_BIND=False \
@@ -465,7 +465,7 @@ Example:
 
 ```bash
     docker run --rm -it --name sink-meta-json \
-    --entrypoint /opt/app/adapters/python/sinks/metadata_json.py \
+    --entrypoint /opt/savant/adapters/python/sinks/metadata_json.py \
     -e ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/output-video.ipc \
     -e ZMQ_TYPE=SUB \
     -e ZMQ_BIND=False \
@@ -502,7 +502,7 @@ Example:
 
 ```bash
     docker run --rm -it --name sink-meta-json \
-    --entrypoint /opt/app/adapters/python/sinks/image_files.py \
+    --entrypoint /opt/savant/adapters/python/sinks/image_files.py \
     -e ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/output-video.ipc \
     -e ZMQ_TYPE=SUB \
     -e ZMQ_BIND=False \
@@ -539,7 +539,7 @@ Example:
 
 ```bash
     docker run --rm -it --name sink-meta-json \
-    --entrypoint /opt/app/adapters/gst/sinks/video_files.sh \
+    --entrypoint /opt/savant/adapters/gst/sinks/video_files.sh \
     -e ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/output-video.ipc \
     -e ZMQ_TYPE=SUB \
     -e ZMQ_BIND=False \
@@ -575,7 +575,7 @@ Example:
 
 ```bash
     docker run --rm -it --name sink-display \
-    --entrypoint /opt/app/adapters/ds/sinks/display.sh \
+    --entrypoint /opt/savant/adapters/ds/sinks/display.sh \
     -e SYNC_OUTPUT=False \
     -e ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/output-video.ipc \
     -e ZMQ_TYPE=SUB \

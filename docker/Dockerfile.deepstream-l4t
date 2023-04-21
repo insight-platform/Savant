@@ -26,8 +26,7 @@ COPY libs/gstsavantframemeta/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY libs/gstsavantframemeta .
-RUN python setup.py bdist_wheel && \
-    rm -rf _skbuild
+RUN python setup.py bdist_wheel && rm -rf _skbuild
 
 
 FROM base_builder AS savantboost_build
@@ -48,7 +47,7 @@ RUN git clone --branch "${OPENCV_VERSION}" --depth 1 https://github.com/opencv/o
 RUN git clone --branch "${OPENCV_VERSION}" --depth 1 https://github.com/opencv/opencv_contrib
 WORKDIR /opencv/build
 
-RUN python3 -m pip install --no-cache-dir 'numpy~=1.22.4'
+RUN python -m pip install --no-cache-dir 'numpy~=1.22.4'
 
 COPY libs/opencv/savant /opencv/opencv_contrib/modules/savant
 RUN --mount=type=cache,target=/tmp/opencv-cache \
@@ -93,10 +92,10 @@ RUN apt-get update \
 COPY --from=opencv_build /opencv/dist /usr/local
 
 ENV PYTHONUNBUFFERED=1
-ARG APP_PATH=/opt/app
-ENV APP_PATH=$APP_PATH
-ENV PYTHONPATH=$APP_PATH
-WORKDIR $APP_PATH
+ARG PROJECT_PATH=/opt/savant
+ENV PROJECT_PATH=$PROJECT_PATH
+ENV PYTHONPATH=$PROJECT_PATH
+WORKDIR $PROJECT_PATH
 
 # add deepstream libs to path, so that ctypes can load them
 ENV LD_LIBRARY_PATH=/opt/nvidia/deepstream/deepstream/lib/:$LD_LIBRARY_PATH
@@ -117,19 +116,20 @@ RUN python -m pip install --no-cache-dir /libs/gstsavantframemeta/dist/*.whl
 COPY --from=savantboost_build /libs/savanboost/dist /libs/savanboost/dist
 RUN python -m pip install --no-cache-dir /libs/savanboost/dist/*.whl
 
+# install savant package
+WORKDIR /tmp/savant
 COPY savant savant
-COPY LICENSE savant/
-ENV GST_PLUGIN_PATH=$APP_PATH/savant/gst_plugins:$APP_PATH/savant/utils/gst_plugins
+COPY setup.py .
+RUN python setup.py install
+WORKDIR $PROJECT_PATH
+RUN rm -r /tmp/savant
+
+COPY LICENSE .
+COPY savant/VERSION .
+COPY gst_plugins gst_plugins
+ENV GST_PLUGIN_PATH=$PROJECT_PATH/gst_plugins
 
 ENTRYPOINT ["python", "-m", "savant.entrypoint"]
-
-
-FROM base AS samples
-COPY requirements/samples.txt requirements-samples.txt
-RUN python -m pip install --no-cache-dir \
-    -r requirements-samples.txt \
-    && rm requirements-samples.txt
-COPY samples samples
 
 
 FROM nvcr.io/nvidia/deepstream-l4t:$DEEPSTREAM_VERSION-triton AS mediamtx
@@ -144,10 +144,11 @@ RUN wget --progress=bar:force:noscroll \
 
 FROM base AS adapters
 
-COPY --from=mediamtx /mediamtx/mediamtx /opt/app/mediamtx/mediamtx
+COPY --from=mediamtx /mediamtx/mediamtx mediamtx/mediamtx
 COPY adapters/ds adapters/ds
 COPY adapters/gst/gst_plugins/python/adjust_timestamps.py \
      adapters/gst/gst_plugins/python/fps_meter.py \
      adapters/gst/gst_plugins/python/
-ENV GST_PLUGIN_PATH=$GST_PLUGIN_PATH:$APP_PATH/adapters/gst/gst_plugins:$APP_PATH/adapters/ds/gst_plugins
+ENV GST_PLUGIN_PATH=$GST_PLUGIN_PATH:$PROJECT_PATH/adapters/gst/gst_plugins:$PROJECT_PATH/adapters/ds/gst_plugins
+
 ENTRYPOINT []

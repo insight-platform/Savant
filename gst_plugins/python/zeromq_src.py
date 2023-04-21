@@ -4,7 +4,7 @@ from typing import Optional
 
 import zmq
 
-from savant.gst_plugins.python.zeromq_properties import (
+from gst_plugins.python.zeromq_properties import (
     socket_type_property,
     ZEROMQ_PROPERTIES,
 )

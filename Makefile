@@ -6,6 +6,7 @@ SAVANT_VERSION := $(shell cat savant/VERSION | awk -F= '$$1=="SAVANT"{print $$2}
 DEEPSTREAM_VERSION := $(shell cat savant/VERSION | awk -F= '$$1=="DEEPSTREAM"{print $$2}' | sed 's/"//g')
 DOCKER_FILE := Dockerfile.deepstream
 PLATFORM_SUFFIX :=
+PROJECT_PATH := /opt/savant
 
 ifeq ("$(shell uname -m)", "aarch64")
     PLATFORM_SUFFIX := -l4t
@@ -17,14 +18,8 @@ build:
 	--target base \
 	--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
 	-f docker/$(DOCKER_FILE) \
-	-t savant-deepstream$(PLATFORM_SUFFIX):$(SAVANT_VERSION)-$(DEEPSTREAM_VERSION)-base .
-
-build-samples:
-	DOCKER_BUILDKIT=1 docker build \
-	--target samples \
-	--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
-	-f docker/$(DOCKER_FILE) \
-	-t savant-deepstream$(PLATFORM_SUFFIX):$(SAVANT_VERSION)-$(DEEPSTREAM_VERSION)-samples .
+	-t savant-deepstream$(PLATFORM_SUFFIX):$(SAVANT_VERSION)-$(DEEPSTREAM_VERSION) \
+	-t savant-deepstream$(PLATFORM_SUFFIX):latest .
 
 build-adapters-deepstream:
 	DOCKER_BUILDKIT=1 docker build \
@@ -56,8 +51,8 @@ build-docs:
 
 run-docs:
 	docker run -it --rm \
-		-v `pwd`/savant:/opt/app/savant \
-		-v `pwd`/docs:/opt/app/docs \
+		-v `pwd`/savant:$(PROJECT_PATH)/savant \
+		-v `pwd`/docs:$(PROJECT_PATH)/docs \
 		--name savant-docs \
 		savant-docs:$(SAVANT_VERSION)
 
@@ -69,7 +64,7 @@ run-dev:
 		-e XAUTHORITY=/tmp/.docker.xauth \
 		-v /tmp/.X11-unix:/tmp/.X11-unix \
 		-v /tmp/.docker.xauth:/tmp/.docker.xauth \
-		-v `pwd`/var:/opt/app/var \
+		-v `pwd`/var:$(PROJECT_PATH)/var \
 		--entrypoint /bin/bash \
 		savant-deepstream$(PLATFORM_SUFFIX):$(SAVANT_VERSION)-$(DEEPSTREAM_VERSION)-base
 

@@ -1,4 +1,42 @@
+[build-system]
+requires = ['setuptools>=61.0']
+build-backend = 'setuptools.build_meta'
+
+[project]
+name = 'savant'
+description = 'Python Streaming Video Analytics Framework'
+authors = [
+    {name = 'In-Sight Team', email = 'savant@bitworks.software'},
+]
+readme = 'README.md'
+requires-python = '>=3.6'
+keywords = ['deepstream', 'opencv', 'machine learning']
+license = {file = 'LICENSE'}
+classifiers = [
+    'Environment :: GPU :: NVIDIA CUDA',
+    'Programming Language :: Python :: 3',
+    'Topic :: Multimedia :: Video',
+    'Topic :: Scientific/Engineering :: Artificial Intelligence',
+]
+dependencies = []
+dynamic = ['version']
+
+[project.urls]
+homepage = 'https://github.com/insight-platform/Savant'
+repository = 'https://github.com/insight-platform/Savant'
+documentation = 'https://insight-platform.github.io/Savant/'
+
+[tool.setuptools.packages.find]
+include = ['savant*']
+
+[tool.setuptools.package-data]
+savant = ['VERSION', '**/*.yml', 'api/avro-schemas/**/*.avsc']
+
+[tool.setuptools.dynamic]
+version = {attr = 'savant.__version__'}
+
 [tool.black]
 skip-string-normalization = true
+
 [tool.pylint.messages_control]
 max-line-length = 88
