@@ -22,13 +22,15 @@ services:
       interval: 5s
       start_period: 5s
   module:
-    image: ghcr.io/insight-platform/savant-deepstream:0.2.0-6.2-samples
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.x86
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../models/peoplenet_detector:/models
       - ../../downloads/peoplenet_detector:/downloads
-      - ..:/opt/app/samples
+      - ..:/opt/savant/samples
     command: samples/peoplenet_detector/demo.yml
     environment:
       - ZMQ_SRC_ENDPOINT=ipc:///tmp/zmq-sockets/input-video.ipc
@@ -61,7 +63,7 @@ services:
       - RTSP_URI=rtsp://rtsp-server:8554/city-traffic
       - SOURCE_ID=city-traffic-processed
       - SYNC_OUTPUT=True
-    entrypoint: /opt/app/adapters/gst/sources/rtsp.sh
+    entrypoint: /opt/savant/adapters/gst/sources/rtsp.sh
   always-on-sink:
     image: ghcr.io/insight-platform/savant-adapters-deepstream:0.2.0-6.2
     restart: unless-stopped
