@@ -1,41 +1,15 @@
 """Module entrypoint.
 
->>> python -m savant.entrypoint [config_file_path]
+>>> python -m savant.entrypoint {config_file_path}
 """
 import logging
-import logging.config
 import sys
 from savant.config import ModuleConfig
 from savant.gstreamer import Gst
 from savant.gstreamer.runner import GstPipelineRunner
 from savant.deepstream.pipeline import NvDsPipeline
+from savant.utils.logging import init_logging, update_logging
 from savant.utils.sink_factories import sink_factory
-
-
-def log_conf(log_level: str):
-    return {
-        'version': 1,
-        'formatters': {
-            'detailed': {
-                'format': '%(asctime)s [%(name)s] [%(levelname)s] %(message)s'
-            },
-        },
-        'handlers': {
-            'console': {
-                'class': 'logging.StreamHandler',
-                'level': log_level,
-                'formatter': 'detailed',
-                'stream': 'ext://sys.stdout',
-            },
-        },
-        'loggers': {
-            'savant': {
-                'level': log_level,
-                'handlers': ['console'],
-                'propagate': False,
-            },
-        },
-    }
 
 
 def main(config_file_path: str):
@@ -46,16 +20,13 @@ def main(config_file_path: str):
     # load default.yml and set up logging
     config = ModuleConfig().config
 
-    log_config = {
-        'root': {'level': 'INFO', 'handlers': ['console']},
-    }
-    log_config.update(log_conf(config.parameters['log_level'].upper()))
-    logging.config.dictConfig(log_config)
+    init_logging(config.parameters['log_level'])
 
     # load module config
     config = ModuleConfig().load(config_file_path)
+
     # reconfigure savant logger with updated loglevel
-    logging.config.dictConfig(log_conf(config.parameters['log_level'].upper()))
+    update_logging(config.parameters['log_level'])
     logger = logging.getLogger('savant')
 
     # possible exceptions will cause app to crash and log error by default
