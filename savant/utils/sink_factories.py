@@ -187,13 +187,7 @@ class ConsoleSinkFactory(SinkFactory):
 
     def get_sink(self) -> SinkCallable:
         if self.json_mode:
-
-            def send_message(
-                msg: SinkMessage,
-                **kwargs,
-            ):
-                if not isinstance(msg, SinkVideoFrame):
-                    return
+            def format_meta(msg) -> str:
                 if 'objects' in msg.frame_meta.metadata:
                     for obj in msg.frame_meta.metadata['objects']:
                         for key, val in obj['bbox'].items():
@@ -213,26 +207,28 @@ class ConsoleSinkFactory(SinkFactory):
                                 )
                 frame_meta_out = asdict(msg.frame_meta)
                 frame_meta_out['tags'] = dict(frame_meta_out['tags'])
-                print(json.dumps(frame_meta_out, indent=4))
+                return json.dumps(frame_meta_out, indent=4)
 
         else:
+            def format_meta(msg) -> str:
+                return f'{msg.frame_meta}'
 
-            def send_message(
-                msg: SinkMessage,
-                **kwargs,
-            ):
-                if isinstance(msg, SinkVideoFrame):
-                    message = f'Frame shape(WxH): {msg.frame_width}x{msg.frame_height}'
-                    if msg.frame_codec is not None:
-                        message += f', codec: {msg.frame_codec.name}'
-                    if msg.frame is not None:
-                        message += f', size (bytes): {len(msg.frame)}'
-                    message += f'. Meta: {msg.frame_meta}.'
-                    print(message)
+        def send_message(
+            msg: SinkMessage,
+            **kwargs,
+        ):
+            if isinstance(msg, SinkVideoFrame):
+                message = f'Frame shape(WxH): {msg.frame_width}x{msg.frame_height}'
+                if msg.frame_codec is not None:
+                    message += f', codec: {msg.frame_codec.name}'
+                if msg.frame is not None:
+                    message += f', size (bytes): {len(msg.frame)}'
+                message += f'.\nMeta: {format_meta(msg)}.\n'
+                print(message)
 
-                elif isinstance(msg, SinkEndOfStream):
-                    message = f'End of stream: {msg.source_id}'
-                    print(message)
+            elif isinstance(msg, SinkEndOfStream):
+                message = f'End of stream {msg.source_id}.\n'
+                print(message)
 
         return send_message
 
