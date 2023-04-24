@@ -22,7 +22,6 @@ If any questions remain :doc:`/reference/api/index` might help to clear them up.
    getting_started/intro
    getting_started/installation
    getting_started/running
-   getting_started/examples
 
 .. toctree::
    :maxdepth: 2
