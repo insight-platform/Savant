@@ -47,7 +47,7 @@ services:
               count: 1
               capabilities: [gpu]
   rtsp-source:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer:0.2.0
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -65,7 +65,7 @@ services:
       - SYNC_OUTPUT=True
     entrypoint: /opt/savant/adapters/gst/sources/rtsp.sh
   always-on-sink:
-    image: ghcr.io/insight-platform/savant-adapters-deepstream:0.2.0-6.2
+    image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets

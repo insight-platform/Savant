@@ -33,7 +33,7 @@ pipeline:
       module: samples.line_crossing.line_crossing
       class_name: ConditionalDetectorSkip
       kwargs:
-        config_path: ${oc.env:APP_PATH}/samples/line_crossing/line_config.yml
+        config_path: ${oc.env:PROJECT_PATH}/samples/line_crossing/line_config.yml
 
     # detector
     - element: nvinfer@detector
@@ -46,6 +46,7 @@ pipeline:
             endpoint: https://eu-central-1.linodeobjects.com
         format: custom
         config_file: config_infer_primary_yoloV8.txt
+        custom_lib_path: /opt/savant/lib/libnvdsinfer_custom_impl_Yolo.so
         output:
           objects:
             - class_id: ${parameters.detected_object.id}
@@ -55,7 +56,7 @@ pipeline:
     - element: nvtracker
       properties:
         ll-lib-file: /opt/nvidia/deepstream/deepstream/lib/libnvds_nvmultiobjecttracker.so
-        ll-config-file: ${oc.env:APP_PATH}/samples/line_crossing/config_tracker_NvDCF_perf.yml
+        ll-config-file: ${oc.env:PROJECT_PATH}/samples/line_crossing/config_tracker_NvDCF_perf.yml
         tracker-width: 960  # 640  # must be a multiple of 32
         tracker-height: 544  # 384
         display-tracking-id: 0
@@ -64,6 +65,6 @@ pipeline:
       module: samples.line_crossing.line_crossing
       class_name: LineCrossing
       kwargs:
-        config_path: ${oc.env:APP_PATH}/samples/line_crossing/line_config.yml
+        config_path: ${oc.env:PROJECT_PATH}/samples/line_crossing/line_config.yml
         stale_track_del_period: 5000
         target_obj_label: ${parameters.detected_object.label}

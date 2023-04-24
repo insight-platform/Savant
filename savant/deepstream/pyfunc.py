@@ -26,8 +26,9 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
         """Add stream event callbacks."""
         if event.type == GST_NVEVENT_STREAM_EOS:
             pad_idx = gst_nvevent_parse_stream_eos(event)
-            source_id = self._sources.get_id_by_pad_index(pad_idx)
-            self.on_source_eos(source_id)
+            if pad_idx is not None:
+                source_id = self._sources.get_id_by_pad_index(pad_idx)
+                self.on_source_eos(source_id)
 
     def on_source_eos(self, source_id: str):
         """On source EOS event callback."""
