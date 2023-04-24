@@ -32,11 +32,11 @@ jobs:
       run: |
         SAVANT_VERSION=$(cat savant/VERSION | awk -F= '$1=="SAVANT"{print $2}' | sed 's/"//g')
         DEEPSTREAM_VERSION=$(cat savant/VERSION | awk -F= '$1=="DEEPSTREAM"{print $2}' | sed 's/"//g')       
-        echo "docker_image=savant-deepstream:$SAVANT_VERSION-$DEEPSTREAM_VERSION-samples" >> $GITHUB_OUTPUT
+        echo "docker_image=savant-deepstream:$SAVANT_VERSION-$DEEPSTREAM_VERSION" >> $GITHUB_OUTPUT
     # TODO: check if docker_image exists
 
   build-docs:
-#    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     needs: check-docs-docker
     runs-on: ubuntu-latest
     container:
