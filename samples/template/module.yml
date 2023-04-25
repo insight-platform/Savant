@@ -22,11 +22,10 @@ parameters:
 # pipeline definition
 pipeline:
   # source definition
-#  TODO: videotestsrc bin
   source:
-    element: uridecodebin
+    element: videotestsrc
     properties:
-      uri: file:///opt/project/samples/template/test.png
+      num-buffers: 1
 #  source:
 #    element: zeromq_source_bin
 #    properties:
