@@ -207,7 +207,7 @@ Example:
     -e READ_METADATA=False \
     -v /path/to/images:/path/to/images:ro \
     -v /tmp/zmq-sockets:/tmp/zmq-sockets \
-    ghcr.io/insight-platform/savant-adapters-gstreamer:0.2.0
+    ghcr.io/insight-platform/savant-adapters-gstreamer:latest
 ```
 
 The same adapter can be run using a script:
@@ -255,7 +255,7 @@ docker run --rm -it --name source-video-files-test \
     -e READ_METADATA=False \
     -v /path/to/data/test.mp4:/path/to/data/test.mp4:ro \
     -v /tmp/zmq-sockets:/tmp/zmq-sockets \
-    ghcr.io/insight-platform/savant-adapters-gstreamer:0.2.0
+    ghcr.io/insight-platform/savant-adapters-gstreamer:latest
 ```
 
 The same adapter can be run using a script:
@@ -306,7 +306,7 @@ docker run --rm -it --name source-video-loop-test \
     -v /path/to/data/test.mp4:/path/to/data/test.mp4:ro \
     -v /tmp/zmq-sockets:/tmp/zmq-sockets \
     -v /tmp/video-loop-source-downloads:/tmp/video-loop-source-downloads \
-    ghcr.io/insight-platform/savant-adapters-gstreamer:0.2.0
+    ghcr.io/insight-platform/savant-adapters-gstreamer:latest
 ```
 
 The same adapter can be run using a script:
@@ -344,7 +344,7 @@ Example:
     -e SOURCE_ID=test \
     -e RTSP_URI=rtsp://192.168.1.1 \
     -v /tmp/zmq-sockets:/tmp/zmq-sockets \
-    ghcr.io/insight-platform/savant-adapters-gstreamer:0.2.0
+    ghcr.io/insight-platform/savant-adapters-gstreamer:latest
 ```
 
 The same adapter can be run using a script:
@@ -380,7 +380,7 @@ Example:
     -e DEVICE=/dev/video1 \
     -e FRAMERATE=30/1 \
     -v /tmp/zmq-sockets:/tmp/zmq-sockets \
-    ghcr.io/insight-platform/savant-adapters-gstreamer:0.2.0
+    ghcr.io/insight-platform/savant-adapters-gstreamer:latest
 ```
 
 The same adapter can be run using a script:
@@ -427,7 +427,7 @@ Example:
     -e SOURCE_ID=test \
     -e CAMERA_NAME=test-camera \
     -v /tmp/zmq-sockets:/tmp/zmq-sockets \
-    ghcr.io/insight-platform/savant-adapters-gstreamer:0.2.0
+    ghcr.io/insight-platform/savant-adapters-gstreamer:latest
 ```
 
 The same adapter can be run using a script:
@@ -474,7 +474,7 @@ Example:
     -e CHUNK_SIZE=0 \
     -v /path/to/output/:/path/to/output/ \
     -v /tmp/zmq-sockets:/tmp/zmq-sockets \
-    ghcr.io/insight-platform/savant-adapters-py:0.2.0
+    ghcr.io/insight-platform/savant-adapters-py:latest
 ```
 
 The same adapter can be run using a script:
@@ -511,7 +511,7 @@ Example:
     -e CHUNK_SIZE=0 \
     -v /path/to/output/:/path/to/output/ \
     -v /tmp/zmq-sockets:/tmp/zmq-sockets \
-    ghcr.io/insight-platform/savant-adapters-py:0.2.0
+    ghcr.io/insight-platform/savant-adapters-py:latest
 ```
 
 The same adapter can be run using a script:
@@ -548,7 +548,7 @@ Example:
     -e CHUNK_SIZE=0 \
     -v /path/to/output/:/path/to/output/ \
     -v /tmp/zmq-sockets:/tmp/zmq-sockets \
-    ghcr.io/insight-platform/savant-adapters-gstreamer:0.2.0
+    ghcr.io/insight-platform/savant-adapters-gstreamer:latest
 ```
 
 The same adapter can be run using a script:
@@ -587,7 +587,7 @@ Example:
     -v /tmp/.docker.xauth:/tmp/.docker.xauth \
     -v /tmp/zmq-sockets:/tmp/zmq-sockets \
     --gpus=all \
-    ghcr.io/insight-platform/savant-adapters-deepstream:0.2.0-6.2
+    ghcr.io/insight-platform/savant-adapters-deepstream:latest
 ```
 
 The same adapter can be run using a script:
@@ -653,7 +653,7 @@ Example:
     -e FRAMERATE=30/1 \
     -v /path/to/stub_file/test.jpg:/path/to/stub_file/test.jpg:ro \
     -v /tmp/zmq-sockets:/tmp/zmq-sockets \
-    ghcr.io/insight-platform/savant-adapters-deepstream:0.2.0-6.2 \
+    ghcr.io/insight-platform/savant-adapters-deepstream:latest \
     -m adapters.ds.sinks.always_on_rtsp
 ```
 
