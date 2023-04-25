@@ -1,4 +1,78 @@
 Attribute Model Unit
 ====================
 
-TODO
+The attributive model unit is used for inferring models that result in attributes of an object. For example, gender or age for detected people, car color, or a re-identification vector for a face. This is a broader class of values than the ones covered by the classification model. We recommend using this element for models that return attributes that cannot be represented with classification. For example, a model that results in a feature vector or a regression model that results in an age.
+
+The mandatory and optional parameters of this model element are the same as for the :doc:`40_cm`. Let us consider an example demonstrating how to use it. Suppose you have trained a model that takes the image of the person as input and calculates a re-identification vector and its quality. The model has one input, which should be the image of a person and two outputs: the re-identification vector and its quality. So we need to add these attributes to the object analyzed:
+
+Let's provide a description of the unit and review its parameters:
+
+.. code-block:: yaml
+
+    - element: nvinfer@attribute_model
+      name: person_reid
+      model:
+        format: onnx
+        model_file: person_reid.onnx
+        batch_size: 16
+        precision: fp16
+        input:
+          object: person_detector.person
+          shape: [3, 256, 128]
+          offsets: [123.675, 116.28, 103.53]
+          scale_factor: 0.00392156862745098
+        output:
+          layer_names: ['output', 'quality']
+          converter:
+            module: customer_analysis.person_reid_converter
+            class_name: PersonReidConverter
+          attributes:
+            - name: reid
+            - name: reid_quality
+              internal: True
+
+
+Let us describe the valuable parameters. First, the parameters of the ``input`` section are observed:
+
+* The ``object`` parameter determines the label of the objects on which the model will operate. In the sample, we assume that there is a people detection model (detection unit) in the pipeline before this element. The detection unit is named "person_detector," It assigns the label ``person`` to detected objects with a class index ``0``. Therefore, the attribute model unit selects objects labeled ``person_detector.person``.
+
+* The ``shape`` parameter specifies the dimensions of the input data vector for the model. In our case, there are 3 channels, a height of 256, and a width of 128. All selected objects will be scaled to this size, and normalized.
+
+* The ``offsets`` parameter defines input values normalization shift. These values must correspond to those used during model training.
+
+* The ``scale_factor`` parameter specifies the input values normalization scaling factor. These values must be the same as those used during model training. In DeepStream, it is impossible to set an individual factor per channel, so this must be considered during model training.
+
+The parameters of the ``output`` section:
+
+* The ``layer_names`` parameter specifies the names of the output layers from which the output tensors will be acquired for post-processing. These names are defined when exporting the model to the ONNX format (example for `PyTorch <https://pytorch.org/docs/stable/onnx.html#example-alexnet-from-pytorch-to-onnx>`_).
+
+* ``converter`` - in this section, you specify the ``module`` and ``class_name`` that are used for converting and post-processing the model outputs. You must implement the converter yourself, specifying :py:class:`~savant.deepstream.nvinfer.model.BaseAttributeModelOutputConverter` as the parent class. The converter for the example is provided below.
+
+* ``attributes`` is a section that describes the parameters of the output attributes in the form of a YAML list:
+
+  * The ``name`` parameter specifies the name of the attribute. This parameter will be available in the converter.
+
+  * The ``internal`` flag determines whether this attribute will only be used within the pipeline. If ``true``, this attribute will not be sent in the output metadata. Default is ``false``.
+
+Example of a converter
+----------------------
+
+The converter returns a list of 2 tuples: the first element of the tuple specifies the attribute name. The framework will use this name to add the attribute to the metadata. The second element is the attribute value: we converted the first model output to a list of values and the second to a number.
+
+In this case, there is no third value (for classification models, this would be the confidence score).
+
+.. code-block:: python
+
+    class PersonReidConverter(BaseAttributeModelOutputConverter):
+        def __call__(
+            self,
+            *output_layers: np.ndarray,
+            model: AttributeModel,
+            roi: Tuple[float, float, float, float]
+        ) -> List[Tuple[str, Any, Optional[float]]]:
+            return [
+                (model.output.attributes[0].name, output_layers[0].tolist(), None),
+                (model.output.attributes[1].name, output_layers[1].item(), None),
+            ]
+
+
