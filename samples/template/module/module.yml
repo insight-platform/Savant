@@ -13,7 +13,7 @@ parameters:
     codec: hevc
   # custom drawing on frames function
   draw_func:
-    module: samples.template.overlay
+    module: module.overlay
     class_name: Overlay
     #kwargs:
   # pipeline primary batch size, required if there is no primary nvinfer element
@@ -92,7 +92,7 @@ pipeline:
 
     # custom pyfunc element
     - element: pyfunc
-      module: samples.template.custom_pyfunc
+      module: module.custom_pyfunc
       class_name: CustomPyFunc
       #kwargs:
 

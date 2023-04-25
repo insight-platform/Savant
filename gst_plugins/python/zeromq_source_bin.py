@@ -1,11 +1,11 @@
 """ZeroMQ src bin."""
+from savant.gstreamer import GObject, Gst
+from savant.utils.logging import LoggerMixin
 from gst_plugins.python.avro_video_decode_bin import (
     AVRO_VIDEO_DECODE_BIN_PROPERTIES,
     AVRO_VIDEO_DECODE_BIN_SRC_PAD_TEMPLATE,
 )
 from gst_plugins.python.zeromq_src import ZEROMQ_SRC_PROPERTIES
-from savant.gstreamer import GObject, Gst
-from savant.utils.logging import LoggerMixin
 
 
 class ZeroMQSourceBin(LoggerMixin, Gst.Bin):
