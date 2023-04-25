@@ -33,21 +33,21 @@ To fine-tune the tracker, you can pass a tracking configuration file to the libr
 
 In the example above, ``config_tracker_NvDCF_perf.yml`` specifies a configuration file for one of the tracking presets provided by Nvidia. This and other configuration files can be found in the DeepStream development image at ``/opt/nvidia/deepstream/deepstream-6.2/samples/configs/deepstream-app``. Nvidia provides four different approaches to tracking, which are described in detail in the Gst-nvtracker Tracker library `documentation <https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_plugin_gst-nvtracker.html#id9>`__.
 
-**IOU** is the most lightweight, but suitable only for the simplest scenes. The configuration file is ``config_tracker_IOU.yml``.
+The **IOU** tracker is the most lightweight, but suitable only for the simplest scenes. The configuration file is ``config_tracker_IOU.yml``.
 
 **NvSORT** is also also a high performance with improved association due to the use of the Kalman filter. The configuration file is ``config_tracker_NvSORT.yml``.
 
-**NvDeepSORT** is the tracker uses a GPU-based ReID model to improve association in a complex environment. The configuration file is ``config_tracker_NvDeepSORT.yml``.
+**NvDeepSORT** is a visual tracker that uses a GPU-based ReID model to improve association in a complex environment. The configuration file is ``config_tracker_NvDeepSORT.yml``.
 
-**NvDCF** is a flexible tracker based on discriminative correlation filter, with the ability to also use ReID model. Three configuration presets are available:
+**NvDCF** is a flexible tracker based on discriminative correlation filter, wich also can use ReID. Three configuration presets are available:
 
 * ``config_tracker_NvDCF_accuracy.yml``;
 * ``config_tracker_NvDCF_perf.yml``;
 * ``config_tracker_NvDCF_max_perf.yml``.
 
-More information about all configuration parameters of Nvidia's object tracking library can be found in NvMultiObjectTracker `documentation <https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_plugin_gst-nvtracker.html#configuration-parameters>`__.
+More information about parameters of Nvidia's object tracking library can be found in NvMultiObjectTracker `documentation <https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_plugin_gst-nvtracker.html#configuration-parameters>`__.
 
-As an alternative to using Nvidia's object tracking in Savant, it is possible to implement custom object tracking, which will be described in more detail in advanced topics.
+As an alternative to Nvidia's trackers, it is possible to implement custom object tracking, which is described in more detail in advanced topics.
 
 
 
