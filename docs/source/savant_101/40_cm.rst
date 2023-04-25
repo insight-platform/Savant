@@ -1,4 +1,56 @@
 Classification Unit
 ===================
 
-TODO
+Savant supports classification models. The element type "Classification Unit" is used for inferring classifier models. Classifiers are applied to objects existing in the frame, whether they are objects previously detected by a detector or a default meta-object that represents the entire frame. The result of the classifier's work is meta-information about the assigned class attached to the target objects as an attribute.
+
+Configuration Parameters Specific to The Classification Model Unit
+------------------------------------------------------------------
+
+The classifier's invocation results in a list of attributes appended to the object's metadata. This list is configured in the ``element.model.output.attributes`` section.
+
+For each of the output layers of the classifier, you must specify a separate attribute using a common list. By default, the correspondence of output layers to attributes is determined by the enumeration order; however, when using a custom converter, this correspondence is determined by the logic of the converter.
+
+The mandatory parameter when configuring an attribute is ``name``: a value that defines the metadata name for the attribute, which can be used later to obtain its value.
+
+The optional parameters when configuring an attribute are:
+
+* ``labels`` defines a dictionary that sets symbolic values for class indices obtained after inferring the model. It translates ``0``, ``1``, ... into ``cat``, ``dog``, etc. If this dictionary is not defined, then attributes will be used with numeric values.
+
+* ``threshold`` is a float number that sets a threshold for the confidence value to add the attribute to the results. The attribute will be added to metadata only if the associated confidence value is strictly above the specified threshold. If it is not defined, the attribute is added to results unconditionally.
+
+* ``multi_label`` is a flag that specifies that any class will be added if passes the configured threshold. By default, it is set to ``false``, so only the class with the highest confidence value will be added.
+
+* ``internal`` is a flag that makes the classes ignored when metadata is passed to a sink. By default, it is ``false``. If ``true``, the attribute will only be available within the pipeline. This parameter should be used if the attribute is auxiliary and meaningless outside the pipeline.
+
+To use a custom model, you may need to write a result converter: ``pyfunc``, which parses the output tensors and build the list of attribute values. The converter is specified in the ``element.model.output.converter`` section:
+
+* ``module`` - a value that defines the Python module containing the converter code.
+* ``class_name`` - a value that specifies the class from the module. The converter class must be a derived from :py:class:`~savant.deepstream.nvinfer.model.BaseAttributeModelOutputConverter`.
+
+It is important to note that when ``element.model.output.converter`` is specified, the classifier will be configured as a custom Deepstream model with the output in the form of a raw tensor. In this case all optional parameters will be used.
+
+If the converter is not specified, the model will be configured as a regular ``nvinfer`` classifier. In this case, the optional configuration parameters for the attributes listed above (except ``threshold``) are not used, and custom parsing of classifier results must be done with Deepstream functionality by defining the ``element.model.custom_lib_path`` and ``element.model.parse_classifier_func_name`` parameters in the configuration. If a custom function is not specified, Deepstream uses the default ``softmax`` layer function to parse the classification results.
+
+In addition, for regular Deepstream classifiers, it is impossible to set a minimum confidence threshold for each attribute individually, so the first specified threshold value will be applied.
+
+.. code-block:: yaml
+
+    - element: nvinfer@classifier
+      name: Secondary_CarColor
+      model:
+        format: caffe
+        model_file: resnet18.caffemodel
+        mean_file: mean.ppm
+        label_file: labels.txt
+        batch_size: 16
+        input:
+          object: Primary_Detector.Car
+          object_min_width: 64
+          object_min_height: 64
+          color_format: bgr
+        output:
+          layer_names: [predictions/Softmax]
+          attributes:
+            - name: car_color
+              threshold: 0.51
+
