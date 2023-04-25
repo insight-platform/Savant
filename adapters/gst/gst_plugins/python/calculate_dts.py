@@ -2,7 +2,7 @@ from typing import List
 
 from savant.gstreamer import GObject, Gst, GstBase
 from savant.gstreamer.codecs import Codec
-from savant.gstreamer.utils import LoggerMixin
+from savant.utils.logging import LoggerMixin
 
 CAPS = Gst.Caps.from_string(
     ';'.join(x.value.caps_with_params for x in [Codec.H264, Codec.HEVC])

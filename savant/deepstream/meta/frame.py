@@ -1,5 +1,5 @@
 """Wrapper of deepstream frame meta information."""
-from typing import Iterator, Any, Dict, Optional
+from typing import Iterator, Optional
 import pyds
 
 from savant.gstreamer.metadata import (

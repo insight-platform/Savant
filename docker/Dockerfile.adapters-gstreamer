@@ -86,10 +86,14 @@ RUN if [ "$(arch)" = "aarch64" ]; then \
     fi
 
 COPY --from=aravis-builder /build/aravis/dist /usr
-ENV GST_PLUGIN_PATH=$PROJECT_PATH/adapters/gst/gst_plugins
+
+# copy savant and plugins - they are used in imports
 COPY savant savant
 COPY gst_plugins gst_plugins
+
+# copy necessary gst plugins and set plugin path correctly
 COPY adapters/python adapters/python
 COPY adapters/gst adapters/gst
-# copy only necessary gst plugins
 COPY gst_plugins/python/zeromq_src.py adapters/gst/gst_plugins/python/
+COPY gst_plugins/python/logger.py adapters/gst/gst_plugins/python/
+ENV GST_PLUGIN_PATH=$PROJECT_PATH/adapters/gst/gst_plugins

@@ -8,7 +8,8 @@ from savant.api.enums import ExternalFrameType
 from gst_plugins.python.avro_video_demux import build_caps, FrameParams
 from savant.gstreamer import GLib, GObject, Gst, GstApp
 from savant.gstreamer.codecs import Codec, CODEC_BY_NAME
-from savant.gstreamer.utils import LoggerMixin, on_pad_event
+from savant.gstreamer.utils import on_pad_event
+from savant.utils.logging import LoggerMixin
 
 DEFAULT_CHUNK_SIZE = 10000
 

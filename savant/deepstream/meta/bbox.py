@@ -1,6 +1,4 @@
 """Deepstream bounding boxes."""
-import logging
-
 import pyds
 from pysavantboost import get_rbbox
 

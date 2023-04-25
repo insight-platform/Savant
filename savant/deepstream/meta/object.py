@@ -16,7 +16,7 @@ from savant.deepstream.utils import (
     nvds_set_obj_uid,
     nvds_get_obj_uid,
 )
-from savant.gstreamer.utils import LoggerMixin
+from savant.utils.logging import LoggerMixin
 from savant.meta.attribute import AttributeMeta
 from savant.meta.constants import (
     UNTRACKED_OBJECT_ID,

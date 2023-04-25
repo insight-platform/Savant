@@ -9,11 +9,8 @@ from gst_plugins.python.zeromq_properties import (
     ZEROMQ_PROPERTIES,
 )
 from savant.gstreamer import GObject, Gst, GstBase
-from savant.gstreamer.utils import (
-    gst_buffer_from_list,
-    LoggerMixin,
-    propagate_gst_setting_error,
-)
+from savant.gstreamer.utils import gst_buffer_from_list, propagate_gst_setting_error
+from savant.utils.logging import LoggerMixin
 from savant.utils.zeromq import (
     Defaults,
     ReceiverSocketTypes,

@@ -9,7 +9,8 @@ from urllib.parse import urlparse
 from savant.gstreamer import GLib, GObject, Gst
 from savant.gstreamer.codecs import Codec, CODEC_BY_CAPS_NAME
 from savant.gstreamer.metadata import DEFAULT_FRAMERATE
-from savant.gstreamer.utils import LoggerMixin, on_pad_event
+from savant.gstreamer.utils import on_pad_event
+from savant.utils.logging import LoggerMixin
 
 
 class FileType(Enum):
