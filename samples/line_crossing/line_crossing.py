@@ -46,8 +46,8 @@ class LineCrossing(NvDsPyFuncPlugin):
         self.cross_events = defaultdict(lambda: defaultdict(list))
 
         # metrics namescheme
-        # savant.module.line_crossing.source_id.exit
-        # savant.module.line_crossing.source_id.entry
+        # savant.module.line_crossing.source_id.obj_class_label.exit
+        # savant.module.line_crossing.source_id.obj_class_label.entry
         self.stats_client = StatsClient(
             'graphite', 8125, prefix='savant.module.line_crossing'
         )
@@ -115,6 +115,7 @@ class LineCrossing(NvDsPyFuncPlugin):
                             '.'.join(
                                 (
                                     frame_meta.source_id,
+                                    self.target_obj_label,
                                     direction.name,
                                 )
                             )
