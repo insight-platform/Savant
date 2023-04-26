@@ -1,3 +1,4 @@
+ARG SAVANT_VERSION
 ARG DEEPSTREAM_VERSION
 FROM nvcr.io/nvidia/deepstream-l4t:$DEEPSTREAM_VERSION-triton AS base_builder
 
@@ -75,6 +76,7 @@ RUN make -j$(nproc) install
 
 
 FROM nvcr.io/nvidia/deepstream-l4t:$DEEPSTREAM_VERSION-base AS base
+ARG SAVANT_VERSION
 
 # install base packages
 RUN apt-get update \
@@ -101,14 +103,13 @@ WORKDIR $PROJECT_PATH
 ENV LD_LIBRARY_PATH=/opt/nvidia/deepstream/deepstream/lib:$LD_LIBRARY_PATH
 
 # install requirements
-COPY requirements/base.txt requirements-base.txt
-COPY requirements/deepstream-l4t.txt requirements-deepstream-l4t.txt
 RUN python -m pip install --no-cache-dir --upgrade pip
-RUN python -m pip install --no-cache-dir \
-    -r requirements-base.txt \
-    -r requirements-deepstream-l4t.txt \
-    && rm requirements-base.txt \
-    && rm requirements-deepstream-l4t.txt
+
+COPY requirements/deepstream-l4t.txt requirements.txt
+RUN python -m pip install --no-cache-dir -r requirements.txt \
+    && rm requirements.txt
+
+RUN python -m pip install "https://github.com/insight-platform/Savant/releases/download/v$SAVANT_VERSION/savant-$SAVANT_VERSION-py3-none-any.whl"
 
 COPY --from=pygstsavantframemeta_build /libs/gstsavantframemeta/dist /libs/gstsavantframemeta/dist
 RUN python -m pip install --no-cache-dir /libs/gstsavantframemeta/dist/*.whl
@@ -116,14 +117,7 @@ RUN python -m pip install --no-cache-dir /libs/gstsavantframemeta/dist/*.whl
 COPY --from=savantboost_build /libs/savanboost/dist /libs/savanboost/dist
 RUN python -m pip install --no-cache-dir /libs/savanboost/dist/*.whl
 
-# install savant package
-WORKDIR /tmp/savant
-COPY savant savant
-COPY setup.py .
-RUN python setup.py install
-WORKDIR $PROJECT_PATH
-RUN rm -r /tmp/savant
-
+# add framework content
 COPY LICENSE .
 COPY savant/VERSION .
 COPY gst_plugins gst_plugins

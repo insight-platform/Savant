@@ -11,7 +11,7 @@ on:
 jobs:
 
   # build savant package and add it to release assets
-  build-adapters:
+  build-savant-package:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3

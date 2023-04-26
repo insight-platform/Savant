@@ -1,9 +1,10 @@
 name: Build and publish docker images
 
 on:
-#  push:
-#    tags:
-#      - 'v*'
+  workflow_run:
+    workflows: [Build and publish packages]
+    types:
+      - completed
 
   # to run this workflow manually from the Actions tab
   workflow_dispatch:

@@ -1,3 +1,4 @@
+ARG SAVANT_VERSION
 ARG DEEPSTREAM_VERSION
 FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-devel AS base_builder
 
@@ -75,6 +76,7 @@ RUN make -j$(nproc) install
 
 
 FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-base AS base
+ARG SAVANT_VERSION
 
 # python to python3 by default
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 10
@@ -84,7 +86,6 @@ RUN apt-get update \
     && apt-get install --no-install-recommends -y \
     python3-pip \
     python3-dev \
-    python3-venv \
     libcairo2-dev \
     libgirepository1.0-dev \
     python3-gst-1.0 \
@@ -105,14 +106,13 @@ WORKDIR $PROJECT_PATH
 ENV LD_LIBRARY_PATH=/opt/nvidia/deepstream/deepstream/lib:$LD_LIBRARY_PATH
 
 # install requirements
-COPY requirements/base.txt requirements-base.txt
-COPY requirements/deepstream.txt requirements-deepstream.txt
 RUN python -m pip install --no-cache-dir --upgrade pip
-RUN python -m pip install --no-cache-dir \
-    -r requirements-base.txt \
-    -r requirements-deepstream.txt \
-    && rm requirements-base.txt \
-    && rm requirements-deepstream.txt
+
+COPY requirements/deepstream.txt requirements.txt
+RUN python -m pip install --no-cache-dir -r requirements.txt \
+    && rm requirements.txt
+
+RUN python -m pip install "https://github.com/insight-platform/Savant/releases/download/v$SAVANT_VERSION/savant-$SAVANT_VERSION-py3-none-any.whl"
 
 COPY --from=pygstsavantframemeta_build /libs/gstsavantframemeta/dist /libs/gstsavantframemeta/dist
 RUN python -m pip install --no-cache-dir /libs/gstsavantframemeta/dist/*.whl
@@ -120,16 +120,7 @@ RUN python -m pip install --no-cache-dir /libs/gstsavantframemeta/dist/*.whl
 COPY --from=savantboost_build /libs/savanboost/dist /libs/savanboost/dist
 RUN python -m pip install --no-cache-dir /libs/savanboost/dist/*.whl
 
-# install savant package
-RUN python -m pip install --upgrade pip setuptools wheel build
-WORKDIR /tmp/savant
-COPY savant savant
-COPY pyproject.toml pyproject.toml
-RUN python -m build --wheel
-RUN python -m pip install --no-cache-dir dist/*.whl
-WORKDIR $PROJECT_PATH
-RUN rm -r /tmp/savant
-
+# add framework content
 COPY LICENSE .
 COPY savant/VERSION .
 COPY gst_plugins gst_plugins

@@ -16,6 +16,7 @@ endif
 build:
 	DOCKER_BUILDKIT=1 docker build \
 	--target base \
+	--build-arg SAVANT_VERSION=$(SAVANT_VERSION) \
 	--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
 	-f docker/$(DOCKER_FILE) \
 	-t savant-deepstream$(PLATFORM_SUFFIX) \
@@ -25,6 +26,7 @@ build:
 build-adapters-deepstream:
 	DOCKER_BUILDKIT=1 docker build \
 	--target adapters \
+	--build-arg SAVANT_VERSION=$(SAVANT_VERSION) \
 	--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
 	-f docker/$(DOCKER_FILE) \
 	-t savant-adapters-deepstream$(PLATFORM_SUFFIX) \
