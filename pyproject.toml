@@ -18,8 +18,7 @@ classifiers = [
     'Topic :: Multimedia :: Video',
     'Topic :: Scientific/Engineering :: Artificial Intelligence',
 ]
-dependencies = []
-dynamic = ['version']
+dynamic = ['version', 'dependencies']
 
 [project.urls]
 homepage = 'https://github.com/insight-platform/Savant'
@@ -34,6 +33,7 @@ savant = ['VERSION', '**/*.yml', 'api/avro-schemas/**/*.avsc']
 
 [tool.setuptools.dynamic]
 version = {attr = 'savant.__version__'}
+dependencies = {file = ['requirements/base.txt']}
 
 [tool.black]
 skip-string-normalization = true
