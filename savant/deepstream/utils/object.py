@@ -172,6 +172,4 @@ def nvds_get_obj_bbox(nvds_obj_meta: pyds.NvDsFrameMeta) -> Union[NvDsBBox, NvDs
     if nvds_get_obj_selection_type(nvds_obj_meta) == ObjectSelectionType.ROTATED_BBOX:
         return NvDsRBBox(nvds_obj_meta)
 
-    raise IncorrectSelectionType(
-        'Unsupported object selection type.'
-    )
+    raise IncorrectSelectionType('Unsupported object selection type.')

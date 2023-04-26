@@ -187,6 +187,7 @@ class ConsoleSinkFactory(SinkFactory):
 
     def get_sink(self) -> SinkCallable:
         if self.json_mode:
+
             def format_meta(msg) -> str:
                 if 'objects' in msg.frame_meta.metadata:
                     for obj in msg.frame_meta.metadata['objects']:
@@ -210,6 +211,7 @@ class ConsoleSinkFactory(SinkFactory):
                 return json.dumps(frame_meta_out, indent=4)
 
         else:
+
             def format_meta(msg) -> str:
                 return f'{msg.frame_meta}'
 

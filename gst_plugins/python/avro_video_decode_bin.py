@@ -339,6 +339,7 @@ class AvroVideoDecodeBin(LoggerMixin, Gst.Bin):
 
         # https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_FAQ.html#on-jetson-platform-i-get-same-output-when-multiple-jpeg-images-are-fed-to-nvv4l2decoder-using-multifilesrc-plugin-why-is-that
         if branch.codec == Codec.JPEG and is_aarch64():
+
             def on_add_element(
                 bin: Gst.Bin,
                 elem: Gst.Element,

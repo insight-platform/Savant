@@ -8,6 +8,7 @@ from savant.deepstream.opencv_utils import (
 )
 import cv2
 
+
 class BgRemover(NvDsPyFuncPlugin):
     """Background remover pyfunc.
 
@@ -22,7 +23,6 @@ class BgRemover(NvDsPyFuncPlugin):
         self.gaussian_filter = cv2.cuda.createGaussianFilter(
             cv2.CV_8UC4, cv2.CV_8UC4, (9, 9), 2
         )
-
 
     def on_source_eos(self, source_id: str):
         """On source EOS event callback."""
@@ -42,7 +42,10 @@ class BgRemover(NvDsPyFuncPlugin):
                 else:
                     back_sub = cv2.cuda.createBackgroundSubtractorMOG2()
                     self.back_subtractors[frame_meta.source_id] = back_sub
-                ref_frame = cv2.cuda_GpuMat(frame_mat, (0, 0, int(frame_meta.roi.width), int(frame_meta.roi.height)))
+                ref_frame = cv2.cuda_GpuMat(
+                    frame_mat,
+                    (0, 0, int(frame_meta.roi.width), int(frame_meta.roi.height)),
+                )
                 cropped = ref_frame.clone()
                 self.gaussian_filter.apply(cropped, cropped, stream=artist.stream)
                 cu_mat_fg = back_sub.apply(cropped, -1, artist.stream)

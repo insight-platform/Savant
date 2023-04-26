@@ -15,7 +15,7 @@ def _log_conf(log_level: str) -> dict:
         'formatters': {
             'detailed': {
                 'format': '%(asctime)s [%(levelname)s] [%(name)s] [%(threadName)s] '
-                          '%(message)s',
+                '%(message)s',
             },
         },
         'handlers': {
