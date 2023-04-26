@@ -4,7 +4,8 @@ from typing import Dict, Optional
 from dataclasses import dataclass
 
 from savant.gstreamer import GLib, GObject, Gst
-from savant.gstreamer.utils import LoggerMixin, on_pad_event, pad_to_source_id
+from savant.gstreamer.utils import on_pad_event, pad_to_source_id
+from savant.utils.logging import LoggerMixin
 
 
 @dataclass

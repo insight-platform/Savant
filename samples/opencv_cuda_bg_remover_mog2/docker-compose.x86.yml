@@ -24,11 +24,11 @@ services:
       interval: 5s
       start_period: 5s
   module:
-    image: ghcr.io/insight-platform/savant-deepstream:0.2.0-6.2-samples
+    image: ghcr.io/insight-platform/savant-deepstream:latest
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
-      - ..:/opt/app/samples
+      - ..:/opt/savant/samples
     command: samples/opencv_cuda_bg_remover_mog2/demo.yml
     environment:
       - ZMQ_SRC_ENDPOINT=ipc:///tmp/zmq-sockets/input-video.ipc
@@ -45,7 +45,7 @@ services:
               count: 1
               capabilities: [gpu]
   rtsp-source:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer:0.2.0
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -61,9 +61,9 @@ services:
       - RTSP_URI=rtsp://rtsp-server:8554/road-traffic
       - SOURCE_ID=road-traffic-processed
       - SYNC_OUTPUT=True
-    entrypoint: /opt/app/adapters/gst/sources/rtsp.sh
+    entrypoint: /opt/savant/adapters/gst/sources/rtsp.sh
   always-on-sink:
-    image: ghcr.io/insight-platform/savant-adapters-deepstream:0.2.0-6.2
+    image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets

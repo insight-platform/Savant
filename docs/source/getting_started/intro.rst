@@ -86,4 +86,4 @@ And the contents of ``module/car_counter.py`` Python script in this example woul
 Next steps
 ----------
 
-Check out :doc:`installation` and :doc:`running` technicalities or go straight to :doc:`examples`.
+Check out :doc:`installation` or :doc:`running` technicalities.

@@ -60,12 +60,12 @@ RUN meson build \
 FROM base
 
 ENV PYTHONUNBUFFERED=1
-ARG APP_PATH=/opt/app
-ENV APP_PATH=$APP_PATH
-ENV PYTHONPATH=$APP_PATH
-WORKDIR $APP_PATH
+ARG PROJECT_PATH=/opt/savant
+ENV PROJECT_PATH=$PROJECT_PATH
+ENV PYTHONPATH=$PROJECT_PATH
+WORKDIR $PROJECT_PATH
 
-COPY adapters/requirements.txt $APP_PATH/adapters/requirements.txt
+COPY adapters/requirements.txt $PROJECT_PATH/adapters/requirements.txt
 # gstreamer1.0-python3-plugin-loader requires python 3.10
 # fastavro and pyzmq don't have built wheels for python 3.10 for aarch64
 # need gcc and python3-dev to build them
@@ -86,9 +86,14 @@ RUN if [ "$(arch)" = "aarch64" ]; then \
     fi
 
 COPY --from=aravis-builder /build/aravis/dist /usr
-ENV GST_PLUGIN_PATH=$APP_PATH/savant/utils/gst_plugins:$APP_PATH/adapters/gst/gst_plugins
+
+# copy savant and plugins - they are used in imports
 COPY savant savant
+COPY gst_plugins gst_plugins
+
+# copy necessary gst plugins and set plugin path correctly
 COPY adapters/python adapters/python
 COPY adapters/gst adapters/gst
-# copy only necessary gst plugins
-COPY savant/gst_plugins/python/zeromq_src.py adapters/gst/gst_plugins/python/
+COPY gst_plugins/python/zeromq_src.py adapters/gst/gst_plugins/python/
+COPY gst_plugins/python/logger.py adapters/gst/gst_plugins/python/
+ENV GST_PLUGIN_PATH=$PROJECT_PATH/adapters/gst/gst_plugins

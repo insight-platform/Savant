@@ -30,7 +30,7 @@ python scripts/run_module.py samples/nvidia_car_classification/flavors/module-ds
       name: Primary_Detector
       model:
         format: caffe
-        config_file: ${oc.env:APP_PATH}/samples/nvidia_car_classification/dstest2_pgie_config.txt
+        config_file: ${oc.env:PROJECT_PATH}/samples/nvidia_car_classification/dstest2_pgie_config.txt
 ```
 
 #### Tracker
@@ -43,7 +43,7 @@ Configuration properties copied from [dstest2_tracker_config.txt](https://github
         tracker-width: 640
         tracker-height: 384
         ll-lib-file: /opt/nvidia/deepstream/deepstream/lib/libnvds_nvmultiobjecttracker.so
-        ll-config-file: ${oc.env:APP_PATH}/samples/nvidia_car_classification/config_tracker_NvDCF_perf.yml
+        ll-config-file: ${oc.env:PROJECT_PATH}/samples/nvidia_car_classification/config_tracker_NvDCF_perf.yml
         enable_batch_process: 1
 ```
 
@@ -56,7 +56,7 @@ For `Secondary_CarColor` classifier use `dstest2_sgie1_config.txt`
       name: Secondary_CarColor
       model:
         format: caffe
-        config_file: ${oc.env:APP_PATH}/samples/nvidia_car_classification/dstest2_sgie1_config.txt
+        config_file: ${oc.env:PROJECT_PATH}/samples/nvidia_car_classification/dstest2_sgie1_config.txt
         input:
           object: Primary_Detector.Car
         output:

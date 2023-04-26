@@ -1,13 +1,5 @@
-import logging
-import os
-
 from savant.gstreamer import GObject, Gst, GstBase
-from savant.gstreamer.utils import LoggerMixin
-
-logging.basicConfig(
-    level=os.environ.get('LOGLEVEL', 'INFO'),
-    format='%(asctime)s [%(levelname)s] [%(name)s] [%(threadName)s] %(message)s',
-)
+from savant.utils.logging import LoggerMixin
 
 
 class Logger(LoggerMixin, GstBase.BaseTransform):

@@ -5,10 +5,11 @@ from adapters.python.sinks.chunk_writer import ChunkWriter, CompositeChunkWriter
 from adapters.python.sinks.metadata_json import MetadataJsonWriter, Patterns
 from savant.api import deserialize
 from savant.api.enums import ExternalFrameType
-from savant.gst_plugins.python.avro_video_demux import build_caps, FrameParams
+from gst_plugins.python.avro_video_demux import build_caps, FrameParams
 from savant.gstreamer import GLib, GObject, Gst, GstApp
 from savant.gstreamer.codecs import Codec, CODEC_BY_NAME
-from savant.gstreamer.utils import LoggerMixin, on_pad_event
+from savant.gstreamer.utils import on_pad_event
+from savant.utils.logging import LoggerMixin
 
 DEFAULT_CHUNK_SIZE = 10000
 

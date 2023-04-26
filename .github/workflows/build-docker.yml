@@ -1,9 +1,10 @@
 name: Build and publish docker images
 
 on:
-  push:
-    tags:
-      - 'v*'
+  workflow_run:
+    workflows: [Build and publish packages]
+    types:
+      - completed
 
   # to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -54,13 +55,10 @@ jobs:
 
     - uses: actions/checkout@v3
 
-#    - name: Check if tag matches project version
-#      run: |
-#        PROJECT_VERSION=v$(cat VERSION)
-#        TAG=$(git describe HEAD --tags --abbrev=0)
-#        echo $TAG
-#        echo $PROJECT_VERSION
-#        if [[ "$TAG" != "$PROJECT_VERSION" ]]; then exit 1; fi
+    - name: Check if tag matches project version
+      run: |
+        TAG=$(git describe HEAD --tags --abbrev=0)
+        if [[ "$TAG" != "${{ needs.get-version.outputs.savant_version }}" ]]; then exit 1; fi
 
     - name: Log in to the container registry
       uses: docker/login-action@v2
@@ -82,27 +80,17 @@ jobs:
       uses: docker/setup-buildx-action@v2
 
     # base image
-    - name: Build and push savant-deepstream:base docker image
+    - name: Build and push savant-deepstream docker image
       uses: docker/build-push-action@v4
       with:
         file: ${{ matrix.docker_file }}
-        tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/savant-${{ matrix.docker_suffix }}:${{ needs.get-version.outputs.savant_version }}-${{ needs.get-version.outputs.deepstream_version }}-base
+        tags: |
+          ${{ env.REGISTRY }}/${{ github.repository_owner }}/savant-${{ matrix.docker_suffix }}:${{ needs.get-version.outputs.savant_version }}-${{ needs.get-version.outputs.deepstream_version }}
+          ${{ env.REGISTRY }}/${{ github.repository_owner }}/savant-${{ matrix.docker_suffix }}:latest
         build-args: |
           DEEPSTREAM_VERSION=${{ needs.get-version.outputs.deepstream_version }}
         platforms: ${{ matrix.arch }}
         target: base
-        push: true
-
-    # samples image
-    - name: Build and push savant-deepstream:samples docker image
-      uses: docker/build-push-action@v4
-      with:
-        file: ${{ matrix.docker_file }}
-        tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/savant-${{ matrix.docker_suffix }}:${{ needs.get-version.outputs.savant_version }}-${{ needs.get-version.outputs.deepstream_version }}-samples
-        build-args: |
-          DEEPSTREAM_VERSION=${{ needs.get-version.outputs.deepstream_version }}
-        platforms: ${{ matrix.arch }}
-        target: samples
         push: true
 
     # adapters image
@@ -110,7 +98,9 @@ jobs:
       uses: docker/build-push-action@v4
       with:
         file: ${{ matrix.docker_file }}
-        tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/savant-adapters-${{ matrix.docker_suffix }}:${{ needs.get-version.outputs.savant_version }}-${{ needs.get-version.outputs.deepstream_version }}
+        tags: |
+          ${{ env.REGISTRY }}/${{ github.repository_owner }}/savant-adapters-${{ matrix.docker_suffix }}:${{ needs.get-version.outputs.savant_version }}-${{ needs.get-version.outputs.deepstream_version }}
+          ${{ env.REGISTRY }}/${{ github.repository_owner }}/savant-adapters-${{ matrix.docker_suffix }}:latest
         build-args: |
           DEEPSTREAM_VERSION=${{ needs.get-version.outputs.deepstream_version }}
         platforms: ${{ matrix.arch }}
@@ -146,13 +136,6 @@ jobs:
 
     steps:
 
-    - run: echo "docker_image_tag=${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.docker_image }}:${{ needs.get-version.outputs.savant_version }}" >> $GITHUB_ENV
-
-    - run: |
-        echo ${{ matrix.arch }}
-        echo ${{ matrix.docker_file }}
-        echo ${{ env.docker_image_tag }}
-
     - uses: actions/checkout@v3
 
     - name: Log in to the container registry
@@ -172,6 +155,8 @@ jobs:
       uses: docker/build-push-action@v4
       with:
         file: ${{ matrix.docker_file }}
-        tags: ${{ env.docker_image_tag }}
+        tags: |
+          ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.docker_image }}:${{ needs.get-version.outputs.savant_version }}
+          ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.docker_image }}:latest
         platforms: ${{ matrix.arch }}
         push: true

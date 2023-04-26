@@ -8,7 +8,7 @@ from savant.api.enums import ExternalFrameType
 from savant.gstreamer import GObject, Gst, GstBase
 from savant.gstreamer.codecs import CODEC_BY_CAPS_NAME, Codec
 from savant.gstreamer.metadata import DEFAULT_FRAMERATE
-from savant.gstreamer.utils import LoggerMixin
+from savant.utils.logging import LoggerMixin
 
 EMBEDDED_FRAME_TYPE = 'embedded'
 

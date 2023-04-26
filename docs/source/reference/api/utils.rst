@@ -19,17 +19,7 @@ General utilities
     artist.Position
     artist.Artist
 
-Gstreamer utilities
--------------------
-
-.. currentmodule:: savant.gstreamer.utils
-
-.. autosummary::
-    :toctree: generated
-    :nosignatures:
-    :template: autosummary/class.rst
-
-    LoggerMixin
+    logging.LoggerMixin
 
 DeepStream utilities
 --------------------

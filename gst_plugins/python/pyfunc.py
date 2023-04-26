@@ -7,7 +7,7 @@ from typing import Any, Optional
 import json
 from savant.base.pyfunc import PyFunc, BasePyFuncPlugin
 from savant.gstreamer import GLib, Gst, GstBase, GObject  # noqa: F401
-from savant.gstreamer.utils import LoggerMixin
+from savant.utils.logging import LoggerMixin
 
 # RGBA format is required to access the frame (pyds.get_nvds_buf_surface)
 CAPS = Gst.Caps.from_string(

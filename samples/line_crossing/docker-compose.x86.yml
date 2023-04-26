@@ -27,7 +27,7 @@ services:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../models/line_crossing:/models
       - ../../downloads/line_crossing:/downloads
-      - .:/opt/app/samples/line_crossing
+      - .:/opt/savant/samples/line_crossing
     command: samples/line_crossing/module-${DETECTOR}.yml
     environment:
       - ZMQ_SRC_ENDPOINT=ipc:///tmp/zmq-sockets/input-video.ipc
@@ -44,7 +44,7 @@ services:
               count: 1
               capabilities: [gpu]
   rtsp-source:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer:0.2.0
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
     links:
@@ -59,9 +59,9 @@ services:
       - RTSP_URI=rtsp://rtsp-server:8554/town-centre
       - SOURCE_ID=town-centre-processed
       - SYNC_OUTPUT=True
-    entrypoint: /opt/app/adapters/gst/sources/rtsp.sh
+    entrypoint: /opt/savant/adapters/gst/sources/rtsp.sh
   always-on-sink:
-    image: ghcr.io/insight-platform/savant-adapters-deepstream:0.2.0-6.2
+    image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../stub_imgs:/stub_imgs

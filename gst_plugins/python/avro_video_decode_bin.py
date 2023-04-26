@@ -6,13 +6,12 @@ from typing import Dict, Optional
 
 from dataclasses import dataclass
 
-import pyds
-
-from savant.gst_plugins.python.avro_video_demux import AVRO_VIDEO_DEMUX_PROPERTIES
 from savant.gstreamer import GLib, GObject, Gst  # noqa:F401
 from savant.gstreamer.codecs import Codec, CODEC_BY_CAPS_NAME
-from savant.gstreamer.utils import LoggerMixin, on_pad_event, pad_to_source_id
+from savant.gstreamer.utils import on_pad_event, pad_to_source_id
+from savant.utils.logging import LoggerMixin
 from savant.utils.platform import is_aarch64
+from gst_plugins.python.avro_video_demux import AVRO_VIDEO_DEMUX_PROPERTIES
 
 OUT_CAPS = Gst.Caps.from_string('video/x-raw(memory:NVMM);video/x-raw')
 DEFAULT_PASS_EOS = True
@@ -340,6 +339,7 @@ class AvroVideoDecodeBin(LoggerMixin, Gst.Bin):
 
         # https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_FAQ.html#on-jetson-platform-i-get-same-output-when-multiple-jpeg-images-are-fed-to-nvv4l2decoder-using-multifilesrc-plugin-why-is-that
         if branch.codec == Codec.JPEG and is_aarch64():
+
             def on_add_element(
                 bin: Gst.Bin,
                 elem: Gst.Element,

@@ -4,7 +4,7 @@ import subprocess
 
 def is_aarch64():
     """Checks if the current platform is Jetson."""
-    return platform.uname()[4] == 'aarch64'
+    return platform.machine() == 'aarch64'
 
 
 def get_l4t_version():
