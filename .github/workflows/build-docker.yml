@@ -83,12 +83,13 @@ jobs:
           ${{ env.REGISTRY }}/${{ github.repository_owner }}/savant-${{ matrix.docker_suffix }}:${{ needs.get-version.outputs.savant_version }}-${{ needs.get-version.outputs.deepstream_version }}
           ${{ env.REGISTRY }}/${{ github.repository_owner }}/savant-${{ matrix.docker_suffix }}:latest
         build-args: |
+          SAVANT_VERSION=${{ needs.get-version.outputs.savant_version }}
           DEEPSTREAM_VERSION=${{ needs.get-version.outputs.deepstream_version }}
         platforms: ${{ matrix.arch }}
         target: base
         push: true
 
-    # adapters image
+    # adapter image
     - name: Build and push savant-adapters-deepstream docker image
       uses: docker/build-push-action@v4
       with:
