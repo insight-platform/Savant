@@ -170,8 +170,6 @@ Next Steps
    advanced_topics/6_chaining
    advanced_topics/7_python_only
    advanced_topics/8_ext_systems
-   advanced_topics/9_advanced_image_modifications
-
 
 .. toctree::
    :maxdepth: 1
