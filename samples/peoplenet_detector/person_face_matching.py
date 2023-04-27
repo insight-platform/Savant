@@ -28,6 +28,7 @@ def _calc_intersection_areas(boxes_a: np.ndarray, boxes_b: np.ndarray) -> np.nda
 
     return intersections_widths * intersections_heights
 
+
 def _iou(boxes_a: np.ndarray, boxes_b: np.ndarray) -> np.ndarray:
     """Calculates IoU coefficients for two sets of boxes.
 
@@ -47,6 +48,7 @@ def _iou(boxes_a: np.ndarray, boxes_b: np.ndarray) -> np.ndarray:
     union_areas = areas_a[:, np.newaxis] + areas_b - inter_areas
 
     return inter_areas / union_areas
+
 
 def match_person_faces(person_boxes: np.ndarray, face_boxes: np.ndarray) -> List[int]:
     """Matches persons and faces based on their bounding boxes' IOU coefficients.

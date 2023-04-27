@@ -18,7 +18,7 @@ from savant.gstreamer.metadata import (
     metadata_add_frame_meta,
     OnlyExtendedDict,
 )
-from savant.gstreamer.utils import LoggerMixin
+from savant.utils.logging import LoggerMixin
 
 DEFAULT_SOURCE_TIMEOUT = 60
 DEFAULT_SOURCE_EVICTION_INTERVAL = 15

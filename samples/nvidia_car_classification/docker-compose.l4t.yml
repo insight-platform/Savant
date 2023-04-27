@@ -22,13 +22,13 @@ services:
       interval: 5s
       start_period: 5s
   module:
-    image: ghcr.io/insight-platform/savant-deepstream-l4t:0.2.0-6.2-samples
+    image: ghcr.io/insight-platform/savant-deepstream-l4t:latest
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../models/nvidia_car_classification:/models
       - ../../downloads/nvidia_car_classification:/downloads
-      - .:/opt/app/samples/nvidia_car_classification
+      - .:/opt/savant/samples/nvidia_car_classification
     command: samples/nvidia_car_classification/module.yml
     environment:
       - ZMQ_SRC_ENDPOINT=ipc:///tmp/zmq-sockets/input-video.ipc
@@ -45,7 +45,7 @@ services:
               count: 1
               capabilities: [gpu]
   rtsp-source:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:0.2.0
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:latest
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -61,9 +61,9 @@ services:
       - RTSP_URI=rtsp://rtsp-server:8554/nvidia-sample
       - SOURCE_ID=nvidia-sample-processed
       - SYNC_OUTPUT=True
-    entrypoint: /opt/app/adapters/gst/sources/rtsp.sh
+    entrypoint: /opt/savant/adapters/gst/sources/rtsp.sh
   always-on-sink:
-    image: ghcr.io/insight-platform/savant-adapters-deepstream-l4t:0.2.0-6.2
+    image: ghcr.io/insight-platform/savant-adapters-deepstream-l4t:latest
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets

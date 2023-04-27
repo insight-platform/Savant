@@ -1,4 +1,5 @@
 """Overlay dashboard module."""
+from pathlib import Path
 import cv2
 
 from savant.deepstream.drawfunc import NvDsDrawFunc
@@ -36,17 +37,19 @@ class Overlay(NvDsDrawFunc):
             self.counters_height, self.counters_font_thickness, self.font_face
         )
 
+        sprites_path = Path(__file__).parent.resolve() / 'sprites'
+
         self.logo = load_sprite(
-            '/opt/app/samples/peoplenet_detector/sprites/logo_insight.png',
+            str(sprites_path / 'logo_insight.png'),
             self.logo_height,
         )
         self.green_man = Animation(
-            '/opt/app/samples/peoplenet_detector/sprites/green_man/',
+            str(sprites_path / 'green_man'),
             10,
             self.sprite_height,
         )
         self.blue_man = Animation(
-            '/opt/app/samples/peoplenet_detector/sprites/blue_man/',
+            str(sprites_path / 'blue_man'),
             10,
             self.sprite_height,
         )

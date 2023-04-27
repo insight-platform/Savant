@@ -70,7 +70,7 @@ def files_source(
     location: str,
     file_type: str,
     envs: List[str],
-    entrypoint: str = '/opt/app/adapters/gst/sources/media_files.sh',
+    entrypoint: str = '/opt/savant/adapters/gst/sources/media_files.sh',
     extra_volumes: List[str] = None,
 ):
     """Read picture or video files from LOCATION.
@@ -269,7 +269,7 @@ def video_loop_source(
         location=location,
         file_type='video',
         envs=envs,
-        entrypoint='/opt/app/adapters/gst/sources/video_loop.sh',
+        entrypoint='/opt/savant/adapters/gst/sources/video_loop.sh',
         extra_volumes=volumes,
     )
 
@@ -402,7 +402,7 @@ def rtsp_source(
         zmq_type=out_type,
         zmq_bind=out_bind,
         sync=sync,
-        entrypoint='/opt/app/adapters/gst/sources/rtsp.sh',
+        entrypoint='/opt/savant/adapters/gst/sources/rtsp.sh',
         envs=envs,
         docker_image=docker_image,
     )
@@ -441,7 +441,7 @@ def usb_cam_source(
         zmq_endpoint=out_endpoint,
         zmq_type=out_type,
         zmq_bind=out_bind,
-        entrypoint='/opt/app/adapters/gst/sources/usb_cam.sh',
+        entrypoint='/opt/savant/adapters/gst/sources/usb_cam.sh',
         envs=(
             build_common_envs(
                 source_id=source_id,
@@ -565,7 +565,7 @@ def gige_cam_source(
         zmq_endpoint=out_endpoint,
         zmq_type=out_type,
         zmq_bind=out_bind,
-        entrypoint='/opt/app/adapters/gst/sources/gige_cam.sh',
+        entrypoint='/opt/savant/adapters/gst/sources/gige_cam.sh',
         envs=envs,
         docker_image=docker_image,
         host_network=host_network,

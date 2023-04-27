@@ -22,6 +22,9 @@ class GstElementFactory:
         if element.element == 'capsfilter':
             return self.create_caps_filter(element)
 
+        if element.element == 'videotestsrc':
+            return self.create_videotestsrc(element)
+
         if isinstance(element, PipelineElement):
             return self.create_element(element)
 
@@ -66,3 +69,35 @@ class GstElementFactory:
         if caps:
             gst_element.set_property('caps', caps)
         return gst_element
+
+    @staticmethod
+    def create_videotestsrc(element: PipelineElement) -> Gst.Bin:
+        """videotestsrc element as Gst.Bin with `pad-added`."""
+        src_decodebin = Gst.Bin.new(element.name)
+
+        src_element = GstElementFactory.create_element(element)
+        Gst.Bin.add(src_decodebin, src_element)
+
+        decodebin = GstElementFactory.create_element(PipelineElement('decodebin'))
+
+        def on_pad_added(elem: Gst.Element, pad: Gst.Pad):
+            """Proxy newly added pad to bin."""
+            ghost_pad: Gst.GhostPad = Gst.GhostPad.new(pad.get_name(), pad)
+            ghost_pad.set_active(True)
+            src_decodebin.add_pad(ghost_pad)
+
+        def on_pad_removed(elem: Gst.Element, pad: Gst.Pad):
+            """Remove ghost pad for removed pad."""
+            for ghost_pad in src_decodebin.iterate_pads():
+                if ghost_pad.get_name() == pad.get_name():
+                    src_decodebin.remove_pad(ghost_pad)
+                    return
+
+        decodebin.connect('pad-added', on_pad_added)
+        decodebin.connect('pad-removed', on_pad_removed)
+
+        Gst.Bin.add(src_decodebin, decodebin)
+
+        src_element.link(decodebin)
+
+        return src_decodebin

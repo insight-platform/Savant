@@ -5,14 +5,8 @@
     "fields": [
         {
             "name": "type",
-            "type": {
-                "type": "enum",
-                "name": "ExternalFrameType",
-                "symbols": [
-                    "zeromq"
-                ]
-            },
-            "doc": "External frame type, e.g. 'zeromq'."
+            "type": "string",
+            "doc": "External frame type, e.g. 'zeromq', 'keydb'."
         },
         {
             "name": "location",

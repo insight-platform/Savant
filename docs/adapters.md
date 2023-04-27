@@ -195,7 +195,7 @@ Example:
 
 ```bash
     docker run --rm -it --name source-pictures-files-test \
-    --entrypoint /opt/app/adapters/gst/sources/media_files.sh \
+    --entrypoint /opt/savant/adapters/gst/sources/media_files.sh \
     -e SYNC_OUTPUT=False \
     -e ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/input-video.ipc \
     -e ZMQ_TYPE=DEALER \
@@ -207,7 +207,7 @@ Example:
     -e READ_METADATA=False \
     -v /path/to/images:/path/to/images:ro \
     -v /tmp/zmq-sockets:/tmp/zmq-sockets \
-    ghcr.io/insight-platform/savant-adapters-gstreamer:0.2.0
+    ghcr.io/insight-platform/savant-adapters-gstreamer:latest
 ```
 
 The same adapter can be run using a script:
@@ -243,7 +243,7 @@ Example:
 
 ```bash
 docker run --rm -it --name source-video-files-test \
-    --entrypoint /opt/app/adapters/gst/sources/media_files.sh \
+    --entrypoint /opt/savant/adapters/gst/sources/media_files.sh \
     -e SYNC_OUTPUT=False \
     -e ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/input-video.ipc \
     -e ZMQ_TYPE=DEALER \
@@ -255,7 +255,7 @@ docker run --rm -it --name source-video-files-test \
     -e READ_METADATA=False \
     -v /path/to/data/test.mp4:/path/to/data/test.mp4:ro \
     -v /tmp/zmq-sockets:/tmp/zmq-sockets \
-    ghcr.io/insight-platform/savant-adapters-gstreamer:0.2.0
+    ghcr.io/insight-platform/savant-adapters-gstreamer:latest
 ```
 
 The same adapter can be run using a script:
@@ -294,7 +294,7 @@ Example:
 
 ```bash
 docker run --rm -it --name source-video-loop-test \
-    --entrypoint /opt/app/adapters/gst/sources/video_loop.sh \
+    --entrypoint /opt/savant/adapters/gst/sources/video_loop.sh \
     -e SYNC_OUTPUT=False \
     -e ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/input-video.ipc \
     -e ZMQ_TYPE=DEALER \
@@ -306,7 +306,7 @@ docker run --rm -it --name source-video-loop-test \
     -v /path/to/data/test.mp4:/path/to/data/test.mp4:ro \
     -v /tmp/zmq-sockets:/tmp/zmq-sockets \
     -v /tmp/video-loop-source-downloads:/tmp/video-loop-source-downloads \
-    ghcr.io/insight-platform/savant-adapters-gstreamer:0.2.0
+    ghcr.io/insight-platform/savant-adapters-gstreamer:latest
 ```
 
 The same adapter can be run using a script:
@@ -336,7 +336,7 @@ Example:
 
 ```bash
     docker run --rm -it --name source-video-files-test \
-    --entrypoint /opt/app/adapters/gst/sources/rtsp.sh \
+    --entrypoint /opt/savant/adapters/gst/sources/rtsp.sh \
     -e SYNC_OUTPUT=False \
     -e ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/input-video.ipc \
     -e ZMQ_TYPE=DEALER \
@@ -344,7 +344,7 @@ Example:
     -e SOURCE_ID=test \
     -e RTSP_URI=rtsp://192.168.1.1 \
     -v /tmp/zmq-sockets:/tmp/zmq-sockets \
-    ghcr.io/insight-platform/savant-adapters-gstreamer:0.2.0
+    ghcr.io/insight-platform/savant-adapters-gstreamer:latest
 ```
 
 The same adapter can be run using a script:
@@ -372,7 +372,7 @@ Example:
 
 ```bash
     docker run --rm -it --name source-video-files-test \
-    --entrypoint /opt/app/adapters/gst/sources/rtsp.sh \
+    --entrypoint /opt/savant/adapters/gst/sources/rtsp.sh \
     -e ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/input-video.ipc \
     -e ZMQ_TYPE=DEALER \
     -e ZMQ_BIND=False \
@@ -380,7 +380,7 @@ Example:
     -e DEVICE=/dev/video1 \
     -e FRAMERATE=30/1 \
     -v /tmp/zmq-sockets:/tmp/zmq-sockets \
-    ghcr.io/insight-platform/savant-adapters-gstreamer:0.2.0
+    ghcr.io/insight-platform/savant-adapters-gstreamer:latest
 ```
 
 The same adapter can be run using a script:
@@ -420,14 +420,14 @@ Example:
 
 ```bash
     docker run --rm -it --name source-video-files-test \
-    --entrypoint /opt/app/adapters/gst/sources/gige_cam.sh \
+    --entrypoint /opt/savant/adapters/gst/sources/gige_cam.sh \
     -e ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/input-video.ipc \
     -e ZMQ_TYPE=DEALER \
     -e ZMQ_BIND=False \
     -e SOURCE_ID=test \
     -e CAMERA_NAME=test-camera \
     -v /tmp/zmq-sockets:/tmp/zmq-sockets \
-    ghcr.io/insight-platform/savant-adapters-gstreamer:0.2.0
+    ghcr.io/insight-platform/savant-adapters-gstreamer:latest
 ```
 
 The same adapter can be run using a script:
@@ -465,7 +465,7 @@ Example:
 
 ```bash
     docker run --rm -it --name sink-meta-json \
-    --entrypoint /opt/app/adapters/python/sinks/metadata_json.py \
+    --entrypoint /opt/savant/adapters/python/sinks/metadata_json.py \
     -e ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/output-video.ipc \
     -e ZMQ_TYPE=SUB \
     -e ZMQ_BIND=False \
@@ -474,7 +474,7 @@ Example:
     -e CHUNK_SIZE=0 \
     -v /path/to/output/:/path/to/output/ \
     -v /tmp/zmq-sockets:/tmp/zmq-sockets \
-    ghcr.io/insight-platform/savant-adapters-py:0.2.0
+    ghcr.io/insight-platform/savant-adapters-py:latest
 ```
 
 The same adapter can be run using a script:
@@ -502,7 +502,7 @@ Example:
 
 ```bash
     docker run --rm -it --name sink-meta-json \
-    --entrypoint /opt/app/adapters/python/sinks/image_files.py \
+    --entrypoint /opt/savant/adapters/python/sinks/image_files.py \
     -e ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/output-video.ipc \
     -e ZMQ_TYPE=SUB \
     -e ZMQ_BIND=False \
@@ -511,7 +511,7 @@ Example:
     -e CHUNK_SIZE=0 \
     -v /path/to/output/:/path/to/output/ \
     -v /tmp/zmq-sockets:/tmp/zmq-sockets \
-    ghcr.io/insight-platform/savant-adapters-py:0.2.0
+    ghcr.io/insight-platform/savant-adapters-py:latest
 ```
 
 The same adapter can be run using a script:
@@ -539,7 +539,7 @@ Example:
 
 ```bash
     docker run --rm -it --name sink-meta-json \
-    --entrypoint /opt/app/adapters/gst/sinks/video_files.sh \
+    --entrypoint /opt/savant/adapters/gst/sinks/video_files.sh \
     -e ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/output-video.ipc \
     -e ZMQ_TYPE=SUB \
     -e ZMQ_BIND=False \
@@ -548,7 +548,7 @@ Example:
     -e CHUNK_SIZE=0 \
     -v /path/to/output/:/path/to/output/ \
     -v /tmp/zmq-sockets:/tmp/zmq-sockets \
-    ghcr.io/insight-platform/savant-adapters-gstreamer:0.2.0
+    ghcr.io/insight-platform/savant-adapters-gstreamer:latest
 ```
 
 The same adapter can be run using a script:
@@ -575,7 +575,7 @@ Example:
 
 ```bash
     docker run --rm -it --name sink-display \
-    --entrypoint /opt/app/adapters/ds/sinks/display.sh \
+    --entrypoint /opt/savant/adapters/ds/sinks/display.sh \
     -e SYNC_OUTPUT=False \
     -e ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/output-video.ipc \
     -e ZMQ_TYPE=SUB \
@@ -587,7 +587,7 @@ Example:
     -v /tmp/.docker.xauth:/tmp/.docker.xauth \
     -v /tmp/zmq-sockets:/tmp/zmq-sockets \
     --gpus=all \
-    ghcr.io/insight-platform/savant-adapters-deepstream:0.2.0-6.2
+    ghcr.io/insight-platform/savant-adapters-deepstream:latest
 ```
 
 The same adapter can be run using a script:
@@ -653,7 +653,7 @@ Example:
     -e FRAMERATE=30/1 \
     -v /path/to/stub_file/test.jpg:/path/to/stub_file/test.jpg:ro \
     -v /tmp/zmq-sockets:/tmp/zmq-sockets \
-    ghcr.io/insight-platform/savant-adapters-deepstream:0.2.0-6.2 \
+    ghcr.io/insight-platform/savant-adapters-deepstream:latest \
     -m adapters.ds.sinks.always_on_rtsp
 ```
 
