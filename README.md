@@ -13,7 +13,7 @@ that utilize the best Nvidia approaches for data center and edge accelerators ve
 - [Prepare the OS Runtime](https://insight-platform.github.io/Savant/getting_started/0_configure_prod_env.html)
 - [Getting Started Tutorial](https://hello.savant.video/peoplenet-tutorial)
 - [Publications and Samples](https://hello.savant.video/samples)
-- [Architecture](docs/architecture.md) - DRAFT
+- [Architecture Draft](docs/architecture.md)
 - [Documentation](https://insight-platform.github.io/Savant)
 - [Adapters Guide](docs/adapters.md)
 
@@ -267,7 +267,7 @@ As for now, we provide images for x86 architecture and for Jetson hardware.
 - [Prepare the OS Runtime](https://insight-platform.github.io/Savant/getting_started/0_configure_prod_env.html)
 - [Getting Started Tutorial](https://hello.savant.video/peoplenet-tutorial)
 - [Publications and Samples](https://hello.savant.video/samples)
-- [Architecture](docs/architecture.md) - DRAFT
+- [Architecture Draft](docs/architecture.md)
 - [Documentation](https://insight-platform.github.io/Savant)
 - [Adapters Guide](docs/adapters.md)
 

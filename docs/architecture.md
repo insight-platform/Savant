@@ -1,6 +1,6 @@
 # Architecture Overview
 
-**THIS IS WIP SECTION**
+**This is a draft document**. For practically applicable knowledge, please, take a look at the [documentation](https://insight-platform.github.io/Savant/)
 
 avant is a cutting-edge platform that leverages the power of DeepStream SDK, an advanced Nvidia framework designed for streaming AI applications. DeepStream is a cornerstone of the Nvidia ecosystem, unleashing the full potential of Nvidia accelerators in inference tasks.
 
@@ -180,6 +180,3 @@ The whole pipeline of elements works as shown in the picture:
 
 Ideally, heavyweight image frames do not leave the GPU RAM, being handled by CUDA kernels, while the system CPU executes metadata operations. However, sometimes, the image frames or at least parts of them may be copied to the CPU. When an element doesn't have a CUDA kernel implemented, less-efficient processing is accomplished in the system CPU. Another case is when a highly efficient model implemented in CPU exists - e.g., a model from OpenVino Zoo, so it can be effective to copy part of a frame to run CPU inference. 
 
-## Dynamic Pipeline Configuration
-
-TODO
