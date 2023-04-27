@@ -74,20 +74,20 @@ jobs:
     - name: Set up docker buildx
       uses: docker/setup-buildx-action@v2
 
-    # base image
-    - name: Build and push savant-deepstream docker image
-      uses: docker/build-push-action@v4
-      with:
-        file: ${{ matrix.docker_file }}
-        tags: |
-          ${{ env.REGISTRY }}/${{ github.repository_owner }}/savant-${{ matrix.docker_suffix }}:${{ needs.get-version.outputs.savant_version }}-${{ needs.get-version.outputs.deepstream_version }}
-          ${{ env.REGISTRY }}/${{ github.repository_owner }}/savant-${{ matrix.docker_suffix }}:latest
-        build-args: |
-          SAVANT_VERSION=${{ needs.get-version.outputs.savant_version }}
-          DEEPSTREAM_VERSION=${{ needs.get-version.outputs.deepstream_version }}
-        platforms: ${{ matrix.arch }}
-        target: base
-        push: true
+#    # base image
+#    - name: Build and push savant-deepstream docker image
+#      uses: docker/build-push-action@v4
+#      with:
+#        file: ${{ matrix.docker_file }}
+#        tags: |
+#          ${{ env.REGISTRY }}/${{ github.repository_owner }}/savant-${{ matrix.docker_suffix }}:${{ needs.get-version.outputs.savant_version }}-${{ needs.get-version.outputs.deepstream_version }}
+#          ${{ env.REGISTRY }}/${{ github.repository_owner }}/savant-${{ matrix.docker_suffix }}:latest
+#        build-args: |
+#          SAVANT_VERSION=${{ needs.get-version.outputs.savant_version }}
+#          DEEPSTREAM_VERSION=${{ needs.get-version.outputs.deepstream_version }}
+#        platforms: ${{ matrix.arch }}
+#        target: base
+#        push: true
 
     # adapter image
     - name: Build and push savant-adapters-deepstream docker image
@@ -104,56 +104,56 @@ jobs:
         target: adapters
         push: true
 
-  # build adapter's dockers (except deepstream adapters)
-  build-adapters:
-    needs: get-version
-
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      packages: write
-
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - docker_file: docker/Dockerfile.adapters-gstreamer
-            docker_image: savant-adapters-gstreamer
-            arch: linux/amd64
-          - docker_file: docker/Dockerfile.adapters-gstreamer
-            docker_image: savant-adapters-gstreamer-l4t
-            arch: linux/arm64
-          - docker_file: docker/Dockerfile.adapters-py
-            docker_image: savant-adapters-py
-            arch: linux/amd64
-          - docker_file: docker/Dockerfile.adapters-py
-            docker_image: savant-adapters-py-l4t
-            arch: linux/arm64
-
-    steps:
-
-    - uses: actions/checkout@v3
-
-    - name: Log in to the container registry
-      uses: docker/login-action@v2
-      with:
-        registry: ${{ env.REGISTRY }}
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v2
-
-    - name: Set up docker buildx
-      uses: docker/setup-buildx-action@v2
-
-    - name: Build and push docker image
-      uses: docker/build-push-action@v4
-      with:
-        file: ${{ matrix.docker_file }}
-        tags: |
-          ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.docker_image }}:${{ needs.get-version.outputs.savant_version }}
-          ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.docker_image }}:latest
-        platforms: ${{ matrix.arch }}
-        push: true
+#  # build adapter's dockers (except deepstream adapters)
+#  build-adapters:
+#    needs: get-version
+#
+#    runs-on: ubuntu-latest
+#
+#    permissions:
+#      contents: read
+#      packages: write
+#
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        include:
+#          - docker_file: docker/Dockerfile.adapters-gstreamer
+#            docker_image: savant-adapters-gstreamer
+#            arch: linux/amd64
+#          - docker_file: docker/Dockerfile.adapters-gstreamer
+#            docker_image: savant-adapters-gstreamer-l4t
+#            arch: linux/arm64
+#          - docker_file: docker/Dockerfile.adapters-py
+#            docker_image: savant-adapters-py
+#            arch: linux/amd64
+#          - docker_file: docker/Dockerfile.adapters-py
+#            docker_image: savant-adapters-py-l4t
+#            arch: linux/arm64
+#
+#    steps:
+#
+#    - uses: actions/checkout@v3
+#
+#    - name: Log in to the container registry
+#      uses: docker/login-action@v2
+#      with:
+#        registry: ${{ env.REGISTRY }}
+#        username: ${{ github.actor }}
+#        password: ${{ secrets.GITHUB_TOKEN }}
+#
+#    - name: Set up QEMU
+#      uses: docker/setup-qemu-action@v2
+#
+#    - name: Set up docker buildx
+#      uses: docker/setup-buildx-action@v2
+#
+#    - name: Build and push docker image
+#      uses: docker/build-push-action@v4
+#      with:
+#        file: ${{ matrix.docker_file }}
+#        tags: |
+#          ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.docker_image }}:${{ needs.get-version.outputs.savant_version }}
+#          ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.docker_image }}:latest
+#        platforms: ${{ matrix.arch }}
+#        push: true
