@@ -1,4 +1,0 @@
-Frame Mapping
-=============
-
-TODO

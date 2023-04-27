@@ -155,8 +155,8 @@ Dive into :repo-link:`Savant` from :doc:`/getting_started/1_intro` and :doc:`/ma
    savant_101/65_extended_metadata
    savant_101/70_python
    savant_101/80_opencv_cuda
+   savant_101/80_map
    savant_101/90_artist
-   savant_101/99_map
 
 .. toctree::
    :maxdepth: 1

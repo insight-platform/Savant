@@ -15,6 +15,8 @@ Copying them to the CPU and back introduces additional latency, which decreases 
 
 All the above-mentioned strategies can be implemented with the API provided by Savant. To further improve the performance of such operations, you should consider using asynchronous Nvidia CUDA API based on streams. Streams enable sending the operations into a non-blocking executor while the Python code can handle the next operation. You wait for the CUDA stream to complete background processing at the end of the frame processing.
 
+**YOU MUST AVOID CHANGING FRAME DIMENSIONS WITH THE CURRENT FUNCTIONALITY. IT WILL RESULT IN ERROR.**
+
 Direct access to frames on the GPU is achieved by calling the ``nvds_to_gpu_mat`` helper function, for example:
 
 .. code-block:: python
@@ -22,10 +24,11 @@ Direct access to frames on the GPU is achieved by calling the ``nvds_to_gpu_mat`
     from savant.deepstream.opencv_utils import nvds_to_gpu_mat
     def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
         with nvds_to_gpu_mat(buffer, frame_meta.frame_meta) as frame_mat:
-        # frame_mat is a cv2.cuda.GpuMat
+            # frame_mat is a cv2.cuda.GpuMat
 
 
 The variable ``frame_mat`` acting inside the context in the example will refer to the memory of the frame being processed and will have the type ``cv2.cuda.GpuMat``. The work with the frame will be carried out through OpenCV CUDA methods, for example, you can apply Gaussian blur to a certain area of the frame:
+
 
 .. code-block:: python
 
