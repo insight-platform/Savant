@@ -13,6 +13,12 @@ VideoFrame Schema
 .. literalinclude:: ../../../savant/api/avro-schemas/payload/VideoFrame/vision.module.VideoFrame.avsc
    :language: json
 
+ExternalFrame Schema
+--------------------------
+
+.. literalinclude:: ../../../savant/api/avro-schemas/payload/VideoFrame/vision.module.ExternalFrame.avsc
+   :language: json
+
 VideoFrameMetadata Schema
 -------------------------
 

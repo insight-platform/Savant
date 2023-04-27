@@ -112,8 +112,6 @@ As for now, we provide images for x86 architecture and for Jetson hardware.
 Next Steps
 ^^^^^^^^^^
 
-Dive into :repo-link:`Savant` from :doc:`/getting_started/1_intro` and :doc:`/main_concepts/index`.
-
 
 .. toctree::
    :maxdepth: 1
@@ -169,21 +167,11 @@ Dive into :repo-link:`Savant` from :doc:`/getting_started/1_intro` and :doc:`/ma
    advanced_topics/3_skipping_frames
    advanced_topics/3_hybrid_pipelines
    advanced_topics/4_etcd
-   advanced_topics/5_env_vars_yml
    advanced_topics/6_chaining
    advanced_topics/7_python_only
    advanced_topics/8_ext_systems
    advanced_topics/9_advanced_image_modifications
 
-
-.. toctree::
-   :maxdepth: 1
-   :hidden:
-   :caption: Main Concepts
-
-   main_concepts/index
-   main_concepts/model_elements
-   main_concepts/adapters
 
 .. toctree::
    :maxdepth: 1
