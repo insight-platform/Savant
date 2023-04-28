@@ -1,6 +1,5 @@
 # `Makefile` for local development.
-# Use to develop and test your module, format module code,
-# build and run module container for your platform.
+# Use to build and run module container for your platform.
 
 # module/container name
 MODULE_NAME := module
@@ -36,29 +35,3 @@ run-dev:
 		-v `pwd`/module:$(PROJECT_PATH)/module \
 		--entrypoint /bin/bash \
 		$(MODULE_NAME)
-
-# clean project dir
-clean:
-	find . -type d -name __pycache__ -exec rm -rf {} \+
-
-# check with `black` code formatter
-check-black:
-	black --check .
-
-# check string quotes with `unify`
-check-unify:
-	unify --check-only --recursive . | grep -- '--- before' | sed 's#--- before/##'
-	unify --check-only --recursive . > /dev/null
-
-check: check-black check-unify
-
-# run `unify` code formatter
-run-unify:
-	unify --in-place --recursive .
-
-# run `black` code formatter
-run-black:
-	black .
-
-# reformat module code
-reformat: run-unify run-black

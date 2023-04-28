@@ -132,8 +132,8 @@ ARG MEDIAMTX_VERSION="v0.22.1"
 WORKDIR /mediamtx
 RUN wget --progress=bar:force:noscroll \
         "https://github.com/aler9/mediamtx/releases/download/${MEDIAMTX_VERSION}/mediamtx_${MEDIAMTX_VERSION}_linux_armv7.tar.gz" \
-    && tar -xvzf "mediamtx_${MEDIAMTX_VERSION}_linux_amd64.tar.gz" \
-    && rm -f "mediamtx_${MEDIAMTX_VERSION}_linux_amd64.tar.gz"
+    && tar -xvzf "mediamtx_${MEDIAMTX_VERSION}_linux_armv7.tar.gz" \
+    && rm -f "mediamtx_${MEDIAMTX_VERSION}_linux_armv7.tar.gz"
 
 
 FROM base AS adapters

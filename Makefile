@@ -52,6 +52,7 @@ build-adapters-all: build-adapters-py build-adapters-gstreamer build-adapters-de
 build-docs:
 	DOCKER_BUILDKIT=1 docker build \
 	--target docs \
+	--build-arg SAVANT_VERSION=$(SAVANT_VERSION) \
 	--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
 	--build-arg USER_UID=`id -u` \
 	--build-arg USER_GID=`id -g` \
