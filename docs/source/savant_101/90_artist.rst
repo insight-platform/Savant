@@ -44,7 +44,7 @@ Another way to use the default implementation is to populate the ``rendered_obje
 where:
 
 * ``<unit_name>`` the name of the unit defining the objects;
-* ``<class_label>`` the label of object class;
+* ``<class_label>`` the label of the object class set by a detector;
 * ``<color_str>`` color to use when drawing boxes for the ``<unit_name>.<class_label>``.
 
 Besides the standard ``draw_func``, it is also possible to use a custom draw function. In this case, the function must inherit the :py:class:`~savant.deepstream.drawfunc.NvDsDrawFunc` class, overriding the ``draw_on_frame`` method in it.
