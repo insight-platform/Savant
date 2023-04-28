@@ -168,7 +168,6 @@ Next Steps
    advanced_topics/3_hybrid_pipelines
    advanced_topics/4_etcd
    advanced_topics/6_chaining
-   advanced_topics/7_python_only
    advanced_topics/8_ext_systems
 
 .. toctree::
