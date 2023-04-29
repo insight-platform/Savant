@@ -4,21 +4,24 @@ Introduction
 Getting Started Tutorials
 -------------------------
 
-We have created several tutorials to help you get started with Savant. These tutorials are designed to be run on a x86+dGPU, or Jetson NX/AGX+ edge devices. The tutorials are published on Medium:
+We created several tutorials to help you get started with Savant. These tutorials are designed for both x86+dGPU, and Jetson NX/AGX+ edge devices.
+
+The tutorials are published on Medium:
 
 - `Meet Savant: a New High-Performance Python Video Analytics Framework For Nvidia Hardware <https://hello.savant.video/peoplenet-tutorial>`_;
-- `Building a 500+ FPS Accelerated Video Background Removal Pipeline with Savant and OpenCV CUDA MOG2 <https://hello.savant.video/opencv-cuda-bg-remover-mog2-tutorial>`_.
+- `Building a 500+ FPS Accelerated Video Background Removal Pipeline with Savant and OpenCV CUDA MOG2 <https://hello.savant.video/opencv-cuda-bg-remover-mog2-tutorial>`_;
+- `Building a High-Performance Car Classification Pipeline With Savant <https://medium.com/inside-in-sight/building-a-high-performance-car-classifier-pipeline-with-savant-b232461ad96?source=friends_link&sk=63cb289315679af83032ef5247861a2d>`_.
 
-Savant simplifies everyday tasks encountered when building a video analytics pipeline. With GStreamer technicalities being hidden by Savant, all the user writes is code and configuration specific to their video analytics application.
+Savant simplifies everyday tasks, including data ingestion, stream processing, data output, and other operations encountered when building video analytics pipelines. With GStreamer technicalities being hidden by Savant, all the user writes is code and configuration specific to their video analytics application.
 
 How The Pipeline Looks Like
 ---------------------------
 
-Every Savant application consists of two parts: YAML configuration and Python code. The configuration is used to define the pipeline and the Python code is used to implement custom processing.
+Every Savant application consists of two parts: YAML configuration and Python code. The configuration is used to define the pipeline, and the Python code is used to implement custom processing.
 
-Let us represent pieces of YAML serving specific purposes, later in the documentation we will explore them in details:
+Let us represent pieces of YAML serving specific purposes; later in the documentation, we will explore them in detail. There are essential omitted parts in every unit provided in the following code snippets; this is done with the intention of not overwhelming readers with details.
 
-Let us begin with the pipeline with a single element - detector model:
+We begin with a pipeline containing one unit - a detector:
 
 .. code-block:: yaml
 
@@ -31,7 +34,7 @@ Let us begin with the pipeline with a single element - detector model:
             - class_id: 0
               label: car
 
-Next, let us add a classifier model to the pipeline, which will be used to classify cars into different colors:
+Next, add a classifier model to the pipeline, which is used to classify cars into different colors:
 
 .. code-block:: yaml
 
@@ -50,7 +53,7 @@ Next, let us add a classifier model to the pipeline, which will be used to class
         attributes:
           - name: car_color
 
-Next, let us add custom processing in Python, e.g. count the number of detected cars of each color:
+Next, add custom processing in Python, e.g., count the number of detected cars of each color:
 
 .. code-block:: yaml
 
@@ -73,7 +76,7 @@ Next, let us add custom processing in Python, e.g. count the number of detected 
       module: module.car_counter
       class_name: CarCounter
 
-And the contents of ``module/car_counter.py`` would be:
+The contents of ``module/car_counter.py`` would be:
 
 .. code-block:: python
 
@@ -93,5 +96,5 @@ And the contents of ``module/car_counter.py`` would be:
                 counter[car_color_attr.value] += 1
 
 
-This is how a typical Savant pipeline looks like. You may find other examples of pipelines in the `examples <https://github.com/insight-platform/Savant/tree/develop/samples>`_ directory.
+This is what a typical Savant pipeline looks like. Other examples of pipelines can be found in the `examples <https://github.com/insight-platform/Savant/tree/develop/samples>`_ directory.
 

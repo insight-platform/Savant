@@ -6,9 +6,9 @@ Savant modules and adapters are executed in the docker environment. This documen
 General Compatibility Notes
 ---------------------------
 
-*Savant does not support Jetson Nano due to the outdated software stack supported by the device.*
+**Savant does not support 1st-gen Jetson Nano due to the outdated software stack supported by the device.**
 
-:repo-link:`Savant` runs on top of Deepstream ecosystem, therefore, it requires DeepStream's dependencies to be satisfied:
+:repo-link:`Savant` runs on top of DeepStream ecosystem, therefore, it requires DeepStream's dependencies to be satisfied:
 
 * Docker with Compose, R525+ display driver for dGPU platform;
 * Docker with Compose, Jetpack 5.1 GA on Jetson AGX Xavier/ NX, Orin Family.
@@ -18,7 +18,7 @@ You can look for detailed environment setup instructions in the Nvidia `Quicksta
 Ubuntu 22.04
 ------------
 
-At the current moment we provide the information on how to configure Ubuntu-based runtime. If you have other operation system than Ubuntu, please adapt the instructions to conform your OS.
+At the current moment, we provide the instruction on how to configure Ubuntu 22.04 runtime. If you have other operation system than Ubuntu, please adapt the instructions to conform your OS.
 
 Update Packages and Install Basic Tools
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -1,15 +1,15 @@
 Running a Savant module
 =======================
 
-Every piece of Savant framework is executed in a docker container normally. We provide such compose files for evey example we have developed so far. To get idea how to run a Savant module, let us take a look at the docker compose from one of the Savant examples:
+Pieces of Savant framework are normally run in a docker containers. We provide docker compose files for examples we have developed so far. To get an idea how to run a Savant module, let us take a look at the docker compose from one of the Savant examples:
 
 .. literalinclude:: ../../../samples/nvidia_car_classification/docker-compose.x86.yml
   :language: YAML
 
 The file introduces several services:
 
-- ``module``:  Savant module that runs video analytics on the video streams;
-- ``rtsp-source``: adapter that provides video streams from RTSP cameras to the module;
-- ``always-on-sink``: adapter that receives the results of video analytics and represents them in the form of RTSP-stream.
+- ``module``:  the Savant module that runs video analytics on the video streams;
+- ``rtsp-source``: the adapter that ingests video streams from the RTSP camera to the module;
+- ``always-on-sink``: the adapter that receives the results of video analytics and represents them as RTSP-stream.
 
-In the next sections, we dive into the details of each service. We will explain what are the adapters and how do they communicate with modules.
+In the following sections, we dive into the details of modules and explain what the adapters are and how do they communicate with modules.
