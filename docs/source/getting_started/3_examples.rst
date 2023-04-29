@@ -1,7 +1,7 @@
 Examples
 ========
 
-We developed example pipelines to help people get acquainted with Savant. Every example contains a short readme instruction on how to run it. Some examples also accompanied by the articles published on Medium.
+We developed example pipelines to help people get acquainted with Savant. Every example contains a short readme instruction on how to run it. Some examples are also accompanied by the articles published on Medium.
 
 Currently available examples are:
 
