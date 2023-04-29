@@ -15,5 +15,5 @@ The API to access the frame with NumPy is provided with the utility function ``g
             # frame_mat is a numpy.ndarray
 
 
-As a result, the ``frame_mat`` variable will have the ``numpy.ndarray`` type and contain the RGBA array of the frame being processed. Upon exiting the context, the changes made to the array will be saved in the frame. However, it is worth considering that the restrictions specified in the Deepstream `documentation <https://docs.nvidia.com/metropolis/deepstream/python-api/PYTHON_API/Methods/methodsdoc.html#get-nvds-buf-surface>`__ apply.
+As a result, the ``frame_mat`` variable will have the ``numpy.ndarray`` type and contain the RGBA array of the frame being processed. Upon exiting the context, the changes made to the array will be saved in the frame. However, it is worth considering that the restrictions specified in the DeepStream `documentation <https://docs.nvidia.com/metropolis/deepstream/python-api/PYTHON_API/Methods/methodsdoc.html#get-nvds-buf-surface>`__ apply.
 
