@@ -139,12 +139,12 @@ Next Steps
    savant_101/00_streaming_model
    savant_101/10_adapters
    savant_101/12_module_definition
+   savant_101/12_var_interpolation
    savant_101/20_video_processing
    savant_101/24_metadata
    savant_101/25_top_level_roi
    savant_101/27_working_with_models
    savant_101/29_pipeline
-   savant_101/29_var_referencing
    savant_101/30_dm
    savant_101/40_cm
    savant_101/43_am

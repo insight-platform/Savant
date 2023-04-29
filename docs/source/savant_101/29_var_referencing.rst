@@ -1,2 +1,0 @@
-Variables Substitution and Referencing
-======================================
