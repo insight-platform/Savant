@@ -1,10 +1,10 @@
 name: Build and publish documentation
 
 on:
-  workflow_run:
-    workflows: [Build and publish docker images]
-    types:
-      - completed
+#  workflow_run:
+#    workflows: [Build and publish docker images]
+#    types:
+#      - completed
 
   # to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -36,7 +36,7 @@ jobs:
     # TODO: check if docker_image exists
 
   build-docs:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+#    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     needs: check-docs-docker
     runs-on: ubuntu-latest
     container:
