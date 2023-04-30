@@ -1,15 +1,12 @@
 Module Overview
 ===============
 
-A module is an executable unit that can be deployed and executed on Nvidia edge devices
-or in the cloud on x86 servers with discrete GPUs. The module is defined in a YAML configuration file.
+A module is an executable unit that is deployed and executed on Nvidia edge devices or in the cloud on x86 servers with discrete GPUs. The module is defined in a YAML configuration file.
 
 Module Runtime
 --------------
 
-Modules are executed within specially prepared docker containers. If a module does not require any additional dependencies, a base Savant docker image may be used to run it. Otherwise, a customized container must be built based on the selected base image.
-
-We provide base images for:
+Modules are executed within specially prepared docker containers. If a module does not require any additional dependencies, a base Savant docker image may be used to run it. Otherwise, a customized container must be built based on the selected base image. We provide base images for:
 
 * Nvidia DGPUs on x86 architecture
 
