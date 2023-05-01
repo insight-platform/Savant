@@ -24,7 +24,7 @@ The module utilizes the following directories:
 
 * ``/models`` - where compiled models are located;
 * ``/downloads`` - where the module downloads models from remote locations;
-* ``/opt/app`` - where the module expects the application code root is.
+* ``/opt/savant`` - where the module expects the application code root is.
 
 Normally, you map host's directories to above-mentioned paths. You also can override ``/downloads`` and ``/models`` with the following parameters:
 
