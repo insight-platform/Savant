@@ -1,4 +1,4 @@
-Communicating With External Systems
+Communication With External Systems
 ===================================
 
 We consider three kinds of pipeline circuits:
