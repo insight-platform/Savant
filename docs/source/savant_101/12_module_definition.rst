@@ -44,6 +44,8 @@ Parameters
 
 Any number of :py:attr:`~savant.config.schema.Module.parameters` can be set in the ``parameters`` section of the module configuration file, including user-defined ones.
 
+If you need to define a per-stream configuration, consider using external configuration options like Etcd or a database like Redis or MongoDB. Another option could be passing the required instructions in the Savant protocol with frame tags enabling precise per-frame configuration.
+
 The following parameters are defined for a Savant module by default:
 
 .. literalinclude:: ../../../savant/config/default.yml
