@@ -67,9 +67,9 @@ To access parameter values in runtime use the :py:class:`~savant.parameter_stora
 Dynamic Parameters
 ^^^^^^^^^^^^^^^^^^
 
-Savant also supports module-wide dynamic parameters. Those parameters can receive new values during the module execution. Those parameters are defined within ``dynamic_parameters`` section. Currently, only Etcd is supported as a dynamic parameter source. The Etcd connection is configured with ``parameters.etcd_config`` section.
+Savant supports module-wide dynamic parameters. Those parameters can retrieve their current values during the module execution. They are defined within the ``dynamic_parameters`` section. Currently, only Etcd is supported as a dynamic parameter source. The Etcd connection is configured with the ``parameters.etcd_config`` section.
 
-Dynamic parameters are also available with the same function:
+The dynamic parameters are also available in the functions:
 
 .. code-block:: python
 
@@ -113,15 +113,15 @@ TODO: queue_maxsize
 Log Level
 ^^^^^^^^^
 
-The ``log_level`` parameter defines the log-level configured for the framework. By default it is configured as ``log_level: ${oc.env:LOGLEVEL, 'INFO'}`` which allows overriding it with the ``LOGLEVEL`` environment variable.
+The ``log_level`` parameter defines the verbosity of logging for the framework. By default, it is configured as ``log_level: ${oc.env:LOGLEVEL, 'INFO'}`` which allows overriding it with the ``LOGLEVEL`` environment variable.
 
 Output Video Stream Codec
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If the ``output_frame`` section is set, Savant adds encoded video-streams to sink. More information you will find in the next section :doc:`20_video_processing`.
+If the ``output_frame`` section is set, Savant adds encoded video streams to sink. More information you will find in the next section :doc:`20_video_processing`.
 
 Pipeline
 --------
 
-Pipeline is where the processing steps are defined. In the section, detectors, classifiers, segmenting units, and custom python units are placed. We will describe the pipeline in details in the following sections.
+The pipeline section is where the processing steps are defined. In the section, detectors, classifiers, segmenting units, and custom Python units are placed. They are described in detail in the following sections.
 
