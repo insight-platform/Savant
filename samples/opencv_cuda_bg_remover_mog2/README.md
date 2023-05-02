@@ -51,8 +51,8 @@ curl --silent -O -- https://hello.savant.video/opencv_cuda_bg_remover_mog2.html
 # if Jetson
 ../../utils/check-environment-compatible && docker compose -f docker-compose.l4t.yml up
 
-# open 'rtsp://127.0.0.1:8554/road-traffic-processed' in your player
-# or visit 'http://127.0.0.1:8888/road-traffic-processed/' (LL-HLS)
+# open 'rtsp://127.0.0.1:554/stream' in your player
+# or visit 'http://127.0.0.1:888/stream/' (LL-HLS)
 
 # Ctrl+C to stop running the compose bundle
 
