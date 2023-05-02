@@ -31,11 +31,11 @@ Preview:
 
 ### Line crossing demo
 
-Sample Location: [line_crossing](./line_crossing)
+Sample Location: [traffic_meter](./traffic_meter)
 
 Preview:
 
-![](line_crossing/assets/line-crossing-loop-400.webp)
+![](traffic_meter/assets/traffic-meter-loop-400.webp)
 
 ## Utility And Coding Examples 
 

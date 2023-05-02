@@ -4,7 +4,7 @@ import cv2
 from savant.deepstream.drawfunc import NvDsDrawFunc
 from savant.deepstream.meta.frame import NvDsFrameMeta, BBox
 from savant.utils.artist import Position, Artist
-from samples.line_crossing.utils import Direction, RandColorIterator
+from samples.traffic_meter.utils import Direction, RandColorIterator
 
 
 class Overlay(NvDsDrawFunc):

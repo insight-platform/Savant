@@ -4,7 +4,7 @@ from statsd import StatsClient
 from savant.gstreamer import Gst
 from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.deepstream.pyfunc import NvDsPyFuncPlugin
-from samples.line_crossing.utils import TwoLinesCrossingTracker, Point, Direction
+from samples.traffic_meter.utils import TwoLinesCrossingTracker, Point, Direction
 
 
 class ConditionalDetectorSkip(NvDsPyFuncPlugin):
@@ -46,10 +46,10 @@ class LineCrossing(NvDsPyFuncPlugin):
         self.cross_events = defaultdict(lambda: defaultdict(list))
 
         # metrics namescheme
-        # savant.module.line_crossing.source_id.obj_class_label.exit
-        # savant.module.line_crossing.source_id.obj_class_label.entry
+        # savant.module.traffic_meter.source_id.obj_class_label.exit
+        # savant.module.traffic_meter.source_id.obj_class_label.entry
         self.stats_client = StatsClient(
-            'graphite', 8125, prefix='savant.module.line_crossing'
+            'graphite', 8125, prefix='savant.module.traffic_meter'
         )
 
     def on_source_eos(self, source_id: str):

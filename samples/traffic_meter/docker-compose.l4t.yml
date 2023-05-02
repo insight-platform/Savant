@@ -14,7 +14,7 @@ services:
       - "rtsp-server:rtsp-server"
     depends_on:
       - rtsp-server
-    command: -re -stream_loop -1 -i https://eu-central-1.linodeobjects.com/savant-data/line-crossing/AVG-TownCentre.mp4 -c copy -bsf:v h264_mp4toannexb -f rtsp rtsp://rtsp-server:8554/town-centre
+    command: -re -stream_loop -1 -i https://eu-central-1.linodeobjects.com/savant-data/traffic-meter/AVG-TownCentre.mp4 -c copy -bsf:v h264_mp4toannexb -f rtsp rtsp://rtsp-server:8554/town-centre
     healthcheck:
       test: ["CMD", "ffprobe", "rtsp://rtsp-server:8554/town-centre"]
       interval: 5s
@@ -22,13 +22,13 @@ services:
   module:
     build: 
       context: .
-      dockerfile: docker/Dockerfile.x86
+      dockerfile: docker/Dockerfile.l4t
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
-      - ../../models/line_crossing:/models
-      - ../../downloads/line_crossing:/downloads
-      - .:/opt/savant/samples/line_crossing
-    command: samples/line_crossing/module-${DETECTOR}.yml
+      - ../../models/traffic_meter:/models
+      - ../../downloads/traffic_meter:/downloads
+      - .:/opt/savant/samples/traffic_meter
+    command: samples/traffic_meter/module-${DETECTOR}.yml
     environment:
       - ZMQ_SRC_ENDPOINT=ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SRC_TYPE=SUB
@@ -44,7 +44,7 @@ services:
               count: 1
               capabilities: [gpu]
   rtsp-source:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:latest
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
     links:
@@ -61,7 +61,7 @@ services:
       - SYNC_OUTPUT=True
     entrypoint: /opt/savant/adapters/gst/sources/rtsp.sh
   always-on-sink:
-    image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
+    image: ghcr.io/insight-platform/savant-adapters-deepstream-l4t:latest
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../stub_imgs:/stub_imgs
@@ -86,11 +86,11 @@ services:
               capabilities: [gpu]
   graphite:
     image: graphiteapp/graphite-statsd
-  graphana:
+  grafana:
     image: grafana/grafana-oss
     volumes:
-      - ./graphana_datasources:/etc/grafana/provisioning/datasources/
-      - ./graphana_dashboards:/etc/grafana/provisioning/dashboards/
+      - ./grafana_datasources:/etc/grafana/provisioning/datasources/
+      - ./grafana_dashboards:/etc/grafana/provisioning/dashboards/
     ports:
       - "3000:3000"
     environment:

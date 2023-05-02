@@ -1,10 +1,10 @@
 # Line crossing demo
 
-The pipeline detects when people cross a user-configured line and the direction of the crossing. The crossing events are attached to individual tracks, counted for each source separately and the counters are displayed on the frame. The crossing events are also stored with Graphite and displayed on a Graphana dashboard.
+The pipeline detects when people cross a user-configured line and the direction of the crossing. The crossing events are attached to individual tracks, counted for each source separately and the counters are displayed on the frame. The crossing events are also stored with Graphite and displayed on a Grafana dashboard.
 
 Preview:
 
-![](assets/line-crossing-loop.webp)
+![](assets/traffic-meter-loop.webp)
 
 Tested on platforms:
 
@@ -25,12 +25,12 @@ Run the demo:
 
 ```bash
 git clone https://github.com/insight-platform/Savant.git
-cd Savant/samples/line_crossing
+cd Savant/samples/traffic_meter
 git lfs pull
 
 # if you want to share with us where are you from
 # run the following command, it is completely optional
-curl --silent -O -- https://hello.savant.video/line_crossing.html
+curl --silent -O -- https://hello.savant.video/traffic_meter.html
 
 # if x86
 ../../utils/check-environment-compatible && docker compose -f docker-compose.x86.yml up
@@ -41,7 +41,7 @@ curl --silent -O -- https://hello.savant.video/line_crossing.html
 # open 'rtsp://127.0.0.1:8554/town-centre-processed' in your player
 # or visit 'http://127.0.0.1:8888/town-centre-processed/' (LL-HLS)
 
-# for pre-configured Graphana dashboard visit
+# for pre-configured Grafana dashboard visit
 # http://127.0.0.1:3000/d/WM6WimE4z/entries-exits?orgId=1&refresh=5s
 
 # Ctrl+C to stop running the compose bundle
@@ -50,4 +50,4 @@ curl --silent -O -- https://hello.savant.video/line_crossing.html
 cd ../..
 ```
 
-To create a custom Graphana dashboard, sign in with `admin\admin` credentials.
+To create a custom Grafana dashboard, sign in with `admin\admin` credentials.
