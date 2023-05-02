@@ -31,12 +31,8 @@ services:
       - ..:/opt/savant/samples
     command: samples/opencv_cuda_bg_remover_mog2/demo.yml
     environment:
-      - ZMQ_SRC_ENDPOINT=ipc:///tmp/zmq-sockets/input-video.ipc
-      - ZMQ_SRC_TYPE=SUB
-      - ZMQ_SRC_BIND=True
-      - ZMQ_SINK_ENDPOINT=ipc:///tmp/zmq-sockets/output-video.ipc
-      - ZMQ_SINK_TYPE=PUB
-      - ZMQ_SINK_BIND=True
+      - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
+      - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
     deploy:
       resources:
         reservations:
@@ -55,9 +51,7 @@ services:
       road-traffic:
         condition: service_healthy
     environment:
-      - ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/input-video.ipc
-      - ZMQ_TYPE=PUB
-      - ZMQ_BIND=False
+      - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
       - RTSP_URI=rtsp://rtsp-server:8554/road-traffic
       - SOURCE_ID=road-traffic-processed
       - SYNC_OUTPUT=True
@@ -73,9 +67,7 @@ services:
     depends_on:
       - rtsp-server
     environment:
-      - ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/output-video.ipc
-      - ZMQ_TYPE=SUB
-      - ZMQ_BIND=False
+      - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
       - RTSP_URI=rtsp://rtsp-server:8554/road-traffic-processed
       - SOURCE_ID=road-traffic-processed
       - STUB_FILE_LOCATION=/stub_img/smpte100_2560x720.jpeg

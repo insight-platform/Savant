@@ -10,9 +10,7 @@ services:
     environment:
       - LOCATION=https://eu-central-1.linodeobjects.com/savant-data/demo/Free_City_Street_Footage.mp4
       - DOWNLOAD_PATH=/tmp/video-loop-source-downloads
-      - ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/input-video.ipc
-      - ZMQ_TYPE=PUB
-      - ZMQ_BIND=False
+      - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
       - SOURCE_ID=city-traffic
       - SYNC_OUTPUT=True
     entrypoint: /opt/savant/adapters/gst/sources/video_loop.sh
@@ -29,12 +27,8 @@ services:
       - ..:/opt/savant/samples
     command: samples/peoplenet_detector/demo.yml
     environment:
-      - ZMQ_SRC_ENDPOINT=ipc:///tmp/zmq-sockets/input-video.ipc
-      - ZMQ_SRC_TYPE=SUB
-      - ZMQ_SRC_BIND=True
-      - ZMQ_SINK_ENDPOINT=ipc:///tmp/zmq-sockets/output-video.ipc
-      - ZMQ_SINK_TYPE=PUB
-      - ZMQ_SINK_BIND=True
+      - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
+      - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
       - FPS_PERIOD=1000
     deploy:
       resources:
@@ -56,9 +50,7 @@ services:
       - zmq_sockets:/tmp/zmq-sockets
       - ../stub_imgs:/stub_imgs
     environment:
-      - ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/output-video.ipc
-      - ZMQ_TYPE=SUB
-      - ZMQ_BIND=False
+      - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
       - SOURCE_ID=city-traffic
       - FRAMERATE=25/1
       - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x900.jpeg

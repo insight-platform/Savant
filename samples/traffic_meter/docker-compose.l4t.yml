@@ -33,12 +33,8 @@ services:
       - .:/opt/savant/samples/traffic_meter
     command: samples/traffic_meter/module-${DETECTOR}.yml
     environment:
-      - ZMQ_SRC_ENDPOINT=ipc:///tmp/zmq-sockets/input-video.ipc
-      - ZMQ_SRC_TYPE=SUB
-      - ZMQ_SRC_BIND=True
-      - ZMQ_SINK_ENDPOINT=ipc:///tmp/zmq-sockets/output-video.ipc
-      - ZMQ_SINK_TYPE=PUB
-      - ZMQ_SINK_BIND=True
+      - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
+      - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
     deploy:
       resources:
         reservations:
@@ -57,9 +53,7 @@ services:
       rtsp-stream:
         condition: service_healthy
     environment:
-      - ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/input-video.ipc
-      - ZMQ_TYPE=PUB
-      - ZMQ_BIND=False
+      - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
       - RTSP_URI=rtsp://rtsp-server:8554/town-centre
       - SOURCE_ID=town-centre-processed
       - SYNC_OUTPUT=True
@@ -77,9 +71,7 @@ services:
       - zmq_sockets:/tmp/zmq-sockets
       - ../stub_imgs:/stub_imgs
     environment:
-      - ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/output-video.ipc
-      - ZMQ_TYPE=SUB
-      - ZMQ_BIND=False
+      - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
       - SOURCE_ID=town-centre-processed
       - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x720.jpeg
       - DEV_MODE=True
