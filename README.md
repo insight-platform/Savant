@@ -27,7 +27,7 @@ If you are acquainted with running dockerized applications using Nvidia GPUs:
 
 Trying the demo you will find how to craft the following showcase:
 
-![](samples/peoplenet-blur-demo-loop-400.webp)
+![](samples/peoplenet_detector/assets/peoplenet-blur-demo-loop-400.webp)
 
 ```bash
 git clone https://github.com/insight-platform/Savant.git

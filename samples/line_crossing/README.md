@@ -4,7 +4,7 @@ The pipeline detects when people cross a user-configured line and the direction 
 
 Preview:
 
-![](../line-crossing-loop.webp)
+![](assets/line-crossing-loop.webp)
 
 Tested on platforms:
 

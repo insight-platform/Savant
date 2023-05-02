@@ -37,7 +37,7 @@ class Overlay(NvDsDrawFunc):
             self.counters_height, self.counters_font_thickness, self.font_face
         )
 
-        sprites_path = Path(__file__).parent.resolve() / 'sprites'
+        sprites_path = Path(__file__).parent.resolve() / 'assets' / 'sprites'
 
         self.logo = load_sprite(
             str(sprites_path / 'logo_insight.png'),

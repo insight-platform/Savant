@@ -4,7 +4,7 @@ The app reproduces [deepstream-test2 app](https://github.com/NVIDIA-AI-IOT/deeps
 
 Preview:
 
-![](../nvidia-car-classification-loop.webp)
+![](assets/nvidia-car-classification-loop.webp)
 
 Tested on platforms:
 

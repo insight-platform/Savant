@@ -9,7 +9,7 @@ The **Blue** Icon represents how many people with blurred faces in the scene.
 
 Preview:
 
-![](../peoplenet-blur-demo-loop.webp)
+![](assets/peoplenet-blur-demo-loop.webp)
 
 Features:
 

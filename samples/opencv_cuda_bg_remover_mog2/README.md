@@ -6,7 +6,7 @@ The left side represents the orignial frame; the right side represents the framw
 
 Preview:
 
-![](../opencv_cuda_bg_remover_mog2.webp)
+![](assets/opencv_cuda_bg_remover_mog2.webp)
 
 Features:
 
