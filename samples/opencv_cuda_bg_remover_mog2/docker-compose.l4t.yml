@@ -1,28 +1,20 @@
 version: "3.3"
 services:
-  rtsp-server:
-    image: aler9/rtsp-simple-server
-    restart: unless-stopped
-    ports:
-      - "1935:1935"
-      - "8554:8554"
-      - "8888:8888"
-    environment:
-      - RTSP_PROTOCOLS=tcp
-  road-traffic:
-    image: linuxserver/ffmpeg:version-4.4-cli
+
+  video-loop-source:
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:latest
     restart: unless-stopped
     volumes:
-      - ../../data/:/data
-    links:
-      - "rtsp-server:rtsp-server"
-    depends_on:
-      - rtsp-server
-    command: -re -stream_loop -1 -i https://eu-central-1.linodeobjects.com/savant-data/opencv_cuda_bg_remover_mog2/road_traffic.mp4  -c copy -bsf:v h264_mp4toannexb -f rtsp rtsp://rtsp-server:8554/road-traffic
-    healthcheck:
-      test: ["CMD", "ffprobe", "rtsp://rtsp-server:8554/road-traffic"]
-      interval: 5s
-      start_period: 5s
+      - zmq_sockets:/tmp/zmq-sockets
+      - /tmp/video-loop-source-downloads:/tmp/video-loop-source-downloads
+    environment:
+      - LOCATION=https://eu-central-1.linodeobjects.com/savant-data/opencv_cuda_bg_remover_mog2/road_traffic.mp4
+      - DOWNLOAD_PATH=/tmp/video-loop-source-downloads
+      - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
+      - SOURCE_ID=road-traffic-processed
+      - SYNC_OUTPUT=True
+    entrypoint: /opt/savant/adapters/gst/sources/video_loop.sh
+
   module:
     image: ghcr.io/insight-platform/savant-deepstream-l4t:latest
     restart: unless-stopped
@@ -33,6 +25,7 @@ services:
     environment:
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
+      - FPS_PERIOD=1000
     deploy:
       resources:
         reservations:
@@ -40,37 +33,23 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
-  rtsp-source:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:latest
-    restart: unless-stopped
-    volumes:
-      - zmq_sockets:/tmp/zmq-sockets
-    links:
-      - "rtsp-server:rtsp-server"
-    depends_on:
-      road-traffic:
-        condition: service_healthy
-    environment:
-      - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
-      - RTSP_URI=rtsp://rtsp-server:8554/road-traffic
-      - SOURCE_ID=road-traffic-processed
-      - SYNC_OUTPUT=True
-    entrypoint: /opt/savant/adapters/gst/sources/rtsp.sh
+
   always-on-sink:
     image: ghcr.io/insight-platform/savant-adapters-deepstream-l4t:latest
     restart: unless-stopped
+    ports:
+      - "554:554"    # RTSP
+      - "1935:1935"  # RTMP
+      - "888:888"    # HLS
+      - "8889:8889"  # WebRTC
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ./assets/stub_img:/stub_img
-    links:
-      - "rtsp-server:rtsp-server"
-    depends_on:
-      - rtsp-server
     environment:
       - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
-      - RTSP_URI=rtsp://rtsp-server:8554/road-traffic-processed
       - SOURCE_ID=road-traffic-processed
       - STUB_FILE_LOCATION=/stub_img/smpte100_2560x720.jpeg
+      - DEV_MODE=True
     command: python -m adapters.ds.sinks.always_on_rtsp
     deploy:
       resources:
