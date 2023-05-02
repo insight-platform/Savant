@@ -38,8 +38,8 @@ curl --silent -O -- https://hello.savant.video/traffic_meter.html
 # if Jetson
 ../../utils/check-environment-compatible && docker compose -f docker-compose.l4t.yml up
 
-# open 'rtsp://127.0.0.1:8554/town-centre-processed' in your player
-# or visit 'http://127.0.0.1:8888/town-centre-processed/' (LL-HLS)
+# open 'rtsp://127.0.0.1:554/stream' in your player
+# or visit 'http://127.0.0.1:888/stream/' (LL-HLS)
 
 # for pre-configured Grafana dashboard visit
 # http://127.0.0.1:3000/d/WM6WimE4z/entries-exits?orgId=1&refresh=5s

@@ -1,5 +1,6 @@
 version: "3.3"
 services:
+
   rtsp-server:
     image: aler9/rtsp-simple-server
     ports:
@@ -8,6 +9,7 @@ services:
       - "8888:8888"
     environment:
       - RTSP_PROTOCOLS=tcp
+
   rtsp-stream:
     image: linuxserver/ffmpeg:version-4.4-cli
     links:
@@ -19,6 +21,7 @@ services:
       test: ["CMD", "ffprobe", "rtsp://rtsp-server:8554/town-centre"]
       interval: 5s
       start_period: 5s
+
   module:
     build: 
       context: .
@@ -43,6 +46,7 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
+
   rtsp-source:
     image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:latest
     volumes:
@@ -60,22 +64,25 @@ services:
       - SOURCE_ID=town-centre-processed
       - SYNC_OUTPUT=True
     entrypoint: /opt/savant/adapters/gst/sources/rtsp.sh
+
   always-on-sink:
     image: ghcr.io/insight-platform/savant-adapters-deepstream-l4t:latest
+    restart: unless-stopped
+    ports:
+      - "554:554"    # RTSP
+#      - "1935:1935"  # RTMP
+      - "888:888"    # HLS
+      - "8889:8889"  # WebRTC
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../stub_imgs:/stub_imgs
-    links:
-      - "rtsp-server:rtsp-server"
-    depends_on:
-      - rtsp-server
     environment:
       - ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/output-video.ipc
       - ZMQ_TYPE=SUB
       - ZMQ_BIND=False
-      - RTSP_URI=rtsp://rtsp-server:8554/town-centre-processed
       - SOURCE_ID=town-centre-processed
       - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x720.jpeg
+      - DEV_MODE=True
     command: python -m adapters.ds.sinks.always_on_rtsp
     deploy:
       resources:
