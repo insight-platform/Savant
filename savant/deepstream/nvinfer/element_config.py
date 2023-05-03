@@ -126,24 +126,34 @@ def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
     # try to parse engine file and check for a match
     if model_config.engine_file:
         parse_result = NvInferConfig.parse_model_engine_file(model_config.engine_file)
-        if parse_result and (
-            model_config.batch_size,
-            model_config.gpu_id,
-            model_config.precision,
-        ) != (
-            parse_result['batch_size'],
-            parse_result['gpu_id'],
-            parse_result['precision'],
-        ):
-            logger.info(
-                'Specified engine file "%s" does not match configuration: '
-                'batch_size=%d, gpu_id=%d, precision=%s.',
-                model_config.engine_file,
+        if parse_result:
+            # if engine options are not set explicitly
+            # get their values from engine file name
+            if model_config.batch_size is None:
+                model_config.batch_size = parse_result['batch_size']
+            if model_config.gpu_id is None:
+                model_config.gpu_id = parse_result['gpu_id']
+            if model_config.precision is None:
+                model_config.precision = parse_result['precision']
+
+            if (
                 model_config.batch_size,
                 model_config.gpu_id,
-                model_config.precision.name,
-            )
-            model_config.engine_file = None
+                model_config.precision,
+            ) != (
+                parse_result['batch_size'],
+                parse_result['gpu_id'],
+                parse_result['precision'],
+            ):
+                logger.info(
+                    'Specified engine file "%s" does not match configuration: '
+                    'batch_size=%d, gpu_id=%d, precision=%s.',
+                    model_config.engine_file,
+                    model_config.batch_size,
+                    model_config.gpu_id,
+                    model_config.precision.name,
+                )
+                model_config.engine_file = None
 
     # model or engine file must be specified
     model_file_required = True
