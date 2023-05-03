@@ -131,10 +131,13 @@ def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
             # get their values from engine file name
             if model_config.batch_size is None:
                 model_config.batch_size = parse_result['batch_size']
+                logger.debug('Model batch size is taken from engine file name and set to %d', parse_result['batch_size'])
             if model_config.gpu_id is None:
                 model_config.gpu_id = parse_result['gpu_id']
+                logger.debug('Model gpu_id is taken from engine file name and set to %d', parse_result['gpu_id'])
             if model_config.precision is None:
                 model_config.precision = parse_result['precision']
+                logger.debug('Model precision is taken from engine file name and set to %s', parse_result['precision'].name)
 
             if (
                 model_config.batch_size,
