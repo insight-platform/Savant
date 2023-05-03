@@ -15,6 +15,8 @@ General Compatibility Notes
 
 You can look for detailed environment setup instructions in the Nvidia `Quickstart Guide <https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_Quickstart.html#quickstart-guide>`_.
 
+The recommended spare space in a filesystem where docker images are stored is **15 GB**.
+
 Ubuntu 22.04
 ------------
 

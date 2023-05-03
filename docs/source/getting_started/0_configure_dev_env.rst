@@ -9,6 +9,8 @@ Popular Python IDEs like PyCharm Professional and VSCode support the feature to 
 
 **NB2**: Unfortunately, the PyCharm Community edition doesn't support the environment on Docker, so you cannot use it to reproduce the presented instructions.
 
+**NB3**: The recommended spare space in a filesystem where docker images are stored is **20 GB**.
+
 PyCharm Professional
 --------------------
 
