@@ -251,8 +251,9 @@ def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
                     model_config.tlt_model_key,
                 )
 
-    # calibration file required for model in INT8
-    if model_config.precision == ModelPrecision.INT8:
+    # model_file_required is True when the engine file is not built
+    # calibration file is required to build model in INT8
+    if model_config.precision == ModelPrecision.INT8 and model_file_required:
         if not model_config.int8_calib_file:
             raise NvInferConfigException(
                 'INT8 calibration file (model.int8_calib_file) required.'
