@@ -224,7 +224,7 @@ def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
             except TypeError as exception:
                 raise NvInferConfigException(
                     f'model.custom_lib_path "{model_config.custom_lib_path}"'
-                    ' cannot be converted to pathlib.Path.'
+                    ' is invalid.'
                 ) from exception
 
             if model_config.engine_create_func_name is None:
