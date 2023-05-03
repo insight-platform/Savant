@@ -150,8 +150,8 @@ Next Steps
    savant_101/43_am
    savant_101/53_complexm
    savant_101/60_nv_trackers
-   savant_101/65_extended_metadata
    savant_101/70_python
+   savant_101/75_working_with_metadata
    savant_101/80_opencv_cuda
    savant_101/80_map
    savant_101/90_artist

@@ -13,7 +13,7 @@ In Savant, we support two types of metadata: the basic one provided by DeepStrea
 
 .. image:: ../_static/img/24_metadata.png
 
-We will discuss operations on metadata in detail in :doc:`65_extended_metadata`.
+We will discuss operations on metadata in detail in :doc:`75_working_with_metadata`.
 
 When we started this topic, we claimed that initially, the metadata was absent. It is true when vanilla DeepStream is used; with Savant, it is not always like that because Savant's protocol allows for injecting already-existing metadata from outer space.
 

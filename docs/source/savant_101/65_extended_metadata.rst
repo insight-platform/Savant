@@ -1,4 +1,0 @@
-Working With Metadata
-=====================
-
-TODO
