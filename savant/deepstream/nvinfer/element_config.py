@@ -213,6 +213,25 @@ def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
             # use abs path for custom config file
             model_config.custom_config_file = str(custom_config_file_path.resolve())
 
+            if model_config.custom_lib_path is None:
+                raise NvInferConfigException('model.custom_lib_path is required.')
+            try:
+                lib_path = Path(model_config.custom_lib_path)
+                if not lib_path.is_file():
+                    raise NvInferConfigException(
+                        f'model.custom_lib_path "{lib_path}" not found.'
+                    )
+            except TypeError as exception:
+                raise NvInferConfigException(
+                    f'model.custom_lib_path "{model_config.custom_lib_path}"'
+                    ' is invalid.'
+                ) from exception
+
+            if model_config.engine_create_func_name is None:
+                raise NvInferConfigException(
+                    'model.engine_create_func_name is required.'
+                )
+
         elif model_config.format == NvInferModelFormat.ETLT:
             if not model_config.tlt_model_key:
                 model_config.tlt_model_key = 'tlt_encode'  # or 'nvidia_tlt'
