@@ -123,7 +123,6 @@ def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
 
     model_config = OmegaConf.merge(model, model_config)
 
-    logger.info(f'=====\nmodel config\n{model_config}\n==========')
     # try to parse engine file and check for a match
     if model_config.engine_file:
         parse_result = NvInferConfig.parse_model_engine_file(model_config.engine_file)
@@ -154,10 +153,6 @@ def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
             model_file_required = False
         else:
             logger.warning('Model engine file "%s" not found.', engine_file_path)
-    else:
-        logger.info('===\nno engine_file in config\n====')
-
-    logger.info(f'===\nmodel file required {model_file_required}\n=====')
 
     if model_config.model_file:
         model_file_path = model_path / model_config.model_file
