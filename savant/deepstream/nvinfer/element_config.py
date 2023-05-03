@@ -123,6 +123,7 @@ def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
 
     model_config = OmegaConf.merge(model, model_config)
 
+    logger.info(f'=====\nmodel config\n{model_config}\n==========')
     # try to parse engine file and check for a match
     if model_config.engine_file:
         parse_result = NvInferConfig.parse_model_engine_file(model_config.engine_file)
@@ -153,6 +154,10 @@ def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
             model_file_required = False
         else:
             logger.warning('Model engine file "%s" not found.', engine_file_path)
+    else:
+        logger.info('===\nno engine_file in config\n====')
+
+    logger.info(f'===\nmodel file required {model_file_required}\n=====')
 
     if model_config.model_file:
         model_file_path = model_path / model_config.model_file
@@ -212,6 +217,20 @@ def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
                 )
             # use abs path for custom config file
             model_config.custom_config_file = str(custom_config_file_path.resolve())
+
+            try:
+                lib_path = Path(model_config.custom_lib_path)
+                if not lib_path.is_file():
+                    raise NvInferConfigException(
+                        f'custom_lib_path "{lib_path}" not found.'
+                    )
+            except TypeError as exception:
+                raise NvInferConfigException(
+                    f'custom_lib_path "{model_config.custom_lib_path}" cannot be converted to pathlib.Path.'
+                ) from exception
+
+            if model_config.engine_create_func_name is None:
+                raise NvInferConfigException('engine_create_func_name is required.')
 
         elif model_config.format == NvInferModelFormat.ETLT:
             if not model_config.tlt_model_key:
