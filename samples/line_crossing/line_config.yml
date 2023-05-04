@@ -1,7 +1,0 @@
-town-centre-processed:
-  from: [305, 600, 685, 700]
-  to: [325, 580, 705, 680]
-# add other source ids like so
-# road-traffic-processed:
-#   from: [105, 665, 1160, 665]
-#   to: [115, 645, 1175, 645]

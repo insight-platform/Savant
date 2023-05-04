@@ -4,7 +4,7 @@ The app reproduces [deepstream-test2 app](https://github.com/NVIDIA-AI-IOT/deeps
 
 Preview:
 
-![](../nvidia-car-classification-loop.webp)
+![](assets/nvidia-car-classification-loop.webp)
 
 Tested on platforms:
 
@@ -36,8 +36,8 @@ curl --silent -O -- https://hello.savant.video/cars.html
 # if Jetson
 ../../utils/check-environment-compatible && docker compose -f docker-compose.l4t.yml up
 
-# open 'rtsp://127.0.0.1:8554/nvidia-sample-processed' in your player
-# or visit 'http://127.0.0.1:8888/nvidia-sample-processed/' (LL-HLS)
+# open 'rtsp://127.0.0.1:554/stream' in your player
+# or visit 'http://127.0.0.1:888/stream/' (LL-HLS)
 
 # Ctrl+C to stop running the compose bundle
 
