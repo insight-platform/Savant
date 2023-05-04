@@ -141,7 +141,13 @@ class NvInferModel(Model):
     """Key for the TAO toolkit encoded model."""
 
     gpu_id: int = 0
-    """Device ID of GPU to use for pre-processing/inference (dGPU only)."""
+    """Device ID of GPU to use for pre-processing/inference (dGPU only).
+
+    .. note:: In case the model is configured to
+       use the TRT engine file directly, the default value for ``gpu_id``
+       will be taken from the :py:attr:`.engine_file`, by parsing it
+       according to the scheme {model_name}_b{batch_size}_gpu{gpu_id}_{precision}.engine
+    """
 
     # TODO: Add support for custom models.
     #  Currently it is supported for regular detector and classifier only.

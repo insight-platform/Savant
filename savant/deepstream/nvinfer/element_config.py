@@ -3,7 +3,12 @@ from pathlib import Path
 from typing import Type, Optional
 import logging
 from omegaconf import OmegaConf, DictConfig
-from savant.base.model import ModelPrecision, ObjectModel, AttributeModel
+from savant.base.model import (
+    ModelPrecision,
+    ObjectModel,
+    AttributeModel,
+    ModelColorFormat,
+)
 from savant.config.schema import get_element_name
 from savant.parameter_storage import param_storage
 from savant.remote_file import process_remote
@@ -43,6 +48,7 @@ def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
         logging.getLogger(__name__), dict(element_name=element_name)
     )
 
+    logger.debug('Configuring nvinfer element %s', element_config)
     # check model type
     try:
         model_type: Type[NvInferModel] = NVINFER_MODEL_TYPE_REGISTRY.get(
@@ -78,7 +84,11 @@ def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
         and model_config.precision
         and isinstance(model_config.precision, str)
     ):
-        model_config.precision = model_config.precision.upper()
+        new_val = ModelPrecision[model_config.precision.upper()]
+        logger.debug(
+            'Preparing model.precision: %s -> %s', model_config.precision, new_val
+        )
+        model_config.precision = new_val
     if (
         'input' in model_config
         and model_config.input
@@ -86,7 +96,13 @@ def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
         and model_config.input.color_format
         and isinstance(model_config.input.color_format, str)
     ):
-        model_config.input.color_format = model_config.input.color_format.upper()
+        new_val = ModelColorFormat[model_config.input.color_format.upper()]
+        logger.debug(
+            'Preparing model.input.color_format: %s -> %s',
+            model_config.input.color_format,
+            new_val,
+        )
+        model_config.input.color_format = new_val
 
     # setup path for the model files
     if not model_config.get('local_path'):
@@ -107,6 +123,7 @@ def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
     nvinfer_config_file = model_config.get('config_file')
     if nvinfer_config_file:
         config_file_path = model_path / nvinfer_config_file
+        logger.debug('Trying to load nvinfer config file %s', config_file_path)
         if config_file_path.is_file():
             nvinfer_config = NvInferConfig.read_file(config_file_path)
             logger.info(
@@ -121,29 +138,60 @@ def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
                 f'Configuration file "{config_file_path}" not found.'
             )
 
-    model_config = OmegaConf.merge(model, model_config)
-
     # try to parse engine file and check for a match
     if model_config.engine_file:
         parse_result = NvInferConfig.parse_model_engine_file(model_config.engine_file)
-        if parse_result and (
-            model_config.batch_size,
-            model_config.gpu_id,
-            model_config.precision,
-        ) != (
-            parse_result['batch_size'],
-            parse_result['gpu_id'],
-            parse_result['precision'],
-        ):
-            logger.info(
-                'Specified engine file "%s" does not match configuration: '
-                'batch_size=%d, gpu_id=%d, precision=%s.',
-                model_config.engine_file,
+        if parse_result:
+            # if engine options are not set explicitly
+            # get their values from engine file name
+            if (
+                not hasattr(model_config, 'batch_size')
+                or model_config.batch_size is None
+            ):
+                model_config.batch_size = parse_result['batch_size']
+                logger.debug(
+                    'Model batch size is taken from engine file name and set to %d',
+                    parse_result['batch_size'],
+                )
+            if not hasattr(model_config, 'gpu_id') or model_config.gpu_id is None:
+                model_config.gpu_id = parse_result['gpu_id']
+                logger.debug(
+                    'Model gpu_id is taken from engine file name and set to %d',
+                    parse_result['gpu_id'],
+                )
+            if not hasattr(model_config, 'precision') or model_config.precision is None:
+                model_config.precision = parse_result['precision']
+                logger.debug(
+                    'Model precision is taken from engine file name and set to %s',
+                    parse_result['precision'].name,
+                )
+
+            if (
                 model_config.batch_size,
                 model_config.gpu_id,
-                model_config.precision.name,
-            )
-            model_config.engine_file = None
+                model_config.precision,
+            ) != (
+                parse_result['batch_size'],
+                parse_result['gpu_id'],
+                parse_result['precision'],
+            ):
+                logger.info(
+                    'Specified engine file "%s" does not match configuration: '
+                    'batch_size=%d, gpu_id=%d, precision=%s.',
+                    model_config.engine_file,
+                    model_config.batch_size,
+                    model_config.gpu_id,
+                    model_config.precision.name,
+                )
+                model_config.engine_file = None
+
+    logger.debug(
+        'Merging model with model config\nmodel %s\nmodel config %s',
+        model,
+        model_config,
+    )
+    model_config = OmegaConf.merge(model, model_config)
+    logger.debug('Merging complete, result\n%s', model_config)
 
     # model or engine file must be specified
     model_file_required = True
@@ -241,8 +289,9 @@ def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
                     model_config.tlt_model_key,
                 )
 
-    # calibration file required for model in INT8
-    if model_config.precision == ModelPrecision.INT8:
+    # model_file_required is True when the engine file is not built
+    # calibration file is required to build model in INT8
+    if model_config.precision == ModelPrecision.INT8 and model_file_required:
         if not model_config.int8_calib_file:
             raise NvInferConfigException(
                 'INT8 calibration file (model.int8_calib_file) required.'
