@@ -48,7 +48,7 @@ services:
       - "8889:8889"  # WebRTC
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
-      - ../stub_imgs:/stub_imgs
+      - ../assets/stub_imgs:/stub_imgs
     environment:
       - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
       - SOURCE_ID=city-traffic
