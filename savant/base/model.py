@@ -364,7 +364,13 @@ class Model:
     """
 
     batch_size: int = 1
-    """Number of frames or objects to be inferred together in a batch."""
+    """Number of frames or objects to be inferred together in a batch.
+
+    .. note:: In case the model is an NvInferModel and it is configured to
+       use the TRT engine file directly, the default value for ``batch_size``
+       will be taken from the engine file name, by parsing it according to the scheme
+       {model_name}_b{batch_size}_gpu{gpu_id}_{precision}.engine
+    """
 
     precision: ModelPrecision = ModelPrecision.FP16
     """Data format to be used by inference.
@@ -376,6 +382,11 @@ class Model:
         precision: fp16
         # precision: int8
         # precision: fp32
+
+    .. note:: In case the model is an NvInferModel and it is configured to
+       use the TRT engine file directly, the default value for ``precision``
+       will be taken from the engine file name, by parsing it according to the scheme
+       {model_name}_b{batch_size}_gpu{gpu_id}_{precision}.engine
     """
 
     input: ModelInput = ModelInput()
