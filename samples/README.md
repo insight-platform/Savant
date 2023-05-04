@@ -29,7 +29,7 @@ Preview:
 
 ![](nvidia_car_classification/assets/nvidia-car-classification-loop-400.webp)
 
-### Line crossing demo
+### Traffic meter demo
 
 Sample Location: [traffic_meter](./traffic_meter)
 
