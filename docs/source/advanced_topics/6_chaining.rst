@@ -5,18 +5,18 @@ With Savant, you can create chains of pipelines decomposing the processing based
 
 To implement chaining, you attach the later module's source to the source module's sink. You may use all socket types like ``pub/sub``, ``dealer/router``, and ``req/rep`` to connect chain elements.
 
-What reasons and arguments for implementing chaining rather than crafting a single module?
+What are the reasons and arguments for implementing chaining rather than crafting a single module?
 Let us provide you with several:
 
 1. Distribute the workload in case a single GPU cannot carry out all the workload, or you want to use a grid of cheap GPUs to carry out commodity operations and a small number of expensive GPUs to carry out sophisticated operations if a cheap GPU discovers valuable information.
 2. Distribute the processing between the edge and the core: on edge, you run primary perception operations and send the heavyweight processing to the data center; this scheme is beneficial as the core skips specific frames if there is no metadata required to process them; the edge also can avoid sending data for the frames which does not include valuable information.
 3. Access to ready-to-use module you cannot change or incorporate in your pipeline, e.g., because of IP/license restrictions;
-4. You would like to build a routed network of processing where data flow according to specific rules.
+4. You would like to build a routed network of processing where data flows according to specific rules.
 
 Efficiency
 ----------
 
-Yes, it is the encoding and decoding are almost free on Nvidia GPUs, you usually don't care about additional operations like that.
+Since the encoding and decoding are almost free on Nvidia GPUs, from the throughput perspective there's usually no reason to care about additional operations that come with the chaining scheme.
 
 Drawbacks
 ---------

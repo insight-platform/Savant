@@ -26,11 +26,11 @@ Our recommendations when building such sort of circuits:
 Pure Real-Time Circuits
 -----------------------
 
-As it comes from its name, a real-time circuit works in a real-time with no delays expected. Such circuits may tolerate short-term traffic bursts with internal buffers, but suffer from the situations when a part of the circuit stuck.
+As it comes from its name, a real-time circuit works in a real-time with no delays expected. Such circuits may tolerate short-term traffic bursts with internal buffers, but suffer when a part of the circuit gets stuck.
 
 An example of such a circuit: RTSP -> Module -> RTSP
 
-So, to realize such circuits, we give following recommendations:
+So, to realize such circuits, we give the following recommendations:
 
 - use pub/sub sockets, as they drop the packets which cannot be delivered;
 - use low-latency systems with predictable functionality to implement 3rd-party communications (Redis/KeyDB, ZeroMQ Pub/Sub);
@@ -45,4 +45,3 @@ Mixed Circuit
 Mixed circuits derive both properties and limitations of capacity circuits and real-time circuits. You must craft them carefully, combining `pub/sub` and `dealer/router (req/rep)` sockets where necessary, adding queues and real-time systems to overcome bottlenecks. This is a hard topic requiring skills and practice. There are no rules of thumb; you must experiment and consider various failure scenarios to design predictably performing circuits.
 
 Such circuits definitely require skills in developing real-time circuits.
-
