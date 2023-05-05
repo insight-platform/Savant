@@ -148,6 +148,8 @@ The draw function may be overriden by the developer if the stock version cannot 
           counters_height: 85
           counters_font_thickness: 5
 
+if ``draw_func`` section is omitted, drawing is not performed.
+
 De-Multiplexing
 ---------------
 
@@ -155,6 +157,8 @@ This step is automatically performed by the framework to turn batches into indiv
 
 Encoding
 --------
+
+If the ``output_frame`` section is omitted, video frames will not be sent to sinks at all.
 
 The framework supports several encoding schemes:
 
