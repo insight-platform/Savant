@@ -5,7 +5,7 @@ In vanilla DeepStream, the sources and sinks are by-design integrated to the GSt
 
 There are reasons for that. The first one is decreased reliability: the source and sink are external entities that, being coupled into the pipeline, will cause its outage when they fail. E.g., when the RTSP camera becomes unavailable, the corresponding GStreamer RTSP source will signal the pipeline to terminate.
 
-The problem becomes more serious when multiple sources send data into a single pipeline: a natural case in the real world. Normally, you want avoid loading multiple instances of the same AI models into the GPU because of RAM limitations and resource over-utilization. So, following the natural GStreamer approach, you multiplex data streams into a single pipeline, crafting a program prone to crash when any source fails.
+The problem becomes more serious when multiple sources send data into a single pipeline: a natural case in the real world. Normally, you want avoid loading multiple instances of the same AI models into the GPU because of RAM limitations and resource over-utilization. So, following the natural GStreamer approach, you multiplex data streams into a single pipeline, making a program prone to crash when any source fails.
 
 That's why you want to have sources decoupled from the pipeline: to increase the stability and avoid unnecessary reloads in case of source failure.
 
@@ -25,7 +25,7 @@ The module de-multiplexes those streams internally to the form where each stream
 
 The developer doesn't care about how to handle multiple streams. However, they must be aware that there are numerous streams, not one. Especially, It is important when the code maintains the state for every stream, e.g., when counting people on a per-stream basis. To ensure the state is handled properly, the developer must consider the stream's ``source_id``. The API allows the developer to retrieve per-stream information to control the situation.
 
-Such a multiplexed/de-multiplexed operation model is very beneficial because every Savant module is production-ready from the beginning when appropriately crafted. The module doesn't know whether it processes a file-based stream, a live stream, or just a bunch of images; it doesn't distinguish between them. The framework ensures the processing for all those streams in the same way. More to say, a mix of various streams can be processed simultaneously by the same module.
+Such a multiplexed/de-multiplexed operation model is very beneficial because any well-made Savant module immediately becomes production-ready. The module doesn't know whether it processes a file-based stream, a live stream, or just a bunch of images; it doesn't distinguish between them. The framework ensures the processing for all those streams in the same way. More to say, a mix of various streams can be processed simultaneously by the same module.
 
 Streams may appear and disappear dynamically: the framework handles such situations transparently to the developer, providing handy callbacks if they want to know when the stream no longer exists.
 

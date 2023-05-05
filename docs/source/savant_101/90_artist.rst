@@ -1,7 +1,7 @@
 Artist Usage
 ============
 
-Often, in the step of development or due to business needs the pipeline must display ongoing metadata on the frames. You may use OpenCV CUDA functionality within a specially developed ``pyfunc`` to do that. However, Savant provides a special facility that automatically displays frequently used primitives. This function is called ``draw_func``. The ``draw_func`` feature uses the so-called :py:class:`~savant.utils.artist.artist_gpumat.Artist` object which implements displaying a number of primitives like text labels, bounding boxes, etc. The :py:class:`~savant.utils.artist.artist_gpumat.Artist` object also can be used directly from any ``pyfunc``, but in current section we discuss the use of the ``draw_func`` function.
+Often, during the development or due to business needs the pipeline must display ongoing metadata on the frames. You may use OpenCV CUDA functionality within a specially developed ``pyfunc`` to do that. However, Savant provides a special facility that automatically displays frequently used primitives. This function is called ``draw_func``. The ``draw_func`` feature uses the so-called :py:class:`~savant.utils.artist.artist_gpumat.Artist` object which implements displaying a number of primitives like text labels, bounding boxes, etc. The :py:class:`~savant.utils.artist.artist_gpumat.Artist` object also can be used directly from any ``pyfunc``, but in current section we discuss the use of the ``draw_func`` function.
 
 To set the parameters for the draw_func operation, the general parameters section is used, since the rendering step always occurs in a fixed place: after the completion of all elements of the pipeline, before passing frames and metadata to external consumers.
 
@@ -12,7 +12,6 @@ To set the parameters for the draw_func operation, the general parameters sectio
         module: draw_func.module
         class_name: CustomDrawFuncClass
         kwargs: {}
-
 
 In the example above a custom ``draw_func`` implementation is used. In simple cases you may use a predefined ``draw_func`` implementation.
 
@@ -31,7 +30,7 @@ Savant has a default implementation of ``draw_func`` that is used when ``draw_fu
     parameters:
       draw_func: {}
 
-Another way to use the default implementation is to populate the ``rendered_objects`` section, which the default implementation uses to set the classes of rendered objects and their border colors:
+Another way to use the default implementation is to populate the ``rendered_objects`` section, which the default implementation uses to define the objects of which classes are going to be rendered and their border colors:
 
 .. code-block:: yaml
 
@@ -45,7 +44,7 @@ where:
 
 * ``<unit_name>`` the name of the unit defining the objects;
 * ``<class_label>`` the label of the object class set by a detector;
-* ``<color_str>`` color to use when drawing boxes for the ``<unit_name>.<class_label>``.
+* ``<color_str>`` color to use when drawing boxes for the ``<unit_name>.<class_label>``. Color strings are defined in the `code <https://github.com/insight-platform/Savant/blob/develop/savant/utils/artist/__init__.py>`__.
 
 Besides the standard ``draw_func``, it is also possible to use a custom draw function. In this case, the function must inherit the :py:class:`~savant.deepstream.drawfunc.NvDsDrawFunc` class, overriding the ``draw_on_frame`` method in it.
 
@@ -219,7 +218,6 @@ For example, the following call will add to the frame an image read from a file 
 
     import cv2
 
-
     img = cv2.imread(path, cv2.IMREAD_UNCHANGED)
     img = cv2.cvtColor(img , cv2.COLOR_BGRA2RGBA)
     img = cv2.cuda.GpuMat(img)
@@ -240,4 +238,3 @@ For example, the following call will apply a blur to the objects detected on the
 
     for obj_meta in frame_meta.objects:
         artist.blur(obj_meta.bbox)
-

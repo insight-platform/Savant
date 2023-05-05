@@ -25,7 +25,7 @@ If you are acquainted with running dockerized applications using Nvidia GPUs:
 - **X86 & Volta/Turing/Ampere/Ada Lovelace**: Linux, Drivers 525+, Docker with Compose, Nvidia Container Runtime,
 - **Nvidia Jetson NX/AGX+**: JetPack 5.1+, Docker with Compose, Nvidia Container Runtime.
 
-Trying the demo you will find how to craft the following showcase:
+Trying the demo you will find how to make the following showcase:
 
 ![](samples/peoplenet_detector/assets/peoplenet-blur-demo-loop-400.webp)
 

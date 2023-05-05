@@ -19,7 +19,7 @@ How The Pipeline Looks Like
 
 Every Savant application consists of two parts: YAML configuration and Python code. The configuration is used to define the pipeline, and the Python code is used to implement custom processing.
 
-Let us represent pieces of YAML serving specific purposes; later in the documentation, we will explore them in detail. There are essential omitted parts in every unit provided in the following code snippets; this is done with the intention of not overwhelming readers with details.
+Let's take a look at a few pieces of YAML serving specific purposes; later in the documentation, we will explore them in detail. There are essential omitted parts in every unit provided in the following code snippets; this is done with the intention of not overwhelming readers with details.
 
 We begin with a pipeline containing one unit - a detector:
 
@@ -95,6 +95,4 @@ The contents of ``module/car_counter.py`` would be:
                 car_color_attr = obj_meta.get_attr_meta(CAR_COLOR_ELEMENT_NAME, CAR_COLOR_ATTR_NAME)
                 counter[car_color_attr.value] += 1
 
-
 This is what a typical Savant pipeline looks like. Other examples of pipelines can be found in the `examples <https://github.com/insight-platform/Savant/tree/develop/samples>`_ directory.
-

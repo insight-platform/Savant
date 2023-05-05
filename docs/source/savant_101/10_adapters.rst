@@ -17,7 +17,7 @@ There is a protocol based on ZeroMQ and Apache Avro, which adapters use to commu
 - frame-related metadata;
 - the hierarchy of objects related to the frame.
 
-The protocol is described in the `API <https://github.com/insight-platform/Savant/tree/develop/savant/api/avro-schemas>`_ section.
+The protocol is described in the :doc:`API <../reference/avro>` section.
 
 Communication Sockets
 ---------------------

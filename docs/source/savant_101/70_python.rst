@@ -1,7 +1,7 @@
 Python Function Unit
 ====================
 
-The Python Function Unit is used to include arbitrary custom Python code in the pipeline. To work with ``pyfunc``, custom code must be implemented as a successor to :py:class:`~savant.deepstream.NvDsPyFuncPlugin`, which exposes two methods: the first allows frames for each source to be handled separately, the second supports processing the frames for the whole batch.
+The Python Function Unit is used to include arbitrary custom Python code in the pipeline. To work with ``pyfunc``, custom code must be implemented by specifying :py:class:`~savant.deepstream.NvDsPyFuncPlugin` as the parent class, which exposes two methods: the first allows frames for each source to be handled separately, the second supports processing the frames for the whole batch.
 
 Per-source processing, normally you want to use this method:
 
@@ -59,9 +59,9 @@ The ``on_sink_event`` method is similar to ``on_src_event``, but works for event
 
 When overriding this method, it is important to note that, by default, the ``NvDsPyFuncPlugin.on_sink_event`` method handles the ``GST_NVEVENT_STREAM_EOS`` DeepStream event (gst-nvevent.h `documentation <https://docs.nvidia.com/metropolis/deepstream/dev-guide/sdk-api/gst-nvevent_8h.html>`__), determining which source it refers to, and calls the ``on_source_eos`` method. Therefore, when implementing your version of the event handler on the sink pad, it is worth including a call to the parent class method in it.
 
-The ``on_source_eos`` method is called for every ``GST_NVEVENT_STREAM_EOS`` event that arrives on the DeepStream sink pad. The purpose of this method is to handle the situation when a data stream corresponding to a particular source ends.
+The ``on_source_eos`` method is called for every ``GST_NVEVENT_STREAM_EOS`` event that arrives on the PyFunc sink pad. The purpose of this method is to handle the situation when a data stream corresponding to a particular source ends.
 
-Source addressing is achieved by reading ``frame_meta.source_id``, which corresponds to the identifier of the source defined by an external system ingesting frames. The ``on_source_eos`` method can be used to release the state resources allocated for a particular source. For example, delete information about the tracks of this source.
+Source addressing is achieved by reading ``frame_meta.source_id`` preperty, which corresponds to the identifier of the source defined by an external system ingesting frames. The ``on_source_eos`` method can be used to release the state resources allocated for a particular source. For example, delete information about the tracks of this source.
 
 .. code-block:: python
 
@@ -78,7 +78,7 @@ A Python path example:
 .. code-block:: yaml
 
     - element: pyfunc
-      module: samples.line_crossing.line_crossing
+      module: samples.traffic_meter.line_crossing
       class_name: LineCrossing
 
 A filesystem path example:
@@ -86,7 +86,7 @@ A filesystem path example:
 .. code-block:: yaml
 
     - element: pyfunc
-      module: /opt/app/samples/line_crossing/line_crossing.py
+      module: /opt/savant/samples/traffic_meter/line_crossing.py
       class_name: LineCrossing
 
 Also, the ``pyfunc`` unit configuration allows setting an arbitrary set of user parameters through the ``kwargs`` key:
@@ -94,10 +94,9 @@ Also, the ``pyfunc`` unit configuration allows setting an arbitrary set of user 
 .. code-block:: yaml
 
     - element: pyfunc
-      module: /opt/app/samples/line_crossing/line_crossing.py
+      module: /opt/savant/samples/traffic_meter/line_crossing.py
       class_name: LineCrossing
       kwargs:
-        config_path: /opt/app/samples/line_crossing/line_crossing.yml
+        config_path: /opt/savant/samples/traffic_meter/line_crossing.yml
 
 Parameters defined with ``kwargs`` are available as ``pyfunc`` class instance attributes.
-

@@ -6,9 +6,9 @@ Savant supports classification models. The element type "Classification Unit" is
 Configuration Parameters Specific to The Classification Model Unit
 ------------------------------------------------------------------
 
-The classifier's invocation results in a list of attributes appended to the object's metadata. This list is configured in the ``element.model.output.attributes`` section.
+The classifier's inference results in a list of attributes appended to the object's metadata. This list is configured in the ``element.model.output.attributes`` section.
 
-For each of the output layers of the classifier, you must specify a separate attribute using a common list. By default, the correspondence of output layers to attributes is determined by the enumeration order; however, when using a custom converter, this correspondence is determined by the logic of the converter.
+For each of the output layers of the classifier, you must specify a separate attribute. By default, the correspondence of output layers to attributes is determined by the enumeration order; however, when using a custom converter, this correspondence is determined by the logic of the converter.
 
 The mandatory parameter when configuring an attribute is ``name``: a value that defines the metadata name for the attribute, which can be used later to obtain its value.
 
@@ -16,22 +16,22 @@ The optional parameters when configuring an attribute are:
 
 * ``labels`` defines a dictionary that sets symbolic values for class indices obtained after inferring the model. It translates ``0``, ``1``, ... into ``cat``, ``dog``, etc. If this dictionary is not defined, then attributes will be used with numeric values.
 
-* ``threshold`` is a float number that sets a threshold for the confidence value to add the attribute to the results. The attribute will be added to metadata only if the associated confidence value is strictly above the specified threshold. If it is not defined, the attribute is added to results unconditionally.
+* ``threshold`` is a float number that sets a confidence value threshold for the attribute to be added to the results. The attribute will be added to metadata only if the associated confidence value is strictly above the specified threshold. If it is not defined, the attribute is added to results unconditionally.
 
-* ``multi_label`` is a flag that specifies that any class will be added if passes the configured threshold. By default, it is set to ``false``, so only the class with the highest confidence value will be added.
+* ``multi_label`` is a flag that specifies if every class that passes the configured threshold should be inlcuded in results. By default, it is set to ``false``, so only the class with the highest confidence value will be inlcuded in results\.
 
-* ``internal`` is a flag that makes the classes ignored when metadata is passed to a sink. By default, it is ``false``. If ``true``, the attribute will only be available within the pipeline. This parameter should be used if the attribute is auxiliary and meaningless outside the pipeline.
+* ``internal`` is a flag that makes the classes be ignored when metadata is passed to the pipeline output. By default, it is ``false``. If ``true``, the attribute will only be available within the pipeline. This parameter should be used if the attribute is auxiliary and meaningless outside the pipeline.
 
-To use a custom model, you may need to write a result converter: ``pyfunc``, which parses the output tensors and build the list of attribute values. The converter is specified in the ``element.model.output.converter`` section:
+To use a custom model, you may need to write a result converter: ``pyfunc``, which parses the output tensors and builds the list of attribute values. The converter is specified in the ``element.model.output.converter`` section:
 
 * ``module`` - a value that defines the Python module containing the converter code.
 * ``class_name`` - a value that specifies the class from the module. The converter class must be a derived from :py:class:`~savant.deepstream.nvinfer.model.BaseAttributeModelOutputConverter`.
 
-It is important to note that when ``element.model.output.converter`` is specified, the classifier will be configured as a custom Deepstream model with the output in the form of a raw tensor. In this case all optional parameters will be used.
+It is important to note that when ``element.model.output.converter`` is specified, the classifier will be configured as a custom Deepstream model with the output in the form of a raw tensor. In this case all optional parameters described above will be used.
 
 If the converter is not specified, the model will be configured as a regular ``nvinfer`` classifier. In this case, the optional configuration parameters for the attributes listed above (except ``threshold``) are not used, and custom parsing of classifier results must be done with Deepstream functionality by defining the ``element.model.custom_lib_path`` and ``element.model.parse_classifier_func_name`` parameters in the configuration. If a custom function is not specified, Deepstream uses the default ``softmax`` layer function to parse the classification results.
 
-In addition, for regular Deepstream classifiers, it is impossible to set a minimum confidence threshold for each attribute individually, so the first specified threshold value will be applied.
+In addition, for regular Deepstream classifiers, it is impossible to set a minimum confidence threshold for each attribute individually, so the first specified threshold value will be applied to every attribute.
 
 .. code-block:: yaml
 

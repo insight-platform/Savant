@@ -7,7 +7,6 @@ The complex model unit is used for inferring complex models that perform both de
 
     complex model = detection model + attribute model
 
-
 This element combines both the detection and attribute model units. Below is an example of defining such a unit for inferring a model that detects faces and simultaneously finds facial keypoints.
 
 .. code-block:: yaml
@@ -41,7 +40,6 @@ This element combines both the detection and attribute model units. Below is an 
                   min_width: 90
           attributes:
             - name: landmarks
-
 
 We will not describe the parameters for the input section, as they are similar to those described in :doc:`30_dm`. The output section is of particular interest, we specify both the ``objects`` section (described in the :doc:`30_dm`) and the ``attributes`` section (described in the :doc:`43_am`).
 
@@ -84,9 +82,6 @@ The converter must be implemented by specifying :py:class:`~savant.deepstream.nv
             attrs = [[(model.output.attributes[0].name, x.tolist(), None)] for x in landmarks]
             return bbox_tensor, attrs
 
-
 The model used in the example has three outputs. Two are related to detections, and the third returns the coordinates of the facial keypoints for the detected face. The converter processes the first two outputs with the names ``bboxes`` and ``scores`` to obtain the boxes, while the third output with the name ``landmarks`` returns the keypoints, which are returned as attributes for each detected object. Note that the number of boxes and the length of the attribute list for each box must match.
 
 The ``detector_decoder`` is a separate function specifically written to process the outputs of the RetinaNet model and is not provided here, as it does not affect the overall understanding of the principles of writing converters.
-
-

@@ -12,13 +12,13 @@ Modules are executed within specially prepared docker containers. If a module do
 
    .. code-block:: bash
 
-        docker pull ghcr.io/insight-platform/savant-deepstream:0.2.0-6.2-base
+        docker pull ghcr.io/insight-platform/savant-deepstream:latest
 
 * Deepstream 6.1+ capable Nvidia edge devices (Jetson Xavier/Orin)
 
    .. code-block:: bash
 
-        docker pull ghcr.io/insight-platform/savant-deepstream-l4t:0.2.0-6.2-base
+        docker pull ghcr.io/insight-platform/savant-deepstream-l4t:latest
 
 The module utilizes the following directories:
 
@@ -26,7 +26,7 @@ The module utilizes the following directories:
 * ``/downloads`` - where the module downloads models from remote locations;
 * ``/opt/savant`` - where the module expects the application code root is.
 
-Normally, you map host's directories to above-mentioned paths. You also can override ``/downloads`` and ``/models`` with the following parameters:
+Normally, you map host's directories to the above-mentioned paths. You also can override ``/downloads`` and ``/models`` with the following parameters:
 
 .. code-block:: yaml
 
