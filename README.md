@@ -27,7 +27,7 @@ If you are acquainted with running dockerized applications using Nvidia GPUs:
 
 Trying the demo you will find how to craft the following showcase:
 
-![](samples/peoplenet-blur-demo-loop-400.webp)
+![](samples/peoplenet_detector/assets/peoplenet-blur-demo-loop-400.webp)
 
 ```bash
 git clone https://github.com/insight-platform/Savant.git
@@ -44,8 +44,8 @@ curl --silent -O -- https://hello.savant.video/peoplenet.html
 # if Jetson
 ../../utils/check-environment-compatible && docker compose -f docker-compose.l4t.yml up
 
-# open 'rtsp://127.0.0.1:8554/city-traffic-processed' in your player
-# or visit 'http://127.0.0.1:8888/city-traffic-processed/' (LL-HLS)
+# open 'rtsp://127.0.0.1:554/stream' in your player
+# or visit 'http://127.0.0.1:888/stream/' (LL-HLS)
 
 # Ctrl+C to stop running the compose bundle
 

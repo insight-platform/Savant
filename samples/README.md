@@ -19,7 +19,7 @@ Sample Location: [peoplenet_detector](./peoplenet_detector)
 
 Preview:
 
-![](peoplenet-blur-demo-loop-400.webp)
+![](peoplenet_detector/assets/peoplenet-blur-demo-loop-400.webp)
 
 ### Car Detection and Classification (Nvidia detectors and classifiers, Nvidia tracker)
 
@@ -27,15 +27,15 @@ Sample Location: [nvidia_car_classification](./nvidia_car_classification)
 
 Preview:
 
-![](nvidia-car-classification-loop-400.webp)
+![](nvidia_car_classification/assets/nvidia-car-classification-loop-400.webp)
 
-### Line crossing demo
+### Traffic meter demo
 
-Sample Location: [line_crossing](./line_crossing)
+Sample Location: [traffic_meter](./traffic_meter)
 
 Preview:
 
-![](line-crossing-loop-400.webp)
+![](traffic_meter/assets/traffic-meter-loop-400.webp)
 
 ## Utility And Coding Examples 
 
@@ -45,6 +45,6 @@ Sample Location: [opencv_cuda_bg_remover_mog2](./opencv_cuda_bg_remover_mog2)
 
 Preview:
 
-![](opencv_cuda_bg_remover_mog2-800.webp)
+![](opencv_cuda_bg_remover_mog2/assets/opencv_cuda_bg_remover_mog2-800.webp)
 
 

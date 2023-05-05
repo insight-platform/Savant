@@ -9,7 +9,7 @@ The **Blue** Icon represents how many people with blurred faces in the scene.
 
 Preview:
 
-![](../peoplenet-blur-demo-loop.webp)
+![](assets/peoplenet-blur-demo-loop.webp)
 
 Features:
 
@@ -57,8 +57,8 @@ curl --silent -O -- https://hello.savant.video/peoplenet.html
 # if Jetson
 ../../utils/check-environment-compatible && docker compose -f docker-compose.l4t.yml up
 
-# open 'rtsp://127.0.0.1:8554/city-traffic-processed' in your player
-# or visit 'http://127.0.0.1:8888/city-traffic-processed/' (LL-HLS)
+# open 'rtsp://127.0.0.1:554/stream' in your player
+# or visit 'http://127.0.0.1:888/stream/' (LL-HLS)
 
 # Ctrl+C to stop running the compose bundle
 
