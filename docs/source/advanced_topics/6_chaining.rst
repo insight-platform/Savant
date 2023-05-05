@@ -5,7 +5,7 @@ With Savant, you can create chains of pipelines decomposing the processing based
 
 To implement chaining, you attach the later module's source to the source module's sink. You may use all socket types like ``pub/sub``, ``dealer/router``, and ``req/rep`` to connect chain elements.
 
-What are the reasons and arguments for implementing chaining rather than crafting a single module?
+What are the reasons and arguments for implementing chaining rather than making a single module?
 Let us provide you with several:
 
 1. Distribute the workload in case a single GPU cannot carry out all the workload, or you want to use a grid of cheap GPUs to carry out commodity operations and a small number of expensive GPUs to carry out sophisticated operations if a cheap GPU discovers valuable information.

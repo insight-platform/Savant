@@ -12,7 +12,7 @@ The listing below represents a typical Savant inference node:
       model:
         format: etlt
         remote:
-          url: "https:/127.0.0.1/models/detection_model.zip"
+          url: "https://127.0.0.1/models/detection_model.zip"
         local_path: /opt/aispp/models/detection_model
         model_file: resnet18_dashcamnet_pruned.etlt
         engine_file: resnet18.etlt_b1_gpu0_int8.engine
@@ -29,7 +29,7 @@ The listing below represents a typical Savant inference node:
 
 The ``element`` section specifies the type of a pipeline unit. There are 4 types of units for defining models: detector, classifier, attribute_model, instance_segmentation, and complex_model.
 
-The ``name`` parameter defines the name of the unit. The ``name`` is used by the following pipeline units to refer to the objects that the unit produces. This parameter is also used to construct the path to the model files, see the ``local_path`` parameter.
+The ``name`` parameter defines the name of the unit. The ``name`` is used by the downstream pipeline units to refer to the objects that the unit produces. This parameter is also used to construct the path to the model files, see the ``local_path`` parameter.
 
 The ``format`` parameter specifies the format in which the model is provided. The supported formats and the peculiarities of specifying certain parameters depending on the model format are described below.
 
@@ -51,9 +51,9 @@ The ``int8_calib_file`` defines the name of the calibration file in case the mod
 
 The ``mean_file`` parameter defines the name of the file with the mean values for data preprocessing. The file must be in PPM format. It makes sense to use this file if you already have it, in general, it is easier to specify the necessary mean values and scaling factor for preprocessing in the input section.
 
-The ``input`` section describes the peculiarities of the model input. Names of input layers, dimensionality, etc. The mandatory or optional nature of the parameters in this section depends on the model format, as well as on the type of model. Further, when describing model formats or types of models, this section will be covered in more detail.
+The ``input`` section describes the model input: names of input layers, dimensionality, etc. The mandatory or optional nature of the parameters in this section depends on the model format, as well as on the type of model. This section will be covered in more detail later, when describing model formats or types of models.
 
-The ``output`` section describes the peculiarities of the model output. Names of output layers, converters, selectors, etc. The mandatory or optional nature of the parameters in this section depends on the model format, as well as on the type of model. Further, when describing model formats, this section will be covered in more detail.
+The ``output`` section describes the model output: names of output layers, converters, selectors, etc. The mandatory or optional nature of the parameters in this section depends on the model format, as well as on the type of model. This section will be covered in more detail later, when describing model formats.
 
 To accelerate inference in the framework, Nvidia TensorRT is used. To use a model in a pipeline, it must be presented in one of the formats supported by TensorRT:
 
@@ -90,7 +90,6 @@ If the model has non-standard outputs (outputs that cannot be automatically conv
       output:
         layer_names: [output]
 
-
 UFF
 ---
 
@@ -108,7 +107,6 @@ UFF is an intermediate format for representing a model between TensorFlow and Te
         shape: [3, 544, 960]
       output:
         layer_names: [output_cov/Sigmoid, output_bbox/BiasAdd]
-
 
 This format will no longer be supported by future releases of TensorRT (`Tensor RT release notes <https://docs.nvidia.com/deeplearning/tensorrt/release-notes/index.html#rel_7-0-0>`_).
 
@@ -130,7 +128,6 @@ If you have a model trained using the Caffe framework, then you can save your mo
 
 
 This format will no longer be supported by future releases of TensorRT (`Tensor RT release notes <https://docs.nvidia.com/deeplearning/tensorrt/release-notes/index.html#rel_7-0-0>`_).
-
 
 Nvidia TAO Toolkit
 ------------------
@@ -166,7 +163,6 @@ For all the above-mentioned variants of specifying the model, during the first l
       custom_config_file: yolov2-tiny.cfg
       custom_lib_path: libnvdsinfer_custom_impl_Yolo.so
       engine_create_func_name: NvDsInferYoloCudaEngineGet
-
 
 Working With Remote Models
 --------------------------
@@ -204,5 +200,3 @@ The archive should contain a set of files. You can download an example model arc
   aws --endpoint-url=https://eu-central-1.linodeobjects.com s3 cp s3://savant-data/models/Primary_Detector/Primary_Detector.zip .
 
 You can find an example of using this model archive at the following `link <https://github.com/insight-platform/Savant/blob/develop/samples/nvidia_car_classification/module.yml#L20>`_.
-
-

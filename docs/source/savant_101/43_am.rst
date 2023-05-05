@@ -1,7 +1,7 @@
 Attribute Model Unit
 ====================
 
-The attributive model unit is used for inferring models that result in attributes of an object. For example, gender or age for detected people, car color, or a re-identification vector for a face. This is a broader class of values than the ones covered by the classification model. We recommend using this element for models that return attributes that cannot be represented with classification. For example, a model that results in a feature vector or a regression model that results in an age.
+The attribute model unit is used for inferring models that result in attributes of an object. For example, gender or age for detected people, car color, or a re-identification vector for a face. This is a broader class of values than the ones covered by the classification model. We recommend using this element for models that return attributes that cannot be represented with classification. For example, a model that results in a feature vector or a regression model that results in an age.
 
 The mandatory and optional parameters of this model element are the same as for the :doc:`40_cm`. Let us consider an example demonstrating how to use it. Suppose you have trained a model that takes the image of the person as input and calculates a re-identification vector and its quality. The model has one input, which should be the image of a person and two outputs: the re-identification vector and its quality. So we need to add these attributes to the object analyzed:
 
@@ -30,7 +30,6 @@ Let's provide a description of the unit and review its parameters:
             - name: reid
             - name: reid_quality
               internal: True
-
 
 Let us describe the valuable parameters. First, the parameters of the ``input`` section are observed:
 
@@ -74,5 +73,3 @@ In this case, there is no third value (for classification models, this would be 
                 (model.output.attributes[0].name, output_layers[0].tolist(), None),
                 (model.output.attributes[1].name, output_layers[1].item(), None),
             ]
-
-

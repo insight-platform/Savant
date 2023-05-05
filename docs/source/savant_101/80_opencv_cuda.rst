@@ -26,9 +26,7 @@ Direct access to frames on the GPU is achieved by calling the ``nvds_to_gpu_mat`
         with nvds_to_gpu_mat(buffer, frame_meta.frame_meta) as frame_mat:
             # frame_mat is a cv2.cuda.GpuMat
 
-
 The variable ``frame_mat`` acting inside the context in the example will refer to the memory of the frame being processed and will have the type ``cv2.cuda.GpuMat``. The work with the frame will be carried out through OpenCV CUDA methods, for example, you can apply Gaussian blur to a certain area of the frame:
-
 
 .. code-block:: python
 
@@ -38,6 +36,4 @@ The variable ``frame_mat`` acting inside the context in the example will refer t
     roi = cv2.cuda_GpuMat(frame_mat, (0, 0, 100, 100))
     gaussian_filter.apply(roi , roi)
 
-
 You can read more about the capabilities of OpenCV CUDA in the OpenCV `documentation <https://docs.opencv.org/4.7.0/d1/d1a/namespacecv_1_1cuda.html>`__.
-

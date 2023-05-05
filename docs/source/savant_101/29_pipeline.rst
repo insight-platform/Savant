@@ -37,7 +37,7 @@ The units are discussed in detail in the following sections.
 Frame Processing Workflow
 -------------------------
 
-Savant's pipeline is linear. It doesn't support tree-like conditional processing. Every frame goes from the beginning of the pipeline to the end of the pipeline. However, it doesn't mean that every pipeline block handles every object.
+Savant's pipeline is linear. It doesn't support tree-like conditional processing. Every frame goes from the beginning of the pipeline to the end of the pipeline. However, it doesn't mean that every pipeline unit handles every object.
 
 To get an idea of how the frame is processed, let us take a look at the following **pseudocode**, which corresponds to the Savant's logic of operation:
 
@@ -74,10 +74,8 @@ To get an idea of how the frame is processed, let us take a look at the followin
     if objects:
         draw_objects(objects)
 
+So, basically every unit in the pipeline runs a unit-specific selection on metadata available. If metadata match the configured unit requirements, the unit is executed on those matched objects. Certain units like ``pyfunc`` don't filter objects beforehand.
 
-So, basically every unit in the pipeline runs a unit-specific selection on metadata available. If metadata match the configured unit requirements, the unit is executed on those matched objects. Certain units like ``pyfunc`` doesn't filter objects beforehand.
-
-Other words, the pipeline doesn't support branching directly, but it enables conditional call for units based on selection. Also, a developer can implement sophisticated "shadowing" hiding objects from a unit with a specially designed pyfunc. Our experience shows that such a functionality is enough to craft complex pipelines without significant limitations.
+In other words, the pipeline doesn't support branching directly, but it enables conditional call for units based on selection. Also, a developer can implement sophisticated "shadowing" hiding objects from a unit with a specially designed pyfunc. Our experience shows that such a functionality is enough to make complex pipelines without significant limitations.
 
 Finally, the metadata and resulting frames are encoded in Savant protocol message and sent to the sink socket. This is done by the framework.
-

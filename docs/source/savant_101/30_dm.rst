@@ -1,7 +1,7 @@
 Detection Unit
 ==============
 
-To create an detector unit the developer have to create the ``nvinfer@detector`` declaration like it shown in the following listing:
+To create a detector unit the developer have to write the ``nvinfer@detector`` declaration like it's shown in the following listing:
 
 .. code-block:: yaml
 
@@ -23,7 +23,7 @@ To create an detector unit the developer have to create the ``nvinfer@detector``
 Full documentation for the detector unit is located on the unit page:
 :py:class:`~savant.deepstream.nvinfer.model.NvInferRotatedObjectDetector`.
 
-You must configure model parameters, input and output. The parameters also may be specified in the `model.config_file` file according to Nvidia DeepStream specification for a detector (`example <https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_plugin_gst-nvinfer.html#gst-nvinfer-file-configuration-specifications>`_). YAML-based parameters override configured in `model.config_file`.
+You must configure model parameters, input and output. The parameters also may be specified in the `model.config_file` file according to Nvidia DeepStream specification for a detector (`example <https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_plugin_gst-nvinfer.html#gst-nvinfer-file-configuration-specifications>`_). YAML-based parameters override those configured in `model.config_file`.
 
 Batch Size
 ----------
@@ -44,7 +44,7 @@ Object Selection
 
 The primary detectors usually work with the default ``object: frame``, while secondary detectors specify labels to select objects of interest.
 
-There are other parameters in the ``input`` section which select objects, like ``object_min_width``, ``object_min_height`` and others. Please, keep in mind that the selected objects are passed to the model, while not selected just ignored, they continue to persist in metadata, so other elements can consume them further.
+There are other parameters in the ``input`` section which select objects, like ``object_min_width``, ``object_min_height`` and others. Please, keep in mind that the selected objects are passed to the model, and those not selected are ignored, but they continue to persist in metadata, so downstream elements can consume them later.
 
 Imagine the situation when you have 2 models: the first one works well with medium-size objects but is very heavyweight while the second works perfectly with large objects and is lightweight. To efficiently utilize resources you may place two inference elements with properly defined input blocks:
 
@@ -71,7 +71,7 @@ Imagine the situation when you have 2 models: the first one works well with medi
 Custom Preprocessing
 ^^^^^^^^^^^^^^^^^^^^
 
-``Input`` also allows for making custom preprocessing with ``preprocess_object_meta`` and ``preprocess_object_tensor``. To use the former, you have to implement code with the interface :py:class:`~savant.base.input_preproc.BasePreprocessObjectMeta`, the later is an advanced topic which is not covered here. Keep in mind, that all modifications made in preprocess are restored after the unit is completed.
+``Input`` also allows making custom preprocessing with ``preprocess_object_meta`` and ``preprocess_object_tensor``. To use the former, you have to implement code with the interface :py:class:`~savant.base.input_preproc.BasePreprocessObjectMeta`, the later is an advanced topic which is not covered here. Keep in mind, that all modifications made in preprocess are restored after the unit is done with its processing.
 
 Example of preprocess_object_meta:
 
@@ -101,7 +101,6 @@ Example of preprocess_object_meta:
 
             return bbox
 
-
 Unit Output
 -----------
 
@@ -115,7 +114,7 @@ The parameter ``layer_names`` defines the names of the model output layers retur
 Converter
 ^^^^^^^^^
 
-``Output`` defines an important parameter ``converter`` which is basically a method which makes  bounding boxes from a raw tensor. For "standard" detection models supported by DeepStream ``converter`` parameter is not required, however if the model's output cannot be parsed automatically, you have to provide an implementation of :py:class:`~savant.base.converter.BaseObjectModelOutputConverter` to produce boxes for detected objects.
+``Output`` defines an important parameter ``converter`` which is basically a method which makes bounding boxes from a raw tensor. For "standard" detection models supported by DeepStream ``converter`` parameter is not required, however if the model's output cannot be parsed automatically, you have to provide an implementation of :py:class:`~savant.base.converter.BaseObjectModelOutputConverter` to produce boxes for detected objects.
 
 Example:
 
@@ -129,7 +128,7 @@ Example:
 
 The converter implementation can be found in the class :py:class:`~savant.converter.yolo_x.TensorToBBoxConverter`.
 
-An example of the convertor for YOLOv4 listed below. The YOLOv4 model has two output layers: the first represents box definition (incl. ``class_id``), the last is for confidence. When you are writing the converter you must return objects respectively to ROI of parent object.
+An example of the convertor for YOLOv4 listed below. The YOLOv4 model has two output layers: the first represents box definition (incl. ``class_id``), the last is for confidence. When you are writing the converter you must return objects relative to the ROI of the parent object.
 
 .. code-block:: python
 
@@ -216,5 +215,4 @@ All skipped classes will be permanently excluded from the next steps of the pipe
 
 If unit name is ``Primary_Detector``, then to address selected objects in the following units use ``Primary_Detector.person`` and ``Primary_Detector.face`` labels.
 
-The default selector implementation runs NMS and allows selecting objects by specifying ``min_width``, ``min_height``, and ``confidence_threshold``. To create a custom ``selector`` you have to implement :py:class:`~savant.base.selector.BaseSelector`. You may take a look at :py:class:`~savant.selector.BBoxSelector` to get an idea of how to craft it.
-
+The default selector implementation runs NMS and allows selecting objects by specifying ``min_width``, ``min_height``, and ``confidence_threshold``. To create a custom ``selector`` you have to implement :py:class:`~savant.base.selector.BaseSelector`. You may take a look at :py:class:`~savant.selector.BBoxSelector` to get an idea of how to write it.

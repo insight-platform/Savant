@@ -16,7 +16,7 @@ Such circuits are the easiest thing to create. Purely capacity circuits assume t
 
 A typical example of such a circuit: File -> Module -> MongoDB
 
-If Mongo is dead or slow, the processing will be delayed or stuck until it recovers. You don't have to use sophisticated logic to craft such kinds of circuits.
+If Mongo is dead or slow, the processing will be delayed or stuck until it recovers. You don't have to use sophisticated logic to make such kinds of circuits.
 
 Our recommendations when building such sort of circuits:
 
@@ -42,6 +42,6 @@ So, to realize such circuits, we give the following recommendations:
 Mixed Circuit
 -------------
 
-Mixed circuits derive both properties and limitations of capacity circuits and real-time circuits. You must craft them carefully, combining `pub/sub` and `dealer/router (req/rep)` sockets where necessary, adding queues and real-time systems to overcome bottlenecks. This is a hard topic requiring skills and practice. There are no rules of thumb; you must experiment and consider various failure scenarios to design predictably performing circuits.
+Mixed circuits derive both properties and limitations of capacity circuits and real-time circuits. You must develop them carefully, combining `pub/sub` and `dealer/router (req/rep)` sockets where necessary, adding queues and real-time systems to overcome bottlenecks. This is a hard topic requiring skills and practice. There are no rules of thumb; you must experiment and consider various failure scenarios to design predictably performing circuits.
 
 Such circuits definitely require skills in developing real-time circuits.

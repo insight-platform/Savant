@@ -27,7 +27,7 @@ Hardware-accelerated with NVDEC, preferred to be used:
 - HEVC (H265) - preferred (performance, bandwidth);
 - MJPEG, JPEG - when image streams or USB/CSI-cams are used.
 
-Software-decoded (do not recommend to use):
+Software-decoded (not recommended to use):
 
 - PNG - made for compatibility purposes.
 
@@ -36,9 +36,9 @@ Scaling to a Common Resolution
 
 **The pipeline will scale all streams to the configured resolution.**
 
-This is a very, very important topic. The pipeline is always configured to run on common resolution. It means that every stream handled by a certain pipeline instance, always scaled to the common resolution, configured for the pipeline instance, no matter what its input resolution was.
+This is a crucial topic. The pipeline is always configured to run on common resolution. It means that every stream handled by a certain pipeline instance is always scaled to the common resolution configured for the pipeline instance, no matter what its input resolution was.
 
-If you need different streams are handled on different resolutions, you have to launch several pipelines configuring each pipeline to use a resolution acceptable for streams processed by that pipeline.
+If you need different streams to be handled on different resolutions, you have to launch several pipelines configuring each pipeline to use a resolution acceptable for streams processed by that pipeline.
 
 .. code-block:: yaml
 
@@ -61,7 +61,7 @@ You have 10 cams of FullHD and 15 cams of HD resolution. You don't need the outg
 Case 2: Low-Res Output Footage
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-You have 10 cams of FullHD and 15 cams of HD resolution. You need the outgoing video but HD is OK, all your models are fine to work with HD resolution.
+You have 10 cams of FullHD and 15 cams of HD resolution. You need the outgoing video and HD resolition is acceptable, all your models are fine to work with HD resolution.
 
 **Solution**: configure the pipeline to use HD resolution, send all streams to a single pipeline.
 

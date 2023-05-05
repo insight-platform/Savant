@@ -14,7 +14,7 @@ In this example, we indicated to the unit that of all the objects that exist on 
 
 Similarly, the ``output`` section specifies how the metadata will be written to the model results, such as attribute names, and can filter based on these values to exclude some of the metadata from the results.
 
-You can obtain full access to all metadata in the Python Function unit. In this element, by implementing the processing you need, you can read the metadata for the fame, and object metadata, change metadata if it is writable, and delete or add new metadata.
+You can obtain full access to all metadata in the Python Function unit. In this element, by implementing the processing you need, you can read the metadata for the frame, and object metadata, change metadata if it is writable, and delete or add new metadata.
 
 For example, you may want to remove all objects that belong to red-colored cars without an identified car plate or make the areas with license plates blurred.
 
@@ -31,7 +31,7 @@ Entire Frame Metadata
 
 Let us first look at what metadata is defined for the frame.  The access restrictions for metadata are shown in parentheses:
 
-* The ``source_id [read]`` attribute is a unique identifier of the video stream source. By this identifier, you can understand which source frame the metadata for which you receive metadata belongs to. Most often, this identifier is used to be able to store some state, which must be unique for each video stream. In the example of counting people crossing the frame_num line, this property was used to separate the counting of people for different video streams (link).
+* The ``source_id [read]`` attribute is a unique identifier of the video stream source. With this identifier, you can understand which source frame the metadata you receive belongs to. Most often, this identifier is used to be able to store some state, which must be unique for each video stream. In the TrafficMeter example, this property was used to separate the counting of people for different video streams (`link <https://github.com/insight-platform/Savant/blob/documentation-initial-update/samples/traffic_meter/line_crossing.py>`__).
 
 * The ``frame_num [read]`` attribute is a frame number for a particular source.
 
@@ -58,7 +58,7 @@ Per-Object Metadata
 
 * The ``element_name [read]`` attribute is the name of the unit that added this object. If the object is a result of the detection model, ``element_name`` is the name of the unit (the name field of the unit defined in the configuration file). For user-created objects, ``element_name`` is a mandatory constructor argument.
 
-* The ``confidence [read]`` attribute is the numeric value denoting the probability that the object of the class is specified in the label field. Typically set by a detector, in cases described in `NvDsObjectMeta <https://docs.nvidia.com/metropolis/deepstream/python-api/PYTHON_API/NvDsMeta/NvDsObjectMeta.html#pyds.NvDsObjectMeta>`__ possible special value ``-0.1``.
+* The ``confidence [read]`` attribute is the numeric value denoting the probability that the object of the class is specified in the label field. Typically set by a detector, in cases described in `NvDsObjectMeta <https://docs.nvidia.com/metropolis/deepstream/python-api/PYTHON_API/NvDsMeta/NvDsObjectMeta.html#pyds.NvDsObjectMeta>`__ a special value ``-0.1`` is possible.
 
 * The ``bbox [read, write]`` attribute is meta-information about the object's position on the frame. Object position can be set by two types of boxes: an aligned bounding box (sides of the box are parallel to the coordinate axes) and an oriented bounding box (the box can have an angle).  The position is set by the coordinates of the center of the box, the width and height of the box, and the rotation angle if it is an oriented bounding box.
 
@@ -85,9 +85,9 @@ The different types of metadata are related to each other. Frame metadata allows
 
 In addition to this hierarchy, there is also a relationship between the metadata of different objects: an object can have a reference to a parent object located on the frame (the ``parent`` property).
 
-In Savant, unlike DeepStream, objects usually have a parent, even if they are objects obtained from the detector inference on the whole frame. The point is that for flexible application of different models (for example, if you need to specify the region of interest or skip the inference by a user condition), Savant always creates one object on the frame equal to the whole frame; the default class label of such pseudo-object is ``frame``.
+In Savant, unlike DeepStream, objects usually have a parent, even if they are objects obtained from the detector inference on the whole frame. For the purpose of flexible application of different models (for example, if you need to specify the region of interest or skip the inference by a user condition), Savant always creates one object on the frame equal to the whole frame; the default class label of such pseudo-object is ``frame``. See also :doc:`25_top_level_roi`.
 
-All pipelined models configured without specifying an input object receive this pseudo-object, also called the primary object, as input. Then, in the case of detectors, the resulting objects will have the ``frame`` as a parent by default.
+All pipeline models configured without specifying an input object receive this pseudo-object, also called the primary object, as input. Then, in the case of detectors, the resulting objects will have the ``frame`` as a parent by default.
 
 To work with metadata, it is necessary to get a frame metadata iterator in the batch from ``Gst.Buffer``. You can see details on how to do this in the code at the `link <https://github.com/insight-platform/Savant/blob/develop/savant/deepstream/pyfunc.py#L37-L49>`__, but Savant simplifies working with GStreamer/DeepStream structures, so the Python Function unit provides a simple API described below.
 
@@ -156,7 +156,7 @@ The ``bbox`` parameter can be one of the two types described above in ``bbox``. 
         height=100,
     )
 
-To create an oriented ``bbox``, in addition to the coordinates of the center and dimensions, you also need to specify the angle of rotation, given in degrees (range, reference angle?), for example:
+To create an oriented ``bbox``, in addition to the coordinates of the center and dimensions, you also need to specify the angle of rotation, given in degrees, for example:
 
 .. code-block:: python
 
@@ -188,7 +188,7 @@ Thus, an example of adding metadata about a new object to the frame is as follow
         )
     frame_meta.add_obj_meta(new_obj_meta)
 
-It is not necessary to specify the parent, including the primary object, for objects added to the frame manually.
+It is not necessary to specify any parent, including the primary object, for objects added to the frame manually.
 
 Next, let's look at the methods of working with object attributes. The methods ``get_attr_meta`` and ``get_attr_meta_list`` are defined as follows:
 
@@ -231,4 +231,3 @@ For example, in the `traffic_meter <https://github.com/insight-platform/Savant/t
     primary_meta_object.add_attr_meta(
         'analytics', 'exits_n', self.exit_count[frame_meta.source_id]
     )
-
