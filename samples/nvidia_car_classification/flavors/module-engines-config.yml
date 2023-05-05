@@ -15,9 +15,6 @@ pipeline:
       model:
         format: caffe
         engine_file: resnet10.caffemodel_b1_gpu0_int8.engine
-        precision: int8
-        int8_calib_file: cal_trt.bin
-        batch_size: 1
         input:
           scale_factor: 0.0039215697906911373
         output:
@@ -52,9 +49,6 @@ pipeline:
         engine_file: resnet18.caffemodel_b16_gpu0_int8.engine
         mean_file: mean.ppm
         label_file: labels.txt
-        precision: int8
-        int8_calib_file: cal_trt.bin
-        batch_size: 16
         input:
           object: Primary_Detector.Car
           object_min_width: 64
@@ -74,9 +68,6 @@ pipeline:
         engine_file: resnet18.caffemodel_b16_gpu0_int8.engine
         mean_file: mean.ppm
         label_file: labels.txt
-        precision: int8
-        int8_calib_file: cal_trt.bin
-        batch_size: 16
         input:
           object: Primary_Detector.Car
           object_min_width: 64
@@ -96,9 +87,6 @@ pipeline:
         engine_file: resnet18.caffemodel_b16_gpu0_int8.engine
         mean_file: mean.ppm
         label_file: labels.txt
-        precision: int8
-        int8_calib_file: cal_trt.bin
-        batch_size: 16
         input:
           object: Primary_Detector.Car
           object_min_width: 64

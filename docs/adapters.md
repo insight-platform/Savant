@@ -624,7 +624,7 @@ The adapter parameters are set with environment variables:
 - `ZMQ_TYPE` - ZeroMQ socket type for the adapter's input; the default value is `SUB`, can also be set to `ROUTER` or `REP`;
 - `ZMQ_BIND` - flag specifies whether the adapter's input should be bound or connected to the specified endpoint; If `True`, the input is bound; otherwise, it's connected; the default value is `False`.
 
-**Note**: When `DEV_MODE=False` the stream is available at:
+**Note**: When `DEV_MODE=True` the stream is available at:
 - RTSP - `rtsp://<container-host>:554/stream`;
 - RTMP - `rtmp://<container-host>:1935/stream`;
 - HLS - `http://<container-host>:888/stream`;
