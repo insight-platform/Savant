@@ -20,7 +20,7 @@ The recommended spare space in a filesystem where docker images are stored is **
 Ubuntu 22.04
 ------------
 
-At the current moment, we provide the instruction on how to configure Ubuntu 22.04 runtime. If you have other operation system than Ubuntu, please adapt the instructions to conform your OS.
+At the current moment, we provide the instruction on how to configure Ubuntu 22.04 runtime. If you have other operation system than Ubuntu, please adapt the instructions to your OS.
 
 Update Packages and Install Basic Tools
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

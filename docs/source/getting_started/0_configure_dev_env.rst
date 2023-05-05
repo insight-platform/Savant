@@ -93,7 +93,7 @@ The ``run.py`` file is the entrypoint of the module, let's configure the launch 
 
     .. image:: ../_static/img/dev-env/10-run-output-1.png
 
-#. You must see various GStreamer messages: it's ok. At the end you will see pipeline's output with metadata:
+#. You may see various GStreamer error messages: it's ok. At the end you will see pipeline's output with metadata:
 
     .. image:: ../_static/img/dev-env/11-run-output-2.png
 
@@ -102,7 +102,7 @@ That's it, the environment is set up. Now you are ready to develop your own pipe
 Notes
 ^^^^^
 
-PyCharm does not automatically detects newly installed packages in a Docker container. However, there is an option to manually scan for new packages:  go to the **Settings** and look for **Rescan**, then navigate to **Plugins > Python > Rescan Available Python Modules and Packages** and set the hotkey (e.g., **Alt+R**):
+PyCharm does not automatically detect newly installed packages in a Docker container. However, there is an option to manually scan for new packages: go to the **Settings** and look for **Rescan**, then navigate to **Plugins > Python > Rescan Available Python Modules and Packages** and set the hotkey (e.g., **Alt+R**):
 
 .. image:: ../_static/img/dev-env/12-rescan.png
 

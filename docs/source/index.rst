@@ -112,10 +112,6 @@ The framework and the adapters are delivered as Docker images. To implement the 
 
 As for now, we provide images for x86 architecture and for Jetson hardware.
 
-Next Steps
-^^^^^^^^^^
-
-
 .. toctree::
    :maxdepth: 1
    :hidden:
