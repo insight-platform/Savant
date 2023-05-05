@@ -138,6 +138,15 @@ def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
                 f'Configuration file "{config_file_path}" not found.'
             )
 
+    logger.debug(
+        'Merging model with model config\nmodel %s\nmodel config %s',
+        model,
+        model_config,
+    )
+    model_config_original = model_config
+    model_config = OmegaConf.merge(model, model_config)
+    logger.debug('Merging complete, result\n%s', model_config)
+
     # try to parse engine file and check for a match
     if model_config.engine_file:
         parse_result = NvInferConfig.parse_model_engine_file(model_config.engine_file)
@@ -145,21 +154,27 @@ def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
             # if engine options are not set explicitly
             # get their values from engine file name
             if (
-                not hasattr(model_config, 'batch_size')
-                or model_config.batch_size is None
+                not hasattr(model_config_original, 'batch_size')
+                or model_config_original.batch_size is None
             ):
                 model_config.batch_size = parse_result['batch_size']
                 logger.debug(
                     'Model batch size is taken from engine file name and set to %d',
                     parse_result['batch_size'],
                 )
-            if not hasattr(model_config, 'gpu_id') or model_config.gpu_id is None:
+            if (
+                not hasattr(model_config_original, 'gpu_id')
+                or model_config_original.gpu_id is None
+            ):
                 model_config.gpu_id = parse_result['gpu_id']
                 logger.debug(
                     'Model gpu_id is taken from engine file name and set to %d',
                     parse_result['gpu_id'],
                 )
-            if not hasattr(model_config, 'precision') or model_config.precision is None:
+            if (
+                not hasattr(model_config_original, 'precision')
+                or model_config_original.precision is None
+            ):
                 model_config.precision = parse_result['precision']
                 logger.debug(
                     'Model precision is taken from engine file name and set to %s',
@@ -184,14 +199,6 @@ def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
                     model_config.precision.name,
                 )
                 model_config.engine_file = None
-
-    logger.debug(
-        'Merging model with model config\nmodel %s\nmodel config %s',
-        model,
-        model_config,
-    )
-    model_config = OmegaConf.merge(model, model_config)
-    logger.debug('Merging complete, result\n%s', model_config)
 
     # model or engine file must be specified
     model_file_required = True
