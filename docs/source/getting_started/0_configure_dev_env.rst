@@ -5,11 +5,11 @@ The Savant framework requires a complex environment, including GStreamer, Nvidia
 
 Popular Python IDEs like PyCharm Professional and VSCode support the feature to set up a development environment inside a  docker container: it gives the best opportunity to configure the dev runtime for Savant quickly. The Savant repository includes a module template for a quick start; we will use it to show you how to set up the development environment in popular IDEs.
 
-**NB1**: Currently, we have only a configuration guide for PyCharm Professional. In future releases, we are going to extend the guide to VSCode.
+.. note:: Currently, we have only a configuration guide for PyCharm Professional. In future releases, we are going to extend the guide to VSCode.
 
-**NB2**: Unfortunately, the PyCharm Community edition doesn't support the environment on Docker, so you cannot use it to reproduce the presented instructions.
+.. note:: Unfortunately, the PyCharm Community edition doesn't support the environment on Docker, so you cannot use it to reproduce the presented instructions.
 
-**NB3**: The recommended spare space in a filesystem where docker images are stored is **20 GB**.
+.. note:: The recommended spare space in a filesystem where docker images are stored is **20 GB**.
 
 PyCharm Professional
 --------------------

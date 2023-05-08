@@ -9,7 +9,7 @@ Interpolation is useful in the following cases:
 * avoid duplication of the same value in several places, for example, in the case when objects of the same class are filtered at the output of the Detection Unit and also processed in the Python Function Unit;
 * use for the parameter a derivative of the value of another parameter if the values of these parameters are interrelated; for example, when the minimum allowed sizes for detected objects depend on the frame size.
 
-**NB**: Interpolation happens only **once**, when the module is being initialized. Even when the dynamic parameters are used, their values interpolated only **once**.
+.. note:: Interpolation happens only **once**, when the module is being initialized. Even when the dynamic parameters are used, their values interpolated only **once**.
 
 OmegaConf's capabilities to interpolate configuration values are described in OmegaConf `interpolation <https://omegaconf.readthedocs.io/en/2.3_branch/usage.html#variable-interpolation>`__ manual. Savant allows using all the features of OmegaConf, for example:
 

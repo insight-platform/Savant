@@ -51,7 +51,7 @@ Imagine the situation when you have 2 models: the first one works well with medi
 .. code-block:: yaml
 
     - element: nvinfer@detector
-      name: Primary_Detector_Small
+      name: Secondary_Detector_Small
       model:
         format: caffe
         model_file: model1
@@ -61,7 +61,7 @@ Imagine the situation when you have 2 models: the first one works well with medi
         ...
 
     - element: nvinfer@detector
-      name: Primary_Detector_Large
+      name: Secondary_Detector_Large
       model:
         format: caffe
         model_file: model2
