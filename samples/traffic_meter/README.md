@@ -2,9 +2,13 @@
 
 The pipeline detects when people cross a user-configured line and the direction of the crossing. The crossing events are attached to individual tracks, counted for each source separately and the counters are displayed on the frame. The crossing events are also stored with Graphite and displayed on a Grafana dashboard.
 
-Preview:
+Pedestrians preview:
 
 ![](assets/traffic-meter-loop.webp)
+
+Vehicles preview:
+
+![](assets/road-traffic-loop.webp)
 
 Tested on platforms:
 

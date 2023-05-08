@@ -159,10 +159,11 @@ RUN apt update && apt install --no-install-recommends -y \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 
-COPY docs/requirements.txt requirements-docs.txt
-RUN python -m pip install --no-cache-dir \
-    -r requirements-docs.txt \
-    && rm requirements-docs.txt
+COPY samples samples
+
+COPY docs/requirements.txt requirements.txt
+RUN python -m pip install --no-cache-dir -r requirements.txt \
+    && rm requirements.txt
 
 ARG USERNAME=container_user
 # UID should be set to the same value as host OS UID

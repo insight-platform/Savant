@@ -141,8 +141,6 @@ class ModelInput:
     preprocess_object_meta: Optional[PyFunc] = None
     """Object metadata preprocessing.
 
-    It should be defined using :py:class:`~savant.base.pyfunc.PyFunc`.
-
     Preprocessing implementation should be written as a subclass of
     :py:class:`~savant.base.input_preproc.BasePreprocessObjectMeta`.
     """
@@ -186,8 +184,6 @@ class ModelOutput:
     """Model output converter. Converter is used to transform raw tensor
     output into Savant data format.
 
-    Converter should be defined using :py:class:`~savant.base.pyfunc.PyFunc`.
-
     Converter implementation should be written as a subclass of
     :py:class:`~savant.base.converter.BaseObjectModelOutputConverter` or
     :py:class:`~savant.base.converter.BaseAttributeModelOutputConverter` or
@@ -223,8 +219,6 @@ class ObjectModelOutputObject:
 
     selector: Optional[PyFunc] = None
     """Model output selector.
-
-    Selector should be defined using :py:class:`~savant.base.pyfunc.PyFunc`.
 
     Selector implementation should be written as a subclass of
     :py:class:`~savant.base.selector.BaseSelector`.

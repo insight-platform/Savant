@@ -10,11 +10,11 @@ that utilize the best Nvidia approaches for data center and edge accelerators ve
 
 ## Quick Links
 
-- [Prepare the OS Runtime](docs/runtime-configuration.md)
+- [Prepare the OS Runtime](https://insight-platform.github.io/Savant/getting_started/0_configure_prod_env.html)
 - [Getting Started Tutorial](https://hello.savant.video/peoplenet-tutorial)
 - [Publications and Samples](https://hello.savant.video/samples)
-- [Architecture](docs/architecture.md) - DRAFT
-- [Documentation](https://insight-platform.github.io/Savant/getting_started/intro.html)
+- [Architecture Draft](docs/architecture.md)
+- [Documentation](https://insight-platform.github.io/Savant)
 - [Adapters Guide](docs/adapters.md)
 
 ## 1-Minute Quick Start
@@ -25,7 +25,7 @@ If you are acquainted with running dockerized applications using Nvidia GPUs:
 - **X86 & Volta/Turing/Ampere/Ada Lovelace**: Linux, Drivers 525+, Docker with Compose, Nvidia Container Runtime,
 - **Nvidia Jetson NX/AGX+**: JetPack 5.1+, Docker with Compose, Nvidia Container Runtime.
 
-Trying the demo you will find how to craft the following showcase:
+Trying the demo you will find how to make the following showcase:
 
 ![](samples/peoplenet_detector/assets/peoplenet-blur-demo-loop-400.webp)
 
@@ -264,11 +264,11 @@ As for now, we provide images for x86 architecture and for Jetson hardware.
 
 ## What's Next
 
-- [Prepare the OS Runtime](docs/runtime-configuration.md)
+- [Prepare the OS Runtime](https://insight-platform.github.io/Savant/getting_started/0_configure_prod_env.html)
 - [Getting Started Tutorial](https://hello.savant.video/peoplenet-tutorial)
 - [Publications and Samples](https://hello.savant.video/samples)
-- [Architecture](docs/architecture.md) - DRAFT
-- [Documentation](https://insight-platform.github.io/Savant/getting_started/intro.html)
+- [Architecture Draft](docs/architecture.md)
+- [Documentation](https://insight-platform.github.io/Savant)
 - [Adapters Guide](docs/adapters.md)
 
 ## Contribution

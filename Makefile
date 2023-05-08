@@ -63,6 +63,7 @@ run-docs:
 	docker run -it --rm \
 		-v `pwd`/savant:$(PROJECT_PATH)/savant \
 		-v `pwd`/docs:$(PROJECT_PATH)/docs \
+		-v `pwd`/samples:$(PROJECT_PATH)/samples \
 		--name savant-docs \
 		savant-docs:$(SAVANT_VERSION)
 
