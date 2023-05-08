@@ -48,6 +48,10 @@ jobs:
         working-directory: .
 
     steps:
+      - name: Install git-lfs
+        run: |
+          apt update && apt install --no-install-recommends -y git-lfs
+
       - uses: actions/checkout@v3
         with:
           lfs: true
