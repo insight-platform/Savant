@@ -18,8 +18,13 @@ class ArtistGPUMat(AbstractContextManager):
     :param frame: GpuMat header for allocated CUDA-memory of the frame.
     """
 
-    def __init__(self, frame: cv2.cuda.GpuMat) -> None:
-        self.stream = cv2.cuda.Stream()
+    def __init__(self, frame: cv2.cuda.GpuMat, stream: cv2.cuda.Stream = None) -> None:
+        if stream is None:
+            stream = cv2.cuda.Stream()
+            self.stream_is_managed_internally = True
+        else:
+            self.stream_is_managed_internally = False
+        self.stream = stream
         self.frame: cv2.cuda.GpuMat = frame
         self.width, self.height = self.frame.size()
         self.max_col = self.width - 1
@@ -39,7 +44,8 @@ class ArtistGPUMat(AbstractContextManager):
             cv2.cuda.alphaComp(
                 overlay, self.frame, self.alpha_op, self.frame, stream=self.stream
             )
-        self.stream.waitForCompletion()
+        if self.stream_is_managed_internally:
+            self.stream.waitForCompletion()
 
     @property
     def frame_wh(self):
