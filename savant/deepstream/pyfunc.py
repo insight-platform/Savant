@@ -1,5 +1,6 @@
 """Base implementation of user-defined PyFunc class."""
 import pyds
+import cv2
 from savant.base.pyfunc import BasePyFuncPlugin
 from savant.deepstream.utils import (
     nvds_frame_meta_iterator,
@@ -21,6 +22,7 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._sources = SourceInfoRegistry()
+        self.batch_streams = []
 
     def on_sink_event(self, event: Gst.Event):
         """Add stream event callbacks."""
@@ -33,6 +35,12 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
     def on_source_eos(self, source_id: str):
         """On source EOS event callback."""
         # self.logger.debug('Got GST_NVEVENT_STREAM_EOS for source %s.', source_id)
+
+    def get_cuda_stream(self):
+        """"""
+        stream = cv2.cuda.Stream()
+        self.batch_streams.append(stream)
+        return stream
 
     def process_buffer(self, buffer: Gst.Buffer):
         """Process gstreamer buffer directly. Throws an exception if fatal
@@ -47,6 +55,10 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
             frame_meta = NvDsFrameMeta(frame_meta=nvds_frame_meta)
             self.process_frame(buffer, frame_meta)
+
+        for stream in self.batch_streams:
+            stream.waitForCompletion()
+        self.batch_streams = []
 
     def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
         """Process gstreamer buffer and frame metadata. Throws an exception if fatal
