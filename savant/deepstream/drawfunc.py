@@ -28,21 +28,21 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
             for _, labels in self.rendered_objects.items():
                 for label, color in labels.items():
                     labels[label] = COLOR[color]
-        self.batch_streams = []
+        self.frame_streams = []
 
     def __call__(self, nvds_frame_meta: pyds.NvDsFrameMeta, buffer: Gst.Buffer):
         with nvds_to_gpu_mat(buffer, nvds_frame_meta) as frame_mat:
             stream = cv2.cuda.Stream()
-            self.batch_streams.append(stream)
+            self.frame_streams.append(stream)
             with Artist(frame_mat, stream) as artist:
                 self.draw_on_frame(NvDsFrameMeta(nvds_frame_meta), artist)
 
     def finalize(self):
-        """Finalize batch processing. Wait for all CUDA streams to finish.
+        """Finalize batch processing. Wait for all frame CUDA streams to finish.
         """
-        for stream in self.batch_streams:
+        for stream in self.frame_streams:
             stream.waitForCompletion()
-        self.batch_streams = []
+        self.frame_streams = []
 
     def get_bbox_border_color(
         self, obj_meta: ObjectMeta
