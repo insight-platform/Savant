@@ -35,8 +35,9 @@ class BgRemover(NvDsPyFuncPlugin):
         :param buffer: Gstreamer buffer with this frame's data.
         :param frame_meta: This frame's metadata.
         """
+        stream = self.get_cuda_stream()
         with nvds_to_gpu_mat(buffer, frame_meta.frame_meta) as frame_mat:
-            with Artist(frame_mat) as artist:
+            with Artist(frame_mat, stream) as artist:
                 if frame_meta.source_id in self.back_subtractors:
                     back_sub = self.back_subtractors[frame_meta.source_id]
                 else:
