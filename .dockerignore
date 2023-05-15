@@ -11,3 +11,6 @@ Makefile
 **/dist/
 **/*.egg-info/
 **/build/
+downloads/
+models/
+var/
