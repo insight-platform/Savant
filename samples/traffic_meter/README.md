@@ -10,6 +10,8 @@ Vehicles preview:
 
 ![](assets/road-traffic-loop.webp)
 
+Article on Medium: [Link](https://hello.savant.video/city-traffic-metering)
+
 Tested on platforms:
 
 - Xavier NX, Xavier AGX;
