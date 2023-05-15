@@ -1,4 +1,5 @@
 ARG DEEPSTREAM_VERSION
+ARG SAVANT_VERSION
 FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-devel
 
 # Newer cmake ver. needed for "FindCUDAToolkit"
@@ -51,3 +52,5 @@ RUN --mount=type=cache,target=/tmp/opencv-cache \
 RUN make -j$(nproc)
 RUN make -j$(nproc) install
 RUN make -j$(nproc) package
+
+ENTRYPOINT cp OpenCV*.deb /out

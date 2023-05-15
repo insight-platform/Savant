@@ -59,6 +59,20 @@ build-docs:
 	-f docker/$(DOCKER_FILE) \
 	-t savant-docs:$(SAVANT_VERSION) .
 
+build-opencv: opencv-build-image opencv-copy-to-host
+
+opencv-build-image:
+	DOCKER_BUILDKIT=1 docker build --progress plain \
+	--build-arg SAVANT_VERSION=$(SAVANT_VERSION) \
+	--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
+	-f docker/Dockerfile.deepstream-opencv \
+	-t savant-ds-opencv$(PLATFORM_SUFFIX) \
+	-t savant-ds-opencv$(PLATFORM_SUFFIX):$(SAVANT_VERSION)-$(DEEPSTREAM_VERSION) .
+
+opencv-copy-to-host:
+	docker run --rm -v `pwd`:/out \
+	savant-ds-opencv$(PLATFORM_SUFFIX):$(SAVANT_VERSION)-$(DEEPSTREAM_VERSION)
+
 run-docs:
 	docker run -it --rm \
 		-v `pwd`/savant:$(PROJECT_PATH)/savant \
