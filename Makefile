@@ -62,7 +62,7 @@ build-docs:
 build-opencv: opencv-build-image opencv-copy-to-host
 
 opencv-build-image:
-	DOCKER_BUILDKIT=1 docker build --progress plain \
+	DOCKER_BUILDKIT=1 docker build \
 	--build-arg SAVANT_VERSION=$(SAVANT_VERSION) \
 	--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
 	-f docker/Dockerfile.deepstream-opencv \
