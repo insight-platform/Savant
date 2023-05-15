@@ -43,9 +43,9 @@ RUN --mount=type=cache,target=/tmp/opencv-cache \
         -D OPENCV_FORCE_PYTHON_LIBS=ON \
         -D BUILD_PACKAGE=ON \
         -D CPACK_BINARY_DEB=ON \
-        -D CPACK_BINARY_STGZ=ON \
-        -D CPACK_BINARY_TGZ=ON \
-        -D CPACK_BINARY_TZ=ON \
+        -D CPACK_BINARY_STGZ=OFF \
+        -D CPACK_BINARY_TGZ=OFF \
+        -D CPACK_BINARY_TZ=OFF \
         /opencv/opencv
 
 RUN make -j$(nproc)
