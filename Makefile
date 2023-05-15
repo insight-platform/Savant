@@ -65,7 +65,7 @@ opencv-build-image:
 	DOCKER_BUILDKIT=1 docker build \
 	--build-arg SAVANT_VERSION=$(SAVANT_VERSION) \
 	--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
-	-f docker/Dockerfile.deepstream-opencv \
+	-f docker/Dockerfile.deepstream-opencv$(PLATFORM_SUFFIX) \
 	-t savant-ds-opencv$(PLATFORM_SUFFIX) \
 	-t savant-ds-opencv$(PLATFORM_SUFFIX):$(SAVANT_VERSION)-$(DEEPSTREAM_VERSION) .
 
