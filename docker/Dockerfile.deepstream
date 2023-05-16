@@ -99,7 +99,8 @@ RUN python -m pip install --no-cache-dir /libs/savant/dist/*.whl
 
 RUN curl -fsS https://eu-central-1.linodeobjects.com/savant-data/opencv-packages/x86/OpenCV-4.6.0-x86_64-{dev,libs,licenses,python,scripts}.deb \
     -o "OpenCV-#1.deb" \
-    && dpkg -i OpenCV*
+    && dpkg -i OpenCV* \
+    && rm OpenCV*
 
 COPY --from=pygstsavantframemeta_build /libs/gstsavantframemeta/dist /libs/gstsavantframemeta/dist
 RUN python -m pip install --no-cache-dir /libs/gstsavantframemeta/dist/*.whl
