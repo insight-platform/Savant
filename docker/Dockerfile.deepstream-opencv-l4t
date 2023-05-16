@@ -16,6 +16,7 @@ RUN echo "deb https://repo.download.nvidia.com/jetson/$soc `cat /etc/apt/sources
     && touch /opt/nvidia/l4t-packages/.nv-l4t-disable-boot-fw-update-in-preinstall \
     && apt-get update \
     && apt-get install -y \
+        file \
         nvidia-l4t-multimedia \
     && rm -rf /var/lib/apt/lists/*
 
