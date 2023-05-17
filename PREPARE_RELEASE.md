@@ -19,15 +19,10 @@ Move the resulting files into `savant-data/opencv-packages/x86` and `savant-data
 While on the `develop` git branch, run
 
 ```
-./utils/prepare_release.sh savant_ver ds_ver
+./utils/prepare_release.sh
 ```
 
-where
-
-- `savant_ver` is the Savant version in the form X.Y.Z, .Z component is optional
-- `ds_ver` is the Deepstream version in the form M.N.K, .K component is optional
-
-The script creates a local git branch named `releases/vX.Y.Z` with the X.Y.Z Savant version fixed in the samples Dockerfiles, samples docker-compose files and the `savant/VERSION` file.
+The script creates a local git branch named `releases/vX.Y.Z` where X.Y.Z is the Savant version defined in the `savant/VERSION` file. The branch will contain a commit that writes X.Y.Z Savant version into the samples Dockerfiles and samples docker-compose files.
 
 The branch can be pushed to remote
 
@@ -35,16 +30,4 @@ The branch can be pushed to remote
 git push -u origin releases/vX.Y.Z
 ```
 
-To start the git workflows that will build the Savant package and docker images for this version
-
-1. Tag the commit in the branch as `vX.Y.Z`
-
-```
-git tag -a vX.Y.X -m "Release version X.Y.Z"
-```
-
-2. And push the tag to remote
-
-```
-git push origin vX.Y.Z
-```
+Next, the developer is expected to create a PR from `releases/vX.Y.Z` into `main`, and tag the commit after merge. This starts the git workflows that will build the Savant package and docker images for the version.
