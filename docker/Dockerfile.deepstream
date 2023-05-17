@@ -1,22 +1,6 @@
 ARG SAVANT_VERSION
 ARG DEEPSTREAM_VERSION
 
-FROM ubuntu:20.04 as savant_build
-
-RUN apt-get update \
-    && apt-get install --no-install-recommends -y \
-    python3.8 \
-    python3-pip \
-    python3.8-venv \
-    && apt-get autoremove -y \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-RUN python3 -m pip install --upgrade pip setuptools wheel build
-
-WORKDIR /tmp/build
-COPY . .
-RUN python3 -m build --wheel
-
 
 FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-devel AS base_builder
 
@@ -30,12 +14,31 @@ RUN mkdir -p /tmp/cmake \
 RUN apt-get update \
     && apt-get install --no-install-recommends -y \
     python3-dev
+    && apt-get autoremove -y \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # python to python3 by default
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 10
 
 # update pip
 RUN python -m pip install --no-cache-dir --upgrade pip
+
+
+FROM base_builder as savant_build
+
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y \
+    python3.8-venv \
+    && apt-get autoremove -y \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN python3 -m pip install setuptools wheel build
+
+WORKDIR /tmp/build
+COPY . .
+RUN python3 -m build --wheel
 
 
 FROM base_builder AS pygstsavantframemeta_build
