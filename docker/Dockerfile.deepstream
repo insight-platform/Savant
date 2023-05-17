@@ -1,7 +1,5 @@
 ARG SAVANT_VERSION
 ARG DEEPSTREAM_VERSION
-
-
 FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-devel AS base_builder
 
 # Newer cmake ver. needed for "FindCUDAToolkit"
@@ -62,7 +60,6 @@ RUN python setup.py bdist_wheel && rm -rf _skbuild
 
 
 FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-base AS base
-ARG SAVANT_VERSION
 ARG DEEPSTREAM_VERSION
 
 # python to python3 by default

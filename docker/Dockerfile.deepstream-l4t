@@ -57,6 +57,7 @@ RUN python setup.py bdist_wheel && rm -rf _skbuild
 
 
 FROM nvcr.io/nvidia/deepstream-l4t:$DEEPSTREAM_VERSION-base AS base
+ARG DEEPSTREAM_VERSION
 
 # install base packages
 RUN apt-get update \
