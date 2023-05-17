@@ -3,11 +3,6 @@ FROM nvcr.io/nvidia/deepstream-l4t:$DEEPSTREAM_VERSION-triton
 ARG DEEPSTREAM_VERSION
 ARG soc=t194
 
-RUN wget --no-verbose -O /tmp/cmake.sh \
-        https://github.com/Kitware/CMake/releases/download/v3.24.2/cmake-3.24.2-linux-aarch64.sh  \
-    && sh /tmp/cmake.sh --skip-license --prefix=/usr/local \
-    && rm -f /tmp/cmake.sh
-
 RUN echo "deb https://repo.download.nvidia.com/jetson/$soc `cat /etc/apt/sources.list | grep jetson/common | cut -d' ' -f3` main" \
      > /etc/apt/sources.list.d/nvidia-l4t-apt-source.list \
     && rm /etc/ld.so.conf.d/nvidia-tegra.conf \
