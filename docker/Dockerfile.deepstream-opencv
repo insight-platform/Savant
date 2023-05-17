@@ -2,6 +2,12 @@ ARG DEEPSTREAM_VERSION
 FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-devel
 ARG DEEPSTREAM_VERSION
 
+# CMake upgrade needed to install CPack
+ARG CMAKE_VER=3.26.3
+RUN mkdir -p /tmp/cmake \
+    && cd /tmp/cmake \
+    && wget --progress=bar:force:noscroll https://github.com/Kitware/CMake/releases/download/v$CMAKE_VER/cmake-$CMAKE_VER-linux-x86_64.sh \
+    && sh cmake-$CMAKE_VER-linux-x86_64.sh --skip-license --prefix=/usr/local/
 # need python headers
 RUN apt-get update \
     && apt-get install --no-install-recommends -y \
