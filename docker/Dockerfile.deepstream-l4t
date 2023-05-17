@@ -93,7 +93,7 @@ RUN python -m pip install --no-cache-dir -r requirements.txt \
 COPY --from=savant_build /tmp/build/dist /libs/savant/dist/
 RUN python -m pip install --no-cache-dir /libs/savant/dist/*.whl
 
-RUN curl -fsS https://eu-central-1.linodeobjects.com/savant-data/opencv-packages/aarch64/OpenCV-4.6.0-aarch64-{dev,libs,licenses,python,scripts}.deb \
+RUN curl -fsS https://eu-central-1.linodeobjects.com/savant-data/opencv-packages/aarch64/OpenCV-4.6.0-aarch64-{dev,libs,licenses,python,scripts}_${DEEPSTREAM_VERSION}.deb \
     -o "OpenCV-#1.deb" \
     && dpkg -i OpenCV* \
     && rm OpenCV*

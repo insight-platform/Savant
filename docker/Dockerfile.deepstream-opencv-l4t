@@ -1,7 +1,6 @@
 ARG DEEPSTREAM_VERSION
 FROM nvcr.io/nvidia/deepstream-l4t:$DEEPSTREAM_VERSION-triton
 ARG DEEPSTREAM_VERSION
-ARG SAVANT_VERSION
 ARG soc=t194
 
 RUN wget --no-verbose -O /tmp/cmake.sh \
@@ -59,6 +58,6 @@ RUN --mount=type=cache,target=/tmp/opencv-cache \
 RUN make -j$(nproc)
 RUN make -j$(nproc) install
 RUN make -j$(nproc) package \
-    && for file in *.deb; do mv "$file" "${file%.deb}_${SAVANT_VERSION}_${DEEPSTREAM_VERSION}.deb"; done
+    && for file in *.deb; do mv "$file" "${file%.deb}_${DEEPSTREAM_VERSION}.deb"; done
 
 ENTRYPOINT cp OpenCV*.deb /out

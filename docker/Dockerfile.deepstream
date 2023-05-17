@@ -60,6 +60,7 @@ RUN python setup.py bdist_wheel && rm -rf _skbuild
 
 FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-base AS base
 ARG SAVANT_VERSION
+ARG DEEPSTREAM_VERSION
 
 # python to python3 by default
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 10
@@ -97,7 +98,7 @@ RUN python -m pip install --no-cache-dir -r requirements.txt \
 COPY --from=savant_build /tmp/build/dist /libs/savant/dist/
 RUN python -m pip install --no-cache-dir /libs/savant/dist/*.whl
 
-RUN curl -fsS https://eu-central-1.linodeobjects.com/savant-data/opencv-packages/x86/OpenCV-4.6.0-x86_64-{dev,libs,licenses,python,scripts}.deb \
+RUN curl -fsS https://eu-central-1.linodeobjects.com/savant-data/opencv-packages/x86/OpenCV-4.6.0-x86_64-{dev,libs,licenses,python,scripts}_${DEEPSTREAM_VERSION}.deb \
     -o "OpenCV-#1.deb" \
     && dpkg -i OpenCV* \
     && rm OpenCV*
