@@ -2,15 +2,15 @@
 
 # bash script first argument is the Savant version to be released
 # validate the version number
-if [[ ! $1 =~ ^[0-9]+\.[0-9]+\.?[0-9]*$ ]]; then
-    echo "Invalid version number: $1"
+if [[ ! $1 =~ ^[0-9]+\.[0-9]+(\.[0-9])?$ ]]; then
+    echo "Invalid Savant version number: $1"
     echo "Version number must be in the format: x.y.z"
     exit 1
 fi
 
 # bash script second argument is the DeepStream version used in the release
 # validate the DeepStream version number
-if [[ ! $2 =~ ^[0-9]+\.[0-9]+\.?[0-9]*$ ]]; then
+if [[ ! $2 =~ ^[0-9]+\.[0-9]+(\.[0-9])?$ ]]; then
     echo "Invalid DeepStream version number: $2"
     echo "Version number must be in the format: x.y.z"
     exit 1
