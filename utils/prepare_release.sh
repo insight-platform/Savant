@@ -1,30 +1,11 @@
 #!/bin/bash
-
-# bash script first argument is the Savant version to be released
-# validate the version number
-if [[ ! $1 =~ ^[0-9]+\.[0-9]+(\.[0-9])?$ ]]; then
-    echo "Invalid Savant version number: $1"
-    echo "Version number must be in the format: x.y.z"
-    exit 1
-fi
-
-# bash script second argument is the DeepStream version used in the release
-# validate the DeepStream version number
-if [[ ! $2 =~ ^[0-9]+\.[0-9]+(\.[0-9])?$ ]]; then
-    echo "Invalid DeepStream version number: $2"
-    echo "Version number must be in the format: x.y.z"
-    exit 1
-fi
-SAVANT_VER=$1
-DS_VER=$2
+VERSION_FILE=savant/VERSION
+# parse the version numbers from the VERSION file
+SAVANT_VER=$(cat $VERSION_FILE | awk -F= '$1=="SAVANT"{print $2}' | sed 's/"//g')
+DS_VER=$(cat $VERSION_FILE | awk -F= '$1=="DEEPSTREAM"{print $2}' | sed 's/"//g')
 
 # create a git branch named releases/x.y.z from the current branch
 git checkout -b releases/$SAVANT_VER
-
-VERSION_FILE=savant/VERSION
-# replace the version numbers in the VERSION file
-sed -i "s/SAVANT=.*/SAVANT=$SAVANT_VER/;s/DEEPSTREAM=.*/DEEPSTREAM=$DS_VER/" $VERSION_FILE
-git add $VERSION_FILE
 
 DEFAULT_TAG=latest
 PATTERN_DS="savant-(adapters-)?deepstream(-l4t)?"
