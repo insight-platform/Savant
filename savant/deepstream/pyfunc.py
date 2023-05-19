@@ -40,7 +40,7 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
         """Get a CUDA stream that can be used to asynchronously process a frame in a batch.
         All frame CUDA streams will be waited for at the end of batch processing.
         """
-        if frame_meta.batch_id not in self.frame_streams[frame_meta.batch_id]:
+        if frame_meta.batch_id not in self.frame_streams:
             self.frame_streams[frame_meta.batch_id] = cv2.cuda.Stream()
 
         return self.frame_streams[frame_meta.batch_id]
