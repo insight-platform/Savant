@@ -88,10 +88,8 @@ COPY requirements/deepstream-l4t.txt requirements.txt
 RUN python -m pip install --no-cache-dir -r requirements.txt \
     && rm requirements.txt
 
-COPY --from=savant_build /tmp/build/dist /libs/savant/dist/
-RUN python -m pip install --no-cache-dir /libs/savant/dist/*.whl
-
-RUN curl -fsS https://eu-central-1.linodeobjects.com/savant-data/opencv-packages/aarch64/OpenCV-4.6.0-aarch64-{dev,libs,licenses,python,scripts}_${DEEPSTREAM_VERSION}.deb \
+RUN curl -fsS \
+    "https://eu-central-1.linodeobjects.com/savant-data/opencv-packages/aarch64/OpenCV-4.6.0-aarch64-{dev,libs,licenses,python,scripts}_${DEEPSTREAM_VERSION}.deb" \
     -o "OpenCV-#1.deb" \
     && dpkg -i OpenCV* \
     && rm OpenCV*
@@ -101,6 +99,9 @@ RUN python -m pip install --no-cache-dir /libs/gstsavantframemeta/dist/*.whl
 
 COPY --from=savantboost_build /libs/savanboost/dist /libs/savanboost/dist
 RUN python -m pip install --no-cache-dir /libs/savanboost/dist/*.whl
+
+COPY --from=savant_build /tmp/build/dist /libs/savant/dist/
+RUN python -m pip install --no-cache-dir /libs/savant/dist/*.whl
 
 # add framework content
 COPY LICENSE .
