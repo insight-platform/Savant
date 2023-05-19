@@ -1,4 +1,5 @@
 """AvroVideoDemux element."""
+import inspect
 import itertools
 
 import time
@@ -18,6 +19,7 @@ from savant.gstreamer.metadata import (
     metadata_add_frame_meta,
     OnlyExtendedDict,
 )
+from savant.gstreamer.utils import propagate_gst_error
 from savant.utils.logging import LoggerMixin
 
 DEFAULT_SOURCE_TIMEOUT = 60
@@ -263,14 +265,21 @@ class AvroVideoDemux(LoggerMixin, Gst.Element):
                     self.max_parallel_streams
                     and len(self.sources) >= self.max_parallel_streams
                 ):
-                    self.logger.warning(
-                        'Reached maximum number of streams: %s. '
-                        'Skipping frame %s from source %s',
-                        self.max_parallel_streams,
-                        frame_pts,
-                        source_id,
+                    error = (
+                        f'Failed to add source {source_id!r}: reached maximum '
+                        f'number of streams: {self.max_parallel_streams}.'
                     )
-                    return Gst.FlowReturn.OK
+                    self.logger.error(error)
+                    frame = inspect.currentframe()
+                    propagate_gst_error(
+                        gst_element=self,
+                        frame=frame,
+                        file_path=__file__,
+                        domain=Gst.StreamError.quark(),
+                        code=Gst.StreamError.DEMUX,
+                        text=error,
+                    )
+                    return Gst.FlowReturn.ERROR
                 if not message['keyframe']:
                     self.logger.warning(
                         'Frame %s from source %s is not a keyframe, skipping it. '
