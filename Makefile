@@ -59,18 +59,30 @@ build-docs:
 	-f docker/$(DOCKER_FILE) \
 	-t savant-docs:$(SAVANT_VERSION) .
 
-build-opencv: opencv-build-image opencv-copy-to-host
+build-opencv: opencv-build-amd64 opencv-image-arm64 opencv-cp-amd64 opencv-cp-arm64
 
-opencv-build-image:
+opencv-build-amd64:
 	DOCKER_BUILDKIT=1 docker build \
 	--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
-	-f docker/Dockerfile.deepstream-opencv$(PLATFORM_SUFFIX) \
-	-t savant-ds-opencv$(PLATFORM_SUFFIX) \
-	-t savant-ds-opencv$(PLATFORM_SUFFIX):$(DEEPSTREAM_VERSION) .
+	-f docker/Dockerfile.deepstream-opencv \
+	-t savant-ds-opencv \
+	-t savant-ds-opencv:$(DEEPSTREAM_VERSION) .
 
-opencv-copy-to-host:
+opencv-cp-amd64:
 	docker run --rm -v `pwd`:/out \
-	savant-ds-opencv$(PLATFORM_SUFFIX):$(DEEPSTREAM_VERSION)
+	savant-ds-opencv:$(DEEPSTREAM_VERSION)
+
+opencv-image-arm64:
+	docker buildx build \
+	--platform linux/arm64 \
+	--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
+	-f docker/Dockerfile.deepstream-opencv-l4t \
+	-t savant-ds-opencv-l4t \
+	-t savant-ds-opencv-l4t:$(DEEPSTREAM_VERSION) .
+
+opencv-cp-arm64:
+	docker run --rm -v `pwd`:/out --platform arm64 \
+	savant-ds-opencv-l4t:$(DEEPSTREAM_VERSION)
 
 run-docs:
 	docker run -it --rm \
