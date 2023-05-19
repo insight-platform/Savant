@@ -80,7 +80,6 @@ class LineCrossing(NvDsPyFuncPlugin):
                 break
 
         if primary_meta_object is not None and frame_meta.source_id in self.line_config:
-
             line_from = self.line_config[frame_meta.source_id]['from']
             line_to = self.line_config[frame_meta.source_id]['to']
 
@@ -104,7 +103,10 @@ class LineCrossing(NvDsPyFuncPlugin):
                     self.track_last_frame_num[frame_meta.source_id][
                         obj_meta.track_id
                     ] = frame_meta.frame_num
+
                     direction = lc_tracker.check_track(obj_meta.track_id)
+                    direction_rs = lc_tracker.check_track_rs(obj_meta.track_id)
+                    assert direction == direction_rs
 
                     obj_events = self.cross_events[frame_meta.source_id][
                         obj_meta.track_id

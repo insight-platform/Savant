@@ -5,6 +5,8 @@ from typing import Optional, Tuple
 import random
 import math
 import numpy as np
+from savant_rs.primitives import PolygonalArea, Segment, IntersectionKind
+from savant_rs.primitives import Point as SavantRsPoint
 
 
 class Direction(Enum):
@@ -115,6 +117,54 @@ class TwoLinesCrossingTracker(LineCrossingTracker):
         self._lines.append(line2)
         # {track_id: (c1, c2)} - stores the last 2 crossing lines
         self._line_crossings = defaultdict(lambda: deque(maxlen=2))
+
+        l1_pt_1, l2_pt_2 = line1
+        l1_pt_2, l2_pt_1 = line2
+        rs_pt1 = SavantRsPoint(*l1_pt_1)
+        rs_pt2 = SavantRsPoint(*l1_pt_2)
+        rs_pt3 = SavantRsPoint(*l2_pt_1)
+        rs_pt4 = SavantRsPoint(*l2_pt_2)
+        self.area = PolygonalArea(
+            [rs_pt1, rs_pt2, rs_pt3, rs_pt4], [None, "entry", None, "exit"]
+        )
+        self.rs_line_crossings = {}
+
+    def check_track_rs(self, track_id: int) -> Optional[Direction]:
+        track_points = self._track_last_points[track_id]
+        if len(track_points) != 2:
+            return None
+
+        segment = Segment(
+            SavantRsPoint(*track_points[0]), SavantRsPoint(*track_points[1])
+        )
+        rs_result = self.area.crossed_by_segment(segment)
+        if rs_result.kind == IntersectionKind.Enter:
+            self.rs_line_crossings[track_id] = rs_result.edges[0]
+
+        elif rs_result.kind == IntersectionKind.Leave:
+            if track_id in self.rs_line_crossings:
+                if self.rs_line_crossings[track_id] == rs_result.edges[0]:
+                    return None
+                else:
+                    if rs_result.edges == [(1, 'entry')]:
+                        return Direction.entry
+                    elif rs_result.edges == [(3, 'exit')]:
+                        return Direction.exit
+                    else:
+                        return None
+            else:
+                raise ValueError(f"Unexpected leave no prev enter: {rs_result.edges}")
+        elif rs_result.kind == IntersectionKind.Cross:
+            if rs_result.edges == [(3, 'exit'), (1, 'entry')]:
+                return Direction.entry
+            elif rs_result.edges == [(1, 'entry'), (3, 'exit')]:
+                return Direction.exit
+            else:
+                return None
+        else:
+            # rs_result.kind == IntersectionKind.Inside
+            # rs_result.kind == IntersectionKind.Outside
+            return None
 
     def check_track(self, track_id: int) -> Optional[Direction]:
         track_points = self._track_last_points[track_id]
