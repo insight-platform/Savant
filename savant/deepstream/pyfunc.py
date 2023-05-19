@@ -22,7 +22,7 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._sources = SourceInfoRegistry()
-        self.frame_streams = []
+        self.frame_streams = {}
 
     def on_sink_event(self, event: Gst.Event):
         """Add stream event callbacks."""
@@ -36,13 +36,14 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
         """On source EOS event callback."""
         # self.logger.debug('Got GST_NVEVENT_STREAM_EOS for source %s.', source_id)
 
-    def get_cuda_stream(self):
+    def get_cuda_stream(self, frame_meta: NvDsFrameMeta):
         """Get a CUDA stream that can be used to asynchronously process a frame in a batch.
         All frame CUDA streams will be waited for at the end of batch processing.
         """
-        stream = cv2.cuda.Stream()
-        self.frame_streams.append(stream)
-        return stream
+        if frame_meta.batch_id not in self.frame_streams:
+            self.frame_streams[frame_meta.batch_id] = cv2.cuda.Stream()
+
+        return self.frame_streams[frame_meta.batch_id]
 
     def process_buffer(self, buffer: Gst.Buffer):
         """Process gstreamer buffer directly. Throws an exception if fatal
@@ -58,9 +59,9 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
             frame_meta = NvDsFrameMeta(frame_meta=nvds_frame_meta)
             self.process_frame(buffer, frame_meta)
 
-        for stream in self.frame_streams:
+        for stream in self.frame_streams.values():
             stream.waitForCompletion()
-        self.frame_streams = []
+        self.frame_streams.clear()
 
     def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
         """Process gstreamer buffer and frame metadata. Throws an exception if fatal
