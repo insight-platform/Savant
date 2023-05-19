@@ -40,12 +40,10 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
         """Get a CUDA stream that can be used to asynchronously process a frame in a batch.
         All frame CUDA streams will be waited for at the end of batch processing.
         """
-        if frame_meta in self.frame_streams:
-            return self.frame_streams[frame_meta]
-        else:
-            stream = cv2.cuda.Stream()
-            self.frame_streams[frame_meta] = stream
-            return stream
+        if frame_meta.batch_id not in self.frame_streams[frame_meta.batch_id]:
+            self.frame_streams[frame_meta.batch_id] = cv2.cuda.Stream()
+
+        return self.frame_streams[frame_meta.batch_id]
 
     def process_buffer(self, buffer: Gst.Buffer):
         """Process gstreamer buffer directly. Throws an exception if fatal
@@ -63,7 +61,7 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
 
         for stream in self.frame_streams.values():
             stream.waitForCompletion()
-        self.frame_streams = {}
+        self.frame_streams.clear()
 
     def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
         """Process gstreamer buffer and frame metadata. Throws an exception if fatal
