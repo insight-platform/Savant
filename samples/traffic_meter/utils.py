@@ -1,7 +1,7 @@
 """Line crossing trackers."""
 from collections import deque, defaultdict, namedtuple
 from enum import Enum
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 import random
 import math
 import numpy as np
@@ -165,6 +165,19 @@ class TwoLinesCrossingTracker(LineCrossingTracker):
             # rs_result.kind == IntersectionKind.Inside
             # rs_result.kind == IntersectionKind.Outside
             return None
+        
+    def check_track_rs_batch(self, track_ids: List[int]) -> List[Optional[Direction]]:
+        segments = []
+        for track_id in track_ids:
+            track_points = self._track_last_points[track_id]
+            if len(track_points) != 2:
+                return None
+
+            segments.append(
+                Segment(
+                    SavantRsPoint(*track_points[0]), SavantRsPoint(*track_points[1])
+                )
+            )
 
     def check_track(self, track_id: int) -> Optional[Direction]:
         track_points = self._track_last_points[track_id]
