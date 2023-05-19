@@ -5,8 +5,8 @@ from savant.gstreamer import Gst
 from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.deepstream.pyfunc import NvDsPyFuncPlugin
 from samples.traffic_meter.utils import TwoLinesCrossingTracker, Point, Direction
-
-
+from timeit import default_timer as timer
+import numpy as np
 class ConditionalDetectorSkip(NvDsPyFuncPlugin):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -48,9 +48,12 @@ class LineCrossing(NvDsPyFuncPlugin):
         # metrics namescheme
         # savant.module.traffic_meter.source_id.obj_class_label.exit
         # savant.module.traffic_meter.source_id.obj_class_label.entry
-        self.stats_client = StatsClient(
-            'graphite', 8125, prefix='savant.module.traffic_meter'
-        )
+        # self.stats_client = StatsClient(
+        #     'graphite', 8125, prefix='savant.module.traffic_meter'
+        # )
+
+        self.times_py = []
+        self.times_rs = []
 
     def on_source_eos(self, source_id: str):
         """On source EOS event callback."""
@@ -104,24 +107,30 @@ class LineCrossing(NvDsPyFuncPlugin):
                         obj_meta.track_id
                     ] = frame_meta.frame_num
 
+                    t1 = timer()
                     direction = lc_tracker.check_track(obj_meta.track_id)
-                    direction_rs = lc_tracker.check_track_rs(obj_meta.track_id)
-                    assert direction == direction_rs
+                    t2 = timer()
+                    direction = lc_tracker.check_track_rs(obj_meta.track_id)
+                    t3 = timer()
+                    self.times_py.append(t2-t1)
+                    self.times_rs.append(t3-t2)
+                    # print(f"check_track: {(t2-t1)*10**6:.3f}, check_track_rs: {(t3-t2)*10**6:.3f}")
+                    # assert direction == direction_rs
 
                     obj_events = self.cross_events[frame_meta.source_id][
                         obj_meta.track_id
                     ]
                     if direction is not None:
                         # send to graphite
-                        self.stats_client.incr(
-                            '.'.join(
-                                (
-                                    frame_meta.source_id,
-                                    self.target_obj_label,
-                                    direction.name,
-                                )
-                            )
-                        )
+                        # self.stats_client.incr(
+                        #     '.'.join(
+                        #         (
+                        #             frame_meta.source_id,
+                        #             self.target_obj_label,
+                        #             direction.name,
+                        #         )
+                        #     )
+                        # )
 
                         obj_events.append((direction.name, frame_meta.pts))
 
@@ -156,3 +165,8 @@ class LineCrossing(NvDsPyFuncPlugin):
                     lc_tracker = self.lc_trackers[frame_meta.source_id]
                     del last_frames[track_id]
                     lc_tracker.remove_track(track_id)
+
+    def on_stop(self):
+        print(f"avg py: {np.mean(self.times_py)*10**6:.3f}, avg rs: {np.mean(self.times_rs)*10**6:.3f}")
+        print(f"avg delta: {(np.mean(np.array(self.times_py)-np.array(self.times_rs)))*10**6:.3f}")
+        return True
