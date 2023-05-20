@@ -10,8 +10,6 @@ Run
 make build-opencv
 ```
 
-Do this for both `x86` and `aarch64` platforms.
-
 Move the resulting files into `savant-data/opencv-packages/x86` and `savant-data/opencv-packages/aarch64` buckets on the S3 storage.
 
 ## Build and publish Savant release
