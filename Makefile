@@ -59,7 +59,7 @@ build-docs:
 	-f docker/$(DOCKER_FILE) \
 	-t savant-docs:$(SAVANT_VERSION) .
 
-build-opencv: opencv-build-amd64 opencv-image-arm64 opencv-cp-amd64 opencv-cp-arm64
+build-opencv: opencv-build-amd64 opencv-build-arm64 opencv-cp-amd64 opencv-cp-arm64
 
 opencv-build-amd64:
 	DOCKER_BUILDKIT=1 docker build \
@@ -72,7 +72,7 @@ opencv-cp-amd64:
 	docker run --rm -v `pwd`:/out \
 	savant-ds-opencv:$(DEEPSTREAM_VERSION)
 
-opencv-image-arm64:
+opencv-build-arm64:
 	docker buildx build \
 	--platform linux/arm64 \
 	--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
