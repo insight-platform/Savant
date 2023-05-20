@@ -27,5 +27,4 @@ class BaseNvDsDrawFunc(BasePyFuncCallableImpl):
 
     @abstractmethod
     def finalize(self):
-        """Finalize batch processing.
-        """
+        """Finalize batch processing."""

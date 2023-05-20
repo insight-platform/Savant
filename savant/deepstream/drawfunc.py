@@ -38,8 +38,7 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
                 self.draw_on_frame(NvDsFrameMeta(nvds_frame_meta), artist)
 
     def finalize(self):
-        """Finalize batch processing. Wait for all frame CUDA streams to finish.
-        """
+        """Finalize batch processing. Wait for all frame CUDA streams to finish."""
         for stream in self.frame_streams:
             stream.waitForCompletion()
         self.frame_streams = []

@@ -47,7 +47,12 @@ from savant.utils.fps_meter import FPSMeter
 from savant.utils.model_registry import ModelObjectRegistry
 from savant.utils.source_info import SourceInfoRegistry, SourceInfo, Resolution
 from savant.utils.platform import is_aarch64
-from savant.config.schema import PipelineElement, ModelElement, FrameParameters, DrawFunc
+from savant.config.schema import (
+    PipelineElement,
+    ModelElement,
+    FrameParameters,
+    DrawFunc,
+)
 from savant.base.model import AttributeModel, ComplexModel
 from savant.utils.sink_factories import SinkEndOfStream
 
