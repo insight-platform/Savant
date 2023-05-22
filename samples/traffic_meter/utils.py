@@ -138,6 +138,7 @@ class TwoLinesCrossingTracker(LineCrossingTracker):
             SavantRsPoint(*track_points[0]), SavantRsPoint(*track_points[1])
         )
         rs_result = self.area.crossed_by_segment(segment)
+
         if rs_result.kind == IntersectionKind.Enter:
             self.rs_line_crossings[track_id] = rs_result.edges[0]
 
@@ -145,39 +146,64 @@ class TwoLinesCrossingTracker(LineCrossingTracker):
             if track_id in self.rs_line_crossings:
                 if self.rs_line_crossings[track_id] == rs_result.edges[0]:
                     return None
-                else:
-                    if rs_result.edges == [(1, 'entry')]:
-                        return Direction.entry
-                    elif rs_result.edges == [(3, 'exit')]:
-                        return Direction.exit
-                    else:
-                        return None
-            else:
-                raise ValueError(f"Unexpected leave no prev enter: {rs_result.edges}")
+                if rs_result.edges == [(1, 'entry')]:
+                    return Direction.entry
+                if rs_result.edges == [(3, 'exit')]:
+                    return Direction.exit
+                return None
+            raise ValueError(f"Unexpected leave no prev enter: {rs_result.edges}")
+
         elif rs_result.kind == IntersectionKind.Cross:
             if rs_result.edges == [(3, 'exit'), (1, 'entry')]:
                 return Direction.entry
-            elif rs_result.edges == [(1, 'entry'), (3, 'exit')]:
+            if rs_result.edges == [(1, 'entry'), (3, 'exit')]:
                 return Direction.exit
-            else:
-                return None
+            return None
+
         else:
             # rs_result.kind == IntersectionKind.Inside
             # rs_result.kind == IntersectionKind.Outside
             return None
         
     def check_track_rs_batch(self, track_ids: List[int]) -> List[Optional[Direction]]:
+        ret = [None] * len(track_ids)
+        check_track_idxs = []
         segments = []
-        for track_id in track_ids:
+        for i, track_id in enumerate(track_ids):
             track_points = self._track_last_points[track_id]
-            if len(track_points) != 2:
-                return None
-
-            segments.append(
-                Segment(
-                    SavantRsPoint(*track_points[0]), SavantRsPoint(*track_points[1])
+            if len(track_points) == 2:
+                segments.append(
+                    Segment(
+                        SavantRsPoint(*track_points[0]), SavantRsPoint(*track_points[1])
+                    )
                 )
-            )
+                check_track_idxs.append(i)
+
+        cross_results = self.area.crossed_by_segments(segments)
+
+        for cross_result, track_idx in zip(cross_results, check_track_idxs):
+
+            track_id = track_ids[track_idx]
+
+            if cross_result.kind == IntersectionKind.Enter:
+                self.rs_line_crossings[track_id] = cross_result.edges[0]
+
+            elif cross_result.kind == IntersectionKind.Leave:
+                # if the defined area was entered before
+                # and the leave edge is not the same as the enter edge
+                if track_id in self.rs_line_crossings and self.rs_line_crossings[track_id] != cross_result.edges[0]:
+                    if cross_result.edges == [(1, 'entry')]:
+                        ret[track_idx] = Direction.entry
+                    elif cross_result.edges == [(3, 'exit')]:
+                        ret[track_idx] = Direction.exit
+
+            elif cross_result.kind == IntersectionKind.Cross:
+                if cross_result.edges == [(3, 'exit'), (1, 'entry')]:
+                    ret[track_idx] = Direction.entry
+                elif cross_result.edges == [(1, 'entry'), (3, 'exit')]:
+                    ret[track_idx] = Direction.exit
+
+        return ret
 
     def check_track(self, track_id: int) -> Optional[Direction]:
         track_points = self._track_last_points[track_id]
