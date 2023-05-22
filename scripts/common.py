@@ -1,6 +1,7 @@
 """Common utilities for run scripts."""
+import string
 from pathlib import Path
-from typing import List, Iterable, Optional
+from typing import List, Iterable, Optional, Tuple
 import sys
 import os
 import pathlib
@@ -9,28 +10,31 @@ import subprocess
 import click
 
 sys.path.append(str(Path(__file__).parent.parent))
-from savant.utils.version import version  # noqa: F401
-from savant.utils.platform import is_aarch64, get_l4t_version  # noqa: F401
+from savant.utils.version import version
+from savant.utils.platform import is_aarch64
+
+# docker registry to use with scripts, set to "None" to use local images
+DOCKER_REGISTRY = 'ghcr.io/insight-platform'
+# DOCKER_REGISTRY = None
 
 
 def docker_image_option(default_docker_image_name: str, tag: Optional[str] = None):
     """Click option for docker image."""
     SAVANT_VERSION = version.SAVANT
     DEEPSTREAM_VERSION = version.DEEPSTREAM
-    if is_aarch64() and get_l4t_version()[0] == 32:
-        DEEPSTREAM_VERSION = '6.0.1'
 
     if is_aarch64():
         default_docker_image_name += '-l4t'
 
-    default_docker_image_tag = SAVANT_VERSION
+    default_tag = SAVANT_VERSION
     if 'deepstream' in default_docker_image_name:
-        default_docker_image_tag += f'-{DEEPSTREAM_VERSION}'
+        default_tag += f'-{DEEPSTREAM_VERSION}'
 
     if tag:
-        default_docker_image_tag += f'-{tag}'
+        default_tag += f'-{tag}'
 
-    default_docker_image = f'{default_docker_image_name}:{default_docker_image_tag}'
+    registry = DOCKER_REGISTRY.strip('/') + '/' if DOCKER_REGISTRY else ''
+    default_docker_image = f'{registry}{default_docker_image_name}:{default_tag}'
     return click.option(
         '-i',
         '--docker-image',
@@ -71,6 +75,61 @@ def get_ipc_mounts(zmq_sockets: Iterable[str]) -> List[str]:
     return list(set(ipc_mounts))
 
 
+def validate_source_id(ctx, param, value):
+    if value is None:
+        return value
+    safe_chars = set(string.ascii_letters + string.digits + '_.-')
+    invalid_chars = {char for char in value if char not in safe_chars}
+    if len(invalid_chars) > 0:
+        raise click.BadParameter(f'chars {invalid_chars} are not allowed.')
+    return value
+
+
+def source_id_option(required: bool):
+    return click.option(
+        '--source-id',
+        required=required,
+        type=click.STRING,
+        callback=validate_source_id,
+        help='Source ID, e.g. "camera1".',
+    )
+
+
+def fps_meter_options(func):
+    func = click.option(
+        '--fps-output',
+        help='Where to dump stats (stdout or logger).',
+    )(func)
+    func = click.option(
+        '--fps-period-frames',
+        type=int,
+        help='FPS measurement period, in frames.',
+    )(func)
+    func = click.option(
+        '--fps-period-seconds',
+        type=float,
+        help='FPS measurement period, in seconds.',
+    )(func)
+    return func
+
+
+def build_common_envs(
+    source_id: str,
+    fps_period_frames: Optional[int],
+    fps_period_seconds: Optional[float],
+    fps_output: str,
+):
+    """Generate env var run options."""
+    envs = [f'SOURCE_ID={source_id}']
+    if fps_period_frames:
+        envs.append(f'FPS_PERIOD_FRAMES={fps_period_frames}')
+    if fps_period_seconds:
+        envs.append(f'FPS_PERIOD_SECONDS={fps_period_seconds}')
+    if fps_output:
+        envs.append(f'FPS_OUTPUT={fps_output}')
+    return envs
+
+
 def build_docker_run_command(
     container_name: str,
     zmq_endpoint: str,
@@ -83,6 +142,9 @@ def build_docker_run_command(
     volumes: List[str] = None,
     devices: List[str] = None,
     with_gpu: bool = False,
+    host_network: bool = False,
+    args: List[str] = None,
+    ports: List[Tuple[int, int]] = None,
 ) -> List[str]:
     """Build docker run command for an adapter container.
 
@@ -100,6 +162,9 @@ def build_docker_run_command(
     :param volumes: add ``-v`` parametrs
     :param devices: add ``--devices`` parameters
     :param with_gpu: add ``--gpus=all`` parameter
+    :param host_network: add ``--network=host`` parameter
+    :param args: add command line arguments to the entrypoint
+    :param ports: add ``-p`` parameters
     """
     gst_debug = os.environ.get('GST_DEBUG', '2')
     # fmt: off
@@ -138,7 +203,16 @@ def build_docker_run_command(
     if with_gpu:
         command.append('--gpus=all')
 
+    if host_network:
+        command.append('--network=host')
+
+    if ports:
+        for host_port, container_port in ports:
+            command += ['-p', f'{host_port}:{container_port}']
+
     command.append(docker_image)
+    if args:
+        command.extend(args)
 
     return command
 

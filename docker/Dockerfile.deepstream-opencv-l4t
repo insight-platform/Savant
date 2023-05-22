@@ -1,0 +1,58 @@
+ARG DEEPSTREAM_VERSION
+FROM nvcr.io/nvidia/deepstream-l4t:$DEEPSTREAM_VERSION-triton
+ARG DEEPSTREAM_VERSION
+ARG soc=t194
+
+RUN echo "deb https://repo.download.nvidia.com/jetson/$soc `cat /etc/apt/sources.list | grep jetson/common | cut -d' ' -f3` main" \
+     > /etc/apt/sources.list.d/nvidia-l4t-apt-source.list \
+    && rm /etc/ld.so.conf.d/nvidia-tegra.conf \
+    && mkdir -p /opt/nvidia/l4t-packages/ \
+    && touch /opt/nvidia/l4t-packages/.nv-l4t-disable-boot-fw-update-in-preinstall \
+    && apt-get update \
+    && apt-get install -y \
+        file \
+        nvidia-l4t-multimedia \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /opencv
+ARG OPENCV_VERSION=4.6.0
+RUN git clone --branch "${OPENCV_VERSION}" --depth 1 https://github.com/opencv/opencv
+RUN git clone --branch "${OPENCV_VERSION}" --depth 1 https://github.com/opencv/opencv_contrib
+WORKDIR /opencv/build
+
+RUN python3 -m pip install --no-cache-dir 'numpy~=1.22.4'
+
+COPY libs/opencv/savant /opencv/opencv_contrib/modules/savant
+RUN --mount=type=cache,target=/tmp/opencv-cache \
+    cmake \
+        -D CMAKE_BUILD_TYPE=RELEASE \
+        -D OPENCV_EXTRA_MODULES_PATH=/opencv/opencv_contrib/modules  \
+        -D CMAKE_INSTALL_PREFIX=/opencv/dist  \
+        -D OPENCV_DOWNLOAD_PATH=/tmp/opencv-cache \
+        -D PYTHON_DEFAULT_EXECUTABLE=$(which python3) \
+        -D BUILD_LIST=core,cudaarithm,cudabgsegm,cudacodec,cudafeatures2d,cudafilters,cudaimgproc,cudev,features2d,flann,imgcodecs,savant,python3 \
+        -D BUILD_opencv_apps=OFF \
+        -D BUILD_DOCS=OFF \
+        -D BUILD_EXAMPLES=OFF \
+        -D BUILD_JAVA=OFF \
+        -D BUILD_PERF_TESTS=OFF \
+        -D BUILD_SHARED_LIBS=ON \
+        -D WITH_CUDA=ON \
+        -D WITH_FFMPEG=OFF \
+        -D WITH_GSTREAMER=OFF \
+        -D BUILD_opencv_python3=ON \
+        -D OPENCV_PYTHON_INSTALL_PATH=lib/python3.8/dist-packages \
+        -D OPENCV_FORCE_PYTHON_LIBS=ON \
+        -D BUILD_PACKAGE=ON \
+        -D CPACK_BINARY_DEB=ON \
+        -D CPACK_BINARY_STGZ=OFF \
+        -D CPACK_BINARY_TGZ=OFF \
+        -D CPACK_BINARY_TZ=OFF \
+        /opencv/opencv
+
+RUN make -j$(nproc)
+RUN make -j$(nproc) install
+RUN make -j$(nproc) package \
+    && for file in *.deb; do mv "$file" "${file%.deb}_${DEEPSTREAM_VERSION}.deb"; done
+
+ENTRYPOINT cp OpenCV*.deb /out

@@ -30,7 +30,7 @@ def get_models_mount(
 )
 @click.option(
     '--in-type',
-    default='PULL',
+    default='ROUTER',
     help='Input ZeroMQ socket type',
     show_default=True,
 )
@@ -58,7 +58,7 @@ def get_models_mount(
     help='Output ZeroMQ socket bind/connect mode (bind if True)',
     show_default=True,
 )
-@docker_image_option('savant-deepstream', 'samples')
+@docker_image_option('savant-deepstream')
 def run_module(
     module_config: str,
     in_endpoint: str,
@@ -69,7 +69,7 @@ def run_module(
     out_bind: bool,
     docker_image: Optional[str],
 ):
-    """Run sample MODULE_NAME."""
+    """Run sample module."""
     repo_root_dir = pathlib.Path(__file__).parent.parent
 
     gst_debug = os.environ.get('GST_DEBUG', '2')
@@ -104,7 +104,7 @@ def run_module(
         )
 
     module_name = module_config_path.parent.stem
-    volumes = []
+    volumes = [f'{(repo_root_dir / "samples").resolve()}:/opt/savant/samples']
     volumes += get_ipc_mounts((in_endpoint, out_endpoint))
     volumes.append(
         get_downloads_mount(repo_root_dir, module_name, container_downloads_dir)

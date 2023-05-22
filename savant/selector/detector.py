@@ -1,8 +1,10 @@
 """Detector's bbox selectors."""
+from numba import njit, uint8, uint16, float32
 import numpy as np
 from savant.base.selector import BaseSelector
 
 
+@njit(uint8[:](float32[:, :], float32[:], float32), nogil=True)
 def nms_cpu(
     bboxes: np.ndarray, confidences: np.ndarray, threshold: float
 ) -> np.ndarray:
@@ -39,18 +41,77 @@ def nms_cpu(
     return keep
 
 
+@njit(
+    float32[:, :](float32[:, :], float32, float32, uint16, uint16, uint16, uint16),
+    nogil=True,
+)
+def default_selector(
+    bbox_tensor: np.ndarray,
+    confidence_threshold: float = 0.0,
+    nms_iou_threshold: float = 0.0,
+    min_width: int = 0,
+    min_height: int = 0,
+    max_width: int = 0,
+    max_height: int = 0,
+) -> np.ndarray:
+    """Filters bboxes by confidence and size, applies NMS.
+
+    :param bbox_tensor: tensor(class_id, confidence, left, top, width, height)
+    :param confidence_threshold: confidence threshold
+    :param nms_iou_threshold: nms iou threshold
+    :param min_width: minimal bbox width
+    :param min_height: minimal bbox height
+    :param max_width: maximum bbox width
+    :param max_height: maximum bbox height
+    :return: Selected bbox tensor
+    """
+    selected_bbox_tensor = bbox_tensor.copy()
+
+    if confidence_threshold:
+        selected_bbox_tensor = selected_bbox_tensor[
+            selected_bbox_tensor[:, 1] > confidence_threshold
+        ]
+
+    if nms_iou_threshold:
+        keep = nms_cpu(
+            selected_bbox_tensor[:, 2:6],
+            selected_bbox_tensor[:, 1],
+            nms_iou_threshold,
+        )
+        selected_bbox_tensor = selected_bbox_tensor[keep == 1]
+
+    if min_width:
+        selected_bbox_tensor = selected_bbox_tensor[
+            selected_bbox_tensor[:, 4] > min_width
+        ]
+
+    if min_height:
+        selected_bbox_tensor = selected_bbox_tensor[
+            selected_bbox_tensor[:, 5] > min_height
+        ]
+
+    if max_width:
+        selected_bbox_tensor = selected_bbox_tensor[
+            selected_bbox_tensor[:, 4] < max_width
+        ]
+
+    if max_height:
+        selected_bbox_tensor = selected_bbox_tensor[
+            selected_bbox_tensor[:, 5] < max_height
+        ]
+
+    return selected_bbox_tensor
+
+
 class BBoxSelector(BaseSelector):
     """Detector bbox per class selector.
-
-    .. todo::
-        - support max_width/max_height
-        - support topk
-        - check width/height before nms?
 
     :param confidence_threshold: confidence threshold
     :param nms_iou_threshold: nms iou threshold
     :param min_width: minimal bbox width
     :param min_height: minimal bbox height
+    :param max_width: maximum bbox width
+    :param max_height: maximum bbox height
     """
 
     def __init__(
@@ -59,12 +120,17 @@ class BBoxSelector(BaseSelector):
         nms_iou_threshold: float = 0.5,
         min_width: int = 0,
         min_height: int = 0,
+        max_width: int = 0,
+        max_height: int = 0,
+        **kwargs
     ):
+        super().__init__(**kwargs)
         self.confidence_threshold = confidence_threshold
         self.nms_iou_threshold = nms_iou_threshold
         self.min_width = min_width
         self.min_height = min_height
-        super().__init__()
+        self.max_width = max_width
+        self.max_height = max_height
 
     def __call__(self, bbox_tensor: np.ndarray) -> np.ndarray:
         """Filters bboxes by confidence and size, applies NMS.
@@ -72,29 +138,12 @@ class BBoxSelector(BaseSelector):
         :param bbox_tensor: tensor(class_id, confidence, left, top, width, height)
         :return: Selected bbox tensor
         """
-        selected_bbox_tensor = bbox_tensor.copy()
-
-        if self.confidence_threshold:
-            selected_bbox_tensor = selected_bbox_tensor[
-                selected_bbox_tensor[:, 1] > self.confidence_threshold
-            ]
-
-        if self.nms_iou_threshold:
-            keep = nms_cpu(
-                selected_bbox_tensor[:, 2:6],
-                selected_bbox_tensor[:, 1],
-                self.nms_iou_threshold,
-            )
-            selected_bbox_tensor = selected_bbox_tensor[keep == 1]
-
-        if self.min_width:
-            selected_bbox_tensor = selected_bbox_tensor[
-                selected_bbox_tensor[:, 4] >= self.min_width
-            ]
-
-        if self.min_height:
-            selected_bbox_tensor = selected_bbox_tensor[
-                selected_bbox_tensor[:, 5] >= self.min_height
-            ]
-
-        return selected_bbox_tensor
+        return default_selector(
+            bbox_tensor=bbox_tensor,
+            confidence_threshold=self.confidence_threshold,
+            nms_iou_threshold=self.nms_iou_threshold,
+            min_width=self.min_width,
+            min_height=self.min_height,
+            max_width=self.max_width,
+            max_height=self.max_height,
+        )

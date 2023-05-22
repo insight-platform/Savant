@@ -1,6 +1,6 @@
 import logging
 import math
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 
 class ChunkWriter:
@@ -18,14 +18,18 @@ class ChunkWriter:
         self.opened = False
 
     def write(
-        self, data, can_start_new_chunk: bool, is_frame: bool = True
+        self,
+        message,
+        data,
+        can_start_new_chunk: bool,
+        is_frame: bool = True,
     ) -> bool:
         if can_start_new_chunk and 0 < self.chunk_size <= self.frames_in_chunk:
             self.close()
         if not self.opened:
             self.open()
         frame_num = self.frames_in_chunk if is_frame else None
-        result = self._write(data, frame_num)
+        result = self._write(message, data, frame_num)
         if is_frame:
             self.frames_in_chunk += 1
         return result
@@ -59,7 +63,7 @@ class ChunkWriter:
     def _flush(self):
         pass
 
-    def _write(self, data, frame_num: Optional[int]) -> bool:
+    def _write(self, message, data, frame_num: Optional[int]) -> bool:
         pass
 
 
@@ -80,8 +84,13 @@ class CompositeChunkWriter(ChunkWriter):
         for writer in self.writers:
             writer.flush()
 
-    def _write(self, data, frame_num: Optional[int]) -> bool:
+    def _write(
+        self,
+        message: Dict,
+        data: List[bytes],
+        frame_num: Optional[int],
+    ) -> bool:
         for writer in self.writers:
-            if not writer._write(data, frame_num):
+            if not writer._write(message, data, frame_num):
                 return False
         return True

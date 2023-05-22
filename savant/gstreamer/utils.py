@@ -1,7 +1,6 @@
 """GStreamer utils."""
-import logging
 from contextlib import contextmanager
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, List
 
 from gi.repository import Gst  # noqa:F401
 from savant.gstreamer.ffi import LIBGST, GstMapInfo
@@ -42,40 +41,6 @@ def pad_to_source_id(pad: Gst.Pad) -> str:
     Pad should be named with pattern "src_<source_id>" (eg "src_cam-1").
     """
     return pad.get_name()[4:]
-
-
-class LoggerMixin:
-    """Mixes logger in GStreamer element.
-
-    When the element name is available, logger name changes to
-    `module_name/element_name`. Otherwise, logger name is `module_name`.
-
-    Note: we cannot override `do_set_state` or any other method where element name
-    becomes available since base classes are bindings.
-    """
-
-    _logger: logging.Logger = None
-    _logger_initialized: bool = False
-
-    def __init__(self):
-        self._init_logger()
-
-    @property
-    def logger(self):
-        """Logger."""
-        if not self._logger_initialized:
-            self._init_logger()
-        return self._logger
-
-    def _init_logger(self):
-        if hasattr(self, 'get_name') and self.get_name():
-            self._logger = logging.getLogger(
-                f'savant.{self.__module__}.{self.get_name()}'
-            )
-        else:
-            self._logger = logging.getLogger(f'savant.{self.__module__}')
-
-        self._logger_initialized = True
 
 
 def on_pad_event(
@@ -123,3 +88,12 @@ def propagate_gst_setting_error(gst_element: Gst.Element, frame, file_path):
         function=frame.f_code.co_name,
         line=frame.f_code.co_firstlineno,
     )
+
+
+def gst_buffer_from_list(data: List[bytes]) -> Gst.Buffer:
+    """Wrap list of data to GStreamer buffer."""
+
+    buffer: Gst.Buffer = Gst.Buffer.new()
+    for item in data:
+        buffer = buffer.append(Gst.Buffer.new_wrapped(item))
+    return buffer

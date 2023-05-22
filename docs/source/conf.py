@@ -10,9 +10,10 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath(os.path.join('..', '..')))
+import os
+import sys
+
+sys.path.append(os.path.abspath('./_ext'))
 
 import gi
 
@@ -23,12 +24,14 @@ Gst.init(None)
 
 # -- Project information -----------------------------------------------------
 project = 'Savant'
-copyright = '2022 BWSoft Management, LLC'
+copyright = '2020-2023 BWSoft Management, LLC'
 # author = 'BWSoft'
 
 # The full version, including alpha/beta/rc tags
 from savant import __version__
+
 release = __version__
+version = __version__
 
 # -- General configuration ---------------------------------------------------
 
@@ -43,7 +46,10 @@ extensions = [
     'sphinx.ext.inheritance_diagram',
     'sphinx_rtd_theme',
     'sphinx.ext.autosectionlabel',
+    'repo_link'
 ]
+
+repo_link = 'https://github.com/insight-platform/Savant'
 
 # This value controls how to represent typehints
 autodoc_typehints = 'description'
@@ -85,6 +91,9 @@ exclude_patterns = [
 #
 # html_theme = 'alabaster'
 html_theme = "sphinx_rtd_theme"
+html_theme_options = {
+    'display_version': True,
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -93,6 +102,10 @@ html_static_path = ['_static']
 
 html_css_files = [
     'css/custom.css',
+]
+
+html_js_files = [
+    'js/custom.js',
 ]
 
 # Example configuration for intersphinx: refer to the Python standard library.

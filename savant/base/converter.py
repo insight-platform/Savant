@@ -18,7 +18,8 @@ class BaseObjectModelOutputConverter(BasePyFuncCallableImpl):
     ) -> np.ndarray:
         """Converts raw model output tensors to a numpy array that represents a
         list of detected bboxes in the format ``(class_id, confidence, xc, yc,
-        width, height, [angle])`` in ``roi`` scale.
+        width, height, [angle])`` in absolute coordinates computed with ``ROI``
+        information.
 
         :param output_layers: Model output layer tensors
         :param model: Object model, required parameters: input tensor shape,

@@ -8,14 +8,15 @@ from savant.meta.errors import MetaValueError
 from savant.deepstream.meta.bbox import NvDsBBox, NvDsRBBox
 from savant.deepstream.meta.constants import MAX_LABEL_SIZE
 from savant.deepstream.utils import (
-    nvds_get_selection_type,
+    nvds_get_obj_selection_type,
     nvds_get_obj_attr_meta,
     nvds_get_obj_attr_meta_list,
     nvds_add_attr_meta_to_obj,
-    nvds_set_selection_type,
+    nvds_set_obj_selection_type,
     nvds_set_obj_uid,
+    nvds_get_obj_uid,
 )
-from savant.gstreamer.utils import LoggerMixin
+from savant.utils.logging import LoggerMixin
 from savant.meta.attribute import AttributeMeta
 from savant.meta.constants import (
     UNTRACKED_OBJECT_ID,
@@ -95,7 +96,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
             rect_params.top = bbox.top
             rect_params.width = bbox.width
             rect_params.height = bbox.height
-            nvds_set_selection_type(
+            nvds_set_obj_selection_type(
                 obj_meta=self.ds_object_meta,
                 selection_type=ObjectSelectionType.REGULAR_BBOX,
             )
@@ -108,9 +109,9 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
             rbbox_coords.height = bbox.height
             rbbox_coords.angle = bbox.angle
             add_rbbox_to_object_meta(
-                self._frame_meta.batch_meta, self._frame_meta.frame_meta, rbbox_coords
+                self._frame_meta.batch_meta, self.ds_object_meta, rbbox_coords
             )
-            nvds_set_selection_type(
+            nvds_set_obj_selection_type(
                 obj_meta=self.ds_object_meta,
                 selection_type=ObjectSelectionType.ROTATED_BBOX,
             )
@@ -135,11 +136,16 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
             It can be :py:class:`~savant.meta.bbox.RegularBoundingBox` or
             :py:class:`~savant.meta.bbox.RotatedBoundingBox`.
         """
-        bbox_type = nvds_get_selection_type(self.ds_object_meta)
+        bbox_type = nvds_get_obj_selection_type(self.ds_object_meta)
         if bbox_type == ObjectSelectionType.REGULAR_BBOX:
             return NvDsBBox(self.ds_object_meta)
         if bbox_type == ObjectSelectionType.ROTATED_BBOX:
             return NvDsRBBox(self.ds_object_meta)
+
+    @property
+    def uid(self) -> int:
+        """Returns uid of the object."""
+        return nvds_get_obj_uid(self._frame_meta, self.ds_object_meta)
 
     def get_attr_meta(
         self, element_name: str, attr_name: str
@@ -244,19 +250,22 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         return self._parent_object
 
     @parent.setter
-    def parent(self, value: Union['_NvDsObjectMetaImpl', ObjectMeta]):
+    def parent(self, value: Union['_NvDsObjectMetaImpl', ObjectMeta, None]):
         """Sets this object's parent.
 
         :param value: Parent object.
         """
         if value is None:
             self._parent_object = None
+            self.ds_object_meta.parent = None
         elif isinstance(value, ObjectMeta) and isinstance(
             value.object_meta_impl, _NvDsObjectMetaImpl
         ):
             self._parent_object = value.object_meta_impl
+            self.ds_object_meta.parent = value.object_meta_impl.ds_object_meta
         elif isinstance(value, _NvDsObjectMetaImpl):
             self._parent_object = value
+            self.ds_object_meta.parent = value.ds_object_meta
         else:
             raise MetaValueError(
                 f'{self.__class__.__name__} supports only '

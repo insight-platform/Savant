@@ -29,9 +29,18 @@ parameters:
         port: 2379
     timeout: 15
 
-  # pipeline processing frame width/height
-  frame_width: ${initializer:frame_width, 1280}
-  frame_height: ${initializer:frame_height, 720}
+  # pipeline processing frame parameters, default 720p
+  frame:
+    width: ${oc.decode:${oc.env:FRAME_WIDTH, 1280}}
+    height: ${oc.decode:${oc.env:FRAME_HEIGHT, 720}}
+    # Add paddings to the frame before processing
+    # padding:
+    #   # Whether to keep paddings on the output frame
+    #   keep: true
+    #   left: 0
+    #   right: 0
+    #   top: 0
+    #   bottom: 0
 
   # FPS measurement period
   fps_period: ${oc.decode:${oc.env:FPS_PERIOD, 10000}}
@@ -43,14 +52,37 @@ parameters:
   # leave empty to include only metadata (no frames)
   output_frame: ${json:${oc.env:OUTPUT_FRAME, null}}
 
+  # PyFunc for drawing on frames. Should be an instance of savant.config.schema.DrawFunc.
+  #
+  # To not draw on frames leave "null".
+  #
+  # To use default class to draw on frames use an empty object ("{}")
+  # E.g.:
+  # draw_func: {}
+  #
+  # To use custom class to draw on frames define "module", "class_name" and "kwargs".
+  # E.g.:
+  # draw_func:
+  #   module: custom.drawer
+  #   class_name: CustomDrawer
+  #   kwargs:
+  #     color: RED
+  # Class to draw on frames must implement savant.deepstream.base_drawfunc.BaseNvDsDrawFunc.
+  draw_func: null
+
+
 # pipeline definition
 pipeline:
   source:
     element: zeromq_source_bin
     properties:
       socket: ${oc.env:ZMQ_SRC_ENDPOINT}
-      socket_type: ${oc.env:ZMQ_SRC_TYPE, PULL}
+      socket_type: ${oc.env:ZMQ_SRC_TYPE, ROUTER}
       bind: ${oc.decode:${oc.env:ZMQ_SRC_BIND, True}}
+      # Filter inbound frames by source ID.
+      source_id: ${oc.decode:${oc.env:SOURCE_ID, null}}
+      # Filter inbound frames by source ID prefix.
+      source_id_prefix: ${oc.decode:${oc.env:SOURCE_ID_PREFIX, null}}
 
 # elements:
 # elements should be defined here

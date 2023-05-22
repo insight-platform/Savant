@@ -1,19 +1,21 @@
 """ZeroMQ sink."""
-from typing import List
 import inspect
+from typing import List, Union
+
 import zmq
 
-from savant.gst_plugins.python.zeromq_properties import (
+from gst_plugins.python.zeromq_properties import (
     socket_type_property,
     ZEROMQ_PROPERTIES,
 )
 from savant.gstreamer import GObject, Gst, GstBase
-from savant.gstreamer.utils import LoggerMixin, propagate_gst_setting_error
+from savant.gstreamer.utils import propagate_gst_setting_error
+from savant.utils.logging import LoggerMixin
 from savant.utils.zeromq import (
+    Defaults,
     SenderSocketTypes,
     ZMQException,
-    get_socket_type,
-    get_socket_endpoint,
+    parse_zmq_socket_uri,
 )
 
 
@@ -39,15 +41,35 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
     __gproperties__ = {
         **ZEROMQ_PROPERTIES,
         'socket-type': socket_type_property(SenderSocketTypes),
+        'send-hwm': (
+            int,
+            'High watermark for outbound messages',
+            'High watermark for outbound messages',
+            1,
+            GObject.G_MAXINT,
+            Defaults.SEND_HWM,
+            GObject.ParamFlags.READWRITE,
+        ),
+        'source-id': (
+            str,
+            'Source ID',
+            'Source ID, e.g. "camera1".',
+            None,
+            GObject.ParamFlags.READWRITE,
+        ),
     }
 
     def __init__(self):
         GstBase.BaseSink.__init__(self)
         self.socket: str = None
-        self.socket_type: SenderSocketTypes = SenderSocketTypes.PUSH
+        self.socket_type: Union[str, SenderSocketTypes] = SenderSocketTypes.DEALER
         self.bind: bool = True
         self.zmq_context: zmq.Context = None
         self.sender: zmq.Socket = None
+        self.wait_response = False
+        self.send_hwm = Defaults.SEND_HWM
+        self.source_id: str = None
+        self.zmq_topic: bytes = None
         self.set_sync(False)
 
     def do_get_property(self, prop):
@@ -59,9 +81,17 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
         if prop.name == 'socket':
             return self.socket
         if prop.name == 'socket-type':
-            return self.socket_type.name
+            return (
+                self.socket_type.name
+                if isinstance(self.socket_type, SenderSocketTypes)
+                else self.socket_type
+            )
         if prop.name == 'bind':
             return self.bind
+        if prop.name == 'send-hwm':
+            return self.send_hwm
+        if prop.name == 'source-id':
+            return self.source_id
         raise AttributeError(f'Unknown property {prop.name}.')
 
     def do_set_property(self, prop, value):
@@ -78,14 +108,24 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
             self.socket_type = value
         elif prop.name == 'bind':
             self.bind = value
+        elif prop.name == 'send-hwm':
+            self.send_hwm = value
+        elif prop.name == 'source-id':
+            self.source_id = value
+            self.zmq_topic = f'{value}/'.encode()
         else:
             raise AttributeError(f'Unknown property {prop.name}.')
 
     def do_start(self):
         """Start source."""
+        assert self.source_id, 'Source ID is required.'
         try:
-            self.socket = get_socket_endpoint(self.socket)
-            self.socket_type = get_socket_type(self.socket_type, SenderSocketTypes)
+            self.socket_type, self.bind, self.socket = parse_zmq_socket_uri(
+                uri=self.socket,
+                socket_type_name=self.socket_type,
+                socket_type_enum=SenderSocketTypes,
+                bind=self.bind,
+            )
         except ZMQException:
             self.logger.exception('Element start error.')
             frame = inspect.currentframe()
@@ -93,8 +133,10 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
             # prevents pipeline from starting
             return False
 
+        self.wait_response = self.socket_type == SenderSocketTypes.REQ
         self.zmq_context = zmq.Context()
         self.sender = self.zmq_context.socket(self.socket_type.value)
+        self.sender.setsockopt(zmq.SNDHWM, self.send_hwm)
         if self.bind:
             self.sender.bind(self.socket)
         else:
@@ -106,13 +148,31 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
         self.logger.debug(
             'Processing frame %s of size %s', buffer.pts, buffer.get_size()
         )
+        message: List[bytes] = [self.zmq_topic]
+        mapinfo_list: List[Gst.MapInfo] = []
         mapinfo: Gst.MapInfo
-        result, mapinfo = buffer.map(Gst.MapFlags.READ)
+        result, mapinfo = buffer.map_range(0, 1, Gst.MapFlags.READ)
         assert result, 'Cannot read buffer.'
-        data = mapinfo.data
-        self.logger.debug('Sending %s bytes to socket %s.', len(data), self.socket)
-        self.sender.send(data)
-        buffer.unmap(mapinfo)
+        mapinfo_list.append(mapinfo)
+        message.append(mapinfo.data)
+        if buffer.n_memory() > 1:
+            # TODO: Use Gst.Meta to check where to split buffer to ZeroMQ message parts
+            result, mapinfo = buffer.map_range(1, -1, Gst.MapFlags.READ)
+            assert result, 'Cannot read buffer.'
+            mapinfo_list.append(mapinfo)
+            message.append(mapinfo.data)
+        self.logger.debug(
+            'Sending %s bytes to socket %s.', sum(len(x) for x in message), self.socket
+        )
+        self.sender.send_multipart(message)
+        if self.wait_response:
+            resp = self.sender.recv()
+            self.logger.debug(
+                'Received %s bytes from socket %s.', len(resp), self.socket
+            )
+        for mapinfo in mapinfo_list:
+            buffer.unmap(mapinfo)
+
         return Gst.FlowReturn.OK
 
     def do_stop(self):

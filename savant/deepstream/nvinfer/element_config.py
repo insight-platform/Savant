@@ -3,7 +3,12 @@ from pathlib import Path
 from typing import Type, Optional
 import logging
 from omegaconf import OmegaConf, DictConfig
-from savant.base.model import ModelPrecision, ObjectModel, AttributeModel
+from savant.base.model import (
+    ModelPrecision,
+    ObjectModel,
+    AttributeModel,
+    ModelColorFormat,
+)
 from savant.config.schema import get_element_name
 from savant.parameter_storage import param_storage
 from savant.remote_file import process_remote
@@ -43,6 +48,7 @@ def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
         logging.getLogger(__name__), dict(element_name=element_name)
     )
 
+    logger.debug('Configuring nvinfer element %s', element_config)
     # check model type
     try:
         model_type: Type[NvInferModel] = NVINFER_MODEL_TYPE_REGISTRY.get(
@@ -78,7 +84,11 @@ def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
         and model_config.precision
         and isinstance(model_config.precision, str)
     ):
-        model_config.precision = model_config.precision.upper()
+        new_val = ModelPrecision[model_config.precision.upper()]
+        logger.debug(
+            'Preparing model.precision: %s -> %s', model_config.precision, new_val
+        )
+        model_config.precision = new_val
     if (
         'input' in model_config
         and model_config.input
@@ -86,7 +96,13 @@ def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
         and model_config.input.color_format
         and isinstance(model_config.input.color_format, str)
     ):
-        model_config.input.color_format = model_config.input.color_format.upper()
+        new_val = ModelColorFormat[model_config.input.color_format.upper()]
+        logger.debug(
+            'Preparing model.input.color_format: %s -> %s',
+            model_config.input.color_format,
+            new_val,
+        )
+        model_config.input.color_format = new_val
 
     # setup path for the model files
     if not model_config.get('local_path'):
@@ -107,6 +123,7 @@ def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
     nvinfer_config_file = model_config.get('config_file')
     if nvinfer_config_file:
         config_file_path = model_path / nvinfer_config_file
+        logger.debug('Trying to load nvinfer config file %s', config_file_path)
         if config_file_path.is_file():
             nvinfer_config = NvInferConfig.read_file(config_file_path)
             logger.info(
@@ -121,7 +138,67 @@ def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
                 f'Configuration file "{config_file_path}" not found.'
             )
 
+    logger.debug(
+        'Merging model with model config\nmodel %s\nmodel config %s',
+        model,
+        model_config,
+    )
+    model_config_original = model_config
     model_config = OmegaConf.merge(model, model_config)
+    logger.debug('Merging complete, result\n%s', model_config)
+
+    # try to parse engine file and check for a match
+    if model_config.engine_file:
+        parse_result = NvInferConfig.parse_model_engine_file(model_config.engine_file)
+        if parse_result:
+            # if engine options are not set explicitly
+            # get their values from engine file name
+            if (
+                not hasattr(model_config_original, 'batch_size')
+                or model_config_original.batch_size is None
+            ):
+                model_config.batch_size = parse_result['batch_size']
+                logger.debug(
+                    'Model batch size is taken from engine file name and set to %d',
+                    parse_result['batch_size'],
+                )
+            if (
+                not hasattr(model_config_original, 'gpu_id')
+                or model_config_original.gpu_id is None
+            ):
+                model_config.gpu_id = parse_result['gpu_id']
+                logger.debug(
+                    'Model gpu_id is taken from engine file name and set to %d',
+                    parse_result['gpu_id'],
+                )
+            if (
+                not hasattr(model_config_original, 'precision')
+                or model_config_original.precision is None
+            ):
+                model_config.precision = parse_result['precision']
+                logger.debug(
+                    'Model precision is taken from engine file name and set to %s',
+                    parse_result['precision'].name,
+                )
+
+            if (
+                model_config.batch_size,
+                model_config.gpu_id,
+                model_config.precision,
+            ) != (
+                parse_result['batch_size'],
+                parse_result['gpu_id'],
+                parse_result['precision'],
+            ):
+                logger.info(
+                    'Specified engine file "%s" does not match configuration: '
+                    'batch_size=%d, gpu_id=%d, precision=%s.',
+                    model_config.engine_file,
+                    model_config.batch_size,
+                    model_config.gpu_id,
+                    model_config.precision.name,
+                )
+                model_config.engine_file = None
 
     # model or engine file must be specified
     model_file_required = True
@@ -152,7 +229,7 @@ def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
         model_config.engine_file = NvInferConfig.generate_model_engine_file(
             model_config.model_file,
             model_config.batch_size,
-            int(nvinfer_config['property'].get('gpu-id', 0)) if nvinfer_config else 0,
+            model_config.gpu_id,
             model_config.precision,
         )
         logger.info('Model engine file has been set to "%s".', model_config.engine_file)
@@ -191,6 +268,25 @@ def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
             # use abs path for custom config file
             model_config.custom_config_file = str(custom_config_file_path.resolve())
 
+            if model_config.custom_lib_path is None:
+                raise NvInferConfigException('model.custom_lib_path is required.')
+            try:
+                lib_path = Path(model_config.custom_lib_path)
+                if not lib_path.is_file():
+                    raise NvInferConfigException(
+                        f'model.custom_lib_path "{lib_path}" not found.'
+                    )
+            except TypeError as exception:
+                raise NvInferConfigException(
+                    f'model.custom_lib_path "{model_config.custom_lib_path}"'
+                    ' is invalid.'
+                ) from exception
+
+            if model_config.engine_create_func_name is None:
+                raise NvInferConfigException(
+                    'model.engine_create_func_name is required.'
+                )
+
         elif model_config.format == NvInferModelFormat.ETLT:
             if not model_config.tlt_model_key:
                 model_config.tlt_model_key = 'tlt_encode'  # or 'nvidia_tlt'
@@ -200,8 +296,9 @@ def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
                     model_config.tlt_model_key,
                 )
 
-    # calibration file required for model in INT8
-    if model_config.precision == ModelPrecision.INT8:
+    # model_file_required is True when the engine file is not built
+    # calibration file is required to build model in INT8
+    if model_config.precision == ModelPrecision.INT8 and model_file_required:
         if not model_config.int8_calib_file:
             raise NvInferConfigException(
                 'INT8 calibration file (model.int8_calib_file) required.'
@@ -323,8 +420,9 @@ def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
         nvinfer_config['property']['output-tensor-meta'] = 1
         nvinfer_config['property']['network-type'] = NvInferModelType.CUSTOM.value
 
-    if nvinfer_config['property'].get('network-type') is None:
-        # regular model specific configuration
+    # or configure regular model
+    else:
+        nvinfer_config['property']['output-tensor-meta'] = 0
 
         # classifier
         if issubclass(model_type, AttributeModel):
@@ -353,14 +451,14 @@ def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
             # set NMS clustering (so far only this one is supported)
             nvinfer_config['property']['cluster-mode'] = 2
 
-    element_config.model = OmegaConf.to_object(model_config)
+    # TODO: Test carefully! (removed to avoid duplicate pyfunc init)
+    # element_config.model = OmegaConf.to_object(model_config)
+    element_config.model = model_config
 
     # save resulting nvinfer config file
     # build config file name using required model engine file
     model_name = model_config.engine_file.split('.')[0]
-    config_file = f'{model_name}_config.txt'
-    if config_file == model_config.config_file:
-        config_file = f'{model_name}_config_0.txt'
+    config_file = f'{model_name}_config_savant.txt'
     config_file_path = Path(model_config.local_path) / config_file
     NvInferConfig.write_file(nvinfer_config, config_file_path)
     logger.info('Resulting configuration file "%s" has been saved.', config_file_path)

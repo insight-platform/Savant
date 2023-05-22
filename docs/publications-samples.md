@@ -1,5 +1,7 @@
 # Publications And Samples
 
+THIS IS WIP SECTION. DON'T BELIEVE 100% TO WHAT YOU SEE HERE.
+
 On this page, you can find practical examples, how-tos, publications, and other non-formal documentation links that can
 help you dive into Savant.
 
@@ -25,7 +27,7 @@ In addition, a step-by-step guide published on the Medium Portal is also [availa
 
 Tested Platforms are:
 
-- Jetson Nano, Xavier NX, Xavier AGX;
+- Jetson Xavier NX, Xavier AGX;
 - Nvidia Turing;
 - Nvidia Ampere.
 
@@ -46,7 +48,7 @@ In addition, a step-by-step guide published on the Medium Portal is also [availa
 
 Tested Platforms are:
 
-- Jetson Nano, Xavier NX, Xavier AGX;
+- Jetson Xavier NX, Xavier AGX;
 - Nvidia Turing;
 - Nvidia Ampere.
 
@@ -65,7 +67,7 @@ In addition, a step-by-step guide published on the Medium Portal is also [availa
 
 Tested Platforms are:
 
-- Jetson Nano, Xavier NX, Xavier AGX;
+- Jetson Xavier NX, Xavier AGX;
 - Nvidia Turing;
 - Nvidia Ampere.
 
@@ -87,7 +89,7 @@ In addition, a step-by-step guide published on the Medium Portal is also [availa
 
 Tested Platforms are:
 
-- Jetson Nano, Xavier NX, Xavier AGX;
+- Jetson Xavier NX, Xavier AGX;
 - Nvidia Turing;
 - Nvidia Ampere.
 

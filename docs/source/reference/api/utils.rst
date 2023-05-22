@@ -19,14 +19,31 @@ General utilities
     artist.Position
     artist.Artist
 
-Gstreamer utilities
--------------------
+    logging.LoggerMixin
 
-.. currentmodule:: savant.gstreamer.utils
+DeepStream utilities
+--------------------
+
+.. currentmodule:: savant.deepstream.utils
 
 .. autosummary::
     :toctree: generated
     :nosignatures:
-    :template: autosummary/class.rst
+    :template: autosummary/function.rst
 
-    LoggerMixin
+    get_nvds_buf_surface
+
+OpenCV utilities
+--------------------
+
+.. currentmodule:: savant.deepstream.opencv_utils
+
+.. autosummary::
+    :toctree: generated
+    :nosignatures:
+    :template: autosummary/function.rst
+
+    nvds_to_gpu_mat
+    alpha_comp
+    apply_cuda_filter
+    draw_rect

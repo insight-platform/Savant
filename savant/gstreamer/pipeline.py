@@ -1,17 +1,14 @@
 """GStreamer base pipeline."""
 from queue import Queue, Empty as EmptyException
-from typing import Any, List, Dict, Generator, Optional, Tuple
+from typing import Any, List, Generator, Optional, Tuple
 import logging
 from gi.repository import Gst  # noqa:F401
 
-from savant.parameter_storage import param_storage
+from savant.gstreamer.buffer_processor import GstBufferProcessor
 from savant.config.schema import PipelineElement, ModelElement
 from savant.utils.sink_factories import SinkMessage
 from savant.utils.fps_meter import FPSMeter
-
-
-class CreateElementException(Exception):
-    """Unable to create Gst.Element Exception."""
+from savant.gstreamer.element_factory import CreateElementException, GstElementFactory
 
 
 class GstPipeline:  # pylint: disable=too-many-instance-attributes
@@ -24,6 +21,9 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
     :key queue_maxsize: Output queue size.
     :key fps_period: FPS measurement period, in frames.
     """
+
+    # pipeline element factory
+    _element_factory = GstElementFactory()
 
     def __init__(
         self,
@@ -40,6 +40,11 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
         # init FPS meter
         self._fps_meter = FPSMeter(period_frames=kwargs['fps_period'])
 
+        # create buffer processor
+        self._buffer_processor = self._build_buffer_processor(
+            self._queue, self._fps_meter
+        )
+
         # init pipeline
         self._pipeline: Gst.Pipeline = Gst.Pipeline(name)
 
@@ -53,7 +58,7 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
         # build pipeline: source -> elements -> fakesink
         self._add_source(source)
         for element in elements:
-            self._add_element(element, with_probes=isinstance(element, ModelElement))
+            self.add_element(element, with_probes=isinstance(element, ModelElement))
         self._add_sink()
 
         self._is_running = False
@@ -64,33 +69,7 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
             elements = 'no elements'
         return f'{self._pipeline.name}<{self.__class__.__name__}>: {elements}'
 
-    @staticmethod
-    def create_gst_element(element: PipelineElement) -> Gst.Element:
-        """Creates Gst.Element.
-
-        :param element: pipeline element to create.
-        """
-        gst_element = Gst.ElementFactory.make(element.element, element.name)
-        if not gst_element:
-            raise CreateElementException(f'Unable to create element {element}.')
-
-        for prop_name, prop_value in element.properties.items():
-            gst_element.set_property(prop_name, prop_value)
-
-        for prop_name, dyn_gst_prop in element.dynamic_properties.items():
-
-            def on_change(response_value: Any, propery_name: str = prop_name):
-                gst_element.set_property(propery_name, response_value)
-
-            param_storage().register_dynamic_parameter(
-                dyn_gst_prop.storage_key, dyn_gst_prop.default, on_change
-            )
-            prop_value = param_storage()[dyn_gst_prop.storage_key]
-            gst_element.set_property(prop_name, prop_value)
-
-        return gst_element
-
-    def _add_element(
+    def add_element(
         self,
         element: PipelineElement,
         with_probes: bool = False,
@@ -102,10 +81,12 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
                 f'Duplicate element name {element} in the pipeline.'
             )
 
-        gst_element = self.create_gst_element(element)
+        gst_element = self._element_factory.create(element)
         self._pipeline.add(gst_element)
         if link and self._last_element:
-            self._last_element.link(gst_element)
+            assert self._last_element.link(
+                gst_element
+            ), f'Unable to link {element.name} to {self._last_element.name}'
         self._last_element = gst_element
 
         # set element name from GstElement
@@ -117,93 +98,57 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
 
         if with_probes:
             gst_element.get_static_pad('sink').add_probe(
-                Gst.PadProbeType.BUFFER, self._element_input_probe, element
+                Gst.PadProbeType.BUFFER,
+                self._buffer_processor.element_input_probe,
+                element,
             )
             gst_element.get_static_pad('src').add_probe(
-                Gst.PadProbeType.BUFFER, self._element_output_probe, element
+                Gst.PadProbeType.BUFFER,
+                self._buffer_processor.element_output_probe,
+                element,
             )
             self._logger.debug('Added in/out probes to element %s.', element.full_name)
 
         return gst_element
 
-    def _element_input_probe(  # pylint: disable=unused-argument
-        self, pad: Gst.Pad, info: Gst.PadProbeInfo, element: PipelineElement
-    ):
-        buffer = info.get_buffer()
-        self.prepare_element_input(element, buffer)
-        return Gst.PadProbeReturn.OK
-
-    def prepare_element_input(self, element: PipelineElement, buffer: Gst.Buffer):
-        """Element input processor."""
-
-    def _element_output_probe(  # pylint: disable=unused-argument
-        self, pad: Gst.Pad, info: Gst.PadProbeInfo, element: PipelineElement
-    ):
-        buffer = info.get_buffer()
-        self.prepare_element_output(element, buffer)
-        return Gst.PadProbeReturn.OK
-
-    def prepare_element_output(self, element: PipelineElement, buffer: Gst.Buffer):
-        """Element output processor."""
-
     def _add_source(self, source: PipelineElement) -> Gst.Element:
         source.name = 'source'
-        _source = self._add_element(source)
+        _source = self.add_element(source)
         # input processor (post-source)
         _source.get_static_pad('src').add_probe(
-            Gst.PadProbeType.BUFFER, self._input_probe, 0
+            Gst.PadProbeType.BUFFER, self._buffer_processor.input_probe
         )
         return _source
 
-    # pylint:disable=keyword-arg-before-vararg)
     def _add_sink(
         self,
         sink: Optional[PipelineElement] = None,
         link: bool = True,
-        *probe_data,
+        probe_data: Any = None,
     ) -> Gst.Element:
         if not sink:
             sink = PipelineElement(
                 element='fakesink', name='sink', properties=dict(sync=0, qos=0)
             )
 
-        _sink = self._add_element(sink, link=link)
+        _sink = self.add_element(sink, link=link)
 
         # output processor (pre-sink)
         _sink.get_static_pad('sink').add_probe(
-            Gst.PadProbeType.BUFFER, self._output_probe, *probe_data
+            Gst.PadProbeType.BUFFER, self._buffer_processor.output_probe, probe_data
         )
 
         return _sink
-
-    def _input_probe(  # pylint: disable=unused-argument
-        self, pad: Gst.Pad, info: Gst.PadProbeInfo, user_data: Any
-    ):
-        buffer = info.get_buffer()
-        self.prepare_input(buffer)
-        return Gst.PadProbeReturn.OK
-
-    def prepare_input(self, buffer: Gst.Buffer):
-        """Pipeline input processor."""
-
-    def _output_probe(  # pylint: disable=unused-argument
-        self, pad: Gst.Pad, info: Gst.PadProbeInfo, *data
-    ):
-        buffer = info.get_buffer()
-        self.prepare_output(buffer, *data)
-        # measure and logging FPS
-        if self._fps_meter():
-            self._log_fps()
-        return Gst.PadProbeReturn.OK
-
-    def prepare_output(self, buffer: Gst.Buffer, *data):
-        """Pipeline output processor."""
 
     def on_startup(self):
         """Callback called after pipeline is set to PLAYING."""
         self._is_running = True
         # start fps meter
         self._fps_meter.start()
+
+    def before_shutdown(self):
+        """Callback called before pipeline is set to NULL."""
+        pass
 
     def on_shutdown(self):
         """Callback called after pipeline is set to NULL."""
@@ -221,6 +166,14 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
         """
         return self._elements
 
+    @property
+    def pipeline(self) -> Gst.Pipeline:
+        """Get underlying Gst.Pipeline instance.
+
+        :return: Gst.Pipeline instance of this pipeline.
+        """
+        return self._pipeline
+
     def get_bus(self) -> Gst.Bus:
         """Get underlying Gst.Pipeline bus.
 
@@ -228,13 +181,14 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
         """
         return self._pipeline.get_bus()
 
-    def set_state(self, state: Gst.State) -> None:
+    def set_state(self, state: Gst.State) -> Gst.StateChangeReturn:
         """Set underlying Gst.Pipeline state.
 
         :param state: One of Gst element States (READY, PLAYING etc.)
             to set in underlying pipeline
+        :return: Result of the state change using Gst.StateChangeReturn
         """
-        self._pipeline.set_state(state)
+        return self._pipeline.set_state(state)
 
     def stream(self, timeout: float = 0.1) -> Generator[SinkMessage, None, None]:
         """Fetches messages from queue using specified timeout (sec).
@@ -247,3 +201,11 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
                 yield self._queue.get(timeout=timeout)
             except EmptyException:
                 pass
+
+    def _build_buffer_processor(
+        self,
+        queue: Queue,
+        fps_meter: FPSMeter,
+    ) -> GstBufferProcessor:
+        """Create buffer processor."""
+        return GstBufferProcessor(queue, fps_meter)

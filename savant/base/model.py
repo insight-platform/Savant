@@ -4,6 +4,7 @@ from enum import Enum
 from typing import List, Optional, Tuple
 from omegaconf import MISSING
 from savant.base.pyfunc import PyFunc
+from savant.meta.constants import PRIMARY_OBJECT_LABEL
 from savant.remote_file.schema import RemoteFile
 
 
@@ -74,7 +75,7 @@ class ModelInput:
                 maintain_aspect_ratio: True
     """
 
-    object: str = 'frame'
+    object: str = PRIMARY_OBJECT_LABEL
     """A text label in the form of ``model_name.object_label``.
     Indicates objects that will be used as input data.
     Special value `frame` is used to specify the entire frame as model input.
@@ -104,6 +105,8 @@ class ModelInput:
     maintain_aspect_ratio: bool = False
     """Indicates whether the input preprocessing should maintain image aspect ratio.
     """
+
+    # TODO: Add `symmetric-padding` support.
 
     # TODO: Enhance scaling options
     #  range: Tuple[] = (0, 255) or (0.0, 1.0)
@@ -137,8 +140,6 @@ class ModelInput:
 
     preprocess_object_meta: Optional[PyFunc] = None
     """Object metadata preprocessing.
-
-    It should be defined using :py:class:`~savant.base.pyfunc.PyFunc`.
 
     Preprocessing implementation should be written as a subclass of
     :py:class:`~savant.base.input_preproc.BasePreprocessObjectMeta`.
@@ -183,8 +184,6 @@ class ModelOutput:
     """Model output converter. Converter is used to transform raw tensor
     output into Savant data format.
 
-    Converter should be defined using :py:class:`~savant.base.pyfunc.PyFunc`.
-
     Converter implementation should be written as a subclass of
     :py:class:`~savant.base.converter.BaseObjectModelOutputConverter` or
     :py:class:`~savant.base.converter.BaseAttributeModelOutputConverter` or
@@ -220,8 +219,6 @@ class ObjectModelOutputObject:
 
     selector: Optional[PyFunc] = None
     """Model output selector.
-
-    Selector should be defined using :py:class:`~savant.base.pyfunc.PyFunc`.
 
     Selector implementation should be written as a subclass of
     :py:class:`~savant.base.selector.BaseSelector`.
@@ -361,7 +358,13 @@ class Model:
     """
 
     batch_size: int = 1
-    """Number of frames or objects to be inferred together in a batch."""
+    """Number of frames or objects to be inferred together in a batch.
+
+    .. note:: In case the model is an NvInferModel and it is configured to
+       use the TRT engine file directly, the default value for ``batch_size``
+       will be taken from the engine file name, by parsing it according to the scheme
+       {model_name}_b{batch_size}_gpu{gpu_id}_{precision}.engine
+    """
 
     precision: ModelPrecision = ModelPrecision.FP16
     """Data format to be used by inference.
@@ -373,6 +376,11 @@ class Model:
         precision: fp16
         # precision: int8
         # precision: fp32
+
+    .. note:: In case the model is an NvInferModel and it is configured to
+       use the TRT engine file directly, the default value for ``precision``
+       will be taken from the engine file name, by parsing it according to the scheme
+       {model_name}_b{batch_size}_gpu{gpu_id}_{precision}.engine
     """
 
     input: ModelInput = ModelInput()

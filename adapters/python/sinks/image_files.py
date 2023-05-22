@@ -4,7 +4,7 @@ import logging
 import os
 import traceback
 from distutils.util import strtobool
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 from adapters.python.sinks.chunk_writer import ChunkWriter, CompositeChunkWriter
 from adapters.python.sinks.metadata_json import (
@@ -13,7 +13,8 @@ from adapters.python.sinks.metadata_json import (
     Patterns,
 )
 from savant.api import deserialize
-from savant.utils.zeromq import ZeroMQSource
+from savant.api.enums import ExternalFrameType
+from savant.utils.zeromq import ZeroMQSource, build_topic_prefix
 
 DEFAULT_CHUNK_SIZE = 10000
 
@@ -24,19 +25,33 @@ class ImageFilesWriter(ChunkWriter):
         self.chunk_location = None
         super().__init__(chunk_size)
 
-    def _write(self, data: Dict, frame_num: Optional[int]) -> bool:
-        frame = data.get('frame')
-        if not frame:
+    def _write(
+        self,
+        message: Dict,
+        data: List[bytes],
+        frame_num: Optional[int],
+    ) -> bool:
+        frame = message.get('frame')
+        if frame is None:
             return True
         if frame_num is None:
             # Cannot get file location for frame_num=None
             self.logger.warning(
                 'Got frame of size %s with PTS %s, but "frame_num" is None. Not saving it to a file.',
                 len(frame),
-                data.get('pts'),
+                message.get('pts'),
             )
             return True
-        codec = data['codec']
+        if isinstance(frame, dict):
+            frame_type = ExternalFrameType(frame['type'])
+            if frame_type != ExternalFrameType.ZEROMQ:
+                self.logger.error('Unsupported frame type "%s".', frame_type.value)
+                return False
+            if len(data) != 1:
+                self.logger.error('Data has %s parts, expected 1.', len(data))
+                return False
+            frame = data[0]
+        codec = message['codec']
         filepath = os.path.join(
             self.chunk_location, f'{frame_num:0{self.chunk_size_digits}}.{codec}'
         )
@@ -68,15 +83,15 @@ class ImageFilesSink:
         self.skip_frames_without_objects = skip_frames_without_objects
         self.writers: Dict[str, ChunkWriter] = {}
 
-    def write(self, schema_name: str, message: Dict):
+    def write(self, schema_name: str, message: Dict, data: List[bytes]):
         message_with_schema = {**message, 'schema': schema_name}
         if schema_name == 'VideoFrame':
-            return self._write_video_frame(message_with_schema)
+            return self._write_video_frame(message_with_schema, data)
         elif schema_name == 'EndOfStream':
             return self._write_eos(message_with_schema)
         self.logger.error('Unknown schema "%s"', schema_name)
 
-    def _write_video_frame(self, message: Dict) -> bool:
+    def _write_video_frame(self, message: Dict, data: List[bytes]) -> bool:
         source_id = message['source_id']
         pts = message['pts']
         if self.skip_frames_without_objects and not frame_has_objects(message):
@@ -100,7 +115,7 @@ class ImageFilesSink:
                 self.chunk_size,
             )
             self.writers[source_id] = writer
-        return writer.write(message, message.get('keyframe'))
+        return writer.write(message, data, message.get('keyframe'))
 
     def _write_eos(self, message: Dict):
         source_id = message['source_id']
@@ -108,7 +123,7 @@ class ImageFilesSink:
         writer = self.writers.get(source_id)
         if writer is None:
             return False
-        writer.write(message, can_start_new_chunk=False, is_frame=False)
+        writer.write(message, None, can_start_new_chunk=False, is_frame=False)
         writer.flush()
         return True
 
@@ -130,18 +145,27 @@ def main():
         os.environ.get('SKIP_FRAMES_WITHOUT_OBJECTS', 'false')
     )
     chunk_size = int(os.environ.get('CHUNK_SIZE', DEFAULT_CHUNK_SIZE))
+    topic_prefix = build_topic_prefix(
+        source_id=os.environ.get('SOURCE_ID'),
+        source_id_prefix=os.environ.get('SOURCE_ID_PREFIX'),
+    )
 
     # possible exceptions will cause app to crash and log error by default
     # no need to handle exceptions here
-    source = ZeroMQSource(zmq_endpoint, zmq_socket_type, zmq_bind)
+    source = ZeroMQSource(
+        zmq_endpoint,
+        zmq_socket_type,
+        zmq_bind,
+        topic_prefix=topic_prefix,
+    )
 
     image_sink = ImageFilesSink(dir_location, chunk_size, skip_frames_without_objects)
     logging.info('Image files sink started')
 
     try:
-        for message_bin in source:
+        for message_bin, *data in source:
             schema_name, message = deserialize(message_bin)
-            image_sink.write(schema_name, message)
+            image_sink.write(schema_name, message, data)
     except KeyboardInterrupt:
         logging.info('Interrupted')
     finally:

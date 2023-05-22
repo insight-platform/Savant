@@ -1,5 +1,67 @@
+ARG SAVANT_VERSION
 ARG DEEPSTREAM_VERSION
+FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-devel AS base_builder
+
+# Newer cmake ver. needed for "FindCUDAToolkit"
+ARG CMAKE_VER=3.26.3
+RUN mkdir -p /tmp/cmake \
+    && cd /tmp/cmake \
+    && wget --progress=bar:force:noscroll https://github.com/Kitware/CMake/releases/download/v$CMAKE_VER/cmake-$CMAKE_VER-linux-x86_64.sh \
+    && sh cmake-$CMAKE_VER-linux-x86_64.sh --skip-license --prefix=/usr/local/
+
+# need python headers
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y \
+    python3-dev \
+    && apt-get autoremove -y \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# python to python3 by default
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 10
+
+# update pip
+RUN python -m pip install --no-cache-dir --upgrade pip
+
+
+FROM base_builder as savant_build
+
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y \
+    python3.8-venv \
+    && apt-get autoremove -y \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN python3 -m pip install setuptools wheel build
+
+WORKDIR /tmp/build
+COPY . .
+RUN python3 -m build --wheel
+
+
+FROM base_builder AS pygstsavantframemeta_build
+
+WORKDIR /libs/gstsavantframemeta
+COPY libs/gstsavantframemeta/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY libs/gstsavantframemeta .
+RUN python setup.py bdist_wheel && rm -rf _skbuild
+
+
+FROM base_builder AS savantboost_build
+
+WORKDIR /libs/savanboost
+COPY libs/savantboost/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY libs/savantboost .
+RUN python setup.py bdist_wheel && rm -rf _skbuild
+
+
 FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-base AS base
+ARG DEEPSTREAM_VERSION
 
 # python to python3 by default
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 10
@@ -7,6 +69,7 @@ RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 10
 # install base packages
 RUN apt-get update \
     && apt-get install --no-install-recommends -y \
+    curl \
     python3-pip \
     python3-dev \
     libcairo2-dev \
@@ -18,50 +81,68 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 ENV PYTHONUNBUFFERED=1
-ARG APP_PATH=/opt/app
-ENV APP_PATH=$APP_PATH
-ENV PYTHONPATH=$APP_PATH
-WORKDIR $APP_PATH
+ARG PROJECT_PATH=/opt/savant
+ENV PROJECT_PATH=$PROJECT_PATH
+ENV PYTHONPATH=$PROJECT_PATH
+WORKDIR $PROJECT_PATH
 
-# add deepstream libs to path, so that ctypes can load libnvbufsurface.so
-ENV LD_LIBRARY_PATH=/opt/nvidia/deepstream/deepstream/lib/:/opt/app/module/lib:$LD_LIBRARY_PATH
+# add deepstream libs to path, so that ctypes can load them
+ENV LD_LIBRARY_PATH=/opt/nvidia/deepstream/deepstream/lib:$LD_LIBRARY_PATH
 
 # install requirements
-COPY requirements/base.txt requirements-base.txt
-COPY requirements/deepstream.txt requirements-deepstream.txt
 RUN python -m pip install --no-cache-dir --upgrade pip
-RUN python -m pip install --no-cache-dir \
-    -r requirements-base.txt \
-    -r requirements-deepstream.txt \
-    && rm requirements-base.txt \
-    && rm requirements-deepstream.txt
 
-COPY savant savant
-ENV GST_PLUGIN_PATH=${APP_PATH}/savant/gst_plugins:${APP_PATH}/savant/utils/gst_plugins
+COPY requirements/deepstream.txt requirements.txt
+RUN python -m pip install --no-cache-dir -r requirements.txt \
+    && rm requirements.txt
 
-COPY LICENSE savant/
+RUN curl -fsS \
+    "https://eu-central-1.linodeobjects.com/savant-data/opencv-packages/x86/OpenCV-4.6.0-x86_64-{dev,libs,licenses,python,scripts}_${DEEPSTREAM_VERSION}.deb" \
+    -o "OpenCV-#1.deb" \
+    && dpkg -i OpenCV* \
+    && rm OpenCV*
 
-# https://github.com/onnx/onnx-tensorrt/issues/823#issuecomment-1132735098
-# missing symlink for cublas and cublasLt in DS6.1-base image
-# (no missing symlink for cublas and cublasLt in DS6.1-devel image)
-RUN ln -s /usr/local/cuda/targets/x86_64-linux/lib/libcublasLt.so.11 /usr/local/cuda/targets/x86_64-linux/lib/libcublasLt.so \
-    && ln -s /usr/local/cuda/targets/x86_64-linux/lib/libcublas.so.11 /usr/local/cuda/targets/x86_64-linux/lib/libcublas.so \
-    && ldconfig
+COPY --from=pygstsavantframemeta_build /libs/gstsavantframemeta/dist /libs/gstsavantframemeta/dist
+RUN python -m pip install --no-cache-dir /libs/gstsavantframemeta/dist/*.whl
 
-ENTRYPOINT [ "python", "-m", "savant.entrypoint"]
+COPY --from=savantboost_build /libs/savanboost/dist /libs/savanboost/dist
+RUN python -m pip install --no-cache-dir /libs/savanboost/dist/*.whl
+
+COPY --from=savant_build /tmp/build/dist /libs/savant/dist/
+RUN python -m pip install --no-cache-dir /libs/savant/dist/*.whl
+
+# add framework content
+COPY LICENSE .
+COPY savant/VERSION .
+COPY gst_plugins gst_plugins
+ENV GST_PLUGIN_PATH=$PROJECT_PATH/gst_plugins
+
+ENTRYPOINT ["python", "-m", "savant.entrypoint"]
+
+
+FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-devel AS mediamtx
+
+ARG MEDIAMTX_VERSION="v0.22.1"
+WORKDIR /mediamtx
+RUN wget --progress=bar:force:noscroll \
+        "https://github.com/aler9/mediamtx/releases/download/${MEDIAMTX_VERSION}/mediamtx_${MEDIAMTX_VERSION}_linux_amd64.tar.gz" \
+    && tar -xvzf "mediamtx_${MEDIAMTX_VERSION}_linux_amd64.tar.gz" \
+    && rm -f "mediamtx_${MEDIAMTX_VERSION}_linux_amd64.tar.gz"
+
 
 FROM base AS adapters
 
-COPY adapters/ds ${APP_PATH}/adapters/ds
-COPY adapters/gst/gst_plugins/python/adjust_timestamps.py ${APP_PATH}/adapters/ds/gst_plugins/python/adjust_timestamps.py
-ENV GST_PLUGIN_PATH=${GST_PLUGIN_PATH}:${APP_PATH}/adapters/ds/gst_plugins
+COPY --from=mediamtx /mediamtx/mediamtx mediamtx/mediamtx
+COPY adapters/ds adapters/ds
+COPY adapters/gst/gst_plugins/python/adjust_timestamps.py \
+     adapters/gst/gst_plugins/python/fps_meter.py \
+     adapters/gst/gst_plugins/python/
+ENV GST_PLUGIN_PATH=$GST_PLUGIN_PATH:$PROJECT_PATH/adapters/gst/gst_plugins:$PROJECT_PATH/adapters/ds/gst_plugins
+
 ENTRYPOINT []
 
-FROM base as samples
 
-COPY samples ${APP_PATH}/samples
-
-FROM samples as docs
+FROM base AS docs
 
 RUN apt update && apt install --no-install-recommends -y \
     graphviz && \
@@ -69,10 +150,11 @@ RUN apt update && apt install --no-install-recommends -y \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 
-COPY docs/requirements.txt requirements-docs.txt
-RUN python -m pip install --no-cache-dir \
-    -r requirements-docs.txt \
-    && rm requirements-docs.txt
+COPY samples samples
+
+COPY docs/requirements.txt requirements.txt
+RUN python -m pip install --no-cache-dir -r requirements.txt \
+    && rm requirements.txt
 
 ARG USERNAME=container_user
 # UID should be set to the same value as host OS UID
@@ -82,9 +164,10 @@ ARG USER_GID=$USER_UID
 RUN groupadd --gid $USER_GID $USERNAME \
 	&& useradd --uid $USER_UID --gid $USER_GID -m $USERNAME
 
-RUN chown -R $USER_UID:$USER_GID $APP_PATH
+RUN chown -R $USER_UID:$USER_GID $PROJECT_PATH
 USER $USERNAME
 
-WORKDIR $APP_PATH/docs
+WORKDIR $PROJECT_PATH/docs
+
 ENTRYPOINT ["make"]
 CMD ["clean", "html"]

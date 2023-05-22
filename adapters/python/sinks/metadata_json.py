@@ -5,11 +5,11 @@ import logging
 import os
 import traceback
 from distutils.util import strtobool
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 from adapters.python.sinks.chunk_writer import ChunkWriter
 from savant.api import deserialize
-from savant.utils.zeromq import ZeroMQSource
+from savant.utils.zeromq import ZeroMQSource, build_topic_prefix
 
 
 class Patterns:
@@ -23,13 +23,19 @@ class MetadataJsonWriter(ChunkWriter):
         self.pattern = pattern
         super().__init__(chunk_size)
 
-    def _write(self, metadata: Dict, frame_num: Optional[int]) -> bool:
+    def _write(
+        self,
+        message: Dict,
+        data: List[bytes],
+        frame_num: Optional[int],
+    ) -> bool:
         self.logger.debug('Writing meta to file %s', self.location)
-        data = {k: v for k, v in metadata.items() if k != 'frame'}
+        metadata = {k: v for k, v in message.items() if k != 'frame'}
+        # TODO: add frame to metadata if its not embedded
         if frame_num is not None:
-            data['frame_num'] = frame_num
+            metadata['frame_num'] = frame_num
         try:
-            json.dump(data, self.file)
+            json.dump(metadata, self.file)
             self.file.write('\n')
         except Exception:
             traceback.print_exc()
@@ -112,7 +118,7 @@ class MetadataJsonSink:
             if last_writer is not None:
                 last_writer.flush()
             self.last_writer_per_source[source_id] = writer
-        return writer.write(message, message['keyframe'])
+        return writer.write(message, None, message['keyframe'])
 
     def _write_eos(self, message: Dict):
         source_id = message['source_id']
@@ -120,7 +126,7 @@ class MetadataJsonSink:
         writer = self.last_writer_per_source.get(source_id)
         if writer is None:
             return False
-        result = writer.write(message, can_start_new_chunk=False, is_frame=False)
+        result = writer.write(message, None, can_start_new_chunk=False, is_frame=False)
         writer.flush()
         return result
 
@@ -155,16 +161,25 @@ def main():
         os.environ.get('SKIP_FRAMES_WITHOUT_OBJECTS', 'false')
     )
     chunk_size = int(os.environ.get('CHUNK_SIZE', 0))
+    topic_prefix = build_topic_prefix(
+        source_id=os.environ.get('SOURCE_ID'),
+        source_id_prefix=os.environ.get('SOURCE_ID_PREFIX'),
+    )
 
     # possible exceptions will cause app to crash and log error by default
     # no need to handle exceptions here
-    source = ZeroMQSource(zmq_endpoint, zmq_socket_type, zmq_bind)
+    source = ZeroMQSource(
+        zmq_endpoint,
+        zmq_socket_type,
+        zmq_bind,
+        topic_prefix=topic_prefix,
+    )
 
     sink = MetadataJsonSink(location, skip_frames_without_objects, chunk_size)
     logging.info('Metadata JSON sink started')
 
     try:
-        for message_bin in source:
+        for message_bin, *data in source:
             schema_name, message = deserialize(message_bin)
             sink.write(schema_name, message)
     except KeyboardInterrupt:

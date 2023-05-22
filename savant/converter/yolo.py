@@ -1,4 +1,6 @@
-"""YOLO base detector postprocessing (converter)."""
+"""YOLO base detector postprocessing (converter).
+TODO: Add `symmetric-padding` support.
+"""
 from typing import Tuple
 import numpy as np
 from savant.base.converter import BaseObjectModelOutputConverter
@@ -61,9 +63,6 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
             bboxes[:, 3] -= bboxes[:, 1]
             bboxes[:, 0] += bboxes[:, 2] / 2
             bboxes[:, 1] += bboxes[:, 3] / 2
-
-            # TODO: tmp workaround
-            confidences += 1.0
 
         # filter by confidence
         if self.confidence_threshold:

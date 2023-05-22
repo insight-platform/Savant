@@ -4,7 +4,11 @@ from typing import Optional, Any, List, Union
 
 from savant.meta.bbox import BBox, RBBox
 from savant.meta.attribute import AttributeMeta
-from savant.meta.constants import UNTRACKED_OBJECT_ID, DEFAULT_CONFIDENCE
+from savant.meta.constants import (
+    UNTRACKED_OBJECT_ID,
+    DEFAULT_CONFIDENCE,
+    PRIMARY_OBJECT_LABEL,
+)
 
 
 class BaseObjectMetaImpl(ABC):
@@ -89,6 +93,7 @@ class ObjectMeta:
         self._track_id = track_id
         self._parent = parent
         self._bbox = bbox
+        self._uid = None
         self.object_meta_impl: Optional[BaseObjectMetaImpl] = None
         self._attributes = {}
         if attributes:
@@ -231,6 +236,10 @@ class ObjectMeta:
         self._element_name = value
 
     @property
+    def is_primary(self) -> bool:
+        return not self.element_name and self.label == PRIMARY_OBJECT_LABEL
+
+    @property
     def confidence(self) -> float:
         """Returns object confidence.
 
@@ -252,6 +261,13 @@ class ObjectMeta:
         if self.object_meta_impl:
             return self.object_meta_impl.bbox
         return self._bbox
+
+    @property
+    def uid(self) -> Optional[int]:
+        """Returns uid of the object."""
+        if self.object_meta_impl:
+            return self.object_meta_impl.uid
+        return self._uid
 
     @classmethod
     def _from_be_object_meta(cls, be_object_meta: BaseObjectMetaImpl):

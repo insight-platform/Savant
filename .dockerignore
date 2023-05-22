@@ -7,3 +7,10 @@
 docker/
 .dockerignore
 Makefile
+**/_skbuild/
+**/dist/
+**/*.egg-info/
+**/build/
+downloads/
+models/
+var/

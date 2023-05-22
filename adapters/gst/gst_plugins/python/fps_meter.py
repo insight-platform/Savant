@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Any, Optional
 
 from savant.gstreamer import GObject, Gst, GstBase
-from savant.gstreamer.utils import LoggerMixin
+from savant.utils.logging import LoggerMixin
 from savant.utils.fps_meter import FPSMeter
 
 
@@ -76,6 +76,13 @@ class FPSMeterPlugin(LoggerMixin, GstBase.BaseTransform):
             True,
             GObject.ParamFlags.READWRITE,
         ),
+        'measure-per-loop': (
+            bool,
+            'Measure FPS per loop',
+            'Measure FPS per loop. FPS meter will dump statistics at the end of each loop.',
+            False,
+            GObject.ParamFlags.READWRITE,
+        ),
     }
 
     def __init__(self):
@@ -83,6 +90,7 @@ class FPSMeterPlugin(LoggerMixin, GstBase.BaseTransform):
         # properties
         self.output: Output = DEFAULT_OUTPUT
         self.measure_per_file = True
+        self.measure_per_loop = False
 
         self.location: Optional[str] = None
         self.fps_meter = FPSMeter(period_frames=DEFAULT_PERIOD_FRAMES)
@@ -103,6 +111,8 @@ class FPSMeterPlugin(LoggerMixin, GstBase.BaseTransform):
             return self.fps_meter.period_seconds
         if prop.name == 'measure-per-file':
             return self.measure_per_file
+        if prop.name == 'measure-per-loop':
+            return self.measure_per_loop
         raise AttributeError(f'Unknown property {prop.name}.')
 
     def do_set_property(self, prop: GObject.GParamSpec, value: Any):
@@ -119,6 +129,8 @@ class FPSMeterPlugin(LoggerMixin, GstBase.BaseTransform):
             self.fps_meter.period_seconds = value
         elif prop.name == 'measure-per-file':
             self.measure_per_file = value
+        elif prop.name == 'measure-per-loop':
+            self.measure_per_loop = value
         else:
             raise AttributeError(f'Unknown property {prop.name}.')
 
@@ -137,14 +149,19 @@ class FPSMeterPlugin(LoggerMixin, GstBase.BaseTransform):
             self.fps_meter.reset_counter()
             self.dump_stats()
 
-        elif self.measure_per_file and event.type == Gst.EventType.TAG:
+        elif (
+            self.measure_per_file or self.measure_per_loop
+        ) and event.type == Gst.EventType.TAG:
             tag_list: Gst.TagList = event.parse_tag()
             has_location, location = tag_list.get_string(Gst.TAG_LOCATION)
-            if has_location and self.location and self.location != location:
+            if has_location:
+                if self.location and (
+                    self.measure_per_loop or self.location != location
+                ):
+                    self.dump_stats()
+                    self.fps_meter.reset_counter()
                 self.logger.debug('Set location to %s', location)
-                self.dump_stats()
                 self.location = location
-                self.fps_meter.reset_counter()
 
         # Cannot use `super()` since it is `self`
         return GstBase.BaseTransform.do_sink_event(self, event)

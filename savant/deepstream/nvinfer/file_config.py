@@ -14,6 +14,7 @@ from typing import (
 )
 from configparser import ConfigParser
 import copy
+import re
 from omegaconf import DictConfig
 from savant.base.model import ModelPrecision, ModelColorFormat
 from .model import (
@@ -99,9 +100,29 @@ class NvInferConfig:
         return deep_update(config1, config2)
 
     @staticmethod
+    def parse_model_engine_file(model_engine_file: str) -> Optional[Dict]:
+        """Try to parse ``model-engine-file`` according to default Deepstream
+        engine naming scheme."""
+        result = re.match(
+            r'(?P<model_file>.*)'
+            r'_b(?P<batch_size>\d+)'
+            r'_gpu(?P<gpu_id>\d+)'
+            r'_(?P<precision>fp32|fp16|int8)\.engine',
+            model_engine_file,
+        )
+        if not result:
+            return None
+        return {
+            'model_file': result['model_file'],
+            'batch_size': int(result['batch_size']),
+            'gpu_id': int(result['gpu_id']),
+            'precision': ModelPrecision[result['precision'].upper()],
+        }
+
+    @staticmethod
     def generate_model_engine_file(
         model_file: str, batch_size: int, gpu_id: int, precision: ModelPrecision
-    ):
+    ) -> str:
         """Generate ``model-engine-file`` according to default Deepstream
         engine naming scheme."""
         prefix = model_file if model_file else 'model'
@@ -174,6 +195,8 @@ class NvInferConfig:
         _FieldMap('input-object-max-height', 'input.object_max_height', int),
         _FieldMap('output-blob-names', 'output.layer_names', lambda v: v.split(';')),
         _FieldMap('num-detected-classes', 'output.num_detected_classes', int),
+        _FieldMap('gpu-id', 'gpu_id', int),
+        _FieldMap('secondary-reinfer-interval', 'interval', int),
     ]
 
     _CLASS_ATTR_MAP = [

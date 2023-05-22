@@ -10,12 +10,12 @@ from savant.config.schema import (
     PyFuncElement,
     ModelElement,
     get_element_name,
-    DrawBinElement,
+    DrawFunc,
+    FrameParameters,
 )
 from savant.deepstream.nvinfer.element_config import nvinfer_configure_element
 from savant.parameter_storage import init_param_storage
 from savant.utils.singleton import SingletonMeta
-
 
 logger = logging.getLogger(__name__)
 
@@ -111,9 +111,6 @@ def get_schema_configurator(
     if element == 'pyfunc':
         return PyFuncElement, None
 
-    if element == 'drawbin':
-        return DrawBinElement, None
-
     if element == 'nvinfer':
         return ModelElement, nvinfer_configure_element
 
@@ -157,6 +154,24 @@ def setup_batch_size(config: Module) -> None:
     config.parameters['batch_size'] = batch_size
 
 
+def resolve_parameters(config: DictConfig):
+    """Resolve parameters on module config ("frame", "draw_func", etc.).
+
+    :param config: Module config.
+    """
+
+    config.parameters['frame'] = OmegaConf.unsafe_merge(
+        OmegaConf.structured(FrameParameters),
+        config.parameters['frame'],
+    )
+
+    draw_func_cfg = config.parameters.get('draw_func')
+    if draw_func_cfg is not None:
+        draw_func_schema = OmegaConf.structured(DrawFunc)
+        draw_func_cfg = OmegaConf.unsafe_merge(draw_func_schema, draw_func_cfg)
+        config.parameters['draw_func'] = draw_func_cfg
+
+
 class ModuleConfig(metaclass=SingletonMeta):
     """Singleton that provides module configuration loading and access."""
 
@@ -179,10 +194,11 @@ class ModuleConfig(metaclass=SingletonMeta):
 
         # if source for module is specified,
         # it should be used instead of default source (not merged)
-        if 'source' in module_cfg.pipeline:
+        if 'pipeline' in module_cfg and 'source' in module_cfg.pipeline:
             del self._default_cfg.pipeline.source
 
         logger.debug('Default conf\n%s', self._default_cfg)
+        logger.debug('Module conf\n%s', module_cfg)
         module_cfg = OmegaConf.unsafe_merge(
             self._config_schema, self._default_cfg, module_cfg
         )
@@ -190,6 +206,7 @@ class ModuleConfig(metaclass=SingletonMeta):
         init_param_storage(module_cfg)
 
         OmegaConf.resolve(module_cfg)  # to resolve parameters for pipeline elements
+        resolve_parameters(module_cfg)
         logger.debug('Resolved conf\n%s', module_cfg)
         logger.info('Configure pipeline elements...')
 

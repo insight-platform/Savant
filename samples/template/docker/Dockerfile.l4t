@@ -1,0 +1,9 @@
+FROM ghcr.io/insight-platform/savant-deepstream-l4t:latest
+
+COPY requirements.txt requirements.txt
+RUN python -m pip install -r requirements.txt
+
+COPY module module
+WORKDIR /opt/savant/module
+
+ENTRYPOINT ["./run.py"]

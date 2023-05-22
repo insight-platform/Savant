@@ -31,6 +31,10 @@ class BasePyFuncPlugin(BasePyFuncImpl):
     :py:class:`.PyFunc` structure.
     """
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.gst_element: Optional[Gst.Element] = None
+
     def on_start(self) -> bool:
         """Do on plugin start."""
         return True
@@ -38,6 +42,12 @@ class BasePyFuncPlugin(BasePyFuncImpl):
     def on_stop(self) -> bool:
         """Do on plugin stop."""
         return True
+
+    def on_sink_event(self, event: Gst.Event):
+        """Do on sink event."""
+
+    def on_src_event(self, event: Gst.Event):
+        """Do on src event."""
 
     @abstractmethod
     def process_buffer(self, buffer: Gst.Buffer):

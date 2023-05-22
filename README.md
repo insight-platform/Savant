@@ -1,30 +1,74 @@
-# Savant - High-Performance Streaming Inference Framework for Humans
+# Savant: Supercharged Video Analytics Framework With Batteries Included
+
+:star: Star us on GitHub — it motivates us a lot and helps the project become more visible to developers.
 
 Savant is an open-source, high-level framework for building real-time, streaming, highly efficient multimedia AI
 applications on the Nvidia stack. It makes it possible to develop dynamic, fault-tolerant inference pipelines
 that utilize the best Nvidia approaches for data center and edge accelerators very quickly.
 
+[![discord](https://user-images.githubusercontent.com/15047882/229273271-d033e597-06d3-4aeb-b93d-1217e95ca07e.png)](https://discord.gg/KVAfGBsZGd)
+
 ## Quick Links
 
-- [Getting Started](https://insight-platform.github.io/Savant/getting_started/intro.html)
-- [Publications and Samples](docs/publications-samples.md)
-- [Architecture](docs/architecture.md)
-- [API Documentation](https://insight-platform.github.io/Savant/reference/api/index.html)
+- [Prepare the OS Runtime](https://insight-platform.github.io/Savant/getting_started/0_configure_prod_env.html)
+- [Getting Started Tutorial](https://hello.savant.video/peoplenet-tutorial)
+- [Publications and Samples](https://hello.savant.video/samples)
+- [Architecture Draft](docs/architecture.md)
+- [Documentation](https://insight-platform.github.io/Savant)
+- [Adapters Guide](docs/adapters.md)
 
-## What it's not
+## 1-Minute Quick Start
+
+**Note**: Ubuntu 22.04 runtime configuration [guide](docs/runtime-configuration.md) helps to configure the runtime to run Savant pipelines.
+
+If you are acquainted with running dockerized applications using Nvidia GPUs:
+- **X86 & Volta/Turing/Ampere/Ada Lovelace**: Linux, Drivers 525+, Docker with Compose, Nvidia Container Runtime,
+- **Nvidia Jetson NX/AGX+**: JetPack 5.1+, Docker with Compose, Nvidia Container Runtime.
+
+Trying the demo you will find how to make the following showcase:
+
+![](samples/peoplenet_detector/assets/peoplenet-blur-demo-loop-400.webp)
+
+```bash
+git clone https://github.com/insight-platform/Savant.git
+cd Savant/samples/peoplenet_detector
+git lfs pull
+
+# if you want to share with us where are you from
+# run the following command, it is completely optional
+curl --silent -O -- https://hello.savant.video/peoplenet.html
+
+# if x86
+../../utils/check-environment-compatible && docker compose -f docker-compose.x86.yml up
+
+# if Jetson
+../../utils/check-environment-compatible && docker compose -f docker-compose.l4t.yml up
+
+# open 'rtsp://127.0.0.1:554/stream' in your player
+# or visit 'http://127.0.0.1:888/stream/' (LL-HLS)
+
+# Ctrl+C to stop running the compose bundle
+
+# to get back to project root
+cd ../..
+```
+
+
+
+## What It Is Not
 
 Savant is not for AI model training; it's for building fast streaming inference applications working on Edge and Core Nvidia equipment.
 
-## Who would love it?
+## Who Would Love Savant?
 
 The one, who wants:
 
-- to get the maximum performance of Nvidia equipment on streaming inference tasks either on edge or in core;
-- to decrease time to market when building dynamic pipelines with DeepStream technology without extra hassle.
+- get the maximum performance of Nvidia equipment on streaming inference tasks either on edge or in core;
+- decrease time to market when building dynamic pipelines with DeepStream technology without extra hassle.
 
-## Runs On
+## Runs On Nvidia Hardware
 
-- Nvidia Jetson Nano, NX Xavier, Xavier AGX;
+- Nvidia Jetson NX, Xavier AGX;
 - Nvidia Turing GPU;
 - Nvidia Ampere GPU;
 - Nvidia Hopper, hopefully - haven't chance to get it yet :-)
@@ -43,7 +87,7 @@ without excessive data transfers into CPU RAM and back. It also stands on a high
 stack ([TensorRT](https://developer.nvidia.com/tensorrt)) that optimizes inference operations to get the best of the
 hardware used.
 
-## Why was Savant developed?
+## Why Was Savant Developed?
 
 Why do we develop Savant if DeepStream solves the problem? Because DeepStream is a very tough and challenging to use
 technology.
@@ -60,16 +104,7 @@ like to utilize most of the CUDA runtime).
 
 ## Features
 
-### Dynamic Runtime Parameters Configuration
-
-Sophisticated ML pipelines can use external knowledge, which helps optimize the results based on additional knowledge
-from the environment.
-
-The framework enables dynamic configuration of the pipeline operational parameters with:
-
-- ingested frame parameters passed in per-frame metadata;
-- Etcd parameters watched and instantly applied;
-- 3rd-party parameters, which are received through user-defined functions.
+Savant is packed with several killer features which skyrocket the development of Deepstream applications.
 
 ### Dynamic Sources Management
 
@@ -98,7 +133,7 @@ loaded in GPU RAM. So, you want to avoid that as well.
 
 The framework implements the handlers, which address all the mentioned problems magically without the need to manage
 them someway explicitly. It helps the developer to process streams of anything without restarting the pipeline. The
-video files, sets of video files, image collections, network video streams, and raw video frames (USB, GigE) - all is
+video files, sets of video files, video loop file, image collections, network video streams, and raw video frames (USB, GigE) - all is
 processed universally (and can be mixed together) without the need to reload the pipeline to attach or detach the
 stream.
 
@@ -112,6 +147,24 @@ simple and utilizes standard open source tools.
 
 The decoupled nature of adapters also provides better reliability because the failed data source affects the adapter
 operation, not a framework operation.
+
+### Dynamic Runtime Parameters Configuration
+
+Sophisticated ML pipelines can use external knowledge, which helps optimize the results based on additional knowledge
+from the environment.
+
+The framework enables dynamic configuration of the pipeline operational parameters with:
+
+- ingested frame parameters passed in per-frame metadata;
+- Etcd parameters watched and instantly applied;
+- 3rd-party parameters, which are received through user-defined functions.
+
+### OpenCV CUDA Integration
+
+Savant supports custom OpenCV CUDA bindings which allow accessing DeepStream's in-GPU frames with a broad range of OpenCV CUDA 
+utilities: the feature helps implement highly efficient video transformations, including but not limited to blurring, cropping, clipping, applying banners and graphical elements over the frame, and others. 
+
+To use the functionality, a developer doesn't need anything rather than Python. However, the performance is way better than what can be achieved with a naive map/change/unmap approach which is available through standard Nvidia python bindings for DeepStream. 
 
 ### Oriented Bounding Boxes Out Of The Box
 
@@ -177,45 +230,53 @@ own.
 
 Currently, the following source adapters are available:
 
-- Local video file;
-- URL video;
-- Local directory of video files;
-- RTSP;
-- Local image file;
-- URL Image;
-- Image directory;
-- USB cam;
-- Apache Kafka;
-- Elasticsearch;
-- MongoDB.
+- [Local video file](docs/adapters.md#the-video-file-source-adapter);
+- [Local directory of video files](docs/adapters.md#the-video-file-source-adapter);
+- [Loop local video file](docs/adapters.md#the-video-loop-file-source-adapter);
+- [Local image file](docs/adapters.md#the-image-file-source-adapter);
+- [Local directory of image files](docs/adapters.md#the-image-file-source-adapter);
+- [Image URL](docs/adapters.md#the-image-file-source-adapter);
+- [Video URL](docs/adapters.md#the-video-file-source-adapter);
+- [Video loop URL](docs/adapters.md#the-video-loop-file-source-adapter);
+- [RTSP stream](docs/adapters.md#the-rtsp-source-adapter);
+- [USB/CSI camera](docs/adapters.md#the-usb-cam-source-adapter);
+- [GigE (Genicam) industrial cam](docs/adapters.md#the-gige-source-adapter).
 
 There are basic sink adapters implemented:
 
-- Inference results are placed into JSON file stream;
-- Resulting video overlay displayed on a screen (per source);
-- MP4 file (per source);
-- image directory (per source);
+- [Inference results are placed into JSON file stream](docs/adapters.md#the-json-meta-sink-adapter);
+- [Resulting video overlay displayed on a screen (per source)](docs/adapters.md#the-display-sink-adapter);
+- [MP4 file (per source)](docs/adapters.md#the-video-file-sink-adapter);
+- [image directory (per source)](docs/adapters.md#the-image-file-sink-adapter);
+- [Always-On RTSP Stream Sink](docs/adapters.md#the-always-on-rtsp-sink-adapter).
 
 The framework uses an established protocol based on Apache Avro, both for sources and sinks. The sources and sinks talk
 to Savant through ZeroMQ sockets.
 
 ### Easy to Deploy
 
-The framework and adapters are delivered as a Docker image. To implement the pipeline, you take the base image, add AI
+The framework and the adapters are delivered as Docker images. To implement the pipeline, you take the base image, add AI
 models and a custom code with extra dependencies, then build the resulting image. Some pipelines which don't require
 additional dependencies can be implemented just by mapping directories with models and user functions into the docker
 image.
 
-As for now, we provide images for conventional PC architecture based on Intel or AMD CPU and discrete GPUs and for
-Jetson ARM-based devices.
+As for now, we provide images for x86 architecture and for Jetson hardware.
 
 ## What's Next
 
-- [Getting Started](https://insight-platform.github.io/Savant/getting_started/intro.html)
-- [Publications and Samples](docs/publications-samples.md)
-- [Architecture](docs/architecture.md)
-- [API Documentation](https://insight-platform.github.io/Savant/reference/api/index.html)
+- [Prepare the OS Runtime](https://insight-platform.github.io/Savant/getting_started/0_configure_prod_env.html)
+- [Getting Started Tutorial](https://hello.savant.video/peoplenet-tutorial)
+- [Publications and Samples](https://hello.savant.video/samples)
+- [Architecture Draft](docs/architecture.md)
+- [Documentation](https://insight-platform.github.io/Savant)
+- [Adapters Guide](docs/adapters.md)
 
 ## Contribution
 
 We welcome anyone who wishes to contribute, report, and learn.
+
+## About Us
+
+The In-Sight team is a ML/AI department of Bitworks Software. We develop custom high performance CV applications for various industries providing full-cycle process, which includes but not limited to data labeling, model evaluation, training, pruning, quantization, validation, and verification, pipelines development, CI/CD. We are mostly focused on Nvidia hardware (both datacenter and edge).
+
+Contact us: info@bw-sw.com

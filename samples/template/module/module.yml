@@ -1,0 +1,108 @@
+# module name, required
+name: ${oc.env:MODULE_NAME, 'template'}
+
+# base module parameters
+parameters:
+  # pipeline processing frame parameters
+  frame:
+    width: 1280
+    height: 720
+    # Add paddings to the frame before processing
+  # output codec - hevc
+  output_frame:
+    codec: hevc
+  # custom drawing on frames function
+  draw_func:
+    module: module.overlay
+    class_name: Overlay
+    #kwargs:
+  # pipeline primary batch size, required if there is no primary nvinfer element
+  batch_size: 1
+
+# pipeline definition
+pipeline:
+  # source definition
+  source:
+    element: videotestsrc
+    properties:
+      num-buffers: 1
+#  source:
+#    element: zeromq_source_bin
+#    properties:
+#      socket: ${oc.env:ZMQ_SRC_ENDPOINT}
+#      socket_type: ${oc.env:ZMQ_SRC_TYPE, ROUTER}
+#      bind: ${oc.decode:${oc.env:ZMQ_SRC_BIND, True}}
+#      # Filter inbound frames by source ID.
+#      source_id: ${oc.decode:${oc.env:SOURCE_ID, null}}
+#      # Filter inbound frames by source ID prefix.
+#      source_id_prefix: ${oc.decode:${oc.env:SOURCE_ID_PREFIX, null}}
+
+  # define pipeline's main elements
+  elements:
+#    # primary detector element, inference is provided by the nvinfer Deepstream element
+#    # model type is detector (other available types are: classifier, custom)
+#    - element: nvinfer@detector
+#      # Model's name in the pipeline, mandatory
+#      name: peoplenet
+#      # model definition
+#      model:
+#        # format of the provided model file
+#        format: etlt
+#        # remote storage where the model files can be found
+#        # skip if providing model files locally
+#        remote:
+#          url: s3://savant-data/models/peoplenet/peoplenet_pruned_v2.0.zip
+#          checksum_url: s3://savant-data/models/peoplenet/peoplenet_pruned_v2.0.md5
+#          parameters:
+#            endpoint: https://eu-central-1.linodeobjects.com
+#          # or get the model directly from NGC API
+#          # peoplenet v2.0
+#          # url: "https://api.ngc.nvidia.com/v2/models/nvidia/tao/peoplenet/versions/pruned_v2.0/zip"
+#
+#        # model file name, without location
+#        model_file: resnet34_peoplenet_pruned.etlt  # v2.0 Accuracy: 84.3 Size 20.9 MB
+#
+#        # configuration of input data and custom preprocessing methods
+#        input:
+#          # model input layer name
+#          layer_name: input_1
+#          # model input layer shape
+#          shape: [3, 544, 960]
+#          # pixel scaling/normalization factor
+#          scale_factor: 0.0039215697906911373
+#
+#        # configuration of model output
+#        output:
+#          # model output layer names
+#          layer_names: [output_bbox/BiasAdd, output_cov/Sigmoid]
+#          # number of detected classes for detector model
+#          num_detected_classes: 3
+#          # specify which detected objects are included in output
+#          objects:
+#            # object class id
+#            - class_id: 0
+#              # label assigned to objects of this class id
+#              label: person
+#              selector:
+#                kwargs:
+#                  # minimal width of the objects of this class to be included in output
+#                  min_width: 32
+#                  # minimal height of the objects of this class to be included in output
+#                  min_height: 32
+
+    # custom pyfunc element
+    - element: pyfunc
+      module: module.custom_pyfunc
+      class_name: CustomPyFunc
+      #kwargs:
+
+  # sinks definition
+  sink:
+    - element: console_sink
+      properties:
+        json_mode: true
+#    - element: zeromq_sink
+#      properties:
+#        socket: ${oc.env:ZMQ_SINK_ENDPOINT}
+#        socket_type: ${oc.env:ZMQ_SINK_TYPE, PUB}
+#        bind: ${oc.decode:${oc.env:ZMQ_SINK_BIND, True}}

@@ -26,7 +26,7 @@
         {
             "name": "angle",
             "type": "float",
-            "default": 0,
+            "default": 0.0,
             "doc": "Rotation angle of the object in degrees, aspect ratio 1:1."
         }
     ]

@@ -11,7 +11,7 @@ required_env SOURCE_ID
 required_env DEVICE
 required_env ZMQ_ENDPOINT
 
-ZMQ_SOCKET_TYPE="${ZMQ_TYPE:="PUSH"}"
+ZMQ_SOCKET_TYPE="${ZMQ_TYPE:="DEALER"}"
 ZMQ_SOCKET_BIND="${ZMQ_BIND:="false"}"
 SYNC_OUTPUT="${SYNC_OUTPUT:="false"}"
 FRAMERATE="${FRAMERATE:="15/1"}"
@@ -24,6 +24,12 @@ else
     FPS_PERIOD="period-frames=1000"
 fi
 
+handler() {
+    kill -s SIGINT "${child_pid}"
+    wait "${child_pid}"
+}
+trap handler SIGINT SIGTERM
+
 gst-launch-1.0 --eos-on-shutdown \
     v4l2src device="${DEVICE}" ! \
     "video/x-raw,framerate=${FRAMERATE}" ! \
@@ -31,4 +37,8 @@ gst-launch-1.0 --eos-on-shutdown \
     'video/x-raw,format=RGBA' ! \
     fps_meter "${FPS_PERIOD}" output="${FPS_OUTPUT}" ! \
     video_to_avro_serializer source-id="${SOURCE_ID}" ! \
-    zeromq_sink socket="${ZMQ_ENDPOINT}" socket-type="${ZMQ_SOCKET_TYPE}" bind="${ZMQ_SOCKET_BIND}" sync="${SYNC_OUTPUT}"
+    zeromq_sink socket="${ZMQ_ENDPOINT}" socket-type="${ZMQ_SOCKET_TYPE}" bind="${ZMQ_SOCKET_BIND}" sync="${SYNC_OUTPUT}" source-id="${SOURCE_ID}" \
+    &
+
+child_pid="$!"
+wait "${child_pid}"

@@ -1,74 +1,61 @@
 """Convert deepstream object meta to output format."""
 from typing import Any, Dict
-import numpy as np
 import pyds
 
-from savant.converter.scale import scale_rbbox
-from savant.deepstream.utils import nvds_get_rbbox
+from savant.config.schema import FrameParameters
+from savant.deepstream.meta.bbox import NvDsRBBox
+from savant.deepstream.utils import nvds_get_obj_bbox
 from savant.meta.attribute import AttributeMeta
+from savant.meta.constants import PRIMARY_OBJECT_LABEL
 from savant.utils.model_registry import ModelObjectRegistry
+from savant.utils.source_info import Resolution
 
 
 def nvds_obj_meta_output_converter(
     nvds_obj_meta: pyds.NvDsObjectMeta,
-    frame_width: int,
-    frame_height: int,
+    frame_params: FrameParameters,
+    output_resolution: Resolution,
 ) -> Dict[str, Any]:
     """Convert object meta to output format.
 
     :param nvds_obj_meta: NvDsObjectMeta
-    :param frame_width: Frame width, to scale to [0..1]
-    :param frame_height: Frame height
-    :return: dict
+    :param frame_params: Frame parameters (width/height, to scale to [0..1]
+    :param output_resolution: SourceInfo value associated with given source id
+    :return: resolution of output frame
     """
     model_name, label = ModelObjectRegistry.parse_model_object_key(
         nvds_obj_meta.obj_label
     )
-    rect_params = nvds_obj_meta.detector_bbox_info.org_bbox_coords
-    confidence = nvds_obj_meta.confidence
-    if nvds_obj_meta.tracker_bbox_info.org_bbox_coords.width > 0:
-        rect_params = nvds_obj_meta.tracker_bbox_info.org_bbox_coords
-        if nvds_obj_meta.tracker_confidence < 1.0:  # specified confidence
-            confidence = nvds_obj_meta.tracker_confidence
 
-    # scale bbox to [0..1]
-    if rect_params.width == 0:
-        rbbox = nvds_get_rbbox(nvds_obj_meta)
-        scaled_bbox = scale_rbbox(
-            bboxes=np.array(
-                [
-                    [
-                        rbbox.x_center,
-                        rbbox.y_center,
-                        rbbox.width,
-                        rbbox.height,
-                        rbbox.angle,
-                    ]
-                ]
-            ),
-            scale_factor_x=1 / frame_width,
-            scale_factor_y=1 / frame_height,
-        )[0]
-        bbox = dict(
-            xc=scaled_bbox[0],
-            yc=scaled_bbox[1],
-            width=scaled_bbox[2],
-            height=scaled_bbox[3],
-            angle=scaled_bbox[4],
-        )
+    if frame_params.padding and frame_params.padding.keep:
+        frame_width = frame_params.total_width
+        frame_height = frame_params.total_height
     else:
-        obj_width = rect_params.width / frame_width
-        obj_height = rect_params.height / frame_height
-        bbox = dict(
-            xc=rect_params.left / frame_width + obj_width / 2,
-            yc=rect_params.top / frame_height + obj_height / 2,
-            width=obj_width,
-            height=obj_height,
-        )
+        frame_width = frame_params.width
+        frame_height = frame_params.height
+
+    confidence = nvds_obj_meta.confidence
+    if 0.0 < nvds_obj_meta.tracker_confidence < 1.0:  # specified confidence
+        confidence = nvds_obj_meta.tracker_confidence
+
+    nvds_bbox = nvds_get_obj_bbox(nvds_obj_meta)
+    if frame_params.padding and not frame_params.padding.keep:
+        nvds_bbox.x_center -= frame_params.padding.left
+        nvds_bbox.y_center -= frame_params.padding.top
+    nvds_bbox.scale(
+        output_resolution.width / frame_width, output_resolution.height / frame_height
+    )
+    bbox = dict(
+        xc=nvds_bbox.x_center,
+        yc=nvds_bbox.y_center,
+        width=nvds_bbox.width,
+        height=nvds_bbox.height,
+        angle=nvds_bbox.angle if isinstance(nvds_bbox, NvDsRBBox) else 0.0,
+    )
 
     # parse parent object
     parent_model_name, parent_label, parent_object_id = None, None, None
-    if nvds_obj_meta.parent and nvds_obj_meta.parent.obj_label != 'frame':
+    if nvds_obj_meta.parent and nvds_obj_meta.parent.obj_label != PRIMARY_OBJECT_LABEL:
         parent_model_name, parent_label = ModelObjectRegistry.parse_model_object_key(
             nvds_obj_meta.parent.obj_label
         )

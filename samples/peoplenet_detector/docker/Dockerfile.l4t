@@ -1,0 +1,3 @@
+FROM ghcr.io/insight-platform/savant-deepstream-l4t:latest
+
+RUN python -m pip install scipy~=1.10

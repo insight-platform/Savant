@@ -1,11 +1,16 @@
+import json
 from fractions import Fraction
-from typing import Any, NamedTuple, Optional
+from pathlib import Path
+from typing import Any, Dict, NamedTuple, Optional, Union
 
 from savant.api import serialize, ENCODING_REGISTRY
+from savant.api.enums import ExternalFrameType
 from savant.gstreamer import GObject, Gst, GstBase
 from savant.gstreamer.codecs import CODEC_BY_CAPS_NAME, Codec
 from savant.gstreamer.metadata import DEFAULT_FRAMERATE
-from savant.gstreamer.utils import LoggerMixin
+from savant.utils.logging import LoggerMixin
+
+EMBEDDED_FRAME_TYPE = 'embedded'
 
 
 class FrameParams(NamedTuple):
@@ -67,11 +72,18 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
             DEFAULT_FRAMERATE,
             GObject.ParamFlags.READWRITE,
         ),
-        'eos-on-location-change': (
+        'eos-on-file-end': (
             bool,
-            'Send EOS when location changed',
-            'Send EOS when location changed',
+            'Send EOS at the end of each file',
+            'Send EOS at the end of each file',
             True,
+            GObject.ParamFlags.READWRITE,
+        ),
+        'eos-on-loop-end': (
+            bool,
+            'Send EOS on a loop end',
+            'Send EOS on a loop end',
+            False,
             GObject.ParamFlags.READWRITE,
         ),
         'eos-on-frame-params-change': (
@@ -79,6 +91,22 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
             'Send EOS when frame parameters changed',
             'Send EOS when frame parameters changed',
             True,
+            GObject.ParamFlags.READWRITE,
+        ),
+        'read-metadata': (
+            bool,
+            'Read metadata',
+            'Attempt to read the metadata of objects from the JSON file that has the identical name '
+            'as the source file with `json` extension, and then send it to the module.',
+            False,
+            GObject.ParamFlags.READWRITE,
+        ),
+        'frame-type': (
+            str,
+            'Frame type.',
+            'Frame type (allowed: '
+            f'{", ".join([EMBEDDED_FRAME_TYPE] + [enum_member.value for enum_member in ExternalFrameType])})',
+            None,
             GObject.ParamFlags.READWRITE,
         ),
     }
@@ -89,16 +117,21 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
         self.eos_schema = ENCODING_REGISTRY["EndOfStream"]
         # properties
         self.source_id: Optional[str] = None
-        self.eos_on_location_change: bool = True
+        self.eos_on_file_end: bool = True
+        self.eos_on_loop_end: bool = False
         self.eos_on_frame_params_change: bool = True
         # will be set after caps negotiation
         self.frame_params: Optional[FrameParams] = None
         self.last_frame_params: Optional[FrameParams] = None
-        self.location: Optional[str] = None
-        self.last_location: Optional[str] = None
+        self.location: Optional[Path] = None
+        self.last_location: Optional[Path] = None
+        self.new_loop: bool = False
         self.default_framerate: str = DEFAULT_FRAMERATE
+        self.frame_type: Optional[ExternalFrameType] = ExternalFrameType.ZEROMQ
 
         self.stream_in_progress = False
+        self.read_metadata: bool = False
+        self.json_metadata = None
 
     def do_set_caps(  # pylint: disable=unused-argument
         self, in_caps: Gst.Caps, out_caps: Gst.Caps
@@ -138,10 +171,18 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
             return self.location
         if prop.name == 'framerate':
             return self.default_framerate
-        if prop.name == 'eos-on-location-change':
-            return self.eos_on_location_change
+        if prop.name == 'eos-on-file-end':
+            return self.eos_on_file_end
+        if prop.name == 'eos-on-loop-end':
+            return self.eos_on_loop_end
         if prop.name == 'eos-on-frame-params-change':
             return self.eos_on_frame_params_change
+        if prop.name == 'read-metadata':
+            return self.read_metadata
+        if prop.name == 'frame-type':
+            if self.frame_type is None:
+                return EMBEDDED_FRAME_TYPE
+            return self.frame_type.value
         raise AttributeError(f'Unknown property {prop.name}.')
 
     def do_set_property(self, prop: GObject.GParamSpec, value: Any):
@@ -160,10 +201,19 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
             except (ZeroDivisionError, ValueError) as e:
                 raise AttributeError(f'Invalid property {prop.name}: {e}.') from e
             self.default_framerate = value
-        elif prop.name == 'eos-on-location-change':
-            self.eos_on_location_change = value
+        elif prop.name == 'eos-on-file-end':
+            self.eos_on_file_end = value
+        elif prop.name == 'eos-on-loop-end':
+            self.eos_on_loop_end = value
         elif prop.name == 'eos-on-frame-params-change':
             self.eos_on_frame_params_change = value
+        elif prop.name == 'read-metadata':
+            self.read_metadata = value
+        elif prop.name == 'frame-type':
+            if value == EMBEDDED_FRAME_TYPE:
+                self.frame_type = None
+            else:
+                self.frame_type = ExternalFrameType(value)
         else:
             raise AttributeError(f'Unknown property {prop.name}.')
 
@@ -177,28 +227,47 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
         self.logger.debug(
             'Processing frame %s of size %s', in_buf.pts, in_buf.get_size()
         )
-        frame = in_buf.extract_dup(0, in_buf.get_size())
         if self.stream_in_progress:
             if (
-                self.eos_on_location_change
+                self.eos_on_file_end
                 and self.location != self.last_location
                 or self.eos_on_frame_params_change
                 and self.frame_params != self.last_frame_params
+                or self.eos_on_loop_end
+                and self.new_loop
             ):
+                self.json_metadata = self.read_json_metadata_file(
+                    self.location.parent / f"{self.location.stem}.json"
+                )
                 self.send_end_message()
         self.last_location = self.location
         self.last_frame_params = self.frame_params
+        self.new_loop = False
 
+        frame_mapinfo: Optional[Gst.MapInfo] = None
+        if self.frame_type is None:
+            result, frame_mapinfo = in_buf.map(Gst.MapFlags.READ)
+            assert result, 'Cannot read buffer.'
+            frame = frame_mapinfo.data
+        elif self.frame_type == ExternalFrameType.ZEROMQ:
+            frame = {'type': self.frame_type.value}
+        else:
+            self.logger.error('Unsupported frame type "%s".', self.frame_type.value)
+            return Gst.FlowReturn.ERROR
         message = self.build_message(
             in_buf.pts,
             in_buf.dts if in_buf.dts != Gst.CLOCK_TIME_NONE else None,
             in_buf.duration if in_buf.duration != Gst.CLOCK_TIME_NONE else None,
-            frame,
+            frame=frame,
             keyframe=not in_buf.has_flags(Gst.BufferFlags.DELTA_UNIT),
         )
-        data = serialize(self.schema, message)
+        frame_meta = serialize(self.schema, message)
 
-        out_buf = Gst.Buffer.new_wrapped(data)
+        out_buf: Gst.Buffer = Gst.Buffer.new_wrapped(frame_meta)
+        if frame_mapinfo is not None:
+            in_buf.unmap(frame_mapinfo)
+        else:
+            out_buf.append_memory(in_buf.get_memory_range(0, -1))
         out_buf.pts = in_buf.pts
         out_buf.dts = in_buf.dts
         out_buf.duration = in_buf.duration
@@ -216,12 +285,35 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
             has_location, location = tag_list.get_string(Gst.TAG_LOCATION)
             if has_location:
                 self.logger.info('Set location to %s', location)
-                self.location = location
+                self.location = Path(location)
+                self.new_loop = True
+                self.json_metadata = self.read_json_metadata_file(
+                    self.location.parent / f"{self.location.stem}.json"
+                )
 
         # Cannot use `super()` since it is `self`
         return GstBase.BaseTransform.do_sink_event(self, event)
 
+    def read_json_metadata_file(self, location: Path):
+        json_metadata = None
+        if self.read_metadata:
+            if location.is_file():
+                with open(location, 'r') as fp:
+                    json_metadata = dict(
+                        map(
+                            lambda x: (x["pts"], x),
+                            filter(
+                                lambda x: x["schema"] == "VideoFrame",
+                                map(json.loads, fp.readlines()),
+                            ),
+                        )
+                    )
+            else:
+                self.logger.warning('JSON file `%s` not found', location.absolute())
+        return json_metadata
+
     def send_end_message(self):
+        self.logger.info('Sending serialized EOS message')
         data = serialize(
             self.eos_schema,
             {'source_id': self.source_id},
@@ -235,12 +327,15 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
         pts: int,
         dts: Optional[int],
         duration: Optional[int],
-        frame: Optional[bytes],
+        frame: Optional[Union[bytes, Dict[str, Any]]],
         **kwargs,
     ):
         if pts == Gst.CLOCK_TIME_NONE:
             # TODO: support CLOCK_TIME_NONE in schema
             pts = 0
+        frame_metadata = None
+        if self.read_metadata and self.json_metadata:
+            frame_metadata = self.json_metadata[pts]
         message = {
             'source_id': self.source_id,
             'framerate': self.frame_params.framerate,
@@ -251,10 +346,11 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
             'dts': dts,
             'duration': duration,
             'frame': frame,
+            'metadata': frame_metadata["metadata"] if self.read_metadata else None,
             **kwargs,
         }
         if self.location:
-            message['tags'] = {'location': self.location}
+            message['tags'] = {'location': str(self.location)}
         return message
 
 
