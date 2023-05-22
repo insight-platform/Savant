@@ -1,6 +1,7 @@
 """Default implementation PyFunc for drawing on frame."""
 from typing import Any, Dict, Optional, Tuple
 import pyds
+import cv2
 from savant.meta.object import ObjectMeta
 from savant.deepstream.base_drawfunc import BaseNvDsDrawFunc
 from savant.deepstream.meta.frame import NvDsFrameMeta
@@ -27,11 +28,20 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
             for _, labels in self.rendered_objects.items():
                 for label, color in labels.items():
                     labels[label] = COLOR[color]
+        self.frame_streams = []
 
     def __call__(self, nvds_frame_meta: pyds.NvDsFrameMeta, buffer: Gst.Buffer):
         with nvds_to_gpu_mat(buffer, nvds_frame_meta) as frame_mat:
-            with Artist(frame_mat) as artist:
+            stream = cv2.cuda.Stream()
+            self.frame_streams.append(stream)
+            with Artist(frame_mat, stream) as artist:
                 self.draw_on_frame(NvDsFrameMeta(nvds_frame_meta), artist)
+
+    def finalize(self):
+        """Finalize batch processing. Wait for all frame CUDA streams to finish."""
+        for stream in self.frame_streams:
+            stream.waitForCompletion()
+        self.frame_streams = []
 
     def get_bbox_border_color(
         self, obj_meta: ObjectMeta
