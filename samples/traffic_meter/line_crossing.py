@@ -6,7 +6,8 @@ from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.deepstream.pyfunc import NvDsPyFuncPlugin
 from samples.traffic_meter.utils import TwoLinesCrossingTracker, Point, Direction
 from timeit import default_timer as timer
-import numpy as np
+
+
 class ConditionalDetectorSkip(NvDsPyFuncPlugin):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -52,11 +53,6 @@ class LineCrossing(NvDsPyFuncPlugin):
         #     'graphite', 8125, prefix='savant.module.traffic_meter'
         # )
 
-        self.per_obj_times_py = []
-        self.per_obj_times_rs = []
-        self.per_frame_times_py = []
-        self.times_rs_batch = []
-
     def on_source_eos(self, source_id: str):
         """On source EOS event callback."""
         if source_id in self.lc_trackers:
@@ -95,10 +91,10 @@ class LineCrossing(NvDsPyFuncPlugin):
                 )
             lc_tracker = self.lc_trackers[frame_meta.source_id]
 
-            track_ids = []
-            py_checks = []
-            rs_checks = []
-            this_frame_per_obj_times_py = []
+            # py_checks = []
+            obj_metas = []
+            # rs_checks = []
+            # this_frame_per_obj_times_py = []
             for obj_meta in frame_meta.objects:
                 if obj_meta.label == self.target_obj_label:
                     lc_tracker.add_track_point(
@@ -112,53 +108,44 @@ class LineCrossing(NvDsPyFuncPlugin):
                     self.track_last_frame_num[frame_meta.source_id][
                         obj_meta.track_id
                     ] = frame_meta.frame_num
-                    track_ids.append(obj_meta.track_id)
 
-                    t1 = timer()
-                    direction_py = lc_tracker.check_track(obj_meta.track_id)
-                    t2 = timer()
-                    direction_rs = lc_tracker.check_track_rs(obj_meta.track_id)
-                    t3 = timer()
-                    self.per_obj_times_py.append(t2-t1)
-                    this_frame_per_obj_times_py.append(t2-t1)
-                    self.per_obj_times_rs.append(t3-t2)
-                    py_checks.append(direction_py)
-                    rs_checks.append(direction_rs)
+                    obj_metas.append(obj_meta)
 
-                    obj_events = self.cross_events[frame_meta.source_id][
-                        obj_meta.track_id
-                    ]
-                    if direction_py is not None:
-                        # send to graphite
-                        # self.stats_client.incr(
-                        #     '.'.join(
-                        #         (
-                        #             frame_meta.source_id,
-                        #             self.target_obj_label,
-                        #             direction.name,
-                        #         )
-                        #     )
-                        # )
+                    # direction_py = lc_tracker.check_track(obj_meta.track_id)
+                    # py_checks.append(direction_py)
 
-                        obj_events.append((direction_py.name, frame_meta.pts))
+            batch_rs_checks = lc_tracker.check_track_rs_batch(tuple(obj_meta.track_id for obj_meta in obj_metas))
 
-                        if direction_py == Direction.entry:
-                            self.entry_count[frame_meta.source_id] += 1
-                        elif direction_py == Direction.exit:
-                            self.exit_count[frame_meta.source_id] += 1
+            # assert len(py_checks) == len(batch_rs_checks)
+            # for py_check, b_rs_check in zip(py_checks, batch_rs_checks):
+            #     assert py_check == b_rs_check
 
-                    for direction_name, frame_pts in obj_events:
-                        obj_meta.add_attr_meta('lc_tracker', direction_name, frame_pts)
+            for obj_meta, cross_direction in zip(obj_metas, batch_rs_checks):
+                obj_events = self.cross_events[frame_meta.source_id][
+                    obj_meta.track_id
+                ]
+                if cross_direction is not None:
+                    # send to graphite
+                    # self.stats_client.incr(
+                    #     '.'.join(
+                    #         (
+                    #             frame_meta.source_id,
+                    #             self.target_obj_label,
+                    #             direction.name,
+                    #         )
+                    #     )
+                    # )
 
-            self.per_frame_times_py.append(sum(this_frame_per_obj_times_py))
+                    obj_events.append((cross_direction.name, frame_meta.pts))
 
-            t4 = timer()
-            batch_rs_checks = lc_tracker.check_track_rs_batch(track_ids)
-            self.times_rs_batch.append(timer()-t4)
+                    if cross_direction == Direction.entry:
+                        self.entry_count[frame_meta.source_id] += 1
+                    elif cross_direction == Direction.exit:
+                        self.exit_count[frame_meta.source_id] += 1
 
-            assert len(py_checks) == len(rs_checks) == len(batch_rs_checks)
-            for py_check, rs_check, b_rs_check in zip(py_checks, rs_checks, batch_rs_checks):
-                assert py_check == rs_check == b_rs_check
+                for direction_name, frame_pts in obj_events:
+                    obj_meta.add_attr_meta('lc_tracker', direction_name, frame_pts)
+
 
             primary_meta_object.add_attr_meta(
                 'analytics', 'entries_n', self.entry_count[frame_meta.source_id]
@@ -183,12 +170,3 @@ class LineCrossing(NvDsPyFuncPlugin):
                     lc_tracker = self.lc_trackers[frame_meta.source_id]
                     del last_frames[track_id]
                     lc_tracker.remove_track(track_id)
-
-    def on_stop(self):
-        print(f"avg per obj py: {np.mean(self.per_obj_times_py)*10**6:.3f}, avg per obj rs: {np.mean(self.per_obj_times_rs)*10**6:.3f}")
-        print(f"avg delta rs: {(np.mean(np.abs(np.array(self.per_obj_times_py)-np.array(self.per_obj_times_rs))))*10**6:.3f}")
-
-        print(f"avg per frame py {np.mean(self.per_frame_times_py)*10**6:.3f}, avg per frame rs: {np.mean(self.times_rs_batch)*10**6:.3f}")
-        print(f"avg delta b_rs: {(np.mean(np.abs(np.array(self.per_frame_times_py)-np.array(self.times_rs_batch))))*10**6:.3f}")
-
-        return True
