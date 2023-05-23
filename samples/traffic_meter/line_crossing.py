@@ -4,8 +4,8 @@ from statsd import StatsClient
 from savant.gstreamer import Gst
 from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.deepstream.pyfunc import NvDsPyFuncPlugin
-from samples.traffic_meter.utils import TwoLinesCrossingTracker, Point, Direction
-from timeit import default_timer as timer
+from samples.traffic_meter.utils import Point, Direction, TwoLinesCrossingTracker
+
 
 
 class ConditionalDetectorSkip(NvDsPyFuncPlugin):
@@ -91,10 +91,7 @@ class LineCrossing(NvDsPyFuncPlugin):
                 )
             lc_tracker = self.lc_trackers[frame_meta.source_id]
 
-            # py_checks = []
             obj_metas = []
-            # rs_checks = []
-            # this_frame_per_obj_times_py = []
             for obj_meta in frame_meta.objects:
                 if obj_meta.label == self.target_obj_label:
                     lc_tracker.add_track_point(
@@ -111,16 +108,10 @@ class LineCrossing(NvDsPyFuncPlugin):
 
                     obj_metas.append(obj_meta)
 
-                    # direction_py = lc_tracker.check_track(obj_meta.track_id)
-                    # py_checks.append(direction_py)
+            track_lines_crossings = lc_tracker.check_tracks(tuple(obj_meta.track_id for obj_meta in obj_metas))
 
-            batch_rs_checks = lc_tracker.check_track_rs_batch(tuple(obj_meta.track_id for obj_meta in obj_metas))
+            for obj_meta, cross_direction in zip(obj_metas, track_lines_crossings):
 
-            # assert len(py_checks) == len(batch_rs_checks)
-            # for py_check, b_rs_check in zip(py_checks, batch_rs_checks):
-            #     assert py_check == b_rs_check
-
-            for obj_meta, cross_direction in zip(obj_metas, batch_rs_checks):
                 obj_events = self.cross_events[frame_meta.source_id][
                     obj_meta.track_id
                 ]

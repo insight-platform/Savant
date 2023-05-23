@@ -19,8 +19,11 @@ class TwoLinesCrossingTracker:
     """
 
     def __init__(self, line1: Tuple[Point, Point], line2: Tuple[Point, Point]):
+        # The conversion from 2 lines to a 4 point polygon is as follows:
+        # assuming the lines are AB and CD, the polygon is ABDC.
+        # The AB polygon edge is marked as "from" and the CD edge is marked as "to".
         self._area = PolygonalArea(
-            line1 + line2, [None, "entry", None, "exit"]
+            [line1[0], line1[1], line2[1], line2[0]], ["from", None, "to", None]
         )
         self._prev_cross_edge_label = {}
         self._track_last_points = defaultdict(lambda: deque(maxlen=2))
@@ -32,7 +35,7 @@ class TwoLinesCrossingTracker:
     def add_track_point(self, track_id: int, point: Point):
         self._track_last_points[track_id].append(point)
 
-    def check_track_rs_batch(self, track_ids: Tuple[int]) -> List[Optional[Direction]]:
+    def check_tracks(self, track_ids: Tuple[int]) -> List[Optional[Direction]]:
         ret = [None] * len(track_ids)
         check_track_idxs = []
         segments = []
@@ -49,25 +52,21 @@ class TwoLinesCrossingTracker:
                 continue
 
             track_id = track_ids[track_idx]
-            cross_edge_label = cross_result.edges[0][1]
-
+            cross_edge_labels = [edge[1] for edge in cross_result.edges]
+            
             if cross_result.kind == IntersectionKind.Enter:
-                self._prev_cross_edge_label[track_id] = cross_edge_label
+                self._prev_cross_edge_label[track_id] = cross_edge_labels[0]
+                continue
 
-            elif cross_result.kind == IntersectionKind.Leave:
-                # if the defined area was entered before
-                # and the leave edge is not the same as the enter edge
-                if track_id in self._prev_cross_edge_label and self._prev_cross_edge_label[track_id] != cross_edge_label:
-                    if cross_edge_label == 'entry':
-                        ret[track_idx] = Direction.entry
-                    elif cross_edge_label == 'exit':
-                        ret[track_idx] = Direction.exit
+            if cross_result.kind == IntersectionKind.Leave:
+                if track_id in self._prev_cross_edge_label:
+                    cross_edge_labels.insert(0, self._prev_cross_edge_label[track_id])
 
-            elif cross_result.kind == IntersectionKind.Cross:
-                if cross_edge_label == 'exit':
-                    ret[track_idx] = Direction.entry
-                elif cross_edge_label == 'entry':
-                    ret[track_idx] = Direction.exit
+            if cross_edge_labels == ['from', 'to']:
+                ret[track_idx] = Direction.entry
+
+            elif cross_edge_labels == ['to', 'from']:
+                ret[track_idx] = Direction.exit
 
         return ret
 
