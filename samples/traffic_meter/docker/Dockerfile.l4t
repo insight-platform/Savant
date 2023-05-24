@@ -24,4 +24,4 @@ ARG NVDSINFER_PATH=/opt/nvidia/deepstream/deepstream/sources/libs/nvdsinfer
 
 COPY --from=builder $DS_YOLO_PATH/nvdsinfer_custom_impl_Yolo/libnvdsinfer_custom_impl_Yolo.so /opt/savant/lib/
 COPY --from=builder $NVDSINFER_PATH/libnvds_infer.so /opt/nvidia/deepstream/deepstream/lib/
-RUN python -m pip install statsd~=4.0 savant-rs~=0.1.10
+RUN python -m pip install statsd~=4.0 savant-rs~=0.1.11
