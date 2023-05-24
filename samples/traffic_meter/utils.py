@@ -59,7 +59,6 @@ class TwoLinesCrossingTracker:
 
             if cross_edge_labels == ['from', 'to']:
                 ret[track_idx] = Direction.entry
-                print(f'entry {cross_result}')
 
             elif cross_edge_labels == ['to', 'from']:
                 ret[track_idx] = Direction.exit
