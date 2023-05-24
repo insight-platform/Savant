@@ -39,10 +39,10 @@ class LineCrossing(NvDsPyFuncPlugin):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         with open(self.config_path, "r", encoding='utf8') as stream:
-            line_config = yaml.safe_load(stream)
+            self.line_config = yaml.safe_load(stream)
 
         self.areas = {}
-        for source_id, line_cfg in line_config.items():
+        for source_id, line_cfg in self.line_config.items():
             # The conversion from 2 lines to a 4 point polygon is as follows:
             # assuming the lines are AB and CD, the polygon is ABDC.
             # The AB polygon edge is marked as "from" and the CD edge is marked as "to".
@@ -72,7 +72,12 @@ class LineCrossing(NvDsPyFuncPlugin):
         self.exit_count = defaultdict(int)
         self.cross_events = defaultdict(lambda: defaultdict(list))
 
-        return True
+        # metrics namescheme
+        # savant.module.traffic_meter.source_id.obj_class_label.exit
+        # savant.module.traffic_meter.source_id.obj_class_label.entry
+        self.stats_client = StatsClient(
+            'graphite', 8125, prefix='savant.module.traffic_meter'
+        )
 
     def on_source_eos(self, source_id: str):
         """On source EOS event callback."""
@@ -101,10 +106,7 @@ class LineCrossing(NvDsPyFuncPlugin):
                 primary_meta_object = obj_meta
                 break
 
-        if primary_meta_object is not None and frame_meta.source_id in self.line_config:
-            line_from = self.line_config[frame_meta.source_id]['from']
-            line_to = self.line_config[frame_meta.source_id]['to']
-
+        if primary_meta_object is not None and frame_meta.source_id in self.areas:
             if frame_meta.source_id not in self.lc_trackers:
                 self.lc_trackers[frame_meta.source_id] = TwoLinesCrossingTracker(
                     self.areas[frame_meta.source_id]
@@ -162,8 +164,12 @@ class LineCrossing(NvDsPyFuncPlugin):
             primary_meta_object.add_attr_meta(
                 'analytics', 'exits_n', self.exit_count[frame_meta.source_id]
             )
-            primary_meta_object.add_attr_meta('analytics', 'line_from', line_from)
-            primary_meta_object.add_attr_meta('analytics', 'line_to', line_to)
+            primary_meta_object.add_attr_meta(
+                'analytics', 'line_from', self.line_config[frame_meta.source_id]['from']
+            )
+            primary_meta_object.add_attr_meta(
+                'analytics', 'line_to', self.line_config[frame_meta.source_id]['to']
+            )
 
         # periodically remove stale tracks
         if not (frame_meta.frame_num % self.stale_track_del_period):
