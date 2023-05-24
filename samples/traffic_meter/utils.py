@@ -50,12 +50,14 @@ class TwoLinesCrossingTracker:
             cross_edge_labels = [edge[1] for edge in cross_result.edges]
 
             if cross_result.kind == IntersectionKind.Enter:
-                self._prev_cross_edge_label[track_id] = cross_edge_labels[0]
+                self._prev_cross_edge_label[track_id] = cross_edge_labels
                 continue
 
             if cross_result.kind == IntersectionKind.Leave:
                 if track_id in self._prev_cross_edge_label:
-                    cross_edge_labels.insert(0, self._prev_cross_edge_label[track_id])
+                    cross_edge_labels = self._prev_cross_edge_label[track_id] + cross_edge_labels
+
+            cross_edge_labels = list(filter(lambda x: x is not None, cross_edge_labels))
 
             if cross_edge_labels == ['from', 'to']:
                 ret[track_idx] = Direction.entry
