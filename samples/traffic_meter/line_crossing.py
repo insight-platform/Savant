@@ -1,11 +1,11 @@
 from collections import defaultdict
 import yaml
 from statsd import StatsClient
+from savant_rs.primitives import PolygonalArea, Point
 from savant.gstreamer import Gst
 from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.deepstream.pyfunc import NvDsPyFuncPlugin
 from samples.traffic_meter.utils import Point, Direction, TwoLinesCrossingTracker
-
 
 
 class ConditionalDetectorSkip(NvDsPyFuncPlugin):
@@ -49,9 +49,38 @@ class LineCrossing(NvDsPyFuncPlugin):
         # metrics namescheme
         # savant.module.traffic_meter.source_id.obj_class_label.exit
         # savant.module.traffic_meter.source_id.obj_class_label.entry
-        # self.stats_client = StatsClient(
-        #     'graphite', 8125, prefix='savant.module.traffic_meter'
-        # )
+        self.stats_client = StatsClient(
+            'graphite', 8125, prefix='savant.module.traffic_meter'
+        )
+
+    def on_start(self) -> bool:
+        self.areas = {}
+        for source_id, line_cfg in self.line_config.items():
+            # The conversion from 2 lines to a 4 point polygon is as follows:
+            # assuming the lines are AB and CD, the polygon is ABDC.
+            # The AB polygon edge is marked as "from" and the CD edge is marked as "to".
+            pt_A = Point(*line_cfg['from'][:2])
+            pt_B = Point(*line_cfg['from'][2:])
+            pt_C = Point(*line_cfg['to'][:2])
+            pt_D = Point(*line_cfg['to'][2:])
+            area = PolygonalArea([pt_A, pt_B, pt_D, pt_C], ["from", None, "to", None])
+            if area.is_self_intersecting():
+                # try to correct the polygon by reversing one of the lines
+                area = PolygonalArea(
+                    [pt_A, pt_B, pt_C, pt_D], ["from", None, "to", None]
+                )
+                if area.is_self_intersecting():
+                    self.logger.error(
+                        'Lines config for the "%s" source id produced a self-intersecting polygon.'
+                        ' Please correct coordinates "%s" in the config file and restart the pipeline.',
+                        source_id,
+                        line_cfg,
+                    )
+                    return False
+
+            self.areas[source_id] = area
+
+        return True
 
     def on_source_eos(self, source_id: str):
         """On source EOS event callback."""
@@ -86,8 +115,7 @@ class LineCrossing(NvDsPyFuncPlugin):
 
             if frame_meta.source_id not in self.lc_trackers:
                 self.lc_trackers[frame_meta.source_id] = TwoLinesCrossingTracker(
-                    (Point(*line_from[:2]), Point(*line_from[2:])),
-                    (Point(*line_to[:2]), Point(*line_to[2:])),
+                    self.areas[frame_meta.source_id]
                 )
             lc_tracker = self.lc_trackers[frame_meta.source_id]
 
@@ -108,24 +136,23 @@ class LineCrossing(NvDsPyFuncPlugin):
 
                     obj_metas.append(obj_meta)
 
-            track_lines_crossings = lc_tracker.check_tracks(tuple(obj_meta.track_id for obj_meta in obj_metas))
+            track_lines_crossings = lc_tracker.check_tracks(
+                tuple(obj_meta.track_id for obj_meta in obj_metas)
+            )
 
             for obj_meta, cross_direction in zip(obj_metas, track_lines_crossings):
-
-                obj_events = self.cross_events[frame_meta.source_id][
-                    obj_meta.track_id
-                ]
+                obj_events = self.cross_events[frame_meta.source_id][obj_meta.track_id]
                 if cross_direction is not None:
                     # send to graphite
-                    # self.stats_client.incr(
-                    #     '.'.join(
-                    #         (
-                    #             frame_meta.source_id,
-                    #             self.target_obj_label,
-                    #             direction.name,
-                    #         )
-                    #     )
-                    # )
+                    self.stats_client.incr(
+                        '.'.join(
+                            (
+                                frame_meta.source_id,
+                                self.target_obj_label,
+                                cross_direction.name,
+                            )
+                        )
+                    )
 
                     obj_events.append((cross_direction.name, frame_meta.pts))
 
@@ -136,7 +163,6 @@ class LineCrossing(NvDsPyFuncPlugin):
 
                 for direction_name, frame_pts in obj_events:
                     obj_meta.add_attr_meta('lc_tracker', direction_name, frame_pts)
-
 
             primary_meta_object.add_attr_meta(
                 'analytics', 'entries_n', self.entry_count[frame_meta.source_id]

@@ -18,13 +18,8 @@ class TwoLinesCrossingTracker:
     the jitter of the detected bounding box.
     """
 
-    def __init__(self, line1: Tuple[Point, Point], line2: Tuple[Point, Point]):
-        # The conversion from 2 lines to a 4 point polygon is as follows:
-        # assuming the lines are AB and CD, the polygon is ABDC.
-        # The AB polygon edge is marked as "from" and the CD edge is marked as "to".
-        self._area = PolygonalArea(
-            [line1[0], line1[1], line2[1], line2[0]], ["from", None, "to", None]
-        )
+    def __init__(self, area: PolygonalArea):
+        self._area = area
         self._prev_cross_edge_label = {}
         self._track_last_points = defaultdict(lambda: deque(maxlen=2))
 
@@ -53,7 +48,7 @@ class TwoLinesCrossingTracker:
 
             track_id = track_ids[track_idx]
             cross_edge_labels = [edge[1] for edge in cross_result.edges]
-            
+
             if cross_result.kind == IntersectionKind.Enter:
                 self._prev_cross_edge_label[track_id] = cross_edge_labels[0]
                 continue
@@ -64,6 +59,7 @@ class TwoLinesCrossingTracker:
 
             if cross_edge_labels == ['from', 'to']:
                 ret[track_idx] = Direction.entry
+                print(f'entry {cross_result}')
 
             elif cross_edge_labels == ['to', 'from']:
                 ret[track_idx] = Direction.exit
