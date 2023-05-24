@@ -1,4 +1,5 @@
 from collections import defaultdict
+import sys
 import yaml
 from statsd import StatsClient
 from savant_rs.primitives import PolygonalArea, Point
@@ -38,24 +39,10 @@ class LineCrossing(NvDsPyFuncPlugin):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         with open(self.config_path, "r", encoding='utf8') as stream:
-            self.line_config = yaml.safe_load(stream)
+            line_config = yaml.safe_load(stream)
 
-        self.lc_trackers = {}
-        self.track_last_frame_num = defaultdict(lambda: defaultdict(int))
-        self.entry_count = defaultdict(int)
-        self.exit_count = defaultdict(int)
-        self.cross_events = defaultdict(lambda: defaultdict(list))
-
-        # metrics namescheme
-        # savant.module.traffic_meter.source_id.obj_class_label.exit
-        # savant.module.traffic_meter.source_id.obj_class_label.entry
-        self.stats_client = StatsClient(
-            'graphite', 8125, prefix='savant.module.traffic_meter'
-        )
-
-    def on_start(self) -> bool:
         self.areas = {}
-        for source_id, line_cfg in self.line_config.items():
+        for source_id, line_cfg in line_config.items():
             # The conversion from 2 lines to a 4 point polygon is as follows:
             # assuming the lines are AB and CD, the polygon is ABDC.
             # The AB polygon edge is marked as "from" and the CD edge is marked as "to".
@@ -76,9 +63,14 @@ class LineCrossing(NvDsPyFuncPlugin):
                         source_id,
                         line_cfg,
                     )
-                    return False
-
+                    sys.exit(1)
             self.areas[source_id] = area
+
+        self.lc_trackers = {}
+        self.track_last_frame_num = defaultdict(lambda: defaultdict(int))
+        self.entry_count = defaultdict(int)
+        self.exit_count = defaultdict(int)
+        self.cross_events = defaultdict(lambda: defaultdict(list))
 
         return True
 
