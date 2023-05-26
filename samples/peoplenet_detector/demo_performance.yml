@@ -71,9 +71,8 @@ parameters:
           central_dot:
             color: 00FF00FF
             radius: 2
-        # face:
-        #   bbox:
-        #     blur: true
+        face:
+          blur: true
 
 # pipeline definition
 pipeline:
