@@ -50,6 +50,19 @@ parameters:
       counters_height: 85
       # thickness of counter's font
       counters_font_thickness: 5
+    rendered_objects:
+      peoplenet:
+        person:
+          bbox:
+            color: green
+            thickness: 3
+          display_label: true
+          display_track_id: true
+          central_dot:
+            color:
+            radius:
+        face:
+          blur: true
 
 # pipeline definition
 pipeline:

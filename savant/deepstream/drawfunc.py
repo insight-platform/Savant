@@ -2,6 +2,9 @@
 from typing import Any, Dict, Optional, Tuple
 import pyds
 import cv2
+
+from savant_rs.primitives import BoundingBoxDraw, ColorDraw, LabelDraw, DotDraw, PaddingDraw, ObjectDraw
+
 from savant.meta.object import ObjectMeta
 from savant.deepstream.base_drawfunc import BaseNvDsDrawFunc
 from savant.deepstream.meta.frame import NvDsFrameMeta
@@ -10,7 +13,7 @@ from savant.meta.constants import UNTRACKED_OBJECT_ID
 from savant.utils.artist import Position, Artist, COLOR
 from savant.gstreamer import Gst  # noqa: F401
 from savant.deepstream.opencv_utils import nvds_to_gpu_mat
-
+import pprint
 
 class NvDsDrawFunc(BaseNvDsDrawFunc):
     """Default implementation of PyFunc for drawing on frame.
@@ -25,9 +28,20 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
         self.rendered_objects: Optional[Dict[str, Dict[str, Any]]] = None
         super().__init__(**kwargs)
         if self.rendered_objects:
-            for _, labels in self.rendered_objects.items():
-                for label, color in labels.items():
-                    labels[label] = COLOR[color]
+            pprint.pprint(self.rendered_objects)
+            for unit, objects in self.rendered_objects.items():
+                print(unit, objects)
+                for obj, draw_spec in objects.items():
+                    print(obj, draw_spec)
+                    for key, value in draw_spec.items():
+                        print(key, value)
+                        if key == "color":
+                            draw_spec[key] = COLOR[value]
+
+
+            
+        # self.draw_spec = ObjectDraw()
+
         self.frame_streams = []
 
     def __call__(self, nvds_frame_meta: pyds.NvDsFrameMeta, buffer: Gst.Buffer):
@@ -61,6 +75,15 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
         ):
             return self.rendered_objects[obj_meta.element_name][obj_meta.label]
 
+    # def override_draw_spec(object_meta, specification: ObjectDraw) -> ObjectDraw:
+    #     """Override draw specification for an object.
+
+    #     :param object_meta: Object's meta
+    #     :param specification: Draw specification
+    #     :return: Overridden draw specification
+    #     """
+    #     return specification
+
     def draw_on_frame(self, frame_meta: NvDsFrameMeta, artist: Artist):
         """Draws bounding boxes and labels for all objects in the frame's metadata.
 
@@ -68,6 +91,7 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
         :param artist: Artist to draw on the frame.
         """
         for obj_meta in frame_meta.objects:
+            spec = self.override_draw_spec(obj_meta, self.draw_spec)
             if obj_meta.is_primary:
                 continue
 
