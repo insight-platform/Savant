@@ -61,14 +61,19 @@ parameters:
               top: 4
               right: 5
               bottom: 6
-          display_label: true
-          display_track_id: true
+          label:
+            font_scale: 4
+            color: FFFFFFFF
+            thickness: 1
+            format: 
+              - "Label: {label}"
+              - "Track: #{track_id}"
           central_dot:
-            color:
-            radius:
-        face:
-          bbox:
-            blur: true
+            color: 00FF00FF
+            radius: 2
+        # face:
+        #   bbox:
+        #     blur: true
 
 # pipeline definition
 pipeline:
