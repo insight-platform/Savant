@@ -54,15 +54,21 @@ parameters:
       peoplenet:
         person:
           bbox:
-            color: green
+            color: 00FF00FF
             thickness: 3
+            padding:
+              left: 3
+              top: 4
+              right: 5
+              bottom: 6
           display_label: true
           display_track_id: true
           central_dot:
             color:
             radius:
         face:
-          blur: true
+          bbox:
+            blur: true
 
 # pipeline definition
 pipeline:
