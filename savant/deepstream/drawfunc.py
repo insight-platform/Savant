@@ -117,42 +117,16 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
             spec = self.override_draw_spec(obj_meta, self.draw_spec[(obj_meta.element_name, obj_meta.label)])
 
             # draw according to the specification
-
+            # blur should be the first to be applied
+            # to avoid blurring the other elements
+            if spec.blur:
+                self._blur(obj_meta, artist)
             if spec.bounding_box:
                 self._draw_bounding_box(obj_meta, artist, spec.bounding_box)
             if spec.label:
                 self._draw_label(obj_meta, artist, spec.label)
             if spec.central_dot:
                 self._draw_central_dot(obj_meta, artist, spec.central_dot)
-
-            # bbox_border_color = self.get_bbox_border_color(obj_meta)
-            # if bbox_border_color:
-            #     artist.add_bbox(
-            #         bbox=obj_meta.bbox,
-            #         border_color=bbox_border_color,
-            #     )
-
-            #     label = obj_meta.label
-            #     if obj_meta.track_id != UNTRACKED_OBJECT_ID:
-            #         label += f' #{obj_meta.track_id}'
-
-            #     if isinstance(obj_meta.bbox, BBox):
-            #         artist.add_text(
-            #             text=label,
-            #             anchor_x=int(obj_meta.bbox.left),
-            #             anchor_y=int(obj_meta.bbox.top),
-            #             bg_color=(0.0, 0.0, 0.0),
-            #             anchor_point=Position.LEFT_TOP,
-            #         )
-
-            #     elif isinstance(obj_meta.bbox, RBBox):
-            #         artist.add_text(
-            #             text=label,
-            #             anchor_x=int(obj_meta.bbox.x_center),
-            #             anchor_y=int(obj_meta.bbox.y_center),
-            #             bg_color=(0.0, 0.0, 0.0),
-            #             anchor_point=Position.CENTER,
-            #         )
 
     def _draw_bounding_box(obj_meta, artist: Artist, spec: BoundingBoxDraw):
         artist.add_bbox(
@@ -163,7 +137,32 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
         )
 
     def _draw_label(obj_meta, artist: Artist, spec: LabelDraw):
-        pass
+        if isinstance(obj_meta.bbox, BBox):
+            anchor_x=int(obj_meta.bbox.left)
+            anchor_y=int(obj_meta.bbox.top)
+            anchor_point=Position.LEFT_TOP
+        else:
+            anchor_x=int(obj_meta.bbox.x_center)
+            anchor_y=int(obj_meta.bbox.y_center)
+            anchor_point=Position.CENTER
+
+        artist.add_text(
+            text=obj_meta.label,
+            anchor_x=anchor_x,
+            anchor_y=anchor_y,
+            anchor_point=anchor_point,
+            font_color=spec.color,
+            font_scale=spec.font_scale,
+            font_thickness=spec.thickness,
+        )
 
     def _draw_central_dot(obj_meta, artist: Artist, spec: DotDraw):
-        pass
+        artist.add_circle(
+            (round(obj_meta.bbox.x_center), round(obj_meta.bbox.y_center)),
+            spec.radius,
+            spec.color,
+            cv2.FILLED
+        )
+
+    def _blur(obj_meta, artist: Artist):
+        artist.blur(obj_meta.bbox)

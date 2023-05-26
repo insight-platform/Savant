@@ -51,10 +51,10 @@ class ArtistGPUMat(AbstractContextManager):
         anchor_y: int,
         font_scale: float = 0.5,
         font_thickness: int = 1,
-        font_color: Tuple[int, int, int, int] = (255, 255, 255, 255),
+        font_color: Tuple[int, int, int, int] = (255, 255, 255, 255), # white
         border_width: int = 0,
-        border_color: Tuple[int, int, int, int] = (255, 0, 0, 255),
-        bg_color: Optional[Tuple[int, int, int, int]] = None,
+        border_color: Tuple[int, int, int, int] = (255, 0, 0, 255), # red
+        bg_color: Optional[Tuple[int, int, int, int]] = (0, 0, 0, 255), # black
         padding: Tuple[int, int, int, int] = (0,0,0,0),
         anchor_point: Position = Position.CENTER,
     ):
@@ -67,7 +67,7 @@ class ArtistGPUMat(AbstractContextManager):
         :param font_thickness: Thickness of the lines used to draw the text.
         :param font_color: Font color, RGBA, ints in range [0;255].
         :param border_width: Border width around the text.
-        :param border_color: Border color around the text.
+        :param border_color: Border color around the text, RGBA, ints in range [0;255].
         :param bg_color: Background color, RGBA, ints in range [0;255].
         :param padding: Increase the size of the rectangle around
             the text in each direction (left, top, right, bottom), in pixels.
@@ -94,11 +94,11 @@ class ArtistGPUMat(AbstractContextManager):
             rect_tl = rect_left, rect_top
             rect_br = rect_right, rect_bottom
 
-            if bg_color is not None:
+            if bg_color is not None and bg_color[3] > 0:
                 cv2.rectangle(
                     self.overlay, rect_tl, rect_br, bg_color, cv2.FILLED
                 )
-            if border_width > 0:
+            if border_width > 0 and border_color[3] > 0:
                 cv2.rectangle(
                     self.overlay,
                     rect_tl,
@@ -106,17 +106,18 @@ class ArtistGPUMat(AbstractContextManager):
                     border_color,
                     border_width,
                 )
-
-        cv2.putText(
-            self.overlay,
-            text,
-            (text_x, text_y),
-            self.font_face,
-            font_scale,
-            font_color,
-            font_thickness,
-            cv2.LINE_AA,
-        )
+        
+        if font_color[3] > 0:
+            cv2.putText(
+                self.overlay,
+                text,
+                (text_x, text_y),
+                self.font_face,
+                font_scale,
+                font_color,
+                font_thickness,
+                cv2.LINE_AA,
+            )
 
     # pylint:disable=too-many-arguments
     def add_bbox(
@@ -137,6 +138,15 @@ class ArtistGPUMat(AbstractContextManager):
         :param padding: Increase the size of the rectangle in each direction,
             value in pixels, tuple of 4 values (left, top, right, bottom).
         """
+        no_border = False
+        no_bg = False
+        if border_width <= 0 or border_color[3] <= 0:
+            no_border = True
+        if bg_color is None or bg_color[3] <= 0:
+            no_bg = True
+        if no_border and no_bg:
+            return
+
         if isinstance(bbox, BBox):
             left, top, right, bottom, _, _ = self.__convert_bbox(
                 bbox, padding, border_width
