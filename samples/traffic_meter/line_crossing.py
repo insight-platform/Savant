@@ -131,7 +131,7 @@ class LineCrossing(NvDsPyFuncPlugin):
                     obj_metas.append(obj_meta)
 
             track_lines_crossings = lc_tracker.check_tracks(
-                tuple(obj_meta.track_id for obj_meta in obj_metas)
+                [obj_meta.track_id for obj_meta in obj_metas]
             )
 
             for obj_meta, cross_direction in zip(obj_metas, track_lines_crossings):

@@ -1,4 +1,5 @@
 """Line crossing trackers."""
+from typing import Iterable
 from collections import deque, defaultdict
 from enum import Enum
 from typing import Optional, Tuple, List
@@ -30,7 +31,7 @@ class TwoLinesCrossingTracker:
     def add_track_point(self, track_id: int, point: Point):
         self._track_last_points[track_id].append(point)
 
-    def check_tracks(self, track_ids: Tuple[int]) -> List[Optional[Direction]]:
+    def check_tracks(self, track_ids: Iterable[int]) -> List[Optional[Direction]]:
         ret = [None] * len(track_ids)
         check_track_idxs = []
         segments = []
