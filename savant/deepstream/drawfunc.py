@@ -27,22 +27,68 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
     def __init__(self, **kwargs):
         self.rendered_objects: Optional[Dict[str, Dict[str, Any]]] = None
         super().__init__(**kwargs)
+        self.draw_spec = {}
         if self.rendered_objects:
+
+            
             pprint.pprint(self.rendered_objects)
             for unit, objects in self.rendered_objects.items():
-                print(unit, objects)
-                for obj, draw_spec in objects.items():
-                    print(obj, draw_spec)
-                    for key, value in draw_spec.items():
-                        print(key, value)
-                        if key == "color":
-                            draw_spec[key] = COLOR[value]
+                # print(unit, objects)
+                for obj, obj_draw_spec_cfg in objects.items():
+                    self.draw_spec[(unit, obj)] = self._get_obj_draw_spec(obj_draw_spec_cfg)
+
+                    # for key, value in draw_spec.items():
+                    #     print(key, value)
+                    #     if key == "color":
+                    #         draw_spec[key] = COLOR[value]
 
 
             
-        # self.draw_spec = ObjectDraw()
+        # 
 
         self.frame_streams = []
+
+    def _get_obj_draw_spec(self, config:dict) -> ObjectDraw:
+        bbox_draw = None
+        
+        
+        if 'bbox' in config:
+            blur = None
+            if 'blur' in config['bbox']:
+                blur = config['bbox']['blur']
+    
+            padding_draw = None
+            if 'padding' in config['bbox']:
+                padding_draw = PaddingDraw(**config['bbox']['padding'])
+
+            bbox_draw = BoundingBoxDraw(
+                color=ColorDraw(*self._convert_hex_to_rgb(config['bbox']['color'])),
+                padding=padding_draw,
+                thickness=config['bbox']['thickness'],
+                blur=blur,
+            )
+
+        central_dot_draw = None
+        if 'central_dot' in config:
+            central_dot_draw = DotDraw(
+                color=ColorDraw(*self._convert_hex_to_rgb(config['central_dot']['color'])),
+                radius=config['central_dot']['radius'],
+            )
+
+        label_draw = None
+        label_draw = LabelDraw()
+
+
+        return ObjectDraw(bounding_box=bbox_draw, label=label_draw, central_dot=central_dot_draw)
+    
+    def _convert_hex_to_rgb(self, hex_color:str) -> Tuple[int, int, int, int]:
+        """Convert hex color to RGBA.
+
+        :param hex_color: Hex color string
+        :return: RGBA color tuple
+        """
+        hex_color = hex_color.lstrip("#")
+        return tuple(int(hex_color[i : i + 2], 16) for i in (0, 2, 4, 6))
 
     def __call__(self, nvds_frame_meta: pyds.NvDsFrameMeta, buffer: Gst.Buffer):
         with nvds_to_gpu_mat(buffer, nvds_frame_meta) as frame_mat:
