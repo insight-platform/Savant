@@ -50,10 +50,9 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
 
     def _get_obj_draw_spec(self, config:dict) -> ObjectDraw:
         bbox_draw = None
-        
-        
+
         if 'bbox' in config:
-            blur = None
+            blur = False
             if 'blur' in config['bbox']:
                 blur = config['bbox']['blur']
     
@@ -76,12 +75,19 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
             )
 
         label_draw = None
-        label_draw = LabelDraw()
+        if 'label' in config:
+
+            label_draw = LabelDraw(
+                color = ColorDraw(*self._convert_hex_to_rgb(config['label']['color'])),
+                font_scale=2.5,
+                thickness=2,
+                format=["{model}", "{label}", "{confidence}", "{track_id}"]
+            )
 
 
         return ObjectDraw(bounding_box=bbox_draw, label=label_draw, central_dot=central_dot_draw)
     
-    def _convert_hex_to_rgb(self, hex_color:str) -> Tuple[int, int, int, int]:
+    def _convert_hex_to_rgb(self, hex_color: str) -> Tuple[int, int, int, int]:
         """Convert hex color to RGBA.
 
         :param hex_color: Hex color string
@@ -121,14 +127,16 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
         ):
             return self.rendered_objects[obj_meta.element_name][obj_meta.label]
 
-    # def override_draw_spec(object_meta, specification: ObjectDraw) -> ObjectDraw:
-    #     """Override draw specification for an object.
+    def override_draw_spec(object_meta, specification: ObjectDraw) -> ObjectDraw:
+        """Override draw specification for an object
+        based on dynamically changning object properties.
 
-    #     :param object_meta: Object's meta
-    #     :param specification: Draw specification
-    #     :return: Overridden draw specification
-    #     """
-    #     return specification
+        :param object_meta: Object's meta
+        :param specification: Draw specification
+        :return: Overridden draw specification
+        """
+        # make sure default draw spec is not modified
+        return specification
 
     def draw_on_frame(self, frame_meta: NvDsFrameMeta, artist: Artist):
         """Draws bounding boxes and labels for all objects in the frame's metadata.
@@ -137,35 +145,58 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
         :param artist: Artist to draw on the frame.
         """
         for obj_meta in frame_meta.objects:
-            spec = self.override_draw_spec(obj_meta, self.draw_spec)
+            
             if obj_meta.is_primary:
                 continue
 
-            bbox_border_color = self.get_bbox_border_color(obj_meta)
-            if bbox_border_color:
-                artist.add_bbox(
-                    bbox=obj_meta.bbox,
-                    border_color=bbox_border_color,
-                )
+            spec = self.override_draw_spec(obj_meta, self.draw_spec[(obj_meta.element_name, obj_meta.label)])
 
-                label = obj_meta.label
-                if obj_meta.track_id != UNTRACKED_OBJECT_ID:
-                    label += f' #{obj_meta.track_id}'
+            # draw according to the specification
 
-                if isinstance(obj_meta.bbox, BBox):
-                    artist.add_text(
-                        text=label,
-                        anchor_x=int(obj_meta.bbox.left),
-                        anchor_y=int(obj_meta.bbox.top),
-                        bg_color=(0.0, 0.0, 0.0),
-                        anchor_point=Position.LEFT_TOP,
-                    )
+            if spec.bounding_box:
+                self._draw_bounding_box(obj_meta, artist, spec.bounding_box)
+            if spec.label:
+                self._draw_label(obj_meta, artist, spec.label)
+            if spec.central_dot:
+                self._draw_central_dot(obj_meta, artist, spec.central_dot)
 
-                elif isinstance(obj_meta.bbox, RBBox):
-                    artist.add_text(
-                        text=label,
-                        anchor_x=int(obj_meta.bbox.x_center),
-                        anchor_y=int(obj_meta.bbox.y_center),
-                        bg_color=(0.0, 0.0, 0.0),
-                        anchor_point=Position.CENTER,
-                    )
+            # bbox_border_color = self.get_bbox_border_color(obj_meta)
+            # if bbox_border_color:
+            #     artist.add_bbox(
+            #         bbox=obj_meta.bbox,
+            #         border_color=bbox_border_color,
+            #     )
+
+            #     label = obj_meta.label
+            #     if obj_meta.track_id != UNTRACKED_OBJECT_ID:
+            #         label += f' #{obj_meta.track_id}'
+
+            #     if isinstance(obj_meta.bbox, BBox):
+            #         artist.add_text(
+            #             text=label,
+            #             anchor_x=int(obj_meta.bbox.left),
+            #             anchor_y=int(obj_meta.bbox.top),
+            #             bg_color=(0.0, 0.0, 0.0),
+            #             anchor_point=Position.LEFT_TOP,
+            #         )
+
+            #     elif isinstance(obj_meta.bbox, RBBox):
+            #         artist.add_text(
+            #             text=label,
+            #             anchor_x=int(obj_meta.bbox.x_center),
+            #             anchor_y=int(obj_meta.bbox.y_center),
+            #             bg_color=(0.0, 0.0, 0.0),
+            #             anchor_point=Position.CENTER,
+            #         )
+
+    def _draw_bounding_box(obj_meta, artist: Artist, spec: BoundingBoxDraw):
+        artist.add_bbox(
+            bbox=obj_meta.bbox,
+            border_color=bbox_border_color,
+        )
+
+    def _draw_label(obj_meta, artist: Artist, spec: LabelDraw):
+        pass
+
+    def _draw_central_dot(obj_meta, artist: Artist, spec: DotDraw):
+        pass
