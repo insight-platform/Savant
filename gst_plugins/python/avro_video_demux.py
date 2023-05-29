@@ -140,6 +140,7 @@ class AvroVideoDemux(LoggerMixin, Gst.Element):
         self.source_eviction_interval = DEFAULT_SOURCE_EVICTION_INTERVAL
         self.last_eviction = 0
         self.source_lock = Lock()
+        self.is_running = False
         self.expiration_thread = Thread(target=self.eviction_job, daemon=True)
         self.store_metadata = False
         self.max_parallel_streams: int = 0
@@ -166,6 +167,7 @@ class AvroVideoDemux(LoggerMixin, Gst.Element):
             and new != Gst.State.NULL
             and not self.expiration_thread.is_alive()
         ):
+            self.is_running = True
             self.expiration_thread.start()
 
     def do_get_property(self, prop):
@@ -213,6 +215,12 @@ class AvroVideoDemux(LoggerMixin, Gst.Element):
             buffer.get_size(),
             buffer.pts,
         )
+        if not self.is_running:
+            self.logger.info(
+                'Demuxer is not running. Skipping buffer with timestamp %s.',
+                buffer.pts,
+            )
+            return Gst.FlowReturn.OK
         frame_meta_mapinfo: Gst.MapInfo
         result, frame_meta_mapinfo = buffer.map_range(0, 1, Gst.MapFlags.READ)
         assert result, 'Cannot read buffer.'
@@ -229,6 +237,7 @@ class AvroVideoDemux(LoggerMixin, Gst.Element):
             result = self.handle_eos(message)
         else:
             self.logger.error('Unknown schema "%s"', schema_name)
+            self.is_running = False
             result = Gst.FlowReturn.ERROR
 
         buffer.unmap(frame_meta_mapinfo)
@@ -265,6 +274,7 @@ class AvroVideoDemux(LoggerMixin, Gst.Element):
                     self.max_parallel_streams
                     and len(self.sources) >= self.max_parallel_streams
                 ):
+                    self.is_running = False
                     error = (
                         f'Failed to add source {source_id!r}: reached maximum '
                         f'number of streams: {self.max_parallel_streams}.'
@@ -316,12 +326,14 @@ class AvroVideoDemux(LoggerMixin, Gst.Element):
                 frame_type = ExternalFrameType(frame['type'])
                 if frame_type != ExternalFrameType.ZEROMQ:
                     self.logger.error('Unsupported frame type "%s".', frame_type.value)
+                    self.is_running = False
                     return Gst.FlowReturn.ERROR
                 if buffer.n_memory() < 2:
                     self.logger.error(
                         'Buffer has %s regions of memory, expected at least 2.',
                         buffer.n_memory(),
                     )
+                    self.is_running = False
                     return Gst.FlowReturn.ERROR
 
                 frame_buf: Gst.Buffer = Gst.Buffer.new()
@@ -459,13 +471,15 @@ class AvroVideoDemux(LoggerMixin, Gst.Element):
 
     def eviction_job(self):
         """Eviction job."""
-        while True:
+        while self.is_running:
             self.eviction_loop()
 
     def eviction_loop(self):
-        """Evicion job loop."""
+        """Eviction job loop."""
         self.logger.debug('Start eviction loop')
         with self.source_lock:
+            if not self.is_running:
+                return
             now = time.time()
             limit = now - self.source_timeout
             earliest_ts = now
