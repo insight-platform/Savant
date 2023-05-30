@@ -22,7 +22,6 @@ Default value is: ``4000000`` (``4`` seconds).
 
     # base module parameters
     parameters:
-      ...
       batch_size: 1
       batched_push_timeout: 40000
 
@@ -37,6 +36,5 @@ Secondary models operate on objects detected by primary models. Usually, there a
     - element: nvinfer@classifier
       name: Secondary_CarColor
       model:
-        ...
         batch_size: 16
 
