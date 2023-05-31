@@ -57,7 +57,7 @@ class ArtistGPUMat(AbstractContextManager):
         bg_color: Optional[Tuple[int, int, int, int]] = (0, 0, 0, 255), # black
         padding: Tuple[int, int, int, int] = (0,0,0,0),
         anchor_point: Position = Position.CENTER,
-    ):
+    ) -> Tuple[int, int]:
         """Add text on the frame.
 
         :param text: Display text.
@@ -94,11 +94,11 @@ class ArtistGPUMat(AbstractContextManager):
             rect_tl = rect_left, rect_top
             rect_br = rect_right, rect_bottom
 
-            if bg_color is not None and bg_color[3] > 0:
+            if bg_color is not None:
                 cv2.rectangle(
                     self.overlay, rect_tl, rect_br, bg_color, cv2.FILLED
                 )
-            if border_width > 0 and border_color[3] > 0:
+            if border_width > 0:
                 cv2.rectangle(
                     self.overlay,
                     rect_tl,
@@ -106,18 +106,18 @@ class ArtistGPUMat(AbstractContextManager):
                     border_color,
                     border_width,
                 )
-        
-        if font_color[3] > 0:
-            cv2.putText(
-                self.overlay,
-                text,
-                (text_x, text_y),
-                self.font_face,
-                font_scale,
-                font_color,
-                font_thickness,
-                cv2.LINE_AA,
-            )
+
+        cv2.putText(
+            self.overlay,
+            text,
+            (text_x, text_y),
+            self.font_face,
+            font_scale,
+            font_color,
+            font_thickness,
+            cv2.LINE_AA,
+        )
+        return text_size
 
     # pylint:disable=too-many-arguments
     def add_bbox(
@@ -138,14 +138,8 @@ class ArtistGPUMat(AbstractContextManager):
         :param padding: Increase the size of the rectangle in each direction,
             value in pixels, tuple of 4 values (left, top, right, bottom).
         """
-        no_border = False
-        no_bg = False
-        if border_width <= 0 or border_color[3] <= 0:
-            no_border = True
-        if bg_color is None or bg_color[3] <= 0:
-            no_bg = True
-        if no_border and no_bg:
-            return
+        if border_width <= 0 and bg_color is None:
+           return
 
         if isinstance(bbox, BBox):
             left, top, right, bottom, _, _ = self.__convert_bbox(

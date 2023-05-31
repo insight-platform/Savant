@@ -30,7 +30,7 @@ Savant has a default implementation of ``draw_func`` that is used when ``draw_fu
     parameters:
       draw_func: {}
 
-Another way to use the default implementation is to populate the ``rendered_objects`` section, which the default implementation uses to define the objects of which classes are going to be rendered and their border colors:
+Another way to use the default implementation is to populate the ``rendered_objects`` section, which the default implementation uses to define the objects of which classes are going to be rendered and their render specifications. The ``rendered_objects`` section is a dictionary of the following structure:
 
 .. code-block:: yaml
 
@@ -38,13 +38,38 @@ Another way to use the default implementation is to populate the ``rendered_obje
       draw_func:
         rendered_objects:
           <unit_name>:
-            <class_label>: <color_str>
+            <class_label>:
+              bbox:
+                color: <color_str>
+                thickness: <int>
+                padding:
+                  left: <int>
+                  top: <int>
+                  right: <int>
+                  bottom: <int>
+              label:
+                color: <color_str>
+                font_scale: <float>
+                thickness: <int>
+                format:
+                  - "Label: {label}"
+                  - "Confidence: {confidence:.2f}"
+                  - "Track ID: {track_id}"
+                  - "Model: {model}"
+              central_dot:
+                color: <color_str>
+                radius: <int>
+              blur: <true/false>
 
 where:
 
 * ``<unit_name>`` the name of the unit defining the objects;
 * ``<class_label>`` the label of the object class set by a detector;
-* ``<color_str>`` color to use when drawing boxes for the ``<unit_name>.<class_label>``. Color strings are defined in the `code <https://github.com/insight-platform/Savant/blob/develop/savant/utils/artist/__init__.py>`__.
+* ``<color_str>`` color used to draw the specified element, color is defined as a RGBA hex string (without the '#' as it marks a comment in YAML), e.g. ``"00ff00ff"`` for green;
+
+Any of the elements in the render specification (``bbox``, ``label``, ``central_dot``, ``blur``) can be omitted, if the corresponding element is not required to be rendered. Blur is false by default.
+
+Label format is defined as a list of strings, where each string is a format string that can contain the following placeholders: ``{label}``, ``{confidence}``, ``{track_id}``, ``{model}``. Each string in the list is rendered on a separate line.
 
 Besides the standard ``draw_func``, it is also possible to use a custom draw function. In this case, the function must inherit the :py:class:`~savant.deepstream.drawfunc.NvDsDrawFunc` class, overriding the ``draw_on_frame`` method in it.
 
