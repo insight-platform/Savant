@@ -55,7 +55,9 @@ class TwoLinesCrossingTracker:
 
             if cross_result.kind == IntersectionKind.Leave:
                 if track_id in self._prev_cross_edge_label:
-                    cross_edge_labels = self._prev_cross_edge_label[track_id] + cross_edge_labels
+                    cross_edge_labels = (
+                        self._prev_cross_edge_label[track_id] + cross_edge_labels
+                    )
 
             cross_edge_labels = list(filter(lambda x: x is not None, cross_edge_labels))
 

@@ -7,11 +7,6 @@ from savant.meta.bbox import BBox, RBBox
 from .position import Position, get_text_origin
 
 
-# def convert_color(color: Tuple[int, int, int, int], alpha: int = 255):
-#     """Convert color from BGR floats to RGBA int8."""
-#     return int(color[2] * 255), int(color[1] * 255), int(color[0] * 255), alpha
-
-
 class ArtistGPUMat(AbstractContextManager):
     """Artist implementation using OpenCV GpuMat.
 
@@ -51,11 +46,11 @@ class ArtistGPUMat(AbstractContextManager):
         anchor_y: int,
         font_scale: float = 0.5,
         font_thickness: int = 1,
-        font_color: Tuple[int, int, int, int] = (255, 255, 255, 255), # white
+        font_color: Tuple[int, int, int, int] = (255, 255, 255, 255),  # white
         border_width: int = 0,
-        border_color: Tuple[int, int, int, int] = (255, 0, 0, 255), # red
-        bg_color: Optional[Tuple[int, int, int, int]] = (0, 0, 0, 255), # black
-        padding: Tuple[int, int, int, int] = (0,0,0,0),
+        border_color: Tuple[int, int, int, int] = (255, 0, 0, 255),  # red
+        bg_color: Optional[Tuple[int, int, int, int]] = (0, 0, 0, 255),  # black
+        padding: Tuple[int, int, int, int] = (0, 0, 0, 0),
         anchor_point: Position = Position.CENTER,
     ) -> Tuple[int, int]:
         """Add text on the frame.
@@ -84,20 +79,20 @@ class ArtistGPUMat(AbstractContextManager):
         text_x, text_y = get_text_origin(
             anchor_point, anchor_x, anchor_y, text_size[0], text_size[1], baseline
         )
+        text_bottom = text_y + baseline
 
         if bg_color or border_width:
             rect_left = text_x - border_width - padding[0]
             rect_top = text_y - text_size[1] - border_width - padding[1]
             rect_right = text_x + text_size[0] + border_width + padding[2]
             rect_bottom = text_y + baseline + border_width + padding[3]
+            text_bottom = rect_bottom
 
             rect_tl = rect_left, rect_top
             rect_br = rect_right, rect_bottom
 
             if bg_color is not None:
-                cv2.rectangle(
-                    self.overlay, rect_tl, rect_br, bg_color, cv2.FILLED
-                )
+                cv2.rectangle(self.overlay, rect_tl, rect_br, bg_color, cv2.FILLED)
             if border_width > 0:
                 cv2.rectangle(
                     self.overlay,
@@ -117,7 +112,7 @@ class ArtistGPUMat(AbstractContextManager):
             font_thickness,
             cv2.LINE_AA,
         )
-        return text_size
+        return text_bottom
 
     # pylint:disable=too-many-arguments
     def add_bbox(
@@ -126,7 +121,7 @@ class ArtistGPUMat(AbstractContextManager):
         border_width: int = 3,
         border_color: Tuple[int, int, int, int] = (0, 255, 0, 255),  # RGBA, Green
         bg_color: Optional[Tuple[int, int, int, int]] = None,  # RGBA
-        padding: Tuple[int, int, int, int] = (0, 0, 0, 0)
+        padding: Tuple[int, int, int, int] = (0, 0, 0, 0),
     ):
         """Draw bbox on frame.
 
@@ -139,7 +134,7 @@ class ArtistGPUMat(AbstractContextManager):
             value in pixels, tuple of 4 values (left, top, right, bottom).
         """
         if border_width <= 0 and bg_color is None:
-           return
+            return
 
         if isinstance(bbox, BBox):
             left, top, right, bottom, _, _ = self.__convert_bbox(
@@ -250,9 +245,7 @@ class ArtistGPUMat(AbstractContextManager):
         :param line_type: Circle line type.
         """
         self.__init_overlay()
-        cv2.circle(
-            self.overlay, center, radius, color, thickness, line_type
-        )
+        cv2.circle(self.overlay, center, radius, color, thickness, line_type)
 
     def add_polygon(
         self,
@@ -271,15 +264,16 @@ class ArtistGPUMat(AbstractContextManager):
         self.__init_overlay()
         vertices = np.intp(vertices)
         if bg_color is not None:
-            cv2.drawContours(
-                self.overlay, [vertices], 0, bg_color, cv2.FILLED
-            )
+            cv2.drawContours(self.overlay, [vertices], 0, bg_color, cv2.FILLED)
         if line_width:
-            cv2.drawContours(
-                self.overlay, [vertices], 0, line_color, line_width
-            )
+            cv2.drawContours(self.overlay, [vertices], 0, line_color, line_width)
 
-    def blur(self, bbox: BBox, padding: Tuple[int, int, int, int] = (0,0,0,0), sigma: Optional[float] = None):
+    def blur(
+        self,
+        bbox: BBox,
+        padding: Tuple[int, int, int, int] = (0, 0, 0, 0),
+        sigma: Optional[float] = None,
+    ):
         """Apply gaussian blur to the specified ROI.
 
         :param bbox: ROI specified as Savant bbox.
@@ -373,7 +367,9 @@ class ArtistGPUMat(AbstractContextManager):
         top = round(bbox.top) - padding[1] - border_width
 
         width = max(round(bbox.width) + 2 * (padding[0] + padding[2] + border_width), 1)
-        height = max(round(bbox.height) + 2 * (padding[1] + padding[3] + border_width), 1)
+        height = max(
+            round(bbox.height) + 2 * (padding[1] + padding[3] + border_width), 1
+        )
 
         right = left + width
         bottom = top + height
