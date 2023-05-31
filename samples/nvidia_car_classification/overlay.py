@@ -15,17 +15,26 @@ class Overlay(NvDsDrawFunc):
             new_label_format = draw_spec.label.format
             # add classifier attributes labels to the object visualisation
             # one attribute per line
+            # if there's no specific attribute for the object on this frame
+            # reserve a line for it anyway
+            # so that the object's labels don't jump up and down
             attr_meta = object_meta.get_attr_meta("Secondary_CarColor", 'car_color')
             if attr_meta is not None:
                 new_label_format += [str(attr_meta.value)]
+            else:
+                new_label_format += ['']
 
             attr_meta = object_meta.get_attr_meta("Secondary_CarMake", 'car_make')
             if attr_meta is not None:
                 new_label_format += [str(attr_meta.value)]
+            else:
+                new_label_format += ['']
 
             attr_meta = object_meta.get_attr_meta("Secondary_VehicleTypes", 'car_type')
             if attr_meta is not None:
                 new_label_format += [str(attr_meta.value)]
+            else:
+                new_label_format += ['']
 
             draw_spec = ObjectDraw(
                 bounding_box=draw_spec.bounding_box,
