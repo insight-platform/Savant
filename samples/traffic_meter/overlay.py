@@ -43,8 +43,6 @@ class Overlay(NvDsDrawFunc):
                         direction,
                         int(obj_meta.bbox.left),
                         int(obj_meta.bbox.top) + offset,
-                        bg_color=(0, 0, 0),
-                        padding=0,
                         anchor_point=Position.LEFT_TOP,
                     )
                     offset += 20
@@ -53,10 +51,10 @@ class Overlay(NvDsDrawFunc):
         if line_from and line_to:
             pt1 = line_from.value[:2]
             pt2 = line_from.value[2:]
-            artist.add_polygon([pt1, pt2], line_color=(0, 0, 1))
+            artist.add_polygon([pt1, pt2], line_color=(255, 0, 0, 255))
             pt1 = line_to.value[:2]
             pt2 = line_to.value[2:]
-            artist.add_polygon([pt1, pt2], line_color=(1, 0, 0))
+            artist.add_polygon([pt1, pt2], line_color=(0, 0, 255, 255))
 
         # manually refresh (by filling with black) frame padding used for drawing
         # this workaround avoids rendering problem where drawings from previous frames
@@ -70,8 +68,7 @@ class Overlay(NvDsDrawFunc):
                 height=self.overlay_height,
             ),
             border_width=0,
-            bg_color=(0, 0, 0),
-            padding=0,
+            bg_color=(0, 0, 0, 0),
         )
         # add entries/exits counters
         entries_n = entries_n.value if entries_n is not None else 0
@@ -82,8 +79,6 @@ class Overlay(NvDsDrawFunc):
             50,
             2.5,
             5,
-            (1, 1, 1),
-            padding=0,
             anchor_point=Position.LEFT_TOP,
         )
         artist.add_text(
@@ -92,7 +87,5 @@ class Overlay(NvDsDrawFunc):
             50,
             2.5,
             5,
-            (1, 1, 1),
-            padding=0,
             anchor_point=Position.LEFT_TOP,
         )
