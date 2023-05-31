@@ -1,5 +1,6 @@
 """Default implementation PyFunc for drawing on frame."""
 from typing import Any, Dict, Optional, Tuple
+import re
 import pyds
 import cv2
 from savant_rs.primitives import (
@@ -19,7 +20,6 @@ from savant.meta.constants import UNTRACKED_OBJECT_ID
 from savant.utils.artist import Position, Artist
 from savant.gstreamer import Gst  # noqa: F401
 from savant.deepstream.opencv_utils import nvds_to_gpu_mat
-import pprint
 
 
 class NvDsDrawFunc(BaseNvDsDrawFunc):
@@ -40,7 +40,7 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
                 for obj, obj_draw_spec_cfg in objects.items():
                     self.draw_spec[(unit, obj)] = get_obj_draw_spec(obj_draw_spec_cfg)
         else:
-            self.default_spec = ObjectDraw(
+            self.default_spec_track_id = ObjectDraw(
                 bounding_box=BoundingBoxDraw(
                     color=ColorDraw(red=0, blue=0, green=255, alpha=255),
                     thickness=2,
@@ -52,6 +52,10 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
                     format=['{label} #{track_id}'],
                 ),
             )
+            self.default_spec_no_track_id = clone_obj_draw_spec(
+                self.default_spec_track_id
+            )
+            self.default_spec_no_track_id.label.format = ['{label}']
 
         self.frame_streams = []
 
@@ -95,8 +99,10 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
 
             if len(self.draw_spec) > 0:
                 spec = self.draw_spec.get((obj_meta.element_name, obj_meta.label), None)
+            elif obj_meta.track_id != UNTRACKED_OBJECT_ID:
+                spec = self.default_spec_track_id
             else:
-                spec = self.default_spec
+                spec = self.default_spec_no_track_id
 
             if spec is None:
                 continue
@@ -140,8 +146,6 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
             anchor_point = Position.CENTER
 
         for format_str in spec.format:
-            # if the object is not tracked, the track_id is UNTRACKED_OBJECT_ID
-            # do not add the track_id if it is UNTRACKED_OBJECT_ID
             text = format_str.format(
                 model=obj_meta.element_name,
                 label=obj_meta.label,
