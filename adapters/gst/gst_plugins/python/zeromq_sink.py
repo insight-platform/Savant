@@ -13,6 +13,7 @@ from savant.gstreamer.utils import propagate_gst_setting_error
 from savant.utils.logging import LoggerMixin
 from savant.utils.zeromq import (
     Defaults,
+    END_OF_STREAM_MESSAGE,
     SenderSocketTypes,
     ZMQException,
     parse_zmq_socket_uri,
@@ -177,6 +178,16 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
 
     def do_stop(self):
         """Stop source."""
+
+        if self.socket_type == SenderSocketTypes.DEALER:
+            self.logger.info('Sending End-of-Stream message to socket %s', self.socket)
+            self.sender.send_multipart([END_OF_STREAM_MESSAGE])
+            self.logger.info(
+                'Waiting for End-of-Stream message confirmation from socket %s',
+                self.socket,
+            )
+            self.sender.recv()
+
         self.logger.info('Closing ZeroMQ socket')
         self.sender.close()
         self.logger.info('Terminating ZeroMQ context.')
