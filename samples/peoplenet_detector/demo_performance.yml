@@ -50,29 +50,6 @@ parameters:
       counters_height: 85
       # thickness of counter's font
       counters_font_thickness: 5
-    rendered_objects:
-      peoplenet:
-        person:
-          bbox:
-            color: 00FF00FF
-            thickness: 3
-            padding:
-              left: 3
-              top: 4
-              right: 5
-              bottom: 6
-          label:
-            font_scale: 4
-            color: FFFFFFFF
-            thickness: 1
-            format: 
-              - "Label: {label}"
-              - "Track: #{track_id}"
-          central_dot:
-            color: 00FF00FF
-            radius: 2
-        face:
-          blur: true
 
 # pipeline definition
 pipeline:
@@ -163,5 +140,5 @@ pipeline:
         counters_smoothing_period: 0.25
 
   # noop pipeline sink, not using sink adapter
-  sink:
-    - element: devnull_sink
+  # sink:
+  #   - element: devnull_sink
