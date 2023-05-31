@@ -21,8 +21,7 @@ class Overlay(NvDsDrawFunc):
                     str(attr_meta.value),
                     int(obj_meta.bbox.left),
                     int(obj_meta.bbox.top) + 20,
-                    bg_color=(0, 0, 0),
-                    padding=0,
+                    bg_color=(0, 0, 0, 255),
                     anchor_point=Position.LEFT_TOP,
                 )
             attr_meta = obj_meta.get_attr_meta("Secondary_CarMake", 'car_make')
@@ -31,8 +30,7 @@ class Overlay(NvDsDrawFunc):
                     str(attr_meta.value),
                     int(obj_meta.bbox.left),
                     int(obj_meta.bbox.top) + 38,
-                    bg_color=(0, 0, 0),
-                    padding=0,
+                    bg_color=(0, 0, 0, 255),
                     anchor_point=Position.LEFT_TOP,
                 )
             attr_meta = obj_meta.get_attr_meta("Secondary_VehicleTypes", 'car_type')
@@ -41,7 +39,6 @@ class Overlay(NvDsDrawFunc):
                     str(attr_meta.value),
                     int(obj_meta.bbox.left),
                     int(obj_meta.bbox.top) + 56,
-                    bg_color=(0, 0, 0),
-                    padding=0,
+                    bg_color=(0, 0, 0, 255),
                     anchor_point=Position.LEFT_TOP,
                 )

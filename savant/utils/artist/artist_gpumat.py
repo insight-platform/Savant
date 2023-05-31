@@ -121,7 +121,7 @@ class ArtistGPUMat(AbstractContextManager):
         border_width: int = 3,
         border_color: Tuple[int, int, int, int] = (0, 255, 0, 255),  # RGBA, Green
         bg_color: Optional[Tuple[int, int, int, int]] = None,  # RGBA
-        padding: Tuple[int, int, int, int] = (0, 0, 0, 0),
+        padding: Optional[Tuple[int, int, int, int]] = None,
     ):
         """Draw bbox on frame.
 
@@ -135,6 +135,8 @@ class ArtistGPUMat(AbstractContextManager):
         """
         if border_width <= 0 and bg_color is None:
             return
+        if padding is None:
+            padding = (0, 0, 0, 0)
 
         if isinstance(bbox, BBox):
             left, top, right, bottom, _, _ = self.__convert_bbox(

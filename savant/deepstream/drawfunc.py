@@ -39,6 +39,19 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
             for unit, objects in self.rendered_objects.items():
                 for obj, obj_draw_spec_cfg in objects.items():
                     self.draw_spec[(unit, obj)] = get_obj_draw_spec(obj_draw_spec_cfg)
+        else:
+            self.default_spec = ObjectDraw(
+                bounding_box=BoundingBoxDraw(
+                    color=ColorDraw(red=0, blue=0, green=255, alpha=255),
+                    thickness=2,
+                ),
+                label=LabelDraw(
+                    color=ColorDraw(red=255, blue=255, green=255, alpha=255),
+                    font_scale=0.5,
+                    thickness=2,
+                    format=['{label} #{track_id}'],
+                ),
+            )
 
         self.frame_streams = []
 
@@ -80,13 +93,15 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
             if obj_meta.is_primary:
                 continue
 
-            default_spec = self.draw_spec.get(
-                (obj_meta.element_name, obj_meta.label), None
-            )
-            if default_spec is None:
+            if len(self.draw_spec) > 0:
+                spec = self.draw_spec.get((obj_meta.element_name, obj_meta.label), None)
+            else:
+                spec = self.default_spec
+
+            if spec is None:
                 continue
 
-            spec = self.override_draw_spec(obj_meta, clone_obj_draw_spec(default_spec))
+            spec = self.override_draw_spec(obj_meta, clone_obj_draw_spec(spec))
 
             # draw according to the specification
             # blur should be the first to be applied
