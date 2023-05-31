@@ -140,5 +140,5 @@ pipeline:
         counters_smoothing_period: 0.25
 
   # noop pipeline sink, not using sink adapter
-  # sink:
-  #   - element: devnull_sink
+  sink:
+    - element: devnull_sink
