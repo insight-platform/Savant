@@ -15,6 +15,7 @@ from pygstsavantframemeta import gst_buffer_get_savant_frame_meta
 
 from adapters.ds.sinks.always_on_rtsp.last_frame import LastFrame
 from savant.config.schema import PipelineElement
+from savant.deepstream.encoding import check_encoder_is_available
 from savant.gstreamer import Gst
 from savant.gstreamer.codecs import CODEC_BY_CAPS_NAME, Codec
 from savant.gstreamer.element_factory import GstElementFactory
@@ -385,6 +386,11 @@ def main():
     last_frame = LastFrame(timestamp=datetime.utcfromtimestamp(0))
 
     Gst.init(None)
+    if not check_encoder_is_available(
+        {'output_frame': {'codec': Codec.H264.value.name}}
+    ):
+        return
+
     logger.info('Starting Always-On-RTSP sink')
     factory = GstElementFactory()
     output_pipeline_thread = PipelineThread(
