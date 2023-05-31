@@ -17,6 +17,9 @@ parameters:
             color: FFFFFFFF  # White
             font_scale: 0.5
             thickness: 1
+            # Note that the label format for Primary_Detector.Car objects
+            # is overriden on a per object basis:
+            # every car has the classifier result labels added on separate lines
             format: ['{label} #{track_id}']
         Person:
           bbox:
