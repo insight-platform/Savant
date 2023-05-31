@@ -48,7 +48,7 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
                 label=LabelDraw(
                     color=ColorDraw(red=255, blue=255, green=255, alpha=255),
                     font_scale=0.5,
-                    thickness=2,
+                    thickness=1,
                     format=['{label} #{track_id}'],
                 ),
             )
@@ -118,11 +118,15 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
     def _draw_bounding_box(
         self, obj_meta: ObjectMeta, artist: Artist, spec: BoundingBoxDraw
     ):
+        if spec.padding is not None:
+            padding = spec.padding.padding
+        else:
+            padding = (0, 0, 0, 0)
         artist.add_bbox(
             bbox=obj_meta.bbox,
             border_color=rgba_color(spec.color),
             border_width=spec.thickness,
-            padding=spec.padding.padding,
+            padding=padding,
         )
 
     def _draw_label(self, obj_meta: ObjectMeta, artist: Artist, spec: LabelDraw):
