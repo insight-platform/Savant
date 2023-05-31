@@ -1,6 +1,5 @@
 """Default implementation PyFunc for drawing on frame."""
 from typing import Any, Dict, Optional, Tuple
-import copy
 import pyds
 import cv2
 from savant_rs.primitives import (
@@ -38,7 +37,7 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
         if self.rendered_objects:
             for unit, objects in self.rendered_objects.items():
                 for obj, obj_draw_spec_cfg in objects.items():
-                    self.draw_spec[(unit, obj)] = obj_draw_spec_cfg
+                    self.draw_spec[(unit, obj)] = get_obj_draw_spec(obj_draw_spec_cfg)
         else:
             default_bbox_spec = BoundingBoxDraw(
                 color=ColorDraw(red=0, blue=0, green=255, alpha=255),
@@ -82,8 +81,8 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
         self.frame_streams = []
 
     def override_draw_spec(
-        self, object_meta: ObjectMeta, draw_spec_cfg: dict
-    ) -> dict:
+        self, object_meta: ObjectMeta, draw_spec: ObjectDraw
+    ) -> ObjectDraw:
         """Override draw specification for an object
         based on dynamically changning object properties.
         For example, re-assign bbox color from default per object class one
@@ -93,7 +92,7 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
         :param specification: Draw specification
         :return: Overridden draw specification
         """
-        return draw_spec_cfg
+        return draw_spec
 
     def draw_on_frame(self, frame_meta: NvDsFrameMeta, artist: Artist):
         """Draws bounding boxes and labels for all objects in the frame's metadata.
@@ -107,14 +106,9 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
                 continue
 
             if len(self.draw_spec) > 0:
-                spec_cfg = self.draw_spec.get(
-                    (obj_meta.element_name, obj_meta.label), None
-                )
-                if spec_cfg is not None:
-                    spec_cfg = self.override_draw_spec(
-                        obj_meta, copy.deepcopy(spec_cfg)
-                    )
-                    spec = get_obj_draw_spec(spec_cfg)
+                spec = self.draw_spec.get((obj_meta.element_name, obj_meta.label), None)
+                if spec is not None:
+                    spec = self.override_draw_spec(obj_meta, spec.copy())
                 else:
                     continue
 
