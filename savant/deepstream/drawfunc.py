@@ -1,6 +1,6 @@
 """Default implementation PyFunc for drawing on frame."""
 from typing import Any, Dict, Optional, Tuple
-import re
+import copy
 import pyds
 import cv2
 from savant_rs.primitives import (
@@ -38,24 +38,33 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
         if self.rendered_objects:
             for unit, objects in self.rendered_objects.items():
                 for obj, obj_draw_spec_cfg in objects.items():
-                    self.draw_spec[(unit, obj)] = get_obj_draw_spec(obj_draw_spec_cfg)
+                    self.draw_spec[(unit, obj)] = obj_draw_spec_cfg
         else:
+            default_bbox_spec = BoundingBoxDraw(
+                color=ColorDraw(red=0, blue=0, green=255, alpha=255),
+                thickness=2,
+            )
+            default_text_color = ColorDraw(red=255, blue=255, green=255, alpha=255)
+            default_font_scale = 0.5
+            default_thickness = 1
             self.default_spec_track_id = ObjectDraw(
-                bounding_box=BoundingBoxDraw(
-                    color=ColorDraw(red=0, blue=0, green=255, alpha=255),
-                    thickness=2,
-                ),
+                bounding_box=default_bbox_spec,
                 label=LabelDraw(
-                    color=ColorDraw(red=255, blue=255, green=255, alpha=255),
-                    font_scale=0.5,
-                    thickness=1,
+                    color=default_text_color,
+                    font_scale=default_font_scale,
+                    thickness=default_thickness,
                     format=['{label} #{track_id}'],
                 ),
             )
-            self.default_spec_no_track_id = clone_obj_draw_spec(
-                self.default_spec_track_id
+            self.default_spec_no_track_id = ObjectDraw(
+                bounding_box=default_bbox_spec,
+                label=LabelDraw(
+                    color=default_text_color,
+                    font_scale=default_font_scale,
+                    thickness=default_thickness,
+                    format=['{label}'],
+                ),
             )
-            self.default_spec_no_track_id.label.format = ['{label}']
 
         self.frame_streams = []
 
@@ -73,8 +82,8 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
         self.frame_streams = []
 
     def override_draw_spec(
-        self, object_meta: ObjectMeta, specification: ObjectDraw
-    ) -> ObjectDraw:
+        self, object_meta: ObjectMeta, draw_spec_cfg: dict
+    ) -> dict:
         """Override draw specification for an object
         based on dynamically changning object properties.
         For example, re-assign bbox color from default per object class one
@@ -84,7 +93,7 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
         :param specification: Draw specification
         :return: Overridden draw specification
         """
-        return specification
+        return draw_spec_cfg
 
     def draw_on_frame(self, frame_meta: NvDsFrameMeta, artist: Artist):
         """Draws bounding boxes and labels for all objects in the frame's metadata.
@@ -98,16 +107,21 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
                 continue
 
             if len(self.draw_spec) > 0:
-                spec = self.draw_spec.get((obj_meta.element_name, obj_meta.label), None)
+                spec_cfg = self.draw_spec.get(
+                    (obj_meta.element_name, obj_meta.label), None
+                )
+                if spec_cfg is not None:
+                    spec_cfg = self.override_draw_spec(
+                        obj_meta, copy.deepcopy(spec_cfg)
+                    )
+                    spec = get_obj_draw_spec(spec_cfg)
+                else:
+                    continue
+
             elif obj_meta.track_id != UNTRACKED_OBJECT_ID:
                 spec = self.default_spec_track_id
             else:
                 spec = self.default_spec_no_track_id
-
-            if spec is None:
-                continue
-
-            spec = self.override_draw_spec(obj_meta, clone_obj_draw_spec(spec))
 
             # draw according to the specification
             # blur should be the first to be applied
@@ -130,7 +144,7 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
             padding = (0, 0, 0, 0)
         artist.add_bbox(
             bbox=obj_meta.bbox,
-            border_color=rgba_color(spec.color),
+            border_color=spec.color.rgba,
             border_width=spec.thickness,
             padding=padding,
         )
@@ -158,7 +172,7 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
                 anchor_x=anchor_x,
                 anchor_y=anchor_y,
                 anchor_point=anchor_point,
-                font_color=rgba_color(spec.color),
+                font_color=spec.color.rgba,
                 font_scale=spec.font_scale,
                 font_thickness=spec.thickness,
             )
@@ -169,7 +183,7 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
         artist.add_circle(
             (round(obj_meta.bbox.x_center), round(obj_meta.bbox.y_center)),
             spec.radius,
-            rgba_color(spec.color),
+            spec.color.rgba,
             cv2.FILLED,
         )
 
@@ -224,67 +238,4 @@ def get_obj_draw_spec(config: dict) -> ObjectDraw:
         label=label_draw,
         central_dot=central_dot_draw,
         blur=blur,
-    )
-
-
-def rgba_color(color_spec: ColorDraw) -> Tuple[int, int, int, int]:
-    return (color_spec.red, color_spec.green, color_spec.blue, color_spec.alpha)
-
-
-def clone_obj_draw_spec(spec: ObjectDraw) -> ObjectDraw:
-    return ObjectDraw(
-        bounding_box=clone_bbox_draw(spec.bounding_box),
-        label=clone_label_draw(spec.label),
-        central_dot=clone_dot_draw(spec.central_dot),
-        blur=spec.blur,
-    )
-
-
-def clone_bbox_draw(spec: Optional[BoundingBoxDraw]) -> Optional[BoundingBoxDraw]:
-    if spec is None:
-        return None
-    return BoundingBoxDraw(
-        color=clone_color_draw(spec.color),
-        padding=clone_padding_draw(spec.padding),
-        thickness=spec.thickness,
-    )
-
-
-def clone_label_draw(spec: Optional[LabelDraw]) -> Optional[LabelDraw]:
-    if spec is None:
-        return None
-    return LabelDraw(
-        color=clone_color_draw(spec.color),
-        font_scale=spec.font_scale,
-        thickness=spec.thickness,
-        format=spec.format.copy(),
-    )
-
-
-def clone_dot_draw(spec: Optional[DotDraw]) -> Optional[DotDraw]:
-    if spec is None:
-        return None
-    return DotDraw(
-        color=clone_color_draw(spec.color),
-        radius=spec.radius,
-    )
-
-
-def clone_color_draw(spec: ColorDraw) -> ColorDraw:
-    return ColorDraw(
-        red=spec.red,
-        green=spec.green,
-        blue=spec.blue,
-        alpha=spec.alpha,
-    )
-
-
-def clone_padding_draw(spec: Optional[PaddingDraw]) -> Optional[PaddingDraw]:
-    if spec is None:
-        return None
-    return PaddingDraw(
-        left=spec.left,
-        top=spec.top,
-        right=spec.right,
-        bottom=spec.bottom,
     )
