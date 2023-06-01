@@ -1,4 +1,5 @@
 """Buffer processor for DeepStream pipeline."""
+import time
 from queue import Queue
 from typing import Optional, Union, NamedTuple, Iterator
 
@@ -8,7 +9,9 @@ from pygstsavantframemeta import (
     gst_buffer_get_savant_frame_meta,
     nvds_frame_meta_get_nvds_savant_frame_meta,
 )
-from pysavantboost import ObjectsPreprocessing
+
+from savant.base.input_preproc import ObjectsPreprocessing
+# from pysavantboost import ObjectsPreprocessing
 
 from savant.base.model import ObjectModel, ComplexModel
 from savant.meta.constants import PRIMARY_OBJECT_LABEL
@@ -308,7 +311,7 @@ class NvDsBufferProcessor(GstBufferProcessor):
         model = element.model
         if (
             not model.input.preprocess_object_meta
-            and not model.input.preprocess_object_tensor
+            and not model.input.preprocess_object_image
         ):
             return
 
@@ -351,18 +354,18 @@ class NvDsBufferProcessor(GstBufferProcessor):
                     rect_params.width = bbox.width
                     rect_params.height = bbox.height
 
-        elif model.input.preprocess_object_tensor:
+        elif model.input.preprocess_object_image:
             model_uid, class_id = self._model_object_registry.get_model_object_ids(
                 model.input.object
             )
+            self._fps_meter.start_time()
             self._objects_preprocessing.preprocessing(
                 element.name,
                 hash(buffer),
                 model_uid,
-                class_id,
-                model.input.preprocess_object_tensor.padding[0],
-                model.input.preprocess_object_tensor.padding[1],
+                class_id
             )
+            self._fps_meter.fix_time()
 
     def prepare_element_output(self, element: PipelineElement, buffer: Gst.Buffer):
         """Model output postprocessing.
@@ -594,7 +597,7 @@ class NvDsBufferProcessor(GstBufferProcessor):
                 # restore nvds_obj_meta.rect_params if there was preprocessing
                 if (
                     model.input.preprocess_object_meta
-                    or model.input.preprocess_object_tensor
+                    or model.input.preprocess_object_image
                 ) and self._is_model_input_object(element, nvds_obj_meta):
                     bbox_coords = nvds_obj_meta.detector_bbox_info.org_bbox_coords
                     if nvds_obj_meta.tracker_bbox_info.org_bbox_coords.width > 0:
@@ -606,7 +609,7 @@ class NvDsBufferProcessor(GstBufferProcessor):
                     rect_params.height = bbox_coords.height
 
         # restore frame
-        if model.input.preprocess_object_tensor:
+        if model.input.preprocess_object_image:
             self._objects_preprocessing.restore_frame(hash(buffer))
 
     def _is_model_input_object(

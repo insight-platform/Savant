@@ -160,7 +160,7 @@ def nvds_generate_obj_uid(
     )
 
 
-def nvds_get_obj_bbox(nvds_obj_meta: pyds.NvDsFrameMeta) -> Union[NvDsBBox, NvDsRBBox]:
+def nvds_get_obj_bbox(nvds_obj_meta: pyds.NvDsObjectMeta) -> Union[NvDsBBox, NvDsRBBox]:
     """Returns BBox instance for specified frame meta.
 
     :param nvds_obj_meta: NvDsObjectMeta.

@@ -7,7 +7,13 @@ from typing import Any, List, Optional
 import time
 import pyds
 
-from pysavantboost import ObjectsPreprocessing
+PREPROCESSING_BACKEND = 'python'
+
+if PREPROCESSING_BACKEND == 'python':
+    from savant.base.input_preproc import ObjectsPreprocessing
+else:
+    from pysavantboost import ObjectsPreprocessing
+
 from pygstsavantframemeta import (
     add_convert_savant_frame_meta_pad_probe,
     nvds_frame_meta_get_nvds_savant_frame_meta,
@@ -185,10 +191,10 @@ class NvDsPipeline(GstPipeline):
         link: bool = True,
     ) -> Gst.Element:
         if isinstance(element, ModelElement):
-            if element.model.input.preprocess_object_tensor:
+            if element.model.input.preprocess_object_image:
                 self._objects_preprocessing.add_preprocessing_function(
-                    element.name,
-                    element.model.input.preprocess_object_tensor.custom_function,
+                    element_name=element.name,
+                    preprocessing_func=element.model.input.preprocess_object_image,
                 )
             if isinstance(element.model, (AttributeModel, ComplexModel)):
                 for attr in element.model.output.attributes:

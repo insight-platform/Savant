@@ -35,28 +35,23 @@ class ModelColorFormat(Enum):
 
 
 @dataclass
-class PreprocessObjectTensor:
+class OutputImage:
+    size: Tuple[int, int]
+    method: str
+    interpolation: str
+
+    def __post_init__(self):
+        pass
+
+
+@dataclass
+class PreprocessObjectImage(PyFunc):
     """Object image preprocessing function configuration."""
 
-    custom_function: str = MISSING
-    """Object image preprocessing function. It can be a Python function:
+    max_image_size: int = 0
+    """Maximum image size (in pixels) for the object image."""
 
-    1. Function should take one argument of type ``pysavantboost.Image``
-       and return ``pysavantboost.Image``
-    2. Function should be referenced in the form of ``module:function_name``
-
-    or a C++ function
-
-    1. Function should take one argument of type ``pysavantboost.Image``
-       and return ``pysavantboost.Image``
-    2. Function should be referenced in the form of ``library.so:function_name``
-    """
-
-    padding: Tuple[int, int] = (0, 0)
-    """Setting X and Y padding (in pixels) around the object bbox allows specifying
-    an extended image region that includes not just the object,
-    but also its immediate surroundings.
-    """
+    output_image:  Optional[OutputImage] = None
 
 
 @dataclass
@@ -145,7 +140,7 @@ class ModelInput:
     :py:class:`~savant.base.input_preproc.BasePreprocessObjectMeta`.
     """
 
-    preprocess_object_tensor: Optional[PreprocessObjectTensor] = None
+    preprocess_object_image: Optional[PreprocessObjectImage] = None
     """Object image preprocessing Python/C++ function configuration.
 
     .. todo:: object_tensor_padding can be one of P, (PX, PY),
