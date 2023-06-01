@@ -1,10 +1,12 @@
 from collections import defaultdict
+import sys
 import yaml
 from statsd import StatsClient
+from savant_rs.primitives import PolygonalArea, Point
 from savant.gstreamer import Gst
 from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.deepstream.pyfunc import NvDsPyFuncPlugin
-from samples.traffic_meter.utils import TwoLinesCrossingTracker, Point, Direction
+from samples.traffic_meter.utils import Point, Direction, TwoLinesCrossingTracker
 
 
 class ConditionalDetectorSkip(NvDsPyFuncPlugin):
@@ -38,6 +40,31 @@ class LineCrossing(NvDsPyFuncPlugin):
         super().__init__(**kwargs)
         with open(self.config_path, "r", encoding='utf8') as stream:
             self.line_config = yaml.safe_load(stream)
+
+        self.areas = {}
+        for source_id, line_cfg in self.line_config.items():
+            # The conversion from 2 lines to a 4 point polygon is as follows:
+            # assuming the lines are AB and CD, the polygon is ABDC.
+            # The AB polygon edge is marked as "from" and the CD edge is marked as "to".
+            pt_A = Point(*line_cfg['from'][:2])
+            pt_B = Point(*line_cfg['from'][2:])
+            pt_C = Point(*line_cfg['to'][:2])
+            pt_D = Point(*line_cfg['to'][2:])
+            area = PolygonalArea([pt_A, pt_B, pt_D, pt_C], ["from", None, "to", None])
+            if area.is_self_intersecting():
+                # try to correct the polygon by reversing one of the lines
+                area = PolygonalArea(
+                    [pt_A, pt_B, pt_C, pt_D], ["from", None, "to", None]
+                )
+                if area.is_self_intersecting():
+                    self.logger.error(
+                        'Lines config for the "%s" source id produced a self-intersecting polygon.'
+                        ' Please correct coordinates "%s" in the config file and restart the pipeline.',
+                        source_id,
+                        line_cfg,
+                    )
+                    sys.exit(1)
+            self.areas[source_id] = area
 
         self.lc_trackers = {}
         self.track_last_frame_num = defaultdict(lambda: defaultdict(int))
@@ -79,18 +106,14 @@ class LineCrossing(NvDsPyFuncPlugin):
                 primary_meta_object = obj_meta
                 break
 
-        if primary_meta_object is not None and frame_meta.source_id in self.line_config:
-
-            line_from = self.line_config[frame_meta.source_id]['from']
-            line_to = self.line_config[frame_meta.source_id]['to']
-
+        if primary_meta_object is not None and frame_meta.source_id in self.areas:
             if frame_meta.source_id not in self.lc_trackers:
                 self.lc_trackers[frame_meta.source_id] = TwoLinesCrossingTracker(
-                    (Point(*line_from[:2]), Point(*line_from[2:])),
-                    (Point(*line_to[:2]), Point(*line_to[2:])),
+                    self.areas[frame_meta.source_id]
                 )
             lc_tracker = self.lc_trackers[frame_meta.source_id]
 
+            obj_metas = []
             for obj_meta in frame_meta.objects:
                 if obj_meta.label == self.target_obj_label:
                     lc_tracker.add_track_point(
@@ -104,32 +127,36 @@ class LineCrossing(NvDsPyFuncPlugin):
                     self.track_last_frame_num[frame_meta.source_id][
                         obj_meta.track_id
                     ] = frame_meta.frame_num
-                    direction = lc_tracker.check_track(obj_meta.track_id)
 
-                    obj_events = self.cross_events[frame_meta.source_id][
-                        obj_meta.track_id
-                    ]
-                    if direction is not None:
-                        # send to graphite
-                        self.stats_client.incr(
-                            '.'.join(
-                                (
-                                    frame_meta.source_id,
-                                    self.target_obj_label,
-                                    direction.name,
-                                )
+                    obj_metas.append(obj_meta)
+
+            track_lines_crossings = lc_tracker.check_tracks(
+                [obj_meta.track_id for obj_meta in obj_metas]
+            )
+
+            for obj_meta, cross_direction in zip(obj_metas, track_lines_crossings):
+                obj_events = self.cross_events[frame_meta.source_id][obj_meta.track_id]
+                if cross_direction is not None:
+                    # send to graphite
+                    self.stats_client.incr(
+                        '.'.join(
+                            (
+                                frame_meta.source_id,
+                                self.target_obj_label,
+                                cross_direction.name,
                             )
                         )
+                    )
 
-                        obj_events.append((direction.name, frame_meta.pts))
+                    obj_events.append((cross_direction.name, frame_meta.pts))
 
-                        if direction == Direction.entry:
-                            self.entry_count[frame_meta.source_id] += 1
-                        elif direction == Direction.exit:
-                            self.exit_count[frame_meta.source_id] += 1
+                    if cross_direction == Direction.entry:
+                        self.entry_count[frame_meta.source_id] += 1
+                    elif cross_direction == Direction.exit:
+                        self.exit_count[frame_meta.source_id] += 1
 
-                    for direction_name, frame_pts in obj_events:
-                        obj_meta.add_attr_meta('lc_tracker', direction_name, frame_pts)
+                for direction_name, frame_pts in obj_events:
+                    obj_meta.add_attr_meta('lc_tracker', direction_name, frame_pts)
 
             primary_meta_object.add_attr_meta(
                 'analytics', 'entries_n', self.entry_count[frame_meta.source_id]
@@ -137,8 +164,12 @@ class LineCrossing(NvDsPyFuncPlugin):
             primary_meta_object.add_attr_meta(
                 'analytics', 'exits_n', self.exit_count[frame_meta.source_id]
             )
-            primary_meta_object.add_attr_meta('analytics', 'line_from', line_from)
-            primary_meta_object.add_attr_meta('analytics', 'line_to', line_to)
+            primary_meta_object.add_attr_meta(
+                'analytics', 'line_from', self.line_config[frame_meta.source_id]['from']
+            )
+            primary_meta_object.add_attr_meta(
+                'analytics', 'line_to', self.line_config[frame_meta.source_id]['to']
+            )
 
         # periodically remove stale tracks
         if not (frame_meta.frame_num % self.stale_track_del_period):

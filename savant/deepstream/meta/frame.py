@@ -43,6 +43,11 @@ class NvDsFrameMeta:
         return self.frame_meta.frame_num
 
     @property
+    def batch_id(self) -> int:
+        """Location of the frame in the batch."""
+        return self.frame_meta.batch_id
+
+    @property
     def objects(self) -> Iterator[ObjectMeta]:
         """Returns an iterator over object metas in current frame.
 

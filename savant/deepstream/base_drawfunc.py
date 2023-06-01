@@ -24,3 +24,7 @@ class BaseNvDsDrawFunc(BasePyFuncCallableImpl):
         :param nvds_frame_meta: NvDs metadata for a frame.
         :param buffer: Gstreamer buffer.
         """
+
+    @abstractmethod
+    def finalize(self):
+        """Finalize batch processing."""

@@ -19,7 +19,6 @@ from pygstsavantframemeta import (
     nvds_frame_meta_get_nvds_savant_frame_meta,
 )
 
-from savant.deepstream.base_drawfunc import BaseNvDsDrawFunc
 from savant.deepstream.buffer_processor import (
     NvDsBufferProcessor,
     NvDsRawBufferProcessor,
@@ -54,7 +53,12 @@ from savant.utils.fps_meter import FPSMeter
 from savant.utils.model_registry import ModelObjectRegistry
 from savant.utils.source_info import SourceInfoRegistry, SourceInfo, Resolution
 from savant.utils.platform import is_aarch64
-from savant.config.schema import PipelineElement, ModelElement, FrameParameters
+from savant.config.schema import (
+    PipelineElement,
+    ModelElement,
+    FrameParameters,
+    DrawFunc,
+)
 from savant.base.model import AttributeModel, ComplexModel
 from savant.utils.sink_factories import SinkEndOfStream
 
@@ -97,7 +101,7 @@ class NvDsPipeline(GstPipeline):
 
         self._internal_attrs = set()
 
-        self._draw_func: Optional[BaseNvDsDrawFunc] = kwargs.get('draw_func')
+        self._draw_func: Optional[DrawFunc] = kwargs.get('draw_func')
 
         output_frame = kwargs.get('output_frame')
         if output_frame:
@@ -711,6 +715,7 @@ class NvDsPipeline(GstPipeline):
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
             self._draw_func(nvds_frame_meta, buffer)
+        self._draw_func.instance.finalize()
         return Gst.PadProbeReturn.OK
 
     def _allocate_demuxer_pads(self, demuxer: Gst.Element, n_pads: int):
