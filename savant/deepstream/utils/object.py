@@ -7,6 +7,7 @@ from savant.meta.constants import UNTRACKED_OBJECT_ID, DEFAULT_CONFIDENCE
 from savant.meta.type import InformationType, ObjectSelectionType
 from savant.deepstream.meta.constants import MAX_LABEL_SIZE
 from savant.deepstream.meta.bbox import NvDsBBox, NvDsRBBox
+from .iterator import nvds_obj_user_meta_iterator
 
 
 class IncorrectBBoxType(Exception):
@@ -173,3 +174,11 @@ def nvds_get_obj_bbox(nvds_obj_meta: pyds.NvDsFrameMeta) -> Union[NvDsBBox, NvDs
         return NvDsRBBox(nvds_obj_meta)
 
     raise IncorrectSelectionType('Unsupported object selection type.')
+
+
+def nvds_get_obj_custom_data_struct(obj_meta):
+    for user_meta in nvds_obj_user_meta_iterator(obj_meta):
+        if user_meta.base_meta.meta_type == pyds.NvDsMetaType.NVDS_USER_META:
+            return pyds.CustomDataStruct.cast(user_meta.user_meta_data)
+
+    return None

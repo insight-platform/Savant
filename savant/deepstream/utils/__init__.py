@@ -32,6 +32,7 @@ from .object import (
     nvds_set_obj_uid,
     nvds_get_obj_uid,
     nvds_get_obj_bbox,
+    nvds_get_obj_custom_data_struct,
 )
 from .surface import get_nvds_buf_surface
 from .tensor import nvds_infer_tensor_meta_to_outputs

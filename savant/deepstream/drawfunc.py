@@ -156,7 +156,7 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
         for format_str in spec.format:
             text = format_str.format(
                 model=obj_meta.element_name,
-                label=obj_meta.label,
+                label=obj_meta.draw_label,
                 confidence=obj_meta.confidence,
                 track_id=obj_meta.track_id,
             )
