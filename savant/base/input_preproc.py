@@ -12,6 +12,7 @@ from savant.base.pyfunc import BasePyFuncCallableImpl
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
 from savant.deepstream.opencv_utils import nvds_to_gpu_mat
 from savant.deepstream.utils import nvds_frame_meta_iterator, nvds_obj_meta_iterator
+from savant.meta.bbox import BBox
 from savant.meta.object import ObjectMeta
 from savant.utils.artist.image import GpuImage
 
@@ -22,15 +23,11 @@ class BasePreprocessObjectMeta(BasePyFuncCallableImpl):
     @abstractmethod
     def __call__(
         self,
-        bbox: pyds.NvBbox_Coords,
-        *,
-        parent_bbox: Optional[pyds.NvBbox_Coords] = None,
-        **kwargs
-    ) -> pyds.NvBbox_Coords:
+        object_meta: ObjectMeta,
+    ) -> BBox:
         """Transforms object meta.
 
-        :param bbox: original bbox
-        :param parent_bbox: parent object bbox, eg frame
+        :param object_meta: original bbox
         :return: changed bbox
         """
 

@@ -13,6 +13,8 @@ from pygstsavantframemeta import (
 from savant.base.input_preproc import ObjectsPreprocessing
 
 from savant.base.model import ObjectModel, ComplexModel
+from savant.deepstream.meta.object import _NvDsObjectMetaImpl
+from savant.deepstream.utils.attribute import nvds_get_all_obj_attrs
 from savant.meta.constants import PRIMARY_OBJECT_LABEL
 from savant.config.schema import PipelineElement, ModelElement, FrameParameters
 from savant.meta.bbox import BBox, RBBox
@@ -38,8 +40,10 @@ from savant.gstreamer import Gst  # noqa:F401
 from savant.gstreamer.buffer_processor import GstBufferProcessor
 from savant.gstreamer.codecs import CodecInfo, Codec
 from savant.gstreamer.metadata import get_source_frame_meta, metadata_pop_frame_meta
+from savant.meta.object import ObjectMeta
 from savant.meta.type import ObjectSelectionType
 from savant.utils.fps_meter import FPSMeter
+from savant.utils.logging import LoggerMixin
 from savant.utils.model_registry import ModelObjectRegistry
 from savant.utils.sink_factories import SinkVideoFrame
 from savant.utils.source_info import SourceInfoRegistry, SourceInfo
@@ -55,7 +59,7 @@ class _OutputFrame(NamedTuple):
     keyframe: bool
 
 
-class NvDsBufferProcessor(GstBufferProcessor):
+class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
     def __init__(
         self,
         queue: Queue,
@@ -322,29 +326,73 @@ class NvDsBufferProcessor(GstBufferProcessor):
                         continue
                     # TODO: Unify and also switch to the box representation system
                     #  through the center point during meta preprocessing.
-                    bbox = pyds.NvBbox_Coords()  # why not?
-                    bbox.left = nvds_obj_meta.rect_params.left
-                    bbox.top = nvds_obj_meta.rect_params.top
-                    bbox.width = nvds_obj_meta.rect_params.width
-                    bbox.height = nvds_obj_meta.rect_params.height
 
-                    parent_bbox = pyds.NvBbox_Coords()
-                    if nvds_obj_meta.parent:
-                        parent_bbox.left = nvds_obj_meta.parent.rect_params.left
-                        parent_bbox.top = nvds_obj_meta.parent.rect_params.top
-                        parent_bbox.width = nvds_obj_meta.parent.rect_params.width
-                        parent_bbox.height = nvds_obj_meta.parent.rect_params.height
+                    object_meta = _NvDsObjectMetaImpl.from_nv_ds_object_meta(
+                        object_meta=nvds_obj_meta,
+                        frame_meta=nvds_frame_meta
+                    )
+                    parent_object_meta = object_meta.parent
+
+                    if isinstance(object_meta.bbox, BBox):
+                        bbox = BBox(
+                            x_center=object_meta.bbox.x_center,
+                            y_center=object_meta.bbox.y_center,
+                            width=object_meta.bbox.width,
+                            height=object_meta.bbox.height,
+                        )
+                        if isinstance(parent_object_meta.bbox, BBox):
+                            parent_bbox = BBox(
+                                x_center=parent_object_meta.bbox.x_center,
+                                y_center=parent_object_meta.bbox.y_center,
+                                width=parent_object_meta.bbox.width,
+                                height=parent_object_meta.bbox.height,
+                            )
+                        else:
+                            raise NotImplementedError(
+                                "You try apply preprocessing to object that have "
+                                "rotated bbox in parent object. "
+                                "Only BBox is supported now"
+                            )
                     else:
-                        parent_bbox.left = 0
-                        parent_bbox.top = 0
-                        if self._frame_params.padding:
-                            parent_bbox.left = self._frame_params.padding.left
-                            parent_bbox.top = self._frame_params.padding.top
-                        parent_bbox.width = self._frame_params.width
-                        parent_bbox.height = self._frame_params.height
+                        raise NotImplementedError(
+                            "You try apply preprocessing to rotated bbox. "
+                            "Only BBox is supported now"
+                        )
+                    if parent_object_meta.parent is not None:
+                        self.logger.warning(
+                            "Preprocessing is supported only 1 level of hierarchy."
+                        )
+
+                    user_parent_object = None
+                    if object_meta.parent is not None:
+                        user_parent_object = ObjectMeta(
+                            element_name=parent_object_meta.element_name,
+                            label=parent_object_meta.label,
+                            bbox=parent_bbox,
+                            confidence=parent_object_meta.confidence,
+                            track_id=parent_object_meta.track_id,
+                            parent=None,
+                            attributes=nvds_get_all_obj_attrs(
+                                frame_meta=nvds_frame_meta,
+                                obj_meta=parent_object_meta.ds_object_meta,
+                            )
+                        )
+
+                    user_object_meta = ObjectMeta(
+                        element_name=object_meta.element_name,
+                        label=object_meta.label,
+                        bbox=bbox,
+                        confidence=object_meta.confidence,
+                        track_id=object_meta.track_id,
+                        parent=user_parent_object,
+                        attributes=nvds_get_all_obj_attrs(
+                            frame_meta=nvds_frame_meta,
+                            obj_meta=parent_object_meta.ds_object_meta,
+                        )
+                    )
 
                     bbox = model.input.preprocess_object_meta(
-                        bbox, parent_bbox=parent_bbox
+                        object_meta=user_object_meta
                     )
 
                     rect_params = nvds_obj_meta.rect_params
