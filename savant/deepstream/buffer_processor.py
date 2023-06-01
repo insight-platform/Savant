@@ -11,7 +11,6 @@ from pygstsavantframemeta import (
 )
 
 from savant.base.input_preproc import ObjectsPreprocessing
-# from pysavantboost import ObjectsPreprocessing
 
 from savant.base.model import ObjectModel, ComplexModel
 from savant.meta.constants import PRIMARY_OBJECT_LABEL
@@ -360,10 +359,11 @@ class NvDsBufferProcessor(GstBufferProcessor):
             )
             self._fps_meter.start_time()
             self._objects_preprocessing.preprocessing(
-                element.name,
-                hash(buffer),
-                model_uid,
-                class_id
+                element_name=element.name,
+                buffer=hash(buffer),
+                model_uid=model_uid,
+                class_id=class_id,
+                output_image=model.input.preprocess_object_image.output_image
             )
             self._fps_meter.fix_time()
 
@@ -609,8 +609,8 @@ class NvDsBufferProcessor(GstBufferProcessor):
                     rect_params.height = bbox_coords.height
 
         # restore frame
-        if model.input.preprocess_object_image:
-            self._objects_preprocessing.restore_frame(hash(buffer))
+        # if model.input.preprocess_object_image:
+        #     self._objects_preprocessing.restore_frame(hash(buffer))
 
     def _is_model_input_object(
         self, element: ModelElement, nvds_obj_meta: pyds.NvDsObjectMeta

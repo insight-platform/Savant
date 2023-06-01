@@ -7,12 +7,7 @@ from typing import Any, List, Optional
 import time
 import pyds
 
-PREPROCESSING_BACKEND = 'python'
-
-if PREPROCESSING_BACKEND == 'python':
-    from savant.base.input_preproc import ObjectsPreprocessing
-else:
-    from pysavantboost import ObjectsPreprocessing
+from savant.base.input_preproc import ObjectsPreprocessing
 
 from pygstsavantframemeta import (
     add_convert_savant_frame_meta_pad_probe,

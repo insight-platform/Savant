@@ -1,4 +1,5 @@
 """Base deep learning model configuration templates."""
+import cv2
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import List, Optional, Tuple
@@ -36,20 +37,34 @@ class ModelColorFormat(Enum):
 
 @dataclass
 class OutputImage:
-    size: Tuple[int, int]
+    width: int
+    height: int
     method: str
     interpolation: str
 
     def __post_init__(self):
-        pass
+        self.method = self.method.lower()
+        if self.method not in ['fit', 'scale']:
+            raise ValueError(f'Invalid output image method: {self.method}')
+        self.interpolation = self.interpolation.lower()
+        if self.interpolation not in ['nearest', 'linear', 'cubic', 'area', 'lanczos4']:
+            raise ValueError(f'Invalid interpolation method: {self.interpolation}')
+
+        if self.interpolation == 'nearest':
+            self.cv2_interpolation = cv2.INTER_NEAREST
+        elif self.interpolation == 'linear':
+            self.cv2_interpolation = cv2.INTER_LINEAR
+        elif self.interpolation == 'cubic':
+            self.cv2_interpolation = cv2.INTER_CUBIC
+        elif self.interpolation == 'area':
+            self.cv2_interpolation = cv2.INTER_AREA
+        elif self.interpolation == 'lanczos4':
+            self.cv2_interpolation = cv2.INTER_LANCZOS4
 
 
 @dataclass
 class PreprocessObjectImage(PyFunc):
     """Object image preprocessing function configuration."""
-
-    max_image_size: int = 0
-    """Maximum image size (in pixels) for the object image."""
 
     output_image:  Optional[OutputImage] = None
 
