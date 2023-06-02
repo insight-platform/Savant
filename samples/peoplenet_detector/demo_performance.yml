@@ -37,7 +37,7 @@ parameters:
       # RGBA color value for person label's background
       person_label_bg_color: [216, 230, 255, 255]
       # RGBA color value for person label's font
-      person_label_font_color: [0, 0, 0]
+      person_label_font_color:  [0, 0, 0, 255]
       # width of person's bboxes border in pixels
       bbox_border_width: 3
       # height of overlay dashboard in pixels

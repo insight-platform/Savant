@@ -36,7 +36,7 @@ parameters:
       # RGBA color value for person label's background
       person_label_bg_color: [216, 230, 255, 255]
       # RGBA color value for person label's font
-      person_label_font_color: [0, 0, 0]
+      person_label_font_color: [0, 0, 0, 255]
       # width of person's bboxes border in pixels
       bbox_border_width: 3
       # height of overlay dashboard in pixels
@@ -122,7 +122,7 @@ pipeline:
         # specify tracking config file
         ll-config-file: ${oc.env:PROJECT_PATH}/samples/peoplenet_detector/config_tracker_NvSORT.yml
         enable_batch_process: 1
-    
+
     # analytics element realized in custom pyfunc
     - element: pyfunc
       # specify the pyfunc's python module

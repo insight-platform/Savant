@@ -11,19 +11,27 @@ parameters:
       Primary_Detector:
         Car:
           bbox:
-            color: 00FF00FF  # Green
+            border_color: 00FF00FF  # Green
+            background_color: '00000000'  # transparent
             thickness: 2
           label:
-            color: FFFFFFFF  # White
+            font_color: FFFFFFFF  # White
+            border_color: '00000000'  # transparent
+            background_color: 000000FF  # Black
             font_scale: 0.5
             thickness: 1
             # Note that the label format for Primary_Detector.Car objects
             # is overriden on a per object basis:
             # every car has the classifier result labels added on separate lines
             format: ['{label} #{track_id}']
+            position:
+              # position options are TopLeftInside / TopLeftOutside / Center
+              position: TopLeftInside
+              margin_x: 0
+              margin_y: 0
         Person:
           bbox:
-            color: 0000FFFF  # Blue
+            border_color: 0000FFFF  # Blue
             thickness: 2
 
 pipeline:
