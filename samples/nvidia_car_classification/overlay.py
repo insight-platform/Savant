@@ -39,7 +39,10 @@ class Overlay(NvDsDrawFunc):
             draw_spec = ObjectDraw(
                 bounding_box=draw_spec.bounding_box,
                 label=LabelDraw(
-                    color=draw_spec.label.color,
+                    font_color=draw_spec.label.font_color,
+                    border_color=draw_spec.label.border_color,
+                    background_color=draw_spec.label.background_color,
+                    padding=draw_spec.label.padding,
                     font_scale=draw_spec.label.font_scale,
                     thickness=draw_spec.label.thickness,
                     format=new_label_format,

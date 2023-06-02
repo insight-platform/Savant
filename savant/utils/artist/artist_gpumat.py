@@ -52,14 +52,15 @@ class ArtistGPUMat(AbstractContextManager):
         bg_color: Optional[Tuple[int, int, int, int]] = (0, 0, 0, 255),  # black
         padding: Tuple[int, int, int, int] = (0, 0, 0, 0),
         anchor_point: Position = Position.CENTER,
-    ) -> Tuple[int, int]:
-        """Add text on the frame.
+    ) -> int:
+        """Draw text, text backround box and text background box border on the frame.
+        Does not draw anything if text is empty.
 
         :param text: Display text.
         :param anchor_x: X coordinate of text position.
         :param anchor_y: Y coordinate of text position.
         :param font_scale: Font scale factor that is multiplied by the font-specific base size.
-        :param font_thickness: Thickness of the lines used to draw the text.
+        :param font_thickness: Thickness of the lines used to draw the text, >= 0.
         :param font_color: Font color, RGBA, ints in range [0;255].
         :param border_width: Border width around the text.
         :param border_color: Border color around the text, RGBA, ints in range [0;255].
@@ -69,8 +70,11 @@ class ArtistGPUMat(AbstractContextManager):
         :param anchor_point: Anchor point of a  rectangle with text.
             For example, if you select Position.CENTER, the rectangle with the text
             will be drawn so that the center of the rectangle is at (x,y).
+        :return: Coordinate of the text box bottom, even if nothing was drawn.
         """
-        self.__init_overlay()
+        draw_text = font_scale > 0 and len(text) > 0 and font_color[3] > 0
+        draw_border = border_width > 0 and border_color[3] > 0
+        draw_bg = bg_color is not None and bg_color[3] > 0
 
         text_size, baseline = cv2.getTextSize(
             text, self.font_face, font_scale, font_thickness
@@ -81,37 +85,43 @@ class ArtistGPUMat(AbstractContextManager):
         )
         text_bottom = text_y + baseline
 
-        if bg_color or border_width:
-            rect_left = text_x - border_width - padding[0]
-            rect_top = text_y - text_size[1] - border_width - padding[1]
-            rect_right = text_x + text_size[0] + border_width + padding[2]
-            rect_bottom = text_y + baseline + border_width + padding[3]
-            text_bottom = rect_bottom
+        if not draw_text:
+            return text_bottom
 
-            rect_tl = rect_left, rect_top
-            rect_br = rect_right, rect_bottom
+        self.__init_overlay()
 
-            if bg_color is not None:
-                cv2.rectangle(self.overlay, rect_tl, rect_br, bg_color, cv2.FILLED)
-            if border_width > 0:
-                cv2.rectangle(
-                    self.overlay,
-                    rect_tl,
-                    rect_br,
-                    border_color,
-                    border_width,
-                )
+        rect_left = text_x - border_width - padding[0]
+        rect_top = text_y - text_size[1] - border_width - padding[1]
+        rect_right = text_x + text_size[0] + border_width + padding[2]
+        rect_bottom = text_y + baseline + border_width + padding[3]
+        text_bottom = rect_bottom
 
-        cv2.putText(
-            self.overlay,
-            text,
-            (text_x, text_y),
-            self.font_face,
-            font_scale,
-            font_color,
-            font_thickness,
-            cv2.LINE_AA,
-        )
+        rect_tl = rect_left, rect_top
+        rect_br = rect_right, rect_bottom
+
+        if draw_bg:
+            cv2.rectangle(self.overlay, rect_tl, rect_br, bg_color, cv2.FILLED)
+
+        if draw_border:
+            cv2.rectangle(
+                self.overlay,
+                rect_tl,
+                rect_br,
+                border_color,
+                border_width,
+            )
+
+        if draw_text:
+            cv2.putText(
+                self.overlay,
+                text,
+                (text_x, text_y),
+                self.font_face,
+                font_scale,
+                font_color,
+                font_thickness,
+                cv2.LINE_AA,
+            )
         return text_bottom
 
     # pylint:disable=too-many-arguments
@@ -133,7 +143,9 @@ class ArtistGPUMat(AbstractContextManager):
         :param padding: Increase the size of the rectangle in each direction,
             value in pixels, tuple of 4 values (left, top, right, bottom).
         """
-        if border_width <= 0 and bg_color is None:
+        draw_border = border_width > 0 and border_color[3] > 0
+        draw_bg = bg_color is not None and bg_color[3] > 0
+        if not draw_border and not draw_bg:
             return
 
         if isinstance(bbox, BBox):
@@ -141,12 +153,12 @@ class ArtistGPUMat(AbstractContextManager):
                 bbox, padding, border_width
             )
 
-            if bg_color is not None:
+            if draw_bg:
                 self.frame.colRange(left, right).rowRange(top, bottom).setTo(
                     bg_color, stream=self.stream
                 )
 
-            if border_width and border_color != bg_color:
+            if draw_border and (border_color != bg_color or not draw_bg):
                 self.frame.colRange(left, right).rowRange(
                     top, top + border_width
                 ).setTo(border_color, stream=self.stream)
@@ -191,6 +203,9 @@ class ArtistGPUMat(AbstractContextManager):
         :param radius: Border radius, in px.
         :param bg_color: Background color, RGBA, ints in range [0;255].
         """
+        if bg_color[3] <= 0:
+            return
+
         self.__init_overlay()
 
         cv2.rectangle(
@@ -198,14 +213,14 @@ class ArtistGPUMat(AbstractContextManager):
             (int(bbox.left), int(bbox.top + radius)),
             (int(bbox.right), int(bbox.bottom - radius)),
             bg_color,
-            -1,
+            cv2.FILLED,
         )
         cv2.rectangle(
             self.overlay,
             (int(bbox.left + radius), int(bbox.top)),
             (int(bbox.right - radius), int(bbox.bottom)),
             bg_color,
-            -1,
+            cv2.FILLED,
         )
 
         # rounded corners: center(x, y), rotation angle
@@ -224,7 +239,7 @@ class ArtistGPUMat(AbstractContextManager):
                 0,
                 90,
                 bg_color,
-                -1,
+                cv2.FILLED,
                 cv2.LINE_AA,
             )
 
@@ -244,6 +259,8 @@ class ArtistGPUMat(AbstractContextManager):
         :param thickness: Circle line thickness.
         :param line_type: Circle line type.
         """
+        if color[3] <= 0 or (thickness <= 0 and radius <= 0):
+            return
         self.__init_overlay()
         cv2.circle(self.overlay, center, radius, color, thickness, line_type)
 
@@ -261,11 +278,16 @@ class ArtistGPUMat(AbstractContextManager):
         :param line_color: Line color, RGBA, ints in range [0;255].
         :param bg_color: Background color, RGBA, ints in range [0;255].
         """
+        draw_contour = line_width > 0 and line_color[3] > 0
+        draw_fill = bg_color is not None and bg_color[3] > 0
+        if not draw_contour and not draw_fill:
+            return
+
         self.__init_overlay()
         vertices = np.intp(vertices)
-        if bg_color is not None:
+        if draw_fill:
             cv2.drawContours(self.overlay, [vertices], 0, bg_color, cv2.FILLED)
-        if line_width:
+        if draw_contour and (not draw_fill or line_color != bg_color):
             cv2.drawContours(self.overlay, [vertices], 0, line_color, line_width)
 
     def blur(
