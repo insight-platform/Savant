@@ -41,9 +41,6 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
             for unit, objects in self.rendered_objects.items():
                 for obj, obj_draw_spec_cfg in objects.items():
                     self.draw_spec[(unit, obj)] = get_obj_draw_spec(obj_draw_spec_cfg)
-                    print(obj_draw_spec_cfg)
-                    print(self.draw_spec[(unit, obj)])
-                    print(self.draw_spec[(unit, obj)].bounding_box.background_color.rgba)
 
         else:
             default_bbox_spec = BoundingBoxDraw(

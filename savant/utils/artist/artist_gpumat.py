@@ -85,7 +85,7 @@ class ArtistGPUMat(AbstractContextManager):
         )
         text_bottom = text_y + baseline
 
-        if not draw_text:
+        if len(text) == 0:
             return text_bottom
 
         self.__init_overlay()
