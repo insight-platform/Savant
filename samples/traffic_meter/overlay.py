@@ -41,8 +41,7 @@ class Overlay(NvDsDrawFunc):
                     direction = attr_meta.name
                     artist.add_text(
                         direction,
-                        int(obj_meta.bbox.left),
-                        int(obj_meta.bbox.top) + offset,
+                        (int(obj_meta.bbox.left), int(obj_meta.bbox.top) + offset),
                         anchor_point_type=Position.LEFT_TOP,
                     )
                     offset += 20
@@ -75,16 +74,14 @@ class Overlay(NvDsDrawFunc):
         exits_n = exits_n.value if exits_n is not None else 0
         artist.add_text(
             f'Entries: {entries_n}',
-            50,
-            50,
+            (50, 50),
             2.5,
             5,
             anchor_point_type=Position.LEFT_TOP,
         )
         artist.add_text(
             f'Exits: {exits_n}',
-            600,
-            50,
+            (600, 50),
             2.5,
             5,
             anchor_point_type=Position.LEFT_TOP,
