@@ -46,6 +46,7 @@ class Overlay(NvDsDrawFunc):
                     font_scale=draw_spec.label.font_scale,
                     thickness=draw_spec.label.thickness,
                     format=new_label_format,
+                    position=draw_spec.label.position,
                 ),
                 central_dot=draw_spec.central_dot,
                 blur=draw_spec.blur,
