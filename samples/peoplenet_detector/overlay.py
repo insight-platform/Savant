@@ -121,12 +121,14 @@ class Overlay(NvDsDrawFunc):
                 border_width=self.bbox_border_width,
             )
             artist.add_text(
-                text=f'#{track_id}',
-                anchor_x=int(bbox.left) - self.bbox_border_width,
-                anchor_y=int(bbox.top) - self.bbox_border_width,
+                f'#{track_id}',
+                (
+                    int(bbox.left) - self.bbox_border_width,
+                    int(bbox.top) - self.bbox_border_width,
+                ),
                 bg_color=self.person_label_bg_color,
                 font_color=self.person_label_font_color,
-                anchor_point=Position.LEFT_BOTTOM,
+                anchor_point_type=Position.LEFT_BOTTOM,
             )
 
         pts = frame_meta.pts
@@ -150,17 +152,15 @@ class Overlay(NvDsDrawFunc):
         artist.add_graphic(self.blue_man.get_frame(pts), self.blue_sprite_tl)
         artist.add_text(
             f'{n_persons_w_face}',
-            self.green_text_tl[0],
-            self.green_text_tl[1],
+            self.green_text_tl,
             self.font_scale,
             self.counters_font_thickness,
-            anchor_point=Position.LEFT_TOP,
+            anchor_point_type=Position.LEFT_TOP,
         )
         artist.add_text(
             f'{n_persons_no_face}',
-            self.blue_text_tl[0],
-            self.blue_text_tl[1],
+            self.blue_text_tl,
             self.font_scale,
             self.counters_font_thickness,
-            anchor_point=Position.LEFT_TOP,
+            anchor_point_type=Position.LEFT_TOP,
         )
