@@ -42,8 +42,7 @@ class ArtistGPUMat(AbstractContextManager):
     def add_text(
         self,
         text: str,
-        anchor_x: int,
-        anchor_y: int,
+        anchor: Tuple[int, int],
         font_scale: float = 0.5,
         font_thickness: int = 1,
         font_color: Tuple[int, int, int, int] = (255, 255, 255, 255),  # white
@@ -51,14 +50,13 @@ class ArtistGPUMat(AbstractContextManager):
         border_color: Tuple[int, int, int, int] = (255, 0, 0, 255),  # red
         bg_color: Optional[Tuple[int, int, int, int]] = (0, 0, 0, 255),  # black
         padding: Tuple[int, int, int, int] = (0, 0, 0, 0),
-        anchor_point: Position = Position.CENTER,
+        anchor_point_type: Position = Position.CENTER,
     ) -> int:
         """Draw text, text backround box and text background box border on the frame.
         Does not draw anything if text is empty.
 
         :param text: Display text.
-        :param anchor_x: X coordinate of text position.
-        :param anchor_y: Y coordinate of text position.
+        :param anchor: X,Y coordinates of text position.
         :param font_scale: Font scale factor that is multiplied by the font-specific base size.
         :param font_thickness: Thickness of the lines used to draw the text, >= 0.
         :param font_color: Font color, RGBA, ints in range [0;255].
@@ -67,10 +65,10 @@ class ArtistGPUMat(AbstractContextManager):
         :param bg_color: Background color, RGBA, ints in range [0;255].
         :param padding: Increase the size of the rectangle around
             the text in each direction (left, top, right, bottom), in pixels.
-        :param anchor_point: Anchor point of a  rectangle with text.
+        :param anchor_point_type: Anchor point of a  rectangle with text.
             For example, if you select Position.CENTER, the rectangle with the text
             will be drawn so that the center of the rectangle is at (x,y).
-        :return: Coordinate of the text box bottom, even if nothing was drawn.
+        :return: Text box height, even if nothing was drawn.
         """
         draw_text = font_scale > 0 and len(text) > 0 and font_color[3] > 0
         draw_border = border_width > 0 and border_color[3] > 0
@@ -80,49 +78,45 @@ class ArtistGPUMat(AbstractContextManager):
             text, self.font_face, font_scale, font_thickness
         )
 
-        text_x, text_y = get_text_origin(
-            anchor_point, anchor_x, anchor_y, text_size[0], text_size[1], baseline
-        )
-        text_bottom = text_y + baseline
-
-        if len(text) == 0:
-            return text_bottom
-
-        self.__init_overlay()
-
-        rect_left = text_x - border_width - padding[0]
-        rect_top = text_y - text_size[1] - border_width - padding[1]
-        rect_right = text_x + text_size[0] + border_width + padding[2]
-        rect_bottom = text_y + baseline + border_width + padding[3]
-        text_bottom = rect_bottom
-
-        rect_tl = rect_left, rect_top
-        rect_br = rect_right, rect_bottom
-
-        if draw_bg:
-            cv2.rectangle(self.overlay, rect_tl, rect_br, bg_color, cv2.FILLED)
-
-        if draw_border:
-            cv2.rectangle(
-                self.overlay,
-                rect_tl,
-                rect_br,
-                border_color,
-                border_width,
+        if len(text) > 0:
+            text_left, text_bottom = get_text_origin(
+                anchor_point_type, anchor, text_size, baseline
             )
 
-        if draw_text:
-            cv2.putText(
-                self.overlay,
-                text,
-                (text_x, text_y),
-                self.font_face,
-                font_scale,
-                font_color,
-                font_thickness,
-                cv2.LINE_AA,
-            )
-        return text_bottom
+            self.__init_overlay()
+
+            rect_left = text_left - border_width - padding[0]
+            rect_top = text_bottom - text_size[1] - border_width - padding[1]
+            rect_right = text_left + text_size[0] + border_width + padding[2]
+            rect_bottom = text_bottom + baseline + border_width + padding[3]
+
+            rect_tl = rect_left, rect_top
+            rect_br = rect_right, rect_bottom
+
+            if draw_bg:
+                cv2.rectangle(self.overlay, rect_tl, rect_br, bg_color, cv2.FILLED)
+
+            if draw_border:
+                cv2.rectangle(
+                    self.overlay,
+                    rect_tl,
+                    rect_br,
+                    border_color,
+                    border_width,
+                )
+
+            if draw_text:
+                cv2.putText(
+                    self.overlay,
+                    text,
+                    (text_left, text_bottom),
+                    self.font_face,
+                    font_scale,
+                    font_color,
+                    font_thickness,
+                    cv2.LINE_AA,
+                )
+        return text_size[1] + baseline
 
     # pylint:disable=too-many-arguments
     def add_bbox(

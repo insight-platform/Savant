@@ -43,7 +43,7 @@ class Overlay(NvDsDrawFunc):
                         direction,
                         int(obj_meta.bbox.left),
                         int(obj_meta.bbox.top) + offset,
-                        anchor_point=Position.LEFT_TOP,
+                        anchor_point_type=Position.LEFT_TOP,
                     )
                     offset += 20
 
@@ -79,7 +79,7 @@ class Overlay(NvDsDrawFunc):
             50,
             2.5,
             5,
-            anchor_point=Position.LEFT_TOP,
+            anchor_point_type=Position.LEFT_TOP,
         )
         artist.add_text(
             f'Exits: {exits_n}',
@@ -87,5 +87,5 @@ class Overlay(NvDsDrawFunc):
             50,
             2.5,
             5,
-            anchor_point=Position.LEFT_TOP,
+            anchor_point_type=Position.LEFT_TOP,
         )

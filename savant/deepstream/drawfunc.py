@@ -11,7 +11,7 @@ from savant_rs.primitives import (
     PaddingDraw,
     ObjectDraw,
     LabelPosition,
-    LabelPositionKind
+    LabelPositionKind,
 )
 
 from savant.meta.object import ObjectMeta
@@ -41,30 +41,28 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
             for unit, objects in self.rendered_objects.items():
                 for obj, obj_draw_spec_cfg in objects.items():
                     self.draw_spec[(unit, obj)] = get_obj_draw_spec(obj_draw_spec_cfg)
-
         else:
             default_bbox_spec = BoundingBoxDraw(
-                color=ColorDraw(red=0, blue=0, green=255, alpha=255),
-                thickness=2,
+                border_color=ColorDraw(red=0, green=255, blue=0, alpha=255),
             )
-            default_text_color = ColorDraw(red=255, blue=255, green=255, alpha=255)
+            default_bg_color = ColorDraw(red=0, green=0, blue=0, alpha=255)
+            default_font_color = ColorDraw(red=255, green=255, blue=255, alpha=255)
             default_font_scale = 0.5
-            default_thickness = 1
             self.default_spec_track_id = ObjectDraw(
                 bounding_box=default_bbox_spec,
                 label=LabelDraw(
-                    color=default_text_color,
+                    font_color=default_font_color,
                     font_scale=default_font_scale,
-                    thickness=default_thickness,
+                    background_color=default_bg_color,
                     format=['{label} #{track_id}'],
                 ),
             )
             self.default_spec_no_track_id = ObjectDraw(
                 bounding_box=default_bbox_spec,
                 label=LabelDraw(
-                    color=default_text_color,
+                    font_color=default_font_color,
                     font_scale=default_font_scale,
-                    thickness=default_thickness,
+                    background_color=default_bg_color,
                     format=['{label}'],
                 ),
             )
@@ -149,39 +147,48 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
         )
 
     def _draw_label(self, obj_meta: ObjectMeta, artist: Artist, spec: LabelDraw):
-        if isinstance(obj_meta.bbox, RBBox) or spec.position == LabelPositionKind.Center:
+        if (
+            isinstance(obj_meta.bbox, RBBox)
+            or spec.position.position == LabelPositionKind.Center
+        ):
             anchor_x = int(obj_meta.bbox.x_center)
             anchor_y = int(obj_meta.bbox.y_center)
             anchor_point = Position.CENTER
         else:
-            if spec.position == LabelPositionKind.TopLeftOutside:
-                anchor_x = int(obj_meta.bbox.left) - spec.position.margin_x
-                anchor_y = int(obj_meta.bbox.top) - spec.position.margin_y
-                anchor_point=Position.LEFT_BOTTOM
-            else:
-                # consider default position as TopLeftInside
+            anchor_x = int(obj_meta.bbox.left)
+            anchor_y = int(obj_meta.bbox.top)
+            if spec.position.position == LabelPositionKind.TopLeftInside:
                 anchor_point = Position.LEFT_TOP
-                anchor_x = int(obj_meta.bbox.left) + spec.position.margin_x
-                anchor_y = int(obj_meta.bbox.top) + spec.position.margin_y
+            else:
+                # consider default position as TopLeftOutside
+                anchor_point = Position.LEFT_BOTTOM
+
+        anchor_x += spec.position.margin_x
+        anchor_y += spec.position.margin_y
 
         if spec.padding is not None:
             padding = spec.padding.padding
         else:
             padding = (0, 0, 0, 0)
 
-        for format_str in spec.format:
+        if spec.position.position == LabelPositionKind.TopLeftOutside:
+            lines_sequence = reversed(spec.format)
+            offset_sign = -1
+        else:
+            lines_sequence = spec.format
+            offset_sign = 1
+
+        for format_str in lines_sequence:
             text = format_str.format(
                 model=obj_meta.element_name,
                 label=obj_meta.draw_label,
                 confidence=obj_meta.confidence,
                 track_id=obj_meta.track_id,
             )
-
-            text_bottom = artist.add_text(
+            text_box_height = artist.add_text(
                 text=text,
-                anchor_x=anchor_x,
-                anchor_y=anchor_y,
-                anchor_point=anchor_point,
+                anchor=(anchor_x, anchor_y),
+                anchor_point_type=anchor_point,
                 font_color=spec.font_color.rgba,
                 font_scale=spec.font_scale,
                 font_thickness=spec.thickness,
@@ -190,8 +197,7 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
                 padding=padding,
                 border_width=1,
             )
-
-            anchor_y = text_bottom
+            anchor_y += offset_sign * text_box_height
 
     def _draw_central_dot(self, obj_meta: ObjectMeta, artist: Artist, spec: DotDraw):
         artist.add_circle(
