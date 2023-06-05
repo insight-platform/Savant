@@ -4,7 +4,12 @@ from enum import Enum
 from typing import Optional, Sequence, List, Tuple
 import random
 import math
-from savant_rs.primitives.geometry import PolygonalArea, Segment, IntersectionKind, Point
+from savant_rs.primitives.geometry import (
+    PolygonalArea,
+    Segment,
+    IntersectionKind,
+    Point,
+)
 
 
 class Direction(Enum):
