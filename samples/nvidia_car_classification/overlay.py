@@ -1,5 +1,5 @@
 """Draw func adds car classification models outputs: car color, car make, car type."""
-from savant_rs.primitives import (
+from savant_rs.draw_spec import (
     LabelDraw,
     ObjectDraw,
 )
@@ -11,9 +11,12 @@ class Overlay(NvDsDrawFunc):
     def override_draw_spec(
         self, object_meta: ObjectMeta, draw_spec: ObjectDraw
     ) -> ObjectDraw:
+        """Override draw spec for objects with label 'Car'.
+        Add classifier attributes labels to the object visualisation.
+        """
         if object_meta.label == 'Car':
             new_label_format = draw_spec.label.format
-            # add classifier attributes labels to the object visualisation
+
             # one attribute per line
             # if there's no specific attribute for the object on this frame
             # reserve a line for it anyway

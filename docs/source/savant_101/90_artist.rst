@@ -40,7 +40,8 @@ Another way to use the default implementation is to populate the ``rendered_obje
           <unit_name>:
             <class_label>:
               bbox:
-                color: <color_str>
+                backgound_color: <color_str>
+                border_color: <color_str>
                 thickness: <int>
                 padding:
                   left: <int>
@@ -48,7 +49,9 @@ Another way to use the default implementation is to populate the ``rendered_obje
                   right: <int>
                   bottom: <int>
               label:
-                color: <color_str>
+                background_color: <color_str>
+                border_color: <color_str>
+                font_color: <color_str>
                 font_scale: <float>
                 thickness: <int>
                 format:
@@ -56,6 +59,15 @@ Another way to use the default implementation is to populate the ``rendered_obje
                   - "Confidence: {confidence:.2f}"
                   - "Track ID: {track_id}"
                   - "Model: {model}"
+                padding:
+                  left: <int>
+                  top: <int>
+                  right: <int>
+                  bottom: <int>
+                position:
+                  position: TopLeftInside / TopLeftOutside / Center
+                  margin_x: <int>
+                  margin_y: <int>
               central_dot:
                 color: <color_str>
                 radius: <int>
@@ -64,7 +76,7 @@ Another way to use the default implementation is to populate the ``rendered_obje
 where:
 
 * ``<unit_name>`` the name of the unit defining the objects;
-* ``<class_label>`` the label of the object class set by a detector;
+* ``<class_label>`` the label of the object class set by a detector, draw label is used in place of the class label if it is set by the user;
 * ``<color_str>`` color used to draw the specified element, color is defined as a RGBA hex string (without the '#' as it marks a comment in YAML), e.g. ``"00ff00ff"`` for green;
 
 Any of the elements in the render specification (``bbox``, ``label``, ``central_dot``, ``blur``) can be omitted, if the corresponding element is not required to be rendered. Blur is false by default.

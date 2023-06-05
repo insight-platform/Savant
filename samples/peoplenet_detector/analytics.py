@@ -53,6 +53,18 @@ class Analytics(NvDsPyFuncPlugin):
         else:
             person_w_face_idxs = []
 
+        # assign draw labels to persons based on whether a face was matched to them
+        # these draw labels are used in the config to define different draw specs
+        # for objects of the same class
+        person_idx = 0
+        for obj_meta in frame_meta.objects:
+            if obj_meta.label == 'person':
+                if person_idx in person_w_face_idxs:
+                    obj_meta.draw_label = 'person_face'
+                else:
+                    obj_meta.draw_label = 'person_noface'
+                person_idx += 1
+
         pts = frame_meta.pts
         src_id = frame_meta.source_id
 
@@ -67,9 +79,6 @@ class Analytics(NvDsPyFuncPlugin):
         # (the tracker removes all objects it considers invalid),
         # see tracker config probationAge parameter
         if primary_meta_object:
-            primary_meta_object.add_attr_meta(
-                'analytics', 'person_w_face_idxs', person_w_face_idxs
-            )
             primary_meta_object.add_attr_meta(
                 'analytics', 'n_persons_w_face', n_persons_w_face
             )
