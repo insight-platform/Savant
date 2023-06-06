@@ -161,6 +161,8 @@ As for now, we provide images for x86 architecture and for Jetson hardware.
    :caption: Advanced Topics
 
    advanced_topics/0_batching
+   advanced_topics/0_pipeline_capacity
+   advanced_topics/0_dead_stream_eviction
    advanced_topics/1_custom_tracking
    advanced_topics/3_custom_roi
    advanced_topics/3_skipping_frames
