@@ -7,7 +7,7 @@ import numpy as np
 from savant.meta.bbox import BBox, RBBox
 
 
-class CpuImage:
+class CPUImage:
     def __init__(self, image: np.ndarray):
         """Image data container.
 
@@ -48,7 +48,7 @@ class CpuImage:
         """
         return self._np_image.shape[1]
 
-    def cut(self, bbox: Union[BBox, RBBox]) -> Tuple['CpuImage', Union[BBox, RBBox]]:
+    def cut(self, bbox: Union[BBox, RBBox]) -> Tuple['CPUImage', Union[BBox, RBBox]]:
         """Cuts image by bbox and padding.
         :param bbox: cutout bbox
         :return:
@@ -65,7 +65,7 @@ class CpuImage:
                 f"image size {self.width}x{self.height}"
             cut_roi = self._np_image[cut_top:cut_bottom, cut_left:cut_right, :]
             return \
-                CpuImage(image=cut_roi), \
+                CPUImage(image=cut_roi), \
                 BBox(
                     x_center=cut_roi.shape[1] / 2,
                     y_center=cut_roi.shape[0] / 2,
@@ -108,10 +108,10 @@ class CpuImage:
                 angle=bbox.angle,
             )
 
-            return CpuImage(res_image), res_bbox
+            return CPUImage(res_image), res_bbox
         raise ValueError(f"Unknown bbox type {type(bbox)}")
 
-    def paste(self, image: 'CpuImage', point: Tuple[int, int]):
+    def paste(self, image: 'CPUImage', point: Tuple[int, int]):
         """Pastes image on current image.
 
         :param image: image to paste
@@ -119,7 +119,7 @@ class CpuImage:
         self._np_image[point[1]:point[1] + image.height, point[0]:point[0] + image.width] \
             = image._np_image
 
-    def concat(self, image: 'CpuImage', axis: int = 0) -> 'CpuImage':
+    def concat(self, image: 'CPUImage', axis: int = 0) -> 'CPUImage':
         """Concatenates images along axis.
 
         :param image: image to concatenate
@@ -133,13 +133,13 @@ class CpuImage:
             assert self.width == image.width, \
                 f"Images have different height {self.width} != {image.height}"
 
-            return CpuImage(
+            return CPUImage(
                 image=np.concatenate([self._np_image, image.np_array], axis=0)
             )
         elif axis == 1:
             assert self.height == image.height, \
                 f"Images have different width {self.height} != {image.height}"
-            return CpuImage(
+            return CPUImage(
                 image=np.concatenate([self._np_image, image.np_array], axis=1)
             )
         else:
@@ -149,7 +149,7 @@ class CpuImage:
             self,
             angle: float,
             bbox: Optional[RBBox] = None
-    ) -> Tuple['CpuImage', RBBox]:
+    ) -> Tuple['CPUImage', RBBox]:
         """Rotates image on angle.
 
         :param angle: angle to rotate in degrees
@@ -167,7 +167,7 @@ class CpuImage:
         )
 
         if bbox is not None:
-            return CpuImage(res), \
+            return CPUImage(res), \
                 RBBox(
                     x_center=resolution[0] / 2,
                     y_center=resolution[1] / 2,
@@ -175,7 +175,7 @@ class CpuImage:
                     height=bbox.height,
                     angle=bbox.angle - angle
                 )
-        return CpuImage(image=res), \
+        return CPUImage(image=res), \
             RBBox(
                 x_center=resolution[0] / 2,
                 y_center=resolution[1] / 2,
@@ -189,7 +189,7 @@ class CpuImage:
          resolution: Tuple[int, int],
          method: str = 'fit',
          interpolation: int = cv2.INTER_LINEAR
-    ) -> 'CpuImage':
+    ) -> 'CPUImage':
         """Resizes image to resolution.
 
         :param resolution: resolution to resize [width, height]
@@ -225,15 +225,15 @@ class CpuImage:
             start_col:start_col + new_resolution[0],
             :
         ] = resized_image
-        return CpuImage(image=res)
+        return CPUImage(image=res)
 
 
-class GpuImage:
+class GPUImage:
     """Image data container. GPU version.
     """
     def __init__(
             self,
-            image: Union[cv2.cuda.GpuMat, np.ndarray, CpuImage],
+            image: Union[cv2.cuda.GpuMat, np.ndarray, CPUImage],
             cuda_stream: Optional[cv2.cuda.Stream] = cv2.cuda.Stream_Null()
     ):
         """Image data container.
@@ -245,7 +245,7 @@ class GpuImage:
             gpu_image = cv2.cuda_GpuMat()
             gpu_image.upload(image)
             self._gpu_image = gpu_image
-        elif isinstance(image, CpuImage):
+        elif isinstance(image, CPUImage):
             gpu_image = cv2.cuda_GpuMat()
             gpu_image.upload(image.np_array)
             self._gpu_image = gpu_image
@@ -274,10 +274,10 @@ class GpuImage:
         """
         return self._gpu_image.size()[1]
 
-    def to_cpu(self) -> CpuImage:
-        return CpuImage(self._gpu_image.download())
+    def to_cpu(self) -> CPUImage:
+        return CPUImage(self._gpu_image.download())
 
-    def cut(self, bbox: Union[BBox, RBBox], ) -> Tuple['GpuImage', Union[BBox, RBBox]]:
+    def cut(self, bbox: Union[BBox, RBBox]) -> Tuple['GPUImage', Union[BBox, RBBox]]:
         """Cuts image by bbox
         :param bbox: cutout bbox
         :return:
@@ -298,7 +298,7 @@ class GpuImage:
             res_image = cv2.cuda.GpuMat(size=cut_roi.size(), type=cut_roi.type())
             cut_roi.copyTo(stream=self._cuda_stream, dst=res_image)
             return \
-                GpuImage(image=res_image, cuda_stream=self._cuda_stream), \
+                GPUImage(image=res_image, cuda_stream=self._cuda_stream), \
                 BBox(
                     x_center=cut_roi.size()[0] / 2,
                     y_center=cut_roi.size()[1] / 2,
@@ -351,10 +351,10 @@ class GpuImage:
                 angle=bbox.angle,
             )
 
-            return GpuImage(res_image, cuda_stream=self._cuda_stream), res_bbox
+            return GPUImage(res_image, cuda_stream=self._cuda_stream), res_bbox
         raise ValueError(f"Unknown bbox type {type(bbox)}")
 
-    def concat(self, image: 'GpuImage', axis: int = 0) -> 'GpuImage':
+    def concat(self, image: 'GPUImage', axis: int = 0) -> 'GPUImage':
         """Concatenates images along axis.
 
         :param image: image to concatenate
@@ -381,7 +381,7 @@ class GpuImage:
                 stream=self._cuda_stream,
                 dst=res_image.rowRange(self.height, res_rows)
             )
-            return GpuImage(image=res_image, cuda_stream=self._cuda_stream)
+            return GPUImage(image=res_image, cuda_stream=self._cuda_stream)
         elif axis == 1:
             assert self.height == image.height, \
                 f"Images have different width {self.height} != {image.height}"
@@ -398,11 +398,11 @@ class GpuImage:
                 stream=self._cuda_stream,
                 dst=res_image.colRange(self.width, res_cols)
             )
-            return GpuImage(image=res_image, cuda_stream=self._cuda_stream)
+            return GPUImage(image=res_image, cuda_stream=self._cuda_stream)
         else:
             raise ValueError(f"Unknown axis {axis}")
 
-    def paste(self, image: 'GpuImage', point: Tuple[int, int]):
+    def paste(self, image: 'GPUImage', point: Tuple[int, int]):
         """Pastes image on current image.
 
         :param image: image to paste
@@ -420,7 +420,7 @@ class GpuImage:
             self,
             angle: float,
             bbox: Optional[RBBox] = None
-    ) -> Tuple['GpuImage', RBBox]:
+    ) -> Tuple['GPUImage', RBBox]:
         """Rotates image on angle. If.
 
         :param angle: angle to rotate in degrees
@@ -439,7 +439,7 @@ class GpuImage:
         )
 
         if bbox is not None:
-            return GpuImage(image=res, cuda_stream=self._cuda_stream), \
+            return GPUImage(image=res, cuda_stream=self._cuda_stream), \
                 RBBox(
                     x_center=resolution[0] / 2,
                     y_center=resolution[1] / 2,
@@ -447,7 +447,7 @@ class GpuImage:
                     height=bbox.height,
                     angle=bbox.angle - angle
                 )
-        return GpuImage(image=res, cuda_stream=self._cuda_stream), \
+        return GPUImage(image=res, cuda_stream=self._cuda_stream), \
             RBBox(
                 x_center=resolution[0] / 2,
                 y_center=resolution[1] / 2,
@@ -461,7 +461,7 @@ class GpuImage:
          resolution: Tuple[int, int],
          method: str = 'fit',
          interpolation: int = cv2.INTER_LINEAR
-    ) -> 'GpuImage':
+    ) -> 'GPUImage':
         """Resizes image to resolution.
 
         :param resolution: resolution to resize [width, height]
@@ -500,11 +500,11 @@ class GpuImage:
             stream=self._cuda_stream,
             dst=res_roi
         )
-        return GpuImage(image=res, cuda_stream=self._cuda_stream)
+        return GPUImage(image=res, cuda_stream=self._cuda_stream)
 
 
 def get_rotation_matrix(
-        image: Union[CpuImage, GpuImage],
+        image: Union[CPUImage, GPUImage],
         angle: float,
         rotation_point: Tuple[float, float]
 ):

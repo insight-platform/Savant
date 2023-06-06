@@ -15,10 +15,10 @@ General utilities
 
     registry.Registry
     model_registry.ModelObjectRegistry
-
+    image.CPUImage
+    image.GPUImage
     artist.Position
     artist.Artist
-
     logging.LoggerMixin
 
 DeepStream utilities

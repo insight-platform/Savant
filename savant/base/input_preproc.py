@@ -14,7 +14,7 @@ from savant.deepstream.opencv_utils import nvds_to_gpu_mat
 from savant.deepstream.utils import nvds_frame_meta_iterator, nvds_obj_meta_iterator
 from savant.meta.bbox import BBox
 from savant.meta.object import ObjectMeta
-from savant.utils.artist.image import GpuImage
+from savant.utils.image import GPUImage
 
 
 class BasePreprocessObjectMeta(BasePyFuncCallableImpl):
@@ -27,7 +27,7 @@ class BasePreprocessObjectMeta(BasePyFuncCallableImpl):
     ) -> BBox:
         """Transforms object meta.
 
-        :param object_meta: original bbox
+        :param object_meta: original object meta
         :return: changed bbox
         """
 
@@ -38,9 +38,9 @@ class BasePreprocessObjectImage(BasePyFuncCallableImpl):
     def __call__(
         self,
         object_meta: ObjectMeta,
-        frame_image: GpuImage,
+        frame_image: GPUImage,
         cuda_stream: cv2.cuda.Stream
-    ) -> GpuImage:
+    ) -> GPUImage:
         """Transforms object image.
 
         :param object_meta: object meta
@@ -58,7 +58,7 @@ class ObjectsPreprocessing:
     def add_preprocessing_function(
             self,
             element_name: str,
-            preprocessing_func: Callable[[ObjectMeta, GpuImage, cv2.cuda.Stream], GpuImage]
+            preprocessing_func: Callable[[ObjectMeta, GPUImage, cv2.cuda.Stream], GPUImage]
     ):
         """Add preprocessing function.
 
@@ -98,11 +98,11 @@ class ObjectsPreprocessing:
                 row_height = 0
                 cuda_stream = cuda_streams.get_cuda_stream(nvds_frame_meta)
                 with nvds_to_gpu_mat(buffer, nvds_frame_meta) as frame_mat:
-                    frame_image = GpuImage(
+                    frame_image = GPUImage(
                         image=frame_mat,
                         cuda_stream=cuda_stream
                     )
-                    copy_frame_image = GpuImage(
+                    copy_frame_image = GPUImage(
                         image=frame_mat.clone(),
                         cuda_stream=cuda_stream
                     )
@@ -123,7 +123,7 @@ class ObjectsPreprocessing:
                             frame_image=copy_frame_image,
                             cuda_stream=cuda_stream
                         )
-                        if not isinstance(preprocess_image, GpuImage):
+                        if not isinstance(preprocess_image, GPUImage):
                             raise ValueError("Preprocessing function must "
                                              "return Image object.")
                         if output_image is not None:
