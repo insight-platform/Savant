@@ -5,17 +5,17 @@ Preprocessing for models
 Often, you may require the use of non-standard preprocessing methods.
 For instance, when working with a detection model that can identify rotated objects,
 you might come across an object that requires special preprocessing.
-In such cases, for the classification model, it is necessary to extract the object
+In such cases, for the classification model, it is necessary to cut the object
 and rotate it to enhance the classification accuracy.
 
 These scenarios call for the implementation of non-standard image processing
 algorithms to prepare the image before inferring the model.
 
-There are two ways of preprocessing in the Savant framework: meta information
-preprocessing (bounding boxes) and image preprocessing.
+There are two ways of preprocessing in the Savant framework: object meta preprocessing
+and object image preprocessing.
 
 
-Preprocessing object meta
+Object meta preprocessing
 -------------------------
 
 If you don't need to make any changes to the image, or if you are working with
@@ -24,13 +24,29 @@ For example, take its top half or add padding. In this case it is enough to writ
 own class inherited from `BasePreprocessObjectMeta <https://insight-platform.github.io/Savant/reference/api/generated/savant.base.input_preproc.BasePreprocessObjectMeta.html#basepreprocessobjectmeta>`_ class and
 implement __call__ magic method.
 
+.. code-block:: python
+
+    class BasePreprocessObjectMeta(BasePyFuncCallableImpl):
+        """Object meta preprocessing interface."""
+
+        @abstractmethod
+        def __call__(
+            self,
+            object_meta: ObjectMeta,
+        ) -> BBox:
+            """Transforms object meta.
+
+            :param object_meta: original object meta
+            :return: changed bbox
+            """
+
 Before model inference, custom preprocessing will be applied to all objects on frames. A copy of all
 object meta-information is passed to this method. Note that changes in object meta-information
 in preprocessing are not passed and do not affect the meta-information that will be after
 model inference. The method is called for each object from the list of objects selected
 for inference, based on the information you specified in the ``object`` of ``input`` section.
 
-You can read about the metadata methods in the `"Working With Metadata"
+You can read about the working with metadata in the `"Working With Metadata"
 <https://insight-platform.github.io/Savant/savant_101/75_working_with_metadata.html>`_ section.
 The method must return the instance of the class
 `BBox <https://insight-platform.github.io/Savant/reference/api/generated/savant.meta.bbox.BBox.html#bbox>`_
@@ -52,7 +68,7 @@ Example config:
             module: person_detector.input_preproc
             class_name: TopCrop
 
-Preprocessing object image
+Object image preprocessing
 --------------------------
 
 This kind of preprocessing opens up more possibilities, because it allows you to
@@ -85,7 +101,7 @@ The method passes meta information about the object, the whole frame (image),
 as an instance of the GpuImage class and cuda stream. You can use cuda stream
 to call asynchronous functions from OpenCV library. No additional synchronization
 is required from you to complete all operations, it will be done automatically before
-transferring images to the inference model. Each object uses its own thread for
+transferring images to the inference model. Each object uses its own stream for
 processing. This allows the processing of objects on the same frame in parallel
 with the most efficient use of GPU resources.
 
@@ -130,7 +146,7 @@ to perform basic operations on the GPU
 GPUImage class methods:
 
 - to_cpu - copies image from GPU memory into RAM. The image is returned as instance of CPUImage class.
-- сut - cuts out of the image part defined by normal or rotated box. If a rotated box is specified, it cuts out part of the image by the rectangle enclosing the rotated box. The method returns the cropped part of the image and the box with coordinates relative to the new image.
+- сut - cuts out of the image part defined by normal or rotated box. If a rotated box is specified, it cuts out part of the object by the rectangle enclosing the rotated box. The method returns the cut part of the image and the box with coordinates relative to the new image.
 - concat - allows you to combine two images into one. The first image is the image from which this method is called, the second is the image that is passed to the method. You can specify whether images should be vertically or horizontally joined.
 - paste - inserts the image into the current image. The insertion place is specified as a point on the upper left corner of the inserted image.
 - rotate - rotates the image by a specified angle. You can also pass an object bounding box to the method, so that it is rotated together with the image. The method returns the rotated image and the box.
@@ -138,7 +154,7 @@ GPUImage class methods:
 
 
 `CPUImage <https://insight-platform.github.io/Savant/reference/api/generated/savant.utils.image.CPUImage.html#cpuimage>`_ has the same methods as GPUImage, but they work with images in RAM,
-instead gpu_nat property it has `np_array` property, which returns an instance of the numpy array
+instead `gpu_mat` property it has `np_array` property, which returns an instance of the numpy array
 and instead to_cpu method it has to_gpu method, which copies image from RAM into GPU memory.
 
 Using these basic methods you can do most of the necessary transformations.
