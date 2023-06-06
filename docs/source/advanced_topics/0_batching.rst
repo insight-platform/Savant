@@ -1,7 +1,7 @@
 Batching
 ========
 
-Batching is an important function influencing the performance of the pipeline a lot. Inference units utilize batching to process images more efficiently. Primary models (which operate on the whole image) consider the batch as a number of frames simultaneously passed to the model. Secondary models consider the batch as a number of frames simultaneously passed to the model.
+Batching is an important function influencing the performance of the pipeline a lot. Inference units utilize batching to process images more efficiently. Primary models (which operate on the whole image) consider the batch as a number of frames simultaneously passed to the model. Secondary models consider the batch as a number of objects simultaneously passed to the model.
 
 Primary Batching
 ----------------
@@ -12,7 +12,7 @@ Increasing the batch size may not improve performance depending on the primary m
 
 The pipeline configuration file has parameters that regulate the batch size. They are ``batch_size`` and ``batched_push_timeout``.
 
-The ``batch_size`` parameter may be configured for the first inference element or globally. However, the same value must be configured for the first inference element when it is configured globally. The global configuration is usually necessary when the pipeline doesn't include inference elements; however, it benefits from batching somehow. E.g., if the code uses asynchronous cuda operations, batched processing may result in better performance. However, usually, you must specify the ``batch_size`` parameter for the first inference element. By default, the value for the parameter is set to ``1``.
+The ``batch_size`` parameter may be configured for the first inference element or globally. However, the same value must be configured for the first inference element when it is configured globally. The global configuration is usually necessary when the pipeline doesn't include inference elements; however, it benefits from batching anyway. E.g., if the code uses asynchronous cuda operations, batched processing may result in better performance. However, usually, you must specify the ``batch_size`` parameter for the first inference element. By default, the value for the parameter is set to ``1``.
 
 The ``batched_push_timeout`` defines how long the pipeline waits until the batch is full. The smaller value decreases latency, while the larger one results in greater processing speed. Typically, when handling the real-time streams at 30 FPS, you need to set ``batched_push_timeout`` to ``35000-40000`` (``35-40`` ms). However, when injecting video from file sources, keep it as low as ``1000000`` (``1`` ms).
 

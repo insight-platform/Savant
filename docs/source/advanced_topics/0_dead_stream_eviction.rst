@@ -1,7 +1,7 @@
 Dead Streams Eviction
 =====================
 
-Savant automatically evicts dead streams. You know about such evictions by receiving corresponding events (via designated callbacks) in your Pyfuncs: normally, you do not need to deal with evictions somehow. Instead, configuration parameters specified per source tune how frequently Savant checks the idle streams and how long the stream can be inactive before being considered dead.
+Savant automatically evicts dead streams. You know about such evictions by receiving corresponding events (via designated callbacks) in your Pyfuncs: normally, you do not need to manually deal with evictions. Instead, configuration parameters specified per source tune how frequently Savant checks the idle streams and how long the stream can be inactive before being considered dead.
 
 The behavior is configured with the following parameters specified in the YAML configuration file per source:
 
