@@ -66,7 +66,7 @@ class OutputImage:
 class PreprocessObjectImage(PyFunc):
     """Object image preprocessing function configuration."""
 
-    output_image:  Optional[OutputImage] = None
+    output_image: Optional[OutputImage] = None
 
 
 @dataclass

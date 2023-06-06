@@ -34,12 +34,13 @@ class BasePreprocessObjectMeta(BasePyFuncCallableImpl):
 
 class BasePreprocessObjectImage(BasePyFuncCallableImpl):
     """Object image preprocessing interface."""
+
     @abstractmethod
     def __call__(
         self,
         object_meta: ObjectMeta,
         frame_image: GPUImage,
-        cuda_stream: cv2.cuda.Stream
+        cuda_stream: cv2.cuda.Stream,
     ) -> GPUImage:
         """Transforms object image.
 
@@ -50,15 +51,14 @@ class BasePreprocessObjectImage(BasePyFuncCallableImpl):
 
 
 class ObjectsPreprocessing:
-
     def __init__(self):
         self._preprocessing_functions = {}
         self._frames_map = {}
 
     def add_preprocessing_function(
-            self,
-            element_name: str,
-            preprocessing_func: Callable[[ObjectMeta, GPUImage, cv2.cuda.Stream], GPUImage]
+        self,
+        element_name: str,
+        preprocessing_func: Callable[[ObjectMeta, GPUImage, cv2.cuda.Stream], GPUImage],
     ):
         """Add preprocessing function.
 
@@ -68,12 +68,12 @@ class ObjectsPreprocessing:
         self._preprocessing_functions[element_name] = preprocessing_func
 
     def preprocessing(
-            self,
-            element_name: str,
-            buffer: Gst.Buffer,
-            model_uid: int,
-            class_id: int,
-            output_image: Optional[OutputImage] = None,
+        self,
+        element_name: str,
+        buffer: Gst.Buffer,
+        model_uid: int,
+        class_id: int,
+        output_image: Optional[OutputImage] = None,
     ):
         """Preprocesses objects by using user function.
 
@@ -86,7 +86,7 @@ class ObjectsPreprocessing:
         """
         preprocessing_func = self._preprocessing_functions.get(element_name)
         if preprocessing_func is None:
-            raise ValueError(f"Cannot find preprocessing function for {element_name}")
+            raise ValueError(f'Cannot find preprocessing function for {element_name}')
 
         self._frames_map[buffer] = {}
 
@@ -98,39 +98,36 @@ class ObjectsPreprocessing:
                 row_height = 0
                 cuda_stream = cuda_streams.get_cuda_stream(nvds_frame_meta)
                 with nvds_to_gpu_mat(buffer, nvds_frame_meta) as frame_mat:
-                    frame_image = GPUImage(
-                        image=frame_mat,
-                        cuda_stream=cuda_stream
-                    )
+                    frame_image = GPUImage(image=frame_mat, cuda_stream=cuda_stream)
                     copy_frame_image = GPUImage(
-                        image=frame_mat.clone(),
-                        cuda_stream=cuda_stream
+                        image=frame_mat.clone(), cuda_stream=cuda_stream
                     )
-                    self._frames_map[buffer][nvds_frame_meta.batch_id] = \
-                        copy_frame_image
+                    self._frames_map[buffer][
+                        nvds_frame_meta.batch_id
+                    ] = copy_frame_image
                     for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
                         if nvds_obj_meta.class_id != class_id:
                             continue
                         if nvds_obj_meta.unique_component_id != model_uid:
                             continue
                         object_meta = _NvDsObjectMetaImpl.from_nv_ds_object_meta(
-                            object_meta=nvds_obj_meta,
-                            frame_meta=nvds_frame_meta
+                            object_meta=nvds_obj_meta, frame_meta=nvds_frame_meta
                         )
 
                         preprocess_image = preprocessing_func(
                             object_meta=object_meta,
                             frame_image=copy_frame_image,
-                            cuda_stream=cuda_stream
+                            cuda_stream=cuda_stream,
                         )
                         if not isinstance(preprocess_image, GPUImage):
-                            raise ValueError("Preprocessing function must "
-                                             "return Image object.")
+                            raise ValueError(
+                                'Preprocessing function must ' 'return Image object.'
+                            )
                         if output_image is not None:
                             preprocess_image = preprocess_image.resize(
                                 resolution=(output_image.width, output_image.height),
                                 method=output_image.method,
-                                interpolation=output_image.cv2_interpolation
+                                interpolation=output_image.cv2_interpolation,
                             )
                         if left + preprocess_image.width > frame_image.width:
                             left = 0
@@ -139,11 +136,13 @@ class ObjectsPreprocessing:
                             top += row_height
                             row_height = 0
                         if top >= frame_image.height:
-                            raise ValueError("There is no place on frame "
-                                             "to put object image.")
+                            raise ValueError(
+                                'There is no place on frame ' 'to put object image.'
+                            )
                         if top + preprocess_image.height > frame_image.height:
-                            raise ValueError("There is no place on frame "
-                                             "to put object image.")
+                            raise ValueError(
+                                'There is no place on frame ' 'to put object image.'
+                            )
                         if preprocess_image.height > row_height:
                             row_height = preprocess_image.height
 
@@ -158,5 +157,3 @@ class ObjectsPreprocessing:
                 restore_frame_image.gpu_mat.copyTo(frame_mat)
 
         self._frames_map.pop(buffer)
-
-

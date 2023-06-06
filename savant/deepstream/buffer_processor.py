@@ -328,8 +328,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                     #  through the center point during meta preprocessing.
 
                     object_meta = _NvDsObjectMetaImpl.from_nv_ds_object_meta(
-                        object_meta=nvds_obj_meta,
-                        frame_meta=nvds_frame_meta
+                        object_meta=nvds_obj_meta, frame_meta=nvds_frame_meta
                     )
                     parent_object_meta = object_meta.parent
 
@@ -349,18 +348,18 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                             )
                         else:
                             raise NotImplementedError(
-                                "You try apply preprocessing to object that have "
-                                "rotated bbox in parent object. "
-                                "Only BBox is supported now"
+                                'You try apply preprocessing to object that have '
+                                'rotated bbox in parent object. '
+                                'Only BBox is supported now'
                             )
                     else:
                         raise NotImplementedError(
-                            "You try apply preprocessing to rotated bbox. "
-                            "Only BBox is supported now"
+                            'You try apply preprocessing to rotated bbox. '
+                            'Only BBox is supported now'
                         )
                     if parent_object_meta.parent is not None:
                         self.logger.warning(
-                            "Preprocessing is supported only 1 level of hierarchy."
+                            'Preprocessing is supported only 1 level of hierarchy.'
                         )
 
                     user_parent_object = None
@@ -375,7 +374,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                             attributes=nvds_get_all_obj_attrs(
                                 frame_meta=nvds_frame_meta,
                                 obj_meta=parent_object_meta.ds_object_meta,
-                            )
+                            ),
                         )
 
                     user_object_meta = ObjectMeta(
@@ -388,7 +387,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                         attributes=nvds_get_all_obj_attrs(
                             frame_meta=nvds_frame_meta,
                             obj_meta=parent_object_meta.ds_object_meta,
-                        )
+                        ),
                     )
 
                     bbox = model.input.preprocess_object_meta(
@@ -405,15 +404,13 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
             model_uid, class_id = self._model_object_registry.get_model_object_ids(
                 model.input.object
             )
-            self._fps_meter.start_time()
             self._objects_preprocessing.preprocessing(
                 element_name=element.name,
                 buffer=hash(buffer),
                 model_uid=model_uid,
                 class_id=class_id,
-                output_image=model.input.preprocess_object_image.output_image
+                output_image=model.input.preprocess_object_image.output_image,
             )
-            self._fps_meter.fix_time()
 
     def prepare_element_output(self, element: PipelineElement, buffer: Gst.Buffer):
         """Model output postprocessing.
@@ -657,8 +654,8 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                     rect_params.height = bbox_coords.height
 
         # restore frame
-        # if model.input.preprocess_object_image:
-        #     self._objects_preprocessing.restore_frame(hash(buffer))
+        if model.input.preprocess_object_image:
+            self._objects_preprocessing.restore_frame(hash(buffer))
 
     def _is_model_input_object(
         self, element: ModelElement, nvds_obj_meta: pyds.NvDsObjectMeta

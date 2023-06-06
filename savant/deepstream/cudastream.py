@@ -5,6 +5,7 @@ from savant.utils.logging import LoggerMixin
 
 class CudaStreams(LoggerMixin):
     """Class for managing CUDA streams for asynchronous frame processing."""
+
     def __init__(self):
         super().__init__()
         self.frame_streams = {}

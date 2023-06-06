@@ -88,9 +88,10 @@ class BBox(BaseBBox):
                 [self.left, self.top],
                 [self.right, self.top],
                 [self.right, self.bottom],
-                [self.left, self.bottom]
+                [self.left, self.bottom],
             ]
         )
+
 
 @dataclass
 class RBBox(BaseBBox):
@@ -134,11 +135,12 @@ class RBBox(BaseBBox):
         rotation_matrix = np.array([[c, -s], [s, c]])
         pts = np.array(
             [
-                [- self.width / 2, - self.height / 2],
+                [-self.width / 2, -self.height / 2],
                 [self.width / 2, -self.height / 2],
                 [self.width / 2, self.height / 2],
-                [-self.width / 2, self.height / 2]
-            ])
+                [-self.width / 2, self.height / 2],
+            ]
+        )
         c_point = np.array([self.x_center, self.y_center])
         res_matmult = np.matmul(pts, rotation_matrix)
         rect_points = c_point + res_matmult
@@ -157,5 +159,5 @@ class RBBox(BaseBBox):
             x_center=bbox_aligned_x_center,
             y_center=bbox_aligned_y_center,
             width=bbox_aligned_width,
-            height=bbox_aligned_height
+            height=bbox_aligned_height,
         )
