@@ -4,10 +4,10 @@ from typing import Any, Dict
 import pyds
 
 from savant.config.schema import PipelineElement
+from savant.deepstream.runner import NvDsPipelineRunner
 from savant.gstreamer import Gst  # noqa:F401
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
 from savant.gstreamer.element_factory import GstElementFactory
-from savant.gstreamer.runner import GstPipelineRunner
 from savant.utils.logging import get_logger
 from savant.utils.platform import is_aarch64
 
@@ -35,7 +35,7 @@ def check_encoder_is_available(parameters: Dict[str, Any]) -> bool:
     elements = [
         PipelineElement(
             'videotestsrc',
-            properties={'num-buffers': 50},
+            properties={'num-buffers': 1},
         ),
         PipelineElement(
             'capsfilter',
@@ -64,7 +64,7 @@ def check_encoder_is_available(parameters: Dict[str, Any]) -> bool:
             assert last_gst_element.link(gst_element)
         last_gst_element = gst_element
 
-    with GstPipelineRunner(pipeline) as runner:
+    with NvDsPipelineRunner(pipeline) as runner:
         while runner._is_running:
             time.sleep(0.1)
         if runner._error is not None:
