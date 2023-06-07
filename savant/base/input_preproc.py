@@ -147,6 +147,10 @@ class ObjectsPreprocessing:
                             row_height = preprocess_image.height
 
                         frame_image.paste(preprocess_image, (left, top))
+                        nvds_obj_meta.rect_params.top = top
+                        nvds_obj_meta.rect_params.left = left
+                        nvds_obj_meta.rect_params.width = preprocess_image.width
+                        nvds_obj_meta.rect_params.height = preprocess_image.height
                         left += preprocess_image.width
 
     def restore_frame(self, buffer: Gst.Buffer):
