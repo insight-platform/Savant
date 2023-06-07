@@ -366,6 +366,12 @@ def pictures_source(
     help='Calculate DTS for frames. Set this flag when the source has B-frames.',
     show_default=True,
 )
+@click.option(
+    '--buffer-max-bytes',
+    default=10485760,
+    help='Maximum amount of data in the buffer.',
+    show_default=True,
+)
 @adapter_docker_image_option('gstreamer')
 @click.argument('rtsp_uri', required=True)
 def rtsp_source(
@@ -376,6 +382,7 @@ def rtsp_source(
     sync: bool,
     sync_delay: Optional[int],
     calculate_dts: bool,
+    buffer_max_bytes: int,
     docker_image: str,
     fps_period_frames: Optional[int],
     fps_period_seconds: Optional[float],
@@ -392,6 +399,7 @@ def rtsp_source(
     ) + [
         f'RTSP_URI={rtsp_uri}',
         f'CALCULATE_DTS={calculate_dts}',
+        f'BUFFER_MAX_BYTES={buffer_max_bytes}',
     ]
     if sync and sync_delay is not None:
         envs.append(f'SYNC_DELAY={sync_delay}')
