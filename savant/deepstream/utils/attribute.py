@@ -88,10 +88,7 @@ def nvds_get_all_obj_attrs(
     if skey not in NVDS_OBJ_ATTR_STORAGE:
         return None
     all_attr_dict = NVDS_OBJ_ATTR_STORAGE[skey]
-    all_attr_list = []
-    for key, value in all_attr_dict.items():
-        all_attr_list.extend(value)
-    return all_attr_list
+    return list(all_attr_dict.values())
 
 
 def nvds_get_obj_attr_meta(

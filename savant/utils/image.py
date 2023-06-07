@@ -168,10 +168,14 @@ class CPUImage:
         :return: rotated image
         """
 
-        rotation_matrix, resolution = get_rotation_matrix(
-            self, angle, (bbox.x_center, bbox.y_center)
-        )
-
+        if bbox is not None:
+            rotation_matrix, resolution = get_rotation_matrix(
+                self, angle, (bbox.x_center, bbox.y_center)
+            )
+        else:
+            rotation_matrix, resolution = get_rotation_matrix(
+                self, angle, (self.width // 2, self.height // 2)
+            )
         res = cv2.warpAffine(src=self._np_image, M=rotation_matrix, dsize=resolution)
 
         if bbox is not None:
@@ -243,8 +247,7 @@ class GPUImage:
         :param cuda_stream: cuda stream
         """
         if isinstance(image, np.ndarray):
-            gpu_image = cv2.cuda_GpuMat()
-            gpu_image.upload(image)
+            gpu_image = cv2.cuda_GpuMat(image)
             self._gpu_image = gpu_image
         elif isinstance(image, CPUImage):
             gpu_image = cv2.cuda_GpuMat()
@@ -255,7 +258,6 @@ class GPUImage:
         else:
             raise TypeError(f'Unknown type {type(image)}')
         self._cuda_stream = cuda_stream
-        super().__init__()
 
     @property
     def gpu_mat(self):
@@ -288,16 +290,17 @@ class GPUImage:
             end_col = int(bbox.right)
             start_row = int(bbox.top)
             end_row = int(bbox.bottom)
-            assert (
-                start_col >= 0
-                and end_col < self.width
-                and start_row >= 0
-                and end_row < self.height
-            ), (
-                f'bbox (left={bbox.left}, right={bbox.right}, top={bbox.top}, '
-                f'bottom={bbox.bottom}) is out of '
-                f'image size {self.width}x{self.height}'
-            )
+            if (
+                start_col < 0
+                or end_col >= self.width
+                or start_row < 0
+                or end_row >= self.height
+            ):
+                raise ValueError(
+                    f'bbox (left={bbox.left}, right={bbox.right}, top={bbox.top}, '
+                    f'bottom={bbox.bottom}) is out of '
+                    f'image size {self.width}x{self.height}'
+                )
 
             cut_roi = self._gpu_image.colRange(start_col, end_col).rowRange(
                 start_row, end_row
@@ -406,11 +409,23 @@ class GPUImage:
         :param image: image to paste
         :param point: point to paste (x, y)
         """
-
-        frame_roi = self._gpu_image.colRange(point[0], point[0] + image.width).rowRange(
-            point[1], point[1] + image.height
+        if (
+            point[0] < 0
+            or point[1] < 0
+            or point[0] >= self.width
+            or point[1] >= self.height
+        ):
+            raise ValueError(
+                f'Point {point} is out of image {self.width}x{self.height}'
+            )
+        insert_width = min(image.width, self.width - point[0])
+        insert_height = min(image.height, self.height - point[1])
+        frame_roi = self._gpu_image.colRange(
+            point[0], point[0] + insert_width
+        ).rowRange(point[1], point[1] + insert_height)
+        image.gpu_mat.rowRange(0, insert_height).colRange(0, insert_width).copyTo(
+            stream=self._cuda_stream, dst=frame_roi
         )
-        image.gpu_mat.copyTo(stream=self._cuda_stream, dst=frame_roi)
 
     def rotate(
         self, angle: float, bbox: Optional[RBBox] = None
@@ -464,24 +479,25 @@ class GPUImage:
             cv2.INTER_CUBIC, cv2.INTER_LANCZOS4]
         :return: resized image
         """
-        new_resolution = tuple(map(int, resolution))
+        new_resolution = resolution
         if method == 'scale':
             scale_factor = min(resolution[0] / self.width, resolution[1] / self.height)
             new_resolution = (
                 int(self.width * scale_factor),
                 int(self.height * scale_factor),
             )
-        resized_image = cv2.cuda.resize(
-            src=self._gpu_image,
-            dsize=new_resolution,
-            interpolation=interpolation,
-            stream=self._cuda_stream,
-        )
         res = cv2.cuda.GpuMat(size=resolution, type=self._gpu_image.type(), s=0)
         start_col = (resolution[0] - new_resolution[0]) // 2
         start_row = (resolution[1] - new_resolution[1]) // 2
         res_roi = res.colRange(start_col, start_col + new_resolution[0]).rowRange(
             start_row, start_row + new_resolution[1]
+        )
+        resized_image = cv2.cuda.resize(
+            src=self._gpu_image,
+            dst=res_roi,
+            dsize=new_resolution,
+            interpolation=interpolation,
+            stream=self._cuda_stream,
         )
         resized_image.copyTo(stream=self._cuda_stream, dst=res_roi)
         return GPUImage(image=res, cuda_stream=self._cuda_stream)
@@ -500,7 +516,7 @@ def get_rotation_matrix(
     bbox_image = RBBox(
         image.width // 2, image.height // 2, image.width, image.height, angle
     )
-    polygon = bbox_image.polygons()
+    polygon = bbox_image.polygon()
     width_new = int(math.ceil(max(polygon[:, 0] - min(polygon[:, 0]))))
     height_new = int(math.ceil(max(polygon[:, 1] - min(polygon[:, 1]))))
     resolution = (width_new, height_new)

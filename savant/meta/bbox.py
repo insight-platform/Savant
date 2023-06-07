@@ -78,7 +78,7 @@ class BBox(BaseBBox):
         """[x_min, y_min, x_max, y_max] representation of the bbox."""
         return self.left, self.top, self.right, self.bottom
 
-    def polygons(self) -> np.ndarray:
+    def polygon(self) -> np.ndarray:
         """Representation of the bbox using 4 corner points.
 
         :return: polygon np.array([[x1, y1], [x2, y2], [x3, y3], [x4, y4]]), value in float
@@ -127,7 +127,7 @@ class RBBox(BaseBBox):
         self.height = scaled_bbox[3]
         self.angle = scaled_bbox[4]
 
-    def polygons(self) -> np.ndarray:
+    def polygon(self) -> np.ndarray:
         """representation of the bbox using 4 corner points.
         :return: polygon np.array([[x1, y1], [x2, y2], [x3, y3], [x4, y4]])
         """
@@ -150,11 +150,13 @@ class RBBox(BaseBBox):
         """Converts rotated bounding box to regular (aligned) bounding box.
         :return: BBox
         """
-        polygon = self.polygons()
-        bbox_aligned_width = np.max(polygon[:, 0]) - np.min(polygon[:, 0])
-        bbox_aligned_height = np.max(polygon[:, 1]) - np.min(polygon[:, 1])
-        bbox_aligned_x_center = np.mean(polygon[:, 0]).item()
-        bbox_aligned_y_center = np.mean(polygon[:, 1]).item()
+        polygon = self.polygon()
+        bbox_aligned_width, bbox_aligned_height = map(
+            float, np.max(polygon, axis=0) - np.min(polygon, axis=0)
+        )
+        bbox_aligned_x_center, bbox_aligned_y_center = map(
+            float, np.mean(polygon, axis=0)
+        )
         return BBox(
             x_center=bbox_aligned_x_center,
             y_center=bbox_aligned_y_center,

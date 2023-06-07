@@ -42,20 +42,20 @@ implement __call__ magic method.
 
 Before model inference, custom preprocessing will be applied to all objects on frames. A copy of all
 object meta-information is passed to this method. Note that changes in object meta-information
-in preprocessing are not passed and do not affect the meta-information that will be after
-model inference. The method is called for each object from the list of objects selected
+in preprocessing are not saved and do not affect the meta-information that will be after
+model inference. The method is called for each object in the list of objects selected
 for inference, based on the information you specified in the ``object`` of ``input`` section.
 
 You can read about the working with metadata in the `"Working With Metadata"
 <https://insight-platform.github.io/Savant/savant_101/75_working_with_metadata.html>`_ section.
-The method must return the instance of the class
+The method must return an instance of the class
 `BBox <https://insight-platform.github.io/Savant/reference/api/generated/savant.meta.bbox.BBox.html#bbox>`_
 (The class of aligned bounding box).
 
 After you implemented your own preprocessing class, you just need to specify the module in the
 input section in the preprocess_object_meta subsection (this is the name of your module and
-the file with the class. In the example person_detector is the name of the module and
-input_preproc is the file with the class) and the name of the class
+the file with the class. In the example ``person_detector`` is the name of the module and
+``input_preproc`` is the file with the class) and the name of the class
 (in the example the TopCrop class).
 
 Example config:
@@ -97,8 +97,8 @@ and implement the __call__ magic method.
         :return: changed image
         """
 
-The method passes meta information about the object, the whole frame (image),
-as an instance of the GpuImage class and cuda stream. You can use cuda stream
+The method passes meta information about the object, the whole frame (image)
+as an instance of the GpuImage class, and a CUDA stream. You can use the CUDA stream
 to call asynchronous functions from OpenCV library. No additional synchronization
 is required from you to complete all operations, it will be done automatically before
 transferring images to the inference model. Each object uses its own stream for
@@ -108,7 +108,7 @@ with the most efficient use of GPU resources.
 After you write your own preprocessing, you just need to specify the module in
 the input section in the preprocess_object_image sub-section
 (this is the name of your module and the file with the class.
-In the example person_detector is the name of the module and input_preproc
+In the example ``person_detector`` is the name of the module and ``input_preproc``
 is the file with the class) and the name of the class.
 
 
