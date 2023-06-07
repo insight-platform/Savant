@@ -148,11 +148,10 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
 
     def before_shutdown(self):
         """Callback called before pipeline is set to NULL."""
-        pass
+        self._is_running = False
 
     def on_shutdown(self):
         """Callback called after pipeline is set to NULL."""
-        self._is_running = False
         self._log_fps()
 
     def _log_fps(self):
