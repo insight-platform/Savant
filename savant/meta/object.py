@@ -85,11 +85,11 @@ class ObjectMeta:
         track_id: int = UNTRACKED_OBJECT_ID,
         parent: Optional['ObjectMeta'] = None,
         attributes: Optional[List[AttributeMeta]] = None,
+        draw_label: Optional[str] = None,
     ):
-
         self._element_name = element_name
         self._label = label
-        self._draw_label = None
+        self._draw_label = draw_label
         self._confidence = confidence
         self._track_id = track_id
         self._parent = parent
