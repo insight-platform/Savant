@@ -12,6 +12,9 @@ logger = logging.getLogger(__name__)
 socket_uri_pattern = re.compile('([a-z]+\\+[a-z]+:)?([a-z]+://.*)')
 socket_options_pattern = re.compile('([a-z]+)\\+([a-z]+):')
 
+CONFIRMATION_MESSAGE = b'OK'
+END_OF_STREAM_MESSAGE = b'EOS'
+
 
 class ZMQException(Exception):
     """Error in ZMQ-related code."""
@@ -49,6 +52,7 @@ class Defaults:
     RECEIVE_TIMEOUT = 1000
     RECEIVE_HWM = 50
     SEND_HWM = 50
+    EOS_CONFIRMATION_TIMEOUT = 10_000
 
 
 def get_socket_endpoint(socket_endpoint: str):
@@ -120,7 +124,6 @@ class ZeroMQSource:
             socket_type_enum=ReceiverSocketTypes,
             bind=bind,
         )
-        self.message_len = 2  # source_id, data
 
         self.receive_timeout = receive_timeout
         self.zmq_context = zmq.Context()
@@ -132,15 +135,10 @@ class ZeroMQSource:
             self.receiver.connect(socket)
         if self.socket_type == ReceiverSocketTypes.SUB:
             self.receiver.setsockopt(zmq.SUBSCRIBE, self.topic_prefix)
-        elif self.socket_type == ReceiverSocketTypes.ROUTER:
-            self.message_len += 1  # routing_id, ...
         self.routing_id_filter = RoutingIdFilter(routing_ids_cache_size)
         self.receiver.setsockopt(zmq.RCVTIMEO, self.receive_timeout)
         self.is_alive = True
-        if self.socket_type == ReceiverSocketTypes.REP:
-            self._response = b'ok'
-        else:
-            self._response = None
+        self._always_respond = self.socket_type == ReceiverSocketTypes.REP
 
     def next_message(self) -> Optional[List[bytes]]:
         """Try to receive next message."""
@@ -149,17 +147,25 @@ class ZeroMQSource:
         except zmq.Again:
             logger.debug('Timeout exceeded when receiving the next frame')
             return
-        if len(message) < self.message_len:
-            raise RuntimeError(
-                f'Invalid number of ZeroMQ message parts: got {len(message)} expected at least {self.message_len}.'
-            )
-        if self._response is not None:
-            self.receiver.send(self._response)
+
         if self.socket_type == ReceiverSocketTypes.ROUTER:
-            routing_id, topic, *data = message
+            routing_id, *message = message
         else:
-            topic, *data = message
             routing_id = None
+
+        if message[0] == END_OF_STREAM_MESSAGE:
+            if routing_id:
+                self.receiver.send_multipart([routing_id, CONFIRMATION_MESSAGE])
+            else:
+                self.receiver.send(CONFIRMATION_MESSAGE)
+            return
+
+        if self._always_respond:
+            self.receiver.send(CONFIRMATION_MESSAGE)
+
+        topic, *data = message
+        if not data:
+            raise RuntimeError(f'ZeroMQ message from topic {topic} does not have data.')
 
         if self.topic_prefix and not topic.startswith(self.topic_prefix):
             logger.debug(
