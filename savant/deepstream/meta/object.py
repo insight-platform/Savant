@@ -53,6 +53,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         confidence: Optional[float] = DEFAULT_CONFIDENCE,
         track_id: int = UNTRACKED_OBJECT_ID,
         parent: Optional['ObjectMeta'] = None,
+        draw_label: Optional[str] = None,
     ):
         super().__init__()
         self._model_object_registry = ModelObjectRegistry()
@@ -66,6 +67,8 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         self.ds_object_meta.class_id = class_id
         self.ds_object_meta.unique_component_id = element_uid
         self.label = label  # MAX_LABEL_SIZE
+        if draw_label is not None:
+            self.draw_label = draw_label
         self.track_id = track_id
         self.parent = parent
 
