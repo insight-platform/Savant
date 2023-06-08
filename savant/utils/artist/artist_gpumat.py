@@ -4,7 +4,7 @@ from contextlib import AbstractContextManager
 import numpy as np
 import cv2
 from savant.meta.bbox import BBox, RBBox
-from .position import Position, get_text_origin
+from .position import Position, get_bottom_left_point
 
 
 class ArtistGPUMat(AbstractContextManager):
@@ -79,7 +79,7 @@ class ArtistGPUMat(AbstractContextManager):
         )
 
         if len(text) > 0:
-            text_left, text_bottom = get_text_origin(
+            text_left, text_bottom = get_bottom_left_point(
                 anchor_point_type, anchor, text_size, baseline
             )
 

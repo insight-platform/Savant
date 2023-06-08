@@ -17,39 +17,40 @@ class Position(Enum):
     RIGHT_BOTTOM = 9
 
 
-def get_text_origin(
+def get_bottom_left_point(
     anchor_point_type: Position,
     anchor: Tuple[int, int],
-    text_size: Tuple[int, int],
-    baseline: int,
+    box_size: Tuple[int, int],
+    baseline: int = 0,
 ) -> Tuple[int, int]:
     """Calculate text origin coordinates.
 
     :param anchor_point_type: Anchor point type of a rectangle with text.
     :param anchor: Anchor point X,Y coordinates.
-    :param text_size: Text box width and height.
-    :param baseline: y-coordinate of the baseline relative to the bottom-most text point.
-    :return: Bottom-left corner of the text string in the image.
+    :param box_size: Box width and height.
+    :param baseline: y-coordinate of the baseline relative to the bottom-most box point.
+        Used for text boxes.
+    :return: Bottom-left corner of the box in the image.
     """
-    text_w, text_h = text_size
+    box_w, box_h = box_size
     anchor_x, anchor_y = anchor
     if anchor_point_type == Position.CENTER:
-        text_x, text_y = anchor_x - text_w / 2, anchor_y + text_h / 2
+        left, bottom = anchor_x - box_w / 2, anchor_y + box_h / 2
     if anchor_point_type == Position.LEFT_TOP:
-        text_x, text_y = anchor_x, anchor_y + text_h
+        left, bottom = anchor_x, anchor_y + box_h
     if anchor_point_type == Position.CENTER_TOP:
-        text_x, text_y = anchor_x - text_w / 2, anchor_y + text_h
+        left, bottom = anchor_x - box_w / 2, anchor_y + box_h
     if anchor_point_type == Position.RIGHT_TOP:
-        text_x, text_y = anchor_x - text_w, anchor_y + text_h - baseline / 2
+        left, bottom = anchor_x - box_w, anchor_y + box_h - baseline / 2
     if anchor_point_type == Position.LEFT_CENTER:
-        text_x, text_y = anchor_x, anchor_y + text_h / 2 - baseline / 2
+        left, bottom = anchor_x, anchor_y + box_h / 2 - baseline / 2
     if anchor_point_type == Position.RIGHT_CENTER:
-        text_x, text_y = anchor_x - text_w, anchor_y + text_h / 2 - baseline / 2
+        left, bottom = anchor_x - box_w, anchor_y + box_h / 2 - baseline / 2
     if anchor_point_type == Position.LEFT_BOTTOM:
-        text_x, text_y = anchor_x, anchor_y - baseline
+        left, bottom = anchor_x, anchor_y - baseline
     if anchor_point_type == Position.CENTER_BOTTOM:
-        text_x, text_y = anchor_x - text_w / 2, anchor_y - baseline
+        left, bottom = anchor_x - box_w / 2, anchor_y - baseline
     if anchor_point_type == Position.RIGHT_BOTTOM:
-        text_x, text_y = anchor_x - text_w, anchor_y - baseline
+        left, bottom = anchor_x - box_w, anchor_y - baseline
 
-    return int(text_x), int(text_y)
+    return int(left), int(bottom)
