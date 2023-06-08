@@ -9,7 +9,7 @@ from gst_plugins.python.zeromq_properties import (
     ZEROMQ_PROPERTIES,
 )
 from savant.gstreamer import GObject, Gst, GstBase
-from savant.gstreamer.utils import propagate_gst_setting_error
+from savant.gstreamer.utils import propagate_gst_error, propagate_gst_setting_error
 from savant.utils.logging import LoggerMixin
 from savant.utils.zeromq import (
     Defaults,
@@ -51,6 +51,15 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
             Defaults.SEND_HWM,
             GObject.ParamFlags.READWRITE,
         ),
+        'eos-confirmation-timeout': (
+            int,
+            'Timeout for waiting EOS confirmation message',
+            'Timeout for waiting EOS confirmation message',
+            0,
+            GObject.G_MAXINT,
+            Defaults.EOS_CONFIRMATION_TIMEOUT,
+            GObject.ParamFlags.READWRITE,
+        ),
         'source-id': (
             str,
             'Source ID',
@@ -69,6 +78,7 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
         self.sender: zmq.Socket = None
         self.wait_response = False
         self.send_hwm = Defaults.SEND_HWM
+        self.eos_confirmation_timeout = Defaults.EOS_CONFIRMATION_TIMEOUT
         self.source_id: str = None
         self.zmq_topic: bytes = None
         self.set_sync(False)
@@ -91,6 +101,8 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
             return self.bind
         if prop.name == 'send-hwm':
             return self.send_hwm
+        if prop.name == 'eos-confirmation-timeout':
+            return self.eos_confirmation_timeout
         if prop.name == 'source-id':
             return self.source_id
         raise AttributeError(f'Unknown property {prop.name}.')
@@ -111,6 +123,8 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
             self.bind = value
         elif prop.name == 'send-hwm':
             self.send_hwm = value
+        elif prop.name == 'eos-confirmation-timeout':
+            self.eos_confirmation_timeout = value
         elif prop.name == 'source-id':
             self.source_id = value
             self.zmq_topic = f'{value}/'.encode()
@@ -138,6 +152,7 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
         self.zmq_context = zmq.Context()
         self.sender = self.zmq_context.socket(self.socket_type.value)
         self.sender.setsockopt(zmq.SNDHWM, self.send_hwm)
+        self.sender.setsockopt(zmq.RCVTIMEO, self.eos_confirmation_timeout)
         if self.bind:
             self.sender.bind(self.socket)
         else:
@@ -186,7 +201,24 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
                 'Waiting for End-of-Stream message confirmation from socket %s',
                 self.socket,
             )
-            self.sender.recv()
+            try:
+                self.sender.recv()
+            except zmq.Again:
+                error = (
+                    f'Timeout exceeded when receiving End-of-Stream message '
+                    f'confirmation from socket {self.socket}'
+                )
+                self.logger.error(error)
+                frame = inspect.currentframe()
+                propagate_gst_error(
+                    gst_element=self,
+                    frame=frame,
+                    file_path=__file__,
+                    domain=Gst.StreamError.quark(),
+                    code=Gst.StreamError.FAILED,
+                    text=error,
+                )
+                return False
 
         self.logger.info('Closing ZeroMQ socket')
         self.sender.close()

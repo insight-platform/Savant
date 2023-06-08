@@ -52,6 +52,7 @@ class Defaults:
     RECEIVE_TIMEOUT = 1000
     RECEIVE_HWM = 50
     SEND_HWM = 50
+    EOS_CONFIRMATION_TIMEOUT = 10_000
 
 
 def get_socket_endpoint(socket_endpoint: str):
