@@ -1,8 +1,9 @@
 """Module entrypoint function."""
 from savant.config import ModuleConfig
 from savant.gstreamer import Gst
-from savant.gstreamer.runner import GstPipelineRunner
+from savant.deepstream.encoding import check_encoder_is_available
 from savant.deepstream.pipeline import NvDsPipeline
+from savant.deepstream.runner import NvDsPipelineRunner
 from savant.utils.logging import init_logging, update_logging, get_logger
 from savant.utils.sink_factories import sink_factory
 
@@ -30,6 +31,9 @@ def main(config_file_path: str):
 
     Gst.init(None)
 
+    if not check_encoder_is_available(config.parameters):
+        return
+
     pipeline = NvDsPipeline(
         name=config.name,
         source=config.pipeline.source,
@@ -38,7 +42,7 @@ def main(config_file_path: str):
     )
 
     try:
-        with GstPipelineRunner(pipeline):
+        with NvDsPipelineRunner(pipeline):
             for msg in pipeline.stream():
                 sink(msg, **dict(module_name=config.name))
     except Exception as exc:  # pylint: disable=broad-except

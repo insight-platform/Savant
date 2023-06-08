@@ -36,6 +36,10 @@ pipeline:
 #      source_id: ${oc.decode:${oc.env:SOURCE_ID, null}}
 #      # Filter inbound frames by source ID prefix.
 #      source_id_prefix: ${oc.decode:${oc.env:SOURCE_ID_PREFIX, null}}
+#      # Timeout before deleting stale source (in seconds).
+#      source_timeout: ${oc.decode:${oc.env:SOURCE_TIMEOUT, 10}}
+#      # Interval between source eviction checks (in seconds).
+#      source_eviction_interval: ${oc.decode:${oc.env:SOURCE_EVICTION_INTERVAL, 1}}
 
   # define pipeline's main elements
   elements:

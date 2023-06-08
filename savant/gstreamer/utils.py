@@ -78,12 +78,30 @@ def on_pad_event(
 
 
 def propagate_gst_setting_error(gst_element: Gst.Element, frame, file_path):
-    gst_element.message_full(
-        type=Gst.MessageType.ERROR,
+    propagate_gst_error(
+        gst_element=gst_element,
+        frame=frame,
+        file_path=file_path,
         domain=Gst.LibraryError.quark(),
         code=Gst.LibraryError.SETTINGS,
-        text=None,
-        debug=None,
+    )
+
+
+def propagate_gst_error(
+    gst_element: Gst.Element,
+    frame,
+    file_path,
+    domain,
+    code,
+    text=None,
+    debug=None,
+):
+    gst_element.message_full(
+        type=Gst.MessageType.ERROR,
+        domain=domain,
+        code=code,
+        text=text,
+        debug=debug,
         file=file_path,
         function=frame.f_code.co_name,
         line=frame.f_code.co_firstlineno,
