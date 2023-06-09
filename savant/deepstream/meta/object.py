@@ -15,6 +15,9 @@ from savant.deepstream.utils import (
     nvds_set_obj_selection_type,
     nvds_set_obj_uid,
     nvds_get_obj_uid,
+    nvds_set_obj_draw_label,
+    nvds_get_obj_draw_label,
+    nvds_init_obj_draw_label,
 )
 from savant.utils.logging import LoggerMixin
 from savant.meta.attribute import AttributeMeta
@@ -52,6 +55,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         confidence: Optional[float] = DEFAULT_CONFIDENCE,
         track_id: int = UNTRACKED_OBJECT_ID,
         parent: Optional['ObjectMeta'] = None,
+        draw_label: Optional[str] = None,
     ):
         super().__init__()
         self._model_object_registry = ModelObjectRegistry()
@@ -65,6 +69,8 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         self.ds_object_meta.class_id = class_id
         self.ds_object_meta.unique_component_id = element_uid
         self.label = label  # MAX_LABEL_SIZE
+        if draw_label is not None:
+            self.draw_label = draw_label
         self.track_id = track_id
         self.parent = parent
 
@@ -235,6 +241,29 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
                 self.ds_object_meta.obj_label = obj_key[:MAX_LABEL_SIZE]
             else:
                 self.ds_object_meta.obj_label = obj_key
+        else:
+            raise MetaValueError(
+                'The label property can only be a string, '
+                f'the value is `{type(value)}`'
+            )
+
+    @property
+    def draw_label(self) -> str:
+        draw_label = nvds_get_obj_draw_label(self.ds_object_meta)
+        if draw_label is not None:
+            return draw_label
+        return self.label
+
+    @draw_label.setter
+    def draw_label(self, value: str):
+        if isinstance(value, str):
+            ret = nvds_set_obj_draw_label(self.ds_object_meta, value)
+            if not ret:
+                nvds_init_obj_draw_label(
+                    self._frame_meta.base_meta.batch_meta,
+                    self.ds_object_meta,
+                    value,
+                )
         else:
             raise MetaValueError(
                 'The label property can only be a string, '

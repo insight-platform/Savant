@@ -4,12 +4,7 @@ from contextlib import AbstractContextManager
 import numpy as np
 import cv2
 from savant.meta.bbox import BBox, RBBox
-from .position import Position, get_text_origin
-
-
-def convert_color(color: Tuple[float, float, float], alpha: int = 255):
-    """Convert color from BGR floats to RGBA int8."""
-    return int(color[2] * 255), int(color[1] * 255), int(color[0] * 255), alpha
+from .position import Position, get_bottom_left_point
 
 
 class ArtistGPUMat(AbstractContextManager):
@@ -47,120 +42,129 @@ class ArtistGPUMat(AbstractContextManager):
     def add_text(
         self,
         text: str,
-        anchor_x: int,
-        anchor_y: int,
+        anchor: Tuple[int, int],
         font_scale: float = 0.5,
         font_thickness: int = 1,
-        font_color: Tuple[float, float, float] = (1.0, 1.0, 1.0),
+        font_color: Tuple[int, int, int, int] = (255, 255, 255, 255),  # white
         border_width: int = 0,
-        border_color: Tuple[float, float, float] = (0.0, 0.0, 1.0),
-        bg_color: Optional[Tuple[float, float, float]] = None,
-        padding: int = 3,
-        anchor_point: Position = Position.CENTER,
-    ):
-        """Add text on the frame.
+        border_color: Tuple[int, int, int, int] = (255, 0, 0, 255),  # red
+        bg_color: Optional[Tuple[int, int, int, int]] = (0, 0, 0, 255),  # black
+        padding: Tuple[int, int, int, int] = (0, 0, 0, 0),
+        anchor_point_type: Position = Position.CENTER,
+    ) -> int:
+        """Draw text, text backround box and text background box border on the frame.
+        Does not draw anything if text is empty.
 
         :param text: Display text.
-        :param anchor_x: X coordinate of text position.
-        :param anchor_y: Y coordinate of text position.
+        :param anchor: X,Y coordinates of text position.
         :param font_scale: Font scale factor that is multiplied by the font-specific base size.
-        :param font_thickness: Thickness of the lines used to draw the text.
-        :param font_color: Font color, BGR, floats in range [0;1.0].
+        :param font_thickness: Thickness of the lines used to draw the text, >= 0.
+        :param font_color: Font color, RGBA, ints in range [0;255].
         :param border_width: Border width around the text.
-        :param border_color: Border color around the text.
-        :param bg_color: Background color, BGR, floats in range [0;1.0].
+        :param border_color: Border color around the text, RGBA, ints in range [0;255].
+        :param bg_color: Background color, RGBA, ints in range [0;255].
         :param padding: Increase the size of the rectangle around
-            the text in each direction, in pixels.
-        :param anchor_point: Anchor point of a  rectangle with text.
+            the text in each direction (left, top, right, bottom), in pixels.
+        :param anchor_point_type: Anchor point of a  rectangle with text.
             For example, if you select Position.CENTER, the rectangle with the text
             will be drawn so that the center of the rectangle is at (x,y).
+        :return: Text box height, even if nothing was drawn.
         """
-        self.__init_overlay()
+        draw_text = font_scale > 0 and len(text) > 0 and font_color[3] > 0
+        draw_border = border_width > 0 and border_color[3] > 0
+        draw_bg = bg_color is not None and bg_color[3] > 0
 
         text_size, baseline = cv2.getTextSize(
             text, self.font_face, font_scale, font_thickness
         )
 
-        text_x, text_y = get_text_origin(
-            anchor_point, anchor_x, anchor_y, text_size[0], text_size[1], baseline
-        )
+        if len(text) > 0:
+            text_left, text_bottom = get_bottom_left_point(
+                anchor_point_type, anchor, text_size, baseline
+            )
 
-        if bg_color or border_width:
-            rect_left = text_x - border_width - padding
-            rect_top = text_y - text_size[1] - border_width - padding
-            rect_right = text_x + text_size[0] + border_width + padding
-            rect_bottom = text_y + baseline + border_width + padding
+            self.__init_overlay()
+
+            rect_left = text_left - border_width - padding[0]
+            rect_top = text_bottom - text_size[1] - border_width - padding[1]
+            rect_right = text_left + text_size[0] + border_width + padding[2]
+            rect_bottom = text_bottom + baseline + border_width + padding[3]
 
             rect_tl = rect_left, rect_top
             rect_br = rect_right, rect_bottom
 
-            if bg_color is not None:
-                cv2.rectangle(
-                    self.overlay, rect_tl, rect_br, convert_color(bg_color), cv2.FILLED
-                )
-            if border_width > 0:
+            if draw_bg:
+                cv2.rectangle(self.overlay, rect_tl, rect_br, bg_color, cv2.FILLED)
+
+            if draw_border:
                 cv2.rectangle(
                     self.overlay,
                     rect_tl,
                     rect_br,
-                    convert_color(border_color),
+                    border_color,
                     border_width,
                 )
 
-        cv2.putText(
-            self.overlay,
-            text,
-            (text_x, text_y),
-            self.font_face,
-            font_scale,
-            convert_color(font_color),
-            font_thickness,
-            cv2.LINE_AA,
-        )
+            if draw_text:
+                cv2.putText(
+                    self.overlay,
+                    text,
+                    (text_left, text_bottom),
+                    self.font_face,
+                    font_scale,
+                    font_color,
+                    font_thickness,
+                    cv2.LINE_AA,
+                )
+        return text_size[1] + baseline
 
     # pylint:disable=too-many-arguments
     def add_bbox(
         self,
         bbox: Union[BBox, RBBox],
         border_width: int = 3,
-        border_color: Tuple[float, float, float] = (0.0, 1.0, 0.0),  # BGR, Green
-        bg_color: Optional[Tuple[float, float, float]] = None,  # BGR
-        padding: int = 3,
+        border_color: Tuple[int, int, int, int] = (0, 255, 0, 255),  # RGBA, Green
+        bg_color: Optional[Tuple[int, int, int, int]] = None,  # RGBA
+        padding: Tuple[int, int, int, int] = (0, 0, 0, 0),
     ):
         """Draw bbox on frame.
 
         :param bbox: Bounding box.
         :param border_width:  Border width.
-        :param border_color:  Border color, BGR, floats in range [0;1.0].
-        :param bg_color: Background color, BGR, floats in range [0;1.0].
+        :param border_color:  Border color, RGBA, ints in range [0;255].
+        :param bg_color: Background color, RGBA, ints in range [0;255].
             If None, the rectangle will be transparent.
         :param padding: Increase the size of the rectangle in each direction,
-            value in pixels.
+            value in pixels, tuple of 4 values (left, top, right, bottom).
         """
+        draw_border = border_width > 0 and border_color[3] > 0
+        draw_bg = bg_color is not None and bg_color[3] > 0
+        if not draw_border and not draw_bg:
+            return
+
         if isinstance(bbox, BBox):
             left, top, right, bottom, _, _ = self.__convert_bbox(
                 bbox, padding, border_width
             )
 
-            if bg_color is not None:
+            if draw_bg:
                 self.frame.colRange(left, right).rowRange(top, bottom).setTo(
-                    convert_color(bg_color), stream=self.stream
+                    bg_color, stream=self.stream
                 )
 
-            if border_width and border_color != bg_color:
-                color = convert_color(border_color)
+            if draw_border and (border_color != bg_color or not draw_bg):
                 self.frame.colRange(left, right).rowRange(
                     top, top + border_width
-                ).setTo(color, stream=self.stream)
+                ).setTo(border_color, stream=self.stream)
                 self.frame.colRange(left, right).rowRange(
                     bottom - border_width, bottom
-                ).setTo(color, stream=self.stream)
+                ).setTo(border_color, stream=self.stream)
                 self.frame.colRange(left, left + border_width).rowRange(
                     top, bottom
-                ).setTo(color, stream=self.stream)
+                ).setTo(border_color, stream=self.stream)
                 self.frame.colRange(right - border_width, right).rowRange(
                     top, bottom
-                ).setTo(color, stream=self.stream)
+                ).setTo(border_color, stream=self.stream)
 
         elif isinstance(bbox, RBBox):
             x_center = bbox.x_center
@@ -169,8 +173,8 @@ class ArtistGPUMat(AbstractContextManager):
             height = bbox.height
             degrees = bbox.angle
             if padding:
-                width += 2 * padding
-                height += 2 * padding
+                width += padding[0] + padding[2]
+                height += padding[1] + padding[3]
 
             vertices = cv2.boxPoints(((x_center, y_center), (width, height), degrees))
 
@@ -185,29 +189,32 @@ class ArtistGPUMat(AbstractContextManager):
         self,
         bbox: BBox,
         radius: int,
-        bg_color: Tuple[float, float, float],  # BGR
+        bg_color: Tuple[int, int, int, int],  # RGBA
     ):
         """Draw rounded rect.
 
         :param bbox: Bounding box.
         :param radius: Border radius, in px.
-        :param bg_color: Background color, BGR, floats in range [0;1.0].
+        :param bg_color: Background color, RGBA, ints in range [0;255].
         """
+        if bg_color[3] <= 0:
+            return
+
         self.__init_overlay()
 
         cv2.rectangle(
             self.overlay,
             (int(bbox.left), int(bbox.top + radius)),
             (int(bbox.right), int(bbox.bottom - radius)),
-            convert_color(bg_color),
-            -1,
+            bg_color,
+            cv2.FILLED,
         )
         cv2.rectangle(
             self.overlay,
             (int(bbox.left + radius), int(bbox.top)),
             (int(bbox.right - radius), int(bbox.bottom)),
-            convert_color(bg_color),
-            -1,
+            bg_color,
+            cv2.FILLED,
         )
 
         # rounded corners: center(x, y), rotation angle
@@ -225,8 +232,8 @@ class ArtistGPUMat(AbstractContextManager):
                 angle,
                 0,
                 90,
-                convert_color(bg_color),
-                -1,
+                bg_color,
+                cv2.FILLED,
                 cv2.LINE_AA,
             )
 
@@ -234,7 +241,7 @@ class ArtistGPUMat(AbstractContextManager):
         self,
         center: Tuple[int, int],
         radius: int,
-        color: Tuple[float, float, float],
+        color: Tuple[int, int, int, int],
         thickness: int,
         line_type: int = cv2.LINE_AA,
     ):
@@ -242,46 +249,52 @@ class ArtistGPUMat(AbstractContextManager):
 
         :param center: Circle center.
         :param radius: Circle radius.
-        :param color: Circle line color, BGR, floats in range [0;1.0].
+        :param color: Circle line color, RGBA, ints in range [0;255].
         :param thickness: Circle line thickness.
         :param line_type: Circle line type.
         """
+        if color[3] <= 0 or (thickness <= 0 and radius <= 0):
+            return
         self.__init_overlay()
-        cv2.circle(
-            self.overlay, center, radius, convert_color(color), thickness, line_type
-        )
+        cv2.circle(self.overlay, center, radius, color, thickness, line_type)
 
     def add_polygon(
         self,
         vertices: List[Tuple[float, float]],
         line_width: int = 3,
-        line_color: Tuple[float, float, float] = (0.0, 0.0, 1.0),  # BGR, Red
-        bg_color: Optional[Tuple[float, float, float]] = None,  # BGR
+        line_color: Tuple[int, int, int, int] = (255, 0, 0, 255),  # RGBA, Red
+        bg_color: Optional[Tuple[int, int, int, int]] = None,  # RGBA
     ):
         """Draw polygon.
 
         :param vertices: List of points.
         :param line_width: Line width.
-        :param line_color: Line color, BGR, floats in range [0;1.0].
-        :param bg_color: Background color, BGR, floats in range [0;1.0].
+        :param line_color: Line color, RGBA, ints in range [0;255].
+        :param bg_color: Background color, RGBA, ints in range [0;255].
         """
+        draw_contour = line_width > 0 and line_color[3] > 0
+        draw_fill = bg_color is not None and bg_color[3] > 0
+        if not draw_contour and not draw_fill:
+            return
+
         self.__init_overlay()
         vertices = np.intp(vertices)
-        if bg_color is not None:
-            cv2.drawContours(
-                self.overlay, [vertices], 0, convert_color(bg_color), cv2.FILLED
-            )
-        if line_width:
-            cv2.drawContours(
-                self.overlay, [vertices], 0, convert_color(line_color), line_width
-            )
+        if draw_fill:
+            cv2.drawContours(self.overlay, [vertices], 0, bg_color, cv2.FILLED)
+        if draw_contour and (not draw_fill or line_color != bg_color):
+            cv2.drawContours(self.overlay, [vertices], 0, line_color, line_width)
 
-    def blur(self, bbox: BBox, padding: int = 0, sigma: Optional[float] = None):
+    def blur(
+        self,
+        bbox: BBox,
+        padding: Tuple[int, int, int, int] = (0, 0, 0, 0),
+        sigma: Optional[float] = None,
+    ):
         """Apply gaussian blur to the specified ROI.
 
         :param bbox: ROI specified as Savant bbox.
         :param padding: Increase the size of the rectangle in each direction,
-            value in pixels.
+            value in pixels, left, top, right, bottom.
         :param sigma: gaussian blur stddev.
         """
         if sigma is None:
@@ -357,20 +370,22 @@ class ArtistGPUMat(AbstractContextManager):
             self.overlay = np.zeros((self.height, self.width, 4), dtype=np.uint8)
 
     def __convert_bbox(
-        self, bbox: BBox, padding: int, border_width: int
+        self, bbox: BBox, padding: Tuple[int, int, int, int], border_width: int
     ) -> Tuple[int, int, int, int, int, int]:
         """Convert Savant bbox to OpenCV format.
 
         :param bbox: Savant BBox structure.
-        :param padding: Padding value.
+        :param padding: Padding values, left, top, right, bottom.
         :param border_width: Box border width.
         :return: Left, top, right, bottom, width, height, clamped to frame dimensions.
         """
-        left = round(bbox.left) - padding - border_width
-        top = round(bbox.top) - padding - border_width
+        left = round(bbox.left) - padding[0] - border_width
+        top = round(bbox.top) - padding[1] - border_width
 
-        width = max(round(bbox.width) + 2 * (padding + border_width), 1)
-        height = max(round(bbox.height) + 2 * (padding + border_width), 1)
+        width = max(round(bbox.width) + 2 * (padding[0] + padding[2] + border_width), 1)
+        height = max(
+            round(bbox.height) + 2 * (padding[1] + padding[3] + border_width), 1
+        )
 
         right = left + width
         bottom = top + height

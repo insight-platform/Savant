@@ -1,10 +1,15 @@
 """Line crossing trackers."""
 from collections import deque, defaultdict
 from enum import Enum
-from typing import Optional, Sequence, List
+from typing import Optional, Sequence, List, Tuple
 import random
 import math
-from savant_rs.primitives import PolygonalArea, Segment, IntersectionKind, Point
+from savant_rs.primitives.geometry import (
+    PolygonalArea,
+    Segment,
+    IntersectionKind,
+    Point,
+)
 
 
 class Direction(Enum):
@@ -55,7 +60,9 @@ class TwoLinesCrossingTracker:
 
             if cross_result.kind == IntersectionKind.Leave:
                 if track_id in self._prev_cross_edge_label:
-                    cross_edge_labels = self._prev_cross_edge_label[track_id] + cross_edge_labels
+                    cross_edge_labels = (
+                        self._prev_cross_edge_label[track_id] + cross_edge_labels
+                    )
 
             cross_edge_labels = list(filter(lambda x: x is not None, cross_edge_labels))
 
@@ -75,12 +82,12 @@ class RandColorIterator:
         self.saturation = 0.7
         self.value = 0.95
 
-    def __next__(self):
+    def __next__(self) -> Tuple[int, int, int, int]:
         self.hue = math.fmod(self.hue + 0.618033988749895, 1)
-        return hsv_to_rgb(self.hue, self.saturation, self.value)
+        return hsv_to_rgb(self.hue, self.saturation, self.value) + (255,)
 
 
-def hsv_to_rgb(h, s, v):
+def hsv_to_rgb(h, s, v) -> Tuple[int, int, int]:
     """HSV values in [0..1]
     returns [r, g, b] values in [0..1]
     """
@@ -101,4 +108,4 @@ def hsv_to_rgb(h, s, v):
         r, g, b = t, p, v
     elif h_i == 5:
         r, g, b = v, p, q
-    return r, g, b
+    return int(255 * r), int(255 * g), int(255 * b)

@@ -1,13 +1,21 @@
 """Default implementation PyFunc for drawing on frame."""
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional
 import pyds
 import cv2
+from savant_rs.draw_spec import (
+    ObjectDraw,
+    LabelDraw,
+    BoundingBoxDraw,
+    DotDraw,
+    LabelPositionKind,
+)
 from savant.meta.object import ObjectMeta
 from savant.deepstream.base_drawfunc import BaseNvDsDrawFunc
 from savant.deepstream.meta.frame import NvDsFrameMeta
-from savant.meta.bbox import BBox, RBBox
+from savant.meta.bbox import RBBox
 from savant.meta.constants import UNTRACKED_OBJECT_ID
-from savant.utils.artist import Position, Artist, COLOR
+from savant.utils.artist import Position, Artist
+from savant.utils.draw_spec import get_obj_draw_spec, get_default_draw_spec
 from savant.gstreamer import Gst  # noqa: F401
 from savant.deepstream.opencv_utils import nvds_to_gpu_mat
 
@@ -24,10 +32,15 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
     def __init__(self, **kwargs):
         self.rendered_objects: Optional[Dict[str, Dict[str, Any]]] = None
         super().__init__(**kwargs)
+        self.draw_spec = {}
         if self.rendered_objects:
-            for _, labels in self.rendered_objects.items():
-                for label, color in labels.items():
-                    labels[label] = COLOR[color]
+            for unit, objects in self.rendered_objects.items():
+                for obj, obj_draw_spec_cfg in objects.items():
+                    self.draw_spec[(unit, obj)] = get_obj_draw_spec(obj_draw_spec_cfg)
+        else:
+            self.default_spec_track_id = get_default_draw_spec(track_id=True)
+            self.default_spec_no_track_id = get_default_draw_spec(track_id=False)
+
         self.frame_streams = []
 
     def __call__(self, nvds_frame_meta: pyds.NvDsFrameMeta, buffer: Gst.Buffer):
@@ -43,23 +56,19 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
             stream.waitForCompletion()
         self.frame_streams = []
 
-    def get_bbox_border_color(
-        self, obj_meta: ObjectMeta
-    ) -> Optional[Tuple[float, float, float]]:
-        """Get object's bbox color.
-        Draw only objects in rendered_objects if set.
+    def override_draw_spec(
+        self, object_meta: ObjectMeta, draw_spec: ObjectDraw
+    ) -> ObjectDraw:
+        """Override draw specification for an object
+        based on dynamically changning object properties.
+        For example, re-assign bbox color from default per object class one
+        to custom per track id one.
 
-        :param obj_meta: Object's meta
-        :return: None, if there is no need to draw the object, otherwise color in BGR
+        :param object_meta: Object's meta
+        :param specification: Draw specification
+        :return: Overridden draw specification
         """
-        if self.rendered_objects is None:
-            return 0.0, 1.0, 0.0  # BGR
-        # draw only rendered_objects if set
-        if (
-            obj_meta.element_name in self.rendered_objects
-            and obj_meta.label in self.rendered_objects[obj_meta.element_name]
-        ):
-            return self.rendered_objects[obj_meta.element_name][obj_meta.label]
+        return draw_spec
 
     def draw_on_frame(self, frame_meta: NvDsFrameMeta, artist: Artist):
         """Draws bounding boxes and labels for all objects in the frame's metadata.
@@ -68,34 +77,109 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
         :param artist: Artist to draw on the frame.
         """
         for obj_meta in frame_meta.objects:
+
             if obj_meta.is_primary:
                 continue
 
-            bbox_border_color = self.get_bbox_border_color(obj_meta)
-            if bbox_border_color:
-                artist.add_bbox(
-                    bbox=obj_meta.bbox,
-                    border_color=bbox_border_color,
-                )
+            if len(self.draw_spec) > 0:
+                if (obj_meta.element_name, obj_meta.draw_label) in self.draw_spec:
+                    spec = self.draw_spec[(obj_meta.element_name, obj_meta.draw_label)]
+                    spec = self.override_draw_spec(obj_meta, spec.copy())
+                else:
+                    continue
 
-                label = obj_meta.label
-                if obj_meta.track_id != UNTRACKED_OBJECT_ID:
-                    label += f' #{obj_meta.track_id}'
+            elif obj_meta.track_id != UNTRACKED_OBJECT_ID:
+                spec = self.default_spec_track_id
+            else:
+                spec = self.default_spec_no_track_id
 
-                if isinstance(obj_meta.bbox, BBox):
-                    artist.add_text(
-                        text=label,
-                        anchor_x=int(obj_meta.bbox.left),
-                        anchor_y=int(obj_meta.bbox.top),
-                        bg_color=(0.0, 0.0, 0.0),
-                        anchor_point=Position.LEFT_TOP,
-                    )
+            # draw according to the specification
+            # blur should be the first to be applied
+            # to avoid blurring the other elements
+            if spec.blur:
+                self._blur(obj_meta, artist)
+            if spec.bounding_box:
+                self._draw_bounding_box(obj_meta, artist, spec.bounding_box)
+            if spec.label:
+                self._draw_label(obj_meta, artist, spec.label)
+            if spec.central_dot:
+                self._draw_central_dot(obj_meta, artist, spec.central_dot)
 
-                elif isinstance(obj_meta.bbox, RBBox):
-                    artist.add_text(
-                        text=label,
-                        anchor_x=int(obj_meta.bbox.x_center),
-                        anchor_y=int(obj_meta.bbox.y_center),
-                        bg_color=(0.0, 0.0, 0.0),
-                        anchor_point=Position.CENTER,
-                    )
+    def _draw_bounding_box(
+        self, obj_meta: ObjectMeta, artist: Artist, spec: BoundingBoxDraw
+    ):
+        if spec.padding is not None:
+            padding = spec.padding.padding
+        else:
+            padding = (0, 0, 0, 0)
+        artist.add_bbox(
+            bbox=obj_meta.bbox,
+            border_color=spec.border_color.rgba,
+            border_width=spec.thickness,
+            bg_color=spec.background_color.rgba,
+            padding=padding,
+        )
+
+    def _draw_label(self, obj_meta: ObjectMeta, artist: Artist, spec: LabelDraw):
+        if (
+            isinstance(obj_meta.bbox, RBBox)
+            or spec.position.position == LabelPositionKind.Center
+        ):
+            anchor_x = int(obj_meta.bbox.x_center)
+            anchor_y = int(obj_meta.bbox.y_center)
+            anchor_point = Position.CENTER
+        else:
+            anchor_x = int(obj_meta.bbox.left)
+            anchor_y = int(obj_meta.bbox.top)
+            if spec.position.position == LabelPositionKind.TopLeftInside:
+                anchor_point = Position.LEFT_TOP
+            else:
+                # consider default position as TopLeftOutside
+                anchor_point = Position.LEFT_BOTTOM
+
+        anchor_x += spec.position.margin_x
+        anchor_y += spec.position.margin_y
+
+        if spec.padding is not None:
+            padding = spec.padding.padding
+        else:
+            padding = (0, 0, 0, 0)
+
+        if spec.position.position == LabelPositionKind.TopLeftOutside:
+            lines_sequence = reversed(spec.format)
+            offset_sign = -1
+        else:
+            lines_sequence = spec.format
+            offset_sign = 1
+
+        for format_str in lines_sequence:
+            text = format_str.format(
+                model=obj_meta.element_name,
+                label=obj_meta.draw_label,
+                confidence=obj_meta.confidence,
+                track_id=obj_meta.track_id,
+            )
+            text_box_height = artist.add_text(
+                text=text,
+                anchor=(anchor_x, anchor_y),
+                anchor_point_type=anchor_point,
+                font_color=spec.font_color.rgba,
+                font_scale=spec.font_scale,
+                font_thickness=spec.thickness,
+                border_color=spec.border_color.rgba,
+                bg_color=spec.background_color.rgba,
+                padding=padding,
+                border_width=1,
+            )
+            anchor_y += offset_sign * text_box_height
+
+    def _draw_central_dot(self, obj_meta: ObjectMeta, artist: Artist, spec: DotDraw):
+        artist.add_circle(
+            (round(obj_meta.bbox.x_center), round(obj_meta.bbox.y_center)),
+            spec.radius,
+            spec.color.rgba,
+            cv2.FILLED,
+        )
+
+    def _blur(self, obj_meta: ObjectMeta, artist: Artist):
+        artist.blur(obj_meta.bbox)

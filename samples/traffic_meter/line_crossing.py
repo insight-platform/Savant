@@ -2,7 +2,7 @@ from collections import defaultdict
 import sys
 import yaml
 from statsd import StatsClient
-from savant_rs.primitives import PolygonalArea, Point
+from savant_rs.primitives.geometry import PolygonalArea, Point
 from savant.gstreamer import Gst
 from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.deepstream.pyfunc import NvDsPyFuncPlugin

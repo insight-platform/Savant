@@ -2,11 +2,13 @@
 from typing import Optional, Tuple, Union
 import pyds
 from pysavantboost import add_rbbox_to_object_meta, NvRBboxCoords
-from savant.meta.errors import IncorrectSelectionType, UIDError
+from savant.meta.errors import IncorrectSelectionType, UIDError, MetaPoolError
 from savant.meta.constants import UNTRACKED_OBJECT_ID, DEFAULT_CONFIDENCE
 from savant.meta.type import InformationType, ObjectSelectionType
 from savant.deepstream.meta.constants import MAX_LABEL_SIZE
 from savant.deepstream.meta.bbox import NvDsBBox, NvDsRBBox
+from .iterator import nvds_obj_user_meta_iterator
+from .meta_types import OBJ_DRAW_LABEL_META_TYPE
 
 
 class IncorrectBBoxType(Exception):
@@ -173,3 +175,41 @@ def nvds_get_obj_bbox(nvds_obj_meta: pyds.NvDsFrameMeta) -> Union[NvDsBBox, NvDs
         return NvDsRBBox(nvds_obj_meta)
 
     raise IncorrectSelectionType('Unsupported object selection type.')
+
+
+def nvds_init_obj_draw_label(
+    batch_meta: pyds.NvDsBatchMeta, obj_meta: pyds.NvDsObjectMeta, draw_label: str
+):
+    user_meta = pyds.nvds_acquire_user_meta_from_pool(batch_meta)
+    if user_meta:
+        data = pyds.alloc_custom_struct(user_meta)
+        data.message = draw_label
+        user_meta.user_meta_data = data
+        user_meta.base_meta.meta_type = OBJ_DRAW_LABEL_META_TYPE
+        pyds.nvds_add_user_meta_to_obj(obj_meta, user_meta)
+    else:
+        raise MetaPoolError('Error in acquiring user meta from pool.')
+
+
+def nvds_get_obj_draw_label_struct(
+    obj_meta: pyds.NvDsObjectMeta,
+) -> pyds.CustomDataStruct:
+    for user_meta in nvds_obj_user_meta_iterator(obj_meta):
+        if user_meta.base_meta.meta_type == OBJ_DRAW_LABEL_META_TYPE:
+            return pyds.CustomDataStruct.cast(user_meta.user_meta_data)
+    return None
+
+
+def nvds_set_obj_draw_label(obj_meta: pyds.NvDsObjectMeta, draw_label: str) -> bool:
+    data = nvds_get_obj_draw_label_struct(obj_meta)
+    if data is not None:
+        data.message = draw_label
+        return True
+    return False
+
+
+def nvds_get_obj_draw_label(obj_meta: pyds.NvDsObjectMeta) -> Optional[str]:
+    data = nvds_get_obj_draw_label_struct(obj_meta)
+    if data is not None:
+        return pyds.get_string(data.message)
+    return None
