@@ -11,13 +11,13 @@ parameters:
       Primary_Detector:
         Car:
           bbox:
-            border_color: 00FF00FF  # Green
+            border_color: '00FF00FF'  # Green
             background_color: '00000000'  # transparent
             thickness: 2
           label:
-            font_color: FFFFFFFF  # White
+            font_color: 'FFFFFFFF'  # White
             border_color: '00000000'  # transparent
-            background_color: 000000FF  # Black
+            background_color: '000000FF'  # Black
             font_scale: 0.5
             thickness: 1
             # Note that the label format for Primary_Detector.Car objects
@@ -31,7 +31,7 @@ parameters:
               margin_y: 0
         Person:
           bbox:
-            border_color: 0000FFFF  # Blue
+            border_color: '0000FFFF'  # Blue
             thickness: 2
 
 pipeline:

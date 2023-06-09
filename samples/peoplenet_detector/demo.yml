@@ -49,23 +49,23 @@ parameters:
         person_face:
           bbox:
             # RGBA color value for bboxes of persons with face associated
-            border_color: 00ff00ff
+            border_color: '00ff00ff'
             # width of person's bboxes border in pixels
             thickness: 3
           label:
             # RGBA color values for person label's font and background
-            font_color: 000000ff
-            background_color: d8e6ffd9
+            font_color: '000000ff'
+            background_color: 'd8e6ffd9'
         person_noface:
           bbox:
             # RGBA color value for bboxes of persons with no face associated
-            border_color: 0000ffff
+            border_color: '0000ffff'
             # width of person's bboxes border in pixels
             thickness: 3
           label:
             # RGBA color values for person label's font and background
-            font_color: 000000ff
-            background_color: d8e6ffd9
+            font_color: '000000ff'
+            background_color: 'd8e6ffd9'
         face:
           blur: true
 
