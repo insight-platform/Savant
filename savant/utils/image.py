@@ -522,6 +522,5 @@ def get_rotation_matrix(
     rotation_matrix = cv2.getRotationMatrix2D(
         (rotation_point[0], rotation_point[1]), angle, 1
     )
-    rotation_matrix[0, 2] -= min(polygon[:, 0])
-    rotation_matrix[1, 2] -= min(polygon[:, 1])
+    rotation_matrix[:,2] -= np.min(polygon, axis=0)
     return rotation_matrix, resolution
