@@ -17,6 +17,7 @@ Base input preprocessing
     :template: autosummary/class.rst
 
     BasePreprocessObjectMeta
+    BasePreprocessObjectImage
 
 Savant input preprocessing
 --------------------------

@@ -118,8 +118,8 @@ GstFlowReturn ObjectsPreprocessing::preprocessing(
 
         for (frame_meta_list_item = batch_meta->frame_meta_list; frame_meta_list_item != nullptr; frame_meta_list_item = frame_meta_list_item->next)
         {
-            DSCudaMemory ds_cuda_memory = DSCudaMemory(surface, frame_meta->batch_id);
             frame_meta = (NvDsFrameMeta *) (frame_meta_list_item->data);
+            DSCudaMemory ds_cuda_memory = DSCudaMemory(surface, frame_meta->batch_id);
             frame_height = (int) surface->surfaceList[frame_meta->batch_id].planeParams.height[0];
             frame_width = (int) surface->surfaceList[frame_meta->batch_id].planeParams.width[0];
             ref_frame_size = {frame_width, frame_height};
@@ -218,7 +218,6 @@ GstFlowReturn ObjectsPreprocessing::preprocessing(
                     if (preproc_object!=nullptr) delete preproc_object;
                 }
             }
-
             ds_cuda_memory.UnMapCudaPtr();
         }
         gst_buffer_unmap (inbuf, &in_map_info);
@@ -252,8 +251,8 @@ GstFlowReturn ObjectsPreprocessing::restore_frame(GstBuffer* gst_buffer){
         surface = (NvBufSurface *) in_map_info.data;
         for (frame_list_item = batch_meta->frame_meta_list; frame_list_item != nullptr; frame_list_item = frame_list_item->next)
         {
-            DSCudaMemory ds_cuda_memory = DSCudaMemory(surface, frame_meta->batch_id);
             frame_meta = (NvDsFrameMeta *) (frame_list_item->data);
+            DSCudaMemory ds_cuda_memory = DSCudaMemory(surface, frame_meta->batch_id);
             frame_height = (int) surface->surfaceList[frame_meta->batch_id].planeParams.height[0];
             frame_width = (int) surface->surfaceList[frame_meta->batch_id].planeParams.width[0];
             frame_size = {frame_width, frame_height};

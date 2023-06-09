@@ -30,7 +30,7 @@ Savant base models
     Model
     ModelInput
     ModelOutput
-    PreprocessObjectTensor
+    PreprocessObjectImage
 
     ObjectModel
     ObjectModelOutput

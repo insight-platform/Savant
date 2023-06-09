@@ -1,4 +1,5 @@
 """Base deep learning model configuration templates."""
+import cv2
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import List, Optional, Tuple
@@ -35,28 +36,37 @@ class ModelColorFormat(Enum):
 
 
 @dataclass
-class PreprocessObjectTensor:
+class OutputImage:
+    width: int
+    height: int
+    method: str
+    interpolation: str
+
+    def __post_init__(self):
+        self.method = self.method.lower()
+        if self.method not in ['fit', 'scale']:
+            raise ValueError(f'Invalid output image method: {self.method}')
+        self.interpolation = self.interpolation.lower()
+        if self.interpolation not in ['nearest', 'linear', 'cubic', 'area', 'lanczos4']:
+            raise ValueError(f'Invalid interpolation method: {self.interpolation}')
+
+        if self.interpolation == 'nearest':
+            self.cv2_interpolation = cv2.INTER_NEAREST
+        elif self.interpolation == 'linear':
+            self.cv2_interpolation = cv2.INTER_LINEAR
+        elif self.interpolation == 'cubic':
+            self.cv2_interpolation = cv2.INTER_CUBIC
+        elif self.interpolation == 'area':
+            self.cv2_interpolation = cv2.INTER_AREA
+        elif self.interpolation == 'lanczos4':
+            self.cv2_interpolation = cv2.INTER_LANCZOS4
+
+
+@dataclass
+class PreprocessObjectImage(PyFunc):
     """Object image preprocessing function configuration."""
 
-    custom_function: str = MISSING
-    """Object image preprocessing function. It can be a Python function:
-
-    1. Function should take one argument of type ``pysavantboost.Image``
-       and return ``pysavantboost.Image``
-    2. Function should be referenced in the form of ``module:function_name``
-
-    or a C++ function
-
-    1. Function should take one argument of type ``pysavantboost.Image``
-       and return ``pysavantboost.Image``
-    2. Function should be referenced in the form of ``library.so:function_name``
-    """
-
-    padding: Tuple[int, int] = (0, 0)
-    """Setting X and Y padding (in pixels) around the object bbox allows specifying
-    an extended image region that includes not just the object,
-    but also its immediate surroundings.
-    """
+    output_image: Optional[OutputImage] = None
 
 
 @dataclass
@@ -145,7 +155,7 @@ class ModelInput:
     :py:class:`~savant.base.input_preproc.BasePreprocessObjectMeta`.
     """
 
-    preprocess_object_tensor: Optional[PreprocessObjectTensor] = None
+    preprocess_object_image: Optional[PreprocessObjectImage] = None
     """Object image preprocessing Python/C++ function configuration.
 
     .. todo:: object_tensor_padding can be one of P, (PX, PY),

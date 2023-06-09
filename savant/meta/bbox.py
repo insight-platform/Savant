@@ -1,5 +1,6 @@
 """Bounding box metadata."""
-from typing import Tuple
+import math
+from typing import Tuple, Union
 from dataclasses import dataclass
 import numpy as np
 from savant.converter.scale import scale_rbbox
@@ -77,6 +78,21 @@ class BBox(BaseBBox):
         """[x_min, y_min, x_max, y_max] representation of the bbox."""
         return self.left, self.top, self.right, self.bottom
 
+    def polygon(self) -> np.ndarray:
+        """Representation of the bbox using 4 corner points.
+
+        :return: polygon np.array([[x1, y1], [x2, y2], [x3, y3], [x4, y4]]), value in float
+        """
+        left, top, right, bottom = self.tlbr
+        return np.array(
+            [
+                [left, top],
+                [right, top],
+                [right, bottom],
+                [left, bottom],
+            ]
+        )
+
 
 @dataclass
 class RBBox(BaseBBox):
@@ -111,3 +127,41 @@ class RBBox(BaseBBox):
         self.width = scaled_bbox[2]
         self.height = scaled_bbox[3]
         self.angle = scaled_bbox[4]
+
+    def polygon(self) -> np.ndarray:
+        """representation of the bbox using 4 corner points.
+        :return: polygon np.array([[x1, y1], [x2, y2], [x3, y3], [x4, y4]])
+        """
+        angle_rad = self.angle / 180 * np.pi
+        c, s = math.cos(angle_rad), math.sin(angle_rad)
+        rotation_matrix = np.array([[c, -s], [s, c]])
+        pts = np.array(
+            [
+                [-self.width / 2, -self.height / 2],
+                [self.width / 2, -self.height / 2],
+                [self.width / 2, self.height / 2],
+                [-self.width / 2, self.height / 2],
+            ]
+        )
+        c_point = np.array([self.x_center, self.y_center])
+        res_matmult = np.matmul(pts, rotation_matrix)
+        rect_points = c_point + res_matmult
+        return rect_points
+
+    def to_bbox(self) -> BBox:
+        """Converts rotated bounding box to regular (aligned) bounding box.
+        :return: BBox
+        """
+        polygon = self.polygon()
+        bbox_aligned_width, bbox_aligned_height = map(
+            float, np.max(polygon, axis=0) - np.min(polygon, axis=0)
+        )
+        bbox_aligned_x_center, bbox_aligned_y_center = map(
+            float, np.mean(polygon, axis=0)
+        )
+        return BBox(
+            x_center=bbox_aligned_x_center,
+            y_center=bbox_aligned_y_center,
+            width=bbox_aligned_width,
+            height=bbox_aligned_height,
+        )
