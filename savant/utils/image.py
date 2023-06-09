@@ -251,8 +251,7 @@ class GPUImage:
         :param cuda_stream: cuda stream
         """
         if isinstance(image, np.ndarray):
-            gpu_image = cv2.cuda_GpuMat(image)
-            self._gpu_image = gpu_image
+            self._gpu_image =  cv2.cuda_GpuMat(image)
         elif isinstance(image, CPUImage):
             self._gpu_image = cv2.cuda_GpuMat(image.np_array)
         elif isinstance(image, cv2.cuda_GpuMat):
