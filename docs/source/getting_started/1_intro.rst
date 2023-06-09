@@ -10,7 +10,8 @@ The tutorials are published on Medium:
 
 - `Meet Savant: a New High-Performance Python Video Analytics Framework For Nvidia Hardware <https://hello.savant.video/peoplenet-tutorial>`_;
 - `Building a 500+ FPS Accelerated Video Background Removal Pipeline with Savant and OpenCV CUDA MOG2 <https://hello.savant.video/opencv-cuda-bg-remover-mog2-tutorial>`_;
-- `Building a High-Performance Car Classification Pipeline With Savant <https://medium.com/inside-in-sight/building-a-high-performance-car-classifier-pipeline-with-savant-b232461ad96?source=friends_link&sk=63cb289315679af83032ef5247861a2d>`_.
+- `Building a High-Performance Car Classification Pipeline With Savant <https://medium.com/inside-in-sight/building-a-high-performance-car-classifier-pipeline-with-savant-b232461ad96?source=friends_link&sk=63cb289315679af83032ef5247861a2d>`_;
+- `Efficient City Traffic Metering With PeopleNet/YOLOv8, Savant, And Grafana At Scale <https://medium.com/inside-in-sight/efficient-city-traffic-metering-with-peoplenet-yolov8-savant-and-grafana-at-scale-d6f162afe883?source=friends_link&sk=ab96c5ef3c173902559f213849dede9b>`_.
 
 Savant simplifies everyday tasks, including data ingestion, stream processing, data output, and other operations encountered when building video analytics pipelines. With GStreamer technicalities being hidden by Savant, all the user writes is code and configuration specific to their video analytics application.
 

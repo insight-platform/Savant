@@ -54,6 +54,15 @@ def nvds_frame_user_meta_iterator(frame_meta: pyds.NvDsFrameMeta) -> NvDsMetaIte
     return NvDsMetaIterator(frame_meta.frame_user_meta_list, pyds.NvDsUserMeta.cast)
 
 
+def nvds_obj_user_meta_iterator(obj_meta: pyds.NvDsObjectMeta) -> NvDsMetaIterator:
+    """NvDsUserMeta iterator.
+
+    :param frame_meta: NvDs object metadata structure that will be iterated on.
+    :return: NvDsUserMeta iterator.
+    """
+    return NvDsMetaIterator(obj_meta.obj_user_meta_list, pyds.NvDsUserMeta.cast)
+
+
 def nvds_obj_meta_iterator(frame_meta: pyds.NvDsFrameMeta) -> NvDsMetaIterator:
     """NvDsObjectMeta iterator.
 

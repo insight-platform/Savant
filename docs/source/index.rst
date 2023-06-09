@@ -4,7 +4,7 @@
 Welcome To Savant Documentation
 ===================================
 
-:repo-link:`Savant` is a Python/C++ open-source, high-level framework for building real-time, streaming, highly efficient multimedia AI applications on the Nvidia stack. It makes it possible to develop dynamic, fault-tolerant inference pipelines that utilize the best Nvidia approaches for data center and edge accelerators very quickly. Savant supports both discrete Nvidia GPUs and Jetson edge devices.
+:repo-link:`Savant` is an open-source, high-level Python/C++/Rust framework for building real-time, streaming, highly efficient computer vision AI applications on the Nvidia stack. It makes it possible to develop dynamic, fault-tolerant inference pipelines that utilize the best Nvidia approaches for data center and edge accelerators very quickly. Savant supports both discrete Nvidia GPUs and Jetson edge devices.
 
 * **Repository**: https://github.com/insight-platform/Savant
 * **License**: Apache 2.0
@@ -162,6 +162,8 @@ As for now, we provide images for x86 architecture and for Jetson hardware.
    :caption: Advanced Topics
 
    advanced_topics/0_batching
+   advanced_topics/0_pipeline_capacity
+   advanced_topics/0_dead_stream_eviction
    advanced_topics/1_custom_tracking
    advanced_topics/3_custom_roi
    advanced_topics/3_skipping_frames

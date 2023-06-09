@@ -85,10 +85,11 @@ class ObjectMeta:
         track_id: int = UNTRACKED_OBJECT_ID,
         parent: Optional['ObjectMeta'] = None,
         attributes: Optional[List[AttributeMeta]] = None,
+        draw_label: Optional[str] = None,
     ):
-
         self._element_name = element_name
         self._label = label
+        self._draw_label = draw_label
         self._confidence = confidence
         self._track_id = track_id
         self._parent = parent
@@ -172,6 +173,21 @@ class ObjectMeta:
             self.object_meta_impl.label = value
         else:
             self._label = value
+
+    @property
+    def draw_label(self) -> str:
+        if self.object_meta_impl:
+            return self.object_meta_impl.draw_label
+        if self._draw_label is not None:
+            return self._draw_label
+        return self.label
+
+    @draw_label.setter
+    def draw_label(self, value: str) -> str:
+        if self.object_meta_impl:
+            self.object_meta_impl.draw_label = value
+        else:
+            self._draw_label = value
 
     @property
     def parent(self) -> 'ObjectMeta':

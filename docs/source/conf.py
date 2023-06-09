@@ -46,7 +46,7 @@ extensions = [
     'sphinx.ext.inheritance_diagram',
     'sphinx_rtd_theme',
     'sphinx.ext.autosectionlabel',
-    'repo_link'
+    'repo_link',
 ]
 
 repo_link = 'https://github.com/insight-platform/Savant'

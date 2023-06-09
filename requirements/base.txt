@@ -5,6 +5,8 @@ fastavro~=1.4.4
 pyzmq~=22.2.1
 cachetools~=5.3.0
 
+savant-rs~=0.1.23
+
 omegaconf~=2.2
 # for omegaconf arithmetic resolver
 simpleeval~=0.9.12

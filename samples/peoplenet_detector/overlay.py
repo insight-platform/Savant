@@ -84,52 +84,18 @@ class Overlay(NvDsDrawFunc):
         :param frame_meta: This frame's metadata.
         :artist: Artist object, provides high-level interface to drawing funcitons.
         """
-        person_bboxes = []
-        person_track_ids = []
+        super().draw_on_frame(frame_meta, artist)
 
-        person_w_face_idxs = []
         n_persons_w_face = 0
         n_persons_no_face = 0
-
         for obj_meta in frame_meta.objects:
             if obj_meta.is_primary:
-                person_w_face_idxs = obj_meta.get_attr_meta(
-                    'analytics', 'person_w_face_idxs'
-                ).value
                 n_persons_w_face = obj_meta.get_attr_meta(
                     'analytics', 'n_persons_w_face'
                 ).value
                 n_persons_no_face = obj_meta.get_attr_meta(
                     'analytics', 'n_persons_no_face'
                 ).value
-
-            elif obj_meta.label == 'person':
-                person_bboxes.append(obj_meta.bbox)
-                person_track_ids.append(obj_meta.track_id)
-
-            elif obj_meta.label == 'face':
-                artist.blur(obj_meta.bbox)
-
-        for i, (bbox, track_id) in enumerate(zip(person_bboxes, person_track_ids)):
-            if i in person_w_face_idxs:
-                color = self.person_with_face_bbox_color
-            else:
-                color = self.person_no_face_bbox_color
-            artist.add_bbox(
-                bbox=bbox,
-                border_color=color,
-                border_width=self.bbox_border_width,
-                padding=0,
-            )
-            artist.add_text(
-                text=f'#{track_id}',
-                anchor_x=int(bbox.left) - self.bbox_border_width,
-                anchor_y=int(bbox.top) - self.bbox_border_width,
-                bg_color=self.person_label_bg_color,
-                font_color=self.person_label_font_color,
-                anchor_point=Position.LEFT_BOTTOM,
-                padding=0,
-            )
 
         pts = frame_meta.pts
 
@@ -145,29 +111,22 @@ class Overlay(NvDsDrawFunc):
                 height=self.overlay_height,
             ),
             border_width=0,
-            bg_color=(0, 0, 0),
-            padding=0,
+            bg_color=(0, 0, 0, 255),
         )
         artist.add_graphic(self.logo, self.logo_pos)
         artist.add_graphic(self.green_man.get_frame(pts), self.green_sprite_tl)
         artist.add_graphic(self.blue_man.get_frame(pts), self.blue_sprite_tl)
         artist.add_text(
             f'{n_persons_w_face}',
-            self.green_text_tl[0],
-            self.green_text_tl[1],
+            self.green_text_tl,
             self.font_scale,
             self.counters_font_thickness,
-            (1, 1, 1),
-            padding=0,
-            anchor_point=Position.LEFT_TOP,
+            anchor_point_type=Position.LEFT_TOP,
         )
         artist.add_text(
             f'{n_persons_no_face}',
-            self.blue_text_tl[0],
-            self.blue_text_tl[1],
+            self.blue_text_tl,
             self.font_scale,
             self.counters_font_thickness,
-            (1, 1, 1),
-            padding=0,
-            anchor_point=Position.LEFT_TOP,
+            anchor_point_type=Position.LEFT_TOP,
         )

@@ -130,10 +130,14 @@ class GstPipelineRunner:
         err, debug = message.parse_error()
         # calling `raise` here causes the pipeline to hang,
         # just save message and handle it later
-        self._error = f'Received error "{err}" from {message.src.name}.'
+        self._error = self.build_error_message(message, err, debug)
         logger.error(self._error)
         self._error += f' Debug info: "{debug}".'
         self.shutdown()
+
+    def build_error_message(self, message: Gst.Message, err: GLib.GError, debug: str):
+        """Build error message."""
+        return f'Received error "{err}" from {message.src.name}.'
 
     def on_eos(  # pylint: disable=unused-argument
         self, bus: Gst.Bus, message: Gst.Message

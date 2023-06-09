@@ -248,6 +248,13 @@ class NvDsPipeline(GstPipeline):
         :param new_pad: The pad that has been added.
         """
 
+        if not self._is_running:
+            self._logger.info(
+                'Pipeline is not running. Do not add source for pad %s.',
+                new_pad.get_name(),
+            )
+            return
+
         # filter out non-video pads
         # new_pad caps can be None, e.g. for zeromq_source_bin
         caps = new_pad.get_current_caps()
@@ -265,11 +272,18 @@ class NvDsPipeline(GstPipeline):
         except KeyError:
             source_info = self._sources.init_source(source_id)
         else:
-            while not source_info.lock.wait(5):
+            while self._is_running and not source_info.lock.wait(5):
                 self._logger.debug(
                     'Waiting source %s to release', source_info.source_id
                 )
             source_info.lock.clear()
+
+        if not self._is_running:
+            self._logger.info(
+                'Pipeline is not running. Cancel adding source %s.',
+                source_id,
+            )
+            return
 
         self._logger.debug('Ready to add source %s', source_info.source_id)
 
@@ -286,51 +300,63 @@ class NvDsPipeline(GstPipeline):
     ):
         """Handle adding caps to video source pad."""
 
-        new_pad_caps: Gst.Caps = event.parse_caps()
-        self._logger.debug(
-            'Pad %s.%s has caps %s',
-            new_pad.get_parent().get_name(),
-            new_pad.get_name(),
-            new_pad_caps,
-        )
-        caps_struct: Gst.Structure = new_pad_caps.get_structure(0)
-        parsed, width = caps_struct.get_int('width')
-        assert parsed, f'Failed to parse "width" property of caps "{new_pad_caps}"'
-        parsed, height = caps_struct.get_int('height')
-        assert parsed, f'Failed to parse "height" property of caps "{new_pad_caps}"'
-
-        while source_info.pad_idx is None:
-            try:
-                with self._source_adding_lock:
-                    source_info.pad_idx = self._free_pad_indices.pop(0)
-            except IndexError:
-                # avro_video_decode_bin already sent EOS for some stream and adding a
-                # new one, but the former stream did not complete in this pipeline yet.
-                self._logger.warning(
-                    'Reached maximum number of streams: %s. '
-                    'Waiting resources for source %s.',
-                    self._max_parallel_streams,
-                    source_info.source_id,
-                )
-                time.sleep(5)
-
-        with self._source_adding_lock:
-            source_info.src_resolution = Resolution(width, height)
-            self._sources.update_source(source_info)
-
-            if not source_info.after_demuxer:
-                self._add_source_output(source_info)
-            input_src_pad = self._add_input_converter(
-                new_pad,
+        try:
+            new_pad_caps: Gst.Caps = event.parse_caps()
+            self._logger.debug(
+                'Pad %s.%s has caps %s',
+                new_pad.get_parent().get_name(),
+                new_pad.get_name(),
                 new_pad_caps,
-                source_info,
             )
-            add_convert_savant_frame_meta_pad_probe(
-                input_src_pad,
-                True,
+            caps_struct: Gst.Structure = new_pad_caps.get_structure(0)
+            parsed, width = caps_struct.get_int('width')
+            assert parsed, f'Failed to parse "width" property of caps "{new_pad_caps}"'
+            parsed, height = caps_struct.get_int('height')
+            assert parsed, f'Failed to parse "height" property of caps "{new_pad_caps}"'
+
+            while source_info.pad_idx is None:
+                self._check_pipeline_is_running()
+                try:
+                    with self._source_adding_lock:
+                        source_info.pad_idx = self._free_pad_indices.pop(0)
+                except IndexError:
+                    # avro_video_decode_bin already sent EOS for some stream and adding a
+                    # new one, but the former stream did not complete in this pipeline yet.
+                    self._logger.warning(
+                        'Reached maximum number of streams: %s. '
+                        'Waiting resources for source %s.',
+                        self._max_parallel_streams,
+                        source_info.source_id,
+                    )
+                    time.sleep(5)
+
+            with self._source_adding_lock:
+                self._check_pipeline_is_running()
+                source_info.src_resolution = Resolution(width, height)
+                self._sources.update_source(source_info)
+
+                if not source_info.after_demuxer:
+                    self._add_source_output(source_info)
+                input_src_pad = self._add_input_converter(
+                    new_pad,
+                    new_pad_caps,
+                    source_info,
+                )
+                self._check_pipeline_is_running()
+                add_convert_savant_frame_meta_pad_probe(
+                    input_src_pad,
+                    True,
+                )
+                self._link_to_muxer(input_src_pad, source_info)
+                self._check_pipeline_is_running()
+                self._pipeline.set_state(Gst.State.PLAYING)
+
+        except PipelineIsNotRunningError:
+            self._logger.info(
+                'Pipeline is not running. Cancel adding source %s.',
+                source_info.source_id,
             )
-            self._link_to_muxer(input_src_pad, source_info)
-            self._pipeline.set_state(Gst.State.PLAYING)
+            return Gst.PadProbeReturn.REMOVE
 
         self._logger.info('Added source %s', source_info.source_id)
 
@@ -343,6 +369,7 @@ class NvDsPipeline(GstPipeline):
         new_pad_caps: Gst.Caps,
         source_info: SourceInfo,
     ) -> Gst.Pad:
+        self._check_pipeline_is_running()
         nv_video_converter: Gst.Element = Gst.ElementFactory.make('nvvideoconvert')
         if not is_aarch64():
             nv_video_converter.set_property(
@@ -360,6 +387,7 @@ class NvDsPipeline(GstPipeline):
             )
             nv_video_converter.set_property('dest-crop', dest_crop)
 
+        self._check_pipeline_is_running()
         self._pipeline.add(nv_video_converter)
         nv_video_converter.sync_state_with_parent()
         video_converter_sink: Gst.Pad = nv_video_converter.get_static_pad('sink')
@@ -369,6 +397,7 @@ class NvDsPipeline(GstPipeline):
                 'Inserting "videoconvert" before it.',
                 new_pad_caps,
             )
+            self._check_pipeline_is_running()
             video_converter: Gst.Element = Gst.ElementFactory.make('videoconvert')
             self._pipeline.add(video_converter)
             video_converter.sync_state_with_parent()
@@ -377,9 +406,11 @@ class NvDsPipeline(GstPipeline):
             source_info.before_muxer.append(video_converter)
 
         source_info.before_muxer.append(nv_video_converter)
+        self._check_pipeline_is_running()
         # TODO: send EOS to video_converter on unlink if source didn't
         assert new_pad.link(video_converter_sink) == Gst.PadLinkReturn.OK
 
+        self._check_pipeline_is_running()
         capsfilter: Gst.Element = Gst.ElementFactory.make('capsfilter')
         capsfilter.set_property(
             'caps',
@@ -404,13 +435,24 @@ class NvDsPipeline(GstPipeline):
         self._logger.debug(
             'Removing input elements for source %s', source_info.source_id
         )
-        for elem in source_info.before_muxer:
-            self._logger.debug('Removing element %s', elem.get_name())
-            elem.set_locked_state(True)
-            elem.set_state(Gst.State.NULL)
-            self._pipeline.remove(elem)
-        source_info.before_muxer = []
-        self._release_muxer_sink_pad(sink_pad)
+
+        try:
+            for elem in source_info.before_muxer:
+                self._check_pipeline_is_running()
+                self._logger.debug('Removing element %s', elem.get_name())
+                elem.set_locked_state(True)
+                elem.set_state(Gst.State.NULL)
+                self._pipeline.remove(elem)
+            source_info.before_muxer = []
+            self._release_muxer_sink_pad(sink_pad)
+
+        except PipelineIsNotRunningError:
+            self._logger.info(
+                'Pipeline is not running. Cancel removing input elements for source %s.',
+                source_info.source_id,
+            )
+            return False
+
         self._logger.debug(
             'Input elements for source %s removed', source_info.source_id
         )
@@ -418,6 +460,7 @@ class NvDsPipeline(GstPipeline):
 
     # Output
     def _add_source_output(self, source_info: SourceInfo):
+        self._check_pipeline_is_running()
         fakesink = super()._add_sink(
             PipelineElement(
                 element='fakesink',
@@ -434,6 +477,7 @@ class NvDsPipeline(GstPipeline):
         fakesink.sync_state_with_parent()
 
         fakesink_pad: Gst.Pad = fakesink.get_static_pad('sink')
+        self._check_pipeline_is_running()
         fakesink_pad.add_probe(
             Gst.PadProbeType.EVENT_DOWNSTREAM,
             on_pad_event,
@@ -441,6 +485,7 @@ class NvDsPipeline(GstPipeline):
             source_info,
         )
 
+        self._check_pipeline_is_running()
         output_queue = self.add_element(PipelineElement('queue'), link=False)
         output_queue.sync_state_with_parent()
         source_info.after_demuxer.append(output_queue)
@@ -452,11 +497,13 @@ class NvDsPipeline(GstPipeline):
             source_info.source_id,
             source_info.dest_resolution,
         )
+        self._check_pipeline_is_running()
         output_pad: Gst.Pad = self._source_output.add_output(
             pipeline=self,
             source_info=source_info,
             input_pad=output_queue.get_static_pad('src'),
         )
+        self._check_pipeline_is_running()
         assert output_pad.link(fakesink_pad) == Gst.PadLinkReturn.OK
 
         source_info.after_demuxer.append(fakesink)
@@ -466,22 +513,34 @@ class NvDsPipeline(GstPipeline):
         self._logger.debug(
             'Removing output elements for source %s', source_info.source_id
         )
-        for elem in source_info.after_demuxer:
-            self._logger.debug('Removing element %s', elem.get_name())
-            elem.set_locked_state(True)
-            elem.set_state(Gst.State.NULL)
-            self._pipeline.remove(elem)
-        source_info.after_demuxer = []
-        self._logger.debug(
-            'Output elements for source %s removed', source_info.source_id
-        )
 
-        self._sources.remove_source(source_info)
+        try:
+            for elem in source_info.after_demuxer:
+                self._logger.debug('Removing element %s', elem.get_name())
+                elem.set_locked_state(True)
+                elem.set_state(Gst.State.NULL)
+                self._pipeline.remove(elem)
+            source_info.after_demuxer = []
+            self._logger.debug(
+                'Output elements for source %s removed', source_info.source_id
+            )
 
-        self._free_pad_indices.append(source_info.pad_idx)
-        source_info.pad_idx = None
-        self._logger.debug('Releasing lock for source %s', source_info.source_id)
-        source_info.lock.set()
+            self._sources.remove_source(source_info)
+
+            self._free_pad_indices.append(source_info.pad_idx)
+
+        except PipelineIsNotRunningError:
+            self._logger.info(
+                'Pipeline is not running. Cancel removing output elements for source %s.',
+                source_info.source_id,
+            )
+            return False
+
+        finally:
+            source_info.pad_idx = None
+            self._logger.debug('Releasing lock for source %s', source_info.source_id)
+            source_info.lock.set()
+
         self._logger.info(
             'Resources for source %s has been released.', source_info.source_id
         )
@@ -492,7 +551,15 @@ class NvDsPipeline(GstPipeline):
         self._logger.debug(
             'Got EOS on pad %s.%s', pad.get_parent().get_name(), pad.get_name()
         )
-        GLib.idle_add(self._remove_output_elements, source_info)
+
+        try:
+            self._check_pipeline_is_running()
+            GLib.idle_add(self._remove_output_elements, source_info)
+        except PipelineIsNotRunningError:
+            self._logger.info(
+                'Pipeline is not running. Do not remove output elements for source %s.',
+                source_info.source_id,
+            )
 
         self._queue.put(SinkEndOfStream(source_info.source_id))
 
@@ -624,6 +691,7 @@ class NvDsPipeline(GstPipeline):
         """
 
         muxer_sink_pad = self._request_muxer_sink_pad(source_info)
+        self._check_pipeline_is_running()
         assert pad.link(muxer_sink_pad) == Gst.PadLinkReturn.OK
 
     def _request_muxer_sink_pad(self, source_info: SourceInfo) -> Gst.Pad:
@@ -632,6 +700,7 @@ class NvDsPipeline(GstPipeline):
         :param source_info: Video source info.
         """
 
+        self._check_pipeline_is_running()
         # sink_N == NvDsFrameMeta.pad_index
         sink_pad_name = f'sink_{source_info.pad_idx}'
         sink_pad: Gst.Pad = self._muxer.get_static_pad(sink_pad_name)
@@ -641,6 +710,7 @@ class NvDsPipeline(GstPipeline):
                 self._muxer.get_name(),
                 sink_pad_name,
             )
+            self._check_pipeline_is_running()
             sink_pad: Gst.Pad = self._muxer.get_request_pad(sink_pad_name)
             sink_pad.add_probe(
                 Gst.PadProbeType.EVENT_DOWNSTREAM,
@@ -657,6 +727,7 @@ class NvDsPipeline(GstPipeline):
         :param pad: Sink pad to release.
         """
 
+        self._check_pipeline_is_running()
         element: Gst.Element = pad.get_parent()
         self._logger.debug(
             'Releasing pad %s.%s',
@@ -673,7 +744,14 @@ class NvDsPipeline(GstPipeline):
             'Got EOS on pad %s.%s', pad.get_parent().get_name(), pad.get_name()
         )
         source_info = self._sources.get_source(source_id)
-        GLib.idle_add(self._remove_input_elements, source_info, pad)
+        try:
+            self._check_pipeline_is_running()
+            GLib.idle_add(self._remove_input_elements, source_info, pad)
+        except PipelineIsNotRunningError:
+            self._logger.info(
+                'Pipeline is not running. Do not remove output elements for source %s.',
+                source_info.source_id,
+            )
         return Gst.PadProbeReturn.PASS
 
     # Demuxer
@@ -739,22 +817,35 @@ class NvDsPipeline(GstPipeline):
             pad.get_parent().get_name(),
             pad.get_name(),
         )
-        peer: Gst.Pad = pad.get_peer()
-        if peer is not None:
-            self._logger.debug(
-                'Unlinking %s.%s from %s.%s',
-                peer.get_parent().get_name(),
-                peer.get_name(),
-                pad.get_parent().get_name(),
+
+        try:
+            self._check_pipeline_is_running()
+            peer: Gst.Pad = pad.get_peer()
+            if peer is not None:
+                self._logger.debug(
+                    'Unlinking %s.%s from %s.%s',
+                    peer.get_parent().get_name(),
+                    peer.get_name(),
+                    pad.get_parent().get_name(),
+                    pad.get_name(),
+                )
+                self._check_pipeline_is_running()
+                pad.unlink(peer)
+                self._logger.debug(
+                    'Sending EOS to %s.%s',
+                    peer.get_parent().get_name(),
+                    peer.get_name(),
+                )
+                self._check_pipeline_is_running()
+                peer.send_event(Gst.Event.new_eos())
+
+        except PipelineIsNotRunningError:
+            self._logger.info(
+                'Pipeline is not running. Cancel unlinking demuxer pad %s.',
                 pad.get_name(),
             )
-            pad.unlink(peer)
-            self._logger.debug(
-                'Sending EOS to %s.%s',
-                peer.get_parent().get_name(),
-                peer.get_name(),
-            )
-            peer.send_event(Gst.Event.new_eos())
+            return Gst.PadProbeReturn.PASS
+
         return Gst.PadProbeReturn.DROP
 
     def _link_demuxer_src_pad(self, pad: Gst.Pad, source_info: SourceInfo):
@@ -764,5 +855,16 @@ class NvDsPipeline(GstPipeline):
         :param source_info: Video source info.
         """
 
+        self._check_pipeline_is_running()
         demuxer_src_pad = self._demuxer_src_pads[source_info.pad_idx]
         assert demuxer_src_pad.link(pad) == Gst.PadLinkReturn.OK
+
+    def _check_pipeline_is_running(self):
+        """Raise an exception if pipeline is not running."""
+
+        if not self._is_running:
+            raise PipelineIsNotRunningError('Pipeline is not running')
+
+
+class PipelineIsNotRunningError(Exception):
+    """Pipeline is not running."""
