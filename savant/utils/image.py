@@ -29,9 +29,7 @@ class CPUImage:
 
         :return: GPU image
         """
-        image_gpu = cv2.cuda.GpuMat(self._np_image.shape)
-        image_gpu.upload(self._np_image)
-        return image_gpu
+        return cv2.cuda.GpuMat(self._np_image)
 
     @property
     def height(self) -> int:
