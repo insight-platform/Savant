@@ -15,7 +15,9 @@ from savant.deepstream.utils import (
     nvds_set_obj_selection_type,
     nvds_set_obj_uid,
     nvds_get_obj_uid,
-    nvds_get_obj_custom_data_struct,
+    nvds_set_obj_draw_label,
+    nvds_get_obj_draw_label,
+    nvds_init_obj_draw_label,
 )
 from savant.utils.logging import LoggerMixin
 from savant.meta.attribute import AttributeMeta
@@ -247,27 +249,21 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
 
     @property
     def draw_label(self) -> str:
-        custom_data_struct = nvds_get_obj_custom_data_struct(self.ds_object_meta)
-        if custom_data_struct:
-            return pyds.get_string(custom_data_struct.message)
+        draw_label = nvds_get_obj_draw_label(self.ds_object_meta)
+        if draw_label is not None:
+            return draw_label
         return self.label
 
     @draw_label.setter
     def draw_label(self, value: str):
         if isinstance(value, str):
-            data = nvds_get_obj_custom_data_struct(self.ds_object_meta)
-            if data:
-                data.message = value
-            else:
-                user_meta = pyds.nvds_acquire_user_meta_from_pool(
-                    self._frame_meta.base_meta.batch_meta
+            ret = nvds_set_obj_draw_label(self.ds_object_meta, value)
+            if not ret:
+                nvds_init_obj_draw_label(
+                    self._frame_meta.base_meta.batch_meta,
+                    self.ds_object_meta,
+                    value,
                 )
-                if user_meta:
-                    data = pyds.alloc_custom_struct(user_meta)
-                    data.message = value
-                    user_meta.user_meta_data = data
-                    user_meta.base_meta.meta_type = pyds.NvDsMetaType.NVDS_USER_META
-                    pyds.nvds_add_user_meta_to_obj(self.ds_object_meta, user_meta)
         else:
             raise MetaValueError(
                 'The label property can only be a string, '

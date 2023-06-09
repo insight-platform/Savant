@@ -20,3 +20,7 @@ class UIDError(BaseMetaException):
 
 class MetaTypeError(BaseMetaException):
     """Exception on errors when working with incorrect meta type."""
+
+
+class MetaPoolError(BaseMetaException):
+    """Exception on errors when working with meta pool."""
