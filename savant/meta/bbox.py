@@ -133,7 +133,7 @@ class RBBox(BaseBBox):
         :return: polygon np.array([[x1, y1], [x2, y2], [x3, y3], [x4, y4]])
         """
         angle_rad = self.angle / 180 * np.pi
-        c, s = math.cos(angle_rad ), math.sin(angle_rad )
+        c, s = math.cos(angle_rad), math.sin(angle_rad)
         rotation_matrix = np.array([[c, -s], [s, c]])
         pts = np.array(
             [

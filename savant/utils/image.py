@@ -190,9 +190,7 @@ class CPUImage:
             rotation_point = bbox.x_center, bbox.y_center
         else:
             rotation_point = self.width / 2, self.height / 2
-        rotation_matrix, resolution = get_rotation_matrix(
-                self, angle, rotation_point
-        )
+        rotation_matrix, resolution = get_rotation_matrix(self, angle, rotation_point)
         res = cv2.warpAffine(src=self._np_image, M=rotation_matrix, dsize=resolution)
 
         if bbox is not None:
@@ -264,7 +262,7 @@ class GPUImage:
         :param cuda_stream: cuda stream
         """
         if isinstance(image, np.ndarray):
-            self._gpu_image =  cv2.cuda_GpuMat(image)
+            self._gpu_image = cv2.cuda_GpuMat(image)
         elif isinstance(image, CPUImage):
             self._gpu_image = cv2.cuda_GpuMat(image.np_array)
         elif isinstance(image, cv2.cuda_GpuMat):
@@ -531,8 +529,9 @@ def get_rotation_matrix(
         image.width // 2, image.height // 2, image.width, image.height, angle
     )
     polygon = bbox_image.polygon()
-    resolution = tuple(np.ceil((np.max(polygon, axis=0) - np.min(polygon, axis=0))
-                               .astype(int)))
+    resolution = tuple(
+        np.ceil((np.max(polygon, axis=0) - np.min(polygon, axis=0)).astype(int))
+    )
     rotation_matrix = cv2.getRotationMatrix2D(
         (rotation_point[0], rotation_point[1]), angle, 1
     )
