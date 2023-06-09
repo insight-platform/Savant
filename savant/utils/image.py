@@ -516,9 +516,7 @@ def get_rotation_matrix(
         image.width // 2, image.height // 2, image.width, image.height, angle
     )
     polygon = bbox_image.polygon()
-    width_new = int(math.ceil(max(polygon[:, 0] - min(polygon[:, 0]))))
-    height_new = int(math.ceil(max(polygon[:, 1] - min(polygon[:, 1]))))
-    resolution = (width_new, height_new)
+    resolution = tuple(np.ceil(np.max(polygon, axis=0) - np.min(polygon, axis=0)).astype(int)))
     rotation_matrix = cv2.getRotationMatrix2D(
         (rotation_point[0], rotation_point[1]), angle, 1
     )
