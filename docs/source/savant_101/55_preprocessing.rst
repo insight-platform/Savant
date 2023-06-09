@@ -139,18 +139,43 @@ to perform basic operations on the GPU
 
 `GPUImage <https://insight-platform.github.io/Savant/reference/reference/api/generated/savant.utils.image.GPUImage.html#gpuimage>`_ class properties:
 
-- gpu_mat - returns an instance of the `GpuMat <https://docs.opencv.org/4.x/d0/d60/classcv_1_1cuda_1_1GpuMat.html>`_ class from OpenCV.
-- width - image width in pixels.
-- height - image height in pixels.
+* | **gpu_mat** - returns an instance of the `GpuMat <https://docs.opencv.org/4.x/d0/d60/classcv_1_1cuda_1_1GpuMat.html>`_ class from OpenCV.
+* | **width** - image width in pixels.
+* | **height** - image height in pixels.
 
-GPUImage class methods:
+`GPUImage <https://insight-platform.github.io/Savant/reference/reference/api/generated/savant.utils.image.GPUImage.html#gpuimage>`_ class methods:
 
-- to_cpu - copies image from GPU memory into RAM. The image is returned as instance of CPUImage class.
-- сut - cuts out of the image part defined by normal or rotated box. If a rotated box is specified, it cuts out part of the object by the rectangle enclosing the rotated box. The method returns the cut part of the image and the box with coordinates relative to the new image.
-- concat - allows you to combine two images into one. The first image is the image from which this method is called, the second is the image that is passed to the method. You can specify whether images should be vertically or horizontally joined.
-- paste - inserts the image into the current image. The insertion place is specified as a point on the upper left corner of the inserted image.
-- rotate - rotates the image by a specified angle. You can also pass an object bounding box to the method, so that it is rotated together with the image. The method returns the rotated image and the box.
-- resize - resizes the image and returns the result as a new image. You can specify the resize method. Fit - the image will be resized without aspect ratio preservation, scale - the image will be resized with aspect ratio preservation and indentation. You can also specify the interpolation method.
+* | **to_cpu** - copies image from GPU memory into RAM. The image is returned as instance of CPUImage class.
+* | **сut** - cuts out of the image part defined by normal or rotated box. If a rotated box is specified, it cuts out part of the object by the rectangle enclosing the rotated box. The method returns the cut part of the image and the box with coordinates relative to the new image.
+  | If the boundaries of the box go beyond the image, the resulting image will contain only the part that falls within the intersection of the box and the image, and the rest will be filled with black.
+  | Example. The image is loaded and a box is created that goes beyond the image. In the image with the result, you can see that only those images that intersect with the defined box are cut out, and the rest is filled with black
+
+.. code-block:: python
+
+   ref_image = cv2.cvtColor(cv2.imread("55_ref.jpeg"), cv2.COLOR_RGB2BGR)
+   gpu_ref_image = GPUImage(ref_image)
+   cut_bbox = BBox(x_center=gpu_ref_image.width//2,y_center=0, width=1000, height=200)
+   res_image, _ = gpu_ref_image.cut(cut_bbox)
+   cv2.imwrite('55_res.jpeg', cv2.cvtColor(res_image.gpu_mat.download(), cv2.COLOR_RGB2BGR))
+
+.. figure:: ../_static/img/55_ref.jpeg
+   :width: 400
+   :align: center
+   :alt: Reference image
+
+   Reference image
+
+.. figure:: ../_static/img/55_res.jpeg
+   :width: 400
+   :align: center
+   :alt: Result image
+
+   Result image
+
+* | **concat** - allows you to combine two images into one. The first image is the image from which this method is called, the second is the image that is passed to the method. You can specify whether images should be vertically or horizontally joined.
+* | **paste** - inserts the image into the current image. The insertion place is specified as a point on the upper left corner of the inserted image.
+* | **rotate** - rotates the image by a specified angle. You can also pass an object bounding box to the method, so that it is rotated together with the image. The method returns the rotated image and the box.
+* | **resize** - resizes the image and returns the result as a new image. You can specify the resize method. Fit - the image will be resized without aspect ratio preservation, scale - the image will be resized with aspect ratio preservation and indentation. You can also specify the interpolation method.
 
 
 `CPUImage <https://insight-platform.github.io/Savant/reference/api/generated/savant.utils.image.CPUImage.html#cpuimage>`_ has the same methods as GPUImage, but they work with images in RAM,

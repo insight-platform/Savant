@@ -55,70 +55,71 @@ class CPUImage:
         :return:
         """
         if isinstance(bbox, BBox):
-            cut_left = int(bbox.left)
-            cut_right = int(bbox.right)
-            cut_top = int(bbox.top)
-            cut_bottom = int(bbox.bottom)
-            assert (
-                cut_left >= 0
-                and cut_right < self.width
-                and cut_top >= 0
-                and cut_bottom < self.height
-            ), (
-                f'bbox (left={bbox.left}, right={bbox.right}, top={bbox.top}, '
-                f'bottom={bbox.bottom}) is out of '
-                f'image size {self.width}x{self.height}'
-            )
-            cut_roi = self._np_image[cut_top:cut_bottom, cut_left:cut_right, :]
-            return CPUImage(image=cut_roi), BBox(
-                x_center=cut_roi.shape[1] / 2,
-                y_center=cut_roi.shape[0] / 2,
-                width=cut_roi.shape[1],
-                height=cut_roi.shape[0],
+            cutout_box = bbox
+            res_bbox = BBox(
+                x_center=0,
+                y_center=0,
+                width=bbox.width,
+                height=bbox.height,
             )
         elif isinstance(bbox, RBBox):
-            aligned_bbox = bbox.to_bbox()
-            start_row = int(aligned_bbox.top)
-            end_row = int(aligned_bbox.bottom)
-            start_col = int(aligned_bbox.left)
-            end_col = int(aligned_bbox.right)
-            if (
+            cutout_box = bbox.to_bbox()
+            res_bbox = RBBox(
+                x_center=0,
+                y_center=0,
+                width=bbox.width,
+                height=bbox.height,
+                angle=bbox.angle,
+            )
+        else:
+            raise TypeError(f'Unknown type {type(bbox)}')
+
+        # We need to ceil and floor values to avoid errors.
+        # We will take rows and cols from start to end don't include end
+        start_row = math.ceil(cutout_box.top)
+        end_row = math.floor(cutout_box.bottom)
+        start_col = math.ceil(cutout_box.left)
+        end_col = math.floor(cutout_box.right)
+
+        if (
                 start_row < 0
                 or start_col < 0
-                or end_col >= self.width
-                or end_row >= self.height
-            ):
-                res_image = np.zeros(
-                    shape=[
-                        end_row - start_row + 1,
-                        end_col - start_col + 1,
-                        self._np_image.shape[2],
-                    ]
-                )
+                or end_col > self.width
+                or end_row > self.height
+        ):
+            res_image = np.zeros(
+                shape=[
+                    end_row - start_row + 1,
+                    end_col - start_col + 1,
+                    self._np_image.shape[2],
+                ],
+                dtype=np.uint8
+            )
+            intersection_start_row = max(0, start_row)
+            intersection_end_row = min(end_row, self.height)
+            intersection_start_col = max(0, start_col)
+            intersection_end_col = min(end_col, self.width)
+            # compute the area of intersection rectangle
+            if max(0, intersection_end_row - intersection_start_row) * \
+                    max(0, intersection_end_col - intersection_start_col) > 0:
                 cut_roi = self._np_image[
-                    max(start_row, 0) : min(end_row, self.height - 1),
-                    max(start_col, 0) : min(end_col, self.width - 1),
+                    max(start_row, 0): min(end_row, self.height - 1),
+                    max(start_col, 0): min(end_col, self.width - 1),
                     :,
                 ]
                 res_start_col = max(-start_col, 0)
                 res_start_row = max(-start_row, 0)
                 res_image[
-                    res_start_row : res_start_row + cut_roi.size()[1],
-                    res_start_col : res_start_col + cut_roi.size()[0],
+                    res_start_row: res_start_row + cut_roi.shape[0],
+                    res_start_col: res_start_col + cut_roi.shape[1],
                     :,
                 ] = cut_roi
-            else:
-                res_image = self._np_image[start_row:end_row, start_col:end_col, :]
-            res_bbox = RBBox(
-                x_center=res_image.shape[1] / 2,
-                y_center=res_image.shape[0] / 2,
-                width=bbox.width,
-                height=bbox.height,
-                angle=bbox.angle,
-            )
+        else:
+            res_image = self._np_image[start_row:end_row, start_col:end_col, :]
 
-            return CPUImage(res_image), res_bbox
-        raise ValueError(f'Unknown bbox type {type(bbox)}')
+        res_bbox.x_center = res_image.shape[1] / 2
+        res_bbox.y_center = res_image.shape[0] / 2
+        return CPUImage(res_image), res_bbox
 
     def paste(self, image: 'CPUImage', point: Tuple[int, int]):
         """Pastes image on current image.
@@ -136,22 +137,23 @@ class CPUImage:
         :param axis: axis to concatenate. 0 - is vertical, 1 - is horizontal
         :return: concatenated image
         """
-        assert self._np_image.dtype == image.np_array.dtype, (
-            f'Images have different types {self._np_image.dtype } != '
-            f'{image.np_array.dtype}'
-        )
+        if self._np_image.dtype != image.np_array.dtype:
+            raise ValueError(
+                f'Images have different types {self._np_image.dtype } != '
+                f'{image.np_array.dtype}'
+            )
         if axis == 0:
-            assert (
-                self.width == image.width
-            ), f'Images have different height {self.width} != {image.height}'
+            if self.width != image.width:
+                raise ValueError(f'Images have different '
+                                 f'height {self.width} != {image.height}')
 
             return CPUImage(
                 image=np.concatenate([self._np_image, image.np_array], axis=0)
             )
         elif axis == 1:
-            assert (
-                self.height == image.height
-            ), f'Images have different width {self.height} != {image.height}'
+            if self.height != image.height:
+                raise ValueError(f'Images have different '
+                                 f'width {self.height} != {image.height}')
             return CPUImage(
                 image=np.concatenate([self._np_image, image.np_array], axis=1)
             )
@@ -286,77 +288,70 @@ class GPUImage:
         :return:
         """
         if isinstance(bbox, BBox):
-            start_col = int(bbox.left)
-            end_col = int(bbox.right)
-            start_row = int(bbox.top)
-            end_row = int(bbox.bottom)
-            if (
-                start_col < 0
-                or end_col >= self.width
-                or start_row < 0
-                or end_row >= self.height
-            ):
-                raise ValueError(
-                    f'bbox (left={bbox.left}, right={bbox.right}, top={bbox.top}, '
-                    f'bottom={bbox.bottom}) is out of '
-                    f'image size {self.width}x{self.height}'
-                )
-
-            cut_roi = self._gpu_image.colRange(start_col, end_col).rowRange(
-                start_row, end_row
+            cutout_box = bbox
+            res_bbox = BBox(
+                x_center=0,
+                y_center=0,
+                width=bbox.width,
+                height=bbox.height,
             )
-            res_image = cv2.cuda.GpuMat(size=cut_roi.size(), type=cut_roi.type())
-            cut_roi.copyTo(stream=self._cuda_stream, dst=res_image)
-            return GPUImage(image=res_image, cuda_stream=self._cuda_stream), BBox(
-                x_center=cut_roi.size()[0] / 2,
-                y_center=cut_roi.size()[1] / 2,
-                width=cut_roi.size()[0],
-                height=cut_roi.size()[1],
-            )
-
         elif isinstance(bbox, RBBox):
-            aligned_bbox = bbox.to_bbox()
-            start_row = int(aligned_bbox.top)
-            end_row = int(aligned_bbox.bottom)
-            start_col = int(aligned_bbox.left)
-            end_col = int(aligned_bbox.right)
-            if (
-                start_row < 0
-                or start_col < 0
-                or end_col >= self.width
-                or end_row >= self.height
-            ):
-                res_image = cv2.cuda.GpuMat(
-                    rows=end_row - start_row + 1,
-                    cols=end_col - start_col + 1,
-                    type=self._gpu_image.type(),
-                )
-                cut_roi = self._gpu_image.colRange(
-                    max(start_col, 0), min(end_col, self.width - 1)
-                ).rowRange(max(start_row, 0), min(end_row, self.height - 1))
+            cutout_box = bbox.to_bbox()
+            res_bbox = RBBox(
+                x_center=0,
+                y_center=0,
+                width=bbox.width,
+                height=bbox.height,
+                angle=bbox.angle,
+            )
+        else:
+            raise TypeError(f'Unknown type {type(bbox)}')
+
+        # We need to ceil and floor values to avoid errors.
+        # We will take rows and cols from start to end don't include end
+        start_row = math.ceil(cutout_box.top)
+        end_row = math.floor(cutout_box.bottom)
+        start_col = math.ceil(cutout_box.left)
+        end_col = math.floor(cutout_box.right)
+
+        if (
+            start_row < 0
+            or start_col < 0
+            or end_col > self.width
+            or end_row > self.height
+        ):
+            res_image = cv2.cuda.GpuMat(
+                rows=end_row - start_row,
+                cols=end_col - start_col,
+                type=self._gpu_image.type(),
+                s=0
+            )
+            intersection_start_row = max(0, start_row)
+            intersection_end_row = min(end_row, self.height)
+            intersection_start_col = max(0, start_col)
+            intersection_end_col = min(end_col, self.width)
+            # compute the area of intersection rectangle
+            if max(0, intersection_end_row - intersection_start_row) * \
+                    max(0, intersection_end_col - intersection_start_col) > 0:
+                cut_roi = self._gpu_image\
+                    .colRange(intersection_start_col, intersection_end_col)\
+                    .rowRange(intersection_start_row, intersection_end_row)
                 res_start_col = max(-start_col, 0)
                 res_start_row = max(-start_row, 0)
                 roi_res_image = res_image.colRange(
                     res_start_col, res_start_col + cut_roi.size()[0]
                 ).rowRange(res_start_row, res_start_row + cut_roi.size()[1])
                 cut_roi.copyTo(stream=self._cuda_stream, dst=roi_res_image)
-            else:
-                cut_roi = self._gpu_image.colRange(start_col, end_col).rowRange(
-                    start_row, end_row
-                )
-                res_image = cv2.cuda.GpuMat(size=cut_roi.size(), type=cut_roi.type())
-                cut_roi.copyTo(stream=self._cuda_stream, dst=res_image)
-
-            res_bbox = RBBox(
-                x_center=res_image.size()[0] / 2,
-                y_center=res_image.size()[1] / 2,
-                width=bbox.width,
-                height=bbox.height,
-                angle=bbox.angle,
+        else:
+            cut_roi = self._gpu_image.colRange(start_col, end_col).rowRange(
+                start_row, end_row
             )
+            res_image = cv2.cuda.GpuMat(size=cut_roi.size(), type=cut_roi.type())
+            cut_roi.copyTo(stream=self._cuda_stream, dst=res_image)
 
-            return GPUImage(res_image, cuda_stream=self._cuda_stream), res_bbox
-        raise ValueError(f'Unknown bbox type {type(bbox)}')
+        res_bbox.x_center = res_image.size()[0] / 2
+        res_bbox.y_center = res_image.size()[1] / 2
+        return GPUImage(res_image, cuda_stream=self._cuda_stream), res_bbox
 
     def concat(self, image: 'GPUImage', axis: int = 0) -> 'GPUImage':
         """Concatenates images along axis.
@@ -365,14 +360,15 @@ class GPUImage:
         :param axis: axis to concatenate. 0 - is vertical, 1 - is horizontal
         :return: concatenated image
         """
-        assert self.gpu_mat.type() == image.gpu_mat.type(), (
-            f'Images have different types {self.gpu_mat.type()} != '
-            f'{image.gpu_mat.type()}'
-        )
+        if self.gpu_mat.type() != image.gpu_mat.type():
+            raise ValueError(
+                f'Images have different types {self.gpu_mat.type()} != '
+                f'{image.gpu_mat.type()}'
+            )
         if axis == 0:
-            assert (
-                self.width == image.width
-            ), f'Images have different height {self.width} != {image.height}'
+            if self.width != image.width:
+                raise ValueError(f'Images have different '
+                                 f'height {self.width} != {image.height}')
 
             res_rows = self.height + image.height
             res_image = cv2.cuda.GpuMat(
@@ -386,9 +382,9 @@ class GPUImage:
             )
             return GPUImage(image=res_image, cuda_stream=self._cuda_stream)
         elif axis == 1:
-            assert (
-                self.height == image.height
-            ), f'Images have different width {self.height} != {image.height}'
+            if self.height != image.height:
+                raise ValueError(f'Images have different '
+                                 f'width {self.height} != {image.height}')
             res_cols = self.width + image.width
             res_image = cv2.cuda.GpuMat(
                 size=(res_cols, self.height), type=self._gpu_image.type()
@@ -436,9 +432,8 @@ class GPUImage:
         :param bbox: bounding box on image
         :return: rotated image
         """
-
         rotation_matrix, resolution = get_rotation_matrix(
-            self, angle, (bbox.x_center, bbox.y_center)
+            self, angle, (int(bbox.x_center), int(bbox.y_center))
         )
 
         res = cv2.cuda.warpAffine(
