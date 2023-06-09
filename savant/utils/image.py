@@ -174,13 +174,12 @@ class CPUImage:
         """
 
         if bbox is not None:
-            rotation_matrix, resolution = get_rotation_matrix(
-                self, angle, (bbox.x_center, bbox.y_center)
-            )
+            rotation_point = bbox.x_center, bbox.y_center
         else:
-            rotation_matrix, resolution = get_rotation_matrix(
-                self, angle, (self.width // 2, self.height // 2)
-            )
+            rotation_point = self.width / 2, self.height / 2
+        rotation_matrix, resolution = get_rotation_matrix(
+                self, angle, rotation_point
+        )
         res = cv2.warpAffine(src=self._np_image, M=rotation_matrix, dsize=resolution)
 
         if bbox is not None:
