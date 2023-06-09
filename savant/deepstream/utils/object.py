@@ -191,7 +191,9 @@ def nvds_init_obj_draw_label(
         raise MetaPoolError('Error in acquiring user meta from pool.')
 
 
-def nvds_get_obj_draw_label_struct(obj_meta: pyds.NvDsObjectMeta):
+def nvds_get_obj_draw_label_struct(
+    obj_meta: pyds.NvDsObjectMeta,
+) -> pyds.CustomDataStruct:
     for user_meta in nvds_obj_user_meta_iterator(obj_meta):
         if user_meta.base_meta.meta_type == OBJ_DRAW_LABEL_META_TYPE:
             return pyds.CustomDataStruct.cast(user_meta.user_meta_data)
