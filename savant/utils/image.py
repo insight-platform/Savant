@@ -82,10 +82,10 @@ class CPUImage:
         end_col = math.floor(cutout_box.right)
 
         if (
-                start_row < 0
-                or start_col < 0
-                or end_col > self.width
-                or end_row > self.height
+            start_row < 0
+            or start_col < 0
+            or end_col > self.width
+            or end_row > self.height
         ):
             res_image = np.zeros(
                 shape=[
@@ -93,25 +93,28 @@ class CPUImage:
                     end_col - start_col + 1,
                     self._np_image.shape[2],
                 ],
-                dtype=np.uint8
+                dtype=np.uint8,
             )
             intersection_start_row = max(0, start_row)
             intersection_end_row = min(end_row, self.height)
             intersection_start_col = max(0, start_col)
             intersection_end_col = min(end_col, self.width)
             # compute the area of intersection rectangle
-            if max(0, intersection_end_row - intersection_start_row) * \
-                    max(0, intersection_end_col - intersection_start_col) > 0:
+            if (
+                max(0, intersection_end_row - intersection_start_row)
+                * max(0, intersection_end_col - intersection_start_col)
+                > 0
+            ):
                 cut_roi = self._np_image[
-                    max(start_row, 0): min(end_row, self.height - 1),
-                    max(start_col, 0): min(end_col, self.width - 1),
+                    max(start_row, 0) : min(end_row, self.height - 1),
+                    max(start_col, 0) : min(end_col, self.width - 1),
                     :,
                 ]
                 res_start_col = max(-start_col, 0)
                 res_start_row = max(-start_row, 0)
                 res_image[
-                    res_start_row: res_start_row + cut_roi.shape[0],
-                    res_start_col: res_start_col + cut_roi.shape[1],
+                    res_start_row : res_start_row + cut_roi.shape[0],
+                    res_start_col : res_start_col + cut_roi.shape[1],
                     :,
                 ] = cut_roi
         else:
@@ -144,16 +147,18 @@ class CPUImage:
             )
         if axis == 0:
             if self.width != image.width:
-                raise ValueError(f'Images have different '
-                                 f'height {self.width} != {image.height}')
+                raise ValueError(
+                    f'Images have different ' f'height {self.width} != {image.height}'
+                )
 
             return CPUImage(
                 image=np.concatenate([self._np_image, image.np_array], axis=0)
             )
         elif axis == 1:
             if self.height != image.height:
-                raise ValueError(f'Images have different '
-                                 f'width {self.height} != {image.height}')
+                raise ValueError(
+                    f'Images have different ' f'width {self.height} != {image.height}'
+                )
             return CPUImage(
                 image=np.concatenate([self._np_image, image.np_array], axis=1)
             )
@@ -324,18 +329,21 @@ class GPUImage:
                 rows=end_row - start_row,
                 cols=end_col - start_col,
                 type=self._gpu_image.type(),
-                s=0
+                s=0,
             )
             intersection_start_row = max(0, start_row)
             intersection_end_row = min(end_row, self.height)
             intersection_start_col = max(0, start_col)
             intersection_end_col = min(end_col, self.width)
             # compute the area of intersection rectangle
-            if max(0, intersection_end_row - intersection_start_row) * \
-                    max(0, intersection_end_col - intersection_start_col) > 0:
-                cut_roi = self._gpu_image\
-                    .colRange(intersection_start_col, intersection_end_col)\
-                    .rowRange(intersection_start_row, intersection_end_row)
+            if (
+                max(0, intersection_end_row - intersection_start_row)
+                * max(0, intersection_end_col - intersection_start_col)
+                > 0
+            ):
+                cut_roi = self._gpu_image.colRange(
+                    intersection_start_col, intersection_end_col
+                ).rowRange(intersection_start_row, intersection_end_row)
                 res_start_col = max(-start_col, 0)
                 res_start_row = max(-start_row, 0)
                 roi_res_image = res_image.colRange(
@@ -367,8 +375,9 @@ class GPUImage:
             )
         if axis == 0:
             if self.width != image.width:
-                raise ValueError(f'Images have different '
-                                 f'height {self.width} != {image.height}')
+                raise ValueError(
+                    f'Images have different ' f'height {self.width} != {image.height}'
+                )
 
             res_rows = self.height + image.height
             res_image = cv2.cuda.GpuMat(
@@ -383,8 +392,9 @@ class GPUImage:
             return GPUImage(image=res_image, cuda_stream=self._cuda_stream)
         elif axis == 1:
             if self.height != image.height:
-                raise ValueError(f'Images have different '
-                                 f'width {self.height} != {image.height}')
+                raise ValueError(
+                    f'Images have different ' f'width {self.height} != {image.height}'
+                )
             res_cols = self.width + image.width
             res_image = cv2.cuda.GpuMat(
                 size=(res_cols, self.height), type=self._gpu_image.type()
