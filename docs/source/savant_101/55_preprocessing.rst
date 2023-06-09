@@ -98,7 +98,16 @@ and implement the __call__ magic method.
         """
 
 The method passes meta information about the object, the whole frame (image)
-as an instance of the GpuImage class, and a CUDA stream. You can use the CUDA stream
+as an instance of the GPUImage class, and a CUDA stream.
+
+.. attention::
+    Please note that you will be given the whole frame as an argument. If you draw,
+    paste or modify something on it in any way, it will affect the frame.
+    The frame you have changed will be passed on to the pipeline. That's why
+    we strongly recommend that you first cut out the part of the image with object,
+    and then do transformations with that image.
+
+You can use the CUDA stream
 to call asynchronous functions from OpenCV library. No additional synchronization
 is required from you to complete all operations, it will be done automatically before
 transferring images to the inference model. Each object uses its own stream for
