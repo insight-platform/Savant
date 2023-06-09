@@ -226,25 +226,25 @@ class CPUImage:
             cv2.INTER_CUBIC, cv2.INTER_LANCZOS4]
         :return: resized image
         """
-        new_resolution = tuple(map(int, resolution))
+        resize_resolution = resolution
         if method == 'scale':
             scale_factor = min(resolution[0] / self.width, resolution[1] / self.height)
-            new_resolution = (
+            resize_resolution = (
                 int(self.width * scale_factor),
                 int(self.height * scale_factor),
             )
         resized_image = cv2.resize(
-            src=self._np_image, dsize=new_resolution, interpolation=interpolation
+            src=self._np_image, dsize=resize_resolution, interpolation=interpolation
         )
         res = np.zeros(
             shape=(resolution[0], resolution[1], self._np_image.shape[2]),
             dtype=self._np_image.dtype,
         )
-        start_col = (resolution[0] - new_resolution[0]) // 2
-        start_row = (resolution[1] - new_resolution[1]) // 2
+        start_col = (resolution[0] - resize_resolution[0]) // 2
+        start_row = (resolution[1] - resize_resolution[1]) // 2
         res[
-            start_row: start_row + new_resolution[1],
-            start_col: start_col + new_resolution[0],
+            start_row: start_row + resize_resolution[1],
+            start_col: start_col + resize_resolution[0],
             :,
         ] = resized_image
         return CPUImage(image=res)
@@ -493,23 +493,23 @@ class GPUImage:
             cv2.INTER_CUBIC, cv2.INTER_LANCZOS4]
         :return: resized image
         """
-        new_resolution = resolution
+        resize_resolution = resolution
         if method == 'scale':
             scale_factor = min(resolution[0] / self.width, resolution[1] / self.height)
-            new_resolution = (
+            resize_resolution = (
                 int(self.width * scale_factor),
                 int(self.height * scale_factor),
             )
         res = cv2.cuda.GpuMat(size=resolution, type=self._gpu_image.type(), s=0)
-        start_col = (resolution[0] - new_resolution[0]) // 2
-        start_row = (resolution[1] - new_resolution[1]) // 2
-        res_roi = res.colRange(start_col, start_col + new_resolution[0]).rowRange(
-            start_row, start_row + new_resolution[1]
+        start_col = (resolution[0] - resize_resolution[0]) // 2
+        start_row = (resolution[1] - resize_resolution[1]) // 2
+        res_roi = res.colRange(start_col, start_col + resize_resolution[0]).rowRange(
+            start_row, start_row + resize_resolution[1]
         )
         resized_image = cv2.cuda.resize(
             src=self._gpu_image,
             dst=res_roi,
-            dsize=new_resolution,
+            dsize=resize_resolution,
             interpolation=interpolation,
             stream=self._cuda_stream,
         )
