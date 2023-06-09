@@ -83,12 +83,13 @@ class BBox(BaseBBox):
 
         :return: polygon np.array([[x1, y1], [x2, y2], [x3, y3], [x4, y4]]), value in float
         """
+        left, top, right, bottom = self.tlbr
         return np.array(
             [
-                [self.left, self.top],
-                [self.right, self.top],
-                [self.right, self.bottom],
-                [self.left, self.bottom],
+                [left, top],
+                [right, top],
+                [right, bottom],
+                [left, bottom],
             ]
         )
 
