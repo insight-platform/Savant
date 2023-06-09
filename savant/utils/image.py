@@ -126,10 +126,22 @@ class CPUImage:
         """Pastes image on current image.
 
         :param image: image to paste
+        :param point: point to paste
         """
+        if (
+            point[0] < 0
+            or point[1] < 0
+            or point[0] >= self.width
+            or point[1] >= self.height
+        ):
+            raise ValueError(
+                f'Point {point} is out of image {self.width}x{self.height}'
+            )
+        insert_width = min(image.width, self.width - point[0])
+        insert_height = min(image.height, self.height - point[1])
         self._np_image[
-            point[1] : point[1] + image.height, point[0] : point[0] + image.width
-        ] = image._np_image
+            point[1]: point[1] + insert_width, point[0]: point[0] + insert_height
+        ] = image._np_image[0:insert_width, 0:insert_height, :]
 
     def concat(self, image: 'CPUImage', axis: int = 0) -> 'CPUImage':
         """Concatenates images along axis.
@@ -166,7 +178,8 @@ class CPUImage:
     def rotate(
         self, angle: float, bbox: Optional[RBBox] = None
     ) -> Tuple['CPUImage', RBBox]:
-        """Rotates image on angle.
+        """Rotates image on angle. If bbox is not None,
+        image will be rotated around center point of image.
 
         :param angle: angle to rotate in degrees
         :param bbox: image will be rotated on bbox.angle if bbox is not None
@@ -230,8 +243,8 @@ class CPUImage:
         start_col = (resolution[0] - new_resolution[0]) // 2
         start_row = (resolution[1] - new_resolution[1]) // 2
         res[
-            start_row : start_row + new_resolution[1],
-            start_col : start_col + new_resolution[0],
+            start_row: start_row + new_resolution[1],
+            start_col: start_col + new_resolution[0],
             :,
         ] = resized_image
         return CPUImage(image=res)
@@ -430,7 +443,9 @@ class GPUImage:
     def rotate(
         self, angle: float, bbox: Optional[RBBox] = None
     ) -> Tuple['GPUImage', RBBox]:
-        """Rotates image on angle. If.
+        """Rotates image on angle. If bbox is not None,
+        image will be rotated around center point of image.
+
 
         :param angle: angle to rotate in degrees
         :param bbox: bounding box on image
@@ -504,7 +519,7 @@ class GPUImage:
 
 def get_rotation_matrix(
     image: Union[CPUImage, GPUImage], angle: float, rotation_point: Tuple[float, float]
-):
+) -> Tuple[np.ndarray, Tuple[int, int]]:
     """Returns rotation matrix and new resolution of image.
 
     :param image: image to rotate
@@ -516,9 +531,10 @@ def get_rotation_matrix(
         image.width // 2, image.height // 2, image.width, image.height, angle
     )
     polygon = bbox_image.polygon()
-    resolution = tuple(np.ceil(np.max(polygon, axis=0) - np.min(polygon, axis=0)).astype(int)))
+    resolution = tuple(np.ceil((np.max(polygon, axis=0) - np.min(polygon, axis=0))
+                               .astype(int)))
     rotation_matrix = cv2.getRotationMatrix2D(
         (rotation_point[0], rotation_point[1]), angle, 1
     )
-    rotation_matrix[:,2] -= np.min(polygon, axis=0)
+    rotation_matrix[:, 2] -= np.min(polygon, axis=0)
     return rotation_matrix, resolution
