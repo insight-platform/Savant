@@ -254,9 +254,7 @@ class GPUImage:
             gpu_image = cv2.cuda_GpuMat(image)
             self._gpu_image = gpu_image
         elif isinstance(image, CPUImage):
-            gpu_image = cv2.cuda_GpuMat()
-            gpu_image.upload(image.np_array)
-            self._gpu_image = gpu_image
+            self._gpu_image = cv2.cuda_GpuMat(image.np_array)
         elif isinstance(image, cv2.cuda_GpuMat):
             self._gpu_image = image
         else:
