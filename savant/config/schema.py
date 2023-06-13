@@ -236,6 +236,13 @@ class DrawFunc(PyFunc):
     kwargs: Optional[Dict[str, Any]] = None
     """Class initialization keyword arguments."""
 
+    when_tagged: Optional[str] = None
+    """Frame tag for filtering frames to be processed by the draw function.
+    
+    If specified, the draw function will be applied only to frames with the specified tag.
+    If not specified, the draw function will be applied to all frames.
+    """
+
     def __post_init__(self):
         if self.kwargs is None:
             self.kwargs = {}

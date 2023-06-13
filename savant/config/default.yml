@@ -60,6 +60,10 @@ parameters:
   # E.g.:
   # draw_func: {}
   #
+  # Or:
+  # draw_func:
+  #   when_tagged: draw
+  #
   # To use custom class to draw on frames define "module", "class_name" and "kwargs".
   # E.g.:
   # draw_func:
@@ -67,6 +71,7 @@ parameters:
   #   class_name: CustomDrawer
   #   kwargs:
   #     color: RED
+  #   when_tagged: draw
   # Class to draw on frames must implement savant.deepstream.base_drawfunc.BaseNvDsDrawFunc.
   draw_func: null
 

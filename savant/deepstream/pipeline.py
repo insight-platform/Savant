@@ -3,7 +3,7 @@ from collections import defaultdict
 from pathlib import Path
 from queue import Queue
 from threading import Lock
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Tuple
 import time
 import pyds
 
@@ -33,7 +33,11 @@ from savant.deepstream.metadata import (
     nvds_obj_meta_output_converter,
     nvds_attr_meta_output_converter,
 )
-from savant.gstreamer.metadata import metadata_add_frame_meta, get_source_frame_meta
+from savant.gstreamer.metadata import (
+    SourceFrameMeta,
+    metadata_add_frame_meta,
+    get_source_frame_meta,
+)
 from savant.gstreamer.utils import on_pad_event, pad_to_source_id
 from savant.deepstream.utils import (
     gst_nvevent_parse_stream_eos,
@@ -584,13 +588,12 @@ class NvDsPipeline(GstPipeline):
                     object_ids[nvds_obj_meta.obj_label] += 1
 
             # will extend source metadata
-            source_id = self._sources.get_id_by_pad_index(nvds_frame_meta.pad_index)
-            savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(
-                nvds_frame_meta
-            )
-            frame_idx = savant_frame_meta.idx if savant_frame_meta else None
-            frame_pts = nvds_frame_meta.buf_pts
-            frame_meta = get_source_frame_meta(source_id, frame_idx, frame_pts)
+            (
+                source_id,
+                frame_pts,
+                frame_idx,
+                frame_meta,
+            ) = self._get_nvds_savant_frame_meta(nvds_frame_meta)
             source_info = self._sources.get_source(source_id)
 
             # second iteration to collect module objects
@@ -787,9 +790,20 @@ class NvDsPipeline(GstPipeline):
         buffer: Gst.Buffer = info.get_buffer()
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
-            self._draw_func(nvds_frame_meta, buffer)
+            if self._can_draw_on_frame(nvds_frame_meta):
+                self._draw_func(nvds_frame_meta, buffer)
         self._draw_func.instance.finalize()
         return Gst.PadProbeReturn.OK
+
+    def _can_draw_on_frame(self, nvds_frame_meta: pyds.NvDsFrameMeta) -> bool:
+        """Check whether we can draw on this specific frame."""
+
+        if self._draw_func.when_tagged is not None:
+            return True
+
+        (*ignore, frame_meta) = self._get_nvds_savant_frame_meta(nvds_frame_meta)
+
+        return self._draw_func.when_tagged in frame_meta.tags
 
     def _allocate_demuxer_pads(self, demuxer: Gst.Element, n_pads: int):
         """Allocate a fixed number of demuxer src pads."""
@@ -864,6 +878,20 @@ class NvDsPipeline(GstPipeline):
 
         if not self._is_running:
             raise PipelineIsNotRunningError('Pipeline is not running')
+
+    def _get_nvds_savant_frame_meta(
+        self,
+        nvds_frame_meta: pyds.NvDsFrameMeta,
+    ) -> Tuple[str, Optional[int], int, SourceFrameMeta]:
+        """Extract source frame meta by NvDs frame meta."""
+
+        source_id = self._sources.get_id_by_pad_index(nvds_frame_meta.pad_index)
+        savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(nvds_frame_meta)
+        frame_idx = savant_frame_meta.idx if savant_frame_meta else None
+        frame_pts = nvds_frame_meta.buf_pts
+        frame_meta = get_source_frame_meta(source_id, frame_idx, frame_pts)
+
+        return source_id, frame_pts, frame_idx, frame_meta
 
 
 class PipelineIsNotRunningError(Exception):
