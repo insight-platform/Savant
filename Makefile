@@ -85,7 +85,7 @@ opencv-cp-arm64:
 	savant-ds-opencv-l4t:$(DEEPSTREAM_VERSION)
 
 run-docs:
-	docker run -it --rm --gpus all \
+	docker run -it --rm \
 		-v `pwd`/savant:$(PROJECT_PATH)/savant \
 		-v `pwd`/docs:$(PROJECT_PATH)/docs \
 		-v `pwd`/samples:$(PROJECT_PATH)/samples \
