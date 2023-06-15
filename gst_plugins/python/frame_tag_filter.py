@@ -41,6 +41,12 @@ SRC_NOT_TAGGED_PAD_TEMPLATE = Gst.PadTemplate.new(
 
 
 class FrameTagFilter(LoggerMixin, Gst.Element):
+    """Frame tag filter.
+
+    When frame has specified tag, it is passed to src_tagged pad,
+    otherwise to src_not_tagged pad.
+    """
+
     GST_PLUGIN_NAME = 'frame_tag_filter'
 
     __gstmetadata__ = (
@@ -102,7 +108,8 @@ class FrameTagFilter(LoggerMixin, Gst.Element):
         )
 
     def do_state_changed(self, old: Gst.State, new: Gst.State, pending: Gst.State):
-        """Start an expiration thread if state changed from NULL."""
+        """Validate properties when the element is started."""
+
         init_state = [Gst.State.NULL, Gst.State.READY]
         if old in init_state and new not in init_state:
             try:
@@ -115,6 +122,7 @@ class FrameTagFilter(LoggerMixin, Gst.Element):
 
     def do_get_property(self, prop):
         """Get property callback."""
+
         if prop.name == 'tag':
             return self.tag
         if prop.name == 'source-id':
@@ -123,6 +131,7 @@ class FrameTagFilter(LoggerMixin, Gst.Element):
 
     def do_set_property(self, prop, value):
         """Set property callback."""
+
         self.logger.debug('Setting property "%s" to "%s".', prop.name, value)
         if prop.name == 'tag':
             self.tag = value
@@ -137,6 +146,8 @@ class FrameTagFilter(LoggerMixin, Gst.Element):
         element: Gst.Element,
         buffer: Gst.Buffer,
     ) -> Gst.FlowReturn:
+        """Route buffer either to src_tagged or src_not_tagged pad."""
+
         self.logger.debug('Handling buffer PTS=%s', buffer.pts)
 
         not_tagged_buffers = self.parse_buffer(buffer)
@@ -164,6 +175,8 @@ class FrameTagFilter(LoggerMixin, Gst.Element):
         return Gst.FlowReturn.OK
 
     def parse_buffer(self, buffer: Gst.Buffer) -> Optional[List[Gst.Buffer]]:
+        """Parse buffer and return list of not tagged buffers or None if buffer is tagged."""
+
         not_tagged_buffers = []
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
@@ -197,10 +210,14 @@ class FrameTagFilter(LoggerMixin, Gst.Element):
         return not_tagged_buffers
 
     def push_buffer(self, pad: Gst.Pad, buffer: Gst.Buffer):
+        """Push buffer to src pad."""
+
         self.logger.debug('Pushing buffer PTS=%s to %s', buffer.pts, pad.get_name())
         return pad.push(buffer)
 
     def on_caps(self, pad: Gst.Pad, event: Gst.Event):
+        """Pass caps event to src_pad_tagged pad for negotiation purposes."""
+
         caps: Gst.Caps = event.parse_caps()
         self.logger.info('Caps on pad "%s" changed to %s', pad.get_name(), caps)
         self.src_pad_tagged.push_event(event)

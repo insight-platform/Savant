@@ -8,6 +8,13 @@ STREAM_PART_EVENT_PART_ID_PROPERTY = 'part-id'
 
 
 def build_stream_part_event(part_id: int, tagged: bool):
+    """Build a stream-part event with the given part id and tagged flag.
+
+    :param part_id: ID of the stream part.
+    :param tagged: Whether the stream part is tagged.
+    :returns: The stream-part event.
+    """
+
     structure: Gst.Structure = Gst.Structure.new_empty(STREAM_PART_EVENT_NAME)
     structure.set_value(STREAM_PART_EVENT_PART_ID_PROPERTY, part_id)
     structure.set_value(STREAM_PART_EVENT_TAGGED_PROPERTY, tagged)
@@ -15,6 +22,13 @@ def build_stream_part_event(part_id: int, tagged: bool):
 
 
 def parse_stream_part_event(event: Gst.Event) -> Optional[Tuple[int, bool]]:
+    """Parse a stream-part event.
+
+    :param event: The event to parse.
+    :returns: The part ID and tagged flag if the event is a stream-part event,
+              otherwise None.
+    """
+
     if event.type != Gst.EventType.CUSTOM_DOWNSTREAM:
         return None
 

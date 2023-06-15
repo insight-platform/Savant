@@ -170,6 +170,11 @@ class SourceOutputWithFrame(SourceOutput):
         pipeline: GstPipeline,
         source_info: SourceInfo,
     ) -> Gst.Pad:
+        """Add frame_tag_filter element to the pipeline.
+
+        :returns: src pad for not tagged frames.
+        """
+
         frame_tag_filter = pipeline.add_element(
             PipelineElement(
                 'frame_tag_filter',
@@ -207,6 +212,11 @@ class SourceOutputWithFrame(SourceOutput):
         src_pad_tagged: Gst.Pad,
         src_pad_not_tagged: Gst.Pad,
     ) -> Gst.Pad:
+        """Add frame_tag_funnel element to the pipeline.
+
+        :returns: src pad of the frame_tag_funnel element.
+        """
+
         queue_not_tagged = pipeline.add_element(
             PipelineElement('queue'),
             link=False,
@@ -357,6 +367,8 @@ def create_source_output(
     frame_params: FrameParameters,
     output_frame: Optional[Dict[str, Any]],
 ) -> SourceOutput:
+    """Create an instance of SourceOutput class based on the output_frame config."""
+
     if not output_frame:
         return SourceOutputOnlyMeta()
 

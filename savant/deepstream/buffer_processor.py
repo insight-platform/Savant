@@ -711,7 +711,7 @@ class NvDsEncodedBufferProcessor(NvDsBufferProcessor):
             frame = buffer.extract_dup(0, buffer.get_size())
         else:
             frame = None
-        frame_idx, frame_pts = get_savant_frame_meta(buffer)
+        frame_idx, frame_pts = parse_savant_frame_meta(buffer)
         is_keyframe = not buffer.has_flags(Gst.BufferFlags.DELTA_UNIT)
         yield _OutputFrame(
             idx=frame_idx,
@@ -762,7 +762,7 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
         """
 
         if buffer.get_size() == 0:
-            frame_idx, frame_pts = get_savant_frame_meta(buffer)
+            frame_idx, frame_pts = parse_savant_frame_meta(buffer)
             yield _OutputFrame(
                 idx=frame_idx,
                 pts=frame_pts,
@@ -796,7 +796,9 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
             )
 
 
-def get_savant_frame_meta(buffer: Gst.Buffer) -> Tuple[Optional[int], int]:
+def parse_savant_frame_meta(buffer: Gst.Buffer) -> Tuple[Optional[int], int]:
+    """Extract frame index and PTS from the buffer."""
+
     savant_frame_meta = gst_buffer_get_savant_frame_meta(buffer)
     frame_idx = savant_frame_meta.idx if savant_frame_meta else None
     frame_pts = buffer.pts

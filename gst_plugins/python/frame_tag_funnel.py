@@ -28,12 +28,19 @@ SRC_PAD_TEMPLATE = Gst.PadTemplate.new(
 
 
 class FrameTagFunnel(LoggerMixin, Gst.Element):
+    """Frame tag funnel.
+
+    Funnels frames after "frame_tag_filter" element back to
+    a single stream with the original order.
+    """
+
     GST_PLUGIN_NAME = 'frame_tag_funnel'
 
     __gstmetadata__ = (
-        'Frame tag merger',
+        'Frame tag funnel',
         'Muxer',
-        'Funnels frames after "frame_tag_filter" element back to a single stream.',
+        'Funnels frames after "frame_tag_filter" element back to '
+        'a single stream with the original order.',
         'Pavel Tomskikh <tomskih_pa@bw-sw.com>',
     )
 
@@ -70,7 +77,7 @@ class FrameTagFunnel(LoggerMixin, Gst.Element):
 
         event_handlers = {
             Gst.EventType.EOS: self.on_eos,
-            Gst.EventType.CUSTOM_DOWNSTREAM: self.on_custom_downstream,
+            Gst.EventType.CUSTOM_DOWNSTREAM: self.on_custom_event,
         }
         self.sink_pad_not_tagged.add_probe(
             Gst.PadProbeType.EVENT_DOWNSTREAM,
@@ -89,6 +96,12 @@ class FrameTagFunnel(LoggerMixin, Gst.Element):
         element: Gst.Element,
         buffer: Gst.Buffer,
     ) -> Gst.FlowReturn:
+        """Handle buffer from a sink pad.
+
+        Either pass the buffer to the src pad or store it in the buffer queue
+        for keeping the original order.
+        """
+
         self.logger.debug(
             'Received buffer PTS=%s from %s', buffer.pts, sink_pad.get_name()
         )
@@ -100,6 +113,11 @@ class FrameTagFunnel(LoggerMixin, Gst.Element):
                 return Gst.FlowReturn.OK
 
     def on_eos(self, pad: Gst.Pad, event: Gst.Event):
+        """Handle EOS event from a sink pad.
+
+        Pass EOS to the src pad only when received from both sink pads.
+        """
+
         self.logger.info('Got EOS from %s', pad.get_name())
 
         with self.stream_lock:
@@ -119,7 +137,9 @@ class FrameTagFunnel(LoggerMixin, Gst.Element):
                 self.logger.info('Drop EOS from %s', pad.get_name())
                 return Gst.PadProbeReturn.DROP
 
-    def on_custom_downstream(self, sink_pad: Gst.Pad, event: Gst.Event):
+    def on_custom_event(self, sink_pad: Gst.Pad, event: Gst.Event):
+        """Handle stream-part event from a sink pad."""
+
         self.logger.debug('Got CUSTOM_DOWNSTREAM event from %s', sink_pad.get_name())
         parsed_event = parse_stream_part_event(event)
         if parsed_event is None:
@@ -149,6 +169,8 @@ class FrameTagFunnel(LoggerMixin, Gst.Element):
         return Gst.PadProbeReturn.DROP
 
     def push_buffer(self, buffer: Gst.Buffer):
+        """Push buffer to the src pad."""
+
         self.logger.debug('Pushing buffer PTS=%s', buffer.pts)
         return self.src_pad.push(buffer)
 
