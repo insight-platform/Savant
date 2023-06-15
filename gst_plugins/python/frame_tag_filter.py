@@ -14,6 +14,7 @@ from savant.gstreamer import GObject, Gst
 from savant.gstreamer.metadata import get_source_frame_meta
 from savant.gstreamer.utils import (
     RequiredPropertyError,
+    on_pad_event,
     propagate_gst_setting_error,
     required_property,
 )
@@ -94,6 +95,11 @@ class FrameTagFilter(LoggerMixin, Gst.Element):
         self.add_pad(self.src_pad_not_tagged)
 
         self.sink_pad.set_chain_function_full(self.handle_buffer)
+        self.sink_pad.add_probe(
+            Gst.PadProbeType.EVENT_DOWNSTREAM,
+            on_pad_event,
+            {Gst.EventType.CAPS: self.on_caps},
+        )
 
     def do_state_changed(self, old: Gst.State, new: Gst.State, pending: Gst.State):
         """Start an expiration thread if state changed from NULL."""
@@ -120,7 +126,7 @@ class FrameTagFilter(LoggerMixin, Gst.Element):
         self.logger.debug('Setting property "%s" to "%s".', prop.name, value)
         if prop.name == 'tag':
             self.tag = value
-        if prop.name == 'source-id':
+        elif prop.name == 'source-id':
             self.source_id = value
         else:
             raise AttributeError(f'Unknown property {prop.name}')
@@ -166,14 +172,21 @@ class FrameTagFilter(LoggerMixin, Gst.Element):
             )
             frame_idx = savant_frame_meta.idx if savant_frame_meta else None
             frame_pts = nvds_frame_meta.buf_pts
+            self.logger.debug(
+                'savant_frame_meta=%s, frame_idx=%s, frame_pts=%s',
+                savant_frame_meta,
+                frame_idx,
+                frame_pts,
+            )
             frame_meta = get_source_frame_meta(self.source_id, frame_idx, frame_pts)
+            self.logger.debug('frame_meta=%s', frame_meta)
             if self.tag in frame_meta.tags:
                 self.logger.debug('Frame PTS=%s has tag "%s"', frame_pts, self.tag)
                 return None
 
             not_tagged_buffer: Gst.Buffer = Gst.Buffer.new()
             not_tagged_buffer.pts = frame_pts
-            gst_buffer_add_savant_frame_meta(buffer, frame_idx)
+            gst_buffer_add_savant_frame_meta(not_tagged_buffer, frame_idx)
             not_tagged_buffers.append(not_tagged_buffer)
 
         self.logger.debug(
@@ -185,7 +198,13 @@ class FrameTagFilter(LoggerMixin, Gst.Element):
 
     def push_buffer(self, pad: Gst.Pad, buffer: Gst.Buffer):
         self.logger.debug('Pushing buffer PTS=%s to %s', buffer.pts, pad.get_name())
-        return self.src_pad.push(buffer)
+        return pad.push(buffer)
+
+    def on_caps(self, pad: Gst.Pad, event: Gst.Event):
+        caps: Gst.Caps = event.parse_caps()
+        self.logger.info('Caps on pad "%s" changed to %s', pad.get_name(), caps)
+        self.src_pad_tagged.push_event(event)
+        return Gst.PadProbeReturn.OK
 
 
 # register plugin
