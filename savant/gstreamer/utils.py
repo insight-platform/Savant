@@ -1,6 +1,6 @@
 """GStreamer utils."""
 from contextlib import contextmanager
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Optional
 
 from gi.repository import Gst  # noqa:F401
 from savant.gstreamer.ffi import LIBGST, GstMapInfo
@@ -77,13 +77,14 @@ def on_pad_event(
     return event_handler(pad, event, *data)
 
 
-def propagate_gst_setting_error(gst_element: Gst.Element, frame, file_path):
+def propagate_gst_setting_error(gst_element: Gst.Element, frame, file_path, text=None):
     propagate_gst_error(
         gst_element=gst_element,
         frame=frame,
         file_path=file_path,
         domain=Gst.LibraryError.quark(),
         code=Gst.LibraryError.SETTINGS,
+        text=text,
     )
 
 
@@ -115,3 +116,12 @@ def gst_buffer_from_list(data: List[bytes]) -> Gst.Buffer:
     for item in data:
         buffer = buffer.append(Gst.Buffer.new_wrapped(item))
     return buffer
+
+
+class RequiredPropertyError(Exception):
+    pass
+
+
+def required_property(name: str, value: Optional[Any]):
+    if value is None:
+        raise RequiredPropertyError(f'"{name}" property is required')
