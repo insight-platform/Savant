@@ -1,7 +1,6 @@
 """Buffer processor for DeepStream pipeline."""
-import time
 from queue import Queue
-from typing import Optional, Union, NamedTuple, Iterator
+from typing import Optional, Tuple, Union, NamedTuple, Iterator
 
 import numpy as np
 import pyds
@@ -707,11 +706,12 @@ class NvDsEncodedBufferProcessor(NvDsBufferProcessor):
     def _iterate_output_frames(self, buffer: Gst.Buffer) -> Iterator[_OutputFrame]:
         """Iterate output frames from Gst.Buffer."""
 
-        # get encoded frame for output
-        frame = buffer.extract_dup(0, buffer.get_size())
-        savant_frame_meta = gst_buffer_get_savant_frame_meta(buffer)
-        frame_idx = savant_frame_meta.idx if savant_frame_meta else None
-        frame_pts = buffer.pts
+        if buffer.get_size() > 0:
+            # get encoded frame for output
+            frame = buffer.extract_dup(0, buffer.get_size())
+        else:
+            frame = None
+        frame_idx, frame_pts = get_savant_frame_meta(buffer)
         is_keyframe = not buffer.has_flags(Gst.BufferFlags.DELTA_UNIT)
         yield _OutputFrame(
             idx=frame_idx,
@@ -761,6 +761,18 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
         NvDs batch contains raw RGBA frames. They are all keyframes.
         """
 
+        if buffer.get_size() == 0:
+            frame_idx, frame_pts = get_savant_frame_meta(buffer)
+            yield _OutputFrame(
+                idx=frame_idx,
+                pts=frame_pts,
+                frame=None,
+                codec=self._codec,
+                # Any frame is keyframe since it was not encoded
+                keyframe=True,
+            )
+            return
+
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
             # get frame if required for output
@@ -782,3 +794,10 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
                 # Any frame is keyframe since it was not encoded
                 keyframe=True,
             )
+
+
+def get_savant_frame_meta(buffer: Gst.Buffer) -> Tuple[Optional[int], int]:
+    savant_frame_meta = gst_buffer_get_savant_frame_meta(buffer)
+    frame_idx = savant_frame_meta.idx if savant_frame_meta else None
+    frame_pts = buffer.pts
+    return frame_idx, frame_pts

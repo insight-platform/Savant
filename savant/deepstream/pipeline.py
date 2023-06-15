@@ -20,14 +20,11 @@ from savant.deepstream.buffer_processor import (
     NvDsEncodedBufferProcessor,
 )
 from savant.deepstream.source_output import (
-    SourceOutputOnlyMeta,
-    SourceOutputH26X,
     SourceOutputEncoded,
-    SourceOutputRawRgba,
-    SourceOutputPng,
+    SourceOutputWithFrame,
+    create_source_output,
 )
 from savant.gstreamer import Gst, GLib  # noqa:F401
-from savant.gstreamer.codecs import Codec, CODEC_BY_NAME
 from savant.gstreamer.pipeline import GstPipeline
 from savant.deepstream.metadata import (
     nvds_obj_meta_output_converter,
@@ -103,37 +100,7 @@ class NvDsPipeline(GstPipeline):
         self._draw_func: Optional[DrawFunc] = kwargs.get('draw_func')
 
         output_frame = kwargs.get('output_frame')
-        if output_frame:
-            self._output_frame_codec = CODEC_BY_NAME[output_frame['codec']]
-            self._output_frame_encoder_params = output_frame.get('encoder_params', {})
-        else:
-            self._output_frame_codec = None
-            self._output_frame_encoder_params = None
-
-        if self._output_frame_codec is None:
-            self._source_output = SourceOutputOnlyMeta()
-        elif self._output_frame_codec == Codec.RAW_RGBA:
-            self._source_output = SourceOutputRawRgba(
-                frame_params=self._frame_params,
-            )
-        elif self._output_frame_codec in [Codec.H264, Codec.HEVC]:
-            self._source_output = SourceOutputH26X(
-                codec=self._output_frame_codec.value,
-                params=output_frame.get('encoder_params'),
-                frame_params=self._frame_params,
-            )
-        elif self._output_frame_codec == Codec.PNG:
-            self._source_output = SourceOutputPng(
-                codec=self._output_frame_codec.value,
-                params=output_frame.get('encoder_params'),
-                frame_params=self._frame_params,
-            )
-        else:
-            self._source_output = SourceOutputEncoded(
-                codec=self._output_frame_codec.value,
-                params=output_frame.get('encoder_params'),
-                frame_params=self._frame_params,
-            )
+        self._source_output = create_source_output(self._frame_params, output_frame)
 
         self._demuxer_src_pads: List[Gst.Pad] = []
         self._free_pad_indices: List[int] = []
@@ -164,27 +131,25 @@ class NvDsPipeline(GstPipeline):
         # model-object association storage
         model_object_registry = ModelObjectRegistry()
 
-        if (
-            self._output_frame_codec is None
-            or self._output_frame_codec == Codec.RAW_RGBA
-        ):
-            return NvDsRawBufferProcessor(
+        if isinstance(self._source_output, SourceOutputEncoded):
+            return NvDsEncodedBufferProcessor(
                 queue=queue,
                 fps_meter=fps_meter,
                 sources=self._sources,
                 model_object_registry=model_object_registry,
                 objects_preprocessing=self._objects_preprocessing,
                 frame_params=self._frame_params,
-                output_frame=self._output_frame_codec is not None,
+                codec=self._source_output.codec,
             )
-        return NvDsEncodedBufferProcessor(
+
+        return NvDsRawBufferProcessor(
             queue=queue,
             fps_meter=fps_meter,
             sources=self._sources,
             model_object_registry=model_object_registry,
             objects_preprocessing=self._objects_preprocessing,
             frame_params=self._frame_params,
-            codec=self._output_frame_codec.value,
+            output_frame=isinstance(self._source_output, SourceOutputWithFrame),
         )
 
     def add_element(
@@ -775,7 +740,7 @@ class NvDsPipeline(GstPipeline):
             demuxer, self._max_parallel_streams
         )
         sink_peer_pad: Gst.Pad = demuxer.get_static_pad('sink').get_peer()
-        if self._draw_func and self._output_frame_codec:
+        if self._draw_func and isinstance(self._source_output, SourceOutputWithFrame):
             sink_peer_pad.add_probe(Gst.PadProbeType.BUFFER, self._draw_on_frame_probe)
         sink_peer_pad.add_probe(Gst.PadProbeType.BUFFER, self.update_frame_meta)
         return demuxer

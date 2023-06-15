@@ -125,3 +125,10 @@ class RequiredPropertyError(Exception):
 def required_property(name: str, value: Optional[Any]):
     if value is None:
         raise RequiredPropertyError(f'"{name}" property is required')
+
+
+def link_pads(src_pad: Gst.Pad, sink_pad: Gst.Pad):
+    assert src_pad.link(sink_pad) == Gst.PadLinkReturn.OK, (
+        f'Unable to link {src_pad.get_parent_element().get_name()}.{src_pad.get_name()} '
+        f'to {sink_pad.get_parent_element().get_name()}.{sink_pad.get_name()}'
+    )

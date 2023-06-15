@@ -48,9 +48,16 @@ parameters:
   # pipeline output queue max size
   queue_maxsize: 100
 
+  # TODO: create class for output_frame
   # parameters of a frame to include in module output
   # leave empty to include only metadata (no frames)
   output_frame: ${json:${oc.env:OUTPUT_FRAME, null}}
+  # E.g.:
+  # output_frame:
+  #   codec: h264
+  #   encoder_params:
+  #     iframeinterval: 25
+  #   when_tagged: encode
 
   # PyFunc for drawing on frames. Should be an instance of savant.config.schema.DrawFunc.
   #
