@@ -395,7 +395,7 @@ def create_source_output(
         )
 
     return SourceOutputEncoded(
-        codec=codec,
+        codec=codec.value,
         params=encoder_params,
         frame_params=frame_params,
         when_tagged=when_tagged,
