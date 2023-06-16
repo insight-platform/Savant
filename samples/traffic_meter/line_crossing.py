@@ -120,8 +120,8 @@ class LineCrossing(NvDsPyFuncPlugin):
                         obj_meta.track_id,
                         # center point
                         Point(
-                            obj_meta.bbox.left + obj_meta.bbox.width / 2,
-                            obj_meta.bbox.top + obj_meta.bbox.height / 2,
+                            obj_meta.bbox.xc,
+                            obj_meta.bbox.yc,
                         ),
                     )
                     self.track_last_frame_num[frame_meta.source_id][
