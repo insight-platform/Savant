@@ -113,7 +113,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         return self._bbox
 
     def sync_bbox(self):
-        if self._bbox.is_modified():
+        if self._bbox is not None and self._bbox.is_modified():
             nvds_upd_obj_bbox(self.ds_object_meta, self._bbox)
 
     @property
