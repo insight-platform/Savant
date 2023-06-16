@@ -1,7 +1,7 @@
 """Wrapper of deepstream frame meta information."""
 from typing import Iterator, Optional
 import pyds
-
+from savant_rs.primitives.geometry import BBox
 from savant.gstreamer.metadata import (
     get_source_frame_meta,
     SourceFrameMeta,
@@ -10,7 +10,8 @@ from savant.gstreamer.metadata import (
 from savant.meta.errors import MetaValueError
 from savant.deepstream.meta.iterators import NvDsObjectMetaIterator
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
-from savant.meta.bbox import BBox
+
+# from savant.meta.bbox import BBox
 from savant.meta.object import ObjectMeta
 from savant.utils.source_info import SourceInfoRegistry
 from pygstsavantframemeta import nvds_frame_meta_get_nvds_savant_frame_meta
@@ -27,8 +28,8 @@ class NvDsFrameMeta:
         frame_meta: pyds.NvDsFrameMeta,
     ):
         super().__init__()
-        self.batch_meta = frame_meta.base_meta.batch_meta
-        self.frame_meta = frame_meta
+        self.batch_meta: pyds.NvDsBatchMeta = frame_meta.base_meta.batch_meta
+        self.frame_meta: pyds.NvDsFrameMeta = frame_meta
         self._source_frame_meta: Optional[SourceFrameMeta] = None
         self._primary_obj: Optional[ObjectMeta] = None
 
@@ -66,10 +67,11 @@ class NvDsFrameMeta:
 
     @roi.setter
     def roi(self, value: BBox):
-        self.roi.x_center = value.x_center
-        self.roi.y_center = value.y_center
-        self.roi.width = value.width
-        self.roi.height = value.height
+        roi_box = self.roi
+        roi_box.xc = value.xc
+        roi_box.xc = value.xc
+        roi_box.width = value.width
+        roi_box.height = value.height
 
     @property
     def objects_number(self) -> int:

@@ -2,7 +2,8 @@
 from abc import ABC, abstractmethod
 from typing import Optional, Any, List, Union
 
-from savant.meta.bbox import BBox, RBBox
+from savant_rs.primitives.geometry import BBox, RBBox
+
 from savant.meta.attribute import AttributeMeta
 from savant.meta.constants import (
     UNTRACKED_OBJECT_ID,

@@ -1,9 +1,8 @@
 """Convert deepstream object meta to output format."""
 from typing import Any, Dict
 import pyds
-
+from savant_rs.primitives.geometry import RBBox
 from savant.config.schema import FrameParameters
-from savant.deepstream.meta.bbox import NvDsRBBox
 from savant.deepstream.utils import nvds_get_obj_bbox
 from savant.meta.attribute import AttributeMeta
 from savant.meta.constants import PRIMARY_OBJECT_LABEL
@@ -38,19 +37,19 @@ def nvds_obj_meta_output_converter(
     if 0.0 < nvds_obj_meta.tracker_confidence < 1.0:  # specified confidence
         confidence = nvds_obj_meta.tracker_confidence
 
-    nvds_bbox = nvds_get_obj_bbox(nvds_obj_meta)
+    bbox = nvds_get_obj_bbox(nvds_obj_meta)
     if frame_params.padding and not frame_params.padding.keep:
-        nvds_bbox.x_center -= frame_params.padding.left
-        nvds_bbox.y_center -= frame_params.padding.top
-    nvds_bbox.scale(
+        bbox.xc -= frame_params.padding.left
+        bbox.yc -= frame_params.padding.top
+    bbox.scale(
         output_resolution.width / frame_width, output_resolution.height / frame_height
     )
     bbox = dict(
-        xc=nvds_bbox.x_center,
-        yc=nvds_bbox.y_center,
-        width=nvds_bbox.width,
-        height=nvds_bbox.height,
-        angle=nvds_bbox.angle if isinstance(nvds_bbox, NvDsRBBox) else 0.0,
+        xc=bbox.xc,
+        yc=bbox.yc,
+        width=bbox.width,
+        height=bbox.height,
+        angle=bbox.angle if isinstance(bbox, RBBox) else 0.0,
     )
 
     # parse parent object

@@ -1,5 +1,4 @@
 """Buffer processor for DeepStream pipeline."""
-import time
 from queue import Queue
 from typing import Optional, Union, NamedTuple, Iterator
 
@@ -9,15 +8,13 @@ from pygstsavantframemeta import (
     gst_buffer_get_savant_frame_meta,
     nvds_frame_meta_get_nvds_savant_frame_meta,
 )
-
+from savant_rs.primitives.geometry import BBox, RBBox
 from savant.base.input_preproc import ObjectsPreprocessing
-
 from savant.base.model import ObjectModel, ComplexModel
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
 from savant.deepstream.utils.attribute import nvds_get_all_obj_attrs
 from savant.meta.constants import PRIMARY_OBJECT_LABEL
 from savant.config.schema import PipelineElement, ModelElement, FrameParameters
-from savant.meta.bbox import BBox, RBBox
 from savant.deepstream.nvinfer.model import (
     NvInferRotatedObjectDetector,
     NvInferDetector,
@@ -119,10 +116,10 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                 self._frame_params.height / source_info.src_resolution.height
             )
             primary_bbox = BBox(
-                x_center=self._frame_params.width / 2,
-                y_center=self._frame_params.height / 2,
-                width=self._frame_params.width,
-                height=self._frame_params.height,
+                self._frame_params.width / 2,
+                self._frame_params.height / 2,
+                self._frame_params.width,
+                self._frame_params.height,
             )
 
             all_nvds_obj_metas = {}
@@ -134,19 +131,14 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                 )
                 # skip primary object for now, will be added later
                 if obj_key == PRIMARY_OBJECT_LABEL:
-                    bbox = (
+                    bbox = BBox(
                         obj_meta['bbox']['xc'],
                         obj_meta['bbox']['yc'],
                         obj_meta['bbox']['width'],
                         obj_meta['bbox']['height'],
                     )
                     # if not a full frame then correct primary object
-                    if bbox != (
-                        primary_bbox.x_center,
-                        primary_bbox.y_center,
-                        primary_bbox.width,
-                        primary_bbox.height,
-                    ):
+                    if bbox != primary_bbox:
                         primary_bbox = BBox(*bbox)
                         primary_bbox.scale(scale_factor_x, scale_factor_y)
                     continue
@@ -159,19 +151,19 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                 ) = self._model_object_registry.get_model_object_ids(obj_key)
                 if obj_meta['bbox']['angle']:
                     bbox = RBBox(
-                        x_center=obj_meta['bbox']['xc'],
-                        y_center=obj_meta['bbox']['yc'],
-                        width=obj_meta['bbox']['width'],
-                        height=obj_meta['bbox']['height'],
-                        angle=obj_meta['bbox']['angle'],
+                        obj_meta['bbox']['xc'],
+                        obj_meta['bbox']['yc'],
+                        obj_meta['bbox']['width'],
+                        obj_meta['bbox']['height'],
+                        obj_meta['bbox']['angle'],
                     )
                     selection_type = ObjectSelectionType.ROTATED_BBOX
                 else:
                     bbox = BBox(
-                        x_center=obj_meta['bbox']['xc'],
-                        y_center=obj_meta['bbox']['yc'],
-                        width=obj_meta['bbox']['width'],
-                        height=obj_meta['bbox']['height'],
+                        obj_meta['bbox']['xc'],
+                        obj_meta['bbox']['yc'],
+                        obj_meta['bbox']['width'],
+                        obj_meta['bbox']['height'],
                     )
                     selection_type = ObjectSelectionType.REGULAR_BBOX
 
@@ -188,8 +180,8 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                     class_id=class_id,
                     gie_uid=model_uid,
                     bbox=(
-                        bbox.x_center,
-                        bbox.y_center,
+                        bbox.xc,
+                        bbox.yc,
                         bbox.width,
                         bbox.height,
                         bbox.angle
@@ -240,8 +232,8 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                 obj_label
             )
             if self._frame_params.padding:
-                primary_bbox.x_center += self._frame_params.padding.left
-                primary_bbox.y_center += self._frame_params.padding.top
+                primary_bbox.xc += self._frame_params.padding.left
+                primary_bbox.yc += self._frame_params.padding.top
             nvds_add_obj_meta_to_frame(
                 batch_meta=nvds_batch_meta,
                 frame_meta=nvds_frame_meta,
@@ -249,8 +241,8 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                 class_id=class_id,
                 gie_uid=model_uid,
                 bbox=(
-                    primary_bbox.x_center,
-                    primary_bbox.y_center,
+                    primary_bbox.xc,
+                    primary_bbox.yc,
                     primary_bbox.width,
                     primary_bbox.height,
                     0.0,
@@ -334,17 +326,17 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
 
                     if isinstance(object_meta.bbox, BBox):
                         bbox = BBox(
-                            x_center=object_meta.bbox.x_center,
-                            y_center=object_meta.bbox.y_center,
-                            width=object_meta.bbox.width,
-                            height=object_meta.bbox.height,
+                            object_meta.bbox.xc,
+                            object_meta.bbox.yc,
+                            object_meta.bbox.width,
+                            object_meta.bbox.height,
                         )
                         if isinstance(parent_object_meta.bbox, BBox):
                             parent_bbox = BBox(
-                                x_center=parent_object_meta.bbox.x_center,
-                                y_center=parent_object_meta.bbox.y_center,
-                                width=parent_object_meta.bbox.width,
-                                height=parent_object_meta.bbox.height,
+                                parent_object_meta.bbox.xc,
+                                parent_object_meta.bbox.yc,
+                                parent_object_meta.bbox.width,
+                                parent_object_meta.bbox.height,
                             )
                         else:
                             raise NotImplementedError(
