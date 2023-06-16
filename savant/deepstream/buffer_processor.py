@@ -9,13 +9,19 @@ from pygstsavantframemeta import (
     gst_buffer_get_savant_frame_meta,
     nvds_frame_meta_get_nvds_savant_frame_meta,
 )
+from savant_rs.utils.symbol_mapper import (
+    parse_compound_key,
+    get_model_id,
+    get_object_id,
+    build_model_object_key,
+)
 
 from savant.base.input_preproc import ObjectsPreprocessing
 
 from savant.base.model import ObjectModel, ComplexModel
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
 from savant.deepstream.utils.attribute import nvds_get_all_obj_attrs
-from savant.meta.constants import PRIMARY_OBJECT_LABEL
+from savant.meta.constants import PRIMARY_OBJECT_KEY
 from savant.config.schema import PipelineElement, ModelElement, FrameParameters
 from savant.meta.bbox import BBox, RBBox
 from savant.deepstream.nvinfer.model import (
@@ -44,7 +50,6 @@ from savant.meta.object import ObjectMeta
 from savant.meta.type import ObjectSelectionType
 from savant.utils.fps_meter import FPSMeter
 from savant.utils.logging import LoggerMixin
-from savant.utils.model_registry import ModelObjectRegistry
 from savant.utils.sink_factories import SinkVideoFrame
 from savant.utils.source_info import SourceInfoRegistry, SourceInfo
 
@@ -65,7 +70,6 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
         queue: Queue,
         fps_meter: FPSMeter,
         sources: SourceInfoRegistry,
-        model_object_registry: ModelObjectRegistry,
         objects_preprocessing: ObjectsPreprocessing,
         frame_params: FrameParameters,
     ):
@@ -74,14 +78,12 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
         :param queue: Queue for output data.
         :param fps_meter: FPS meter.
         :param sources: Source info registry.
-        :param model_object_registry: Model.Object registry.
         :param objects_preprocessing: Objects processing registry.
         :param frame_params: Processing frame parameters (after nvstreammux).
         """
 
         super().__init__(queue, fps_meter)
         self._sources = sources
-        self._model_object_registry = model_object_registry
         self._objects_preprocessing = objects_preprocessing
         self._frame_params = frame_params
         self._queue = queue
@@ -129,11 +131,11 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
             nvds_obj_metas_w_parent = {}
             # add external objects to nvds meta
             for obj_meta in frame_meta.metadata['objects']:
-                obj_key = self._model_object_registry.model_object_key(
+                obj_key = build_model_object_key(
                     obj_meta['model_name'], obj_meta['label']
                 )
                 # skip primary object for now, will be added later
-                if obj_key == PRIMARY_OBJECT_LABEL:
+                if obj_key == PRIMARY_OBJECT_KEY:
                     bbox = (
                         obj_meta['bbox']['xc'],
                         obj_meta['bbox']['yc'],
@@ -153,10 +155,8 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                 # obj_key was only registered if
                 # it was required by the pipeline model elements (this case)
                 # or equaled the output object of one of the pipeline model elements
-                (
-                    model_uid,
-                    class_id,
-                ) = self._model_object_registry.get_model_object_ids(obj_key)
+                model_name, label = parse_compound_key(obj_key)
+                model_uid, class_id = get_object_id(model_name, label)
                 if obj_meta['bbox']['angle']:
                     bbox = RBBox(
                         x_center=obj_meta['bbox']['xc'],
@@ -235,10 +235,8 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
 
             frame_meta.metadata['objects'] = []
             # add primary frame object
-            obj_label = PRIMARY_OBJECT_LABEL
-            model_uid, class_id = self._model_object_registry.get_model_object_ids(
-                obj_label
-            )
+            model_name, label = parse_compound_key(PRIMARY_OBJECT_KEY)
+            model_uid, class_id = get_object_id(model_name, label)
             if self._frame_params.padding:
                 primary_bbox.x_center += self._frame_params.padding.left
                 primary_bbox.y_center += self._frame_params.padding.top
@@ -255,7 +253,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                     primary_bbox.height,
                     0.0,
                 ),
-                obj_label=obj_label,
+                obj_label=label,
                 # confidence should be bigger than tracker minDetectorConfidence
                 # to prevent the tracker from deleting the object
                 # use tracker display-tracking-id=0 to avoid labelling
@@ -401,9 +399,8 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                     rect_params.height = bbox.height
 
         elif model.input.preprocess_object_image:
-            model_uid, class_id = self._model_object_registry.get_model_object_ids(
-                model.input.object
-            )
+            model_name, label = parse_compound_key(model.input.object)
+            model_uid, class_id = get_object_id(model_name, label)
             self._objects_preprocessing.preprocessing(
                 element_name=element.name,
                 buffer=hash(buffer),
@@ -431,7 +428,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
             frame_right += self._frame_params.padding.left
             frame_bottom += self._frame_params.padding.top
 
-        model_uid = self._model_object_registry.get_model_uid(element.name)
+        model_uid = get_model_id(element.name)
         model: Union[
             NvInferRotatedObjectDetector,
             NvInferDetector,
@@ -555,10 +552,8 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                                 if obj.selector:
                                     cls_bbox_tensor = obj.selector(cls_bbox_tensor)
 
-                                obj_label = (
-                                    self._model_object_registry.model_object_key(
-                                        element.name, obj.label
-                                    )
+                                obj_label = build_model_object_key(
+                                    element.name, obj.label
                                 )
                                 for bbox in cls_bbox_tensor:
                                     # add NvDsObjectMeta
@@ -613,10 +608,8 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                                 nvds_set_obj_uid(
                                     frame_meta=nvds_frame_meta, obj_meta=nvds_obj_meta
                                 )
-                                nvds_obj_meta.obj_label = (
-                                    self._model_object_registry.model_object_key(
-                                        element.name, obj.label
-                                    )
+                                nvds_obj_meta.obj_label = build_model_object_key(
+                                    element.name, obj.label
                                 )
                                 break
 
@@ -660,9 +653,8 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
     def _is_model_input_object(
         self, element: ModelElement, nvds_obj_meta: pyds.NvDsObjectMeta
     ):
-        model_uid, class_id = self._model_object_registry.get_model_object_ids(
-            element.model.input.object
-        )
+        model_name, label = parse_compound_key(element.model.input.object)
+        model_uid, class_id = get_object_id(model_name, label)
         return (
             nvds_obj_meta.unique_component_id == model_uid
             and nvds_obj_meta.class_id == class_id
@@ -678,7 +670,6 @@ class NvDsEncodedBufferProcessor(NvDsBufferProcessor):
         queue: Queue,
         fps_meter: FPSMeter,
         sources: SourceInfoRegistry,
-        model_object_registry: ModelObjectRegistry,
         objects_preprocessing: ObjectsPreprocessing,
         frame_params: FrameParameters,
         codec: CodecInfo,
@@ -688,7 +679,6 @@ class NvDsEncodedBufferProcessor(NvDsBufferProcessor):
         :param queue: Queue for output data.
         :param fps_meter: FPS meter.
         :param sources: Source info registry.
-        :param model_object_registry: Model.Object registry.
         :param objects_preprocessing: Objects processing registry.
         :param frame_params: Processing frame parameters (after nvstreammux).
         :param codec: Codec of the output frames.
@@ -699,7 +689,6 @@ class NvDsEncodedBufferProcessor(NvDsBufferProcessor):
             queue=queue,
             fps_meter=fps_meter,
             sources=sources,
-            model_object_registry=model_object_registry,
             objects_preprocessing=objects_preprocessing,
             frame_params=frame_params,
         )
@@ -728,7 +717,6 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
         queue: Queue,
         fps_meter: FPSMeter,
         sources: SourceInfoRegistry,
-        model_object_registry: ModelObjectRegistry,
         objects_preprocessing: ObjectsPreprocessing,
         frame_params: FrameParameters,
         output_frame: bool,
@@ -738,7 +726,6 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
         :param queue: Queue for output data.
         :param fps_meter: FPS meter.
         :param sources: Source info registry.
-        :param model_object_registry: Model.Object registry.
         :param objects_preprocessing: Objects processing registry.
         :param frame_params: Processing frame parameters (after nvstreammux).
         :param output_frame: Whether to output frame or not.
@@ -750,7 +737,6 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
             queue=queue,
             fps_meter=fps_meter,
             sources=sources,
-            model_object_registry=model_object_registry,
             objects_preprocessing=objects_preprocessing,
             frame_params=frame_params,
         )

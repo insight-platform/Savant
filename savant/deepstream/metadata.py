@@ -1,13 +1,13 @@
 """Convert deepstream object meta to output format."""
 from typing import Any, Dict
 import pyds
+from savant_rs.utils.symbol_mapper import parse_compound_key
 
 from savant.config.schema import FrameParameters
 from savant.deepstream.meta.bbox import NvDsRBBox
 from savant.deepstream.utils import nvds_get_obj_bbox
 from savant.meta.attribute import AttributeMeta
 from savant.meta.constants import PRIMARY_OBJECT_LABEL
-from savant.utils.model_registry import ModelObjectRegistry
 from savant.utils.source_info import Resolution
 
 
@@ -23,9 +23,7 @@ def nvds_obj_meta_output_converter(
     :param output_resolution: SourceInfo value associated with given source id
     :return: resolution of output frame
     """
-    model_name, label = ModelObjectRegistry.parse_model_object_key(
-        nvds_obj_meta.obj_label
-    )
+    model_name, label = parse_compound_key(nvds_obj_meta.obj_label)
 
     if frame_params.padding and frame_params.padding.keep:
         frame_width = frame_params.total_width
@@ -56,7 +54,7 @@ def nvds_obj_meta_output_converter(
     # parse parent object
     parent_model_name, parent_label, parent_object_id = None, None, None
     if nvds_obj_meta.parent and nvds_obj_meta.parent.obj_label != PRIMARY_OBJECT_LABEL:
-        parent_model_name, parent_label = ModelObjectRegistry.parse_model_object_key(
+        parent_model_name, parent_label = parse_compound_key(
             nvds_obj_meta.parent.obj_label
         )
         if parent_model_name:

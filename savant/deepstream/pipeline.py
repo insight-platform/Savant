@@ -45,7 +45,6 @@ from savant.deepstream.utils import (
 )
 from savant.meta.constants import UNTRACKED_OBJECT_ID, PRIMARY_OBJECT_LABEL
 from savant.utils.fps_meter import FPSMeter
-from savant.utils.model_registry import ModelObjectRegistry
 from savant.utils.source_info import SourceInfoRegistry, SourceInfo, Resolution
 from savant.utils.platform import is_aarch64
 from savant.config.schema import (
@@ -157,9 +156,6 @@ class NvDsPipeline(GstPipeline):
     ) -> NvDsBufferProcessor:
         """Create buffer processor."""
 
-        # model-object association storage
-        model_object_registry = ModelObjectRegistry()
-
         if (
             self._output_frame_codec is None
             or self._output_frame_codec == Codec.RAW_RGBA
@@ -168,7 +164,6 @@ class NvDsPipeline(GstPipeline):
                 queue=queue,
                 fps_meter=fps_meter,
                 sources=self._sources,
-                model_object_registry=model_object_registry,
                 objects_preprocessing=self._objects_preprocessing,
                 frame_params=self._frame_params,
                 output_frame=self._output_frame_codec is not None,
@@ -177,7 +172,6 @@ class NvDsPipeline(GstPipeline):
             queue=queue,
             fps_meter=fps_meter,
             sources=self._sources,
-            model_object_registry=model_object_registry,
             objects_preprocessing=self._objects_preprocessing,
             frame_params=self._frame_params,
             codec=self._output_frame_codec.value,
