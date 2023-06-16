@@ -85,9 +85,9 @@ Usually, you must use combinations colored green:
 .. image:: ../_static/img/10_adapters_normal_pairs.png
 
 The Rules Of Thumb
------------------
+------------------
 
-We recommend following the next ideas when planning adapter-framework communication:
+Consider the following ideas when planning adapter-framework communication:
 
 - Use the framework in the bind mode, adapters in the connect mode; change if it does not work for you.
 - The party which delivers multiplexed stream usually has the bind type; the party which handles a single (non-multiplexed) stream usually has the connect type.
@@ -96,7 +96,7 @@ We recommend following the next ideas when planning adapter-framework communicat
 Typical Patterns
 ----------------
 
-There are typical patterns widely used, start with them when designing pipelines.
+We recommend starting with typical patterns when designing pipelines.
 
 Legend:
 
@@ -110,7 +110,9 @@ The pair combinations are discussed after the patterns-related sections.
 Data-Center Patterns
 ^^^^^^^^^^^^^^^^^^^^
 
-Data-center patterns are used to reliably process video streams with increased latency in situations when the pipeline is overwhelmed with data. Typical ZeroMQ socket pairs used in data-center patterns are ``DEALER/ROUTER`` (default recommended) or ``REQ/REP``. These pairs implement backpressure causing processing to be delayed when thresholds are reached.
+Data-center patterns are used to reliably process video streams with increased latency in situations when the pipeline is overwhelmed with data. Typical ZeroMQ socket pairs used in data-center patterns are ``DEALER/ROUTER`` (recommended) or ``REQ/REP``.
+
+These pairs implement backpressure causing processing to be delayed when thresholds are reached.
 
 .. image:: ../_static/img/10_adapters_dc_patterns.png
 
@@ -121,86 +123,85 @@ The second is typical when adapters deliver data from several sources (e.g. RTSP
 Edge Patterns
 ^^^^^^^^^^^^^
 
-Edge patterns often aim at providing real-time operations for data sources with the lowest latency possible. To implement that, you may utilize the ``PUB/SUB`` socket pair because it drops the packets that the ``SUB`` part cannot process in a timely manner.
+Edge is usually used to execute low-latency real-time video processing. To implement that, you can utilize the ``PUB/SUB`` socket pair because it drops the packets that the ``SUB`` part cannot process on time.
 
-This mechanism works absolutely great when used with streams delivering ``MJPEG``, ``RAW``, ``JPEG``, ``PNG``, and other independent video frames. Using the pattern with video-encoded streams is troublesome because drops cause video corruption.
+This mechanism works great when used with streams delivering ``MJPEG``, ``RAW``, ``JPEG``, ``PNG``, and other independent video frames. Using the pattern with keyframe-encoded streams is troublesome because drops cause video corruption.
 
 .. image:: ../_static/img/10_adapters_edge_patterns.png
 
-The first pattern may be used when neither adapters nor framework must be frozen because of the sink stalling. The second pattern is beneficial when the sink guarantees the processing, and you do not concern that it can be overwhelmed, causing the framework pipeline to stall too.
+The first pattern can be used when neither adapters nor the framework must get stuck because of the sink stalling. The second pattern is beneficial when a sink guarantees processing, and you do not worry that it may cause the stalling.
 
 DEALER/ROUTER
 -------------
 
-This is a recommended pair to use when you don't need to copy the same messages to multiple subscribers or can implement such duplication programmatically. It is a reliable socket pair: the ``DEALER`` will block if the ``ROUTER``'s queue is full.
+This is a recommended pair when you don't need to copy the same messages to multiple subscribers. It is a reliable socket pair: the ``DEALER`` will block if the ``ROUTER``'s queue is full.
 
-**Source/CONNECT-to-Framework/BIND communication**. This is a typical scheme of communication.
+**Source/CONNECT-to-Framework/BIND communication**. This is a typical scheme.
 
 .. image:: ../_static/img/10_adapters_dr_scfb.png
 
-**Framework/CONNECT-to-Sink/BIND communication**. This is a normal pattern, when you have the sink adapter communicating with the external system like Kafka and wish to send data from multiple framework instances.
+**Framework/CONNECT-to-Sink/BIND communication**. This is a normal pattern when a sink adapter communicates with an external system like Kafka and wishes to send data from multiple framework instances.
 
 .. image:: ../_static/img/10_adapters_dr_fcsb.png
 
-**Source/BIND-to-Framework/CONNECT communication**. This is an exotic pattern. Although, It may do the job when you handle raw frames or isolated image streams and don't care about per-stream order. In this scheme, the source will distribute data berween connected frameworks according to ``LRU`` strategy, so it is impossible to use the scheme when you work with video.
+**Source/BIND-to-Framework/CONNECT communication**. This is an exotic pattern. Nevertheless, it does the job when a module handles independent images without the need to maintain per-source order. In this scheme, the source will evenly distribute data between connected frameworks according to the ``LRU`` strategy, so it is impossible to use the scheme when you work with video.
 
 .. image:: ../_static/img/10_adapters_dr_sbfc.png
 
-**Framework/BIND-to-Sink/CONNECT communication**. This is a valid pattern, when sinks communicating with an external system are slow or require multiple operations and the order of data appending is not critical.
-
+**Framework/BIND-to-Sink/CONNECT communication**. This is a valid pattern when sinks communicating with an external system require partitioning and data appending order is not critical.
 
 .. image:: ../_static/img/10_adapters_dr_fbsc.png
 
 REQ/REP
 -------
 
-The ``REQ/REP`` pair works the same way as the ``DEALER/ROUTER`` except that the ``REQ`` part receives replies from the ``REP`` part every time the ``REP`` part handles the message. It can be useful to modify the injecting pace on the ``REQ`` part. This is a generally recommended pair to use when you don't need multiple subscribers or can implement such duplication somehow. It is reliable socket pair: the ``REQ`` sends the next frame only when received the response previously sent from ``REP``.
+The ``REQ/REP`` pair is similar to ``DEALER/ROUTER`` except that the ``REQ`` part receives replies from the ``REP`` part every time the ``REP`` part reads the message.
 
 PUB/SUB
 -------
 
-The ``PUB/SUB`` is convenient to use when you need to handle the same data by multiple subscribers. Another use case for ``PUB/SUB`` is when you are processing the real-time data: when excessive elements are silently dropped if the pipeline or adapter is unable to handle the traffic burst.
+The ``PUB/SUB`` is convenient when you need to duplicate the same data to multiple subscribers. Another use case is real-time data processing: excessive elements are dropped if the pipeline cannot handle the traffic.
 
-**Source/BIND-to-Framework/CONNECT communication**. The source is initialized as a server (bind), the framework connects to it as a client. This scheme is typically can be used when the source already delivers multiple streams or the frameworks handles a single stream provided by the source. In this scenario the source can duplicate the same stream to multiple frameworks simultaneously.
+**Source/BIND-to-Framework/CONNECT communication**. A source is initialized as a server (bind), and a framework connects to it. This scheme can be used when the source already delivers multiple streams or the framework handles a single stream provided by the source. In this scenario, the source can duplicate the same stream to multiple frameworks simultaneously.
 
 .. image:: ../_static/img/10_adapters_ps_sbfc.png
 
-**Framework/BIND-to-Sink/CONNECT communication**. This is a typical scheme which can be used widely. The framework as a server can stream results to multiple sink adapters. Every such adapter can filter out only required information.
+**Framework/BIND-to-Sink/CONNECT communication**. This scheme is used widely. A framework duplicates the same data to multiple sinks. A sink can filter out only required data.
 
 .. image:: ../_static/img/10_adapters_ps_fbsc.png
 
-**Source/CONNECT-to-Framework/BIND communication**. This is a typical when the framework handles multiple streams. The framework binds to a socket and clients connect to that socket.
+**Source/CONNECT-to-Framework/BIND communication**. A typical scheme when a framework handles multiple streams. The framework binds to a socket and adapters connect to that socket.
 
 .. image:: ../_static/img/10_adapters_ps_scfb.png
 
-**Framework/CONNECT-to-Sink/BIND communication**. This is not a typical but a legal scheme. The sink handles multiple outputs from frameworks to deliver them some storage, e.g. Kafka or ClickHouse.
+**Framework/CONNECT-to-Sink/BIND communication**. This is unusual but a correct scheme. A sink handles multiple outputs from frameworks to deliver them in a storage, e.g. Kafka or ClickHouse.
 
 .. image:: ../_static/img/10_adapters_ps_fcsb.png
 
-Examples:
+``PUB/SUB`` examples:
 
-- you want to pass frames from a single camera to two different pipelines;
-- you want to pass resulting video analytics to two different adapters (e.g. RTSP streaming and somewhere else).
+- delivering frames from a single camera to two different pipelines;
+- delivering resulting video analytics to two different adapters (e.g. for RTSP streaming and database collection).
 
-``PUB/SUB`` is not a reliable communication pair, which means that if the subscriber is slow the frames will be dropped; the ``PUB`` part never blocks. To overcome that the adapter must handle incoming frames in an advanced way (e.g. using internal queueing).
+``PUB/SUB`` is unreliable, which means that if the subscriber is slow the frames may be lost because ``PUB`` never blocks. The adapter must handle incoming frames in an advanced way (e.g. using internal queueing) to overcome that.
 
-Generally we recommend using the PUB/SUB in the following scenarios:
+We recommend using the PUB/SUB in the following scenarios:
 
-- you work with independently encoded frames from a cam (``MJPEG``, ``RGB``, etc.) so when processing is slow you can afford dropping frames;
-- you implemented an adapter to read frames from the socket fast and know how to queue them internally.
+- when processing independently encoded frames from a cam (``MJPEG``, ``RGB``, etc.) so when processing is slow you can afford to drop frames;
+- when an adapter is implemented in a way to read frames from the socket fast and know how to queue them internally.
 
 **Antipattern**: passing video files over ``PUB/SUB`` to the framework with no ``SYNC`` flag set.
 
 **Pattern example (Sink)**: Always-On RTSP Sink Adapter when multiple streams are cast.
 
-We provide adapters to address the everyday needs of users. The current list of adapters enables the implementation of many typical scenarios in real life. Every adapter can be used as an idea to implement a specific one required in your case.
+We provide adapters to address the common needs of users. The current list of adapters covers many typical scenarios in real life. Provided adapters can be used as an idea to implement a specific one required in your case.
 
 Source Adapters
 ---------------
 
-Source adapters are used to deliver data from external sources (files, RTSP, devices) to a framework module.
+Source adapters deliver data from external sources (files, RTSP, devices) to a framework module.
 
-Currently, the following `source <https://github.com/insight-platform/Savant/blob/develop/docs/adapters.md#source-adapters>`_ adapters are available:
+Currently, the following source adapters are available:
 
 - Video loop adapter;
 - Local video file;
@@ -213,38 +214,42 @@ Currently, the following `source <https://github.com/insight-platform/Savant/blo
 - USB/CSI camera;
 - GigE (Genicam) industrial cam.
 
-All adapters accept the following parameters:
+All source adapters accept the following common parameters:
 
-- ``SOURCE_ID`` - unique identifier for the source adapter; this option is **required**;
-- ``ZMQ_ENDPOINT`` - adapter output (should be equal to module input) ZeroMQ socket endpoint; schema: ``[<socket_type>+(bind|connect):]<endpoint>``;
-- ``ZMQ_TYPE`` - adapter output ZeroMQ socket type; default is ``DEALER``, also can be set to ``PUB`` or ``REQ``;
-- ``ZMQ_BIND`` - adapter output ZeroMQ socket bind/connect mode (the bind mode is when set to ``True``); default is ``False``;
-- ``FPS_PERIOD_FRAMES`` - number of frames between FPS reports; default is ``1000``;
-- ``FPS_PERIOD_SECONDS`` - Number of seconds between FPS reports; default is ``None``;
-- ``FPS_OUTPUT`` - path to the file where the FPS reports will be written; Default is ``stdout``.
+- ``SOURCE_ID``: a unique identifier for the source adapter; this option is **required**; every source stream must have unique identifier, if identifiers collide processing may cause unpredictable results;
+- ``ZMQ_ENDPOINT``: adapter's output socket (must correspond to module's input); schema: ``[<socket_type>+(bind|connect):]<endpoint>``;
+- ``ZMQ_TYPE``: the socket type; default is ``DEALER``, also can be set to ``PUB`` or ``REQ``; **warning**: this parameter is deprecated, consider encoding the type in ``ZMQ_ENDPOINT``;
+- ``ZMQ_BIND``; the socket mode (the ``bind`` mode is when set to ``True``); default is ``False``; **warning**: this parameter is deprecated, consider encoding the type in ``ZMQ_ENDPOINT``;
+- ``FPS_PERIOD_FRAMES``; a number of frames between FPS reports; default is ``1000``;
+- ``FPS_PERIOD_SECONDS``; a number of seconds between FPS reports; default is ``None``;
+- ``FPS_OUTPUT``; a path to the file for FPS reports; default is ``stdout``.
 
 Image File Source Adapter
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The Image File Source Adapter reads ``JPEG`` or ``PNG`` files from specified ``LOCATION``, which can be:
+The Image File Source Adapter sends ``JPEG`` or ``PNG`` files to a module. It may be used to generate video streams from separate images or process independent images.
+
+The images are delivered from:
 
 - a local path to a single file;
 - a local path to a directory with files (not necessarily in the same encoding);
 - HTTP URL to a single file.
 
-The adapter is useful for development purposes. It also can be used to process image streams efficiently in production.
+.. note::
 
-The adapter parameters are set with environment variables:
+    The adapter is useful for development purposes: a developer can associate every image with extra metadata in JSON format to implement pipeline testing. E.g., you may add metadata for expected bounding boxes and evaluate assertions in the pipeline to validate that the model predicts them.
 
-- ``FILE_TYPE`` - must be set to ``picture``;
-- ``LOCATION`` - image file(s) location or URL;
-- ``FRAMERATE`` - desired framerate for the video stream formed from the input image files (if sync mode is chosen);
-- ``SYNC_OUTPUT`` - flag indicates the need to send frames from source synchronously (i.e. at the source file rate); default is ``False``;
-- ``EOS_ON_FILE_END`` - flag indicates whether to send ``EOS`` message at the end of each file; default is ``False``;
-- ``SORT_BY_TIME`` - flag indicates whether the files from ``LOCATION`` are sorted by modification time (ascending order); by default, it is ``False`` and the files are sorted lexicographically.
-- ``READ_METADATA`` - flag indicates the need to read and send the object's metadata from a ``JSON`` file that has the identical name as the source file; default is ``False``.
+**Parameters**:
 
-Example:
+- ``FILE_TYPE``: the flag specifying that the adapter is used for images; it must always be set to ``picture``;
+- ``LOCATION``: an image file(s) location or URL;
+- ``FRAMERATE``: a desired framerate for the output video stream generated from image files (if ``SYNC_OUTPUT=True``);
+- ``SYNC_OUTPUT``: a flag indicating that images are delivered into the module as a video stream; otherwise, the files are sent as fast as the module is capable processing them; default is ``False``;
+- ``EOS_ON_FILE_END``: a flag configuring sending of ``EOS`` message at the end of each file; the ``EOS`` message is important to trackers, helping them to reset tracking when a video stream is no longer continuous; default is ``False``;
+- ``SORT_BY_TIME``: a flag specifying sorting by modification time (ascending); by default, it is ``False``, causing the files to be sorted lexicographically;
+- ``READ_METADATA``: a flag specifying the need to augment images with metadata from ``JSON`` files with the corresponding names as the source files; default is ``False``.
+
+Running with Docker:
 
 .. code-block:: bash
 
@@ -262,7 +267,7 @@ Example:
         ghcr.io/insight-platform/savant-adapters-gstreamer:latest
 
 
-The adapter can be run using a script:
+Running with the helper script:
 
 .. code-block:: bash
 
@@ -271,22 +276,24 @@ The adapter can be run using a script:
 Video File Source Adapter
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The video file source adapter reads video files from ``LOCATION``, which can be:
+The Video File Source Adapter sends video files to a module as a single stream.
+
+The video files are served from:
 
 - a local path to a single file;
 - a local path to a directory with one or more files;
 - HTTP URL to a single file;
 
-The adapter parameters are set with environment variables:
+**Parameters**:
 
-- ``FILE_TYPE`` - must be set to ``video``;
-- ``LOCATION`` - video file(s) location or URL;
-- ``EOS_ON_FILE_END`` - flag indicates whether to send ``EOS`` message at the end of each file; default is ``True``;
-- ``SYNC_OUTPUT`` - flag indicates the need to send frames from source synchronously (i.e. at the source file rate); default is ``False``;
-- ``SORT_BY_TIME`` - flag indicates whether files from ``LOCATION`` are sorted by modification time (ascending order); by default, it is ``False`` and files are sorted lexicographically;
-- ``READ_METADATA`` - flag indicates the need to read the object's metadata from a ``JSON`` file that has the identical name as the source file; default is ``False``.
+- ``FILE_TYPE``: must be set to ``video``;
+- ``LOCATION``: a video file(s) location or URL;
+- ``EOS_ON_FILE_END``: a flag indicating whether to send the ``EOS`` message at the end of each file; default is ``True``; the ``EOS`` message is crucial for trackers to recognize when a video stream is no longer continuous;
+- ``SYNC_OUTPUT``: flag specifying if to send frames synchronously (i.e. at the source file rate); default is ``False``;
+- ``SORT_BY_TIME``: a flag indicating whether files are sorted by modification time (ascending) before sending to a module; by default, it is ``False`` (lexicographical sorting);
+- ``READ_METADATA``: a flag specifying the need to augment video frames with metadata from ``JSON`` files with the corresponding names as the source files; default is ``False``.
 
-Example:
+Running with Docker:
 
 .. code-block:: bash
 
@@ -303,7 +310,7 @@ Example:
         -v /tmp/zmq-sockets:/tmp/zmq-sockets \
         ghcr.io/insight-platform/savant-adapters-gstreamer:latest
 
-The adapter can be run using a script:
+Running with the helper script:
 
 .. code-block:: bash
 
@@ -311,29 +318,31 @@ The adapter can be run using a script:
 
 .. note::
 
-    Resulting video stream framerate is equal to the framerate of the first encountered video file, possibly overriding the framerate of the rest of input files.
+    Resulting video stream framerate is set to the framerate of the first video file, subsequent files are delivered with the same FPS. Consider having the same framerate for all video files or running the adapter for each file separately. The adapter is lightweight, and the cost of launching is not expensive.
 
-Video Loop File Source Adapter
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Video Loop Source Adapter
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The video loop file source adapter plays continuously a video file from ``LOCATION``, which can be:
+The Video Loop Source Adapter sends a video file from ``LOCATION`` continuously in a loop.
 
-- a local path to a single file;
-- HTTP URL to a single file;
+The location can be:
+
+- a local file;
+- the HTTP URL of a file;
 
 .. note::
-    The adapter helps developers create infinite video streams to benchmark, demonstrate, and test pipelines. It allows configuring arbitrary frame loss to test processing in an unstable environment.
+    The adapter helps developers create infinite video streams to benchmark, demonstrate, and test pipelines. It allows configuring a frame loss ratio to test processing in an unstable environment.
 
-The adapter parameters are set with environment variables:
+**Parameters**:
 
-- ``LOCATION`` - video file location or URL;
-- ``EOS_ON_LOOP_END`` - flag indicates whether to send ``EOS`` message at the end of each loop; default is ``False``;
-- ``READ_METADATA`` - flag indicates the need to read the object's metadata from a JSON file that has the identical name as the source file; default is ``False``;
-- ``SYNC_OUTPUT`` - flag indicates the need to send frames from source synchronously (i.e. at the source file rate); default is ``False``;
-- ``DOWNLOAD_PATH`` - target directory to download files from remote storage in the first loop and reuse it in the next loops;
-- ``LOSS_RATE`` - probability to drop the frames.
+- ``LOCATION``: a video file location or URL;
+- ``EOS_ON_LOOP_END``: a flag indicating whether to send ``EOS`` message at the end of each loop; default is ``False``;
+- ``READ_METADATA``: a flag indicating the need to augment the stream with metadata from a JSON file corresponding to the source file; default is ``False``;
+- ``SYNC_OUTPUT``: a flag indicating the need to send frames from source synchronously (i.e. at the source file rate); default is ``False``;
+- ``DOWNLOAD_PATH``: a directory to download the file from remote storage before playing it;
+- ``LOSS_RATE``: a probability to drop the frames.
 
-Example:
+Running with Docker:
 
 .. code-block:: bash
 
@@ -350,7 +359,7 @@ Example:
         -v /tmp/video-loop-source-downloads:/tmp/video-loop-source-downloads \
         ghcr.io/insight-platform/savant-adapters-gstreamer:latest
 
-The adapter can be run using a script:
+Running with the helper script:
 
 .. code-block:: bash
 
@@ -359,15 +368,17 @@ The adapter can be run using a script:
 RTSP Source Adapter
 ^^^^^^^^^^^^^^^^^^^
 
-The RTSP source adapter delivers RTSP stream to a module. The adapter parameters are set with environment variables:
+The RTSP Source Adapter delivers RTSP stream to a module.
 
-- ``RTSP_URI`` - RTSP URI of the stream; this option is required;
-- ``SYNC_OUTPUT`` - flag indicates the need to send frames from source synchronously (i.e. at the source file rate); default is ``False``;
-- ``SYNC_DELAY`` - delay in seconds before sending frames; useful when the source has B-frames to avoid sending frames in batches; default is ``0``;
-- ``CALCULATE_DTS`` - flag indicates whether the adapter should calculate DTS for frames; set this flag when the source has B-frames; default is ``False``;
-- ``BUFFER_MAX_BYTES`` - maximum amount of data in the buffer; default is ``10485760`` (``10`` MB).
+**Parameters**:
 
-Example:
+- ``RTSP_URI`` (**required**): an RTSP URI of the stream;
+- ``SYNC_OUTPUT``: a flag indicating the need to send frames from source synchronously (i.e. at the source file rate); default is ``False``;
+- ``SYNC_DELAY``: a delay in seconds before sending frames; when the source has B-frames the flag allows avoiding sending frames in batches; default is ``0``;
+- ``CALCULATE_DTS``: a flag indicating whether the adapter should calculate DTS for frames; set this flag when the source has B-frames; default is ``False``;
+- ``BUFFER_MAX_BYTES``: a maximum amount of data in the buffer; default is ``10485760`` (``10`` MB); it is used to drop stalled frames if a module does not read them.
+
+Running with Docker:
 
 .. code-block:: bash
 
@@ -380,7 +391,7 @@ Example:
         -v /tmp/zmq-sockets:/tmp/zmq-sockets \
         ghcr.io/insight-platform/savant-adapters-gstreamer:latest
 
-The adapter can be run using a script:
+Running with the helper script:
 
 .. code-block:: bash
 
@@ -389,14 +400,14 @@ The adapter can be run using a script:
 USB Cam Source Adapter
 ^^^^^^^^^^^^^^^^^^^^^^
 
-The USB cam source adapter captures video from a V4L2 device specified in ``DEVICE`` parameter.
+The USB cam source adapter captures video from a V4L2 device.
 
-The adapter parameters are set with environment variables:
+**Parameters**:
 
-- ``DEVICE`` - USB camera device; default value is ``/dev/video0``;
-- ``FRAMERATE`` - desired framerate for the video stream captured from the device; note that if the input device does not support specified video framerate, results may be unexpected;
+- ``DEVICE``: a USB cam device; default is ``/dev/video0``;
+- ``FRAMERATE``: a desired framerate for the video stream captured from the device; note that if the input device does not support specified video framerate, results may be unexpected;
 
-Example:
+Running with Docker:
 
 .. code-block:: bash
 
@@ -413,7 +424,7 @@ Example:
         -v /tmp/zmq-sockets:/tmp/zmq-sockets \
         ghcr.io/insight-platform/savant-adapters-gstreamer:latest
 
-The adapter can be run using a script:
+Running with the helper script:
 
 .. code-block:: bash
 
@@ -422,37 +433,37 @@ The adapter can be run using a script:
 GigE Source Adapter
 ^^^^^^^^^^^^^^^^^^^
 
-he adapter is designed to take video streams from GigE/Genicam industrial cameras. It passes the frames captured from the camera to the framework without encoding (`#18 <https://github.com/insight-platform/Savant/issues/18>`__) which may introduce significant network payload. We recommend using it locally with the framework deployed at the same host.
+The adapter is designed to take video streams from GigE/Genicam industrial cameras. It passes the frames captured from the camera to the framework without encoding (`#18 <https://github.com/insight-platform/Savant/issues/18>`__) which may introduce significant network load. We recommend using it locally with the framework deployed at the same host.
 
-The adapter parameters are set with environment variables:
+**Parameters**:
 
-* ``WIDTH`` - the width of the video frame, in pixels;
-* ``HEIGHT`` - the height of the video frame, in pixels;
-* ``FRAMERATE`` - the framerate of the video stream, in frames per second;
-* ``INPUT_CAPS`` - the format of the video stream, in GStreamer caps format (e.g. video/x-raw,format=RGB);
-* ``PACKET_SIZE`` - the packet size for GigEVision cameras, in bytes;
-* ``AUTO_PACKET_SIZE`` - whether to negotiate the packet size automatically for GigEVision cameras;
-* ``EXPOSURE`` - the exposure time for the camera, in microseconds;
-* ``EXPOSURE_AUTO`` - the auto exposure mode for the camera, one of ``off``, ``once``, or ``on``;
-* ``GAIN`` - the gain for the camera, in decibels;
-* ``GAIN_AUTO`` - the auto gain mode for the camera, one of ``off``, ``once``, or ``on``;
-* ``FEATURES`` - additional configuration parameters for the camera, as a space-separated list of features;
-* ``HOST_NETWORK`` - host network to use;
-* ``CAMERA_NAME`` - name of the camera, in the format specified in the command description;
+* ``WIDTH``: the width of the video frame, in pixels;
+* ``HEIGHT``: the height of the video frame, in pixels;
+* ``FRAMERATE``: the framerate of the video stream, in frames per second;
+* ``INPUT_CAPS``: the format of the video stream, in GStreamer caps format (e.g. video/x-raw,format=RGB);
+* ``PACKET_SIZE``: the packet size for GigEVision cameras, in bytes;
+* ``AUTO_PACKET_SIZE``: whether to negotiate the packet size automatically for GigEVision cameras;
+* ``EXPOSURE``: the exposure time for the camera, in microseconds;
+* ``EXPOSURE_AUTO``: the auto exposure mode for the camera, one of ``off``, ``once``, or ``on``;
+* ``GAIN``: the gain for the camera, in decibels;
+* ``GAIN_AUTO``: the auto gain mode for the camera, one of ``off``, ``once``, or ``on``;
+* ``FEATURES``: additional configuration parameters for the camera, as a space-separated list of features;
+* ``HOST_NETWORK``: host network to use;
+* ``CAMERA_NAME``: name of the camera, in the format specified in the command description.
 
-Example:
+Running with Docker:
 
 .. code-block:: bash
 
-docker run --rm -it --name source-video-files-test \
-    --entrypoint /opt/savant/adapters/gst/sources/gige_cam.sh \
-    -e ZMQ_ENDPOINT=dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc \
-    -e SOURCE_ID=test \
-    -e CAMERA_NAME=test-camera \
-    -v /tmp/zmq-sockets:/tmp/zmq-sockets \
-    ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    docker run --rm -it --name source-video-files-test \
+        --entrypoint /opt/savant/adapters/gst/sources/gige_cam.sh \
+        -e ZMQ_ENDPOINT=dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc \
+        -e SOURCE_ID=test \
+        -e CAMERA_NAME=test-camera \
+        -v /tmp/zmq-sockets:/tmp/zmq-sockets \
+        ghcr.io/insight-platform/savant-adapters-gstreamer:latest
 
-The adapter can be run using a script:
+Running with the helper script:
 
 .. code-block:: bash
 
@@ -462,10 +473,226 @@ The adapter can be run using a script:
 Sink Adapters
 -------------
 
-There are basic `sink <https://github.com/insight-platform/Savant/blob/develop/docs/adapters.md#sink-adapters>`_ adapters implemented:
+There is a number of sink adapters implemented:
 
-- Inference results are placed into JSON file stream;
-- Resulting video overlay displayed on a screen (per source);
-- MP4 file (per source);
-- image directory (per source);
-- Always-On RTSP Stream Sink.
+- JSON Metadata;
+- Image File;
+- Video File;
+- Display;
+- Always-On RTSP.
+
+All sync adapters accept the following parameters:
+
+- ``ZMQ_ENDPOINT``: a ZeroMQ socket for data input, i.e., the framework output; schema: ``[<socket_type>+(bind|connect):]<endpoint>``;
+- ``ZMQ_TYPE``: a ZeroMQ socket type for the adapter's input; the default value is ``SUB``, can also be set to ROUTER or ``REP``; **warning**: this parameter is deprecated, consider encoding the type in ``ZMQ_ENDPOINT``;
+- ``ZMQ_BIND``: flag specifies whether the adapter's input should be bound or connected to the specified endpoint; If ``True``, the input is bound; otherwise, it's connected; the default value is ``False``; **warning**: this parameter is deprecated, consider encoding the type in ``ZMQ_ENDPOINT``.
+
+JSON Meta Sink Adapter
+^^^^^^^^^^^^^^^^^^^^^^
+
+The JSON Metadata Sink Adapter writes received messages as newline-delimited JSON streaming file to a ``LOCATION``, which can be:
+
+- a local path to a single file;
+- a local path with substitution patterns:
+
+  a. ``%source_id`` inserts ``SOURCE_ID`` value into resulting filename;
+  b. ``%src_filename`` inserts source filename into resulting filename.
+
+**Parameters**:
+
+- ``DIR_LOCATION``: a location to write files to; can be a plain location or a pattern; supported substitution parameters are ``%source_id`` and ``%src_filename``;
+- ``CHUNK_SIZE``: a chunk size in a number of frames; the stream is split into chunks and is written to separate folders with consecutive numbering; default is ``10000``; A value of ``0`` disables chunking resulting in a continuous stream of frames by ``source_id``;
+- ``SKIP_FRAMES_WITHOUT_OBJECTS``: a flag indicating whether frames with ``0`` objects are ignored in output; the default value is ``False``;
+- ``SOURCE_ID``: an optional filter to filter out frames with a specific ``source_id`` only;
+- ``SOURCE_ID_PREFIX`` an optional filter to filter out frames with a matching ``source_id`` prefix only.
+
+Running with Docker:
+
+.. code-block:: bash
+
+    docker run --rm -it --name sink-meta-json \
+    --entrypoint /opt/savant/adapters/python/sinks/metadata_json.py \
+    -e ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc \
+    -e LOCATION=/path/to/output/%source_id-%src_filename \
+    -e SKIP_FRAMES_WITHOUT_OBJECTS=False \
+    -e CHUNK_SIZE=0 \
+    -v /path/to/output/:/path/to/output/ \
+    -v /tmp/zmq-sockets:/tmp/zmq-sockets \
+    ghcr.io/insight-platform/savant-adapters-py:latest
+
+
+Running with the helper script:
+
+.. code-block:: bash
+
+    ./scripts/run_sink.py meta-json /path/to/output/%source_id-%src_filename
+
+
+Image File Sink Adapter
+^^^^^^^^^^^^^^^^^^^^^^^
+
+The image file sink adapter extends the JSON meta adapter by writing image files along with meta JSON files to a specified in ``DIR_LOCATION`` parameter directory.
+
+**Parameters**:
+
+- ``DIR_LOCATION``: a location to write files to; can be a plain location or a pattern; supported substitution parameters are ``%source_id`` and ``%src_filename``;
+- ``CHUNK_SIZE``: a chunk size in a number of frames; the stream is split into chunks and is written to separate folders with consecutive numbering; default is ``10000``; A value of ``0`` disables chunking resulting in a continuous stream of frames by ``source_id``;
+- ``SKIP_FRAMES_WITHOUT_OBJECTS``: a flag indicating whether frames with ``0`` objects are ignored in output; the default value is ``False``;
+- ``SOURCE_ID``: an optional filter to filter out frames with a specific ``source_id`` only;
+- ``SOURCE_ID_PREFIX`` an optional filter to filter out frames with a matching ``source_id`` prefix only.
+
+Running with Docker:
+
+.. code-block:: bash
+
+    docker run --rm -it --name sink-meta-json \
+        --entrypoint /opt/savant/adapters/python/sinks/image_files.py \
+        -e ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc \
+        -e DIR_LOCATION=/path/to/output/%source_id-%src_filename \
+        -e SKIP_FRAMES_WITHOUT_OBJECTS=False \
+        -e CHUNK_SIZE=0 \
+        -v /path/to/output/:/path/to/output/ \
+        -v /tmp/zmq-sockets:/tmp/zmq-sockets \
+        ghcr.io/insight-platform/savant-adapters-py:latest
+
+
+Running with the helper script:
+
+.. code-block:: bash
+
+    ./scripts/run_sink.py image-files /path/to/output/%source_id-%src_filename
+
+Video File Sink Adapter
+^^^^^^^^^^^^^^^^^^^^^^^
+
+The video file sink adapter extends the JSON meta adapter by writing video files along with meta JSON files to a specified in ``DIR_LOCATION`` parameter directory.
+
+**Parameters**:
+
+- ``DIR_LOCATION``: a location to write files to; can be a plain location or a pattern; supported substitution parameters are ``%source_id`` and ``%src_filename``;
+- ``CHUNK_SIZE``: a chunk size in a number of frames; the stream is split into chunks and is written to separate folders with consecutive numbering; default is ``10000``; A value of ``0`` disables chunking resulting in a continuous stream of frames by ``source_id``;
+- ``SKIP_FRAMES_WITHOUT_OBJECTS``: a flag indicating whether frames with ``0`` objects are ignored in output; the default value is ``False``;
+- ``SOURCE_ID``: an optional filter to filter out frames with a specific ``source_id`` only;
+- ``SOURCE_ID_PREFIX`` an optional filter to filter out frames with a matching ``source_id`` prefix only.
+
+Running with Docker:
+
+.. code-block:: bash
+
+    docker run --rm -it --name sink-meta-json \
+        --entrypoint /opt/savant/adapters/gst/sinks/video_files.sh \
+        -e ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc \
+        -e DIR_LOCATION=/path/to/output/%source_id-%src_filename \
+        -e SKIP_FRAMES_WITHOUT_OBJECTS=False \
+        -e CHUNK_SIZE=0 \
+        -v /path/to/output/:/path/to/output/ \
+        -v /tmp/zmq-sockets:/tmp/zmq-sockets \
+        ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+
+Running with the helper script:
+
+.. code-block:: bash
+
+    ./scripts/run_sink.py video-files /path/to/output/%source_id-%src_filename
+
+Display Sink Adapter
+^^^^^^^^^^^^^^^^^^^^
+
+The Display Sink Adapter is a visualizing adapter designed for development purposes. To use this adapter, you need a working X server and monitor. The adapter is intended for use with synchronous streams, so for optimal performance, the data source on the adapter side should use the ``SYNC=True`` mode. The adapter also allows specifying the ``SYNC`` flag, but it is better to configure it on the source side.
+
+**Parameters**:
+
+- ``CLOSING_DELAY``: a delay in seconds before closing the window after the video stream has finished, the default value is ``0``;
+- ``SYNC_OUTPUT``: a flag indicating whether to show the frames on the sink synchronously with the source (i.e., at the source file rate); if you are intending to use ``SYNC`` processing, consider ``DEALER/ROUTER`` or ``REQ/REP`` sockets, because ``PUB/SUB`` may drop packets when queues are overflown;
+- ``SOURCE_ID``: an optional filter to filter out frames with a specific ``source_id`` only;
+- ``SOURCE_ID_PREFIX``: an optional filter to filter out frames with a ``source_id`` prefix only.
+
+Running with Docker:
+
+.. code-block:: bash
+
+    docker run --rm -it --name sink-display \
+        --entrypoint /opt/savant/adapters/ds/sinks/display.sh \
+        -e SYNC_OUTPUT=False \
+        -e ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc \
+        -e DISPLAY \
+        -e XAUTHORITY=/tmp/.docker.xauth \
+        -e CLOSING_DELAY=0 \
+        -v /tmp/.X11-unix:/tmp/.X11-unix \
+        -v /tmp/.docker.xauth:/tmp/.docker.xauth \
+        -v /tmp/zmq-sockets:/tmp/zmq-sockets \
+        --gpus=all \
+        ghcr.io/insight-platform/savant-adapters-deepstream:latest
+
+Running with the helper script:
+
+.. code-block:: bash
+
+    ./scripts/run_sink.py display
+
+Always-On RTSP Sink Adapter
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The Always-on RTSP sink adapter casts the video stream from a specific source as RTSP/LL-HLS/WebRTC. The adapter accepts only one input stream, so if you plan to stream multiple streams from the framework, you must use a ``PUB`` socket on the framework's side and a ``SUB`` socket on the adapter's side. However, if the framework serves a single stream, you can use either ``REQ/REP`` or ``DEALER/ROUTER`` pairs.
+
+This adapter uses DeepStream SDK and **always** performs hardware transcoding of the incoming stream to ensure stable streaming even when the data source stops streaming. In this case, the adapter continues to stream a static image waiting for the source to resume sending data.
+
+The simplified design of the adapter is depicted in the following diagram:
+
+.. image:: ../_static/img/10_adapters_ao_rtsp.png
+
+**Parameters**:
+
+- ``RTSP_URI``: an URI of the RTSP server where to cast the stream, this parameter is required when ``DEV_MODE=False``;
+- ``DEV_MODE``: use embedded MediaMTX to publish RTSP stream; default value is ``False``;
+- ``STUB_FILE_LOCATION``: the location of a stub image file; the image file must be in ``JPEG`` format, this parameter is required; the stub image file is shown when there is no input data; the stub file dimensions define the resolution of the output stream;
+- ``MAX_DELAY_MS``: a maximum delay in milliseconds to wait after the last frame received before the stub image is displayed; default is ``1000``;
+- ``TRANSFER_MODE``: a transfer mode specification; one of: ``scale-to-fit``, ``crop-to-fit``; the default value is ``scale-to-fit``; the parameter defines how the incoming video stream is mapped to the resulting stream;
+- ``PROTOCOLS``: enabled transport protocols, e.g. ``tcp+udp-mcast+udp``; the default value is ``tcp``;
+- ``LATENCY_MS``: resulting RTSP stream buffer size in ms, default value is ``100``;
+- ``KEEP_ALIVE``: whether to send RTSP keep alive packets; set it to ``False`` for old incompatible server, default value is ``True``;
+- ``PROFILE``: an H264 encoding profile; one of: ``Baseline``, ``Main``, ``High``; the default value is ``High``;
+- ``BITRATE``: an H264 encoding bitrate; the default value is ``4000000``;
+- ``FRAMERATE``: a frame rate for the output stream; the default value is ``30/1``;
+- ``METADATA_OUTPUT``: where to dump metadata (``stdout`` or ``logger``);
+- ``SYNC_OUTPUT``: a flag indicates whether to show frames on sink synchronously (i.e. at the source rate); the streaming may be not stable with this flag, try to avoid it; the default value is ``False``;
+- ``SOURCE_ID``: an optional filter to receive frames with a specific ``source_id`` only.
+
+When ``DEV_MODE=True`` the stream is available at:
+
+- RTSP: rtsp://<container-host>:554/stream
+- RTMP: rtmp://<container-host>:1935/stream
+- LL-HLS: http://<container-host>:888/stream
+- WebRTC: http://<container-host>:8889/stream
+
+Running with Docker:
+
+.. code-block:: bash
+
+    docker run --rm -it --name sink-always-on-rtsp \
+        --gpus=all \
+        --entrypoint python \
+        -e SYNC_OUTPUT=False \
+        -e ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc \
+        -e SOURCE_ID=test \
+        -e STUB_FILE_LOCATION=/path/to/stub_file/test.jpg \
+        -e MAX_DELAY_MS=1000 \
+        -e TRANSFER_MODE=scale-to-fit \
+        -e RTSP_URI=rtsp://192.168.1.1 \
+        -e RTSP_PROTOCOLS=tcp \
+        -e RTSP_LATENCY_MS=100 \
+        -e RTSP_KEEP_ALIVE=True \
+        -e ENCODER_PROFILE=High \
+        -e ENCODER_BITRATE=4000000 \
+        -e FRAMERATE=30/1 \
+        -v /path/to/stub_file/test.jpg:/path/to/stub_file/test.jpg:ro \
+        -v /tmp/zmq-sockets:/tmp/zmq-sockets \
+        ghcr.io/insight-platform/savant-adapters-deepstream:latest \
+        -m adapters.ds.sinks.always_on_rtsp
+
+Running with the helper script:
+
+.. code-block:: bash
+
+    ./scripts/run_sink.py always-on-rtsp --source-id=test --stub-file-location=/path/to/stub_file/test.jpg rtsp://192.168.1.1
+
