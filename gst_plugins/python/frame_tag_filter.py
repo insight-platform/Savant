@@ -192,13 +192,13 @@ class FrameTagFilter(LoggerMixin, Gst.Element):
                 frame_pts,
             )
             frame_meta = get_source_frame_meta(self.source_id, frame_idx, frame_pts)
-            self.logger.debug('frame_meta=%s', frame_meta)
             if self.tag in frame_meta.tags:
                 self.logger.debug('Frame PTS=%s has tag "%s"', frame_pts, self.tag)
                 return None
 
             not_tagged_buffer: Gst.Buffer = Gst.Buffer.new()
             not_tagged_buffer.pts = frame_pts
+            not_tagged_buffer.set_flags(Gst.BufferFlags.DELTA_UNIT)
             gst_buffer_add_savant_frame_meta(not_tagged_buffer, frame_idx)
             not_tagged_buffers.append(not_tagged_buffer)
 
