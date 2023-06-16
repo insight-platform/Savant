@@ -8,7 +8,7 @@ from savant.gstreamer.metadata import (
     OnlyExtendedDict,
 )
 from savant.meta.errors import MetaValueError
-from savant.deepstream.meta.iterators import NvDsObjectMetaIterator
+from savant.deepstream.meta.iterators import nvds_obj_meta_generator
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
 
 # from savant.meta.bbox import BBox
@@ -54,7 +54,7 @@ class NvDsFrameMeta:
 
         :return: Iterator over object metas.
         """
-        return NvDsObjectMetaIterator(self.frame_meta)
+        return nvds_obj_meta_generator(self.frame_meta)
 
     @property
     def roi(self) -> BBox:

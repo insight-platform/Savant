@@ -149,10 +149,11 @@ def nvds_generate_obj_uid(
 
 
 def nvds_get_obj_bbox(nvds_obj_meta: pyds.NvDsObjectMeta) -> Union[BBox, RBBox]:
-    """Returns BBox instance for specified object meta.
+    """Get the bounding box for specified object meta
+    from Deepstream meta structures.
 
     :param nvds_obj_meta: NvDsObjectMeta.
-    :return:
+    :return: BBox or RBBox.
     """
     bbox_type = nvds_get_obj_selection_type(nvds_obj_meta)
 
@@ -170,7 +171,8 @@ def nvds_set_obj_bbox(
     obj_meta: pyds.NvDsObjectMeta,
     bbox: Union[BBox, RBBox],
 ) -> None:
-
+    """Set bbox values and object selection type for specified object meta
+    into Deepstream meta structures."""
     if isinstance(bbox, BBox):
         set_aligned_bbox_for_obj_meta(obj_meta, bbox)
         nvds_set_obj_selection_type(
@@ -187,6 +189,8 @@ def nvds_set_obj_bbox(
 
 
 def set_aligned_bbox_for_obj_meta(obj_meta: pyds.NvDsObjectMeta, bbox: BBox) -> None:
+    """Set aligned bbox values for specified object meta
+    into Deepstream meta structures."""
     bbox_coords = obj_meta.detector_bbox_info.org_bbox_coords
     bbox_coords.left = bbox.left
     bbox_coords.top = bbox.top
@@ -203,6 +207,8 @@ def set_aligned_bbox_for_obj_meta(obj_meta: pyds.NvDsObjectMeta, bbox: BBox) -> 
 def set_rotated_bbox_for_obj_meta(
     batch_meta: pyds.NvDsBatchMeta, obj_meta: pyds.NvDsObjectMeta, bbox: RBBox
 ) -> None:
+    """Set rotated bbox values for specified object meta
+    into Deepstream meta structures."""
     rbbox_coords = NvRBboxCoords()
     rbbox_coords.x_center = bbox.xc
     rbbox_coords.y_center = bbox.yc
@@ -212,7 +218,34 @@ def set_rotated_bbox_for_obj_meta(
     add_rbbox_to_object_meta(batch_meta, obj_meta, rbbox_coords)
 
 
+def nvds_upd_obj_bbox(obj_meta: pyds.NvDsObjectMeta, bbox: Union[BBox, RBBox]):
+    """Update bbox values for specified object meta
+    into Deepstream meta structures."""
+    if isinstance(bbox, BBox):
+        set_aligned_bbox_for_obj_meta(obj_meta, bbox)
+
+    elif isinstance(bbox, RBBox):
+        update_rotated_bbox_for_obj_meta(obj_meta, bbox)
+
+
+def update_rotated_bbox_for_obj_meta(
+    obj_meta: pyds.NvDsObjectMeta, bbox: RBBox
+) -> None:
+    rbbox = get_rbbox(obj_meta)
+    if rbbox is None:
+        raise MetaValueError(
+            'No rotated bounding box found in Deepstream meta information.'
+        )
+    rbbox.x_center = bbox.xc
+    rbbox.y_center = bbox.yc
+    rbbox.width = bbox.width
+    rbbox.height = bbox.height
+    rbbox.angle = bbox.angle
+
+
 def get_aligned_bbox_from_obj_meta(obj_meta: pyds.NvDsObjectMeta) -> BBox:
+    """Get aligned bbox instance for specified object meta
+    using values from Deepstream meta structures."""
     if (
         obj_meta.tracker_bbox_info.org_bbox_coords.width > 0
         and obj_meta.tracker_bbox_info.org_bbox_coords.height > 0
@@ -233,6 +266,8 @@ def get_aligned_bbox_from_obj_meta(obj_meta: pyds.NvDsObjectMeta) -> BBox:
 
 
 def get_rotated_bbox_from_obj_meta(obj_meta: pyds.NvDsObjectMeta) -> RBBox:
+    """Get rotated bbox instance for specified object meta
+    using values from Deepstream meta structures."""
     rbbox = get_rbbox(obj_meta)
     if rbbox is None:
         raise MetaValueError(
@@ -244,6 +279,8 @@ def get_rotated_bbox_from_obj_meta(obj_meta: pyds.NvDsObjectMeta) -> RBBox:
 def nvds_init_obj_draw_label(
     batch_meta: pyds.NvDsBatchMeta, obj_meta: pyds.NvDsObjectMeta, draw_label: str
 ):
+    """Initialize Deepstream meta structure
+    for object draw label for specified object meta."""
     user_meta = pyds.nvds_acquire_user_meta_from_pool(batch_meta)
     if user_meta:
         data = pyds.alloc_custom_struct(user_meta)
@@ -258,6 +295,7 @@ def nvds_init_obj_draw_label(
 def nvds_get_obj_draw_label_struct(
     obj_meta: pyds.NvDsObjectMeta,
 ) -> pyds.CustomDataStruct:
+    """Get Deepstream meta structure for object draw label for specified object meta."""
     for user_meta in nvds_obj_user_meta_iterator(obj_meta):
         if user_meta.base_meta.meta_type == OBJ_DRAW_LABEL_META_TYPE:
             return pyds.CustomDataStruct.cast(user_meta.user_meta_data)
@@ -265,6 +303,7 @@ def nvds_get_obj_draw_label_struct(
 
 
 def nvds_set_obj_draw_label(obj_meta: pyds.NvDsObjectMeta, draw_label: str) -> bool:
+    """Set object draw label for specified object meta."""
     data = nvds_get_obj_draw_label_struct(obj_meta)
     if data is not None:
         data.message = draw_label
@@ -273,6 +312,7 @@ def nvds_set_obj_draw_label(obj_meta: pyds.NvDsObjectMeta, draw_label: str) -> b
 
 
 def nvds_get_obj_draw_label(obj_meta: pyds.NvDsObjectMeta) -> Optional[str]:
+    """Get object draw label for specified object meta. Returns None if not set."""
     data = nvds_get_obj_draw_label_struct(obj_meta)
     if data is not None:
         return pyds.get_string(data.message)

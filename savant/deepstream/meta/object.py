@@ -16,6 +16,7 @@ from savant.deepstream.utils import (
     nvds_init_obj_draw_label,
     nvds_get_obj_bbox,
     nvds_set_obj_bbox,
+    nvds_upd_obj_bbox,
 )
 from savant.utils.logging import LoggerMixin
 from savant.meta.attribute import AttributeMeta
@@ -87,6 +88,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
             )
 
         self.ds_object_meta.confidence = confidence
+        self._bbox = bbox  # cached BBox or RBBox structure
         nvds_set_obj_bbox(self._frame_meta.batch_meta, self.ds_object_meta, bbox)
         nvds_set_obj_uid(
             frame_meta=self._frame_meta.frame_meta, obj_meta=self.ds_object_meta
@@ -106,7 +108,13 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
 
         :return: object bounding box.
         """
-        return nvds_get_obj_bbox(self.ds_object_meta)
+        if self._bbox is None:
+            self._bbox = nvds_get_obj_bbox(self.ds_object_meta)
+        return self._bbox
+
+    def sync_bbox(self):
+        if self._bbox.is_modified():
+            nvds_upd_obj_bbox(self.ds_object_meta, self._bbox)
 
     @property
     def uid(self) -> int:
@@ -302,6 +310,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         self._model_object_registry = ModelObjectRegistry()
         self.ds_object_meta = object_meta
         self._frame_meta = frame_meta
+        self._bbox = None
         if object_meta.parent:
             self._parent_object = _NvDsObjectMetaImpl.from_nv_ds_object_meta(
                 object_meta=object_meta.parent, frame_meta=frame_meta

@@ -144,7 +144,9 @@ class ArtistGPUMat(AbstractContextManager):
             return
 
         if isinstance(bbox, BBox):
-            left, top, right, bottom = bbox.visual_box(PaddingDraw(*padding), border_width).as_ltrb()
+            left, top, right, bottom = bbox.visual_box(
+                PaddingDraw(*padding), border_width
+            ).as_ltrb()
             if draw_bg:
                 self.frame.colRange(left, right).rowRange(top, bottom).setTo(
                     bg_color, stream=self.stream
@@ -266,7 +268,7 @@ class ArtistGPUMat(AbstractContextManager):
             return
 
         self.__init_overlay()
-        vertices = np.array(vertices)[np.newaxis,...]
+        vertices = np.array(vertices)[np.newaxis, ...]
         if draw_fill:
             cv2.drawContours(self.overlay, vertices, 0, bg_color, cv2.FILLED)
         if draw_contour and (not draw_fill or line_color != bg_color):

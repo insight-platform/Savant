@@ -279,6 +279,10 @@ class ObjectMeta:
             return self.object_meta_impl.bbox
         return self._bbox
 
+    def sync_bbox(self):
+        if self.object_meta_impl:
+            self.object_meta_impl.sync_bbox()
+
     @property
     def uid(self) -> Optional[int]:
         """Returns uid of the object."""

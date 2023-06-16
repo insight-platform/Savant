@@ -1,27 +1,33 @@
 """Iterator over deepstream object metadata."""
+from typing import Iterator, ContextManager
+from contextlib import contextmanager
 import pyds
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
 from savant.meta.object import ObjectMeta
 
 
-class NvDsObjectMetaIterator:
-    """Iterator over deepstream object metadata."""
+def finalize_obj_meta(obj_meta: ObjectMeta) -> None:
+    obj_meta.sync_bbox()
 
-    def __init__(self, frame_meta: pyds.NvDsFrameMeta):
-        self.item = frame_meta.obj_meta_list
-        self.cast_data = pyds.NvDsObjectMeta.cast
-        self.frame_meta = frame_meta
 
-    def __iter__(self):
-        return self
+@contextmanager
+def obj_meta_manager(
+    obj_meta: pyds.NvDsObjectMeta, frame_meta: pyds.NvDsFrameMeta
+) -> ContextManager[ObjectMeta]:
+    obj_meta = ObjectMeta._from_be_object_meta(
+        _NvDsObjectMetaImpl.from_nv_ds_object_meta(obj_meta, frame_meta)
+    )
+    try:
+        yield obj_meta
+    finally:
+        finalize_obj_meta(obj_meta)
 
-    def __next__(self) -> ObjectMeta:
-        item = self.item
-        if item is None:
-            raise StopIteration
-        self.item = self.item.next
-        return ObjectMeta._from_be_object_meta(
-            _NvDsObjectMetaImpl.from_nv_ds_object_meta(
-                self.cast_data(item.data), frame_meta=self.frame_meta
-            )
-        )
+
+def nvds_obj_meta_generator(frame_meta: pyds.NvDsFrameMeta) -> Iterator[ObjectMeta]:
+    item = frame_meta.obj_meta_list
+    while item is not None:
+        with obj_meta_manager(
+            pyds.NvDsObjectMeta.cast(item.data), frame_meta
+        ) as obj_meta:
+            yield obj_meta
+        item = item.next

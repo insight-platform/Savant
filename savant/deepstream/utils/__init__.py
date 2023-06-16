@@ -33,6 +33,7 @@ from .object import (
     nvds_get_obj_uid,
     nvds_get_obj_bbox,
     nvds_set_obj_bbox,
+    nvds_upd_obj_bbox,
     nvds_set_obj_draw_label,
     nvds_get_obj_draw_label,
     nvds_init_obj_draw_label,
