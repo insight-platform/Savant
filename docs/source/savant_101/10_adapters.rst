@@ -1,39 +1,43 @@
 Adapters
 ========
 
-The adapter is a standalone program typically executed in a Docker container. Adapters communicate with modules via ZeroMQ sockets: source adapters send data into, and sink adapters receive data from them.
+An adapter is a standalone program executed in a Docker container. Adapters communicate with modules via ZeroMQ sockets: source adapters ingest data, and sink adapters receive data from them.
 
-The decoupled nature of adapters ensures better reliability because an error-prone data source affects the adapter operation, not the module operation. As a result, it is always operational regardless of data sources.
+The decoupled nature of adapters guarantees high reliability because error-prone data sources don't affect the module operation.
 
-The adapters can transfer video streams and metadata through the network or locally. We have already implemented several handy adapters, and you can implement the required one if needed - the protocol is based on standard, widely supported open-source technologies.
+Adapters can transfer video streams and metadata over network or locally. We implemented several handy adapters; interested parties can implement the specific adapters to address their situations: the protocol is based on open-source technologies.
 
 Savant Adapter Protocol
 -----------------------
 
-There is a protocol based on ZeroMQ and Apache Avro, which adapters use to communicate. It can be used to connect adapter with adapter, adapter with module, module with module, etc. The protocol is universal for sources and sinks. It allows transferring the following:
+Savant uses a protocol based `ZeroMQ <https://zeromq.org/>`__ and Apache `Avro <https://avro.apache.org/>`__ for communication between adapters and modules. It can be used to connect an adapter with other adapter, an adapter with a module, a module with a module, etc. The protocol is universal for source- and sink adapters.
+
+It supports transferring the following:
 
 - video frames [optional];
 - video stream information;
 - frame-related metadata;
-- the hierarchy of objects related to the frame.
+- the hierarchy of objects and their attributes related to the frame.
 
 The protocol is described in the :doc:`API <../reference/avro>` section.
 
 Communication Sockets
 ---------------------
 
-The adapters and modules can use various ZeroMQ socket pairs to establish communication. The chosen type defines the possible topologies and quality of service. Currently, the following pairs are supported:
+Adapters and modules may use various ZeroMQ socket pairs to communicate. The chosen pair defines possible topologies and quality of service. Currently, the following pairs are supported:
 
-- DEALER/ROUTER: reliable, asynchronous pair with backpressure (default choice);
-- REQ/REP: reliable, synchronous pair (paranoid choice);
-- PUB/SUB: unreliable, real-time pair (default choice for strict real-time operation or broadcasting).
+- ``DEALER/ROUTER``: reliable, asynchronous pair with backpressure (default choice);
+- ``REQ/REP``: reliable, synchronous pair (paranoid choice);
+- ``PUB/SUB``: unreliable, real-time pair (default choice for strict real-time operation or broadcasting).
 
-There are two URL schemes supported:
+You can read read more about ZeroMQ socket pairs on ZeroMQ `website <https://zeromq.org/socket-api/>`__.
+
+Savant supports two transports:
 
 - Unix domain sockets;
 - TCP sockets.
 
-You must prefer Unix domain sockets over TCP sockets when communication is established locally, especially when RAW frame formats are used (e.g. when using GigE Vision industrial cams or USB cams).
+You must prefer Unix domain sockets over TCP sockets when communication is established locally, especially when ``RAW`` frame formats are used (e.g. when using GigE Vision industrial cams or USB cams).
 
 Unix domain URLs look like as follows:
 
@@ -55,12 +59,12 @@ TCP socket URL look like as follows:
     pub+connect:tcp://10.0.0.10:3331
     # etc
 
-When used in the environment variables it may look like:
+When the transports are specified  with the environment variables they look like:
 
 .. code-block:: bash
 
     ZMQ_ENDPOINT="dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc"
-    # is equal to
+    # which is equal to
     ZMQ_ENDPOINT="ipc:///tmp/zmq-sockets/input-video.ipc"
     ZMQ_TYPE="DEALER"
     ZMQ_BIND="False"
@@ -70,48 +74,49 @@ Or:
 .. code-block:: bash
 
     ZMQ_ENDPOINT="pub+bind:tcp://1.1.1.1:3333"
-    # is equal to
+    # which is equal to
     ZMQ_ENDPOINT="tcp://1.1.1.1:3333"
     ZMQ_TYPE="PUB"
     ZMQ_BIND="True"
 
-Read more about ZeroMQ socket pairs on ZeroMQ `website <https://zeromq.org/socket-api/>`__.
 
-You usually want to use combinations, which are marked with Green color:
+Usually, you must use combinations colored green:
 
 .. image:: ../_static/img/10_adapters_normal_pairs.png
 
 The Rules Of Thumb
 -----------------
 
-Typically we recommend following the next ideas when planning how your adapters communicate with the module:
+We recommend following the next ideas when planning adapter-framework communication:
 
-- Try to use the framework in bind mode, and adapters in connect mode first; change only if it does not work for you.
-- The part which delivers multiplexed stream usually has the bind type; the part which handles a single (non-multiplexed) stream usually has the connect type.
-- Use the ``PUB/SUB`` pair only when the pipeline or adapter is capable to handle the traffic in real-time.
+- Use the framework in the bind mode, adapters in the connect mode; change if it does not work for you.
+- The party which delivers multiplexed stream usually has the bind type; the party which handles a single (non-multiplexed) stream usually has the connect type.
+- Use the ``PUB/SUB`` pair when the pipeline or adapter is capable to handle the traffic in real-time.
 
 Typical Patterns
 ----------------
 
-There are typical patterns widely used, try to start from them when designing pipelines.
+There are typical patterns widely used, start with them when designing pipelines.
+
+Legend:
 
 - ``D`` - dealer;
 - ``R`` - router;
 - ``P`` - publisher (PUB);
 - ``S`` - subscriber (SUB).
 
-The pairs are explained after the patterns section in detail.
+The pair combinations are discussed after the patterns-related sections.
 
 Data-Center Patterns
 ^^^^^^^^^^^^^^^^^^^^
 
-Data-center patterns are designed to reliably process video streams with increased latency in situations when the pipeline is overwhelmed with data. 0MQ socket pairs used in data-center patterns are ``DEALER/ROUTER`` (default recommended) or ``REQ/REP``. These pairs implement a backpressure mechanism which causes the processing to be delayed when watermarks are reached.
+Data-center patterns are used to reliably process video streams with increased latency in situations when the pipeline is overwhelmed with data. Typical ZeroMQ socket pairs used in data-center patterns are ``DEALER/ROUTER`` (default recommended) or ``REQ/REP``. These pairs implement backpressure causing processing to be delayed when thresholds are reached.
 
 .. image:: ../_static/img/10_adapters_dc_patterns.png
 
-The first one is a typical scenario when the adapter reads multiplexed streams from an external queue system (like Kafka) and passes them to the framework instance. The framework, in turn, transfers analytics results (and video) to the adapter, which places the results into a database or another queue system.
+The first represents a typical scenario when an adapter reads multiplexed streams from an external queue system (like Kafka) and passes them to a framework. The framework, in turn, transfers results (and video) to the adapter delivering them into an external system.
 
-The second is typical when adapters are used to aggregate data from multiple streams (e.g. ``RTSP`` cams) into the framework instance. The right side of the pipeline stays the same as in the previous case.
+The second is typical when adapters deliver data from several sources (e.g. RTSP cams) into a framework instance. The right side of the pipeline stays the same as in the previous case.
 
 Edge Patterns
 ^^^^^^^^^^^^^
