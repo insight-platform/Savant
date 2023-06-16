@@ -145,8 +145,8 @@ class ArtistGPUMat(AbstractContextManager):
 
         if isinstance(bbox, BBox):
             left, top, right, bottom = bbox.visual_box(
-                PaddingDraw(*padding), border_width
-            ).as_ltrb()
+                PaddingDraw(*padding), border_width, self.max_col, self.max_row
+            ).as_ltrb_int()
             if draw_bg:
                 self.frame.colRange(left, right).rowRange(top, bottom).setTo(
                     bg_color, stream=self.stream
@@ -300,7 +300,9 @@ class ArtistGPUMat(AbstractContextManager):
             cv2.CV_8UC4, cv2.CV_8UC4, (radius, radius), sigma
         )
 
-        left, top, width, height = bbox.visual_box(PaddingDraw(*padding), 0).as_ltwh()
+        left, top, width, height = bbox.visual_box(
+            PaddingDraw(*padding), 0, self.max_col, self.max_row
+        ).as_ltwh_int()
         roi_mat = cv2.cuda.GpuMat(self.frame, (left, top, width, height))
 
         gaussian_filter.apply(roi_mat, roi_mat, stream=self.stream)
