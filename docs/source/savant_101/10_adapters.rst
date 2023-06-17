@@ -226,12 +226,12 @@ Currently, the following source adapters are available:
 
 All source adapters accept the following common parameters:
 
-- ``SOURCE_ID``: a unique identifier for the source adapter; this option is **required**; every source stream must have unique identifier, if identifiers collide processing may cause unpredictable results;
-- ``ZMQ_ENDPOINT``: adapter's output socket (must correspond to module's input); schema: ``[<socket_type>+(bind|connect):]<endpoint>``;
-- ``ZMQ_TYPE``: the socket type; default is ``DEALER``, also can be set to ``PUB`` or ``REQ``; **warning**: this parameter is deprecated, consider encoding the type in ``ZMQ_ENDPOINT``;
-- ``ZMQ_BIND``; the socket mode (the ``bind`` mode is when set to ``True``); default is ``False``; **warning**: this parameter is deprecated, consider encoding the type in ``ZMQ_ENDPOINT``;
-- ``FPS_PERIOD_FRAMES``; a number of frames between FPS reports; default is ``1000``;
-- ``FPS_PERIOD_SECONDS``; a number of seconds between FPS reports; default is ``None``;
+- ``SOURCE_ID``: a string identifier for a stream processed; this option is **required**; every stream must have a unique identifier, if identifiers collide, processing may cause unpredictable results; the identifier may encode user-defined semantics in a prefix, like ``rtsp.stream.1``; many sink adapters can filter out streams by prefix or full ``SOURCE_ID``;
+- ``ZMQ_ENDPOINT``: adapter's socket where it sends media stream; it must form a valid ZeroMQ pair with module's input socket; the endpoint coding scheme is ``[<socket_type>+(bind|connect):]<endpoint>``;
+- ``ZMQ_TYPE``: a socket type; default is ``DEALER``, also can be set to ``PUB`` or ``REQ``; **warning**: this parameter is deprecated, consider encoding the type in ``ZMQ_ENDPOINT``;
+- ``ZMQ_BIND``; a socket mode (the ``bind`` mode is when the parameter is set to ``True``); default is ``False``; **warning**: this parameter is deprecated, consider encoding the type in ``ZMQ_ENDPOINT``;
+- ``FPS_PERIOD_FRAMES``; a number of frames between FPS reports; FPS reporting helps to estimate the performance of the pipeline components deployed; default is ``1000``;
+- ``FPS_PERIOD_SECONDS``; a number of seconds between FPS reports; default is ``None`` which means that FPS reporting uses ``FPS_PERIOD_FRAMES``;
 - ``FPS_OUTPUT``; a path to the file for FPS reports; default is ``stdout``.
 
 Image File Source Adapter
@@ -239,11 +239,11 @@ Image File Source Adapter
 
 The Image File Source Adapter sends ``JPEG`` or ``PNG`` files to a module. It may be used to generate video streams from separate images or process independent images.
 
-The images are delivered from:
+The images are served from:
 
 - a local path to a single file;
 - a local path to a directory with files (not necessarily in the same encoding);
-- HTTP URL to a single file.
+- an HTTP URL to a single file.
 
 .. note::
 
