@@ -191,7 +191,7 @@ The ``PUB/SUB`` is convenient when you need to duplicate the same data to multip
 ``PUB/SUB`` examples:
 
 - delivering frames from a single camera to two different pipelines;
-- delivering resulting video analytics to two different adapters (e.g. for RTSP streaming and database collection).
+- delivering resulting video analytics to two different adapters (e.g. for RTSP streaming and database ingestion).
 
 ``PUB/SUB`` is unreliable, which means that if the subscriber is slow the frames may be lost because ``PUB`` never blocks. The adapter must handle incoming frames in an advanced way (e.g. using internal queueing) to overcome that.
 
