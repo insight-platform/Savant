@@ -146,19 +146,19 @@ DEALER/ROUTER
 
 This is a recommended pair when you don't need to copy the same messages to multiple subscribers. It is a reliable socket pair: the ``DEALER`` will block if the ``ROUTER``'s queue is full.
 
-**Source/CONNECT-to-Framework/BIND communication**. This is a typical scheme.
+**Source/CONNECT, Framework/BIND**. This is a typical scheme.
 
 .. image:: ../_static/img/10_adapters_dr_scfb.png
 
-**Framework/CONNECT-to-Sink/BIND communication**. This is a normal pattern when a sink adapter communicates with an external system like Kafka and wishes to send data from multiple framework instances.
+**Framework/CONNECT, Sink/BIND**. This is a normal pattern when a sink adapter communicates with an external system like Kafka and wishes to send data from multiple framework instances.
 
 .. image:: ../_static/img/10_adapters_dr_fcsb.png
 
-**Source/BIND-to-Framework/CONNECT communication**. This is an exotic pattern. Nevertheless, it does the job when a module handles independent images without the need to maintain per-source order. In this scheme, the source will evenly distribute data between connected frameworks according to the ``LRU`` strategy, so it is impossible to use the scheme when you work with video.
+**Source/BIND, Framework/CONNECT**. This is an exotic pattern. Nevertheless, it does the job when a module handles independent images without the need to maintain per-source order. In this scheme, the source will evenly distribute data between connected frameworks according to the ``LRU`` strategy, so it is impossible to use the scheme when you work with video.
 
 .. image:: ../_static/img/10_adapters_dr_sbfc.png
 
-**Framework/BIND-to-Sink/CONNECT communication**. This is a valid pattern when sinks communicating with an external system require partitioning and data appending order is not critical.
+**Framework/BIND, Sink/CONNECT**. This is a valid pattern when sinks communicating with an external system require partitioning and data appending order is not critical.
 
 .. image:: ../_static/img/10_adapters_dr_fbsc.png
 
@@ -172,19 +172,19 @@ PUB/SUB
 
 The ``PUB/SUB`` is convenient when you need to duplicate the same data to multiple subscribers. Another use case is real-time data processing: excessive elements are dropped if the pipeline cannot handle the traffic.
 
-**Source/BIND-to-Framework/CONNECT communication**. A source is initialized as a server (bind), and a framework connects to it. This scheme can be used when the source already delivers multiple streams or the framework handles a single stream provided by the source. In this scenario, the source can duplicate the same stream to multiple frameworks simultaneously.
+**Source/BIND, Framework/CONNECT**. A source is initialized as a server (bind), and a framework connects to it. This scheme can be used when the source already delivers multiple streams or the framework handles a single stream provided by the source. In this scenario, the source can duplicate the same stream to multiple frameworks simultaneously.
 
 .. image:: ../_static/img/10_adapters_ps_sbfc.png
 
-**Framework/BIND-to-Sink/CONNECT communication**. This scheme is used widely. A framework duplicates the same data to multiple sinks. A sink can filter out only required data.
+**Framework/BIND, Sink/CONNECT**. This scheme is used widely. A framework duplicates the same data to multiple sinks. A sink can filter out only required data.
 
 .. image:: ../_static/img/10_adapters_ps_fbsc.png
 
-**Source/CONNECT-to-Framework/BIND communication**. A typical scheme when a framework handles multiple streams. The framework binds to a socket and adapters connect to that socket.
+**Source/CONNECT, Framework/BIND**. A typical scheme when a framework handles multiple streams. The framework binds to a socket and adapters connect to that socket.
 
 .. image:: ../_static/img/10_adapters_ps_scfb.png
 
-**Framework/CONNECT-to-Sink/BIND communication**. This is unusual but a correct scheme. A sink handles multiple outputs from frameworks to deliver them in a storage, e.g. Kafka or ClickHouse.
+**Framework/CONNECT, Sink/BIND**. This is unusual but a correct scheme. A sink handles multiple outputs from frameworks to deliver them in a storage, e.g. Kafka or ClickHouse.
 
 .. image:: ../_static/img/10_adapters_ps_fcsb.png
 
