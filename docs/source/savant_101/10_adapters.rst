@@ -669,7 +669,7 @@ When ``DEV_MODE=True`` the stream is available at:
 - LL-HLS: http://<container-host>:888/stream
 - WebRTC: http://<container-host>:8889/stream
 
-Running with Docker:
+Running the adapter with Docker:
 
 .. code-block:: bash
 
