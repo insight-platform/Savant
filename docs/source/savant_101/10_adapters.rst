@@ -197,12 +197,12 @@ The ``PUB/SUB`` is convenient when you need to duplicate the same data to multip
 
 We recommend using the PUB/SUB in the following scenarios:
 
-- when processing independently encoded frames from a cam (``MJPEG``, ``RGB``, etc.) so when processing is slow you can afford to drop frames;
+- when processing independently encoded frames from a cam (``MJPEG``, ``RGB``, etc.), so when processing is slow, you can afford to drop frames;
 - when an adapter is implemented in a way to read frames from the socket fast and know how to queue them internally.
 
 **Antipattern**: passing video files over ``PUB/SUB`` to the framework with no ``SYNC`` flag set.
 
-**Pattern example (Sink)**: Always-On RTSP Sink Adapter when multiple streams are cast.
+**Pattern example (Sink)**: Connecting multiple Always-On RTSP Sink instances to the framework instance to cast multiple streams.
 
 We provide adapters to address the common needs of users. The current list of adapters covers many typical scenarios in real life. Provided adapters can be used as an idea to implement a specific one required in your case.
 
