@@ -126,23 +126,23 @@ These pairs implement backpressure causing processing to be delayed when thresho
 
 .. image:: ../_static/img/10_adapters_dc_patterns.png
 
-The first represents a typical scenario when an adapter reads multiplexed streams from an external queue system (like Kafka) and passes them to a framework. The framework, in turn, transfers results (and video) to the adapter delivering them into an external system.
+The first represents a typical scenario when an adapter reads multiplexed streams from an external queue system (like Kafka) and passes them to a framework. The framework, in turn, transfers results (and video) to an adapter delivering them into an external system.
 
 The second is typical when adapters deliver data from several sources (e.g. RTSP cams) into a framework instance. The right side of the pipeline stays the same as in the previous case.
 
 Edge Patterns
 ^^^^^^^^^^^^^
 
-Edge is usually used to execute low-latency real-time video processing. To implement that, you can utilize the ``PUB/SUB`` socket pair because it drops the packets that the ``SUB`` part cannot process on time.
+Edge is usually used to execute low-latency real-time video processing. To implement that, we establish the ``PUB/SUB`` connection because it drops the packets that the ``SUB`` part cannot process on time.
 
-This mechanism works great when used with streams delivering ``MJPEG``, ``RAW``, ``JPEG``, ``PNG``, and other independent video frames. Using the pattern with keyframe-encoded streams is troublesome because drops cause video corruption.
+This mechanism works great with streams delivering ``MJPEG``, ``RAW``, ``JPEG``, ``PNG``, and other independently encoded video frames. Using it with keyframe-encoded streams leads to video corruption.
 
 .. image:: ../_static/img/10_adapters_edge_patterns.png
 
-The first pattern can be used when neither adapters nor the framework must get stuck because of the sink stalling. The second pattern is beneficial when a sink guarantees processing, and you do not worry that it may cause the stalling.
+The first pattern can be used when neither adapters nor the framework must get stuck because of the sink stalling. The second pattern is beneficial when a sink guarantees processing, and you do not worry that it may cause stalling.
 
 DEALER/ROUTER
--------------
+^^^^^^^^^^^^^
 
 This is a recommended pair when you don't need to copy the same messages to multiple subscribers. It is a reliable socket pair: the ``DEALER`` will block if the ``ROUTER``'s queue is full.
 
@@ -163,12 +163,12 @@ This is a recommended pair when you don't need to copy the same messages to mult
 .. image:: ../_static/img/10_adapters_dr_fbsc.png
 
 REQ/REP
--------
+^^^^^^^
 
 The ``REQ/REP`` pair is similar to ``DEALER/ROUTER`` except that the ``REQ`` part receives replies from the ``REP`` part every time the ``REP`` part reads the message.
 
 PUB/SUB
--------
+^^^^^^^
 
 The ``PUB/SUB`` is convenient when you need to duplicate the same data to multiple subscribers. Another use case is real-time data processing: excessive elements are dropped if the pipeline cannot handle the traffic.
 
