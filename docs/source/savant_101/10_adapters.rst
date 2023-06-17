@@ -28,22 +28,24 @@ The protocol is described in the :doc:`API <../reference/avro>` section.
 Communication Sockets
 ---------------------
 
-Adapters and modules may use various ZeroMQ socket pairs to communicate. The chosen pair defines possible topologies and quality of service. Currently, the following pairs are supported:
+Adapters and modules may use three different ZeroMQ patterns to communicate. The chosen pattern defines possible topologies and quality of service.
+
+Currently, the following patterns are supported:
 
 - ``DEALER/ROUTER``: reliable, asynchronous pair with backpressure (default choice);
 - ``REQ/REP``: reliable, synchronous pair (paranoid choice);
 - ``PUB/SUB``: unreliable, real-time pair (default choice for strict real-time operation or broadcasting).
 
-You can read read more about ZeroMQ socket pairs on ZeroMQ `website <https://zeromq.org/socket-api/>`__.
+You can read read more about ZeroMQ sockets on ZeroMQ `website <https://zeromq.org/socket-api/>`__.
 
-Savant supports two transports:
+Savant currently supports two network transports:
 
 - Unix domain sockets;
-- TCP sockets.
+- TCP sockets (unicast).
 
-You must prefer Unix domain sockets over TCP sockets when communication is established locally, especially when ``RAW`` frame formats are used (e.g. when using GigE Vision industrial cams or USB cams).
+You must prefer Unix domain sockets over TCP sockets when communication is established locally, especially when uncompressed frame formats are used (e.g., when using GigE Vision industrial cams or USB cams).
 
-Unix domain URLs look like as follows:
+In Savant Unix domain sockets URLs look like as follows:
 
 .. code-block:: bash
 
@@ -54,7 +56,7 @@ Unix domain URLs look like as follows:
     router+bind:ipc:///tmp/zmq-sockets/input-video.ipc
     # etc...
 
-TCP socket URL look like as follows:
+TCP sockets URLs look like as follows:
 
 .. code-block:: bash
 
@@ -63,11 +65,13 @@ TCP socket URL look like as follows:
     pub+connect:tcp://10.0.0.10:3331
     # etc
 
-When the transports are specified  with the environment variables they look like:
+When the transports are specified  with the environment variables it looks like:
 
 .. code-block:: bash
 
+    # Unix domain socket communication
     ZMQ_ENDPOINT="dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc"
+
     # which is equal to
     ZMQ_ENDPOINT="ipc:///tmp/zmq-sockets/input-video.ipc"
     ZMQ_TYPE="DEALER"
@@ -77,21 +81,23 @@ Or:
 
 .. code-block:: bash
 
+    # tcp socket communication
     ZMQ_ENDPOINT="pub+bind:tcp://1.1.1.1:3333"
+
     # which is equal to
     ZMQ_ENDPOINT="tcp://1.1.1.1:3333"
     ZMQ_TYPE="PUB"
     ZMQ_BIND="True"
 
 
-Usually, you must use combinations colored green:
+Not all socket pairs form "sane" communication patterns, so, you must use combinations colored green:
 
 .. image:: ../_static/img/10_adapters_normal_pairs.png
 
 The Rules Of Thumb
 ------------------
 
-Consider the following ideas when planning adapter-framework communication:
+Consider the following ideas when planning ``source-framework-sink`` topologies:
 
 - Use the framework in the bind mode, adapters in the connect mode; change if it does not work for you.
 - The party which delivers multiplexed stream usually has the bind type; the party which handles a single (non-multiplexed) stream usually has the connect type.
