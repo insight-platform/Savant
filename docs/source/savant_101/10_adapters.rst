@@ -1,22 +1,26 @@
 Adapters
 ========
 
-An adapter is a standalone program executed in a Docker container. Adapters communicate with modules via ZeroMQ sockets: source adapters ingest data, and sink adapters receive data from them.
+Let us begin with two terms to get acquainted with top level components of Savant. A "module" is a docker container where a pipeline running computer vision or video analytics runs. Modules need communicate with eternal world somehow: they capture video or images from cams, files, queues, streaming servers and send results to other external systems like video archives, databases, broadcast systems, etc. In Savant, modules doesn't do these things by themselves, delegating them to adapters.
 
-The decoupled nature of adapters guarantees high reliability because error-prone data sources don't affect the module operation.
+The adapters are standalone programs executed in separate Docker containers. They communicate with modules via `ZeroMQ <https://zeromq.org/>`__: source adapters ingest data, and sink adapters receive data from modules.
 
-Adapters can transfer video streams and metadata over network or locally. We implemented several handy adapters; interested parties can implement the specific adapters to address their situations: the protocol is based on open-source technologies.
+The decoupled nature of adapters guarantees high reliability because errors happening outside of the pipeline don't propagate to the module. Thus, adapters deliver two main functions: abstracting the module from data sources and destinations and providing a foundation for fault-tolerant operations.
+
+Adapters transfer video streams and metadata over network or locally. We implemented several handy adapters already; interested parties can implement the specific adapters to address their situations: the protocol is based on open-source technologies.
 
 Savant Adapter Protocol
 -----------------------
 
-Savant uses a protocol based `ZeroMQ <https://zeromq.org/>`__ and Apache `Avro <https://avro.apache.org/>`__ for communication between adapters and modules. It can be used to connect an adapter with other adapter, an adapter with a module, a module with a module, etc. The protocol is universal for source- and sink adapters.
+Savant uses a protocol based on `ZeroMQ <https://zeromq.org/>`__ and Apache `Avro <https://avro.apache.org/>`__ for communication between adapters and modules. It can be used to connect an adapter with other adapter, an adapter with a module, a module with a module, etc. The protocol is universal for source- and sink adapters.
 
-It supports transferring the following:
+With the protocol, one may build oriented graphs representing data sources, sinks, and modules, arranging them within a single host or in a distributed environment like ``K8s``.
+
+It supports transferring:
 
 - video frames [optional];
-- video stream information;
-- frame-related metadata;
+- video stream-level information (encoding, fps, resolution, etc);
+- frame-related metadata (global per-frame attributes);
 - the hierarchy of objects and their attributes related to the frame.
 
 The protocol is described in the :doc:`API <../reference/avro>` section.
