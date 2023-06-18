@@ -1,9 +1,9 @@
-Defining a Custom ROI
-=====================
+ROI Customization
+=================
 
 By default, Savant creates the automatic default ROI, which covers all the frame space. Sometimes developers need to reconfigure the ROI globally or per frame. It can be done with custom ``pyfunc`` units.
 
-Define Custom ROI
+Create Custom ROI
 -----------------
 
 TODO
