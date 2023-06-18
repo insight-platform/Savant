@@ -22,18 +22,22 @@ The goal of Savant is to demonstrate the same behavior on all Nvidia Hardware: d
 Data Center GPUs
 ----------------
 
-Savant works on any data center GPU starting from the Turing family, like Nvidia V100, A100, T4, A2, A10, etc. Please take a look at the `hardware support matrix <https://developer.nvidia.com/video-encode-and-decode-gpu-support-matrix-new>`__ to find possible hardware limitations before deploying the hardware.
+Savant works on any data center GPU starting from the Turing family, like Nvidia V100, A100, T4, A2, A10, etc.
 
-Certain cards may have a better hardware balance than others: e.g., when the pipeline is expected to encode video actively with high quality, you may find that certain GPUs like NVIDIA RTX 6000 Ada Generation or Nvidia L16 have more NVENC devices onboard than others, which may be beneficial.
+Certain cards have a better hardware balance than others: e.g., when the pipeline is expected to encode video actively with high quality, you may find that certain GPUs like NVIDIA RTX 6000 Ada Generation or Nvidia L16 have more NVENC devices onboard than others, which may be beneficial. If your pipeline doesn't generate augmented video footage, you may consider A100/H100 as the most efficient GPUs available.
 
-If your pipeline doesn't generate augmented video footage, you may consider A100/H100 as the most efficient GPUs available.
+.. note::
+
+    Please take a look at the `hardware support matrix <https://developer.nvidia.com/video-encode-and-decode-gpu-support-matrix-new>`__ to find possible hardware limitations before deploying the hardware.
 
 Professional GPUs
 -----------------
 
 Savant works on professional GPUs starting from the Turing family. Turing cards like RTX 4000/5000/6000/8000, and their Ampere descendants are supported.
 
-Please take a look at the `hardware support matrix <https://developer.nvidia.com/video-encode-and-decode-gpu-support-matrix-new>`__ to find possible hardware limitations before deploying the hardware.
+.. note::
+
+    Please take a look at the `hardware support matrix <https://developer.nvidia.com/video-encode-and-decode-gpu-support-matrix-new>`__ to find possible hardware limitations before deploying the hardware.
 
 Desktop GPUs
 ------------
