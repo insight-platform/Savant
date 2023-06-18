@@ -128,6 +128,7 @@ As for now, we provide images for x86 architecture and for Jetson hardware.
 
    getting_started/1_intro
    getting_started/2_running
+   getting_started/2_hardware_compatibility
    getting_started/3_examples
 
 .. toctree::
