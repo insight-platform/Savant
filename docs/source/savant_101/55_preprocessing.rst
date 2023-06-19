@@ -49,7 +49,7 @@ for inference, based on the information you specified in the ``object`` of ``inp
 You can read about the working with metadata in the `"Working With Metadata"
 <https://insight-platform.github.io/Savant/savant_101/75_working_with_metadata.html>`_ section.
 The method must return an instance of the class
-`BBox <https://docs.savant-ai.io/reference/api/generated/savant.meta.bbox.BBox.html#bbox>`_
+`BBox <https://insight-platform.github.io/savant-rs/modules/savant_rs/primitives_geometry.html#savant_rs.primitives.geometry.BBox>`_
 (The class of aligned bounding box).
 
 After you implemented your own preprocessing class, you just need to specify the module in the
