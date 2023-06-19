@@ -1,4 +1,4 @@
-name: ${oc.env:MODULE_NAME, 'traffic-meter-yolov8m'}
+name: ${oc.env:MODULE_NAME, 'traffic-meter-yolov8m-perf'}
 
 parameters:
   frame:
@@ -27,6 +27,11 @@ parameters:
     # label: car
 
 pipeline:
+
+  source:
+    element: uridecodebin
+    properties:
+      uri: file:///data/AVG-TownCentre.mp4
 
   elements:
     - element: pyfunc
@@ -68,4 +73,8 @@ pipeline:
         config_path: ${oc.env:PROJECT_PATH}/samples/traffic_meter/line_config.yml
         stale_track_del_period: 5000
         target_obj_label: ${parameters.detected_object.label}
-        send_stats: True
+        send_stats: False
+
+  # noop pipeline sink, not using sink adapter
+  sink:
+    - element: devnull_sink

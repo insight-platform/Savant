@@ -75,9 +75,10 @@ class LineCrossing(NvDsPyFuncPlugin):
         # metrics namescheme
         # savant.module.traffic_meter.source_id.obj_class_label.exit
         # savant.module.traffic_meter.source_id.obj_class_label.entry
-        self.stats_client = StatsClient(
-            'graphite', 8125, prefix='savant.module.traffic_meter'
-        )
+        if self.send_stats:
+            self.stats_client = StatsClient(
+                'graphite', 8125, prefix='savant.module.traffic_meter'
+            )
 
     def on_source_eos(self, source_id: str):
         """On source EOS event callback."""
@@ -138,15 +139,16 @@ class LineCrossing(NvDsPyFuncPlugin):
                 obj_events = self.cross_events[frame_meta.source_id][obj_meta.track_id]
                 if cross_direction is not None:
                     # send to graphite
-                    self.stats_client.incr(
-                        '.'.join(
-                            (
-                                frame_meta.source_id,
-                                self.target_obj_label,
-                                cross_direction.name,
+                    if self.send_stats:
+                        self.stats_client.incr(
+                            '.'.join(
+                                (
+                                    frame_meta.source_id,
+                                    self.target_obj_label,
+                                    cross_direction.name,
+                                )
                             )
                         )
-                    )
 
                     obj_events.append((cross_direction.name, frame_meta.pts))
 

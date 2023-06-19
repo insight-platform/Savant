@@ -1,4 +1,4 @@
-name: ${oc.env:MODULE_NAME, 'traffic-meter-yolov8m'}
+name: ${oc.env:MODULE_NAME, 'traffic-meter-peoplenet-perf'}
 
 parameters:
   frame:
@@ -23,10 +23,12 @@ parameters:
   detected_object:
     id: 0
     label: person
-    # id: 2
-    # label: car
 
 pipeline:
+  source:
+    element: uridecodebin
+    properties:
+      uri: file:///data/AVG-TownCentre.mp4
 
   elements:
     - element: pyfunc
@@ -35,19 +37,24 @@ pipeline:
       kwargs:
         config_path: ${oc.env:PROJECT_PATH}/samples/traffic_meter/line_config.yml
 
-    # detector
+    # person detector
     - element: nvinfer@detector
-      name: yolov8m
+      name: peoplenet
       model:
+        format: etlt
         remote:
-          url: s3://savant-data/models/yolov8m/yolov8m.zip
-          checksum_url: s3://savant-data/models/yolov8m/yolov8m.md5
+          url: s3://savant-data/models/peoplenet/peoplenet_pruned_v2.0.zip
+          checksum_url: s3://savant-data/models/peoplenet/peoplenet_pruned_v2.0.md5
           parameters:
             endpoint: https://eu-central-1.linodeobjects.com
-        format: custom
-        config_file: config_infer_primary_yoloV8.txt
-        custom_lib_path: /opt/savant/lib/libnvdsinfer_custom_impl_Yolo.so
+        model_file: resnet34_peoplenet_pruned.etlt
+        input:
+            layer_name: input_1
+            shape: [3, 544, 960]
+            scale_factor: 0.0039215697906911373
         output:
+          layer_names: [output_bbox/BiasAdd, output_cov/Sigmoid]
+          num_detected_classes: 3
           objects:
             - class_id: ${parameters.detected_object.id}
               label: ${parameters.detected_object.label}
@@ -68,4 +75,8 @@ pipeline:
         config_path: ${oc.env:PROJECT_PATH}/samples/traffic_meter/line_config.yml
         stale_track_del_period: 5000
         target_obj_label: ${parameters.detected_object.label}
-        send_stats: True
+        send_stats: False
+
+  # noop pipeline sink, not using sink adapter
+  sink:
+    - element: devnull_sink
