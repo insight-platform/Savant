@@ -53,6 +53,7 @@ class _OutputFrame(NamedTuple):
 
     idx: int
     pts: int
+    dts: Optional[int]
     frame: Optional[bytes]
     codec: Optional[CodecInfo]
     keyframe: bool
@@ -275,16 +276,18 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
         """
 
         self._logger.debug(
-            'Preparing output for buffer with PTS %s for source %s.',
+            'Preparing output for buffer with PTS %s and DTS %s for source %s.',
             buffer.pts,
+            buffer.dts,
             source_info.source_id,
         )
         for output_frame in self._iterate_output_frames(buffer):
             self._logger.debug(
-                'Preparing output for frame of source %s with IDX %s and PTS %s.',
+                'Preparing output for frame of source %s with IDX %s, PTS %s and DTS %s.',
                 source_info.source_id,
                 output_frame.idx,
                 output_frame.pts,
+                output_frame.dts,
             )
             frame_meta = metadata_pop_frame_meta(
                 source_info.source_id,
@@ -298,6 +301,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                 frame_height=source_info.dest_resolution.height,
                 frame=output_frame.frame,
                 frame_codec=output_frame.codec,
+                dts=output_frame.dts,
                 keyframe=output_frame.keyframe,
             )
 
@@ -711,11 +715,12 @@ class NvDsEncodedBufferProcessor(NvDsBufferProcessor):
             frame = buffer.extract_dup(0, buffer.get_size())
         else:
             frame = None
-        frame_idx, frame_pts = parse_savant_frame_meta(buffer)
+        frame_idx = extract_frame_idx(buffer)
         is_keyframe = not buffer.has_flags(Gst.BufferFlags.DELTA_UNIT)
         yield _OutputFrame(
             idx=frame_idx,
-            pts=frame_pts,
+            pts=buffer.pts,
+            dts=buffer.dts if buffer.dts != Gst.CLOCK_TIME_NONE else None,
             frame=frame,
             codec=self._codec,
             keyframe=is_keyframe,
@@ -762,10 +767,11 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
         """
 
         if buffer.get_size() == 0:
-            frame_idx, frame_pts = parse_savant_frame_meta(buffer)
+            frame_idx = extract_frame_idx(buffer)
             yield _OutputFrame(
                 idx=frame_idx,
-                pts=frame_pts,
+                pts=buffer.pts,
+                dts=None,  # Raw frames do not have dts
                 frame=None,
                 codec=self._codec,
                 # Any frame is keyframe since it was not encoded
@@ -789,6 +795,7 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
             yield _OutputFrame(
                 idx=frame_idx,
                 pts=frame_pts,
+                dts=None,  # Raw frames do not have dts
                 frame=frame,
                 codec=self._codec,
                 # Any frame is keyframe since it was not encoded
@@ -796,10 +803,8 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
             )
 
 
-def parse_savant_frame_meta(buffer: Gst.Buffer) -> Tuple[Optional[int], int]:
-    """Extract frame index and PTS from the buffer."""
+def extract_frame_idx(buffer: Gst.Buffer) -> Optional[int]:
+    """Extract frame index from the buffer."""
 
     savant_frame_meta = gst_buffer_get_savant_frame_meta(buffer)
-    frame_idx = savant_frame_meta.idx if savant_frame_meta else None
-    frame_pts = buffer.pts
-    return frame_idx, frame_pts
+    return savant_frame_meta.idx if savant_frame_meta else None

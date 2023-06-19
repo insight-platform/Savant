@@ -37,6 +37,7 @@ class SinkVideoFrame(SinkMessage, NamedTuple):
     frame_height: int
     frame: Optional[bytes]
     frame_codec: Optional[CodecInfo]
+    dts: Optional[int]
     keyframe: bool
 
 
@@ -161,6 +162,7 @@ class ZeroMQSinkFactory(SinkFactory):
                 message = {
                     'source_id': msg.frame_meta.source_id,
                     'pts': msg.frame_meta.pts,
+                    'dts': msg.dts,
                     'duration': msg.frame_meta.duration,
                     'framerate': msg.frame_meta.framerate,
                     'width': msg.frame_width,
