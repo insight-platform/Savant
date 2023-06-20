@@ -16,11 +16,9 @@ from pygstsavantframemeta import (
 
 from savant.deepstream.buffer_processor import (
     NvDsBufferProcessor,
-    NvDsRawBufferProcessor,
-    NvDsEncodedBufferProcessor,
+    create_buffer_processor,
 )
 from savant.deepstream.source_output import (
-    SourceOutputEncoded,
     SourceOutputWithFrame,
     create_source_output,
 )
@@ -46,7 +44,6 @@ from savant.deepstream.utils import (
 )
 from savant.meta.constants import UNTRACKED_OBJECT_ID, PRIMARY_OBJECT_LABEL
 from savant.utils.fps_meter import FPSMeter
-from savant.utils.model_registry import ModelObjectRegistry
 from savant.utils.source_info import SourceInfoRegistry, SourceInfo, Resolution
 from savant.utils.platform import is_aarch64
 from savant.config.schema import (
@@ -128,28 +125,13 @@ class NvDsPipeline(GstPipeline):
     ) -> NvDsBufferProcessor:
         """Create buffer processor."""
 
-        # model-object association storage
-        model_object_registry = ModelObjectRegistry()
-
-        if isinstance(self._source_output, SourceOutputEncoded):
-            return NvDsEncodedBufferProcessor(
-                queue=queue,
-                fps_meter=fps_meter,
-                sources=self._sources,
-                model_object_registry=model_object_registry,
-                objects_preprocessing=self._objects_preprocessing,
-                frame_params=self._frame_params,
-                codec=self._source_output.codec,
-            )
-
-        return NvDsRawBufferProcessor(
+        return create_buffer_processor(
             queue=queue,
             fps_meter=fps_meter,
             sources=self._sources,
-            model_object_registry=model_object_registry,
             objects_preprocessing=self._objects_preprocessing,
             frame_params=self._frame_params,
-            output_frame=isinstance(self._source_output, SourceOutputWithFrame),
+            source_output=self._source_output,
         )
 
     def add_element(
@@ -520,6 +502,7 @@ class NvDsPipeline(GstPipeline):
         self._logger.debug(
             'Got EOS on pad %s.%s', pad.get_parent().get_name(), pad.get_name()
         )
+        self._buffer_processor.on_eos(source_info)
 
         try:
             self._check_pipeline_is_running()
