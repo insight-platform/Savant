@@ -22,12 +22,12 @@
 | Setup_1   | opencv_cuda_bg_remover_mog2 | v0.2.3      | 675 |
 | Setup_1   | opencv_cuda_bg_remover_mog2 | latest      | 670 |
 | Jetson NX | nvidia_car_classification   | v0.2.3      | 42  |
-| Jetson NX | nvidia_car_classification   | latest      |     |
+| Jetson NX | nvidia_car_classification   | latest      | 42  |
 | Jetson NX | peoplenet_detector          | v0.2.3      | 30  |
-| Jetson NX | peoplenet_detector          | latest      |     |
+| Jetson NX | peoplenet_detector          | latest      | 30  |
 | Jetson NX | traffic_meter-yolov8m       | v0.2.3      | 23  |
-| Jetson NX | traffic_meter-yolov8m       | latest      |     |
+| Jetson NX | traffic_meter-yolov8m       | latest      | 24  |
 | Jetson NX | traffic_meter-peoplenet     | v0.2.3      | 28  |
-| Jetson NX | traffic_meter-peoplenet     | latest      |     |
+| Jetson NX | traffic_meter-peoplenet     | latest      | 28  |
 | Jetson NX | opencv_cuda_bg_remover_mog2 | v0.2.3      | 65  |
-| Jetson NX | opencv_cuda_bg_remover_mog2 | latest      |     |
+| Jetson NX | opencv_cuda_bg_remover_mog2 | latest      | 60  |
