@@ -83,6 +83,9 @@ exclude_patterns = [
     'reference/api/gst_plugins.rst',
 ]
 
+# List of modules that will be excluded from import to prevent import errors to stop
+# the build process when some external dependencies cannot be imported during the build.
+autodoc_mock_imports = ['cv2']
 
 # -- Options for HTML output -------------------------------------------------
 
