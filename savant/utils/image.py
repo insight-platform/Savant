@@ -305,7 +305,7 @@ class GPUImage:
                 bbox.height,
             )
         elif isinstance(bbox, RBBox):
-            cutout_box = bbox.to_bbox()
+            cutout_box = bbox.wrapping_box
             res_bbox = RBBox(
                 0,
                 0,
