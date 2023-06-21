@@ -32,7 +32,6 @@ def nvds_add_obj_meta_to_frame(  # pylint: disable=too-many-arguments,too-many-l
     obj_label: str = '',
     confidence: float = DEFAULT_CONFIDENCE,
 ) -> pyds.NvDsObjectMeta:
-    # TODO: check if bbox can be BBox or RBBox
     """Adds object meta to frame.
 
     :param batch_meta: NvDsBatchMeta to acquire object meta from.
@@ -65,7 +64,7 @@ def nvds_add_obj_meta_to_frame(  # pylint: disable=too-many-arguments,too-many-l
     else:
         raise IncorrectBBoxType(f"Incorrect selection type '{selection_type}'")
     nvds_set_obj_bbox(batch_meta, obj_meta, bbox)
-    nvds_set_obj_uid(frame_meta=frame_meta, obj_meta=obj_meta)
+    nvds_set_obj_uid(frame_meta, obj_meta)
     pyds.nvds_add_obj_meta_to_frame(frame_meta, obj_meta, parent)
     return obj_meta
 

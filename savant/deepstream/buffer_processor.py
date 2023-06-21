@@ -139,7 +139,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                     )
                     # if not a full frame then correct primary object
                     if bbox != primary_bbox:
-                        primary_bbox = bbox.copy()
+                        primary_bbox = bbox
                         primary_bbox.scale(scale_factor_x, scale_factor_y)
                     continue
                 # obj_key was only registered if
@@ -174,12 +174,12 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
 
                 # create nvds obj meta
                 nvds_obj_meta = nvds_add_obj_meta_to_frame(
-                    batch_meta=nvds_batch_meta,
-                    frame_meta=nvds_frame_meta,
-                    selection_type=selection_type,
-                    class_id=class_id,
-                    gie_uid=model_uid,
-                    bbox=(
+                    nvds_batch_meta,
+                    nvds_frame_meta,
+                    selection_type,
+                    class_id,
+                    model_uid,
+                    (
                         bbox.xc,
                         bbox.yc,
                         bbox.width,
@@ -188,9 +188,9 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                         if selection_type == ObjectSelectionType.ROTATED_BBOX
                         else 0.0,
                     ),
-                    object_id=obj_meta['object_id'],
-                    obj_label=obj_key,
-                    confidence=obj_meta['confidence'],
+                    obj_meta['object_id'],
+                    obj_key,
+                    obj_meta['confidence'],
                 )
 
                 # save nvds obj meta ref in case it is some other obj's parent
@@ -235,12 +235,12 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                 primary_bbox.xc += self._frame_params.padding.left
                 primary_bbox.yc += self._frame_params.padding.top
             nvds_add_obj_meta_to_frame(
-                batch_meta=nvds_batch_meta,
-                frame_meta=nvds_frame_meta,
-                selection_type=ObjectSelectionType.REGULAR_BBOX,
-                class_id=class_id,
-                gie_uid=model_uid,
-                bbox=(
+                nvds_batch_meta,
+                nvds_frame_meta,
+                ObjectSelectionType.REGULAR_BBOX,
+                class_id,
+                model_uid,
+                (
                     primary_bbox.xc,
                     primary_bbox.yc,
                     primary_bbox.width,
@@ -320,24 +320,14 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                     #  through the center point during meta preprocessing.
 
                     object_meta = _NvDsObjectMetaImpl.from_nv_ds_object_meta(
-                        object_meta=nvds_obj_meta, frame_meta=nvds_frame_meta
+                        nvds_obj_meta, nvds_frame_meta
                     )
                     parent_object_meta = object_meta.parent
 
                     if isinstance(object_meta.bbox, BBox):
-                        bbox = BBox(
-                            object_meta.bbox.xc,
-                            object_meta.bbox.yc,
-                            object_meta.bbox.width,
-                            object_meta.bbox.height,
-                        )
+                        bbox = object_meta.bbox.copy()
                         if isinstance(parent_object_meta.bbox, BBox):
-                            parent_bbox = BBox(
-                                parent_object_meta.bbox.xc,
-                                parent_object_meta.bbox.yc,
-                                parent_object_meta.bbox.width,
-                                parent_object_meta.bbox.height,
-                            )
+                            parent_bbox = parent_object_meta.bbox.copy()
                         else:
                             raise NotImplementedError(
                                 'You try apply preprocessing to object that have '
@@ -357,25 +347,24 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                     user_parent_object = None
                     if object_meta.parent is not None:
                         user_parent_object = ObjectMeta(
-                            element_name=parent_object_meta.element_name,
-                            label=parent_object_meta.label,
-                            bbox=parent_bbox,
-                            confidence=parent_object_meta.confidence,
-                            track_id=parent_object_meta.track_id,
-                            parent=None,
+                            parent_object_meta.element_name,
+                            parent_object_meta.label,
+                            parent_bbox,
+                            parent_object_meta.confidence,
+                            parent_object_meta.track_id,
                             attributes=nvds_get_all_obj_attrs(
-                                frame_meta=nvds_frame_meta,
-                                obj_meta=parent_object_meta.ds_object_meta,
+                                nvds_frame_meta,
+                                parent_object_meta.ds_object_meta,
                             ),
                         )
 
                     user_object_meta = ObjectMeta(
-                        element_name=object_meta.element_name,
-                        label=object_meta.label,
-                        bbox=bbox,
-                        confidence=object_meta.confidence,
-                        track_id=object_meta.track_id,
-                        parent=user_parent_object,
+                        object_meta.element_name,
+                        object_meta.label,
+                        bbox,
+                        object_meta.confidence,
+                        object_meta.track_id,
+                        user_parent_object,
                         attributes=nvds_get_all_obj_attrs(
                             frame_meta=nvds_frame_meta,
                             obj_meta=parent_object_meta.ds_object_meta,
@@ -397,11 +386,11 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                 model.input.object
             )
             self._objects_preprocessing.preprocessing(
-                element_name=element.name,
-                buffer=hash(buffer),
-                model_uid=model_uid,
-                class_id=class_id,
-                output_image=model.input.preprocess_object_image.output_image,
+                element.name,
+                hash(buffer),
+                model_uid,
+                class_id,
+                model.input.preprocess_object_image.output_image,
             )
 
     def prepare_element_output(self, element: PipelineElement, buffer: Gst.Buffer):
@@ -555,15 +544,15 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                                 for bbox in cls_bbox_tensor:
                                     # add NvDsObjectMeta
                                     _nvds_obj_meta = nvds_add_obj_meta_to_frame(
-                                        batch_meta=nvds_batch_meta,
-                                        frame_meta=nvds_frame_meta,
-                                        selection_type=model.output.selection_type,
-                                        class_id=obj.class_id,
-                                        gie_uid=model_uid,
-                                        bbox=bbox[2:7],
-                                        parent=parent_nvds_obj_meta,
-                                        obj_label=obj_label,
-                                        confidence=bbox[1],
+                                        nvds_batch_meta,
+                                        nvds_frame_meta,
+                                        model.output.selection_type,
+                                        obj.class_id,
+                                        model_uid,
+                                        bbox[2:7],
+                                        parent_nvds_obj_meta,
+                                        obj_label,
+                                        bbox[1],
                                     )
                                     selected_bboxes.append(
                                         (int(bbox[7]), _nvds_obj_meta)

@@ -313,7 +313,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         self._bbox = None
         if object_meta.parent:
             self._parent_object = _NvDsObjectMetaImpl.from_nv_ds_object_meta(
-                object_meta=object_meta.parent, frame_meta=frame_meta
+                object_meta.parent, frame_meta
             )
         else:
             self._parent_object = None
