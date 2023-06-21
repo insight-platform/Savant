@@ -139,7 +139,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                     )
                     # if not a full frame then correct primary object
                     if bbox != primary_bbox:
-                        primary_bbox = BBox(*bbox)
+                        primary_bbox = bbox.copy()
                         primary_bbox.scale(scale_factor_x, scale_factor_y)
                     continue
                 # obj_key was only registered if
