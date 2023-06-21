@@ -11,11 +11,13 @@ from savant.meta.errors import MetaValueError
 from savant.deepstream.meta.iterators import nvds_obj_meta_generator
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
 
-# from savant.meta.bbox import BBox
 from savant.meta.object import ObjectMeta
 from savant.utils.source_info import SourceInfoRegistry
 from pygstsavantframemeta import nvds_frame_meta_get_nvds_savant_frame_meta
 
+import logging
+
+logger = logging.getLogger(__name__)
 
 class NvDsFrameMeta:
     """Wrapper of deepstream frame meta information.
@@ -54,10 +56,12 @@ class NvDsFrameMeta:
 
         :return: Iterator over object metas.
         """
+        logger.info(f'calling nvds_obj_meta_generator')
         return nvds_obj_meta_generator(self.frame_meta)
 
     @property
     def roi(self) -> BBox:
+        logger.info(f"Getting ROI")
         if not self._primary_obj:
             for obj_meta in self.objects:
                 if obj_meta.is_primary:
@@ -67,11 +71,11 @@ class NvDsFrameMeta:
 
     @roi.setter
     def roi(self, value: BBox):
-        roi_box = self.roi
-        roi_box.xc = value.xc
-        roi_box.xc = value.xc
-        roi_box.width = value.width
-        roi_box.height = value.height
+        logger.info(f"Setting ROI to {value}")
+        self.roi.xc = value.xc
+        self.roi.yc = value.yc
+        self.roi.width = value.width
+        self.roi.height = value.height
 
     @property
     def objects_number(self) -> int:
