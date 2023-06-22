@@ -355,7 +355,6 @@ def pictures_source(
     type=click.INT,
     help=(
         'Delay in seconds before sending frames. '
-        'Useful when the source has B-frames to avoid sending frames in batches. '
         'Ignored when synchronous frames sending is turned off (i.e. no --sync flag).'
     ),
 )

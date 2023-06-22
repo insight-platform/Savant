@@ -437,6 +437,60 @@ The same adapter can be run using a script:
     ./scripts/run_source.py gige --source-id=test test-camera
 ```
 
+### FFmpeg Source Adapter
+
+The FFmpeg source adapter reads a video stream using FFmpeg from specified `URI`.
+
+The adapter parameters are set with environment variables:
+- `URI` - URI of the stream (e.g. `rtsp://localhost/stream`, `/dev/video0`); this option is required;
+- `SOURCE_ID` - unique identifier for the source stream; this option is required;
+- `ZMQ_ENDPOINT` - adapter output (should be equal to the configured framework input) ZeroMQ socket endpoint; schema: `[<socket_type>+(bind|connect):]<endpoint>`;
+- `ZMQ_TYPE` - adapter output ZeroMQ socket type; default is `DEALER`, also can be set to `PUB` or `REQ` as well;
+- `ZMQ_BIND` - adapter output ZeroMQ socket bind/connect mode (the bind mode is when set to `True`); default is `False`;
+- `SYNC_OUTPUT` - flag indicates the need to send frames from source synchronously (i.e. at the source file rate); default is `False`;
+- `SYNC_DELAY` - delay in seconds before sending frames; useful when the source has B-frames to avoid sending frames in batches; default is `0`;
+- `FFMPEG_PARAMS` - parameters for FFmpeg source; comma separated string `key=value` (e.g. `rtsp_transport=tcp`, `input_format=mjpeg,video_size=1280x720`);
+- `BUFFER_LEN` - maximum amount of frames in the buffer; default is `50`;
+- `FPS_PERIOD_FRAMES` - number of frames between FPS reports; default is `1000`;
+- `FPS_PERIOD_SECONDS` - number of seconds between FPS reports; default is `None`;
+- `FPS_OUTPUT` - path to the file where the FPS reports will be written; default is `stdout`.
+
+#### Examples
+
+##### RTSP
+
+```bash
+    docker run --rm -it --name source-video-files-test \
+    --entrypoint /opt/savant/adapters/gst/sources/ffmpeg.sh \
+    -e SYNC_OUTPUT=False \
+    -e ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/input-video.ipc \
+    -e ZMQ_TYPE=DEALER \
+    -e ZMQ_BIND=False \
+    -e SOURCE_ID=test \
+    -e URI=rtsp://192.168.1.1 \
+    -e FFMPEG_PARAMS=rtsp_transport=tcp \
+    -v /tmp/zmq-sockets:/tmp/zmq-sockets \
+    ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+```
+
+##### USB camera
+
+```bash
+    docker run --rm -it --name source-video-files-test \
+    --entrypoint /opt/savant/adapters/gst/sources/ffmpeg.sh \
+    -e SYNC_OUTPUT=False \
+    -e ZMQ_ENDPOINT=ipc:///tmp/zmq-sockets/input-video.ipc \
+    -e ZMQ_TYPE=DEALER \
+    -e ZMQ_BIND=False \
+    -e SOURCE_ID=test \
+    -e URI=/dev/video0 \
+    -e FFMPEG_PARAMS=input_format=mjpeg,video_size=1280x720 \
+    -v /tmp/zmq-sockets:/tmp/zmq-sockets \
+    --device /dev/video0:/dev/video0 \
+    --privileged \
+    ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+```
+
 
 ## Sink Adapters
 

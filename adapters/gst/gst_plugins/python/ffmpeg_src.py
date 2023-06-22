@@ -5,7 +5,7 @@ from typing import Dict, NamedTuple, Optional
 from ffmpeg_input import FFMpegSource, FFmpegLogLevel, VideoFrameEnvelope
 
 from savant.gstreamer import GObject, Gst, GstBase
-from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
+from savant.gstreamer.codecs import Codec
 from savant.gstreamer.utils import propagate_gst_setting_error, required_property
 from savant.utils.logging import LoggerMixin
 
@@ -15,6 +15,13 @@ STR_TO_FFMPEG_LOG_LEVEL = {
     name.lower(): getattr(FFmpegLogLevel, name)
     for name in dir(FFmpegLogLevel)
     if not name.startswith('_')
+}
+
+CONVERT_CODEC = {
+    # TODO: extend codecs
+    'h264': Codec.H264,
+    'hevc': Codec.HEVC,
+    'mjpeg': Codec.JPEG,
 }
 
 FFMPEG_SRC_PROPERTIES = {
@@ -28,8 +35,8 @@ FFMPEG_SRC_PROPERTIES = {
     'params': (
         str,
         'FFmpeg params',
-        'FFmpeg params. Comma separated string "key=value" '
-        '(e.g. "rtsp_transport=tcp,c:v=v4l2m2m").',
+        'Parameters for FFmpeg source. Comma separated string "key=value" '
+        '(e.g. "rtsp_transport=tcp", "input_format=mjpeg,video_size=1280x720").',
         None,
         GObject.ParamFlags.READWRITE,
     ),
@@ -216,7 +223,7 @@ class FFmpegSrc(LoggerMixin, GstBase.BaseSrc):
         """Change caps when video parameter changed."""
 
         self._frame_params = frame_params
-        codec = CODEC_BY_NAME[frame_params.codec_name]
+        codec = CONVERT_CODEC[frame_params.codec_name]
         caps_str = ','.join(
             [
                 codec.value.caps_with_params,
