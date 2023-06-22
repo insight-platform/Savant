@@ -101,6 +101,7 @@ class FFmpegSrc(LoggerMixin, GstBase.BaseSrc):
 
         self._frame_params: Optional[FrameParams] = None
         self._ffmpeg_source: Optional[FFMpegSource] = None
+        self._last_skipped_frames: int = 0
 
     def do_get_property(self, prop: GObject.GParamSpec):
         """Gst plugin get property function.
@@ -158,7 +159,7 @@ class FFmpegSrc(LoggerMixin, GstBase.BaseSrc):
             )
 
         except Exception as exc:
-            self.logger.exception('Failed to start element: %s', exc, exc_info=True)
+            self.logger.exception('Failed to start element: %s.', exc, exc_info=True)
             frame = inspect.currentframe()
             propagate_gst_setting_error(self, frame, __file__, text=exc.args[0])
             return False
@@ -172,11 +173,22 @@ class FFmpegSrc(LoggerMixin, GstBase.BaseSrc):
 
         frame: VideoFrameEnvelope = self._ffmpeg_source.video_frame()
         self.logger.debug(
-            'Received frame with codec %s, PTS %s and DTS %s',
+            'Received frame with codec %s, PTS %s and DTS %s.',
             frame.codec,
             frame.pts,
             frame.dts,
         )
+        self.logger.debug(
+            '%s frames in queue, %s frames skipped.',
+            frame.queue_len,
+            frame.queue_full_skipped_count,
+        )
+        if frame.queue_full_skipped_count > self._last_skipped_frames:
+            self.logger.warning(
+                'Skipped %s frames due to queue overflow.',
+                frame.queue_full_skipped_count - self._last_skipped_frames,
+            )
+            self._last_skipped_frames = frame.queue_full_skipped_count
         frame_params = FrameParams(
             codec_name=frame.codec,
             width=frame.frame_width,
@@ -214,7 +226,7 @@ class FFmpegSrc(LoggerMixin, GstBase.BaseSrc):
             ]
         )
         caps = Gst.Caps.from_string(caps_str)
-        self.logger.info('Setting caps to %s', caps)
+        self.logger.info('Setting caps to %s.', caps)
         self.set_caps(caps)
 
 

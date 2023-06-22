@@ -327,8 +327,8 @@ The adapter parameters are set with environment variables:
 - `ZMQ_BIND` - adapter output ZeroMQ socket bind/connect mode (the bind mode is when set to `True`); default is `False`;
 - `SYNC_OUTPUT` - flag indicates the need to send frames from source synchronously (i.e. at the source file rate); default is `False`;
 - `SYNC_DELAY` - delay in seconds before sending frames; useful when the source has B-frames to avoid sending frames in batches; default is `0`;
-- `BUFFER_MAX_BYTES` - maximum amount of data in the buffer; default is `10485760` (10 MB);
 - `RTSP_TRANSPORT` - RTSP transport protocol ("udp" or "tcp"); default is `tcp`;
+- `BUFFER_LEN` - maximum amount of frames in the buffer; default is `50`;
 - `FPS_PERIOD_FRAMES` - number of frames between FPS reports; default is `1000`;
 - `FPS_PERIOD_SECONDS` - number of seconds between FPS reports; default is `None`;
 - `FPS_OUTPUT` - path to the file where the FPS reports will be written; default is `stdout`.
