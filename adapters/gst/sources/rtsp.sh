@@ -14,7 +14,6 @@ required_env ZMQ_ENDPOINT
 ZMQ_SOCKET_TYPE="${ZMQ_TYPE:="DEALER"}"
 ZMQ_SOCKET_BIND="${ZMQ_BIND:="false"}"
 SYNC_OUTPUT="${SYNC_OUTPUT:="false"}"
-CALCULATE_DTS="${CALCULATE_DTS:="false"}"
 if [[ -n "${SYNC_DELAY}" ]]; then
     # Seconds to nanoseconds
     SYNC_DELAY=$((SYNC_DELAY * 1000000000))
@@ -30,6 +29,8 @@ else
     FPS_PERIOD="period-frames=1000"
 fi
 BUFFER_MAX_BYTES="${BUFFER_MAX_BYTES:="10485760"}"
+FFMPEG_LOGLEVEL="${FFMPEG_LOGLEVEL:="info"}"
+RTSP_TRANSPORT="${RTSP_TRANSPORT:="tcp"}"
 
 handler() {
     kill -s SIGINT "${child_pid}"
@@ -38,16 +39,8 @@ handler() {
 trap handler SIGINT SIGTERM
 
 PIPELINE=(
-    rtspsrc protocols=tcp location="${RTSP_URI}" !
-    parsebin !
-    'video/x-h264,stream-format=byte-stream,alignment=au;video/x-h265,stream-format=byte-stream,alignment=au' !
+    ffmpeg_src uri="${RTSP_URI}" params="rtsp_transport=${RTSP_TRANSPORT}" loglevel="${FFMPEG_LOGLEVEL}" !
     fps_meter "${FPS_PERIOD}" output="${FPS_OUTPUT}" !
-)
-if [[ "${CALCULATE_DTS,,}" == "true" ]]; then
-    # TODO: find out a way to detect B-frames and get rid of "CALCULATE_DTS" flag
-    PIPELINE+=(calculate_dts !)
-fi
-PIPELINE+=(
     queue leaky=downstream max-size-bytes="${BUFFER_MAX_BYTES}" max-size-buffers=0 max-size-time=0 !
     video_to_avro_serializer source-id="${SOURCE_ID}" !
     zeromq_sink socket="${ZMQ_ENDPOINT}" socket-type="${ZMQ_SOCKET_TYPE}" bind="${ZMQ_SOCKET_BIND}"

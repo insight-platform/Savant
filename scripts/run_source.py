@@ -372,6 +372,12 @@ def pictures_source(
     help='Maximum amount of data in the buffer.',
     show_default=True,
 )
+@click.option(
+    '--rtsp-transport',
+    default='tcp',
+    help='RTSP transport protocol ("udp" or "tcp").',
+    show_default=True,
+)
 @adapter_docker_image_option('gstreamer')
 @click.argument('rtsp_uri', required=True)
 def rtsp_source(
@@ -381,8 +387,8 @@ def rtsp_source(
     out_bind: bool,
     sync: bool,
     sync_delay: Optional[int],
-    calculate_dts: bool,
     buffer_max_bytes: int,
+    rtsp_transport: str,
     docker_image: str,
     fps_period_frames: Optional[int],
     fps_period_seconds: Optional[float],
@@ -398,8 +404,8 @@ def rtsp_source(
         fps_output=fps_output,
     ) + [
         f'RTSP_URI={rtsp_uri}',
-        f'CALCULATE_DTS={calculate_dts}',
         f'BUFFER_MAX_BYTES={buffer_max_bytes}',
+        f'RTSP_TRANSPORT={rtsp_transport}',
     ]
     if sync and sync_delay is not None:
         envs.append(f'SYNC_DELAY={sync_delay}')
