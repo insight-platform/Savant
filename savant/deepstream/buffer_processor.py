@@ -550,9 +550,9 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                                         obj.class_id,
                                         model_uid,
                                         bbox[2:7],
-                                        parent_nvds_obj_meta,
-                                        obj_label,
-                                        bbox[1],
+                                        parent=parent_nvds_obj_meta,
+                                        obj_label=obj_label,
+                                        confidence=bbox[1],
                                     )
                                     selected_bboxes.append(
                                         (int(bbox[7]), _nvds_obj_meta)
