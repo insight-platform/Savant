@@ -1,5 +1,6 @@
 """Wrapper of deepstream frame meta information."""
-from typing import Iterator, Optional
+from typing import Iterator, Optional, Dict
+from contextlib import AbstractContextManager
 import pyds
 from savant_rs.primitives.geometry import BBox
 from savant.gstreamer.metadata import (
@@ -8,18 +9,34 @@ from savant.gstreamer.metadata import (
     OnlyExtendedDict,
 )
 from savant.meta.errors import MetaValueError
-from savant.deepstream.meta.iterators import nvds_obj_meta_generator
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
 
 from savant.meta.object import ObjectMeta
 from savant.utils.source_info import SourceInfoRegistry
 from pygstsavantframemeta import nvds_frame_meta_get_nvds_savant_frame_meta
 
-import logging
 
-logger = logging.getLogger(__name__)
+def nvds_obj_meta_generator(
+    frame_meta: pyds.NvDsFrameMeta, obj_cache: Dict[int, ObjectMeta]
+) -> Iterator[ObjectMeta]:
+    item = frame_meta.obj_meta_list
+    while item is not None:
+        nvds_obj_meta = pyds.NvDsObjectMeta.cast(item.data)
+        obj_meta = ObjectMeta._from_be_object_meta(
+            _NvDsObjectMetaImpl.from_nv_ds_object_meta(nvds_obj_meta, frame_meta)
+        )
 
-class NvDsFrameMeta:
+        try:
+            ret_item = obj_cache[obj_meta.uid]
+        except KeyError:
+            ret_item = obj_meta
+            obj_cache[obj_meta.uid] = obj_meta
+
+        yield ret_item
+        item = item.next
+
+
+class NvDsFrameMeta(AbstractContextManager):
     """Wrapper of deepstream frame meta information.
 
     :param frame_meta: Deepstream python bindings frame meta.
@@ -34,6 +51,13 @@ class NvDsFrameMeta:
         self.frame_meta: pyds.NvDsFrameMeta = frame_meta
         self._source_frame_meta: Optional[SourceFrameMeta] = None
         self._primary_obj: Optional[ObjectMeta] = None
+        self._objects = {}
+
+    def __exit__(self, *exc_details):
+        for obj in self._objects.values():
+            obj.sync_bbox()
+        self._objects.clear()
+        return super().__exit__(*exc_details)
 
     @property
     def source_id(self) -> str:
@@ -56,12 +80,10 @@ class NvDsFrameMeta:
 
         :return: Iterator over object metas.
         """
-        logger.info(f'calling nvds_obj_meta_generator')
-        return nvds_obj_meta_generator(self.frame_meta)
+        return nvds_obj_meta_generator(self.frame_meta, self._objects)
 
     @property
     def roi(self) -> BBox:
-        logger.info(f"Getting ROI")
         if not self._primary_obj:
             for obj_meta in self.objects:
                 if obj_meta.is_primary:
@@ -71,7 +93,6 @@ class NvDsFrameMeta:
 
     @roi.setter
     def roi(self, value: BBox):
-        logger.info(f"Setting ROI to {value}")
         self.roi.xc = value.xc
         self.roi.yc = value.yc
         self.roi.width = value.width
@@ -149,6 +170,9 @@ class NvDsFrameMeta:
             ):
                 return
 
+            if object_meta.uid is not None and object_meta.uid in self._objects:
+                return
+
             ds_object_meta = _NvDsObjectMetaImpl(
                 frame_meta=self,
                 element_name=object_meta.element_name,
@@ -159,6 +183,7 @@ class NvDsFrameMeta:
                 parent=object_meta.parent,
             )
             object_meta.object_meta_impl = ds_object_meta
+            self._objects[object_meta.uid] = object_meta
         else:
             raise MetaValueError(
                 f"{self.__class__.__name__} doesn't "
@@ -171,10 +196,13 @@ class NvDsFrameMeta:
         :param object_meta: Object meta to remove.
         """
         if isinstance(object_meta, ObjectMeta):
+            if object_meta.uid in self._objects:
+                del self._objects[object_meta.uid]
             if object_meta.object_meta_impl:
                 pyds.nvds_remove_obj_meta_from_frame(
                     self.frame_meta, object_meta.object_meta_impl.ds_object_meta
                 )
+                object_meta.object_meta_impl = None
         else:
             raise MetaValueError(
                 f"{self.__class__.__name__} doesn't "

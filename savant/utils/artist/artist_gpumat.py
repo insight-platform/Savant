@@ -25,9 +25,6 @@ class ArtistGPUMat(AbstractContextManager):
         self.font_face = cv2.FONT_HERSHEY_SIMPLEX
         self.gaussian_filter = None
 
-    def __enter__(self):
-        return self
-
     def __exit__(self, *exc_details):
         # apply alpha comp if overlay is not null
         if self.overlay is not None:

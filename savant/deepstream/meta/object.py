@@ -90,9 +90,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         self.ds_object_meta.confidence = confidence
         self._bbox = bbox  # cached BBox or RBBox structure
         nvds_set_obj_bbox(self._frame_meta.batch_meta, self.ds_object_meta, bbox)
-        nvds_set_obj_uid(
-            frame_meta=self._frame_meta.frame_meta, obj_meta=self.ds_object_meta
-        )
+        nvds_set_obj_uid(self._frame_meta.frame_meta, self.ds_object_meta)
 
     @property
     def confidence(self) -> float:

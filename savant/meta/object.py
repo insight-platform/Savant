@@ -196,7 +196,9 @@ class ObjectMeta:
 
         :return: Parent object.
         """
-        if self.object_meta_impl:
+        if self.object_meta_impl and isinstance(
+            self.object_meta_impl.parent, BaseObjectMetaImpl
+        ):
             return ObjectMeta._from_be_object_meta(self.object_meta_impl.parent)
         return self._parent
 
