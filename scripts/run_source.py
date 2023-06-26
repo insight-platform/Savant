@@ -377,6 +377,12 @@ def pictures_source(
     help='Maximum amount of frames in the buffer.',
     show_default=True,
 )
+@click.option(
+    '--ffmpeg-loglevel',
+    default='info',
+    help='Log level for FFmpeg.',
+    show_default=True,
+)
 @adapter_docker_image_option('gstreamer')
 @click.argument('rtsp_uri', required=True)
 def rtsp_source(
@@ -387,6 +393,7 @@ def rtsp_source(
     sync: bool,
     sync_delay: Optional[int],
     buffer_len: int,
+    ffmpeg_loglevel: str,
     rtsp_transport: str,
     docker_image: str,
     fps_period_frames: Optional[int],
@@ -405,6 +412,7 @@ def rtsp_source(
         f'RTSP_URI={rtsp_uri}',
         f'RTSP_TRANSPORT={rtsp_transport}',
         f'BUFFER_LEN={buffer_len}',
+        f'FFMPEG_LOGLEVEL={ffmpeg_loglevel}',
     ]
     if sync and sync_delay is not None:
         envs.append(f'SYNC_DELAY={sync_delay}')

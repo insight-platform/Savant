@@ -450,6 +450,7 @@ The adapter parameters are set with environment variables:
 - `SYNC_OUTPUT` - flag indicates the need to send frames from source synchronously (i.e. at the source file rate); default is `False`;
 - `SYNC_DELAY` - delay in seconds before sending frames; useful when the source has B-frames to avoid sending frames in batches; default is `0`;
 - `FFMPEG_PARAMS` - parameters for FFmpeg source; comma separated string `key=value` (e.g. `rtsp_transport=tcp`, `input_format=mjpeg,video_size=1280x720`);
+- `FFMPEG_LOGLEVEL` - log level for FFmpeg; default is `info`;
 - `BUFFER_LEN` - maximum amount of frames in the buffer; default is `50`;
 - `FPS_PERIOD_FRAMES` - number of frames between FPS reports; default is `1000`;
 - `FPS_PERIOD_SECONDS` - number of seconds between FPS reports; default is `None`;
