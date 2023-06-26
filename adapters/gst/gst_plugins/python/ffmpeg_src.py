@@ -6,7 +6,11 @@ from ffmpeg_input import FFMpegSource, FFmpegLogLevel, VideoFrameEnvelope
 
 from savant.gstreamer import GObject, Gst, GstBase
 from savant.gstreamer.codecs import Codec
-from savant.gstreamer.utils import propagate_gst_setting_error, required_property
+from savant.gstreamer.utils import (
+    propagate_gst_error,
+    propagate_gst_setting_error,
+    required_property,
+)
 from savant.utils.logging import LoggerMixin
 
 DEFAULT_QUEUE_LEN = 100
@@ -203,7 +207,9 @@ class FFmpegSrc(LoggerMixin, GstBase.BaseSrc):
             framerate=frame.fps,
         )
         if self._frame_params != frame_params:
-            self.on_frame_params_change(frame_params)
+            ret = self.on_frame_params_change(frame_params)
+            if ret != Gst.FlowReturn.OK:
+                return ret
         buffer: Gst.Buffer = Gst.Buffer.new_wrapped(frame.payload_as_bytes())
         tb_num, tb_denum = frame.time_base
         buffer.pts = frame.pts * tb_num * Gst.SECOND // tb_denum
@@ -223,7 +229,23 @@ class FFmpegSrc(LoggerMixin, GstBase.BaseSrc):
         """Change caps when video parameter changed."""
 
         self._frame_params = frame_params
-        codec = CONVERT_CODEC[frame_params.codec_name]
+        try:
+            codec = CONVERT_CODEC[frame_params.codec_name]
+        except KeyError:
+            error = f'Unsupported codec {frame_params.codec_name!r}.'
+            self.logger.error(error)
+            frame = inspect.currentframe()
+            propagate_gst_error(
+                gst_element=self,
+                frame=frame,
+                file_path=__file__,
+                domain=Gst.StreamError.quark(),
+                code=Gst.StreamError.DEMUX,
+                text=error,
+                debug=f'Supported codecs: {sorted(CONVERT_CODEC.keys())}.',
+            )
+            return Gst.FlowReturn.ERROR
+
         caps_str = ','.join(
             [
                 codec.value.caps_with_params,
@@ -235,6 +257,7 @@ class FFmpegSrc(LoggerMixin, GstBase.BaseSrc):
         caps = Gst.Caps.from_string(caps_str)
         self.logger.info('Setting caps to %s.', caps)
         self.set_caps(caps)
+        return Gst.FlowReturn.OK
 
 
 # register plugin
