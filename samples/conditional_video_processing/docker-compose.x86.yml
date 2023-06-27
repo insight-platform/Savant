@@ -16,9 +16,7 @@ services:
     entrypoint: /opt/savant/adapters/gst/sources/video_loop.sh
 
   module:
-    build:
-      context: ../peoplenet_detector
-      dockerfile: ../peoplenet_detector/docker/Dockerfile.x86
+    image: ghcr.io/insight-platform/savant-deepstream:latest
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -53,7 +51,7 @@ services:
       - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
       - SOURCE_ID=city-traffic
       - FRAMERATE=25/1
-      - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x900.jpeg
+      - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x720.jpeg
       - DEV_MODE=True
     command: python -m adapters.ds.sinks.always_on_rtsp
     deploy:
