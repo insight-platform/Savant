@@ -2,9 +2,47 @@
 from typing import Tuple
 import numpy as np
 from pysavantboost import nms
-from savant.converter.scale import scale_rbbox
+from numba import njit, float32, void
 from savant.base.converter import BaseObjectModelOutputConverter
 from savant.base.model import ObjectModel
+
+
+@njit(void(float32[:,:],float32,float32), nogil=True)
+def scale_rbbox(
+    bboxes: np.ndarray, scale_factor_x: float, scale_factor_y: float
+) -> np.ndarray:
+    """Scaling rotated boxes in-place.
+
+    :param bboxes: np array of bboxes, shape Nx5. Row is [cx, cy, w, h, angle]
+    :param scale_factor_x: scale factor for x coordinates
+    :param scale_factor_y: scale factor for y coordinates
+    """
+    no_angle_mask = np.mod(bboxes[:, 4], 90) == 0
+    angle_mask = ~no_angle_mask
+
+    if np.any(angle_mask):
+        scale_x_2 = scale_factor_x * scale_factor_x
+        scale_y_2 = scale_factor_y * scale_factor_y
+        cotan = 1 / np.tan(bboxes[angle_mask, 4] / 180 * np.pi)
+        cotan_2 = cotan * cotan
+        scale_angle = np.arccos(
+            scale_factor_x
+            * np.sign(bboxes[angle_mask, 4])
+            / np.sqrt(scale_x_2 + scale_y_2 * cotan * cotan)
+        )
+        nscale_height = np.sqrt((scale_x_2 + scale_y_2 * cotan_2) / (1 + cotan_2))
+        ayh = 1 / np.tan((90 - bboxes[angle_mask, 4]) / 180 * np.pi)
+        ayh_2 = ayh * ayh
+        nscale_width = np.sqrt((scale_x_2 + scale_y_2 * ayh_2)/(1 + ayh * ayh))
+        bboxes[angle_mask, 4] = 90 - (scale_angle * 180) / np.pi
+        bboxes[angle_mask, 3] *= nscale_height
+        bboxes[angle_mask, 2] *= nscale_width
+        bboxes[angle_mask, 1] *= scale_factor_y
+        bboxes[angle_mask, 0] *= scale_factor_x
+
+    if np.any(no_angle_mask):
+        bboxes[no_angle_mask, 0:3:2] *= scale_factor_x
+        bboxes[no_angle_mask, 1:4:2] *= scale_factor_y
 
 
 class TensorToBBoxConverter(BaseObjectModelOutputConverter):
@@ -62,12 +100,12 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
 
         roi_left, roi_top, roi_width, roi_height = roi
 
-        original_bboxes = scale_rbbox(
-            bboxes[:, :5],
+        original_bboxes = bboxes[:, :5].copy()
+        scale_rbbox(
+            original_bboxes,
             roi_width,
             roi_height,
         )
-
         # correct xc, yc
         original_bboxes[:, 0] += roi_left
         original_bboxes[:, 1] += roi_top
