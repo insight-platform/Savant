@@ -196,9 +196,9 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                         if selection_type == ObjectSelectionType.ROTATED_BBOX
                         else 0.0,
                     ),
-                    obj_meta['object_id'],
-                    obj_key,
                     obj_meta['confidence'],
+                    obj_key,
+                    obj_meta['object_id'],
                 )
 
                 # save nvds obj meta ref in case it is some other obj's parent
@@ -260,11 +260,11 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                     primary_bbox.height,
                     0.0,
                 ),
-                obj_label=obj_label,
                 # confidence should be bigger than tracker minDetectorConfidence
                 # to prevent the tracker from deleting the object
                 # use tracker display-tracking-id=0 to avoid labelling
-                confidence=0.999,
+                0.999,
+                obj_label,
             )
 
             nvds_frame_meta.bInferDone = True  # required for tracker (DS 6.0)
@@ -595,9 +595,9 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                                         obj.class_id,
                                         model_uid,
                                         bbox[2:7],
+                                        bbox[1],
+                                        obj_label,
                                         parent=parent_nvds_obj_meta,
-                                        obj_label=obj_label,
-                                        confidence=bbox[1],
                                     )
                                     selected_bboxes.append(
                                         (int(bbox[7]), _nvds_obj_meta)

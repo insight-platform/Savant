@@ -27,10 +27,10 @@ def nvds_add_obj_meta_to_frame(  # pylint: disable=too-many-arguments,too-many-l
     class_id: int,
     gie_uid: int,
     bbox: Tuple[float, float, float, float, float],
+    confidence: float = DEFAULT_CONFIDENCE,
+    obj_label: str = '',
     object_id: int = UNTRACKED_OBJECT_ID,
     parent: Optional[pyds.NvDsObjectMeta] = None,
-    obj_label: str = '',
-    confidence: float = DEFAULT_CONFIDENCE,
 ) -> pyds.NvDsObjectMeta:
     """Adds object meta to frame.
 

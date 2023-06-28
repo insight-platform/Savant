@@ -56,7 +56,8 @@ class NvDsFrameMeta(AbstractContextManager, LoggerMixin):
 
     def __exit__(self, *exc_details):
         self.logger.debug(
-            'Syncing bbox for all objects in frame with PTS %s.', self.frame_meta.buf_pts
+            'Syncing bbox for all objects in frame with PTS %s.',
+            self.frame_meta.buf_pts,
         )
         for obj in self._objects.values():
             obj.sync_bbox()
