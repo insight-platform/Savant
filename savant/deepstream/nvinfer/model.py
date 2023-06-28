@@ -208,11 +208,6 @@ class NvInferObjectModelOutput(ObjectModelOutput):
     num_detected_classes: Optional[int] = None
     """Number of classes detected by the model. Required for regular detector."""
 
-    selection_type: int = ObjectSelectionType.REGULAR_BBOX
-    """Selection type of the output objects.
-    Fixed value = :py:attr:`savant.meta.type.ObjectSelectionType.REGULAR_BBOX`.
-    """
-
 
 @dataclass
 class NvInferRotatedObjectModelOutput(NvInferObjectModelOutput):
@@ -230,11 +225,6 @@ class NvInferRotatedObjectModelOutput(NvInferObjectModelOutput):
                 layer_names: [output]
                 objects:
                     # output objects configuration
-    """
-
-    selection_type: int = ObjectSelectionType.ROTATED_BBOX
-    """Selection type of the output objects.
-    Fixed value = :py:attr:`savant.meta.type.ObjectSelectionType.ROTATED_BBOX`.
     """
 
 

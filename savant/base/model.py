@@ -6,6 +6,7 @@ from typing import List, Optional, Tuple
 from omegaconf import MISSING
 from savant.base.pyfunc import PyFunc
 from savant.meta.constants import PRIMARY_OBJECT_LABEL
+from savant.meta.type import ObjectSelectionType
 from savant.remote_file.schema import RemoteFile
 
 
