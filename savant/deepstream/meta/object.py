@@ -1,5 +1,6 @@
 """Deepstream-specific ObjectMeta interface implementation."""
 from typing import Any, List, Optional, Union
+import logging
 import pyds
 from savant_rs.primitives.geometry import BBox, RBBox
 
@@ -112,6 +113,8 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
 
     def sync_bbox(self):
         if self._bbox is not None and self._bbox.is_modified():
+            if self.logger.isEnabledFor(logging.DEBUG):
+                self.logger.debug('Syncing new bbox into DS meta %s', self._bbox)
             nvds_upd_obj_bbox(self.ds_object_meta, self._bbox)
 
     @property

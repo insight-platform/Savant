@@ -1,7 +1,7 @@
 """Buffer processor for DeepStream pipeline."""
 from queue import Queue
 from typing import Optional, Union, NamedTuple, Iterator
-
+import logging
 import numpy as np
 import pyds
 from pygstsavantframemeta import (
@@ -89,7 +89,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
         :param buffer: gstreamer buffer that is being processed.
         """
 
-        self._logger.debug('Preparing input for buffer with PTS %s.', buffer.pts)
+        self.logger.debug('Preparing input for buffer with PTS %s.', buffer.pts)
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
             # TODO: add source_id to SavantFrameMeta and always attach SavantFrameMeta to the buffers
@@ -100,7 +100,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
             frame_idx = savant_frame_meta.idx if savant_frame_meta else None
             frame_pts = nvds_frame_meta.buf_pts
 
-            self._logger.debug(
+            self.logger.debug(
                 'Preparing input for frame of source %s with IDX %s and PTS %s.',
                 source_id,
                 frame_idx,
@@ -267,13 +267,13 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
         :param source_info: output source info
         """
 
-        self._logger.debug(
+        self.logger.debug(
             'Preparing output for buffer with PTS %s for source %s.',
             buffer.pts,
             source_info.source_id,
         )
         for output_frame in self._iterate_output_frames(buffer):
-            self._logger.debug(
+            self.logger.debug(
                 'Preparing output for frame of source %s with IDX %s and PTS %s.',
                 source_info.source_id,
                 output_frame.idx,
@@ -309,9 +309,14 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
             and not model.input.preprocess_object_image
         ):
             return
-
+        self.logger.debug(
+            'Preparing "%s" element input for buffer with PTS %s.',
+            element.name,
+            buffer.pts,
+        )
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         if model.input.preprocess_object_meta:
+            self.logger.debug('Preprocessing "%s" element object meta.', element.name)
             for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
                 for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
                     if not self._is_model_input_object(element, nvds_obj_meta):
@@ -382,6 +387,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                     rect_params.height = bbox.height
 
         elif model.input.preprocess_object_image:
+            self.logger.debug('Preprocessing "%s" element object image.', element.name)
             model_uid, class_id = self._model_object_registry.get_model_object_ids(
                 model.input.object
             )
@@ -401,7 +407,11 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
         """
         if not isinstance(element, ModelElement):
             return
-
+        self.logger.debug(
+            'Preparing "%s" element output for buffer with PTS %s.',
+            element.name,
+            buffer.pts,
+        )
         frame_left = 0.0
         frame_top = 0.0
         frame_right = self._frame_params.width - 1.0
@@ -432,6 +442,12 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                     for tensor_meta in nvds_tensor_output_iterator(
                         parent_nvds_obj_meta, gie_uid=model_uid
                     ):
+                        if self.logger.isEnabledFor(logging.DEBUG):
+                            self.logger.debug(
+                                'Converting "%s" element tensor output for frame with PTS %s.',
+                                element.name,
+                                nvds_frame_meta.buf_pts,
+                            )
                         # parse and post-process model output
                         output_layers = nvds_infer_tensor_meta_to_outputs(
                             tensor_meta=tensor_meta,
@@ -543,6 +559,12 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                                 )
                                 for bbox in cls_bbox_tensor:
                                     # add NvDsObjectMeta
+                                    if self.logger.isEnabledFor(logging.DEBUG):
+                                        self.logger.debug(
+                                            'Adding obj %s into pyds meta for frame with PTS %s.',
+                                            bbox[2:7],
+                                            nvds_frame_meta.buf_pts,
+                                        )
                                     _nvds_obj_meta = nvds_add_obj_meta_to_frame(
                                         nvds_batch_meta,
                                         nvds_frame_meta,

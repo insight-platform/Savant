@@ -5,6 +5,7 @@ from queue import Queue
 from threading import Lock
 from typing import Any, List, Optional
 import time
+import logging
 import pyds
 
 from savant.base.input_preproc import ObjectsPreprocessing
@@ -570,8 +571,10 @@ class NvDsPipeline(GstPipeline):
     def update_frame_meta(self, pad: Gst.Pad, info: Gst.PadProbeInfo):
         """Prepare frame meta for output."""
         buffer: Gst.Buffer = info.get_buffer()
-        nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
 
+        self._logger.debug('Prepare meta output for buffer with PTS %s', buffer.pts)
+
+        nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         # convert output meta
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
             # use consecutive numbers for object_id in case there is no tracker
@@ -590,6 +593,14 @@ class NvDsPipeline(GstPipeline):
             )
             frame_idx = savant_frame_meta.idx if savant_frame_meta else None
             frame_pts = nvds_frame_meta.buf_pts
+
+            self._logger.debug(
+                'Preparing output for frame of source %s with IDX %s and PTS %s.',
+                source_id,
+                frame_idx,
+                frame_pts,
+            )
+
             frame_meta = get_source_frame_meta(source_id, frame_idx, frame_pts)
             source_info = self._sources.get_source(source_id)
 
@@ -630,7 +641,14 @@ class NvDsPipeline(GstPipeline):
                         and not obj_meta['attributes']
                     ):
                         continue
-
+                if self._logger.isEnabledFor(logging.DEBUG):
+                    self._logger.debug(
+                        'Collecting object (frame src %s, IDX %s, PTS %s): %s',
+                        source_id,
+                        frame_idx,
+                        frame_pts,
+                        obj_meta,
+                    )
                 frame_meta.metadata['objects'].append(obj_meta)
 
             metadata_add_frame_meta(source_id, frame_idx, frame_pts, frame_meta)

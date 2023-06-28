@@ -13,6 +13,7 @@ from savant.deepstream.meta.object import _NvDsObjectMetaImpl
 
 from savant.meta.object import ObjectMeta
 from savant.utils.source_info import SourceInfoRegistry
+from savant.utils.logging import LoggerMixin
 from pygstsavantframemeta import nvds_frame_meta_get_nvds_savant_frame_meta
 
 
@@ -36,7 +37,7 @@ def nvds_obj_meta_generator(
         item = item.next
 
 
-class NvDsFrameMeta(AbstractContextManager):
+class NvDsFrameMeta(AbstractContextManager, LoggerMixin):
     """Wrapper of deepstream frame meta information.
 
     :param frame_meta: Deepstream python bindings frame meta.
@@ -54,6 +55,9 @@ class NvDsFrameMeta(AbstractContextManager):
         self._objects = {}
 
     def __exit__(self, *exc_details):
+        self.logger.debug(
+            'Syncing bbox for all objects in frame with PTS %s.', self.frame_meta.buf_pts
+        )
         for obj in self._objects.values():
             obj.sync_bbox()
         self._objects.clear()
