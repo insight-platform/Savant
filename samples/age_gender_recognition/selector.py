@@ -3,6 +3,7 @@ from numba import njit, uint16, float32
 import numpy as np
 from savant.base.selector import BaseSelector
 
+
 @njit(
     float32[:, :](float32[:, :], uint16, uint16, uint16, uint16),
     nogil=True,

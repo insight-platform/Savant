@@ -1,8 +1,6 @@
 """Module custom model input preprocessing."""
 
-from savant.base.input_preproc import (
-    BasePreprocessObjectImage
-)
+from savant.base.input_preproc import BasePreprocessObjectImage
 from savant.meta.object import ObjectMeta
 
 import cv2
@@ -23,6 +21,7 @@ REFERENCE_FACIAL_POINTS = np.array(
 
 FACE_WIDTH = param_storage()['face_width']
 FACE_HEIGHT = param_storage()['face_height']
+MODEL_NAME = param_storage()['detection_model_name']
 
 
 class AgeGenderPreprocessingObjectImageGPU(BasePreprocessObjectImage):
@@ -39,22 +38,14 @@ class AgeGenderPreprocessingObjectImageGPU(BasePreprocessObjectImage):
         crop_size = (FACE_WIDTH, FACE_HEIGHT)
 
         lanbdmarks = object_meta.get_attr_meta(
-            element_name='yolov5face', attr_name='landmarks'
+            element_name=MODEL_NAME, attr_name='landmarks'
         ).value
         face_landmarks = np.array(lanbdmarks).reshape(-1, 5, 2)
 
-        face_img = cv2.cuda.GpuMat(
-            size=crop_size,
-            type=frame_image.gpu_mat.type(),
-            s=0
-        )
+        face_img = cv2.cuda.GpuMat(size=crop_size, type=frame_image.gpu_mat.type(), s=0)
         src_pts = np.float32(face_landmarks)
         tfm, _ = cv2.estimateAffinePartial2D(src_pts, REFERENCE_FACIAL_POINTS)
         face_img = cv2.cuda.warpAffine(
-            src=frame_image.gpu_mat,
-            M=tfm,
-            dsize=crop_size,
-            stream=cuda_stream
+            src=frame_image.gpu_mat, M=tfm, dsize=crop_size, stream=cuda_stream
         )
         return GPUImage(face_img, cuda_stream=cuda_stream)
-

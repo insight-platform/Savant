@@ -13,10 +13,7 @@ class SmoothedCounter:
     """
 
     def __init__(
-            self,
-            history_len: int = 24,
-            smoothed_type: str = 'mean',
-            lifetime: int = 24
+        self, history_len: int = 24, smoothed_type: str = 'mean', lifetime: int = 24
     ) -> None:
         self.queues: Dict[queue.Queue] = defaultdict(
             lambda: dict(last_frame_num=0, values=queue.Queue(history_len))
@@ -25,10 +22,10 @@ class SmoothedCounter:
         self.lifetime = lifetime
 
     def get_value(
-            self,
-            new_value: Any,
-            frame_num: int,
-            key: Any = 'default',
+        self,
+        new_value: Any,
+        frame_num: int,
+        key: Any = 'default',
     ) -> Any:
         """Receive smooth value using new measurement value
         :param new_value: the value of the new measurement.
@@ -50,8 +47,9 @@ class SmoothedCounter:
 
     def _mean_smooth(self, external_key: Any) -> Any:
         """Calculate mean value of queue"""
-        return sum(self.queues[external_key]['values'].queue) \
-            / len(self.queues[external_key]['values'].queue)
+        return sum(self.queues[external_key]['values'].queue) / len(
+            self.queues[external_key]['values'].queue
+        )
 
     def _median_smooth(self, external_key: Any) -> Any:
         """Calculate median value of queue"""
@@ -62,7 +60,7 @@ class SmoothedCounter:
         """Calculate vote value of queue"""
         return max(
             set(self.queues[external_key]['values'].queue),
-            key=self.queues[external_key]['values'].queue.count
+            key=self.queues[external_key]['values'].queue.count,
         )
 
     def clean(self, frame_num: int):

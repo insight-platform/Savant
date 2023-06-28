@@ -14,11 +14,12 @@ from savant.selector.detector import nms_cpu
 class YoloV5faceConverter(BaseComplexModelOutputConverter):
     """`YOLOv5face <https://github.com/deepcam-cn/yolov5-face>`_ output to bbox
     and landmarks converter."""
+
     def __init__(
-            self,
-            confidence_threshold: float = 0.6,
-            nms_iou_threshold: float = 0.5,
-            **kwargs
+        self,
+        confidence_threshold: float = 0.6,
+        nms_iou_threshold: float = 0.5,
+        **kwargs,
     ):
         """Initialize YOLOv5face converter."""
         super().__init__(**kwargs)
@@ -65,18 +66,15 @@ class YoloV5faceConverter(BaseComplexModelOutputConverter):
             xywh = selected_nms_prediction[:, :4]
             conf = selected_nms_prediction[:, 4:5]
             class_num = np.expand_dims(
-                np.array([0] * len(conf), dtype=np.float32),
-                axis=1
+                np.array([0] * len(conf), dtype=np.float32), axis=1
             )
             xywh *= np.tile(np.float32([ration_width, ratio_height]), 2)
-            landmarks = selected_nms_prediction[:, 5:15] * \
-                np.tile(np.float32([ration_width, ratio_height]), 5)
+            landmarks = selected_nms_prediction[:, 5:15] * np.tile(
+                np.float32([ration_width, ratio_height]), 5
+            )
             bbox = np.concatenate((class_num, conf, xywh), axis=1)
             landmarks_output = list(
-                map(
-                    lambda x: [(atr_name, x, 1.0)],
-                    landmarks.tolist()
-                )
+                map(lambda x: [(atr_name, x, 1.0)], landmarks.tolist())
             )
             return bbox, landmarks_output
         return np.float32([]), []

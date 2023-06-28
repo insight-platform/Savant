@@ -19,7 +19,7 @@ class AgeGenderConverter(BaseAttributeModelOutputConverter):
         model: AttributeModel,
         roi: Tuple[float, float, float, float]
     ) -> List[Tuple[str, Any, Optional[float]]]:
-        """Converts head pose output vector to angles."""
+        """Converts age gender model output vector to age and gender attribute."""
         age = np.sum(np.multiply(output_layers[0], age_range)).item()
         gen = int(np.argmax(output_layers[1]).item())
         return [

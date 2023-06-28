@@ -59,3 +59,40 @@ curl --silent -O -- https://hello.savant.video/age_gender_recognition.html
 # to get back to project root
 cd ../..
 ```
+
+
+## Performance Measurement
+
+Download the video file to your local folder. For example, create a data folder 
+and download the video into it (all commands must be executed from the root directory of the project Savant)
+
+```bash
+# you are expected to be in Savant/ directory
+
+mkdir -p data && curl -o data/elon_musk.mp4 \
+   https://eu-central-1.linodeobjects.com/savant-data/demo/elon_musk.mp4
+```
+
+Now you are ready to run the performance benchmark with the following command:
+
+```bash
+docker run --rm -it --gpus=all \
+-v `pwd`/samples:/opt/savant/samples \
+-v `pwd`/data:/data:ro \
+-v `pwd`/downloads:/downloads \
+-v `pwd`/models/age_gender_recognition:/models \
+ghcr.io/insight-platform/savant-deepstream:latest \
+samples/age_gender_recognition/module_performance.yml
+```
+
+or for Jetson
+
+```bash
+docker run --rm -it --gpus=all \
+-v `pwd`/samples:/opt/savant/samples \
+-v `pwd`/data:/data:ro \
+-v `pwd`/downloads:/downloads \
+-v `pwd`/models/age_gender_recognition:/models \
+ghcr.io/insight-platform/savant-deepstream-l4t:latest \
+samples/age_gender_recognition/module_performance.yml
+```

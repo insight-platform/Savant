@@ -13,15 +13,13 @@ parameters:
       top: 0
       bottom: 0
   output_frame:
-#    codec: jpeg
-    codec: raw-rgba
-#    codec: h264
+    codec: h264
   draw_func:
     module: samples.age_gender_recognition.overlay
     # specify the drawfunc's python class from the module
     class_name: Overlay
     rendered_objects:
-      yolov5nface:
+      yolov5face:
         face:
           bbox:
             border_color: '00FF00FF'  # Green
@@ -43,8 +41,12 @@ parameters:
   face_height: 112
   detection_model_name: yolov5nface
 
-
 pipeline:
+
+  source:
+    element: uridecodebin
+    properties:
+      uri: file:///data/elon_musk.mp4
 
   elements:
 
@@ -118,3 +120,6 @@ pipeline:
       class_name: AgeGenderSmoothing
       kwargs:
         history_len: 24
+
+  sink:
+    - element: devnull_sink
