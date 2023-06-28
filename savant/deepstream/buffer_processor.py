@@ -121,6 +121,9 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                 self._frame_params.width,
                 self._frame_params.height,
             )
+            self.logger.debug(
+                'Init primary bbox for frame with PTS %s: %s', frame_pts, primary_bbox
+            )
 
             all_nvds_obj_metas = {}
             nvds_obj_metas_w_parent = {}
@@ -138,9 +141,14 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                         obj_meta['bbox']['height'],
                     )
                     # if not a full frame then correct primary object
-                    if bbox != primary_bbox:
+                    if not bbox.almost_eq(primary_bbox, 1e-6):
                         primary_bbox = bbox
                         primary_bbox.scale(scale_factor_x, scale_factor_y)
+                        self.logger.debug(
+                            'Corrected primary bbox for frame with PTS %s: %s',
+                            frame_pts,
+                            primary_bbox,
+                        )
                     continue
                 # obj_key was only registered if
                 # it was required by the pipeline model elements (this case)
@@ -234,6 +242,11 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
             if self._frame_params.padding:
                 primary_bbox.xc += self._frame_params.padding.left
                 primary_bbox.yc += self._frame_params.padding.top
+            self.logger.debug(
+                'Add primary object to frame meta with PTS %s, bbox: %s',
+                frame_pts,
+                primary_bbox,
+            )
             nvds_add_obj_meta_to_frame(
                 nvds_batch_meta,
                 nvds_frame_meta,
@@ -316,8 +329,12 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
         )
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         if model.input.preprocess_object_meta:
-            self.logger.debug('Preprocessing "%s" element object meta.', element.name)
             for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
+                self.logger.debug(
+                    'Preprocessing "%s" element object meta for frame with PTS %s.',
+                    element.name,
+                    nvds_frame_meta.buf_pts,
+                )
                 for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
                     if not self._is_model_input_object(element, nvds_obj_meta):
                         continue
@@ -376,15 +393,21 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                         ),
                     )
 
-                    bbox = model.input.preprocess_object_meta(
+                    res_bbox = model.input.preprocess_object_meta(
                         object_meta=user_object_meta
                     )
-
+                    if self.logger.isEnabledFor(logging.DEBUG):
+                        self.logger.debug(
+                            'Preprocessing "%s" object bbox %s -> %s',
+                            user_object_meta.label,
+                            user_object_meta.bbox,
+                            res_bbox,
+                        )
                     rect_params = nvds_obj_meta.rect_params
-                    rect_params.left = bbox.left
-                    rect_params.top = bbox.top
-                    rect_params.width = bbox.width
-                    rect_params.height = bbox.height
+                    rect_params.left = res_bbox.left
+                    rect_params.top = res_bbox.top
+                    rect_params.width = res_bbox.width
+                    rect_params.height = res_bbox.height
 
         elif model.input.preprocess_object_image:
             self.logger.debug('Preprocessing "%s" element object image.', element.name)

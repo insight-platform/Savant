@@ -1,5 +1,6 @@
 """Convert deepstream object meta to output format."""
 from typing import Any, Dict
+import logging
 import pyds
 from savant_rs.primitives.geometry import RBBox
 from savant.config.schema import FrameParameters
@@ -8,6 +9,9 @@ from savant.meta.attribute import AttributeMeta
 from savant.meta.constants import PRIMARY_OBJECT_LABEL
 from savant.utils.model_registry import ModelObjectRegistry
 from savant.utils.source_info import Resolution
+
+
+logger = logging.getLogger(__name__)
 
 
 def nvds_obj_meta_output_converter(
@@ -25,7 +29,12 @@ def nvds_obj_meta_output_converter(
     model_name, label = ModelObjectRegistry.parse_model_object_key(
         nvds_obj_meta.obj_label
     )
-
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.debug(
+            'Converting object meta for model "%s", label "%s".',
+            model_name,
+            label,
+        )
     if frame_params.padding and frame_params.padding.keep:
         frame_width = frame_params.total_width
         frame_height = frame_params.total_height
@@ -38,12 +47,27 @@ def nvds_obj_meta_output_converter(
         confidence = nvds_obj_meta.tracker_confidence
 
     bbox = nvds_get_obj_bbox(nvds_obj_meta)
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.debug('Object DS bbox %s', bbox)
     if frame_params.padding and not frame_params.padding.keep:
         bbox.xc -= frame_params.padding.left
         bbox.yc -= frame_params.padding.top
-    bbox.scale(
-        output_resolution.width / frame_width, output_resolution.height / frame_height
-    )
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(
+                'Applied frame padding %s, bbox: %s', frame_params.padding, bbox
+            )
+    scale_x = output_resolution.width / frame_width
+    scale_y = output_resolution.height / frame_height
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.debug(
+            'Scaling bbox by %s, %s (output res %s, frame w/h %sx%s)',
+            scale_x,
+            scale_y,
+            output_resolution,
+            frame_width,
+            frame_height,
+        )
+    bbox.scale(scale_x, scale_y)
     bbox = dict(
         xc=bbox.xc,
         yc=bbox.yc,
@@ -51,7 +75,8 @@ def nvds_obj_meta_output_converter(
         height=bbox.height,
         angle=bbox.angle if isinstance(bbox, RBBox) else 0.0,
     )
-
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.debug('Object corrected bbox %s', bbox)
     # parse parent object
     parent_model_name, parent_label, parent_object_id = None, None, None
     if nvds_obj_meta.parent and nvds_obj_meta.parent.obj_label != PRIMARY_OBJECT_LABEL:

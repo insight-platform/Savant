@@ -7,6 +7,7 @@ from typing import Any, List, Optional
 import time
 import logging
 import pyds
+from savant_rs.primitives.geometry import BBox
 
 from savant.base.input_preproc import ObjectsPreprocessing
 
@@ -624,22 +625,33 @@ class NvDsPipeline(GstPipeline):
 
                 # skip empty primary object that equals to frame
                 if nvds_obj_meta.obj_label == PRIMARY_OBJECT_LABEL:
-                    bbox = (
+                    bbox = BBox(
                         obj_meta['bbox']['xc'],
                         obj_meta['bbox']['yc'],
                         obj_meta['bbox']['width'],
                         obj_meta['bbox']['height'],
                     )
-                    if (
-                        bbox
-                        == (
-                            source_info.dest_resolution.width / 2,
-                            source_info.dest_resolution.height / 2,
-                            source_info.dest_resolution.width,
-                            source_info.dest_resolution.height,
-                        )
-                        and not obj_meta['attributes']
-                    ):
+                    dest_res_bbox = BBox(
+                        source_info.dest_resolution.width / 2,
+                        source_info.dest_resolution.height / 2,
+                        source_info.dest_resolution.width,
+                        source_info.dest_resolution.height,
+                    )
+                    if not bbox.almost_eq(dest_res_bbox, 1e-6):
+                        if self._logger.isEnabledFor(logging.DEBUG):
+                            self._logger.debug(
+                                'Adding primary object, bbox %s != dest res bbox %s.',
+                                bbox,
+                                dest_res_bbox,
+                            )
+                    elif obj_meta['attributes']:
+                        if self._logger.isEnabledFor(logging.DEBUG):
+                            self._logger.debug(
+                                'Adding primary object, attributes not empty.'
+                            )
+                    else:
+                        if self._logger.isEnabledFor(logging.DEBUG):
+                            self._logger.debug('Skipping empty primary object.')
                         continue
                 if self._logger.isEnabledFor(logging.DEBUG):
                     self._logger.debug(
