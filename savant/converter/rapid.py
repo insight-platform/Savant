@@ -7,7 +7,7 @@ from savant.base.converter import BaseObjectModelOutputConverter
 from savant.base.model import ObjectModel
 
 
-@njit(void(float32[:,:],float32,float32), nogil=True)
+@njit(void(float32[:, :], float32, float32), nogil=True)
 def scale_rbbox(
     bboxes: np.ndarray, scale_factor_x: float, scale_factor_y: float
 ) -> np.ndarray:
@@ -33,7 +33,7 @@ def scale_rbbox(
         nscale_height = np.sqrt((scale_x_2 + scale_y_2 * cotan_2) / (1 + cotan_2))
         ayh = 1 / np.tan((90 - bboxes[angle_mask, 4]) / 180 * np.pi)
         ayh_2 = ayh * ayh
-        nscale_width = np.sqrt((scale_x_2 + scale_y_2 * ayh_2)/(1 + ayh * ayh))
+        nscale_width = np.sqrt((scale_x_2 + scale_y_2 * ayh_2) / (1 + ayh * ayh))
         bboxes[angle_mask, 4] = 90 - (scale_angle * 180) / np.pi
         bboxes[angle_mask, 3] *= nscale_height
         bboxes[angle_mask, 2] *= nscale_width
