@@ -19,7 +19,6 @@ from savant.meta.constants import PRIMARY_OBJECT_LABEL
 from savant.config.schema import PipelineElement, ModelElement, FrameParameters
 from savant.meta.bbox import BBox, RBBox
 from savant.deepstream.nvinfer.model import (
-    NvInferRotatedObjectDetector,
     NvInferDetector,
     NvInferAttributeModel,
 )
@@ -433,7 +432,6 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
 
         model_uid = self._model_object_registry.get_model_uid(element.name)
         model: Union[
-            NvInferRotatedObjectDetector,
             NvInferDetector,
             NvInferAttributeModel,
         ] = element.model
