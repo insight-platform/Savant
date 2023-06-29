@@ -4,7 +4,6 @@ from savant.base.input_preproc import BasePreprocessObjectMeta
 from savant.meta.object import ObjectMeta
 
 
-#  TODO Implement crop
 class CropTopPreprocessObjectMeta(BasePreprocessObjectMeta):
     """Make bbox height no lesser that bbox width."""
 
