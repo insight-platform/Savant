@@ -209,25 +209,6 @@ class NvInferObjectModelOutput(ObjectModelOutput):
     """Number of classes detected by the model. Required for regular detector."""
 
 
-@dataclass
-class NvInferRotatedObjectModelOutput(NvInferObjectModelOutput):
-    """NvInferObjectModel output configuration template for detector with
-    rotated bboxes.
-
-    Example
-
-    .. code-block:: yaml
-
-        model:
-            # model configuration
-            output:
-                num_detected_classes: 4
-                layer_names: [output]
-                objects:
-                    # output objects configuration
-    """
-
-
 @NVINFER_MODEL_TYPE_REGISTRY.register('detector')
 @dataclass
 class NvInferDetector(NvInferModel, ObjectModel):
@@ -271,18 +252,6 @@ class NvInferInstanceSegmentation(NvInferDetector):
     """Name of the custom instance segmentation parsing function.
     It is mandatory for instance segmentation network
     as there is no internal function."""
-
-
-@NVINFER_MODEL_TYPE_REGISTRY.register('rotated_object_detector')
-@dataclass
-class NvInferRotatedObjectDetector(NvInferDetector):
-    """Rotated bbox detector configuration template.
-
-    For example look in :py:class:`NvInferDetector`.
-    """
-
-    output: NvInferRotatedObjectModelOutput = NvInferRotatedObjectModelOutput()
-    """Results post-processing configuration."""
 
 
 @NVINFER_MODEL_TYPE_REGISTRY.register('attribute_model')

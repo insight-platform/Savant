@@ -21,7 +21,7 @@ To create a detector unit the developer have to write the ``nvinfer@detector`` d
           layer_names: [conv2d_bbox, conv2d_cov/Sigmoid]
 
 Full documentation for the detector unit is located on the unit page:
-:py:class:`~savant.deepstream.nvinfer.model.NvInferRotatedObjectDetector`.
+:py:class:`~savant.deepstream.nvinfer.model.NvInferDetector`.
 
 You must configure model parameters, input and output. The parameters also may be specified in the `model.config_file` file according to Nvidia DeepStream specification for a detector (`example <https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_plugin_gst-nvinfer.html#gst-nvinfer-file-configuration-specifications>`_). YAML-based parameters override those configured in `model.config_file`.
 
