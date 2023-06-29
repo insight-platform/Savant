@@ -152,7 +152,9 @@ The draw function may be overriden by the developer if the stock version cannot 
           counters_height: 85
           counters_font_thickness: 5
 
-if ``draw_func`` section is omitted, drawing is not performed.
+.. note::
+
+    To disable ``draw_func`` functionality, remove ``parameters.draw_func`` from the manifest completely.
 
 De-Multiplexing
 ---------------
@@ -191,6 +193,10 @@ Every codec has its own configuration parameters related to a corresponding GStr
           bitrate: 4000000
           iframeinterval: 10
           profile: High
+
+.. note::
+
+    On Nvidia Jetson (DS 6.2) I-frame periodicity is regulated with ``idrinterval`` instead of ``iframeinterval``.
 
 Available properties are:
 
