@@ -28,7 +28,7 @@ def scale_rbbox(
         scale_angle = np.arccos(
             scale_factor_x
             * np.sign(bboxes[angle_mask, 4])
-            / np.sqrt(scale_x_2 + scale_y_2 * cotan * cotan)
+            / np.sqrt(scale_x_2 + scale_y_2 * cotan_2)
         )
         nscale_height = np.sqrt((scale_x_2 + scale_y_2 * cotan_2) / (1 + cotan_2))
         ayh = 1 / np.tan((90 - bboxes[angle_mask, 4]) / 180 * np.pi)
