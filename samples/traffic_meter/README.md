@@ -10,7 +10,7 @@ Vehicles preview:
 
 ![](assets/road-traffic-loop.webp)
 
-Article on Medium: [Link](https://hello.savant.video/city-traffic-metering)
+Article on Medium: [Link](https://blog.savant-ai.io/efficient-city-traffic-metering-with-peoplenet-yolov8-savant-and-grafana-at-scale-d6f162afe883?source=friends_link&sk=ab96c5ef3c173902559f213849dede9b)
 
 Tested on platforms:
 

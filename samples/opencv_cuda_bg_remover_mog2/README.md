@@ -16,7 +16,7 @@ YouTube Video:
 
 [![Watch the video](https://img.youtube.com/vi/P9w-WS6HLew/default.jpg)](https://youtu.be/P9w-WS6HLew)
 
-A step-by-step [tutorial](https://hello.savant.video/opencv-cuda-bg-remover-mog2-tutorial).
+A step-by-step [tutorial](https://blog.savant-ai.io/building-a-500-fps-accelerated-video-background-removal-pipeline-with-savant-and-opencv-cuda-mog2-441294570ac4?source=friends_link&sk=8cee4e671e77cb2b4bb36518619f9044).
 
 Tested on platforms:
 

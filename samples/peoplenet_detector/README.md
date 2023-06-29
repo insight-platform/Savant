@@ -19,7 +19,7 @@ YouTube Video:
 
 [![Watch the video](https://img.youtube.com/vi/YCvT3XbiSik/default.jpg)](https://youtu.be/YCvT3XbiSik)
 
-A step-by-step [tutorial](https://hello.savant.video/peoplenet-tutorial).
+A step-by-step [tutorial](https://blog.savant-ai.io/meet-savant-a-new-high-performance-python-video-analytics-framework-for-nvidia-hardware-22cc830ead4d?source=friends_link&sk=c7169b378b31451ab8de3d882c22a774).
 
 Tested on platforms:
 
