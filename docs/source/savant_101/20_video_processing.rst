@@ -96,6 +96,10 @@ The paddings can either be preserved or removed at the output.
           top: 0
           bottom: 0
 
+.. note::
+
+    If you specify ``parameters.frame.padding.keep == false``, the paddings are removed before frames are encoded. The geometry for all objects are recalculated to conform new geometry.
+
 Multiplexing
 ------------
 
