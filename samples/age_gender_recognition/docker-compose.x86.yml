@@ -2,7 +2,7 @@ version: "3.3"
 services:
 
   video-loop-source:
-    image: savant-adapters-gstreamer:latest
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -18,7 +18,7 @@ services:
 
 
   module:
-    image: savant-deepstream:latest
+    image: ghcr.io/insight-platform/savant-deepstream:latest
 
     restart: unless-stopped
     volumes:
@@ -40,7 +40,7 @@ services:
               capabilities: [gpu]
 
   always-on-sink:
-    image: savant-adapters-deepstream:latest
+    image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
     restart: unless-stopped
     ports:
       - "554:554"    # RTSP
