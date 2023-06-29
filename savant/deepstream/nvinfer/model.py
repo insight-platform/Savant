@@ -1,7 +1,7 @@
 """Gst-nvinfer model configuration templates."""
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import List, Optional
 from omegaconf import MISSING
 from savant.base.pyfunc import PyFunc
 from savant.base.model import (
@@ -13,7 +13,6 @@ from savant.base.model import (
     AttributeModel,
     ComplexModel,
 )
-from savant.meta.type import ObjectSelectionType
 from savant.utils.registry import Registry
 
 NVINFER_MODEL_TYPE_REGISTRY = Registry('nvinfer_model_type')

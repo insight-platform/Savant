@@ -72,7 +72,7 @@ Deepstream model configuration
     :parts: 1
     :caption: Model hierarchy with nvinfer entities
 
-.. inheritance-diagram:: savant.base.model.ComplexModelOutput NvInferObjectModelOutput NvInferRotatedObjectModelOutput
+.. inheritance-diagram:: savant.base.model.ComplexModelOutput NvInferObjectModelOutput
     :parts: 1
     :caption: Model output hierarchy with nvinfer entities
 
@@ -96,7 +96,6 @@ Deepstream model configuration
     NvInferModelInput
 
     NvInferObjectModelOutput
-    NvInferRotatedObjectModelOutput
     NvInferObjectModelOutputObject
 
 .. autoclass:: savant.deepstream.nvinfer.model.NvInferModelFormat
