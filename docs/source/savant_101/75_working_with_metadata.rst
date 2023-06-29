@@ -173,6 +173,7 @@ Thus, an example of adding metadata about a new object to the frame is as follow
 
 .. code-block:: python
 
+    from savant_rs.primitives.geometry import BBox
     from savant.deepstream.meta.frame import NvDsFrameMeta
     from savant.meta.object import ObjectMeta
     def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
