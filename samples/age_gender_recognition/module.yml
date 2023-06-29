@@ -13,9 +13,7 @@ parameters:
       top: 0
       bottom: 0
   output_frame:
-#    codec: jpeg
     codec: raw-rgba
-#    codec: h264
   draw_func:
     module: samples.age_gender_recognition.overlay
     # specify the drawfunc's python class from the module

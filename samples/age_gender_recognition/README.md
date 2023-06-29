@@ -8,16 +8,12 @@ the object metadata. The pipeline uses Nvidia Tracker to track face.
 
 Preview:
 
-![](assets/peoplenet-blur-demo-loop.webp)
-
-YouTube Video:
-
-[![Watch the video](https://img.youtube.com/vi/YCvT3XbiSik/default.jpg)](https://youtu.be/YCvT3XbiSik)
+![](assets/age-gender-recognition-loop.webp)
 
 Tested on platforms:
 
 - Xavier NX, Xavier AGX;
-- Nvidia Ampere.
+- Nvidia Turing, Ampere.
 
 Demonstrated operational modes:
 

@@ -30,7 +30,7 @@ RUN --mount=type=cache,target=/tmp/opencv-cache \
         -D CMAKE_INSTALL_PREFIX=/opencv/dist  \
         -D OPENCV_DOWNLOAD_PATH=/tmp/opencv-cache \
         -D PYTHON_DEFAULT_EXECUTABLE=$(which python3) \
-        -D BUILD_LIST=core,cudaarithm,cudabgsegm,cudacodec,cudafeatures2d,cudafilters,cudaimgproc,cudev,features2d,flann,calib3d, imgcodecs,savant,python3 \
+        -D BUILD_LIST=core,cudaarithm,cudabgsegm,cudacodec,cudafeatures2d,cudafilters,cudaimgproc,cudev,features2d,flann,calib3d,imgcodecs,savant,python3 \
         -D BUILD_opencv_apps=OFF \
         -D BUILD_DOCS=OFF \
         -D BUILD_EXAMPLES=OFF \
