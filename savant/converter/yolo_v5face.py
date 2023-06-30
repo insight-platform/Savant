@@ -65,9 +65,7 @@ class YoloV5faceConverter(BaseComplexModelOutputConverter):
             selected_nms_prediction = selected_preds[keep == 1]
             xywh = selected_nms_prediction[:, :4]
             conf = selected_nms_prediction[:, 4:5]
-            class_num = np.expand_dims(
-                np.array([0] * len(conf), dtype=np.float32), axis=1
-            )
+            class_num = np.zeros_like(conf, dtype=np.float32)
             xywh *= np.tile(np.float32([ration_width, ratio_height]), 2)
             landmarks = selected_nms_prediction[:, 5:15] * np.tile(
                 np.float32([ration_width, ratio_height]), 5
