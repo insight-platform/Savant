@@ -1,7 +1,6 @@
 # Faces detection, tracking and age-gender recognition (YoloV5face, Nvidia Tracker, Age-Gender model)
 
-A pipeline that uses [Yolov5face](https://github.com/deepcam-cn/yolov5-face) model to detect faces. 
-The model detected faces and 5 landmarks (eyes, nose, mouth). Landmarks are used 
+A pipeline that uses [Yolov5face](https://github.com/deepcam-cn/yolov5-face) model to detect faces and 5 face landmarks (eyes, nose, mouth). Landmarks are used 
 to calculate the face orientation and preprocessing face image for age/gender model.  
 Age/gender model estimate age and gender for each face and add this information to 
 the object metadata. The pipeline uses Nvidia Tracker to track face.
