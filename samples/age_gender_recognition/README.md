@@ -1,4 +1,4 @@
-# People detection, tracking and face blurring (PeopleNet, Nvidia Tracker, OpenCV CUDA)
+# Faces detection, tracking and age-gender recognition (YoloV5face, Nvidia Tracker, Age-Gender model)
 
 A pipeline that uses [Yolov5face](https://github.com/deepcam-cn/yolov5-face) model to detect faces. 
 The model detected faces and 5 landmarks (eyes, nose, mouth). Landmarks are used 
