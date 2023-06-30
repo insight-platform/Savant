@@ -165,11 +165,6 @@ class FrameTagFilter(LoggerMixin, Gst.Element):
         for not_tagged_buffer in not_tagged_buffers:
             ret = self.push_buffer(self.src_pad_not_tagged, not_tagged_buffer)
             if ret != Gst.FlowReturn.OK:
-                self.logger.error(
-                    'Failed to push buffer PTS=%s: %s',
-                    not_tagged_buffer.pts,
-                    ret,
-                )
                 return ret
 
         return Gst.FlowReturn.OK
@@ -213,7 +208,21 @@ class FrameTagFilter(LoggerMixin, Gst.Element):
         """Push buffer to src pad."""
 
         self.logger.debug('Pushing buffer PTS=%s to %s', buffer.pts, pad.get_name())
-        return pad.push(buffer)
+        ret = pad.push(buffer)
+        if ret == Gst.FlowReturn.OK:
+            self.logger.debug(
+                'Buffer PTS=%s successfully pushed to %s',
+                buffer.pts,
+                pad.get_name(),
+            )
+        else:
+            self.logger.error(
+                'Failed to push buffer PTS=%s to %s: %s',
+                buffer.pts,
+                pad.get_name(),
+                ret,
+            )
+        return ret
 
     def on_caps(self, pad: Gst.Pad, event: Gst.Event):
         """Pass caps event to src_pad_tagged pad for negotiation purposes."""

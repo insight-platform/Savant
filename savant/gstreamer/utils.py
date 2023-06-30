@@ -121,8 +121,6 @@ def gst_buffer_from_list(data: List[bytes]) -> Gst.Buffer:
 class RequiredPropertyError(Exception):
     """Raised when required property is not set."""
 
-    pass
-
 
 def required_property(name: str, value: Optional[Any]):
     """Check if the property is set."""

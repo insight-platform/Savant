@@ -749,9 +749,21 @@ class NvDsPipeline(GstPipeline):
         if self._draw_func.when_tagged is None:
             return True
 
-        (*ignore, frame_meta) = self._get_nvds_savant_frame_meta(nvds_frame_meta)
+        source_id, frame_pts, frame_idx, frame_meta = self._get_nvds_savant_frame_meta(
+            nvds_frame_meta
+        )
 
-        return self._draw_func.when_tagged in frame_meta.tags
+        if self._draw_func.when_tagged in frame_meta.tags:
+            return True
+        else:
+            self._logger.debug(
+                'Frame from source %s with IDX %s PTS %s does not have tag %s. Skip drawing on it.',
+                source_id,
+                frame_idx,
+                frame_pts,
+                self._draw_func.when_tagged,
+            )
+            return False
 
     def _allocate_demuxer_pads(self, demuxer: Gst.Element, n_pads: int):
         """Allocate a fixed number of demuxer src pads."""
