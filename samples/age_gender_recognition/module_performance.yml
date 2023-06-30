@@ -1,17 +1,10 @@
-name: ${oc.env:MODULE_NAME, 'traffic-meter'}
+name: ${oc.env:MODULE_NAME, 'age-gender-recognition'}
 
 parameters:
   frame:
     width: 1280
     height: 720
-    padding:
-      # Paddings are kept on the output frame
-      keep: true
-      left: 0
-      right: 0
-      # Padding size is 180px on the top of the frame
-      top: 0
-      bottom: 0
+
   output_frame:
     codec: h264
   draw_func:

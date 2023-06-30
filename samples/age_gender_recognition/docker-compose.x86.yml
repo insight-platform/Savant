@@ -2,7 +2,7 @@ version: "3.3"
 services:
 
   video-loop-source:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    image: savant-adapters-gstreamer:latest
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -18,7 +18,7 @@ services:
 
 
   module:
-    image: ghcr.io/insight-platform/savant-deepstream:latest
+    image: savant-deepstream:latest
 
     restart: unless-stopped
     volumes:
@@ -40,7 +40,7 @@ services:
               capabilities: [gpu]
 
   always-on-sink:
-    image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
+    image: savant-adapters-deepstream:latest
     restart: unless-stopped
     ports:
       - "554:554"    # RTSP
@@ -54,7 +54,7 @@ services:
       - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
       - SOURCE_ID=video
       - FRAMERATE=25/1
-      - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x900.jpeg
+      - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x720.jpeg
       - DEV_MODE=True
     command: python -m adapters.ds.sinks.always_on_rtsp
     deploy:

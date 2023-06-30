@@ -43,8 +43,7 @@ class AgeGenderPreprocessingObjectImageGPU(BasePreprocessObjectImage):
         face_landmarks = np.array(landmarks).reshape(-1, 5, 2)
 
         face_img = cv2.cuda.GpuMat(size=crop_size, type=frame_image.gpu_mat.type(), s=0)
-        src_pts = np.float32(face_landmarks)
-        tfm, _ = cv2.estimateAffinePartial2D(src_pts, REFERENCE_FACIAL_POINTS)
+        tfm, _ = cv2.estimateAffinePartial2D(face_landmarks, REFERENCE_FACIAL_POINTS)
         face_img = cv2.cuda.warpAffine(
             src=frame_image.gpu_mat, M=tfm, dsize=crop_size, stream=cuda_stream
         )
