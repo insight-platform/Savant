@@ -37,10 +37,10 @@ class AgeGenderPreprocessingObjectImageGPU(BasePreprocessObjectImage):
 
         crop_size = (FACE_WIDTH, FACE_HEIGHT)
 
-        lanbdmarks = object_meta.get_attr_meta(
+        landmarks = object_meta.get_attr_meta(
             element_name=MODEL_NAME, attr_name='landmarks'
         ).value
-        face_landmarks = np.array(lanbdmarks).reshape(-1, 5, 2)
+        face_landmarks = np.array(landmarks).reshape(-1, 5, 2)
 
         face_img = cv2.cuda.GpuMat(size=crop_size, type=frame_image.gpu_mat.type(), s=0)
         src_pts = np.float32(face_landmarks)
