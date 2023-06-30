@@ -6,7 +6,11 @@ from typing import Dict, Any, Optional
 import pyds
 from pygstsavantframemeta import add_convert_savant_frame_meta_pad_probe
 
-from savant.config.schema import PipelineElement, FrameParameters
+from savant.config.schema import (
+    FrameProcessingCondition,
+    PipelineElement,
+    FrameParameters,
+)
 from savant.gstreamer import Gst  # noqa:F401
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec, CodecInfo
 from savant.gstreamer.pipeline import GstPipeline
@@ -71,10 +75,14 @@ class SourceOutputWithFrame(SourceOutput):
     Output contains frames along with metadata.
     """
 
-    def __init__(self, frame_params: FrameParameters, when_tagged: Optional[str]):
+    def __init__(
+        self,
+        frame_params: FrameParameters,
+        condition: FrameProcessingCondition,
+    ):
         super().__init__()
         self._frame_params = frame_params
-        self._when_tagged = when_tagged
+        self._condition = condition
 
     def dest_resolution(self, source_info: SourceInfo) -> Resolution:
         width = source_info.src_resolution.width
@@ -99,7 +107,7 @@ class SourceOutputWithFrame(SourceOutput):
 
         src_pad_not_tagged = (
             self._add_frame_tag_filter(pipeline, source_info)
-            if self._when_tagged
+            if self._condition.tag
             else None
         )
 
@@ -180,7 +188,7 @@ class SourceOutputWithFrame(SourceOutput):
                 'frame_tag_filter',
                 properties={
                     'source-id': source_info.source_id,
-                    'tag': self._when_tagged,
+                    'tag': self._condition.tag,
                 },
             )
         )
@@ -261,7 +269,7 @@ class SourceOutputRawRgba(SourceOutputWithFrame):
     """
 
     def __init__(self, frame_params: FrameParameters):
-        super().__init__(frame_params, when_tagged=None)
+        super().__init__(frame_params, condition=FrameProcessingCondition())
 
     def _add_transform_elems(self, pipeline: GstPipeline, source_info: SourceInfo):
         pass
@@ -289,14 +297,14 @@ class SourceOutputEncoded(SourceOutputWithFrame):
         codec: CodecInfo,
         params: Optional[Dict[str, Any]],
         frame_params: FrameParameters,
-        when_tagged: Optional[str],
+        condition: FrameProcessingCondition,
     ):
         """
         :param codec: Codec for output frames.
         :param params: Parameters of the encoder.
         """
 
-        super().__init__(frame_params=frame_params, when_tagged=when_tagged)
+        super().__init__(frame_params=frame_params, condition=condition)
         self._codec = codec
         self._params = params or {}
 
@@ -377,13 +385,13 @@ def create_source_output(
         return SourceOutputRawRgba(frame_params=frame_params)
 
     encoder_params = output_frame.get('encoder_params', {})
-    when_tagged = output_frame.get('when_tagged')
+    condition = FrameProcessingCondition(**(output_frame.get('condition') or {}))
     if codec in [Codec.H264, Codec.HEVC]:
         return SourceOutputH26X(
             codec=codec.value,
             params=encoder_params,
             frame_params=frame_params,
-            when_tagged=when_tagged,
+            condition=condition,
         )
 
     if codec == Codec.PNG:
@@ -391,12 +399,12 @@ def create_source_output(
             codec=codec.value,
             params=encoder_params,
             frame_params=frame_params,
-            when_tagged=when_tagged,
+            condition=condition,
         )
 
     return SourceOutputEncoded(
         codec=codec.value,
         params=encoder_params,
         frame_params=frame_params,
-        when_tagged=when_tagged,
+        condition=condition,
     )

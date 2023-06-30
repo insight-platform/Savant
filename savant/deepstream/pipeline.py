@@ -746,14 +746,14 @@ class NvDsPipeline(GstPipeline):
     def _can_draw_on_frame(self, nvds_frame_meta: pyds.NvDsFrameMeta) -> bool:
         """Check whether we can draw on this specific frame."""
 
-        if self._draw_func.when_tagged is None:
+        if self._draw_func.condition.tag is None:
             return True
 
         source_id, frame_pts, frame_idx, frame_meta = self._get_nvds_savant_frame_meta(
             nvds_frame_meta
         )
 
-        if self._draw_func.when_tagged in frame_meta.tags:
+        if self._draw_func.condition.tag in frame_meta.tags:
             return True
         else:
             self._logger.debug(
@@ -761,7 +761,7 @@ class NvDsPipeline(GstPipeline):
                 source_id,
                 frame_idx,
                 frame_pts,
-                self._draw_func.when_tagged,
+                self._draw_func.condition.tag,
             )
             return False
 

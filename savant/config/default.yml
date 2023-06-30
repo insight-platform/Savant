@@ -57,7 +57,8 @@ parameters:
   #   codec: h264
   #   encoder_params:
   #     iframeinterval: 25
-  #   when_tagged: encode
+  #   condition:
+  #     tag: encode
 
   # PyFunc for drawing on frames. Should be an instance of savant.config.schema.DrawFunc.
   #
@@ -69,7 +70,8 @@ parameters:
   #
   # Or:
   # draw_func:
-  #   when_tagged: draw
+  #   condition:
+  #     tag: draw
   #
   # To use custom class to draw on frames define "module", "class_name" and "kwargs".
   # E.g.:
@@ -78,7 +80,8 @@ parameters:
   #   class_name: CustomDrawer
   #   kwargs:
   #     color: RED
-  #   when_tagged: draw
+  #   condition:
+  #     tag: draw
   # Class to draw on frames must implement savant.deepstream.base_drawfunc.BaseNvDsDrawFunc.
   draw_func: null
 

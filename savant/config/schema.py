@@ -57,6 +57,20 @@ class FrameParameters:
 
 
 @dataclass
+class FrameProcessingCondition:
+    """Conditions for frame processing.
+    If all conditions are met, frame will be processed.
+    """
+
+    tag: Optional[str] = None
+    """Frame tag for filtering frames to be processed.
+
+    If specified, frame will be processes only if it has the specified tag.
+    If not specified, all frames will be processed.
+    """
+
+
+@dataclass
 class DynamicGstProperty:
     """Allows configuring a gstreamer element property to be automatically
     updated to current value of a dynamic parameter from parameter storage."""
@@ -236,11 +250,12 @@ class DrawFunc(PyFunc):
     kwargs: Optional[Dict[str, Any]] = None
     """Class initialization keyword arguments."""
 
-    when_tagged: Optional[str] = None
-    """Frame tag for filtering frames to be processed by the draw function.
-    
-    If specified, the draw function will be applied only to frames with the specified tag.
-    If not specified, the draw function will be applied to all frames.
+    condition: FrameProcessingCondition = field(
+        default_factory=FrameProcessingCondition
+    )
+    """Conditions for filtering frames to be processed by the draw function.
+
+    The draw function will be applied only to frames when all conditions are met.
     """
 
     def __post_init__(self):
