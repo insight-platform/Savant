@@ -23,7 +23,6 @@ class CPUImage:
         """
         return self._np_image
 
-    @property
     def to_gpu(self) -> cv2.cuda.GpuMat:
         """Returns GPU image.
 
