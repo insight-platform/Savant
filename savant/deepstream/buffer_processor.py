@@ -253,7 +253,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                     primary_bbox.height,
                     0.0,
                 ),
-                obj_label=label,
+                obj_label=PRIMARY_OBJECT_KEY,
                 # confidence should be bigger than tracker minDetectorConfidence
                 # to prevent the tracker from deleting the object
                 # use tracker display-tracking-id=0 to avoid labelling

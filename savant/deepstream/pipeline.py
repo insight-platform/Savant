@@ -43,7 +43,7 @@ from savant.deepstream.utils import (
     nvds_attr_meta_iterator,
     nvds_remove_obj_attrs,
 )
-from savant.meta.constants import UNTRACKED_OBJECT_ID, PRIMARY_OBJECT_LABEL
+from savant.meta.constants import UNTRACKED_OBJECT_ID, PRIMARY_OBJECT_KEY
 from savant.utils.fps_meter import FPSMeter
 from savant.utils.source_info import SourceInfoRegistry, SourceInfo, Resolution
 from savant.utils.platform import is_aarch64
@@ -606,7 +606,7 @@ class NvDsPipeline(GstPipeline):
                 nvds_remove_obj_attrs(nvds_frame_meta, nvds_obj_meta)
 
                 # skip empty primary object that equals to frame
-                if nvds_obj_meta.obj_label == PRIMARY_OBJECT_LABEL:
+                if nvds_obj_meta.obj_label == PRIMARY_OBJECT_KEY:
                     bbox = (
                         obj_meta['bbox']['xc'],
                         obj_meta['bbox']['yc'],

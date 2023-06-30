@@ -7,7 +7,7 @@ from savant.config.schema import FrameParameters
 from savant.deepstream.meta.bbox import NvDsRBBox
 from savant.deepstream.utils import nvds_get_obj_bbox
 from savant.meta.attribute import AttributeMeta
-from savant.meta.constants import PRIMARY_OBJECT_LABEL
+from savant.meta.constants import PRIMARY_OBJECT_KEY
 from savant.utils.source_info import Resolution
 
 
@@ -53,7 +53,7 @@ def nvds_obj_meta_output_converter(
 
     # parse parent object
     parent_model_name, parent_label, parent_object_id = None, None, None
-    if nvds_obj_meta.parent and nvds_obj_meta.parent.obj_label != PRIMARY_OBJECT_LABEL:
+    if nvds_obj_meta.parent and nvds_obj_meta.parent.obj_label != PRIMARY_OBJECT_KEY:
         parent_model_name, parent_label = parse_compound_key(
             nvds_obj_meta.parent.obj_label
         )

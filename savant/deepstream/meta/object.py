@@ -323,7 +323,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
     @property
     def element_name(self) -> str:
         """Returns the identifier of the element that created this object."""
-        return get_model_name(uid=self.ds_object_meta.unique_component_id)
+        return get_model_name(model_id=self.ds_object_meta.unique_component_id)
 
     @classmethod
     def from_nv_ds_object_meta(
