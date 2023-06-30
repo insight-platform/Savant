@@ -171,6 +171,8 @@ class FrameTagFilter(LoggerMixin, Gst.Element):
 
     def parse_buffer(self, buffer: Gst.Buffer) -> Optional[List[Gst.Buffer]]:
         """Parse buffer and return list of not tagged buffers or None if buffer is tagged."""
+        # Buffer is expected to contain only one frame since it's placed after nvstreamdemux.
+        # It returns list of not tagged buffers just as a precaution.
 
         not_tagged_buffers = []
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
