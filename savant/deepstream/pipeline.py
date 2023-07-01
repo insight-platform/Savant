@@ -645,13 +645,11 @@ class NvDsPipeline(GstPipeline):
                                 dest_res_bbox,
                             )
                     elif obj_meta['attributes']:
-                        if self._logger.isEnabledFor(logging.DEBUG):
-                            self._logger.debug(
-                                'Adding primary object, attributes not empty.'
-                            )
+                        self._logger.debug(
+                            'Adding primary object, attributes not empty.'
+                        )
                     else:
-                        if self._logger.isEnabledFor(logging.DEBUG):
-                            self._logger.debug('Skipping empty primary object.')
+                        self._logger.debug('Skipping empty primary object.')
                         continue
                 if self._logger.isEnabledFor(logging.DEBUG):
                     self._logger.debug(
