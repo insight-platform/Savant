@@ -595,12 +595,13 @@ class NvDsPipeline(GstPipeline):
             frame_idx = savant_frame_meta.idx if savant_frame_meta else None
             frame_pts = nvds_frame_meta.buf_pts
 
-            self._logger.debug(
-                'Preparing output for frame of source %s with IDX %s and PTS %s.',
-                source_id,
-                frame_idx,
-                frame_pts,
-            )
+            if self._logger.isEnabledFor(logging.DEBUG):
+                self._logger.debug(
+                    'Preparing output for frame of source %s with IDX %s and PTS %s.',
+                    source_id,
+                    frame_idx,
+                    frame_pts,
+                )
 
             frame_meta = get_source_frame_meta(source_id, frame_idx, frame_pts)
             source_info = self._sources.get_source(source_id)
