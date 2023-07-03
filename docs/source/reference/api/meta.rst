@@ -24,9 +24,6 @@ Object metadata
     :template: autosummary/class.rst
 
     object.ObjectMeta
-    bbox.BaseBBox
-    bbox.BBox
-    bbox.RBBox
     attribute.AttributeMeta
 
 Constants

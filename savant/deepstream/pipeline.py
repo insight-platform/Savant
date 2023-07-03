@@ -5,7 +5,9 @@ from queue import Queue
 from threading import Lock
 from typing import Any, List, Optional
 import time
+import logging
 import pyds
+from savant_rs.primitives.geometry import BBox
 
 from savant.base.input_preproc import ObjectsPreprocessing
 
@@ -564,8 +566,10 @@ class NvDsPipeline(GstPipeline):
     def update_frame_meta(self, pad: Gst.Pad, info: Gst.PadProbeInfo):
         """Prepare frame meta for output."""
         buffer: Gst.Buffer = info.get_buffer()
-        nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
 
+        self._logger.debug('Prepare meta output for buffer with PTS %s', buffer.pts)
+
+        nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         # convert output meta
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
             # use consecutive numbers for object_id in case there is no tracker
@@ -584,6 +588,15 @@ class NvDsPipeline(GstPipeline):
             )
             frame_idx = savant_frame_meta.idx if savant_frame_meta else None
             frame_pts = nvds_frame_meta.buf_pts
+
+            if self._logger.isEnabledFor(logging.DEBUG):
+                self._logger.debug(
+                    'Preparing output for frame of source %s with IDX %s and PTS %s.',
+                    source_id,
+                    frame_idx,
+                    frame_pts,
+                )
+
             frame_meta = get_source_frame_meta(source_id, frame_idx, frame_pts)
             source_info = self._sources.get_source(source_id)
 
@@ -607,24 +620,40 @@ class NvDsPipeline(GstPipeline):
 
                 # skip empty primary object that equals to frame
                 if nvds_obj_meta.obj_label == PRIMARY_OBJECT_KEY:
-                    bbox = (
+                    bbox = BBox(
                         obj_meta['bbox']['xc'],
                         obj_meta['bbox']['yc'],
                         obj_meta['bbox']['width'],
                         obj_meta['bbox']['height'],
                     )
-                    if (
-                        bbox
-                        == (
-                            source_info.dest_resolution.width / 2,
-                            source_info.dest_resolution.height / 2,
-                            source_info.dest_resolution.width,
-                            source_info.dest_resolution.height,
+                    dest_res_bbox = BBox(
+                        source_info.dest_resolution.width / 2,
+                        source_info.dest_resolution.height / 2,
+                        source_info.dest_resolution.width,
+                        source_info.dest_resolution.height,
+                    )
+                    if not bbox.almost_eq(dest_res_bbox, 1e-6):
+                        if self._logger.isEnabledFor(logging.DEBUG):
+                            self._logger.debug(
+                                'Adding primary object, bbox %s != dest res bbox %s.',
+                                bbox,
+                                dest_res_bbox,
+                            )
+                    elif obj_meta['attributes']:
+                        self._logger.debug(
+                            'Adding primary object, attributes not empty.'
                         )
-                        and not obj_meta['attributes']
-                    ):
+                    else:
+                        self._logger.debug('Skipping empty primary object.')
                         continue
-
+                if self._logger.isEnabledFor(logging.DEBUG):
+                    self._logger.debug(
+                        'Collecting object (frame src %s, IDX %s, PTS %s): %s',
+                        source_id,
+                        frame_idx,
+                        frame_pts,
+                        obj_meta,
+                    )
                 frame_meta.metadata['objects'].append(obj_meta)
 
             metadata_add_frame_meta(source_id, frame_idx, frame_pts, frame_meta)

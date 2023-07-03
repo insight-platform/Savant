@@ -9,10 +9,10 @@ from savant_rs.draw_spec import (
     DotDraw,
     LabelPositionKind,
 )
+from savant_rs.primitives.geometry import RBBox
 from savant.meta.object import ObjectMeta
 from savant.deepstream.base_drawfunc import BaseNvDsDrawFunc
 from savant.deepstream.meta.frame import NvDsFrameMeta
-from savant.meta.bbox import RBBox
 from savant.meta.constants import UNTRACKED_OBJECT_ID
 from savant.utils.artist import Position, Artist
 from savant.utils.draw_spec import get_obj_draw_spec, get_default_draw_spec
@@ -113,11 +113,11 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
         else:
             padding = (0, 0, 0, 0)
         artist.add_bbox(
-            bbox=obj_meta.bbox,
-            border_color=spec.border_color.rgba,
-            border_width=spec.thickness,
-            bg_color=spec.background_color.rgba,
-            padding=padding,
+            obj_meta.bbox,
+            spec.thickness,
+            spec.border_color.rgba,
+            spec.background_color.rgba,
+            padding,
         )
 
     def _draw_label(self, obj_meta: ObjectMeta, artist: Artist, spec: LabelDraw):
@@ -125,8 +125,8 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
             isinstance(obj_meta.bbox, RBBox)
             or spec.position.position == LabelPositionKind.Center
         ):
-            anchor_x = int(obj_meta.bbox.x_center)
-            anchor_y = int(obj_meta.bbox.y_center)
+            anchor_x = int(obj_meta.bbox.xc)
+            anchor_y = int(obj_meta.bbox.yc)
             anchor_point = Position.CENTER
         else:
             anchor_x = int(obj_meta.bbox.left)
@@ -160,22 +160,22 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
                 track_id=obj_meta.track_id,
             )
             text_box_height = artist.add_text(
-                text=text,
-                anchor=(anchor_x, anchor_y),
-                anchor_point_type=anchor_point,
-                font_color=spec.font_color.rgba,
-                font_scale=spec.font_scale,
-                font_thickness=spec.thickness,
-                border_color=spec.border_color.rgba,
-                bg_color=spec.background_color.rgba,
-                padding=padding,
-                border_width=1,
+                text,
+                (anchor_x, anchor_y),
+                spec.font_scale,
+                spec.thickness,
+                spec.font_color.rgba,
+                1,
+                spec.border_color.rgba,
+                spec.background_color.rgba,
+                padding,
+                anchor_point,
             )
             anchor_y += offset_sign * text_box_height
 
     def _draw_central_dot(self, obj_meta: ObjectMeta, artist: Artist, spec: DotDraw):
         artist.add_circle(
-            (round(obj_meta.bbox.x_center), round(obj_meta.bbox.y_center)),
+            (round(obj_meta.bbox.xc), round(obj_meta.bbox.yc)),
             spec.radius,
             spec.color.rgba,
             cv2.FILLED,

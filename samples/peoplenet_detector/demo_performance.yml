@@ -40,35 +40,35 @@ parameters:
       counters_height: 85
       # thickness of counter's font
       counters_font_thickness: 5
-      rendered_objects:
-        # Detector's element name from pipeline definition below
-        peoplenet:
-          # Detector's output object's label from pipeline definition
-          # Note that in this sample the analytics pyfunc assigns draw labels to objects
-          # If assigned, draw labels are used in place of the original object labels
-          # in the default draw func implementation
-          person_face:
-            bbox:
-              # RGBA color value for bboxes of persons with face associated
-              border_color: '00ff00ff'
-              # width of person's bboxes border in pixels
-              thickness: 3
-            label:
-              # RGBA color values for person label's font and background
-              font_color: '000000ff'
-              background_color: 'd8e6ffd9'
-          person_noface:
-            bbox:
-              # RGBA color value for bboxes of persons with no face associated
-              border_color: '0000ffff'
-              # width of person's bboxes border in pixels
-              thickness: 3
-            label:
-              # RGBA color values for person label's font and background
-              font_color: '000000ff'
-              background_color: 'd8e6ffd9'
-          face:
-            blur: true
+    rendered_objects:
+      # Detector's element name from pipeline definition below
+      peoplenet:
+        # Detector's output object's label from pipeline definition
+        # Note that in this sample the analytics pyfunc assigns draw labels to objects
+        # If assigned, draw labels are used in place of the original object labels
+        # in the default draw func implementation
+        person_face:
+          bbox:
+            # RGBA color value for bboxes of persons with face associated
+            border_color: '00ff00ff'
+            # width of person's bboxes border in pixels
+            thickness: 3
+          label:
+            # RGBA color values for person label's font and background
+            font_color: '000000ff'
+            background_color: 'd8e6ffd9'
+        person_noface:
+          bbox:
+            # RGBA color value for bboxes of persons with no face associated
+            border_color: '0000ffff'
+            # width of person's bboxes border in pixels
+            thickness: 3
+          label:
+            # RGBA color values for person label's font and background
+            font_color: '000000ff'
+            background_color: 'd8e6ffd9'
+        face:
+          blur: true
 
 # pipeline definition
 pipeline:
