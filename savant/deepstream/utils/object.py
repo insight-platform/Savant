@@ -157,10 +157,33 @@ def nvds_get_obj_bbox(nvds_obj_meta: pyds.NvDsObjectMeta) -> Union[BBox, RBBox]:
     bbox_type = nvds_get_obj_selection_type(nvds_obj_meta)
 
     if bbox_type == ObjectSelectionType.REGULAR_BBOX:
-        return get_aligned_bbox_from_obj_meta(nvds_obj_meta)
+        if (
+            nvds_obj_meta.tracker_bbox_info.org_bbox_coords.width > 0
+            and nvds_obj_meta.tracker_bbox_info.org_bbox_coords.height > 0
+        ):
+            nv_ds_bbox = nvds_obj_meta.tracker_bbox_info.org_bbox_coords
+        elif (
+            nvds_obj_meta.detector_bbox_info.org_bbox_coords.width > 0
+            and nvds_obj_meta.detector_bbox_info.org_bbox_coords.height > 0
+        ):
+            nv_ds_bbox = nvds_obj_meta.detector_bbox_info.org_bbox_coords
+        else:
+            raise MetaValueError(
+                'No valid bounding box found in Deepstream meta information.'
+            )
+        return BBox.ltwh(
+            nv_ds_bbox.left, nv_ds_bbox.top, nv_ds_bbox.width, nv_ds_bbox.height
+        )
 
     if bbox_type == ObjectSelectionType.ROTATED_BBOX:
-        return get_rotated_bbox_from_obj_meta(nvds_obj_meta)
+        rbbox = get_rbbox(nvds_obj_meta)
+        if rbbox is None:
+            raise MetaValueError(
+                'No rotated bounding box found in Deepstream meta information.'
+            )
+        return RBBox(
+            rbbox.x_center, rbbox.y_center, rbbox.width, rbbox.height, rbbox.angle
+        )
 
     raise IncorrectSelectionType('Unsupported object selection type.')
 
@@ -173,21 +196,27 @@ def nvds_set_obj_bbox(
     """Set bbox values and object selection type for specified object meta
     into Deepstream meta structures."""
     if isinstance(bbox, BBox):
-        set_aligned_bbox_for_obj_meta(obj_meta, bbox)
+        nvds_set_aligned_bbox_for_obj_meta(obj_meta, bbox)
         nvds_set_obj_selection_type(
             obj_meta,
             ObjectSelectionType.REGULAR_BBOX,
         )
 
     elif isinstance(bbox, RBBox):
-        set_rotated_bbox_for_obj_meta(batch_meta, obj_meta, bbox)
+        rbbox_coords = NvRBboxCoords()
+        rbbox_coords.x_center = bbox.xc
+        rbbox_coords.y_center = bbox.yc
+        rbbox_coords.width = bbox.width
+        rbbox_coords.height = bbox.height
+        rbbox_coords.angle = bbox.angle
+        add_rbbox_to_object_meta(batch_meta, obj_meta, rbbox_coords)
         nvds_set_obj_selection_type(
             obj_meta,
             ObjectSelectionType.ROTATED_BBOX,
         )
 
 
-def set_aligned_bbox_for_obj_meta(obj_meta: pyds.NvDsObjectMeta, bbox: BBox) -> None:
+def nvds_set_aligned_bbox_for_obj_meta(obj_meta: pyds.NvDsObjectMeta, bbox: BBox) -> None:
     """Set aligned bbox values for specified object meta
     into Deepstream meta structures."""
     bbox_coords = obj_meta.detector_bbox_info.org_bbox_coords
@@ -203,76 +232,23 @@ def set_aligned_bbox_for_obj_meta(obj_meta: pyds.NvDsObjectMeta, bbox: BBox) -> 
     rect_params.height = bbox.height
 
 
-def set_rotated_bbox_for_obj_meta(
-    batch_meta: pyds.NvDsBatchMeta, obj_meta: pyds.NvDsObjectMeta, bbox: RBBox
-) -> None:
-    """Set rotated bbox values for specified object meta
-    into Deepstream meta structures."""
-    rbbox_coords = NvRBboxCoords()
-    rbbox_coords.x_center = bbox.xc
-    rbbox_coords.y_center = bbox.yc
-    rbbox_coords.width = bbox.width
-    rbbox_coords.height = bbox.height
-    rbbox_coords.angle = bbox.angle
-    add_rbbox_to_object_meta(batch_meta, obj_meta, rbbox_coords)
-
-
 def nvds_upd_obj_bbox(obj_meta: pyds.NvDsObjectMeta, bbox: Union[BBox, RBBox]):
     """Update bbox values for specified object meta
     into Deepstream meta structures."""
     if isinstance(bbox, BBox):
-        set_aligned_bbox_for_obj_meta(obj_meta, bbox)
+        nvds_set_aligned_bbox_for_obj_meta(obj_meta, bbox)
 
     elif isinstance(bbox, RBBox):
-        update_rotated_bbox_for_obj_meta(obj_meta, bbox)
-
-
-def update_rotated_bbox_for_obj_meta(
-    obj_meta: pyds.NvDsObjectMeta, bbox: RBBox
-) -> None:
-    rbbox = get_rbbox(obj_meta)
-    if rbbox is None:
-        raise MetaValueError(
-            'No rotated bounding box found in Deepstream meta information.'
-        )
-    rbbox.x_center = bbox.xc
-    rbbox.y_center = bbox.yc
-    rbbox.width = bbox.width
-    rbbox.height = bbox.height
-    rbbox.angle = bbox.angle
-
-
-def get_aligned_bbox_from_obj_meta(obj_meta: pyds.NvDsObjectMeta) -> BBox:
-    """Get aligned bbox instance for specified object meta
-    using values from Deepstream meta structures."""
-    if (
-        obj_meta.tracker_bbox_info.org_bbox_coords.width > 0
-        and obj_meta.tracker_bbox_info.org_bbox_coords.height > 0
-    ):
-        nv_ds_bbox = obj_meta.tracker_bbox_info.org_bbox_coords
-    elif (
-        obj_meta.detector_bbox_info.org_bbox_coords.width > 0
-        and obj_meta.detector_bbox_info.org_bbox_coords.height > 0
-    ):
-        nv_ds_bbox = obj_meta.detector_bbox_info.org_bbox_coords
-    else:
-        raise MetaValueError(
-            'No valid bounding box found in Deepstream meta information.'
-        )
-    return BBox.ltwh(
-        nv_ds_bbox.left, nv_ds_bbox.top, nv_ds_bbox.width, nv_ds_bbox.height
-    )
-
-
-def get_rotated_bbox_from_obj_meta(obj_meta: pyds.NvDsObjectMeta) -> RBBox:
-    """Get rotated bbox instance for specified object meta
-    using values from Deepstream meta structures."""
-    rbbox = get_rbbox(obj_meta)
-    if rbbox is None:
-        raise MetaValueError(
-            'No rotated bounding box found in Deepstream meta information.'
-        )
-    return RBBox(rbbox.x_center, rbbox.y_center, rbbox.width, rbbox.height, rbbox.angle)
+        rbbox = get_rbbox(obj_meta)
+        if rbbox is None:
+            raise MetaValueError(
+                'No rotated bounding box found in Deepstream meta information.'
+            )
+        rbbox.x_center = bbox.xc
+        rbbox.y_center = bbox.yc
+        rbbox.width = bbox.width
+        rbbox.height = bbox.height
+        rbbox.angle = bbox.angle
 
 
 def nvds_init_obj_draw_label(
