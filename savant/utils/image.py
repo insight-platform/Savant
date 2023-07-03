@@ -3,8 +3,7 @@ from typing import Union, Tuple, Optional
 
 import cv2
 import numpy as np
-
-from savant.meta.bbox import BBox, RBBox
+from savant_rs.primitives.geometry import BBox, RBBox
 
 
 class CPUImage:
@@ -54,19 +53,19 @@ class CPUImage:
         if isinstance(bbox, BBox):
             cutout_box = bbox
             res_bbox = BBox(
-                x_center=0,
-                y_center=0,
-                width=bbox.width,
-                height=bbox.height,
+                0,
+                0,
+                bbox.width,
+                bbox.height,
             )
         elif isinstance(bbox, RBBox):
-            cutout_box = bbox.to_bbox()
+            cutout_box = bbox.wrapping_box()
             res_bbox = RBBox(
-                x_center=0,
-                y_center=0,
-                width=bbox.width,
-                height=bbox.height,
-                angle=bbox.angle,
+                0,
+                0,
+                bbox.width,
+                bbox.height,
+                bbox.angle,
             )
         else:
             raise TypeError(f'Unknown type {type(bbox)}')
@@ -117,8 +116,8 @@ class CPUImage:
         else:
             res_image = self._np_image[start_row:end_row, start_col:end_col, :]
 
-        res_bbox.x_center = res_image.shape[1] / 2
-        res_bbox.y_center = res_image.shape[0] / 2
+        res_bbox.xc = res_image.shape[1] / 2
+        res_bbox.yc = res_image.shape[0] / 2
         return CPUImage(res_image), res_bbox
 
     def paste(self, image: 'CPUImage', point: Tuple[int, int]):
@@ -139,7 +138,7 @@ class CPUImage:
         insert_width = min(image.width, self.width - point[0])
         insert_height = min(image.height, self.height - point[1])
         self._np_image[
-            point[1]: point[1] + insert_width, point[0]: point[0] + insert_height
+            point[1] : point[1] + insert_width, point[0] : point[0] + insert_height
         ] = image._np_image[0:insert_width, 0:insert_height, :]
 
     def concat(self, image: 'CPUImage', axis: int = 0) -> 'CPUImage':
@@ -186,7 +185,7 @@ class CPUImage:
         """
 
         if bbox is not None:
-            rotation_point = bbox.x_center, bbox.y_center
+            rotation_point = bbox.xc, bbox.yc
         else:
             rotation_point = self.width / 2, self.height / 2
         rotation_matrix, resolution = get_rotation_matrix(self, angle, rotation_point)
@@ -194,18 +193,18 @@ class CPUImage:
 
         if bbox is not None:
             return CPUImage(res), RBBox(
-                x_center=resolution[0] / 2,
-                y_center=resolution[1] / 2,
-                width=bbox.width,
-                height=bbox.height,
-                angle=bbox.angle - angle,
+                resolution[0] / 2,
+                resolution[1] / 2,
+                bbox.width,
+                bbox.height,
+                bbox.angle - angle,
             )
         return CPUImage(image=res), RBBox(
-            x_center=resolution[0] / 2,
-            y_center=resolution[1] / 2,
-            width=self.width,
-            height=self.height,
-            angle=angle,
+            resolution[0] / 2,
+            resolution[1] / 2,
+            self.width,
+            self.height,
+            angle,
         )
 
     def resize(
@@ -240,8 +239,8 @@ class CPUImage:
         start_col = (resolution[0] - resize_resolution[0]) // 2
         start_row = (resolution[1] - resize_resolution[1]) // 2
         res[
-            start_row: start_row + resize_resolution[1],
-            start_col: start_col + resize_resolution[0],
+            start_row : start_row + resize_resolution[1],
+            start_col : start_col + resize_resolution[0],
             :,
         ] = resized_image
         return CPUImage(image=res)
@@ -299,19 +298,19 @@ class GPUImage:
         if isinstance(bbox, BBox):
             cutout_box = bbox
             res_bbox = BBox(
-                x_center=0,
-                y_center=0,
-                width=bbox.width,
-                height=bbox.height,
+                0,
+                0,
+                bbox.width,
+                bbox.height,
             )
         elif isinstance(bbox, RBBox):
-            cutout_box = bbox.to_bbox()
+            cutout_box = bbox.wrapping_box
             res_bbox = RBBox(
-                x_center=0,
-                y_center=0,
-                width=bbox.width,
-                height=bbox.height,
-                angle=bbox.angle,
+                0,
+                0,
+                bbox.width,
+                bbox.height,
+                bbox.angle,
             )
         else:
             raise TypeError(f'Unknown type {type(bbox)}')
@@ -361,8 +360,8 @@ class GPUImage:
             res_image = cv2.cuda.GpuMat(size=cut_roi.size(), type=cut_roi.type())
             cut_roi.copyTo(stream=self._cuda_stream, dst=res_image)
 
-        res_bbox.x_center = res_image.size()[0] / 2
-        res_bbox.y_center = res_image.size()[1] / 2
+        res_bbox.xc = res_image.size()[0] / 2
+        res_bbox.yc = res_image.size()[1] / 2
         return GPUImage(res_image, cuda_stream=self._cuda_stream), res_bbox
 
     def concat(self, image: 'GPUImage', axis: int = 0) -> 'GPUImage':
@@ -449,7 +448,7 @@ class GPUImage:
         :return: rotated image
         """
         rotation_matrix, resolution = get_rotation_matrix(
-            self, angle, (int(bbox.x_center), int(bbox.y_center))
+            self, angle, (int(bbox.xc), int(bbox.yc))
         )
 
         res = cv2.cuda.warpAffine(
@@ -461,18 +460,18 @@ class GPUImage:
 
         if bbox is not None:
             return GPUImage(image=res, cuda_stream=self._cuda_stream), RBBox(
-                x_center=resolution[0] / 2,
-                y_center=resolution[1] / 2,
-                width=bbox.width,
-                height=bbox.height,
-                angle=bbox.angle - angle,
+                resolution[0] / 2,
+                resolution[1] / 2,
+                bbox.width,
+                bbox.height,
+                bbox.angle - angle,
             )
         return GPUImage(image=res, cuda_stream=self._cuda_stream), RBBox(
-            x_center=resolution[0] / 2,
-            y_center=resolution[1] / 2,
-            width=self.width,
-            height=self.height,
-            angle=angle,
+            resolution[0] / 2,
+            resolution[1] / 2,
+            self.width,
+            self.height,
+            angle,
         )
 
     def resize(

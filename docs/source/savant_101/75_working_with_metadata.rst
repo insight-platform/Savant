@@ -148,10 +148,10 @@ The ``bbox`` parameter can be one of the two types described above in ``bbox``. 
 
 .. code-block:: python
 
-    from savant.meta.bbox import BBox
+    from savant_rs.primitives.geometry import BBox
     primary_bbox = BBox(
-        x_center=400,
-        y_center=300,
+        xc=400,
+        yc=300,
         width=200,
         height=100,
     )
@@ -160,10 +160,10 @@ To create an oriented ``bbox``, in addition to the coordinates of the center and
 
 .. code-block:: python
 
-    from savant.meta.bbox import RBBox
-        primary_bbox = RBBox(
-        x_center=400,
-        y_center=300,
+    from savant_rs.primitives.geometry import RBBox
+    primary_bbox = RBBox(
+        xc=400,
+        yc=300,
         width=200,
         height=100,
         angle=45
@@ -173,6 +173,7 @@ Thus, an example of adding metadata about a new object to the frame is as follow
 
 .. code-block:: python
 
+    from savant_rs.primitives.geometry import BBox
     from savant.deepstream.meta.frame import NvDsFrameMeta
     from savant.meta.object import ObjectMeta
     def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
@@ -180,8 +181,8 @@ Thus, an example of adding metadata about a new object to the frame is as follow
             element_name='my_element_name',
             label='my_obj_class_label',
             bbox=BBox(
-                x_center=400,
-                y_center=300,
+                xc=400,
+                yc=300,
                 width=200,
                 height=100,
             ),

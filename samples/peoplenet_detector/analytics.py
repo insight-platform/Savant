@@ -47,8 +47,8 @@ class Analytics(NvDsPyFuncPlugin):
 
         if len(person_bboxes) > 0 and len(face_bboxes) > 0:
             person_w_face_idxs = match_person_faces(
-                np.array([bbox.tlbr for bbox in person_bboxes]),
-                np.array([bbox.tlbr for bbox in face_bboxes]),
+                np.array([bbox.as_ltrb() for bbox in person_bboxes]),
+                np.array([bbox.as_ltrb() for bbox in face_bboxes]),
             )
         else:
             person_w_face_idxs = []
