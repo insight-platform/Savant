@@ -4,7 +4,7 @@ A simple pipeline that uses standard [Nvidia PeopleNet](https://catalog.ngc.nvid
 
 GPU-accelerated blurring made with OpenCV is a killer feature of this demonstration. It enables very fast and efficient face blurring without CPU utilization.
 
-The **Green** Icon represents how many people with blurred faces in the scene. 
+The **Green** Icon represents how many people with blurred faces in the scene.
 The **Blue** Icon represents how many people with blurred faces in the scene.
 
 Preview:
@@ -64,4 +64,41 @@ curl --silent -O -- https://hello.savant.video/peoplenet.html
 
 # to get back to project root
 cd ../..
+```
+
+## Performance Measurement
+
+Download the video file to your local folder. For example, create a data folder and download the video into it (all commands must be executed from the root directory of the project Savant)
+
+```bash
+# you are expected to be in Savant/ directory
+
+mkdir -p data && curl -o data/Free_City_Street_Footage.mp4 \
+   https://eu-central-1.linodeobjects.com/savant-data/demo/Free_City_Street_Footage.mp4
+```
+
+Next, if you haven't run the sample in the default mode yet (following the instructions above), run
+
+```bash
+docker compose -f samples/peoplenet_detector/docker-compose.x86.yml up module
+```
+
+or
+
+```bash
+docker compose -f samples/peoplenet_detector/docker-compose.l4t.yml up module
+```
+
+to build the module docker image.
+
+Now you are ready to run the performance benchmark with the following command:
+
+```bash
+docker run --rm -it --gpus=all \
+-v `pwd`/samples:/opt/savant/samples \
+-v `pwd`/data:/data:ro \
+-v `pwd`/models/peoplenet_detector:/models \
+-v `pwd`/downloads/peoplenet_detector:/downloads \
+peoplenet_detector-module \
+samples/peoplenet_detector/demo_performance.yml
 ```

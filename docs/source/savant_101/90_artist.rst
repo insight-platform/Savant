@@ -194,7 +194,7 @@ For example, the following call will add a blue rounded square with a width and 
 
 .. code-block:: python
 
-    from savant.meta.bbox import BBox
+    from savant_rs.primitives.geometry import BBox
 
 
     artist.add_rounded_rect(
@@ -227,7 +227,7 @@ For example, the following call will add a red round bullet of radius 3 to the c
 
 
     for obj_meta in frame_meta.objects:
-        center = round(obj_meta.bbox.x_center), round(obj_meta.bbox.y_center)
+        center = round(obj_meta.bbox.xc), round(obj_meta.bbox.yc)
         artist.add_circle(center, 3, (0,0,1), cv2.FILLED)
 
 Add_polygon Method

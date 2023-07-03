@@ -44,3 +44,38 @@ curl --silent -O -- https://hello.savant.video/cars.html
 # to get back to project root
 cd ../..
 ```
+
+## Performance Measurement
+
+Download the video file to your local folder. For example, create a data folder and download the video into it (all commands must be executed from the root directory of the project Savant)
+
+```bash
+# you are expected to be in Savant/ directory
+
+mkdir -p data && curl -o data/deepstream_sample_720p.mp4 \
+   https://eu-central-1.linodeobjects.com/savant-data/nvidia-car-classification/deepstream_sample_720p.mp4
+```
+
+Now you are ready to run the performance benchmark with the following command:
+
+```bash
+docker run --rm -it --gpus=all \
+-v `pwd`/samples:/opt/savant/samples \
+-v `pwd`/data:/data:ro \
+-v `pwd`/models/nvidia_car_classification:/models \
+-v `pwd`/downloads/nvidia_car_classification:/downloads \
+ghcr.io/insight-platform/savant-deepstream:latest \
+samples/nvidia_car_classification/module_performance.yml
+```
+
+or for Jetson
+
+```bash
+docker run --rm -it --gpus=all \
+-v `pwd`/samples:/opt/savant/samples \
+-v `pwd`/data:/data:ro \
+-v `pwd`/models/nvidia_car_classification:/models \
+-v `pwd`/downloads/nvidia_car_classification:/downloads \
+ghcr.io/insight-platform/savant-deepstream-l4t:latest \
+samples/nvidia_car_classification/module_performance.yml
+```

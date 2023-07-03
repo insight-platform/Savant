@@ -1,23 +1,23 @@
 """Deepstream-specific ObjectMeta interface implementation."""
 from typing import Any, List, Optional, Union
+import logging
 import pyds
-from pysavantboost import NvRBboxCoords, add_rbbox_to_object_meta
+from savant_rs.primitives.geometry import BBox, RBBox
 
-from savant.meta.bbox import BBox, RBBox
 from savant.meta.errors import MetaValueError
-from savant.deepstream.meta.bbox import NvDsBBox, NvDsRBBox
 from savant.deepstream.meta.constants import MAX_LABEL_SIZE
 from savant.deepstream.utils import (
-    nvds_get_obj_selection_type,
     nvds_get_obj_attr_meta,
     nvds_get_obj_attr_meta_list,
     nvds_add_attr_meta_to_obj,
-    nvds_set_obj_selection_type,
     nvds_set_obj_uid,
     nvds_get_obj_uid,
     nvds_set_obj_draw_label,
     nvds_get_obj_draw_label,
     nvds_init_obj_draw_label,
+    nvds_get_obj_bbox,
+    nvds_set_obj_bbox,
+    nvds_upd_obj_bbox,
 )
 from savant.utils.logging import LoggerMixin
 from savant.meta.attribute import AttributeMeta
@@ -26,7 +26,6 @@ from savant.meta.constants import (
     DEFAULT_CONFIDENCE,
 )
 from savant.meta.object import ObjectMeta, BaseObjectMetaImpl
-from savant.meta.type import ObjectSelectionType
 from savant.utils.model_registry import ModelObjectRegistry
 
 
@@ -63,7 +62,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         element_uid, class_id = self._model_object_registry.get_model_object_ids(key)
         self._frame_meta = frame_meta
 
-        self.ds_object_meta = pyds.nvds_acquire_obj_meta_from_pool(
+        self.ds_object_meta: pyds.NvDsObjectMeta = pyds.nvds_acquire_obj_meta_from_pool(
             frame_meta.batch_meta
         )
         self.ds_object_meta.class_id = class_id
@@ -90,40 +89,9 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
             )
 
         self.ds_object_meta.confidence = confidence
-        if isinstance(bbox, BBox):
-            bbox_coords = self.ds_object_meta.detector_bbox_info.org_bbox_coords
-            bbox_coords.left = bbox.left
-            bbox_coords.top = bbox.top
-            bbox_coords.width = bbox.width
-            bbox_coords.height = bbox.height
-
-            rect_params = self.ds_object_meta.rect_params
-            rect_params.left = bbox.left
-            rect_params.top = bbox.top
-            rect_params.width = bbox.width
-            rect_params.height = bbox.height
-            nvds_set_obj_selection_type(
-                obj_meta=self.ds_object_meta,
-                selection_type=ObjectSelectionType.REGULAR_BBOX,
-            )
-
-        elif isinstance(bbox, RBBox):
-            rbbox_coords = NvRBboxCoords()
-            rbbox_coords.x_center = bbox.x_center
-            rbbox_coords.y_center = bbox.y_center
-            rbbox_coords.width = bbox.width
-            rbbox_coords.height = bbox.height
-            rbbox_coords.angle = bbox.angle
-            add_rbbox_to_object_meta(
-                self._frame_meta.batch_meta, self.ds_object_meta, rbbox_coords
-            )
-            nvds_set_obj_selection_type(
-                obj_meta=self.ds_object_meta,
-                selection_type=ObjectSelectionType.ROTATED_BBOX,
-            )
-        nvds_set_obj_uid(
-            frame_meta=self._frame_meta.frame_meta, obj_meta=self.ds_object_meta
-        )
+        self._bbox = bbox  # cached BBox or RBBox structure
+        nvds_set_obj_bbox(self._frame_meta.batch_meta, self.ds_object_meta, bbox)
+        nvds_set_obj_uid(self._frame_meta.frame_meta, self.ds_object_meta)
 
     @property
     def confidence(self) -> float:
@@ -134,19 +102,20 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         return self.ds_object_meta.confidence
 
     @property
-    def bbox(self) -> Optional[Union[BBox, RBBox]]:
-        """Returns bounding box of object. Returns None if the object has no
-        bounding box.
+    def bbox(self) -> Union[BBox, RBBox]:
+        """Returns bounding box of object.
 
-        :return: Instance one of class that implements the BoundingBox interface.
-            It can be :py:class:`~savant.meta.bbox.RegularBoundingBox` or
-            :py:class:`~savant.meta.bbox.RotatedBoundingBox`.
+        :return: object bounding box.
         """
-        bbox_type = nvds_get_obj_selection_type(self.ds_object_meta)
-        if bbox_type == ObjectSelectionType.REGULAR_BBOX:
-            return NvDsBBox(self.ds_object_meta)
-        if bbox_type == ObjectSelectionType.ROTATED_BBOX:
-            return NvDsRBBox(self.ds_object_meta)
+        if self._bbox is None:
+            self._bbox = nvds_get_obj_bbox(self.ds_object_meta)
+        return self._bbox
+
+    def sync_bbox(self):
+        if self._bbox is not None and self._bbox.is_modified():
+            if self.logger.isEnabledFor(logging.DEBUG):
+                self.logger.debug('Syncing new bbox into DS meta %s', self._bbox)
+            nvds_upd_obj_bbox(self.ds_object_meta, self._bbox)
 
     @property
     def uid(self) -> int:
@@ -342,9 +311,10 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         self._model_object_registry = ModelObjectRegistry()
         self.ds_object_meta = object_meta
         self._frame_meta = frame_meta
+        self._bbox = None
         if object_meta.parent:
             self._parent_object = _NvDsObjectMetaImpl.from_nv_ds_object_meta(
-                object_meta=object_meta.parent, frame_meta=frame_meta
+                object_meta.parent, frame_meta
             )
         else:
             self._parent_object = None

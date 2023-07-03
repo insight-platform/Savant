@@ -26,7 +26,7 @@ class Overlay(NvDsDrawFunc):
             else:
                 # mark obj center as it is used for entry/exit detection
                 color = self.obj_colors[(frame_meta.source_id, obj_meta.track_id)]
-                center = round(obj_meta.bbox.x_center), round(obj_meta.bbox.y_center)
+                center = round(obj_meta.bbox.xc), round(obj_meta.bbox.yc)
                 artist.add_circle(center, 3, color, cv2.FILLED)
 
                 # add entry/exit label if detected
@@ -61,10 +61,10 @@ class Overlay(NvDsDrawFunc):
         frame_w, _ = artist.frame_wh
         artist.add_bbox(
             BBox(
-                x_center=frame_w // 2,
-                y_center=self.overlay_height // 2,
-                width=frame_w,
-                height=self.overlay_height,
+                frame_w // 2,
+                self.overlay_height // 2,
+                frame_w,
+                self.overlay_height,
             ),
             border_width=0,
             bg_color=(0, 0, 0, 0),
