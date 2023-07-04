@@ -101,7 +101,7 @@ Consider the following ideas when planning ``source-framework-sink`` topologies:
 
 - Use the framework in the bind mode, adapters in the connect mode; change if it does not work for you.
 - The party which delivers multiplexed stream usually has the bind type; the party which handles a single (non-multiplexed) stream usually has the connect type.
-- Use the ``PUB/SUB`` pair when the pipeline or adapter is capable to handle the traffic in real-time.
+- Use the ``PUB/SUB`` pair when the pipeline or adapter is capable of handling the traffic in real-time.
 
 Typical Patterns
 ----------------
