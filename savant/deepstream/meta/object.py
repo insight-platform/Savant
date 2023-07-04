@@ -2,6 +2,12 @@
 from typing import Any, List, Optional, Union
 import logging
 import pyds
+from savant_rs.utils.symbol_mapper import (
+    parse_compound_key,
+    get_object_id,
+    build_model_object_key,
+    get_model_name,
+)
 from savant_rs.primitives.geometry import BBox, RBBox
 
 from savant.meta.errors import MetaValueError
@@ -26,7 +32,6 @@ from savant.meta.constants import (
     DEFAULT_CONFIDENCE,
 )
 from savant.meta.object import ObjectMeta, BaseObjectMetaImpl
-from savant.utils.model_registry import ModelObjectRegistry
 
 
 class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
@@ -57,9 +62,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         draw_label: Optional[str] = None,
     ):
         super().__init__()
-        self._model_object_registry = ModelObjectRegistry()
-        key = ModelObjectRegistry.model_object_key(element_name, label)
-        element_uid, class_id = self._model_object_registry.get_model_object_ids(key)
+        element_uid, class_id = get_object_id(element_name, label)
         self._frame_meta = frame_meta
 
         self.ds_object_meta: pyds.NvDsObjectMeta = pyds.nvds_acquire_obj_meta_from_pool(
@@ -183,9 +186,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
 
         :return: Object label.
         """
-        _, object_label = ModelObjectRegistry.parse_model_object_key(
-            self.ds_object_meta.obj_label
-        )
+        _, object_label = parse_compound_key(self.ds_object_meta.obj_label)
         return object_label
 
     @label.setter
@@ -195,9 +196,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         :param value: Object label.
         """
         if isinstance(value, str):
-            obj_key = self._model_object_registry.model_object_key(
-                self.element_name, value
-            )
+            obj_key = build_model_object_key(self.element_name, value)
             if len(obj_key) > MAX_LABEL_SIZE:
                 self.logger.warn(
                     f"The length of label '{value}' "
@@ -293,9 +292,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
     @property
     def element_name(self) -> str:
         """Returns the identifier of the element that created this object."""
-        return self._model_object_registry.get_name(
-            uid=self.ds_object_meta.unique_component_id
-        )
+        return get_model_name(model_id=self.ds_object_meta.unique_component_id)
 
     @classmethod
     def from_nv_ds_object_meta(
@@ -308,7 +305,6 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         :return:
         """
         self = cls.__new__(cls)
-        self._model_object_registry = ModelObjectRegistry()
         self.ds_object_meta = object_meta
         self._frame_meta = frame_meta
         self._bbox = None

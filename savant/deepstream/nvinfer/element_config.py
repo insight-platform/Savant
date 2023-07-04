@@ -3,6 +3,13 @@ from pathlib import Path
 from typing import Type, Optional
 import logging
 from omegaconf import OmegaConf, DictConfig
+from savant_rs.utils.symbol_mapper import (
+    register_model_objects,
+    RegistrationPolicy,
+    parse_compound_key,
+    get_object_id,
+)
+
 from savant.base.model import (
     ModelPrecision,
     ObjectModel,
@@ -12,7 +19,6 @@ from savant.base.model import (
 from savant.config.schema import get_element_name
 from savant.parameter_storage import param_storage
 from savant.remote_file import process_remote
-from savant.utils.model_registry import ModelObjectRegistry
 from savant.deepstream.nvinfer.file_config import NvInferConfig, NvInferConfigType
 from savant.deepstream.nvinfer.model import (
     NVINFER_MODEL_TYPE_REGISTRY,
@@ -394,25 +400,22 @@ def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
     # set model processing mode to "secondary" (frame is the only primary object)
     nvinfer_config['property']['process-mode'] = 2
 
-    # register the model (and parent) to identify
-    # and relate the model and parent model correctly
-    model_object_registry = ModelObjectRegistry()
-
     # if there is no input.object (model_uid, class_id) in the registry -
     # register and expect it in module input meta (external meta)
-    parent_model_uid, parent_class_id = model_object_registry.get_model_object_ids(
-        model_config.input.object
-    )
+    model_name, label = parse_compound_key(model_config.input.object)
+    parent_model_uid, parent_class_id = get_object_id(model_name, label)
     nvinfer_config['property']['operate-on-gie-id'] = parent_model_uid
     nvinfer_config['property']['operate-on-class-ids'] = parent_class_id
 
     # register the model
-    object_labels = None
+    object_labels = {}
     if issubclass(model_type, ObjectModel):
         object_labels = {
             obj.class_id: obj.label for obj in model_config.output.get('objects')
         }
-    model_uid = model_object_registry.register_model(element_config.name, object_labels)
+    model_uid = register_model_objects(
+        element_config.name, object_labels, RegistrationPolicy.ErrorIfNonUnique
+    )
     nvinfer_config['property']['gie-unique-id'] = model_uid
 
     # set network type to custom if converter is specified for model output
