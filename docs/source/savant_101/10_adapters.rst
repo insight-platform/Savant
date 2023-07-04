@@ -97,9 +97,9 @@ Not all socket pairs form "sane" communication patterns, so, you must use combin
 The Rules Of Thumb
 ------------------
 
-Consider the following ideas when planning ``source-framework-sink`` topologies:
+Consider the following ideas when planning ``source-module-sink`` topologies:
 
-- Use the framework in the bind mode, adapters in the connect mode; change if it does not work for you.
+- Use the module in the bind mode, adapters in the connect mode; change if it does not work for you.
 - The party which delivers multiplexed stream usually has the bind type; the party which handles a single (non-multiplexed) stream usually has the connect type.
 - Use the ``PUB/SUB`` pair when the pipeline or adapter is capable of handling the traffic in real-time.
 
@@ -126,9 +126,9 @@ These pairs implement backpressure causing processing to be delayed when thresho
 
 .. image:: ../_static/img/10_adapters_dc_patterns.png
 
-The first represents a typical scenario when an adapter reads multiplexed streams from an external queue system (like Kafka) and passes them to a framework. The framework, in turn, transfers results (and video) to an adapter delivering them into an external system.
+The first represents a typical scenario when an adapter reads multiplexed streams from an external queue system (like Kafka) and passes them to a module. The module, in turn, transfers results (and video) to an adapter delivering them into an external system.
 
-The second is typical when adapters deliver data from several sources (e.g. RTSP cams) into a framework instance. The right side of the pipeline stays the same as in the previous case.
+The second is typical when adapters deliver data from several sources (e.g. RTSP cams) into a module instance. The right side of the pipeline stays the same as in the previous case.
 
 Edge Patterns
 ^^^^^^^^^^^^^
@@ -139,26 +139,26 @@ This mechanism works great with streams delivering ``MJPEG``, ``RAW``, ``JPEG``,
 
 .. image:: ../_static/img/10_adapters_edge_patterns.png
 
-The first pattern can be used when neither adapters nor the framework must get stuck because of the sink stalling. The second pattern is beneficial when a sink guarantees processing, and you do not worry that it may cause stalling.
+The first pattern can be used when neither adapters nor the module must get stuck because of the sink stalling. The second pattern is beneficial when a sink guarantees processing, and you do not worry that it may cause stalling.
 
 DEALER/ROUTER
 ^^^^^^^^^^^^^
 
 This is the recommended pair when you don't need to copy the same messages to multiple subscribers. It is a reliable socket pair: the ``DEALER`` will block if the ``ROUTER``'s queue is full.
 
-**Source/CONNECT, Framework/BIND**. This is a typical scheme.
+**Source/CONNECT, Module/BIND**. This is a typical scheme.
 
 .. image:: ../_static/img/10_adapters_dr_scfb.png
 
-**Framework/CONNECT, Sink/BIND**. This is a normal pattern when a sink adapter communicates with an external system like Kafka and wishes to send data from multiple framework instances.
+**Module/CONNECT, Sink/BIND**. This is a normal pattern when a sink adapter communicates with an external system like Kafka and wishes to send data from multiple module instances.
 
 .. image:: ../_static/img/10_adapters_dr_fcsb.png
 
-**Source/BIND, Framework/CONNECT**. This is an exotic pattern. Nevertheless, it does the job when a module handles independent images without the need to maintain per-source order. In this scheme, the source will evenly distribute data between connected frameworks according to the ``LRU`` strategy, so it is impossible to use the scheme when you work with video.
+**Source/BIND, Module/CONNECT**. This is an exotic pattern. Nevertheless, it does the job when a module handles independent images without the need to maintain per-source order. In this scheme, the source will evenly distribute data between connected modules according to the ``LRU`` strategy, so it is impossible to use the scheme when you work with video.
 
 .. image:: ../_static/img/10_adapters_dr_sbfc.png
 
-**Framework/BIND, Sink/CONNECT**. This is a valid pattern when sinks communicating with an external system require partitioning and data appending order is not critical.
+**Module/BIND, Sink/CONNECT**. This is a valid pattern when sinks communicating with an external system require partitioning and data appending order is not critical.
 
 .. image:: ../_static/img/10_adapters_dr_fbsc.png
 
@@ -172,19 +172,19 @@ PUB/SUB
 
 The ``PUB/SUB`` is convenient when you need to duplicate the same data to multiple subscribers. Another use case is real-time data processing: excessive elements are dropped if the pipeline cannot handle the traffic.
 
-**Source/BIND, Framework/CONNECT**. A source is initialized as a server (bind), and a framework connects to it. This scheme can be used when the source already delivers multiple streams or the framework handles a single stream provided by the source. In this scenario, the source can duplicate the same stream to multiple frameworks simultaneously.
+**Source/BIND, Module/CONNECT**. A source is initialized as a server (bind), and a module connects to it. This scheme can be used when the source already delivers multiple streams or the module handles a single stream provided by the source. In this scenario, the source can duplicate the same stream to multiple modules simultaneously.
 
 .. image:: ../_static/img/10_adapters_ps_sbfc.png
 
-**Framework/BIND, Sink/CONNECT**. This scheme is used widely. A framework duplicates the same data to multiple sinks. A sink can filter out only required data.
+**Module/BIND, Sink/CONNECT**. This scheme is used widely. A module duplicates the same data to multiple sinks. A sink can filter out only required data.
 
 .. image:: ../_static/img/10_adapters_ps_fbsc.png
 
-**Source/CONNECT, Framework/BIND**. A typical scheme when a framework handles multiple streams. The framework binds to a socket and adapters connect to that socket.
+**Source/CONNECT, Module/BIND**. A typical scheme when a module handles multiple streams. The module binds to a socket and adapters connect to that socket.
 
 .. image:: ../_static/img/10_adapters_ps_scfb.png
 
-**Framework/CONNECT, Sink/BIND**. This is unusual but a correct scheme. A sink handles multiple outputs from frameworks to deliver them in a storage, e.g. Kafka or ClickHouse.
+**Module/CONNECT, Sink/BIND**. This is unusual but a correct scheme. A sink handles multiple outputs from modules to deliver them in a storage, e.g. Kafka or ClickHouse.
 
 .. image:: ../_static/img/10_adapters_ps_fcsb.png
 
@@ -200,16 +200,16 @@ We recommend using the PUB/SUB in the following scenarios:
 - when processing independently encoded frames from a cam (``MJPEG``, ``RGB``, etc.), so when processing is slow, you can afford to drop frames;
 - when an adapter is implemented in a way to read frames from the socket fast and know how to queue them internally.
 
-**Antipattern**: passing video files over ``PUB/SUB`` to the framework with no ``SYNC`` flag set.
+**Antipattern**: passing video files over ``PUB/SUB`` to the module with no ``SYNC`` flag set.
 
-**Pattern example (Sink)**: Connecting multiple Always-On RTSP Sink instances to the framework instance to cast multiple streams.
+**Pattern example (Sink)**: Connecting multiple Always-On RTSP Sink instances to the module instance to cast multiple streams.
 
 We provide adapters to address the common needs of users. The current list of adapters covers many typical scenarios in real life. Provided adapters can be used as an idea to implement a specific one required in your case.
 
 Source Adapters
 ---------------
 
-Source adapters deliver data from external sources (files, RTSP, devices) to a framework module.
+Source adapters deliver data from external sources (files, RTSP, devices) to a module.
 
 Currently, the following source adapters are available:
 
@@ -435,7 +435,7 @@ Running with the helper script:
 GigE Vision Source Adapter
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The adapter is designed to take video streams from Ethernet GigE Vision industrial cams. It passes the frames captured from the camera to the framework without encoding (`#18 <https://github.com/insight-platform/Savant/issues/18>`__) which may introduce significant network load. We recommend using it locally with the framework deployed at the same host.
+The adapter is designed to take video streams from Ethernet GigE Vision industrial cams. It passes the frames captured from the camera to the module without encoding (`#18 <https://github.com/insight-platform/Savant/issues/18>`__) which may introduce significant network load. We recommend using it locally with the module deployed at the same host.
 
 **Parameters**:
 
@@ -633,7 +633,7 @@ Running with the helper script:
 Always-On RTSP Sink Adapter
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The Always-On RTSP Sink Adapter broadcasts the video stream as RTSP/LL-HLS/WebRTC. The adapter accepts only one input stream, so if you need to serve multiple streams from the framework, use a ``PUB`` socket on the framework's side and a ``SUB`` socket on the adapter's side and run a separate adapter instance for each ``SOURCE_ID``. However, if the framework serves a single stream, you can use either ``REQ/REP`` or ``DEALER/ROUTER`` pairs.
+The Always-On RTSP Sink Adapter broadcasts the video stream as RTSP/LL-HLS/WebRTC. The adapter accepts only one input stream, so if you need to serve multiple streams from the module, use a ``PUB`` socket on the module's side and a ``SUB`` socket on the adapter's side and run a separate adapter instance for each ``SOURCE_ID``. However, if the module serves a single stream, you can use either ``REQ/REP`` or ``DEALER/ROUTER`` pairs.
 
 This adapter uses DeepStream SDK and **always** performs hardware transcoding of the incoming stream to ensure continuous streaming even when its source stops operating. In this case, the adapter continues to stream a static image waiting for the source to resume sending data.
 
