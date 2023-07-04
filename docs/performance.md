@@ -19,7 +19,7 @@
 | Setup_1   | peoplenet_detector          | [#208](https://github.com/insight-platform/Savant/issues/208) | 113 |
 | Setup_1   | traffic_meter-yolov8m       | v0.2.3                                                        | 132 |
 | Setup_1   | traffic_meter-yolov8m       | [#207](https://github.com/insight-platform/Savant/issues/207) | 138 |
-| Setup_1   | traffic_meter-yolov8m       | [#207](https://github.com/insight-platform/Savant/issues/207) | 136 |
+| Setup_1   | traffic_meter-yolov8m       | [#208](https://github.com/insight-platform/Savant/issues/208) | 136 |
 | Setup_1   | traffic_meter-peoplenet     | v0.2.3                                                        | 118 |
 | Setup_1   | traffic_meter-peoplenet     | [#207](https://github.com/insight-platform/Savant/issues/207) | 127 |
 | Setup_1   | traffic_meter-peoplenet     | [#208](https://github.com/insight-platform/Savant/issues/208) | 125 |
