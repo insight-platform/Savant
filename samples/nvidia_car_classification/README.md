@@ -16,7 +16,7 @@ Demonstrated adapters:
 - RTSP source adapter;
 - Always-ON RTSP sink adapter.
 
-A step-by-step [tutorial](https://hello.savant.video/nvidia-test2).
+A step-by-step [tutorial](https://blog.savant-ai.io/building-a-high-performance-car-classifier-pipeline-with-savant-b232461ad96?source=friends_link&sk=63cb289315679af83032ef5247861a2d).
 
 **Note**: Ubuntu 22.04 runtime configuration [guide](../../docs/runtime-configuration.md) helps to configure the runtime to run Savant pipelines.
 

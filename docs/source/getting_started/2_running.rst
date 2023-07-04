@@ -9,7 +9,7 @@ Pieces of Savant framework are normally run in a docker containers. We provide d
 The file introduces several services:
 
 - ``module``:  the Savant module that runs video analytics on the video streams;
-- ``rtsp-source``: the adapter that ingests video streams from the RTSP camera to the module;
+- ``video-loop-source``: the adapter that ingests looped video stream from a file to the module;
 - ``always-on-sink``: the adapter that receives the results of video analytics and represents them as RTSP-stream.
 
 In the following sections, we dive into the details of modules and explain what the adapters are and how do they communicate with modules.
