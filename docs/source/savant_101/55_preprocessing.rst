@@ -174,7 +174,7 @@ to perform basic operations on the GPU
 
    ref_image = cv2.cvtColor(cv2.imread("55_ref.jpeg"), cv2.COLOR_RGB2BGR)
    gpu_ref_image = GPUImage(ref_image)
-   cut_bbox = BBox(x_center=gpu_ref_image.width//2,y_center=0, width=1000, height=200)
+   cut_bbox = BBox(xc=gpu_ref_image.width//2, yc=0, width=1000, height=200)
    res_image, _ = gpu_ref_image.cut(cut_bbox)
    cv2.imwrite('55_res.jpeg', cv2.cvtColor(res_image.gpu_mat.download(), cv2.COLOR_RGB2BGR))
 

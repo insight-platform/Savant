@@ -3,12 +3,13 @@
 FROM nvcr.io/nvidia/deepstream:6.2-devel as builder
 
 ENV CUDA_VER=11.8
-
+ARG DS_YOLO_VER=68f762d5bdeae7ac3458529bfe6fed72714336ca
 ARG DS_YOLO_PATH=/opt/yolo
 ARG NVDSINFER_PATH=/opt/nvidia/deepstream/deepstream/sources/libs/nvdsinfer
 
 RUN git clone https://github.com/marcoslucianops/DeepStream-Yolo.git $DS_YOLO_PATH \
     && cd $DS_YOLO_PATH \
+    && git checkout $DS_YOLO_VER \
     && make -C nvdsinfer_custom_impl_Yolo
 
 # patch nvdsinfer_model_builder.cpp: use engine path to place created engine
