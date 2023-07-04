@@ -144,7 +144,7 @@ The first pattern can be used when neither adapters nor the framework must get s
 DEALER/ROUTER
 ^^^^^^^^^^^^^
 
-This is a recommended pair when you don't need to copy the same messages to multiple subscribers. It is a reliable socket pair: the ``DEALER`` will block if the ``ROUTER``'s queue is full.
+This is the recommended pair when you don't need to copy the same messages to multiple subscribers. It is a reliable socket pair: the ``DEALER`` will block if the ``ROUTER``'s queue is full.
 
 **Source/CONNECT, Framework/BIND**. This is a typical scheme.
 
