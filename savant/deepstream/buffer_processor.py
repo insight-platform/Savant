@@ -137,8 +137,6 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                 )
                 # skip primary object for now, will be added later
                 if obj_key == PRIMARY_OBJECT_KEY:
-                    bbox = (
-                if obj_key == PRIMARY_OBJECT_LABEL:
                     bbox = BBox(
                         obj_meta['bbox']['xc'],
                         obj_meta['bbox']['yc'],
@@ -261,12 +259,11 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                     primary_bbox.height,
                     0.0,
                 ),
-                obj_label=PRIMARY_OBJECT_KEY,
                 # confidence should be bigger than tracker minDetectorConfidence
                 # to prevent the tracker from deleting the object
                 # use tracker display-tracking-id=0 to avoid labelling
                 0.999,
-                obj_label,
+                PRIMARY_OBJECT_KEY,
             )
 
             nvds_frame_meta.bInferDone = True  # required for tracker (DS 6.0)
@@ -587,7 +584,6 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                                             bbox[2:7],
                                             nvds_frame_meta.buf_pts,
                                         )
-                                    !!!!!! ckeckkk
                                     _nvds_obj_meta = nvds_add_obj_meta_to_frame(
                                         nvds_batch_meta,
                                         nvds_frame_meta,

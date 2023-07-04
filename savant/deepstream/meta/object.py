@@ -32,8 +32,6 @@ from savant.meta.constants import (
     DEFAULT_CONFIDENCE,
 )
 from savant.meta.object import ObjectMeta, BaseObjectMetaImpl
-from savant.meta.type import ObjectSelectionType
-from savant.utils.model_registry import ModelObjectRegistry
 
 
 class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
