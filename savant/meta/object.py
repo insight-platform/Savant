@@ -9,6 +9,7 @@ from savant.meta.constants import (
     UNTRACKED_OBJECT_ID,
     DEFAULT_CONFIDENCE,
     PRIMARY_OBJECT_LABEL,
+    DEFAULT_MODEL_NAME,
 )
 
 
@@ -256,7 +257,10 @@ class ObjectMeta:
 
     @property
     def is_primary(self) -> bool:
-        return not self.element_name and self.label == PRIMARY_OBJECT_LABEL
+        return (
+            self.element_name == DEFAULT_MODEL_NAME
+            and self.label == PRIMARY_OBJECT_LABEL
+        )
 
     @property
     def confidence(self) -> float:
