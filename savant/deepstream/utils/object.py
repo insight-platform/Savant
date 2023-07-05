@@ -1,12 +1,17 @@
 """DeepStream object utils."""
 from typing import Optional, Tuple, Union
 import pyds
-from pysavantboost import add_rbbox_to_object_meta, NvRBboxCoords
-from savant.meta.errors import IncorrectSelectionType, UIDError, MetaPoolError
+from savant_rs.primitives.geometry import BBox, RBBox
+from pysavantboost import add_rbbox_to_object_meta, NvRBboxCoords, get_rbbox
+from savant.meta.errors import (
+    IncorrectSelectionType,
+    UIDError,
+    MetaPoolError,
+    MetaValueError,
+)
 from savant.meta.constants import UNTRACKED_OBJECT_ID, DEFAULT_CONFIDENCE
 from savant.meta.type import InformationType, ObjectSelectionType
 from savant.deepstream.meta.constants import MAX_LABEL_SIZE
-from savant.deepstream.meta.bbox import NvDsBBox, NvDsRBBox
 from .iterator import nvds_obj_user_meta_iterator
 from .meta_types import OBJ_DRAW_LABEL_META_TYPE
 
@@ -22,10 +27,10 @@ def nvds_add_obj_meta_to_frame(  # pylint: disable=too-many-arguments,too-many-l
     class_id: int,
     gie_uid: int,
     bbox: Tuple[float, float, float, float, float],
+    confidence: float = DEFAULT_CONFIDENCE,
+    obj_label: str = '',
     object_id: int = UNTRACKED_OBJECT_ID,
     parent: Optional[pyds.NvDsObjectMeta] = None,
-    obj_label: str = '',
-    confidence: float = DEFAULT_CONFIDENCE,
 ) -> pyds.NvDsObjectMeta:
     """Adds object meta to frame.
 
@@ -52,34 +57,14 @@ def nvds_add_obj_meta_to_frame(  # pylint: disable=too-many-arguments,too-many-l
 
     obj_meta.confidence = confidence
 
-    x_center, y_center, width, height, angle = bbox
-
     if selection_type == ObjectSelectionType.ROTATED_BBOX:
-        rbbox_coords = NvRBboxCoords()
-        rbbox_coords.x_center = x_center
-        rbbox_coords.y_center = y_center
-        rbbox_coords.width = width
-        rbbox_coords.height = height
-        rbbox_coords.angle = angle
-        add_rbbox_to_object_meta(batch_meta, obj_meta, rbbox_coords)
-        nvds_set_obj_selection_type(obj_meta=obj_meta, selection_type=selection_type)
+        bbox = RBBox(*bbox)
     elif selection_type == ObjectSelectionType.REGULAR_BBOX:
-        bbox_coords = obj_meta.detector_bbox_info.org_bbox_coords
-        bbox_coords.left = x_center - width / 2
-        bbox_coords.top = y_center - height / 2
-        bbox_coords.width = width
-        bbox_coords.height = height
-
-        rect_params = obj_meta.rect_params
-        rect_params.left = x_center - width / 2
-        rect_params.top = y_center - height / 2
-        rect_params.width = width
-        rect_params.height = height
-
-        nvds_set_obj_selection_type(obj_meta=obj_meta, selection_type=selection_type)
+        bbox = BBox(*bbox[:-1])
     else:
         raise IncorrectBBoxType(f"Incorrect selection type '{selection_type}'")
-    nvds_set_obj_uid(frame_meta=frame_meta, obj_meta=obj_meta)
+    nvds_set_obj_bbox(batch_meta, obj_meta, bbox)
+    nvds_set_obj_uid(frame_meta, obj_meta)
     pyds.nvds_add_obj_meta_to_frame(frame_meta, obj_meta, parent)
     return obj_meta
 
@@ -154,32 +139,123 @@ def nvds_generate_obj_uid(
             frame_meta.source_id,
             frame_meta.frame_num,
             obj_meta.obj_label,
-            bbox.x_center,
-            bbox.y_center,
+            bbox.xc,
+            bbox.yc,
             bbox.width,
             bbox.height,
         )
     )
 
 
-def nvds_get_obj_bbox(nvds_obj_meta: pyds.NvDsObjectMeta) -> Union[NvDsBBox, NvDsRBBox]:
-    """Returns BBox instance for specified frame meta.
+def nvds_get_obj_bbox(nvds_obj_meta: pyds.NvDsObjectMeta) -> Union[BBox, RBBox]:
+    """Get the bounding box for specified object meta
+    from Deepstream meta structures.
 
     :param nvds_obj_meta: NvDsObjectMeta.
-    :return:
+    :return: BBox or RBBox.
     """
-    if nvds_get_obj_selection_type(nvds_obj_meta) == ObjectSelectionType.REGULAR_BBOX:
-        return NvDsBBox(nvds_obj_meta)
+    bbox_type = nvds_get_obj_selection_type(nvds_obj_meta)
 
-    if nvds_get_obj_selection_type(nvds_obj_meta) == ObjectSelectionType.ROTATED_BBOX:
-        return NvDsRBBox(nvds_obj_meta)
+    if bbox_type == ObjectSelectionType.REGULAR_BBOX:
+        if (
+            nvds_obj_meta.tracker_bbox_info.org_bbox_coords.width > 0
+            and nvds_obj_meta.tracker_bbox_info.org_bbox_coords.height > 0
+        ):
+            nv_ds_bbox = nvds_obj_meta.tracker_bbox_info.org_bbox_coords
+        elif (
+            nvds_obj_meta.detector_bbox_info.org_bbox_coords.width > 0
+            and nvds_obj_meta.detector_bbox_info.org_bbox_coords.height > 0
+        ):
+            nv_ds_bbox = nvds_obj_meta.detector_bbox_info.org_bbox_coords
+        else:
+            raise MetaValueError(
+                'No valid bounding box found in Deepstream meta information.'
+            )
+        return BBox.ltwh(
+            nv_ds_bbox.left, nv_ds_bbox.top, nv_ds_bbox.width, nv_ds_bbox.height
+        )
+
+    if bbox_type == ObjectSelectionType.ROTATED_BBOX:
+        rbbox = get_rbbox(nvds_obj_meta)
+        if rbbox is None:
+            raise MetaValueError(
+                'No rotated bounding box found in Deepstream meta information.'
+            )
+        return RBBox(
+            rbbox.x_center, rbbox.y_center, rbbox.width, rbbox.height, rbbox.angle
+        )
 
     raise IncorrectSelectionType('Unsupported object selection type.')
+
+
+def nvds_set_obj_bbox(
+    batch_meta: pyds.NvDsBatchMeta,
+    obj_meta: pyds.NvDsObjectMeta,
+    bbox: Union[BBox, RBBox],
+) -> None:
+    """Set bbox values and object selection type for specified object meta
+    into Deepstream meta structures."""
+    if isinstance(bbox, BBox):
+        nvds_set_aligned_bbox_for_obj_meta(obj_meta, bbox)
+        nvds_set_obj_selection_type(
+            obj_meta,
+            ObjectSelectionType.REGULAR_BBOX,
+        )
+
+    elif isinstance(bbox, RBBox):
+        rbbox_coords = NvRBboxCoords()
+        rbbox_coords.x_center = bbox.xc
+        rbbox_coords.y_center = bbox.yc
+        rbbox_coords.width = bbox.width
+        rbbox_coords.height = bbox.height
+        rbbox_coords.angle = bbox.angle
+        add_rbbox_to_object_meta(batch_meta, obj_meta, rbbox_coords)
+        nvds_set_obj_selection_type(
+            obj_meta,
+            ObjectSelectionType.ROTATED_BBOX,
+        )
+
+
+def nvds_set_aligned_bbox_for_obj_meta(obj_meta: pyds.NvDsObjectMeta, bbox: BBox) -> None:
+    """Set aligned bbox values for specified object meta
+    into Deepstream meta structures."""
+    bbox_coords = obj_meta.detector_bbox_info.org_bbox_coords
+    bbox_coords.left = bbox.left
+    bbox_coords.top = bbox.top
+    bbox_coords.width = bbox.width
+    bbox_coords.height = bbox.height
+
+    rect_params = obj_meta.rect_params
+    rect_params.left = bbox.left
+    rect_params.top = bbox.top
+    rect_params.width = bbox.width
+    rect_params.height = bbox.height
+
+
+def nvds_upd_obj_bbox(obj_meta: pyds.NvDsObjectMeta, bbox: Union[BBox, RBBox]):
+    """Update bbox values for specified object meta
+    into Deepstream meta structures."""
+    if isinstance(bbox, BBox):
+        nvds_set_aligned_bbox_for_obj_meta(obj_meta, bbox)
+
+    elif isinstance(bbox, RBBox):
+        rbbox = get_rbbox(obj_meta)
+        if rbbox is None:
+            raise MetaValueError(
+                'No rotated bounding box found in Deepstream meta information.'
+            )
+        rbbox.x_center = bbox.xc
+        rbbox.y_center = bbox.yc
+        rbbox.width = bbox.width
+        rbbox.height = bbox.height
+        rbbox.angle = bbox.angle
 
 
 def nvds_init_obj_draw_label(
     batch_meta: pyds.NvDsBatchMeta, obj_meta: pyds.NvDsObjectMeta, draw_label: str
 ):
+    """Initialize Deepstream meta structure
+    for object draw label for specified object meta."""
     user_meta = pyds.nvds_acquire_user_meta_from_pool(batch_meta)
     if user_meta:
         data = pyds.alloc_custom_struct(user_meta)
@@ -194,6 +270,7 @@ def nvds_init_obj_draw_label(
 def nvds_get_obj_draw_label_struct(
     obj_meta: pyds.NvDsObjectMeta,
 ) -> pyds.CustomDataStruct:
+    """Get Deepstream meta structure for object draw label for specified object meta."""
     for user_meta in nvds_obj_user_meta_iterator(obj_meta):
         if user_meta.base_meta.meta_type == OBJ_DRAW_LABEL_META_TYPE:
             return pyds.CustomDataStruct.cast(user_meta.user_meta_data)
@@ -201,6 +278,7 @@ def nvds_get_obj_draw_label_struct(
 
 
 def nvds_set_obj_draw_label(obj_meta: pyds.NvDsObjectMeta, draw_label: str) -> bool:
+    """Set object draw label for specified object meta."""
     data = nvds_get_obj_draw_label_struct(obj_meta)
     if data is not None:
         data.message = draw_label
@@ -209,6 +287,7 @@ def nvds_set_obj_draw_label(obj_meta: pyds.NvDsObjectMeta, draw_label: str) -> b
 
 
 def nvds_get_obj_draw_label(obj_meta: pyds.NvDsObjectMeta) -> Optional[str]:
+    """Get object draw label for specified object meta. Returns None if not set."""
     data = nvds_get_obj_draw_label_struct(obj_meta)
     if data is not None:
         return pyds.get_string(data.message)

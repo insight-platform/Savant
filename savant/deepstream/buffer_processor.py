@@ -1,23 +1,37 @@
 """Buffer processor for DeepStream pipeline."""
-import time
+from collections import deque
+from heapq import heappop, heappush
 from queue import Queue
-from typing import Optional, Union, NamedTuple, Iterator
+from typing import Deque, Dict, List, Tuple
 
+from typing import Optional, Union, NamedTuple, Iterator
+import logging
 import numpy as np
 import pyds
 from pygstsavantframemeta import (
     gst_buffer_get_savant_frame_meta,
     nvds_frame_meta_get_nvds_savant_frame_meta,
 )
+from savant_rs.primitives.geometry import BBox, RBBox
+from savant_rs.utils.symbol_mapper import (
+    parse_compound_key,
+    get_model_id,
+    get_object_id,
+    build_model_object_key,
+)
 
 from savant.base.input_preproc import ObjectsPreprocessing
-
 from savant.base.model import ObjectModel, ComplexModel
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
+from savant.deepstream.source_output import (
+    SourceOutput,
+    SourceOutputEncoded,
+    SourceOutputH26X,
+    SourceOutputWithFrame,
+)
 from savant.deepstream.utils.attribute import nvds_get_all_obj_attrs
-from savant.meta.constants import PRIMARY_OBJECT_LABEL
+from savant.meta.constants import PRIMARY_OBJECT_KEY
 from savant.config.schema import PipelineElement, ModelElement, FrameParameters
-from savant.meta.bbox import BBox, RBBox
 from savant.deepstream.nvinfer.model import (
     NvInferRotatedObjectDetector,
     NvInferDetector,
@@ -44,7 +58,7 @@ from savant.meta.object import ObjectMeta
 from savant.meta.type import ObjectSelectionType
 from savant.utils.fps_meter import FPSMeter
 from savant.utils.logging import LoggerMixin
-from savant.utils.model_registry import ModelObjectRegistry
+from savant.utils.platform import is_aarch64
 from savant.utils.sink_factories import SinkVideoFrame
 from savant.utils.source_info import SourceInfoRegistry, SourceInfo
 
@@ -54,6 +68,7 @@ class _OutputFrame(NamedTuple):
 
     idx: int
     pts: int
+    dts: Optional[int]
     frame: Optional[bytes]
     codec: Optional[CodecInfo]
     keyframe: bool
@@ -65,7 +80,6 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
         queue: Queue,
         fps_meter: FPSMeter,
         sources: SourceInfoRegistry,
-        model_object_registry: ModelObjectRegistry,
         objects_preprocessing: ObjectsPreprocessing,
         frame_params: FrameParameters,
     ):
@@ -74,14 +88,12 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
         :param queue: Queue for output data.
         :param fps_meter: FPS meter.
         :param sources: Source info registry.
-        :param model_object_registry: Model.Object registry.
         :param objects_preprocessing: Objects processing registry.
         :param frame_params: Processing frame parameters (after nvstreammux).
         """
 
         super().__init__(queue, fps_meter)
         self._sources = sources
-        self._model_object_registry = model_object_registry
         self._objects_preprocessing = objects_preprocessing
         self._frame_params = frame_params
         self._queue = queue
@@ -92,7 +104,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
         :param buffer: gstreamer buffer that is being processed.
         """
 
-        self._logger.debug('Preparing input for buffer with PTS %s.', buffer.pts)
+        self.logger.debug('Preparing input for buffer with PTS %s.', buffer.pts)
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
             # TODO: add source_id to SavantFrameMeta and always attach SavantFrameMeta to the buffers
@@ -103,7 +115,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
             frame_idx = savant_frame_meta.idx if savant_frame_meta else None
             frame_pts = nvds_frame_meta.buf_pts
 
-            self._logger.debug(
+            self.logger.debug(
                 'Preparing input for frame of source %s with IDX %s and PTS %s.',
                 source_id,
                 frame_idx,
@@ -119,59 +131,60 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                 self._frame_params.height / source_info.src_resolution.height
             )
             primary_bbox = BBox(
-                x_center=self._frame_params.width / 2,
-                y_center=self._frame_params.height / 2,
-                width=self._frame_params.width,
-                height=self._frame_params.height,
+                self._frame_params.width / 2,
+                self._frame_params.height / 2,
+                self._frame_params.width,
+                self._frame_params.height,
+            )
+            self.logger.debug(
+                'Init primary bbox for frame with PTS %s: %s', frame_pts, primary_bbox
             )
 
             all_nvds_obj_metas = {}
             nvds_obj_metas_w_parent = {}
             # add external objects to nvds meta
             for obj_meta in frame_meta.metadata['objects']:
-                obj_key = self._model_object_registry.model_object_key(
+                obj_key = build_model_object_key(
                     obj_meta['model_name'], obj_meta['label']
                 )
                 # skip primary object for now, will be added later
-                if obj_key == PRIMARY_OBJECT_LABEL:
-                    bbox = (
+                if obj_key == PRIMARY_OBJECT_KEY:
+                    bbox = BBox(
                         obj_meta['bbox']['xc'],
                         obj_meta['bbox']['yc'],
                         obj_meta['bbox']['width'],
                         obj_meta['bbox']['height'],
                     )
                     # if not a full frame then correct primary object
-                    if bbox != (
-                        primary_bbox.x_center,
-                        primary_bbox.y_center,
-                        primary_bbox.width,
-                        primary_bbox.height,
-                    ):
-                        primary_bbox = BBox(*bbox)
+                    if not bbox.almost_eq(primary_bbox, 1e-6):
+                        primary_bbox = bbox
                         primary_bbox.scale(scale_factor_x, scale_factor_y)
+                        self.logger.debug(
+                            'Corrected primary bbox for frame with PTS %s: %s',
+                            frame_pts,
+                            primary_bbox,
+                        )
                     continue
                 # obj_key was only registered if
                 # it was required by the pipeline model elements (this case)
                 # or equaled the output object of one of the pipeline model elements
-                (
-                    model_uid,
-                    class_id,
-                ) = self._model_object_registry.get_model_object_ids(obj_key)
+                model_name, label = parse_compound_key(obj_key)
+                model_uid, class_id = get_object_id(model_name, label)
                 if obj_meta['bbox']['angle']:
                     bbox = RBBox(
-                        x_center=obj_meta['bbox']['xc'],
-                        y_center=obj_meta['bbox']['yc'],
-                        width=obj_meta['bbox']['width'],
-                        height=obj_meta['bbox']['height'],
-                        angle=obj_meta['bbox']['angle'],
+                        obj_meta['bbox']['xc'],
+                        obj_meta['bbox']['yc'],
+                        obj_meta['bbox']['width'],
+                        obj_meta['bbox']['height'],
+                        obj_meta['bbox']['angle'],
                     )
                     selection_type = ObjectSelectionType.ROTATED_BBOX
                 else:
                     bbox = BBox(
-                        x_center=obj_meta['bbox']['xc'],
-                        y_center=obj_meta['bbox']['yc'],
-                        width=obj_meta['bbox']['width'],
-                        height=obj_meta['bbox']['height'],
+                        obj_meta['bbox']['xc'],
+                        obj_meta['bbox']['yc'],
+                        obj_meta['bbox']['width'],
+                        obj_meta['bbox']['height'],
                     )
                     selection_type = ObjectSelectionType.REGULAR_BBOX
 
@@ -182,23 +195,23 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
 
                 # create nvds obj meta
                 nvds_obj_meta = nvds_add_obj_meta_to_frame(
-                    batch_meta=nvds_batch_meta,
-                    frame_meta=nvds_frame_meta,
-                    selection_type=selection_type,
-                    class_id=class_id,
-                    gie_uid=model_uid,
-                    bbox=(
-                        bbox.x_center,
-                        bbox.y_center,
+                    nvds_batch_meta,
+                    nvds_frame_meta,
+                    selection_type,
+                    class_id,
+                    model_uid,
+                    (
+                        bbox.xc,
+                        bbox.yc,
                         bbox.width,
                         bbox.height,
                         bbox.angle
                         if selection_type == ObjectSelectionType.ROTATED_BBOX
                         else 0.0,
                     ),
-                    object_id=obj_meta['object_id'],
-                    obj_label=obj_key,
-                    confidence=obj_meta['confidence'],
+                    obj_meta['confidence'],
+                    obj_key,
+                    obj_meta['object_id'],
                 )
 
                 # save nvds obj meta ref in case it is some other obj's parent
@@ -235,31 +248,34 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
 
             frame_meta.metadata['objects'] = []
             # add primary frame object
-            obj_label = PRIMARY_OBJECT_LABEL
-            model_uid, class_id = self._model_object_registry.get_model_object_ids(
-                obj_label
-            )
+            model_name, label = parse_compound_key(PRIMARY_OBJECT_KEY)
+            model_uid, class_id = get_object_id(model_name, label)
             if self._frame_params.padding:
-                primary_bbox.x_center += self._frame_params.padding.left
-                primary_bbox.y_center += self._frame_params.padding.top
+                primary_bbox.xc += self._frame_params.padding.left
+                primary_bbox.yc += self._frame_params.padding.top
+            self.logger.debug(
+                'Add primary object to frame meta with PTS %s, bbox: %s',
+                frame_pts,
+                primary_bbox,
+            )
             nvds_add_obj_meta_to_frame(
-                batch_meta=nvds_batch_meta,
-                frame_meta=nvds_frame_meta,
-                selection_type=ObjectSelectionType.REGULAR_BBOX,
-                class_id=class_id,
-                gie_uid=model_uid,
-                bbox=(
-                    primary_bbox.x_center,
-                    primary_bbox.y_center,
+                nvds_batch_meta,
+                nvds_frame_meta,
+                ObjectSelectionType.REGULAR_BBOX,
+                class_id,
+                model_uid,
+                (
+                    primary_bbox.xc,
+                    primary_bbox.yc,
                     primary_bbox.width,
                     primary_bbox.height,
                     0.0,
                 ),
-                obj_label=obj_label,
                 # confidence should be bigger than tracker minDetectorConfidence
                 # to prevent the tracker from deleting the object
                 # use tracker display-tracking-id=0 to avoid labelling
-                confidence=0.999,
+                0.999,
+                PRIMARY_OBJECT_KEY,
             )
 
             nvds_frame_meta.bInferDone = True  # required for tracker (DS 6.0)
@@ -275,32 +291,45 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
         :param source_info: output source info
         """
 
-        self._logger.debug(
-            'Preparing output for buffer with PTS %s for source %s.',
+        self.logger.debug(
+            'Preparing output for buffer with PTS %s and DTS %s for source %s.',
             buffer.pts,
+            buffer.dts,
             source_info.source_id,
         )
-        for output_frame in self._iterate_output_frames(buffer):
-            self._logger.debug(
-                'Preparing output for frame of source %s with IDX %s and PTS %s.',
-                source_info.source_id,
-                output_frame.idx,
-                output_frame.pts,
-            )
-            frame_meta = metadata_pop_frame_meta(
-                source_info.source_id,
-                output_frame.idx,
-                output_frame.pts,
-            )
-            yield SinkVideoFrame(
-                source_id=source_info.source_id,
-                frame_meta=frame_meta,
-                frame_width=source_info.dest_resolution.width,
-                frame_height=source_info.dest_resolution.height,
-                frame=output_frame.frame,
-                frame_codec=output_frame.codec,
-                keyframe=output_frame.keyframe,
-            )
+        for output_frame in self._iterate_output_frames(buffer, source_info):
+            yield self._build_sink_video_frame(output_frame, source_info)
+
+    def _build_sink_video_frame(
+        self,
+        output_frame: _OutputFrame,
+        source_info: SourceInfo,
+    ) -> SinkVideoFrame:
+        self.logger.debug(
+            'Preparing output for frame of source %s with IDX %s, PTS %s and DTS %s.',
+            source_info.source_id,
+            output_frame.idx,
+            output_frame.pts,
+            output_frame.dts,
+        )
+        frame_meta = metadata_pop_frame_meta(
+            source_info.source_id,
+            output_frame.idx,
+            output_frame.pts,
+        )
+        return SinkVideoFrame(
+            source_id=source_info.source_id,
+            frame_meta=frame_meta,
+            frame_width=source_info.dest_resolution.width,
+            frame_height=source_info.dest_resolution.height,
+            frame=output_frame.frame,
+            frame_codec=output_frame.codec,
+            dts=output_frame.dts,
+            keyframe=output_frame.keyframe,
+        )
+
+    def on_eos(self, source_info: SourceInfo) -> SinkVideoFrame:
+        """Pipeline EOS handler."""
 
     def prepare_element_input(self, element: PipelineElement, buffer: Gst.Buffer):
         """Model input preprocessing.
@@ -317,10 +346,19 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
             and not model.input.preprocess_object_image
         ):
             return
-
+        self.logger.debug(
+            'Preparing "%s" element input for buffer with PTS %s.',
+            element.name,
+            buffer.pts,
+        )
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         if model.input.preprocess_object_meta:
             for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
+                self.logger.debug(
+                    'Preprocessing "%s" element object meta for frame with PTS %s.',
+                    element.name,
+                    nvds_frame_meta.buf_pts,
+                )
                 for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
                     if not self._is_model_input_object(element, nvds_obj_meta):
                         continue
@@ -328,24 +366,14 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                     #  through the center point during meta preprocessing.
 
                     object_meta = _NvDsObjectMetaImpl.from_nv_ds_object_meta(
-                        object_meta=nvds_obj_meta, frame_meta=nvds_frame_meta
+                        nvds_obj_meta, nvds_frame_meta
                     )
                     parent_object_meta = object_meta.parent
 
                     if isinstance(object_meta.bbox, BBox):
-                        bbox = BBox(
-                            x_center=object_meta.bbox.x_center,
-                            y_center=object_meta.bbox.y_center,
-                            width=object_meta.bbox.width,
-                            height=object_meta.bbox.height,
-                        )
+                        bbox = object_meta.bbox.copy()
                         if isinstance(parent_object_meta.bbox, BBox):
-                            parent_bbox = BBox(
-                                x_center=parent_object_meta.bbox.x_center,
-                                y_center=parent_object_meta.bbox.y_center,
-                                width=parent_object_meta.bbox.width,
-                                height=parent_object_meta.bbox.height,
-                            )
+                            parent_bbox = parent_object_meta.bbox.copy()
                         else:
                             raise NotImplementedError(
                                 'You try apply preprocessing to object that have '
@@ -365,51 +393,56 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                     user_parent_object = None
                     if object_meta.parent is not None:
                         user_parent_object = ObjectMeta(
-                            element_name=parent_object_meta.element_name,
-                            label=parent_object_meta.label,
-                            bbox=parent_bbox,
-                            confidence=parent_object_meta.confidence,
-                            track_id=parent_object_meta.track_id,
-                            parent=None,
+                            parent_object_meta.element_name,
+                            parent_object_meta.label,
+                            parent_bbox,
+                            parent_object_meta.confidence,
+                            parent_object_meta.track_id,
                             attributes=nvds_get_all_obj_attrs(
-                                frame_meta=nvds_frame_meta,
-                                obj_meta=parent_object_meta.ds_object_meta,
+                                nvds_frame_meta,
+                                parent_object_meta.ds_object_meta,
                             ),
                         )
 
                     user_object_meta = ObjectMeta(
-                        element_name=object_meta.element_name,
-                        label=object_meta.label,
-                        bbox=bbox,
-                        confidence=object_meta.confidence,
-                        track_id=object_meta.track_id,
-                        parent=user_parent_object,
+                        object_meta.element_name,
+                        object_meta.label,
+                        bbox,
+                        object_meta.confidence,
+                        object_meta.track_id,
+                        user_parent_object,
                         attributes=nvds_get_all_obj_attrs(
                             frame_meta=nvds_frame_meta,
                             obj_meta=parent_object_meta.ds_object_meta,
                         ),
                     )
 
-                    bbox = model.input.preprocess_object_meta(
+                    res_bbox = model.input.preprocess_object_meta(
                         object_meta=user_object_meta
                     )
-
+                    if self.logger.isEnabledFor(logging.DEBUG):
+                        self.logger.debug(
+                            'Preprocessing "%s" object bbox %s -> %s',
+                            user_object_meta.label,
+                            user_object_meta.bbox,
+                            res_bbox,
+                        )
                     rect_params = nvds_obj_meta.rect_params
-                    rect_params.left = bbox.left
-                    rect_params.top = bbox.top
-                    rect_params.width = bbox.width
-                    rect_params.height = bbox.height
+                    rect_params.left = res_bbox.left
+                    rect_params.top = res_bbox.top
+                    rect_params.width = res_bbox.width
+                    rect_params.height = res_bbox.height
 
         elif model.input.preprocess_object_image:
-            model_uid, class_id = self._model_object_registry.get_model_object_ids(
-                model.input.object
-            )
+            self.logger.debug('Preprocessing "%s" element object image.', element.name)
+            model_name, label = parse_compound_key(model.input.object)
+            model_uid, class_id = get_object_id(model_name, label)
             self._objects_preprocessing.preprocessing(
-                element_name=element.name,
-                buffer=hash(buffer),
-                model_uid=model_uid,
-                class_id=class_id,
-                output_image=model.input.preprocess_object_image.output_image,
+                element.name,
+                hash(buffer),
+                model_uid,
+                class_id,
+                model.input.preprocess_object_image.output_image,
             )
 
     def prepare_element_output(self, element: PipelineElement, buffer: Gst.Buffer):
@@ -420,7 +453,11 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
         """
         if not isinstance(element, ModelElement):
             return
-
+        self.logger.debug(
+            'Preparing "%s" element output for buffer with PTS %s.',
+            element.name,
+            buffer.pts,
+        )
         frame_left = 0.0
         frame_top = 0.0
         frame_right = self._frame_params.width - 1.0
@@ -431,7 +468,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
             frame_right += self._frame_params.padding.left
             frame_bottom += self._frame_params.padding.top
 
-        model_uid = self._model_object_registry.get_model_uid(element.name)
+        model_uid = get_model_id(element.name)
         model: Union[
             NvInferRotatedObjectDetector,
             NvInferDetector,
@@ -451,6 +488,12 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                     for tensor_meta in nvds_tensor_output_iterator(
                         parent_nvds_obj_meta, gie_uid=model_uid
                     ):
+                        if self.logger.isEnabledFor(logging.DEBUG):
+                            self.logger.debug(
+                                'Converting "%s" element tensor output for frame with PTS %s.',
+                                element.name,
+                                nvds_frame_meta.buf_pts,
+                            )
                         # parse and post-process model output
                         output_layers = nvds_infer_tensor_meta_to_outputs(
                             tensor_meta=tensor_meta,
@@ -555,23 +598,27 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                                 if obj.selector:
                                     cls_bbox_tensor = obj.selector(cls_bbox_tensor)
 
-                                obj_label = (
-                                    self._model_object_registry.model_object_key(
-                                        element.name, obj.label
-                                    )
+                                obj_label = build_model_object_key(
+                                    element.name, obj.label
                                 )
                                 for bbox in cls_bbox_tensor:
                                     # add NvDsObjectMeta
+                                    if self.logger.isEnabledFor(logging.DEBUG):
+                                        self.logger.debug(
+                                            'Adding obj %s into pyds meta for frame with PTS %s.',
+                                            bbox[2:7],
+                                            nvds_frame_meta.buf_pts,
+                                        )
                                     _nvds_obj_meta = nvds_add_obj_meta_to_frame(
-                                        batch_meta=nvds_batch_meta,
-                                        frame_meta=nvds_frame_meta,
-                                        selection_type=model.output.selection_type,
-                                        class_id=obj.class_id,
-                                        gie_uid=model_uid,
-                                        bbox=bbox[2:7],
+                                        nvds_batch_meta,
+                                        nvds_frame_meta,
+                                        model.output.selection_type,
+                                        obj.class_id,
+                                        model_uid,
+                                        bbox[2:7],
+                                        bbox[1],
+                                        obj_label,
                                         parent=parent_nvds_obj_meta,
-                                        obj_label=obj_label,
-                                        confidence=bbox[1],
                                     )
                                     selected_bboxes.append(
                                         (int(bbox[7]), _nvds_obj_meta)
@@ -613,10 +660,8 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                                 nvds_set_obj_uid(
                                     frame_meta=nvds_frame_meta, obj_meta=nvds_obj_meta
                                 )
-                                nvds_obj_meta.obj_label = (
-                                    self._model_object_registry.model_object_key(
-                                        element.name, obj.label
-                                    )
+                                nvds_obj_meta.obj_label = build_model_object_key(
+                                    element.name, obj.label
                                 )
                                 break
 
@@ -660,15 +705,18 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
     def _is_model_input_object(
         self, element: ModelElement, nvds_obj_meta: pyds.NvDsObjectMeta
     ):
-        model_uid, class_id = self._model_object_registry.get_model_object_ids(
-            element.model.input.object
-        )
+        model_name, label = parse_compound_key(element.model.input.object)
+        model_uid, class_id = get_object_id(model_name, label)
         return (
             nvds_obj_meta.unique_component_id == model_uid
             and nvds_obj_meta.class_id == class_id
         )
 
-    def _iterate_output_frames(self, buffer: Gst.Buffer) -> Iterator[_OutputFrame]:
+    def _iterate_output_frames(
+        self,
+        buffer: Gst.Buffer,
+        source_info: SourceInfo,
+    ) -> Iterator[_OutputFrame]:
         """Iterate output frames."""
 
 
@@ -678,7 +726,6 @@ class NvDsEncodedBufferProcessor(NvDsBufferProcessor):
         queue: Queue,
         fps_meter: FPSMeter,
         sources: SourceInfoRegistry,
-        model_object_registry: ModelObjectRegistry,
         objects_preprocessing: ObjectsPreprocessing,
         frame_params: FrameParameters,
         codec: CodecInfo,
@@ -688,7 +735,6 @@ class NvDsEncodedBufferProcessor(NvDsBufferProcessor):
         :param queue: Queue for output data.
         :param fps_meter: FPS meter.
         :param sources: Source info registry.
-        :param model_object_registry: Model.Object registry.
         :param objects_preprocessing: Objects processing registry.
         :param frame_params: Processing frame parameters (after nvstreammux).
         :param codec: Codec of the output frames.
@@ -699,27 +745,141 @@ class NvDsEncodedBufferProcessor(NvDsBufferProcessor):
             queue=queue,
             fps_meter=fps_meter,
             sources=sources,
-            model_object_registry=model_object_registry,
             objects_preprocessing=objects_preprocessing,
             frame_params=frame_params,
         )
 
-    def _iterate_output_frames(self, buffer: Gst.Buffer) -> Iterator[_OutputFrame]:
+    def _iterate_output_frames(
+        self,
+        buffer: Gst.Buffer,
+        source_info: SourceInfo,
+    ) -> Iterator[_OutputFrame]:
         """Iterate output frames from Gst.Buffer."""
 
-        # get encoded frame for output
-        frame = buffer.extract_dup(0, buffer.get_size())
-        savant_frame_meta = gst_buffer_get_savant_frame_meta(buffer)
-        frame_idx = savant_frame_meta.idx if savant_frame_meta else None
-        frame_pts = buffer.pts
+        yield self._build_output_frame(
+            idx=extract_frame_idx(buffer),
+            pts=buffer.pts,
+            dts=buffer.dts if buffer.dts != Gst.CLOCK_TIME_NONE else None,
+            buffer=buffer,
+        )
+
+    def _build_output_frame(
+        self,
+        idx: Optional[int],
+        pts: int,
+        dts: Optional[int],
+        buffer: Gst.Buffer,
+    ) -> _OutputFrame:
+        if buffer.get_size() > 0:
+            # get encoded frame for output
+            frame = buffer.extract_dup(0, buffer.get_size())
+        else:
+            frame = None
+            dts = None
         is_keyframe = not buffer.has_flags(Gst.BufferFlags.DELTA_UNIT)
-        yield _OutputFrame(
-            idx=frame_idx,
-            pts=frame_pts,
+        return _OutputFrame(
+            idx=idx,
+            pts=pts,
+            dts=dts,
             frame=frame,
             codec=self._codec,
             keyframe=is_keyframe,
         )
+
+
+class NvDsJetsonH26XBufferProcessor(NvDsEncodedBufferProcessor):
+    def __init__(self, *args, **kwargs):
+        """Buffer processor for DeepStream pipeline.
+
+        Workaround for a bug in h264x encoders on Jetson devices.
+        https://forums.developer.nvidia.com/t/nvv4l2h264enc-returns-frames-in-wrong-order-when-pts-doesnt-align-with-framerate/257363
+
+        Encoder "nvv4l2h26xenc" on Jetson devices produces frames with correct
+        DTS but with PTS and metadata from different frames. We store buffers
+        in a queue and wait for a buffer with correct PTS.
+        """
+
+        # source_id -> (DTS, buffer)
+        self._dts_queues: Dict[str, Deque[Tuple[int, Gst.Buffer]]] = {}
+        # source_id -> (PTS, IDX)
+        self._pts_queues: Dict[str, List[Tuple[int, Optional[int]]]] = {}
+        super().__init__(*args, **kwargs)
+
+    def _iterate_output_frames(
+        self,
+        buffer: Gst.Buffer,
+        source_info: SourceInfo,
+    ) -> Iterator[_OutputFrame]:
+        """Iterate output frames from Gst.Buffer."""
+
+        frame_idx = extract_frame_idx(buffer)
+        dts_queue = self._dts_queues.setdefault(source_info.source_id, deque())
+        pts_queue = self._pts_queues.setdefault(source_info.source_id, [])
+        # When the frame is empty assign DTS=PTS
+        dts = buffer.dts if buffer.get_size() > 0 else buffer.pts
+        if dts_queue or buffer.pts != dts:
+            self.logger.debug(
+                'Storing frame with PTS %s, DTS %s and IDX %s to queue.',
+                buffer.pts,
+                dts,
+                frame_idx,
+            )
+            dts_queue.append((dts, buffer))
+            heappush(pts_queue, (buffer.pts, frame_idx))
+            while dts_queue and dts_queue[0][0] == pts_queue[0][0]:
+                next_dts, next_buf = dts_queue.popleft()
+                next_pts, next_idx = heappop(pts_queue)
+                self.logger.debug(
+                    'Pushing output frame frame with PTS %s, DTS %s and IDX %s.',
+                    next_pts,
+                    next_dts,
+                    next_idx,
+                )
+                yield self._build_output_frame(
+                    idx=next_idx,
+                    pts=next_pts,
+                    dts=next_dts,
+                    buffer=next_buf,
+                )
+        else:
+            self.logger.debug(
+                'PTS and DTS of the frame are the same: %s. Pushing output frame.', dts
+            )
+            yield self._build_output_frame(
+                idx=frame_idx,
+                pts=buffer.pts,
+                dts=dts,
+                buffer=buffer,
+            )
+
+    def on_eos(self, source_info: SourceInfo):
+        """Pipeline EOS handler."""
+        dts_queue = self._dts_queues.pop(source_info.source_id, None)
+        pts_queue = self._pts_queues.pop(source_info.source_id, None)
+        if dts_queue is None:
+            return
+        while dts_queue:
+            dts, buffer = dts_queue.popleft()
+            pts, idx = dts, None
+
+            if pts_queue:
+                while pts_queue and pts_queue[0][0] <= dts:
+                    pts, idx = heappop(pts_queue)
+            if pts != dts:
+                pts = dts
+                idx = None
+
+            output_frame = self._build_output_frame(
+                idx=idx,
+                pts=pts,
+                dts=dts,
+                buffer=buffer,
+            )
+            sink_message = self._build_sink_video_frame(output_frame, source_info)
+            self._queue.put(sink_message)
+            # measure and logging FPS
+            if self._fps_meter():
+                self.logger.info(self._fps_meter.message)
 
 
 class NvDsRawBufferProcessor(NvDsBufferProcessor):
@@ -728,7 +888,6 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
         queue: Queue,
         fps_meter: FPSMeter,
         sources: SourceInfoRegistry,
-        model_object_registry: ModelObjectRegistry,
         objects_preprocessing: ObjectsPreprocessing,
         frame_params: FrameParameters,
         output_frame: bool,
@@ -738,7 +897,6 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
         :param queue: Queue for output data.
         :param fps_meter: FPS meter.
         :param sources: Source info registry.
-        :param model_object_registry: Model.Object registry.
         :param objects_preprocessing: Objects processing registry.
         :param frame_params: Processing frame parameters (after nvstreammux).
         :param output_frame: Whether to output frame or not.
@@ -750,16 +908,32 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
             queue=queue,
             fps_meter=fps_meter,
             sources=sources,
-            model_object_registry=model_object_registry,
             objects_preprocessing=objects_preprocessing,
             frame_params=frame_params,
         )
 
-    def _iterate_output_frames(self, buffer: Gst.Buffer) -> Iterator[_OutputFrame]:
+    def _iterate_output_frames(
+        self,
+        buffer: Gst.Buffer,
+        source_info: SourceInfo,
+    ) -> Iterator[_OutputFrame]:
         """Iterate output frames from NvDs batch.
 
         NvDs batch contains raw RGBA frames. They are all keyframes.
         """
+
+        if buffer.get_size() == 0:
+            frame_idx = extract_frame_idx(buffer)
+            yield _OutputFrame(
+                idx=frame_idx,
+                pts=buffer.pts,
+                dts=None,  # Raw frames do not have dts
+                frame=None,
+                codec=self._codec,
+                # Any frame is keyframe since it was not encoded
+                keyframe=True,
+            )
+            return
 
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
@@ -777,8 +951,50 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
             yield _OutputFrame(
                 idx=frame_idx,
                 pts=frame_pts,
+                dts=None,  # Raw frames do not have dts
                 frame=frame,
                 codec=self._codec,
                 # Any frame is keyframe since it was not encoded
                 keyframe=True,
             )
+
+
+def extract_frame_idx(buffer: Gst.Buffer) -> Optional[int]:
+    """Extract frame index from the buffer."""
+
+    savant_frame_meta = gst_buffer_get_savant_frame_meta(buffer)
+    return savant_frame_meta.idx if savant_frame_meta else None
+
+
+def create_buffer_processor(
+    queue: Queue,
+    fps_meter: FPSMeter,
+    sources: SourceInfoRegistry,
+    objects_preprocessing: ObjectsPreprocessing,
+    frame_params: FrameParameters,
+    source_output: SourceOutput,
+):
+    """Create buffer processor."""
+
+    if isinstance(source_output, SourceOutputEncoded):
+        if isinstance(source_output, SourceOutputH26X) and is_aarch64():
+            buffer_processor_class = NvDsJetsonH26XBufferProcessor
+        else:
+            buffer_processor_class = NvDsEncodedBufferProcessor
+        return buffer_processor_class(
+            queue=queue,
+            fps_meter=fps_meter,
+            sources=sources,
+            objects_preprocessing=objects_preprocessing,
+            frame_params=frame_params,
+            codec=source_output.codec,
+        )
+
+    return NvDsRawBufferProcessor(
+        queue=queue,
+        fps_meter=fps_meter,
+        sources=sources,
+        objects_preprocessing=objects_preprocessing,
+        frame_params=frame_params,
+        output_frame=isinstance(source_output, SourceOutputWithFrame),
+    )

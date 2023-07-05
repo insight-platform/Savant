@@ -1,4 +1,4 @@
-name: ${oc.env:MODULE_NAME, 'traffic-meter'}
+name: ${oc.env:MODULE_NAME, 'traffic-meter-yolov8m'}
 
 parameters:
   frame:
@@ -68,3 +68,4 @@ pipeline:
         config_path: ${oc.env:PROJECT_PATH}/samples/traffic_meter/line_config.yml
         stale_track_del_period: 5000
         target_obj_label: ${parameters.detected_object.label}
+        send_stats: True

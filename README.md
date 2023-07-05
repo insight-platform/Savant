@@ -11,8 +11,8 @@ that utilize the best Nvidia approaches for data center and edge accelerators ve
 ## Quick Links
 
 - [Prepare the OS Runtime](https://insight-platform.github.io/Savant/getting_started/0_configure_prod_env.html)
-- [Getting Started Tutorial](https://hello.savant.video/peoplenet-tutorial)
-- [Publications and Samples](https://hello.savant.video/samples)
+- [Getting Started Tutorial](https://blog.savant-ai.io/meet-savant-a-new-high-performance-python-video-analytics-framework-for-nvidia-hardware-22cc830ead4d?source=friends_link&sk=c7169b378b31451ab8de3d882c22a774)
+- [Publications and Samples](https://github.com/insight-platform/Savant/tree/develop/samples)
 - [Architecture Draft](docs/architecture.md)
 - [Documentation](https://insight-platform.github.io/Savant)
 - [Adapters Guide](docs/adapters.md)
@@ -265,8 +265,8 @@ As for now, we provide images for x86 architecture and for Jetson hardware.
 ## What's Next
 
 - [Prepare the OS Runtime](https://insight-platform.github.io/Savant/getting_started/0_configure_prod_env.html)
-- [Getting Started Tutorial](https://hello.savant.video/peoplenet-tutorial)
-- [Publications and Samples](https://hello.savant.video/samples)
+- [Getting Started Tutorial](https://blog.savant-ai.io/meet-savant-a-new-high-performance-python-video-analytics-framework-for-nvidia-hardware-22cc830ead4d?source=friends_link&sk=c7169b378b31451ab8de3d882c22a774)
+- [Publications and Samples](https://github.com/insight-platform/Savant/tree/develop/samples)
 - [Architecture Draft](docs/architecture.md)
 - [Documentation](https://insight-platform.github.io/Savant)
 - [Adapters Guide](docs/adapters.md)

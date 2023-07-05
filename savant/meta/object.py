@@ -2,12 +2,14 @@
 from abc import ABC, abstractmethod
 from typing import Optional, Any, List, Union
 
-from savant.meta.bbox import BBox, RBBox
+from savant_rs.primitives.geometry import BBox, RBBox
+
 from savant.meta.attribute import AttributeMeta
 from savant.meta.constants import (
     UNTRACKED_OBJECT_ID,
     DEFAULT_CONFIDENCE,
     PRIMARY_OBJECT_LABEL,
+    DEFAULT_MODEL_NAME,
 )
 
 
@@ -195,7 +197,9 @@ class ObjectMeta:
 
         :return: Parent object.
         """
-        if self.object_meta_impl:
+        if self.object_meta_impl and isinstance(
+            self.object_meta_impl.parent, BaseObjectMetaImpl
+        ):
             return ObjectMeta._from_be_object_meta(self.object_meta_impl.parent)
         return self._parent
 
@@ -253,7 +257,10 @@ class ObjectMeta:
 
     @property
     def is_primary(self) -> bool:
-        return not self.element_name and self.label == PRIMARY_OBJECT_LABEL
+        return (
+            self.element_name == DEFAULT_MODEL_NAME
+            and self.label == PRIMARY_OBJECT_LABEL
+        )
 
     @property
     def confidence(self) -> float:
@@ -277,6 +284,10 @@ class ObjectMeta:
         if self.object_meta_impl:
             return self.object_meta_impl.bbox
         return self._bbox
+
+    def sync_bbox(self):
+        if self.object_meta_impl:
+            self.object_meta_impl.sync_bbox()
 
     @property
     def uid(self) -> Optional[int]:

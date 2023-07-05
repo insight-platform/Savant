@@ -70,8 +70,8 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
             nvds_batch_meta.num_frames_in_batch,
         )
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
-            frame_meta = NvDsFrameMeta(frame_meta=nvds_frame_meta)
-            self.process_frame(buffer, frame_meta)
+            with NvDsFrameMeta(nvds_frame_meta) as frame_meta:
+                self.process_frame(buffer, frame_meta)
 
         for stream in self.frame_streams.values():
             stream.waitForCompletion()

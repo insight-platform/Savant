@@ -1,7 +1,9 @@
 Artist Usage
 ============
 
-Often, during the development or due to business needs the pipeline must display ongoing metadata on the frames. You may use OpenCV CUDA functionality within a specially developed ``pyfunc`` to do that. However, Savant provides a special facility that automatically displays frequently used primitives. This function is called ``draw_func``. The ``draw_func`` feature uses the so-called :py:class:`~savant.utils.artist.artist_gpumat.Artist` object which implements displaying a number of primitives like text labels, bounding boxes, etc. The :py:class:`~savant.utils.artist.artist_gpumat.Artist` object also can be used directly from any ``pyfunc``, but in current section we discuss the use of the ``draw_func`` function.
+Often, the pipeline must display metadata on frames. You may use OpenCV CUDA functionality within a specially developed ``pyfunc`` to do that. However, Savant provides a special facility that automatically displays frequently used primitives. This function is called ``draw_func``.
+
+The ``draw_func`` feature uses the so-called :py:class:`~savant.utils.artist.artist_gpumat.Artist` object which implements displaying a number of primitives like text labels, bounding boxes, etc. The :py:class:`~savant.utils.artist.artist_gpumat.Artist` object also can be used directly from any ``pyfunc``, but in current section we discuss the use of the ``draw_func`` function.
 
 To set the parameters for the draw_func operation, the general parameters section is used, since the rendering step always occurs in a fixed place: after the completion of all elements of the pipeline, before passing frames and metadata to external consumers.
 
@@ -13,7 +15,11 @@ To set the parameters for the draw_func operation, the general parameters sectio
         class_name: CustomDrawFuncClass
         kwargs: {}
 
-In the example above a custom ``draw_func`` implementation is used. In simple cases you may use a predefined ``draw_func`` implementation.
+In the example above, a custom ``draw_func`` implementation is used. In simple cases you may use a predefined ``draw_func`` implementation.
+
+.. note::
+
+    To disable ``draw_func`` functionality, remove ``parameters.draw_func`` from the manifest completely.
 
 It is important to note that rendering is not performed if no frame encoding scheme is configured for the pipeline. To set the frame coding scheme, you must specify the codec in the ``parameters.output_frame.codec`` parameter to one of the following values: ``jpeg``, ``h264``, ``hevc``, ``raw-rgba``.
 
@@ -188,7 +194,7 @@ For example, the following call will add a blue rounded square with a width and 
 
 .. code-block:: python
 
-    from savant.meta.bbox import BBox
+    from savant_rs.primitives.geometry import BBox
 
 
     artist.add_rounded_rect(
@@ -221,7 +227,7 @@ For example, the following call will add a red round bullet of radius 3 to the c
 
 
     for obj_meta in frame_meta.objects:
-        center = round(obj_meta.bbox.x_center), round(obj_meta.bbox.y_center)
+        center = round(obj_meta.bbox.xc), round(obj_meta.bbox.yc)
         artist.add_circle(center, 3, (0,0,1), cv2.FILLED)
 
 Add_polygon Method

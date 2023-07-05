@@ -3,9 +3,11 @@ from collections import defaultdict
 from pathlib import Path
 from queue import Queue
 from threading import Lock
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Tuple
 import time
+import logging
 import pyds
+from savant_rs.primitives.geometry import BBox
 
 from savant.base.input_preproc import ObjectsPreprocessing
 
@@ -16,24 +18,23 @@ from pygstsavantframemeta import (
 
 from savant.deepstream.buffer_processor import (
     NvDsBufferProcessor,
-    NvDsRawBufferProcessor,
-    NvDsEncodedBufferProcessor,
+    create_buffer_processor,
 )
 from savant.deepstream.source_output import (
-    SourceOutputOnlyMeta,
-    SourceOutputH26X,
-    SourceOutputEncoded,
-    SourceOutputRawRgba,
-    SourceOutputPng,
+    SourceOutputWithFrame,
+    create_source_output,
 )
 from savant.gstreamer import Gst, GLib  # noqa:F401
-from savant.gstreamer.codecs import Codec, CODEC_BY_NAME
 from savant.gstreamer.pipeline import GstPipeline
 from savant.deepstream.metadata import (
     nvds_obj_meta_output_converter,
     nvds_attr_meta_output_converter,
 )
-from savant.gstreamer.metadata import metadata_add_frame_meta, get_source_frame_meta
+from savant.gstreamer.metadata import (
+    SourceFrameMeta,
+    metadata_add_frame_meta,
+    get_source_frame_meta,
+)
 from savant.gstreamer.utils import on_pad_event, pad_to_source_id
 from savant.deepstream.utils import (
     gst_nvevent_parse_stream_eos,
@@ -43,9 +44,8 @@ from savant.deepstream.utils import (
     nvds_attr_meta_iterator,
     nvds_remove_obj_attrs,
 )
-from savant.meta.constants import UNTRACKED_OBJECT_ID, PRIMARY_OBJECT_LABEL
+from savant.meta.constants import UNTRACKED_OBJECT_ID, PRIMARY_OBJECT_KEY
 from savant.utils.fps_meter import FPSMeter
-from savant.utils.model_registry import ModelObjectRegistry
 from savant.utils.source_info import SourceInfoRegistry, SourceInfo, Resolution
 from savant.utils.platform import is_aarch64
 from savant.config.schema import (
@@ -99,37 +99,7 @@ class NvDsPipeline(GstPipeline):
         self._draw_func: Optional[DrawFunc] = kwargs.get('draw_func')
 
         output_frame = kwargs.get('output_frame')
-        if output_frame:
-            self._output_frame_codec = CODEC_BY_NAME[output_frame['codec']]
-            self._output_frame_encoder_params = output_frame.get('encoder_params', {})
-        else:
-            self._output_frame_codec = None
-            self._output_frame_encoder_params = None
-
-        if self._output_frame_codec is None:
-            self._source_output = SourceOutputOnlyMeta()
-        elif self._output_frame_codec == Codec.RAW_RGBA:
-            self._source_output = SourceOutputRawRgba(
-                frame_params=self._frame_params,
-            )
-        elif self._output_frame_codec in [Codec.H264, Codec.HEVC]:
-            self._source_output = SourceOutputH26X(
-                codec=self._output_frame_codec.value,
-                params=output_frame.get('encoder_params'),
-                frame_params=self._frame_params,
-            )
-        elif self._output_frame_codec == Codec.PNG:
-            self._source_output = SourceOutputPng(
-                codec=self._output_frame_codec.value,
-                params=output_frame.get('encoder_params'),
-                frame_params=self._frame_params,
-            )
-        else:
-            self._source_output = SourceOutputEncoded(
-                codec=self._output_frame_codec.value,
-                params=output_frame.get('encoder_params'),
-                frame_params=self._frame_params,
-            )
+        self._source_output = create_source_output(self._frame_params, output_frame)
 
         self._demuxer_src_pads: List[Gst.Pad] = []
         self._free_pad_indices: List[int] = []
@@ -157,30 +127,13 @@ class NvDsPipeline(GstPipeline):
     ) -> NvDsBufferProcessor:
         """Create buffer processor."""
 
-        # model-object association storage
-        model_object_registry = ModelObjectRegistry()
-
-        if (
-            self._output_frame_codec is None
-            or self._output_frame_codec == Codec.RAW_RGBA
-        ):
-            return NvDsRawBufferProcessor(
-                queue=queue,
-                fps_meter=fps_meter,
-                sources=self._sources,
-                model_object_registry=model_object_registry,
-                objects_preprocessing=self._objects_preprocessing,
-                frame_params=self._frame_params,
-                output_frame=self._output_frame_codec is not None,
-            )
-        return NvDsEncodedBufferProcessor(
+        return create_buffer_processor(
             queue=queue,
             fps_meter=fps_meter,
             sources=self._sources,
-            model_object_registry=model_object_registry,
             objects_preprocessing=self._objects_preprocessing,
             frame_params=self._frame_params,
-            codec=self._output_frame_codec.value,
+            source_output=self._source_output,
         )
 
     def add_element(
@@ -551,6 +504,7 @@ class NvDsPipeline(GstPipeline):
         self._logger.debug(
             'Got EOS on pad %s.%s', pad.get_parent().get_name(), pad.get_name()
         )
+        self._buffer_processor.on_eos(source_info)
 
         try:
             self._check_pipeline_is_running()
@@ -570,8 +524,10 @@ class NvDsPipeline(GstPipeline):
     def update_frame_meta(self, pad: Gst.Pad, info: Gst.PadProbeInfo):
         """Prepare frame meta for output."""
         buffer: Gst.Buffer = info.get_buffer()
-        nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
 
+        self._logger.debug('Prepare meta output for buffer with PTS %s', buffer.pts)
+
+        nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         # convert output meta
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
             # use consecutive numbers for object_id in case there is no tracker
@@ -584,13 +540,21 @@ class NvDsPipeline(GstPipeline):
                     object_ids[nvds_obj_meta.obj_label] += 1
 
             # will extend source metadata
-            source_id = self._sources.get_id_by_pad_index(nvds_frame_meta.pad_index)
-            savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(
-                nvds_frame_meta
-            )
-            frame_idx = savant_frame_meta.idx if savant_frame_meta else None
-            frame_pts = nvds_frame_meta.buf_pts
-            frame_meta = get_source_frame_meta(source_id, frame_idx, frame_pts)
+            (
+                source_id,
+                frame_pts,
+                frame_idx,
+                frame_meta,
+            ) = self._get_nvds_savant_frame_meta(nvds_frame_meta)
+
+            if self._logger.isEnabledFor(logging.DEBUG):
+                self._logger.debug(
+                    'Preparing output for frame of source %s with IDX %s and PTS %s.',
+                    source_id,
+                    frame_idx,
+                    frame_pts,
+                )
+
             source_info = self._sources.get_source(source_id)
 
             # second iteration to collect module objects
@@ -612,25 +576,41 @@ class NvDsPipeline(GstPipeline):
                 nvds_remove_obj_attrs(nvds_frame_meta, nvds_obj_meta)
 
                 # skip empty primary object that equals to frame
-                if nvds_obj_meta.obj_label == PRIMARY_OBJECT_LABEL:
-                    bbox = (
+                if nvds_obj_meta.obj_label == PRIMARY_OBJECT_KEY:
+                    bbox = BBox(
                         obj_meta['bbox']['xc'],
                         obj_meta['bbox']['yc'],
                         obj_meta['bbox']['width'],
                         obj_meta['bbox']['height'],
                     )
-                    if (
-                        bbox
-                        == (
-                            source_info.dest_resolution.width / 2,
-                            source_info.dest_resolution.height / 2,
-                            source_info.dest_resolution.width,
-                            source_info.dest_resolution.height,
+                    dest_res_bbox = BBox(
+                        source_info.dest_resolution.width / 2,
+                        source_info.dest_resolution.height / 2,
+                        source_info.dest_resolution.width,
+                        source_info.dest_resolution.height,
+                    )
+                    if not bbox.almost_eq(dest_res_bbox, 1e-6):
+                        if self._logger.isEnabledFor(logging.DEBUG):
+                            self._logger.debug(
+                                'Adding primary object, bbox %s != dest res bbox %s.',
+                                bbox,
+                                dest_res_bbox,
+                            )
+                    elif obj_meta['attributes']:
+                        self._logger.debug(
+                            'Adding primary object, attributes not empty.'
                         )
-                        and not obj_meta['attributes']
-                    ):
+                    else:
+                        self._logger.debug('Skipping empty primary object.')
                         continue
-
+                if self._logger.isEnabledFor(logging.DEBUG):
+                    self._logger.debug(
+                        'Collecting object (frame src %s, IDX %s, PTS %s): %s',
+                        source_id,
+                        frame_idx,
+                        frame_pts,
+                        obj_meta,
+                    )
                 frame_meta.metadata['objects'].append(obj_meta)
 
             metadata_add_frame_meta(source_id, frame_idx, frame_pts, frame_meta)
@@ -772,7 +752,7 @@ class NvDsPipeline(GstPipeline):
             demuxer, self._max_parallel_streams
         )
         sink_peer_pad: Gst.Pad = demuxer.get_static_pad('sink').get_peer()
-        if self._draw_func and self._output_frame_codec:
+        if self._draw_func and isinstance(self._source_output, SourceOutputWithFrame):
             sink_peer_pad.add_probe(Gst.PadProbeType.BUFFER, self._draw_on_frame_probe)
         sink_peer_pad.add_probe(Gst.PadProbeType.BUFFER, self.update_frame_meta)
         return demuxer
@@ -787,9 +767,32 @@ class NvDsPipeline(GstPipeline):
         buffer: Gst.Buffer = info.get_buffer()
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
-            self._draw_func(nvds_frame_meta, buffer)
+            if self._can_draw_on_frame(nvds_frame_meta):
+                self._draw_func(nvds_frame_meta, buffer)
         self._draw_func.instance.finalize()
         return Gst.PadProbeReturn.OK
+
+    def _can_draw_on_frame(self, nvds_frame_meta: pyds.NvDsFrameMeta) -> bool:
+        """Check whether we can draw on this specific frame."""
+
+        if self._draw_func.condition.tag is None:
+            return True
+
+        source_id, frame_pts, frame_idx, frame_meta = self._get_nvds_savant_frame_meta(
+            nvds_frame_meta
+        )
+
+        if self._draw_func.condition.tag in frame_meta.tags:
+            return True
+        else:
+            self._logger.debug(
+                'Frame from source %s with IDX %s PTS %s does not have tag %s. Skip drawing on it.',
+                source_id,
+                frame_idx,
+                frame_pts,
+                self._draw_func.condition.tag,
+            )
+            return False
 
     def _allocate_demuxer_pads(self, demuxer: Gst.Element, n_pads: int):
         """Allocate a fixed number of demuxer src pads."""
@@ -864,6 +867,20 @@ class NvDsPipeline(GstPipeline):
 
         if not self._is_running:
             raise PipelineIsNotRunningError('Pipeline is not running')
+
+    def _get_nvds_savant_frame_meta(
+        self,
+        nvds_frame_meta: pyds.NvDsFrameMeta,
+    ) -> Tuple[str, Optional[int], int, SourceFrameMeta]:
+        """Extract source frame meta by NvDs frame meta."""
+
+        source_id = self._sources.get_id_by_pad_index(nvds_frame_meta.pad_index)
+        savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(nvds_frame_meta)
+        frame_idx = savant_frame_meta.idx if savant_frame_meta else None
+        frame_pts = nvds_frame_meta.buf_pts
+        frame_meta = get_source_frame_meta(source_id, frame_idx, frame_pts)
+
+        return source_id, frame_pts, frame_idx, frame_meta
 
 
 class PipelineIsNotRunningError(Exception):

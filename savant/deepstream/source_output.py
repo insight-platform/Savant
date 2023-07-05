@@ -6,10 +6,15 @@ from typing import Dict, Any, Optional
 import pyds
 from pygstsavantframemeta import add_convert_savant_frame_meta_pad_probe
 
-from savant.config.schema import PipelineElement, FrameParameters
+from savant.config.schema import (
+    FrameProcessingCondition,
+    PipelineElement,
+    FrameParameters,
+)
 from savant.gstreamer import Gst  # noqa:F401
-from savant.gstreamer.codecs import CodecInfo
+from savant.gstreamer.codecs import CODEC_BY_NAME, Codec, CodecInfo
 from savant.gstreamer.pipeline import GstPipeline
+from savant.gstreamer.utils import link_pads
 from savant.utils.platform import is_aarch64
 from savant.utils.source_info import SourceInfo, Resolution
 
@@ -70,9 +75,14 @@ class SourceOutputWithFrame(SourceOutput):
     Output contains frames along with metadata.
     """
 
-    def __init__(self, frame_params: FrameParameters):
+    def __init__(
+        self,
+        frame_params: FrameParameters,
+        condition: FrameProcessingCondition,
+    ):
         super().__init__()
         self._frame_params = frame_params
+        self._condition = condition
 
     def dest_resolution(self, source_info: SourceInfo) -> Resolution:
         width = source_info.src_resolution.width
@@ -90,10 +100,21 @@ class SourceOutputWithFrame(SourceOutput):
         source_info: SourceInfo,
         input_pad: Gst.Pad,
     ) -> Gst.Pad:
-        self._logger.debug('Adding additional output elements')
+        self._logger.debug(
+            'Adding additional output elements (source_id=%s)',
+            source_info.source_id,
+        )
+
+        src_pad_not_tagged = (
+            self._add_frame_tag_filter(pipeline, source_info)
+            if self._condition.tag
+            else None
+        )
+
         add_convert_savant_frame_meta_pad_probe(input_pad, False)
         self._logger.debug(
-            'Added pad probe to convert savant frame meta from NvDsMeta to GstMeta'
+            'Added pad probe to convert savant frame meta from NvDsMeta to GstMeta (source_id=%s)',
+            source_info.source_id,
         )
         output_converter_props = {}
         if not is_aarch64():
@@ -110,7 +131,11 @@ class SourceOutputWithFrame(SourceOutput):
                     self._frame_params.height,
                 ]
             )
-        self._logger.debug('Output converter properties: %s', output_converter_props)
+        self._logger.debug(
+            'Output converter properties: %s (source_id=%s)',
+            output_converter_props,
+            source_info.source_id,
+        )
         output_converter = pipeline.add_element(
             PipelineElement(
                 'nvvideoconvert',
@@ -119,7 +144,10 @@ class SourceOutputWithFrame(SourceOutput):
         )
         source_info.after_demuxer.append(output_converter)
         output_converter.sync_state_with_parent()
-        self._logger.debug('Added converter for video frames')
+        self._logger.debug(
+            'Added converter for video frames (source_id=%s)',
+            source_info.source_id,
+        )
 
         self._add_transform_elems(pipeline, source_info)
 
@@ -128,9 +156,103 @@ class SourceOutputWithFrame(SourceOutput):
         output_capsfilter.set_property('caps', output_caps)
         source_info.after_demuxer.append(output_capsfilter)
         output_capsfilter.sync_state_with_parent()
-        self._logger.debug('Added capsfilter with caps %s', output_caps)
+        self._logger.debug(
+            'Added capsfilter with caps %s (source_id=%s)',
+            output_caps,
+            source_info.source_id,
+        )
+        capsfilter_src_pad = output_capsfilter.get_static_pad('src')
 
-        return output_capsfilter.get_static_pad('src')
+        if src_pad_not_tagged is not None:
+            return self._add_frame_tag_funnel(
+                pipeline=pipeline,
+                source_info=source_info,
+                src_pad_tagged=capsfilter_src_pad,
+                src_pad_not_tagged=src_pad_not_tagged,
+            )
+
+        return capsfilter_src_pad
+
+    def _add_frame_tag_filter(
+        self,
+        pipeline: GstPipeline,
+        source_info: SourceInfo,
+    ) -> Gst.Pad:
+        """Add frame_tag_filter element to the pipeline.
+
+        :returns: src pad for not tagged frames.
+        """
+
+        frame_tag_filter = pipeline.add_element(
+            PipelineElement(
+                'frame_tag_filter',
+                properties={
+                    'source-id': source_info.source_id,
+                    'tag': self._condition.tag,
+                },
+            )
+        )
+        self._logger.debug(
+            'Added frame_tag_filter for video frames (source_id=%s)',
+            source_info.source_id,
+        )
+        src_pad_not_tagged = frame_tag_filter.get_static_pad('src_not_tagged')
+
+        queue_tagged = pipeline.add_element(PipelineElement('queue'), link=False)
+        self._logger.debug(
+            'Added queue for tagged video frames (source_id=%s)',
+            source_info.source_id,
+        )
+        link_pads(
+            frame_tag_filter.get_static_pad('src_tagged'),
+            queue_tagged.get_static_pad('sink'),
+        )
+
+        queue_tagged.sync_state_with_parent()
+        frame_tag_filter.sync_state_with_parent()
+
+        return src_pad_not_tagged
+
+    def _add_frame_tag_funnel(
+        self,
+        pipeline: GstPipeline,
+        source_info: SourceInfo,
+        src_pad_tagged: Gst.Pad,
+        src_pad_not_tagged: Gst.Pad,
+    ) -> Gst.Pad:
+        """Add frame_tag_funnel element to the pipeline.
+
+        :returns: src pad of the frame_tag_funnel element.
+        """
+
+        queue_not_tagged = pipeline.add_element(
+            PipelineElement('queue'),
+            link=False,
+        )
+        self._logger.debug(
+            'Added queue for not tagged video frames (source_id=%s)',
+            source_info.source_id,
+        )
+        link_pads(src_pad_not_tagged, queue_not_tagged.get_static_pad('sink'))
+
+        frame_tag_funnel = pipeline.add_element(
+            PipelineElement('frame_tag_funnel'),
+            link=False,
+        )
+        self._logger.debug(
+            'Added frame_tag_funnel for video frames (source_id=%s)',
+            source_info.source_id,
+        )
+        link_pads(
+            queue_not_tagged.get_static_pad('src'),
+            frame_tag_funnel.get_static_pad('sink_not_tagged'),
+        )
+        link_pads(src_pad_tagged, frame_tag_funnel.get_static_pad('sink_tagged'))
+
+        frame_tag_funnel.sync_state_with_parent()
+        queue_not_tagged.sync_state_with_parent()
+
+        return frame_tag_funnel.get_static_pad('src')
 
     @abstractmethod
     def _add_transform_elems(self, pipeline: GstPipeline, source_info: SourceInfo):
@@ -145,6 +267,9 @@ class SourceOutputRawRgba(SourceOutputWithFrame):
     """Adds an output elements to a DeepStream pipeline.
     Output contains raw-rgba frames along with metadata.
     """
+
+    def __init__(self, frame_params: FrameParameters):
+        super().__init__(frame_params, condition=FrameProcessingCondition())
 
     def _add_transform_elems(self, pipeline: GstPipeline, source_info: SourceInfo):
         pass
@@ -172,15 +297,20 @@ class SourceOutputEncoded(SourceOutputWithFrame):
         codec: CodecInfo,
         params: Optional[Dict[str, Any]],
         frame_params: FrameParameters,
+        condition: FrameProcessingCondition,
     ):
         """
         :param codec: Codec for output frames.
         :param params: Parameters of the encoder.
         """
 
-        super().__init__(frame_params=frame_params)
+        super().__init__(frame_params=frame_params, condition=condition)
         self._codec = codec
         self._params = params or {}
+
+    @property
+    def codec(self) -> CodecInfo:
+        return self._codec
 
     def _add_transform_elems(self, pipeline: GstPipeline, source_info: SourceInfo):
         encoder = pipeline.add_element(
@@ -239,3 +369,42 @@ class SourceOutputPng(SourceOutputEncoded):
             width=round(dest_resolution.width / 8) * 8,
             height=round(dest_resolution.height / 8) * 8,
         )
+
+
+def create_source_output(
+    frame_params: FrameParameters,
+    output_frame: Optional[Dict[str, Any]],
+) -> SourceOutput:
+    """Create an instance of SourceOutput class based on the output_frame config."""
+
+    if not output_frame:
+        return SourceOutputOnlyMeta()
+
+    codec = CODEC_BY_NAME[output_frame['codec']]
+    if codec == Codec.RAW_RGBA:
+        return SourceOutputRawRgba(frame_params=frame_params)
+
+    encoder_params = output_frame.get('encoder_params', {})
+    condition = FrameProcessingCondition(**(output_frame.get('condition') or {}))
+    if codec in [Codec.H264, Codec.HEVC]:
+        return SourceOutputH26X(
+            codec=codec.value,
+            params=encoder_params,
+            frame_params=frame_params,
+            condition=condition,
+        )
+
+    if codec == Codec.PNG:
+        return SourceOutputPng(
+            codec=codec.value,
+            params=encoder_params,
+            frame_params=frame_params,
+            condition=condition,
+        )
+
+    return SourceOutputEncoded(
+        codec=codec.value,
+        params=encoder_params,
+        frame_params=frame_params,
+        condition=condition,
+    )

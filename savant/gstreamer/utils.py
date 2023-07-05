@@ -121,11 +121,18 @@ def gst_buffer_from_list(data: List[bytes]) -> Gst.Buffer:
 class RequiredPropertyError(Exception):
     """Raised when required property is not set."""
 
-    pass
-
 
 def required_property(name: str, value: Optional[Any]):
     """Check if the property is set."""
 
     if value is None:
         raise RequiredPropertyError(f'"{name}" property is required')
+
+
+def link_pads(src_pad: Gst.Pad, sink_pad: Gst.Pad):
+    """Link pads and raise exception if linking failed."""
+
+    assert src_pad.link(sink_pad) == Gst.PadLinkReturn.OK, (
+        f'Unable to link {src_pad.get_parent_element().get_name()}.{src_pad.get_name()} '
+        f'to {sink_pad.get_parent_element().get_name()}.{sink_pad.get_name()}'
+    )

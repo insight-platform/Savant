@@ -33,9 +33,11 @@ class VideoFilesWriter(ChunkWriter):
     def _write(
         self,
         message: Dict,
-        data: Union[bytes, Gst.Memory],
+        data: Optional[Union[bytes, Gst.Memory]],
         frame_num: Optional[int],
     ) -> bool:
+        if data is None:
+            return True
         if 'pts' not in message:
             return True
         frame_pts = message['pts']
@@ -269,8 +271,14 @@ class VideoFilesSink(LoggerMixin, Gst.Bin):
         )
         assert frame_params.codec in [Codec.H264, Codec.HEVC, Codec.JPEG, Codec.PNG]
         frame_pts = message['pts']
-        frame = message['frame']
-        if isinstance(frame, bytes):
+        frame = message.get('frame')
+        if frame is None:
+            self.logger.debug(
+                'Received frame %s from source %s is empty',
+                frame_pts,
+                source_id,
+            )
+        elif isinstance(frame, bytes):
             self.logger.debug(
                 'Received frame %s from source %s, size: %s bytes',
                 frame_pts,

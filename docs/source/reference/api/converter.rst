@@ -59,15 +59,3 @@ Object model converters
     yolo_v4.TensorToBBoxConverter
     yolo_x.TensorToBBoxConverter
     rapid.TensorToBBoxConverter
-
-Utilities
----------
-
-.. automodule:: savant.converter.scale
-
-.. autosummary::
-    :toctree: generated
-    :nosignatures:
-    :template: autosummary/function.rst
-
-    scale_rbbox
