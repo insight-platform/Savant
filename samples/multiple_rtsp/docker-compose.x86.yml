@@ -90,5 +90,6 @@ services:
               count: 1
               capabilities: [gpu]
 
+
 volumes:
   zmq_sockets:
