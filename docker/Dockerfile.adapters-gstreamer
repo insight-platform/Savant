@@ -65,7 +65,13 @@ ENV PROJECT_PATH=$PROJECT_PATH
 ENV PYTHONPATH=$PROJECT_PATH
 WORKDIR $PROJECT_PATH
 
-COPY adapters/requirements.txt $PROJECT_PATH/adapters/requirements.txt
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y \
+        libice6 \
+        libsm6 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY adapters/requirements.txt adapters/requirements-gst.txt $PROJECT_PATH/adapters/
 # gstreamer1.0-python3-plugin-loader requires python 3.10
 # fastavro and pyzmq don't have built wheels for python 3.10 for aarch64
 # need gcc and python3-dev to build them
@@ -74,7 +80,7 @@ RUN if [ "$(arch)" = "aarch64" ]; then \
         apt-get install -y \
             gcc \
             python3-dev && \
-        python -m pip install --no-cache-dir -r adapters/requirements.txt && \
+        python -m pip install --no-cache-dir -r adapters/requirements.txt -r adapters/requirements-gst.txt && \
         apt-get purge -y \
             gcc \
             python3-dev && \
@@ -82,7 +88,7 @@ RUN if [ "$(arch)" = "aarch64" ]; then \
         apt-get clean && \
         rm -rf /var/lib/apt/lists/*; \
     else \
-        python -m pip install --no-cache-dir -r adapters/requirements.txt; \
+        python -m pip install --no-cache-dir -r adapters/requirements.txt -r adapters/requirements-gst.txt; \
     fi
 
 COPY --from=aravis-builder /build/aravis/dist /usr

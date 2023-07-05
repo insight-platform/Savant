@@ -222,7 +222,8 @@ Currently, the following source adapters are available:
 - Video URL;
 - RTSP stream;
 - USB/CSI camera;
-- GigE (Genicam) industrial cam.
+- GigE (Genicam) industrial cam;
+- FFmpeg.
 
 All source adapters accept the following common parameters:
 
@@ -382,8 +383,8 @@ The RTSP Source Adapter delivers RTSP stream to a module.
 - ``RTSP_URI`` (**required**): an RTSP URI of the stream;
 - ``SYNC_OUTPUT``: a flag indicating the need to send frames from source synchronously (i.e. at the source file rate); default is ``False``;
 - ``SYNC_DELAY``: a delay in seconds before sending frames; when the source has ``B``-frames the flag allows avoiding sending frames in batches; default is ``0``;
-- ``CALCULATE_DTS``: a flag indicating whether the adapter should calculate DTS for frames; set this flag when the source has ``B``-frames; default is ``False``;
-- ``BUFFER_MAX_BYTES``: a maximum amount of data in the buffer; default is ``10485760`` (``10`` MB); it is used to drop stalled frames if a module does not read them.
+- ``RTSP_TRANSPORT``: a transport protocol to use; default is ``tcp``;
+- ``BUFFER_LEN``: a maximum amount of frames in the buffer; default is ``50``;
 
 Running the adapter with Docker:
 
@@ -470,6 +471,32 @@ Running with the helper script:
 .. code-block:: bash
 
     ./scripts/run_source.py gige --source-id=test test-camera
+
+FFmpeg Source Adapter
+^^^^^^^^^^^^^^^^^^^^^
+
+The adapter uses delivers video stream using FFmpeg library. It can be used to read video files, RTSP streams, and other sources supported by FFmpeg.
+
+**Parameters**:
+- ``URI`` (**required**): an URI of the stream;
+- ``FFMPEG_PARAMS``: a comma separated string ``key=value`` with parameters for FFmpeg (e.g. ``rtsp_transport=tcp``, ``input_format=mjpeg,video_size=1280x720``);
+- ``FFMPEG_LOGLEVEL``: a log level for FFmpeg; default is ``info``;
+- ``BUFFER_LEN``: a maximum amount of frames in FFmpeg buffer; default is ``50``;
+- ``SYNC_OUTPUT``: a flag indicating the need to send frames from source synchronously (i.e. at the source file rate); default is ``False``;
+- ``SYNC_DELAY``: a delay in seconds before sending frames; default is ``0``;
+
+Running the adapter with Docker:
+
+.. code-block:: bash
+
+    docker run --rm -it --name source-ffmpeg-test \
+        --entrypoint /opt/savant/adapters/gst/sources/ffmpeg.sh \
+        -e ZMQ_ENDPOINT=dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc \
+        -e SOURCE_ID=test \
+        -e URI=rtsp://192.168.1.1 \
+        -e FFMPEG_PARAMS=rtsp_transport=tcp \
+        -v /tmp/zmq-sockets:/tmp/zmq-sockets \
+        ghcr.io/insight-platform/savant-adapters-gstreamer:latest
 
 
 Sink Adapters
