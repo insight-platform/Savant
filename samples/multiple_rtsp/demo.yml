@@ -8,7 +8,7 @@ parameters:
     width: 1280
     height: 720
   output_frame:
-    codec: raw_rgba
+    codec: raw-rgba
   # PyFunc for drawing on frames (default implementation)
   draw_func: {}
 
