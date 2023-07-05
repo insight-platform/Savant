@@ -37,6 +37,7 @@ class SinkVideoFrame(SinkMessage, NamedTuple):
     frame_height: int
     frame: Optional[bytes]
     frame_codec: Optional[CodecInfo]
+    dts: Optional[int]
     keyframe: bool
 
 
@@ -141,13 +142,27 @@ class ZeroMQSinkFactory(SinkFactory):
                     msg.source_id,
                     msg.frame_meta.pts,
                 )
+
                 if msg.frame:
                     frame = {'type': ExternalFrameType.ZEROMQ.value}
+                    logger.debug(
+                        'Size of frame of source %r with PTS %s is %s bytes',
+                        msg.source_id,
+                        msg.frame_meta.pts,
+                        len(msg.frame),
+                    )
                 else:
+                    logger.debug(
+                        'Frame of source %r with PTS %s is empty',
+                        msg.source_id,
+                        msg.frame_meta.pts,
+                    )
                     frame = None
+
                 message = {
                     'source_id': msg.frame_meta.source_id,
                     'pts': msg.frame_meta.pts,
+                    'dts': msg.dts,
                     'duration': msg.frame_meta.duration,
                     'framerate': msg.frame_meta.framerate,
                     'width': msg.frame_width,

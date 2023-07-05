@@ -1,6 +1,6 @@
 """GStreamer utils."""
 from contextlib import contextmanager
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Optional
 
 from gi.repository import Gst  # noqa:F401
 from savant.gstreamer.ffi import LIBGST, GstMapInfo
@@ -77,13 +77,14 @@ def on_pad_event(
     return event_handler(pad, event, *data)
 
 
-def propagate_gst_setting_error(gst_element: Gst.Element, frame, file_path):
+def propagate_gst_setting_error(gst_element: Gst.Element, frame, file_path, text=None):
     propagate_gst_error(
         gst_element=gst_element,
         frame=frame,
         file_path=file_path,
         domain=Gst.LibraryError.quark(),
         code=Gst.LibraryError.SETTINGS,
+        text=text,
     )
 
 
@@ -115,3 +116,23 @@ def gst_buffer_from_list(data: List[bytes]) -> Gst.Buffer:
     for item in data:
         buffer = buffer.append(Gst.Buffer.new_wrapped(item))
     return buffer
+
+
+class RequiredPropertyError(Exception):
+    """Raised when required property is not set."""
+
+
+def required_property(name: str, value: Optional[Any]):
+    """Check if the property is set."""
+
+    if value is None:
+        raise RequiredPropertyError(f'"{name}" property is required')
+
+
+def link_pads(src_pad: Gst.Pad, sink_pad: Gst.Pad):
+    """Link pads and raise exception if linking failed."""
+
+    assert src_pad.link(sink_pad) == Gst.PadLinkReturn.OK, (
+        f'Unable to link {src_pad.get_parent_element().get_name()}.{src_pad.get_name()} '
+        f'to {sink_pad.get_parent_element().get_name()}.{sink_pad.get_name()}'
+    )

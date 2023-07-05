@@ -35,6 +35,10 @@ class GstBufferProcessor(ABC):
         """Pipeline output processor."""
 
     @abstractmethod
+    def on_eos(self, user_data):
+        """Pipeline EOS handler."""
+
+    @abstractmethod
     def prepare_element_input(self, element: PipelineElement, buffer: Gst.Buffer):
         """Element input processor."""
 

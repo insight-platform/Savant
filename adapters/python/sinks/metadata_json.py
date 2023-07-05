@@ -5,7 +5,7 @@ import logging
 import os
 import traceback
 from distutils.util import strtobool
-from typing import Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from adapters.python.sinks.chunk_writer import ChunkWriter
 from savant.api import deserialize
@@ -26,7 +26,7 @@ class MetadataJsonWriter(ChunkWriter):
     def _write(
         self,
         message: Dict,
-        data: List[bytes],
+        data: Any,
         frame_num: Optional[int],
     ) -> bool:
         self.logger.debug('Writing meta to file %s', self.location)

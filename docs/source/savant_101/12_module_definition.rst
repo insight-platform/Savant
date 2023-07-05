@@ -50,7 +50,7 @@ The following parameters are defined for a Savant module by default:
 
 .. literalinclude:: ../../../savant/config/default.yml
   :language: YAML
-  :lines: 1-75
+  :lines: 1-87
 
 .. note::
 
@@ -126,4 +126,3 @@ Pipeline
 --------
 
 The pipeline section is where the processing steps are defined. In the section, detectors, classifiers, segmenting units, and custom Python units are placed. They are described in detail in the following sections.
-

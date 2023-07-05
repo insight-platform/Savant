@@ -1,5 +1,9 @@
 """Buffer processor for DeepStream pipeline."""
+from collections import deque
+from heapq import heappop, heappush
 from queue import Queue
+from typing import Deque, Dict, List, Tuple
+
 from typing import Optional, Union, NamedTuple, Iterator
 import logging
 import numpy as np
@@ -19,6 +23,12 @@ from savant_rs.utils.symbol_mapper import (
 from savant.base.input_preproc import ObjectsPreprocessing
 from savant.base.model import ObjectModel, ComplexModel
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
+from savant.deepstream.source_output import (
+    SourceOutput,
+    SourceOutputEncoded,
+    SourceOutputH26X,
+    SourceOutputWithFrame,
+)
 from savant.deepstream.utils.attribute import nvds_get_all_obj_attrs
 from savant.meta.constants import PRIMARY_OBJECT_KEY
 from savant.config.schema import PipelineElement, ModelElement, FrameParameters
@@ -48,6 +58,7 @@ from savant.meta.object import ObjectMeta
 from savant.meta.type import ObjectSelectionType
 from savant.utils.fps_meter import FPSMeter
 from savant.utils.logging import LoggerMixin
+from savant.utils.platform import is_aarch64
 from savant.utils.sink_factories import SinkVideoFrame
 from savant.utils.source_info import SourceInfoRegistry, SourceInfo
 
@@ -57,6 +68,7 @@ class _OutputFrame(NamedTuple):
 
     idx: int
     pts: int
+    dts: Optional[int]
     frame: Optional[bytes]
     codec: Optional[CodecInfo]
     keyframe: bool
@@ -280,31 +292,44 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
         """
 
         self.logger.debug(
-            'Preparing output for buffer with PTS %s for source %s.',
+            'Preparing output for buffer with PTS %s and DTS %s for source %s.',
             buffer.pts,
+            buffer.dts,
             source_info.source_id,
         )
-        for output_frame in self._iterate_output_frames(buffer):
-            self.logger.debug(
-                'Preparing output for frame of source %s with IDX %s and PTS %s.',
-                source_info.source_id,
-                output_frame.idx,
-                output_frame.pts,
-            )
-            frame_meta = metadata_pop_frame_meta(
-                source_info.source_id,
-                output_frame.idx,
-                output_frame.pts,
-            )
-            yield SinkVideoFrame(
-                source_id=source_info.source_id,
-                frame_meta=frame_meta,
-                frame_width=source_info.dest_resolution.width,
-                frame_height=source_info.dest_resolution.height,
-                frame=output_frame.frame,
-                frame_codec=output_frame.codec,
-                keyframe=output_frame.keyframe,
-            )
+        for output_frame in self._iterate_output_frames(buffer, source_info):
+            yield self._build_sink_video_frame(output_frame, source_info)
+
+    def _build_sink_video_frame(
+        self,
+        output_frame: _OutputFrame,
+        source_info: SourceInfo,
+    ) -> SinkVideoFrame:
+        self.logger.debug(
+            'Preparing output for frame of source %s with IDX %s, PTS %s and DTS %s.',
+            source_info.source_id,
+            output_frame.idx,
+            output_frame.pts,
+            output_frame.dts,
+        )
+        frame_meta = metadata_pop_frame_meta(
+            source_info.source_id,
+            output_frame.idx,
+            output_frame.pts,
+        )
+        return SinkVideoFrame(
+            source_id=source_info.source_id,
+            frame_meta=frame_meta,
+            frame_width=source_info.dest_resolution.width,
+            frame_height=source_info.dest_resolution.height,
+            frame=output_frame.frame,
+            frame_codec=output_frame.codec,
+            dts=output_frame.dts,
+            keyframe=output_frame.keyframe,
+        )
+
+    def on_eos(self, source_info: SourceInfo) -> SinkVideoFrame:
+        """Pipeline EOS handler."""
 
     def prepare_element_input(self, element: PipelineElement, buffer: Gst.Buffer):
         """Model input preprocessing.
@@ -687,7 +712,11 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
             and nvds_obj_meta.class_id == class_id
         )
 
-    def _iterate_output_frames(self, buffer: Gst.Buffer) -> Iterator[_OutputFrame]:
+    def _iterate_output_frames(
+        self,
+        buffer: Gst.Buffer,
+        source_info: SourceInfo,
+    ) -> Iterator[_OutputFrame]:
         """Iterate output frames."""
 
 
@@ -720,22 +749,137 @@ class NvDsEncodedBufferProcessor(NvDsBufferProcessor):
             frame_params=frame_params,
         )
 
-    def _iterate_output_frames(self, buffer: Gst.Buffer) -> Iterator[_OutputFrame]:
+    def _iterate_output_frames(
+        self,
+        buffer: Gst.Buffer,
+        source_info: SourceInfo,
+    ) -> Iterator[_OutputFrame]:
         """Iterate output frames from Gst.Buffer."""
 
-        # get encoded frame for output
-        frame = buffer.extract_dup(0, buffer.get_size())
-        savant_frame_meta = gst_buffer_get_savant_frame_meta(buffer)
-        frame_idx = savant_frame_meta.idx if savant_frame_meta else None
-        frame_pts = buffer.pts
+        yield self._build_output_frame(
+            idx=extract_frame_idx(buffer),
+            pts=buffer.pts,
+            dts=buffer.dts if buffer.dts != Gst.CLOCK_TIME_NONE else None,
+            buffer=buffer,
+        )
+
+    def _build_output_frame(
+        self,
+        idx: Optional[int],
+        pts: int,
+        dts: Optional[int],
+        buffer: Gst.Buffer,
+    ) -> _OutputFrame:
+        if buffer.get_size() > 0:
+            # get encoded frame for output
+            frame = buffer.extract_dup(0, buffer.get_size())
+        else:
+            frame = None
+            dts = None
         is_keyframe = not buffer.has_flags(Gst.BufferFlags.DELTA_UNIT)
-        yield _OutputFrame(
-            idx=frame_idx,
-            pts=frame_pts,
+        return _OutputFrame(
+            idx=idx,
+            pts=pts,
+            dts=dts,
             frame=frame,
             codec=self._codec,
             keyframe=is_keyframe,
         )
+
+
+class NvDsJetsonH26XBufferProcessor(NvDsEncodedBufferProcessor):
+    def __init__(self, *args, **kwargs):
+        """Buffer processor for DeepStream pipeline.
+
+        Workaround for a bug in h264x encoders on Jetson devices.
+        https://forums.developer.nvidia.com/t/nvv4l2h264enc-returns-frames-in-wrong-order-when-pts-doesnt-align-with-framerate/257363
+
+        Encoder "nvv4l2h26xenc" on Jetson devices produces frames with correct
+        DTS but with PTS and metadata from different frames. We store buffers
+        in a queue and wait for a buffer with correct PTS.
+        """
+
+        # source_id -> (DTS, buffer)
+        self._dts_queues: Dict[str, Deque[Tuple[int, Gst.Buffer]]] = {}
+        # source_id -> (PTS, IDX)
+        self._pts_queues: Dict[str, List[Tuple[int, Optional[int]]]] = {}
+        super().__init__(*args, **kwargs)
+
+    def _iterate_output_frames(
+        self,
+        buffer: Gst.Buffer,
+        source_info: SourceInfo,
+    ) -> Iterator[_OutputFrame]:
+        """Iterate output frames from Gst.Buffer."""
+
+        frame_idx = extract_frame_idx(buffer)
+        dts_queue = self._dts_queues.setdefault(source_info.source_id, deque())
+        pts_queue = self._pts_queues.setdefault(source_info.source_id, [])
+        # When the frame is empty assign DTS=PTS
+        dts = buffer.dts if buffer.get_size() > 0 else buffer.pts
+        if dts_queue or buffer.pts != dts:
+            self.logger.debug(
+                'Storing frame with PTS %s, DTS %s and IDX %s to queue.',
+                buffer.pts,
+                dts,
+                frame_idx,
+            )
+            dts_queue.append((dts, buffer))
+            heappush(pts_queue, (buffer.pts, frame_idx))
+            while dts_queue and dts_queue[0][0] == pts_queue[0][0]:
+                next_dts, next_buf = dts_queue.popleft()
+                next_pts, next_idx = heappop(pts_queue)
+                self.logger.debug(
+                    'Pushing output frame frame with PTS %s, DTS %s and IDX %s.',
+                    next_pts,
+                    next_dts,
+                    next_idx,
+                )
+                yield self._build_output_frame(
+                    idx=next_idx,
+                    pts=next_pts,
+                    dts=next_dts,
+                    buffer=next_buf,
+                )
+        else:
+            self.logger.debug(
+                'PTS and DTS of the frame are the same: %s. Pushing output frame.', dts
+            )
+            yield self._build_output_frame(
+                idx=frame_idx,
+                pts=buffer.pts,
+                dts=dts,
+                buffer=buffer,
+            )
+
+    def on_eos(self, source_info: SourceInfo):
+        """Pipeline EOS handler."""
+        dts_queue = self._dts_queues.pop(source_info.source_id, None)
+        pts_queue = self._pts_queues.pop(source_info.source_id, None)
+        if dts_queue is None:
+            return
+        while dts_queue:
+            dts, buffer = dts_queue.popleft()
+            pts, idx = dts, None
+
+            if pts_queue:
+                while pts_queue and pts_queue[0][0] <= dts:
+                    pts, idx = heappop(pts_queue)
+            if pts != dts:
+                pts = dts
+                idx = None
+
+            output_frame = self._build_output_frame(
+                idx=idx,
+                pts=pts,
+                dts=dts,
+                buffer=buffer,
+            )
+            sink_message = self._build_sink_video_frame(output_frame, source_info)
+            self._queue.put(sink_message)
+            # measure and logging FPS
+            if self._fps_meter():
+                self.logger.info(self._fps_meter.message)
 
 
 class NvDsRawBufferProcessor(NvDsBufferProcessor):
@@ -768,11 +912,28 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
             frame_params=frame_params,
         )
 
-    def _iterate_output_frames(self, buffer: Gst.Buffer) -> Iterator[_OutputFrame]:
+    def _iterate_output_frames(
+        self,
+        buffer: Gst.Buffer,
+        source_info: SourceInfo,
+    ) -> Iterator[_OutputFrame]:
         """Iterate output frames from NvDs batch.
 
         NvDs batch contains raw RGBA frames. They are all keyframes.
         """
+
+        if buffer.get_size() == 0:
+            frame_idx = extract_frame_idx(buffer)
+            yield _OutputFrame(
+                idx=frame_idx,
+                pts=buffer.pts,
+                dts=None,  # Raw frames do not have dts
+                frame=None,
+                codec=self._codec,
+                # Any frame is keyframe since it was not encoded
+                keyframe=True,
+            )
+            return
 
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
@@ -790,8 +951,50 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
             yield _OutputFrame(
                 idx=frame_idx,
                 pts=frame_pts,
+                dts=None,  # Raw frames do not have dts
                 frame=frame,
                 codec=self._codec,
                 # Any frame is keyframe since it was not encoded
                 keyframe=True,
             )
+
+
+def extract_frame_idx(buffer: Gst.Buffer) -> Optional[int]:
+    """Extract frame index from the buffer."""
+
+    savant_frame_meta = gst_buffer_get_savant_frame_meta(buffer)
+    return savant_frame_meta.idx if savant_frame_meta else None
+
+
+def create_buffer_processor(
+    queue: Queue,
+    fps_meter: FPSMeter,
+    sources: SourceInfoRegistry,
+    objects_preprocessing: ObjectsPreprocessing,
+    frame_params: FrameParameters,
+    source_output: SourceOutput,
+):
+    """Create buffer processor."""
+
+    if isinstance(source_output, SourceOutputEncoded):
+        if isinstance(source_output, SourceOutputH26X) and is_aarch64():
+            buffer_processor_class = NvDsJetsonH26XBufferProcessor
+        else:
+            buffer_processor_class = NvDsEncodedBufferProcessor
+        return buffer_processor_class(
+            queue=queue,
+            fps_meter=fps_meter,
+            sources=sources,
+            objects_preprocessing=objects_preprocessing,
+            frame_params=frame_params,
+            codec=source_output.codec,
+        )
+
+    return NvDsRawBufferProcessor(
+        queue=queue,
+        fps_meter=fps_meter,
+        sources=sources,
+        objects_preprocessing=objects_preprocessing,
+        frame_params=frame_params,
+        output_frame=isinstance(source_output, SourceOutputWithFrame),
+    )
