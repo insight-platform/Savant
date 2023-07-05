@@ -156,6 +156,23 @@ The draw function may be overriden by the developer if the stock version cannot 
 
     To disable ``draw_func`` functionality, remove ``parameters.draw_func`` from the manifest completely.
 
+Conditional Drawing
+^^^^^^^^^^^^^^^^^^^
+
+Savant 0.2.4 introduced a conditional drawing feature. It enables defining a special condition based on a frame tag which enables drawing. The motivation behind the feature is efficiency: often, you don't need to produce footage for all streams but only for certain streams under investigation. So you may implement a pyfunc which creates a tag for those streams.
+
+To configure conditional drawing, add a subsection to ``draw_func`` as follows:
+
+.. code-block:: yaml
+
+    draw_func:
+      condition:
+        tag: <tagname, e.g. draw>
+
+
+An example of conditional drawing can be found in a dedicated Savant `sample <https://github.com/insight-platform/Savant/tree/develop/samples/conditional_video_processing>`__.
+
+
 De-Multiplexing
 ---------------
 
@@ -336,7 +353,7 @@ Available properties are:
 
 Example:
 
-  .. code-block:: YAML
+  .. code-block:: yaml
 
     parameters:
       output_frame:
@@ -345,10 +362,28 @@ Example:
           bitrate: 4000000
           profile: 4
 
-  .. code-block:: YAML
+  .. code-block:: yaml
 
     parameters:
       output_frame:
         codec: jpeg
         encoder_params:
           quality: 90
+
+Conditional Encoding
+^^^^^^^^^^^^^^^^^^^^
+
+Savant 0.2.4 introduced a conditional encoding feature. It enables defining a special condition based on a frame tag, enabling encoding only certain streams. The motivation behind the feature is efficiency: often, you don't need to produce a resulting video for all streams but only for certain streams under investigation. So you may implement a pyfunc which creates a tag for those streams.
+
+To configure conditional encoding, add a subsection to ``output_frame`` as follows:
+
+.. code-block:: yaml
+
+    output_frame:
+      codec: h264
+      encoder_params:
+        iframeinterval: 25
+      condition:
+        tag: <tagname, e.g. encode>
+
+An example of conditional drawing can be found in a dedicated Savant `sample <https://github.com/insight-platform/Savant/tree/develop/samples/conditional_video_processing>`__.
