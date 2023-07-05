@@ -10,11 +10,13 @@ parameters:
   output_frame:
     codec: h264
     # Encode only frames with tag "encode"
-    when_tagged: encode
+    condition:
+      tag: encode
   # PyFunc for drawing on frames
   draw_func:
     # Draw only on frames with tag "draw"
-    when_tagged: draw
+    condition:
+      tag: draw
 
 # pipeline definition
 pipeline:
