@@ -355,7 +355,6 @@ def pictures_source(
     type=click.INT,
     help=(
         'Delay in seconds before sending frames. '
-        'Useful when the source has B-frames to avoid sending frames in batches. '
         'Ignored when synchronous frames sending is turned off (i.e. no --sync flag).'
     ),
 )
@@ -367,9 +366,21 @@ def pictures_source(
     show_default=True,
 )
 @click.option(
-    '--buffer-max-bytes',
-    default=10485760,
-    help='Maximum amount of data in the buffer.',
+    '--rtsp-transport',
+    default='tcp',
+    help='RTSP transport protocol ("udp" or "tcp").',
+    show_default=True,
+)
+@click.option(
+    '--buffer-len',
+    default=50,
+    help='Maximum amount of frames in the buffer.',
+    show_default=True,
+)
+@click.option(
+    '--ffmpeg-loglevel',
+    default='info',
+    help='Log level for FFmpeg.',
     show_default=True,
 )
 @adapter_docker_image_option('gstreamer')
@@ -381,8 +392,9 @@ def rtsp_source(
     out_bind: bool,
     sync: bool,
     sync_delay: Optional[int],
-    calculate_dts: bool,
-    buffer_max_bytes: int,
+    buffer_len: int,
+    ffmpeg_loglevel: str,
+    rtsp_transport: str,
     docker_image: str,
     fps_period_frames: Optional[int],
     fps_period_seconds: Optional[float],
@@ -398,8 +410,9 @@ def rtsp_source(
         fps_output=fps_output,
     ) + [
         f'RTSP_URI={rtsp_uri}',
-        f'CALCULATE_DTS={calculate_dts}',
-        f'BUFFER_MAX_BYTES={buffer_max_bytes}',
+        f'RTSP_TRANSPORT={rtsp_transport}',
+        f'BUFFER_LEN={buffer_len}',
+        f'FFMPEG_LOGLEVEL={ffmpeg_loglevel}',
     ]
     if sync and sync_delay is not None:
         envs.append(f'SYNC_DELAY={sync_delay}')
