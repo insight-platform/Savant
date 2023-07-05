@@ -28,4 +28,5 @@ The branch can be pushed to remote
 git push -u origin releases/vX.Y.Z
 ```
 
-Next, the developer is expected to create a PR from `releases/vX.Y.Z` into `main`, and tag the commit after merge. This starts the git workflows that will build the Savant package and docker images for the version.
+Next, create a release (`vX.Y.Z`) from `releases/vX.Y.Z`. The release initiates git workflows that build the Savant package and docker images for the version.
+

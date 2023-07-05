@@ -10,7 +10,7 @@ Vehicles preview:
 
 ![](assets/road-traffic-loop.webp)
 
-Article on Medium: [Link](https://hello.savant.video/city-traffic-metering)
+Article on Medium: [Link](https://blog.savant-ai.io/efficient-city-traffic-metering-with-peoplenet-yolov8-savant-and-grafana-at-scale-d6f162afe883?source=friends_link&sk=ab96c5ef3c173902559f213849dede9b)
 
 Tested on platforms:
 
@@ -57,3 +57,52 @@ cd ../..
 ```
 
 To create a custom Grafana dashboard, sign in with `admin\admin` credentials.
+
+## Performance Measurement
+
+Download the video file to your local folder. For example, create a data folder and download the video into it (all commands must be executed from the root directory of the project Savant)
+
+```bash
+# you are expected to be in Savant/ directory
+
+mkdir -p data && curl -o data/AVG-TownCentre.mp4 \
+   https://eu-central-1.linodeobjects.com/savant-data/traffic-meter/AVG-TownCentre.mp4
+```
+
+Next, if you haven't run the sample in the default mode yet (following the instructions above), run
+
+```bash
+docker compose -f samples/traffic_meter/docker-compose.x86.yml up module
+```
+
+or
+
+```bash
+docker compose -f samples/traffic_meter/docker-compose.l4t.yml up module
+```
+
+to build the module docker image.
+
+Now you are ready to run the performance benchmark with the following command:
+
+```bash
+docker run --rm -it --gpus=all \
+-v `pwd`/samples:/opt/savant/samples \
+-v `pwd`/data:/data:ro \
+-v `pwd`/models/traffic_meter:/models \
+-v `pwd`/downloads/traffic_meter:/downloads \
+traffic_meter-module \
+samples/traffic_meter/module-peoplenet-performance.yml
+```
+
+or
+
+```bash
+docker run --rm -it --gpus=all \
+-v `pwd`/samples:/opt/savant/samples \
+-v `pwd`/data:/data:ro \
+-v `pwd`/models/traffic_meter:/models \
+-v `pwd`/downloads/traffic_meter:/downloads \
+traffic_meter-module \
+samples/traffic_meter/module-yolov8m-performance.yml
+```

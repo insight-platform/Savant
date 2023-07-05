@@ -3,7 +3,8 @@ from typing import Tuple, Optional, Union, List
 from contextlib import AbstractContextManager
 import numpy as np
 import cv2
-from savant.meta.bbox import BBox, RBBox
+from savant_rs.primitives.geometry import BBox, RBBox
+from savant_rs.draw_spec import PaddingDraw
 from .position import Position, get_bottom_left_point
 
 
@@ -23,9 +24,6 @@ class ArtistGPUMat(AbstractContextManager):
         self.overlay = None
         self.font_face = cv2.FONT_HERSHEY_SIMPLEX
         self.gaussian_filter = None
-
-    def __enter__(self):
-        return self
 
     def __exit__(self, *exc_details):
         # apply alpha comp if overlay is not null
@@ -143,10 +141,9 @@ class ArtistGPUMat(AbstractContextManager):
             return
 
         if isinstance(bbox, BBox):
-            left, top, right, bottom, _, _ = self.__convert_bbox(
-                bbox, padding, border_width
-            )
-
+            left, top, right, bottom = bbox.visual_box(
+                PaddingDraw(*padding), border_width, self.max_col, self.max_row
+            ).as_ltrb_int()
             if draw_bg:
                 self.frame.colRange(left, right).rowRange(top, bottom).setTo(
                     bg_color, stream=self.stream
@@ -167,22 +164,12 @@ class ArtistGPUMat(AbstractContextManager):
                 ).setTo(border_color, stream=self.stream)
 
         elif isinstance(bbox, RBBox):
-            x_center = bbox.x_center
-            y_center = bbox.y_center
-            width = bbox.width
-            height = bbox.height
-            degrees = bbox.angle
-            if padding:
-                width += padding[0] + padding[2]
-                height += padding[1] + padding[3]
-
-            vertices = cv2.boxPoints(((x_center, y_center), (width, height), degrees))
-
+            padded = bbox.new_padded(PaddingDraw(*padding))
             self.add_polygon(
-                vertices=vertices,
-                line_width=border_width,
-                line_color=border_color,
-                bg_color=bg_color,
+                padded.vertices_int,
+                border_width,
+                border_color,
+                bg_color,
             )
 
     def add_rounded_rect(
@@ -260,7 +247,7 @@ class ArtistGPUMat(AbstractContextManager):
 
     def add_polygon(
         self,
-        vertices: List[Tuple[float, float]],
+        vertices: List[Tuple[int, int]],
         line_width: int = 3,
         line_color: Tuple[int, int, int, int] = (255, 0, 0, 255),  # RGBA, Red
         bg_color: Optional[Tuple[int, int, int, int]] = None,  # RGBA
@@ -278,11 +265,11 @@ class ArtistGPUMat(AbstractContextManager):
             return
 
         self.__init_overlay()
-        vertices = np.intp(vertices)
+        vertices = np.array(vertices)[np.newaxis, ...]
         if draw_fill:
-            cv2.drawContours(self.overlay, [vertices], 0, bg_color, cv2.FILLED)
+            cv2.drawContours(self.overlay, vertices, 0, bg_color, cv2.FILLED)
         if draw_contour and (not draw_fill or line_color != bg_color):
-            cv2.drawContours(self.overlay, [vertices], 0, line_color, line_width)
+            cv2.drawContours(self.overlay, vertices, 0, line_color, line_width)
 
     def blur(
         self,
@@ -310,7 +297,9 @@ class ArtistGPUMat(AbstractContextManager):
             cv2.CV_8UC4, cv2.CV_8UC4, (radius, radius), sigma
         )
 
-        left, top, _, _, width, height = self.__convert_bbox(bbox, padding, 0)
+        left, top, width, height = bbox.visual_box(
+            PaddingDraw(*padding), 0, self.max_col, self.max_row
+        ).as_ltwh_int()
         roi_mat = cv2.cuda.GpuMat(self.frame, (left, top, width, height))
 
         gaussian_filter.apply(roi_mat, roi_mat, stream=self.stream)
@@ -368,31 +357,3 @@ class ArtistGPUMat(AbstractContextManager):
         """Init overlay image."""
         if self.overlay is None:
             self.overlay = np.zeros((self.height, self.width, 4), dtype=np.uint8)
-
-    def __convert_bbox(
-        self, bbox: BBox, padding: Tuple[int, int, int, int], border_width: int
-    ) -> Tuple[int, int, int, int, int, int]:
-        """Convert Savant bbox to OpenCV format.
-
-        :param bbox: Savant BBox structure.
-        :param padding: Padding values, left, top, right, bottom.
-        :param border_width: Box border width.
-        :return: Left, top, right, bottom, width, height, clamped to frame dimensions.
-        """
-        left = round(bbox.left) - padding[0] - border_width
-        top = round(bbox.top) - padding[1] - border_width
-
-        width = max(round(bbox.width) + 2 * (padding[0] + padding[2] + border_width), 1)
-        height = max(
-            round(bbox.height) + 2 * (padding[1] + padding[3] + border_width), 1
-        )
-
-        right = left + width
-        bottom = top + height
-
-        left = max(left, 0)
-        top = max(top, 0)
-        right = min(right, self.max_col)
-        bottom = min(bottom, self.max_row)
-
-        return left, top, right, bottom, right - left, bottom - top

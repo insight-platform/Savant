@@ -49,7 +49,7 @@ for inference, based on the information you specified in the ``object`` of ``inp
 You can read about the working with metadata in the `"Working With Metadata"
 <https://insight-platform.github.io/Savant/savant_101/75_working_with_metadata.html>`_ section.
 The method must return an instance of the class
-`BBox <https://insight-platform.github.io/Savant/reference/api/generated/savant.meta.bbox.BBox.html#bbox>`_
+`BBox <https://insight-platform.github.io/savant-rs/modules/savant_rs/primitives_geometry.html#savant_rs.primitives.geometry.BBox>`_
 (The class of aligned bounding box).
 
 After you implemented your own preprocessing class, you just need to specify the module in the
@@ -75,7 +75,7 @@ This kind of preprocessing opens up more possibilities, because it allows you to
 interact directly with the image of an object. To implement your own image
 preprocessing you need to create your own class inherited from
 `BasePreprocessObjectImage
-<https://insight-platform.github.io/Savant/reference/api/generated/savant.base.input_preproc.BasePreprocessObjectImage.html#basepreprocessobjectimage>`_
+<https://docs.savant-ai.io/reference/api/generated/savant.base.input_preproc.BasePreprocessObjectImage.html#basepreprocessobjectimage>`_
 and implement the __call__ magic method.
 
 .. code-block:: python
@@ -142,28 +142,39 @@ will be transferred to the inference model.
 
 GPUImage is a special wrapper class which allows you to simplify the work with
 the image on the GPU. A detailed specification of the methods can be found in
-the `documentation <https://insight-platform.github.io/Savant/reference/api/generated/savant.utils.image.GPUImage.html#gpuimage>`_.
+the `documentation <https://docs.savant-ai.io/reference/api/generated/savant.utils.image.GPUImage.html#savant.utils.image.GPUImage>`_.
 Let's review the basic methods of this class, which will allow you
 to perform basic operations on the GPU
 
-`GPUImage <https://insight-platform.github.io/Savant/reference/reference/api/generated/savant.utils.image.GPUImage.html#gpuimage>`_ class properties:
+`GPUImage <https://docs.savant-ai.io/reference/api/generated/savant.utils.image.GPUImage.html#savant.utils.image.GPUImage>`_ class properties:
 
 * | **gpu_mat** - returns an instance of the `GpuMat <https://docs.opencv.org/4.x/d0/d60/classcv_1_1cuda_1_1GpuMat.html>`_ class from OpenCV.
 * | **width** - image width in pixels.
 * | **height** - image height in pixels.
 
-`GPUImage <https://insight-platform.github.io/Savant/reference/reference/api/generated/savant.utils.image.GPUImage.html#gpuimage>`_ class methods:
+`GPUImage <https://docs.savant-ai.io/reference/api/generated/savant.utils.image.GPUImage.html#savant.utils.image.GPUImage>`_ class methods:
 
 * | **to_cpu** - copies image from GPU memory into RAM. The image is returned as instance of CPUImage class.
+
+.. code-block:: python
+
+    def to_cpu(self) -> CPUImage:
+
 * | **сut** - cuts out of the image part defined by normal or rotated box. If a rotated box is specified, it cuts out part of the object by the rectangle enclosing the rotated box. The method returns the cut part of the image and the box with coordinates relative to the new image.
   | If the boundaries of the box go beyond the image, the resulting image will contain only the part that falls within the intersection of the box and the image, and the rest will be filled with black.
-  | Example. The image is loaded and a box is created that goes beyond the image. In the image with the result, you can see that only those images that intersect with the defined box are cut out, and the rest is filled with black
+
+.. code-block:: python
+
+    def cut(self, bbox: Union[BBox, RBBox]) -> Tuple['GPUImage', Union[BBox, RBBox]]:
+
+
+| Example. The image is loaded and a box is created that goes beyond the image. In the image with the result, you can see that only those images that intersect with the defined box are cut out, and the rest is filled with black
 
 .. code-block:: python
 
    ref_image = cv2.cvtColor(cv2.imread("55_ref.jpeg"), cv2.COLOR_RGB2BGR)
    gpu_ref_image = GPUImage(ref_image)
-   cut_bbox = BBox(x_center=gpu_ref_image.width//2,y_center=0, width=1000, height=200)
+   cut_bbox = BBox(xc=gpu_ref_image.width//2, yc=0, width=1000, height=200)
    res_image, _ = gpu_ref_image.cut(cut_bbox)
    cv2.imwrite('55_res.jpeg', cv2.cvtColor(res_image.gpu_mat.download(), cv2.COLOR_RGB2BGR))
 
@@ -182,13 +193,40 @@ to perform basic operations on the GPU
    Result image
 
 * | **concat** - allows you to combine two images into one. The first image is the image from which this method is called, the second is the image that is passed to the method. You can specify whether images should be vertically or horizontally joined.
+
+.. code-block:: python
+
+    def concat(self, image: 'GPUImage', axis: int = 0) -> 'GPUImage':
+
 * | **paste** - inserts the image into the current image. The insertion place is specified as a point on the upper left corner of the inserted image.
+
+.. code-block:: python
+
+    def paste(self, image: 'GPUImage', point: Tuple[int, int]):
+
 * | **rotate** - rotates the image by a specified angle. You can also pass an object bounding box to the method, so that it is rotated together with the image. The method returns the rotated image and the box.
+
+.. code-block:: python
+
+    def rotate(self, angle: float, bbox: Optional[RBBox] = None) -> Tuple['GPUImage', RBBox]:
+
 * | **resize** - resizes the image and returns the result as a new image. You can specify the resize method. Fit - the image will be resized without aspect ratio preservation, scale - the image will be resized with aspect ratio preservation and indentation. You can also specify the interpolation method.
 
+.. code-block:: python
 
-`CPUImage <https://insight-platform.github.io/Savant/reference/api/generated/savant.utils.image.CPUImage.html#cpuimage>`_ has the same methods as GPUImage, but they work with images in RAM,
+    def resize(
+        self,
+        resolution: Tuple[int, int],
+        method: str = 'fit',
+        interpolation: int = cv2.INTER_LINEAR,
+    ) -> 'GPUImage':
+
+`CPUImage <https://docs.savant-ai.io/reference/api/generated/savant.utils.image.CPUImage.html#savant.utils.image.CPUImage>`_ has the same methods as GPUImage, but they work with images in RAM,
 instead `gpu_mat` property it has `np_array` property, which returns an instance of the numpy array
 and instead to_cpu method it has to_gpu method, which copies image from RAM into GPU memory.
+
+.. code-block:: python
+
+        def to_gpu(self) -> cv2.cuda.GpuMat:
 
 Using these basic methods you can do most of the necessary transformations.

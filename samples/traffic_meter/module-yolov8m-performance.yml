@@ -1,0 +1,80 @@
+name: ${oc.env:MODULE_NAME, 'traffic-meter-yolov8m-perf'}
+
+parameters:
+  frame:
+    width: 1280
+    height: 720
+    padding:
+      # Paddings are kept on the output frame
+      keep: true
+      left: 0
+      right: 0
+      # Padding size is 180px on the top of the frame
+      top: 180
+      bottom: 0
+  output_frame:
+    codec: h264
+  draw_func:
+    module: samples.traffic_meter.overlay
+    # specify the drawfunc's python class from the module
+    class_name: Overlay
+    kwargs:
+      overlay_height: 180
+  detected_object:
+    id: 0
+    label: person
+    # id: 2
+    # label: car
+
+pipeline:
+
+  source:
+    element: uridecodebin
+    properties:
+      uri: file:///data/AVG-TownCentre.mp4
+
+  elements:
+    - element: pyfunc
+      module: samples.traffic_meter.line_crossing
+      class_name: ConditionalDetectorSkip
+      kwargs:
+        config_path: ${oc.env:PROJECT_PATH}/samples/traffic_meter/line_config.yml
+
+    # detector
+    - element: nvinfer@detector
+      name: yolov8m
+      model:
+        remote:
+          url: s3://savant-data/models/yolov8m/yolov8m.zip
+          checksum_url: s3://savant-data/models/yolov8m/yolov8m.md5
+          parameters:
+            endpoint: https://eu-central-1.linodeobjects.com
+        format: custom
+        config_file: config_infer_primary_yoloV8.txt
+        custom_lib_path: /opt/savant/lib/libnvdsinfer_custom_impl_Yolo.so
+        output:
+          objects:
+            - class_id: ${parameters.detected_object.id}
+              label: ${parameters.detected_object.label}
+
+    # person tracker
+    - element: nvtracker
+      properties:
+        ll-lib-file: /opt/nvidia/deepstream/deepstream/lib/libnvds_nvmultiobjecttracker.so
+        ll-config-file: ${oc.env:PROJECT_PATH}/samples/traffic_meter/config_tracker_NvDCF_perf.yml
+        tracker-width: 960  # 640  # must be a multiple of 32
+        tracker-height: 544  # 384
+        display-tracking-id: 0
+
+    - element: pyfunc
+      module: samples.traffic_meter.line_crossing
+      class_name: LineCrossing
+      kwargs:
+        config_path: ${oc.env:PROJECT_PATH}/samples/traffic_meter/line_config.yml
+        stale_track_del_period: 5000
+        target_obj_label: ${parameters.detected_object.label}
+        send_stats: False
+
+  # noop pipeline sink, not using sink adapter
+  sink:
+    - element: devnull_sink

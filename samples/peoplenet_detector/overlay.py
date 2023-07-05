@@ -105,10 +105,10 @@ class Overlay(NvDsDrawFunc):
         # are persisted on the padding area in the next frame
         artist.add_bbox(
             BBox(
-                x_center=frame_w // 2,
-                y_center=self.overlay_height // 2,
-                width=frame_w,
-                height=self.overlay_height,
+                frame_w // 2,
+                self.overlay_height // 2,
+                frame_w,
+                self.overlay_height,
             ),
             border_width=0,
             bg_color=(0, 0, 0, 255),

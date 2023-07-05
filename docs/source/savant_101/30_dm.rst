@@ -83,23 +83,8 @@ Example of preprocess_object_meta:
         module: something_detector.input_preproc
         class_name: TopCrop
 
-.. code-block:: python
-
-    from savant.base.input_preproc import BasePreprocessObjectMeta
-
-    class TopCrop(BasePreprocessObjectMeta):
-        def __call__(self, bbox: pyds.NvBbox_Coords, **kwargs) -> pyds.NvBbox_Coords:
-
-            bbox.top -= bbox.width * 0.05
-            if bbox.top < 0:
-                bbox.top = 0
-
-            bbox_height = bbox.width * 1.05
-            if bbox_height > bbox.height:
-                bbox_height = bbox.height
-            bbox.height = bbox_height
-
-            return bbox
+.. literalinclude:: ../../../savant/input_preproc/crop.py
+  :language: Python
 
 Unit Output
 -----------

@@ -14,7 +14,6 @@ General utilities
     :template: autosummary/class.rst
 
     registry.Registry
-    model_registry.ModelObjectRegistry
     image.CPUImage
     image.GPUImage
     artist.Position
