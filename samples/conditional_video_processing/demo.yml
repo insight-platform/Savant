@@ -1,0 +1,99 @@
+# module name, required
+name: ${oc.env:MODULE_NAME, 'demo'}
+
+# base module parameters
+parameters:
+  # pipeline processing frame parameters
+  frame:
+    width: 1280
+    height: 720
+  output_frame:
+    codec: h264
+    # Encode only frames with tag "encode"
+    condition:
+      tag: encode
+  # PyFunc for drawing on frames
+  draw_func:
+    # Draw only on frames with tag "draw"
+    condition:
+      tag: draw
+
+# pipeline definition
+pipeline:
+  # source definition is skipped, zeromq source is used by default to connect with source adapters
+
+  # define pipeline's main elements
+  elements:
+    # primary detector element, inference is provided by the nvinfer Deepstream element
+    # model type is detector (other available types are: classifier, custom)
+    - element: nvinfer@detector
+      # Model's name in the pipeline, mandatory
+      name: peoplenet
+      # model definition
+      model:
+        # format of the provided model file
+        format: etlt
+        # remote storage where the model files can be found
+        # skip if providing model files locally
+        remote:
+          url: s3://savant-data/models/peoplenet/peoplenet_pruned_v2.0.zip
+          checksum_url: s3://savant-data/models/peoplenet/peoplenet_pruned_v2.0.md5
+          parameters:
+            endpoint: https://eu-central-1.linodeobjects.com
+          # or get the model directly from NGC API
+          # peoplenet v2.0
+          # url: "https://api.ngc.nvidia.com/v2/models/nvidia/tao/peoplenet/versions/pruned_v2.0/zip"
+
+        # model file name, without location
+        model_file: resnet34_peoplenet_pruned.etlt  # v2.0 Accuracy: 84.3 Size 20.9 MB
+
+        # configuration of input data and custom preprocessing methods
+        input:
+          # model input layer name
+          layer_name: input_1
+          # model input layer shape
+          shape: [3, 544, 960]
+          # pixel scaling/normalization factor
+          scale_factor: 0.0039215697906911373
+
+        # configuration of model output
+        output:
+          # model output layer names
+          layer_names: [output_bbox/BiasAdd, output_cov/Sigmoid]
+          # number of detected classes for detector model
+          num_detected_classes: 3
+          # specify which detected objects are included in output
+          objects:
+            # object class id
+            - class_id: 0
+              # label assigned to objects of this class id
+              label: person
+              selector:
+                kwargs:
+                  # minimal width of the objects of this class to be included in output
+                  min_width: 32
+                  # minimal height of the objects of this class to be included in output
+                  min_height: 32
+
+    # analytics element realized in custom pyfunc
+    - element: pyfunc
+      # specify the pyfunc's python module
+      module: samples.conditional_video_processing.conditional_video_processing
+      # specify the pyfunc's python class from the module
+      class_name: ConditionalVideoProcessing
+      # pyfunc's class init keyword arguments
+      # will be available as pyfunc object's attributes
+      kwargs:
+        detections:
+          # Tag frames with if there are "person" detections from model "peoplenet"
+          - element_name: peoplenet
+            labels:
+              - person
+        set_tags:
+          # Set these tags to frames
+          - encode
+          - draw
+        # Switch period from state to state
+        protection_interval_ms: 1000
+
+  # sink definition is skipped, zeromq sink is used by default to connect with sink adapters
