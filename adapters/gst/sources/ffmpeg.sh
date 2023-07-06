@@ -8,7 +8,7 @@ required_env() {
 }
 
 required_env SOURCE_ID
-required_env RTSP_URI
+required_env URI
 required_env ZMQ_ENDPOINT
 
 ZMQ_SOCKET_TYPE="${ZMQ_TYPE:="DEALER"}"
@@ -28,7 +28,6 @@ elif [[ -n "${FPS_PERIOD_FRAMES}" ]]; then
 else
     FPS_PERIOD="period-frames=1000"
 fi
-RTSP_TRANSPORT="${RTSP_TRANSPORT:="tcp"}"
 BUFFER_LEN="${BUFFER_LEN:="50"}"
 FFMPEG_LOGLEVEL="${FFMPEG_LOGLEVEL:="info"}"
 
@@ -39,7 +38,7 @@ handler() {
 trap handler SIGINT SIGTERM
 
 PIPELINE=(
-    ffmpeg_src uri="${RTSP_URI}" params="rtsp_transport=${RTSP_TRANSPORT}"
+    ffmpeg_src uri="${URI}" params="${FFMPEG_PARAMS}"
     queue-len="${BUFFER_LEN}" loglevel="${FFMPEG_LOGLEVEL}" !
     fps_meter "${FPS_PERIOD}" output="${FPS_OUTPUT}" !
     video_to_avro_serializer source-id="${SOURCE_ID}" !
