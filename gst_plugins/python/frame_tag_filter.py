@@ -196,7 +196,8 @@ class FrameTagFilter(LoggerMixin, Gst.Element):
             not_tagged_buffer: Gst.Buffer = Gst.Buffer.new()
             not_tagged_buffer.pts = frame_pts
             not_tagged_buffer.set_flags(Gst.BufferFlags.DELTA_UNIT)
-            gst_buffer_add_savant_frame_meta(not_tagged_buffer, frame_idx)
+            if frame_idx is not None:
+                gst_buffer_add_savant_frame_meta(not_tagged_buffer, frame_idx)
             not_tagged_buffers.append(not_tagged_buffer)
 
         self.logger.debug(
