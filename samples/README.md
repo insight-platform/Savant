@@ -37,6 +37,14 @@ Preview:
 
 ![](traffic_meter/assets/traffic-meter-loop-400.webp)
 
+### Age gender recognition
+
+Sample Location: [age gender recognition](./age_gender_recognition)
+
+Preview:
+
+![](age_gender_recognition/assets/age-gender-recognition-loop-400.webp)
+
 ## Utility And Coding Examples 
 
 ### OpenCV CUDA MOG2 Background Segmentation Demo
