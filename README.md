@@ -10,12 +10,13 @@ Savant is built on DeepStream and provides a high-level abstraction layer for bu
 
 ## Quick Links
 
-- [Prepare the OS Runtime](https://insight-platform.github.io/Savant/getting_started/0_configure_prod_env.html)
+- [Prepare the OS Runtime](https://docs.savant-ai.io/getting_started/0_configure_prod_env.html)
 - [Getting Started Tutorial](https://blog.savant-ai.io/meet-savant-a-new-high-performance-python-video-analytics-framework-for-nvidia-hardware-22cc830ead4d?source=friends_link&sk=c7169b378b31451ab8de3d882c22a774)
 - [Publications and Samples](https://github.com/insight-platform/Savant/tree/develop/samples)
 - [Architecture Draft](docs/architecture.md)
-- [Documentation](https://insight-platform.github.io/Savant)
-- [Adapters Guide](docs/adapters.md)
+- [Documentation](https://docs.savant-ai.io/)
+- [Adapters Guide](https://docs.savant-ai.io/savant_101/10_adapters.html)
+- [Performance Regression Tracking Dashboard](docs/performance.md)
 
 ## 1-Minute Quick Start
 
@@ -204,12 +205,12 @@ As for now, we provide images for x86 architecture and for Jetson hardware.
 
 ## What's Next
 
-- [Prepare the OS Runtime](https://insight-platform.github.io/Savant/getting_started/0_configure_prod_env.html)
+- [Prepare the OS Runtime](https://docs.savant-ai.io/getting_started/0_configure_prod_env.html)
 - [Getting Started Tutorial](https://blog.savant-ai.io/meet-savant-a-new-high-performance-python-video-analytics-framework-for-nvidia-hardware-22cc830ead4d?source=friends_link&sk=c7169b378b31451ab8de3d882c22a774)
 - [Publications and Samples](https://github.com/insight-platform/Savant/tree/develop/samples)
 - [Architecture Draft](docs/architecture.md)
-- [Documentation](https://insight-platform.github.io/Savant)
-- [Adapters Guide](docs/adapters.md)
+- [Documentation](https://docs.savant-ai.io/)
+- [Adapters Guide](https://docs.savant-ai.io/savant_101/10_adapters.html)
 
 ## Contribution
 
