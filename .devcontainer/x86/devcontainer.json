@@ -1,0 +1,17 @@
+{
+  "name": "savant-dev",
+  "image": "ghcr.io/insight-platform/savant-deepstream:latest",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance"
+      ]
+    }
+  },
+  "workspaceMount": "source=${localWorkspaceFolder}/savant,target=/opt/savant,type=bind",
+  "workspaceFolder": "/opt/savant",
+  "runArgs": [
+    "--gpus=all"
+  ]
+}
