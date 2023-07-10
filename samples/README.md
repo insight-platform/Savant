@@ -55,6 +55,16 @@ Preview:
 
 ![](opencv_cuda_bg_remover_mog2/assets/opencv_cuda_bg_remover_mog2-800.webp)
 
+### Conditional Video Processing
 
+Sample location: [conditional_video_processing](./conditional_video_processing)
 
+Preview:
 
+![](conditional_video_processing/assets/conditional-video-processing_400.webp)
+
+### Multiple RTSP Streams Demo
+
+A simple pipeline demonstrates how multiplexed processing works in Savant. In the demo, two RTSP streams are ingested in the module and processed with the PeopleNet model. 
+
+Sample Location: [multiple_rtsp](./multiple_rtsp)
