@@ -10,7 +10,7 @@
 ## Pipeline FPS
 
 | Hardware  | Sample                      | Savant ver.                                                   | FPS |
-| --------- | --------------------------- | ------------------------------------------------------------- | --- |
+|-----------|-----------------------------|---------------------------------------------------------------|-----|
 | Setup_1   | nvidia_car_classification   | v0.2.3                                                        | 155 |
 | Setup_1   | nvidia_car_classification   | [#207](https://github.com/insight-platform/Savant/issues/207) | 158 |
 | Setup_1   | nvidia_car_classification   | [#208](https://github.com/insight-platform/Savant/issues/208) | 156 |
@@ -31,6 +31,7 @@
 | Setup_1   | opencv_cuda_bg_remover_mog2 | [#207](https://github.com/insight-platform/Savant/issues/207) | 670 |
 | Setup_1   | opencv_cuda_bg_remover_mog2 | [#208](https://github.com/insight-platform/Savant/issues/208) | 662 |
 | Setup_1   | opencv_cuda_bg_remover_mog2 | [#84](https://github.com/insight-platform/Savant/issues/84)   | 663 |
+| Setup_1   | age_gender_recognition      | [#166](https://github.com/insight-platform/Savant/issues/166) | 272 |
 | Jetson NX | nvidia_car_classification   | v0.2.3                                                        | 42  |
 | Jetson NX | nvidia_car_classification   | [#207](https://github.com/insight-platform/Savant/issues/207) | 42  |
 | Jetson NX | nvidia_car_classification   | [#208](https://github.com/insight-platform/Savant/issues/208) | 43  |
@@ -51,3 +52,4 @@
 | Jetson NX | opencv_cuda_bg_remover_mog2 | [#207](https://github.com/insight-platform/Savant/issues/207) | 60  |
 | Jetson NX | opencv_cuda_bg_remover_mog2 | [#208](https://github.com/insight-platform/Savant/issues/208) | 60  |
 | Jetson NX | opencv_cuda_bg_remover_mog2 | [#84](https://github.com/insight-platform/Savant/issues/84)   | 62  |
+| Jetson NX | age_gender_recognition      | [#166](https://github.com/insight-platform/Savant/issues/166) | 39  |
