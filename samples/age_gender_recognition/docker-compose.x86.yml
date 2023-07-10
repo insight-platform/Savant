@@ -16,7 +16,6 @@ services:
       - SYNC_OUTPUT=True
     entrypoint: /opt/savant/adapters/gst/sources/video_loop.sh
 
-
   module:
     image: ghcr.io/insight-platform/savant-deepstream:latest
 

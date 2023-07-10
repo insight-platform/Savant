@@ -80,8 +80,10 @@ def nvds_obj_meta_output_converter(
         logger.debug('Object corrected bbox %s', bbox)
     # parse parent object
     parent_model_name, parent_label, parent_object_id = None, None, None
-    if not nvds_is_empty_object_meta(nvds_obj_meta.parent) and \
-            nvds_obj_meta.parent.obj_label != PRIMARY_OBJECT_KEY:
+    if (
+        not nvds_is_empty_object_meta(nvds_obj_meta.parent)
+        and nvds_obj_meta.parent.obj_label != PRIMARY_OBJECT_KEY
+    ):
         parent_model_name, parent_label = parse_compound_key(
             nvds_obj_meta.parent.obj_label
         )

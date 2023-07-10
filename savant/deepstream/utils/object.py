@@ -216,7 +216,9 @@ def nvds_set_obj_bbox(
         )
 
 
-def nvds_set_aligned_bbox_for_obj_meta(obj_meta: pyds.NvDsObjectMeta, bbox: BBox) -> None:
+def nvds_set_aligned_bbox_for_obj_meta(
+    obj_meta: pyds.NvDsObjectMeta, bbox: BBox
+) -> None:
     """Set aligned bbox values for specified object meta
     into Deepstream meta structures."""
     bbox_coords = obj_meta.detector_bbox_info.org_bbox_coords
@@ -302,5 +304,8 @@ def nvds_is_empty_object_meta(obj_meta: Optional[pyds.NvDsObjectMeta]) -> bool:
     """
     if obj_meta is None:
         return True
-    return obj_meta.rect_params.width == 0 and obj_meta.rect_params.height == 0 \
+    return (
+        obj_meta.rect_params.width == 0
+        and obj_meta.rect_params.height == 0
         and obj_meta.obj_label == ''
+    )
