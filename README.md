@@ -1,10 +1,10 @@
-# Savant: Supercharged Video Analytics Framework With Batteries Included
+# Savant: Supercharged Computer Vision and Video Analytics Framework on DeepStream
 
 :star: Star us on GitHub — it motivates us a lot and helps the project become more visible to developers.
 
-Savant is an open-source, high-level framework for building real-time, streaming, highly efficient multimedia AI
-applications on the Nvidia stack. It makes it possible to develop dynamic, fault-tolerant inference pipelines
-that utilize the best Nvidia approaches for data center and edge accelerators very quickly.
+Savant is an open-source, high-level framework for building real-time, streaming, highly efficient multimedia AI applications on the Nvidia stack. It helps to develop dynamic, fault-tolerant inference pipelines that utilize the best Nvidia approaches for data center and edge accelerators.
+
+Savant is built on DeepStream and provides a high-level abstraction layer for building inference pipelines. It is designed to be easy to use, flexible, and scalable. It is a great choice for building smart CV and video analytics applications for cities, retail, manufacturing, and more.
 
 [![discord](https://user-images.githubusercontent.com/15047882/229273271-d033e597-06d3-4aeb-b93d-1217e95ca07e.png)](https://discord.gg/KVAfGBsZGd)
 
@@ -19,13 +19,15 @@ that utilize the best Nvidia approaches for data center and edge accelerators ve
 
 ## 1-Minute Quick Start
 
-**Note**: Ubuntu 22.04 runtime configuration [guide](docs/runtime-configuration.md) helps to configure the runtime to run Savant pipelines.
+**Note**: Ubuntu 22.04 runtime configuration [guide](https://docs.savant-ai.io/getting_started/0_configure_prod_env.html) helps to configure the runtime to run Savant pipelines.
 
-If you are acquainted with running dockerized applications using Nvidia GPUs:
+Requirements:
 - **X86 & Volta/Turing/Ampere/Ada Lovelace**: Linux, Drivers 525+, Docker with Compose, Nvidia Container Runtime,
 - **Nvidia Jetson NX/AGX+**: JetPack 5.1+, Docker with Compose, Nvidia Container Runtime.
 
-Trying the demo you will find how to make the following showcase:
+**Note**: Savant does not support Jetson Nano (original device released at 2020) because Nvidia doesn't support newer JetPack versions for it.
+
+The demo shows how to make a pipeline featuring person detection, facial detection, tracking, facial blurring (OpenCV CUDA), and a real-time analytics dashboard:
 
 ![](samples/peoplenet_detector/assets/peoplenet-blur-demo-loop-400.webp)
 
@@ -53,18 +55,17 @@ curl --silent -O -- https://hello.savant.video/peoplenet.html
 cd ../..
 ```
 
+## What Savant Is Not
 
+Savant is not for AI model training; it's for building fast streaming inference applications working on Edge and Core Nvidia equipment. We use PyTorch to train our models and recommend sticking with it.
 
-## What It Is Not
+## Who Would Be Interested in Savant?
 
-Savant is not for AI model training; it's for building fast streaming inference applications working on Edge and Core Nvidia equipment.
+If your task is to implement high-performance production-ready computer vision and video analytics applications, Savant is for you. It helps to:
 
-## Who Would Love Savant?
-
-The one, who wants:
-
-- get the maximum performance of Nvidia equipment on streaming inference tasks either on edge or in core;
-- decrease time to market when building dynamic pipelines with DeepStream technology without extra hassle.
+- get the maximum performance on Nvidia equipment on edge and in the core;
+- decrease time to market when building dynamic pipelines with DeepStream technology but without low-level programming;
+- develop easily maintainable and testable applications with a well-established framework API.
 
 ## Runs On Nvidia Hardware
 
@@ -89,18 +90,9 @@ hardware used.
 
 ## Why Was Savant Developed?
 
-Why do we develop Savant if DeepStream solves the problem? Because DeepStream is a very tough and challenging to use
-technology.
+Why do we develop Savant if DeepStream solves the problem? Because DeepStream is a challenging-to-use technology. The root cause is that DeepStream does not define software architecture; it is a bunch of plug-ins for GStreamer: the open-source multimedia framework for building highly-efficient streaming applications. It makes developing more or less sophisticated DeepStream applications very difficult because the developer must understand how the GStreamer processes the data, making the learning curve steep and almost unreachable for ML engineers focused on model training.
 
-The root cause is that DeepStream is a bunch of plug-ins for Gstreamer - the open-source multimedia framework for
-building highly-efficient streaming applications. It makes developing more or less sophisticated DeepStream applications
-very difficult because the developer must understand how the Gstreamer processes the data, making the learning curve
-steep and almost unreachable for ML engineers focused on model training.
-
-Savant is a very high-level framework over the DeepStream, which hides all the Gstreamer internals from the developer
-and provides practical tools for implementing real-life streaming AI applications. So, you implement your inference
-pipeline as a set of declarative (YAML) blocks with several user-defined functions in Python (and C/C++ if you would
-like to utilize most of the CUDA runtime).
+Savant is a very high-level framework on DeepStream, hiding low-level internals from the developer and providing practical tools for quickly implementing real-life streaming AI applications. So, you implement your inference pipeline as a set of declarative (YAML) blocks with several user-defined functions in Python (or C/C++ if you would like to utilize most of the CUDA runtime).
 
 ## Features
 
