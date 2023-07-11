@@ -2,6 +2,7 @@
 """Run performance management."""
 from pathlib import Path
 from typing import Generator
+import argparse
 import re
 import subprocess
 
@@ -18,7 +19,7 @@ def launch_script(script: Path) -> Generator[str, None, None]:
         stderr=subprocess.STDOUT,
         # env=env,
         encoding='utf8',
-        text=True
+        text=True,
     ) as process:
         while True:
             ret_code = process.poll()
@@ -31,8 +32,12 @@ def launch_script(script: Path) -> Generator[str, None, None]:
 
 
 def main():
-    # TODO: num_runs to args
-    num_runs = 3
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-n', '--num-runs', type=int, default=3, help='number of runs')
+    parser.add_argument(
+        '-v', '--verbose', action='store_true', help='print script output'
+    )
+    args = parser.parse_args()
 
     # TODO: 1st step: sync data
     # mkdir -p data
@@ -40,10 +45,10 @@ def main():
     # docker run --rm \
     #  -v `pwd`/data:/data \
     #  -e AWS_CONFIG_FILE \
-    #	amazon/aws-cli \
+    # 	amazon/aws-cli \
     #   --no-sign-request \
-    #	--endpoint-url=https://eu-central-1.linodeobjects.com \
-    #	s3 sync s3://savant-data/demo /data
+    # 	--endpoint-url=https://eu-central-1.linodeobjects.com \
+    # 	s3 sync s3://savant-data/demo /data
 
     sample_root = Path('samples')
 
@@ -53,22 +58,23 @@ def main():
         print('>>> Run', perf_script)
 
         fps_list = []
-        for num in range(num_runs):
+        for num in range(args.num_runs):
             for line in launch_script(perf_script):
                 if not line:
                     continue
 
-                # print(line, '\r')
+                if args.verbose:
+                    print(line, '\r')
 
                 if ' Processed ' in line:
                     match = fps_pattern.match(line)
                     if match:
                         fps_list.append(float(match['fps']))
 
-            if fps_list:
-                print(f'FPS={fps_list}, Avg={(sum(fps_list) / len(fps_list)):.2f}')
-            else:
-                print('Fail')
+        if fps_list:
+            print(f'FPS={fps_list}, Avg={(sum(fps_list) / len(fps_list)):.2f}')
+        else:
+            print('Fail')
 
 
 if __name__ == '__main__':
