@@ -36,7 +36,14 @@ def main():
 
     # TODO: 1st step: sync data
     # mkdir -p data
-    # aws s3 sync --endpoint-url=https://eu-central-1.linodeobjects.com s3://savant-data/demo data
+    # aws s3 sync --no-sign-request --endpoint-url=https://eu-central-1.linodeobjects.com s3://savant-data/demo data
+    # docker run --rm \
+    #  -v `pwd`/data:/data \
+    #  -e AWS_CONFIG_FILE \
+    #	amazon/aws-cli \
+    #   --no-sign-request \
+    #	--endpoint-url=https://eu-central-1.linodeobjects.com \
+    #	s3 sync s3://savant-data/demo /data
 
     sample_root = Path('samples')
 

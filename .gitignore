@@ -58,3 +58,6 @@ generated
 
 # local cached models
 models
+
+# data
+data
