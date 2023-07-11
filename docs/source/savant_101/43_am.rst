@@ -41,6 +41,8 @@ Let us describe the valuable parameters. First, the parameters of the ``input`` 
 
 * The ``scale_factor`` parameter specifies the input values normalization scaling factor. These values must be the same as those used during model training. In DeepStream, it is impossible to set an individual factor per channel, so this must be considered during model training.
 
+Full reference of ``input`` parameters can be found in the specification for :py:class:`~savant.deepstream.nvinfer.model.NvInferModelInput`.
+
 The parameters of the ``output`` section:
 
 * The ``layer_names`` parameter specifies the names of the output layers from which the output tensors will be acquired for post-processing. These names are defined when exporting the model to the ONNX format (example for `PyTorch <https://pytorch.org/docs/stable/onnx.html#example-alexnet-from-pytorch-to-onnx>`_).
