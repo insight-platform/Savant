@@ -54,20 +54,16 @@ def main():
 
         fps_list = []
         for num in range(num_runs):
-            search_fps = False
             for line in launch_script(perf_script):
                 if not line:
                     continue
 
                 # print(line, '\r')
 
-                if search_fps:
+                if ' Processed ' in line:
                     match = fps_pattern.match(line)
                     if match:
                         fps_list.append(float(match['fps']))
-
-                elif 'Pipeline execution ended after' in line:
-                    search_fps = True
 
             if fps_list:
                 print(f'FPS={fps_list}, Avg={(sum(fps_list) / len(fps_list)):.2f}')
