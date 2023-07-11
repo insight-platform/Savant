@@ -32,7 +32,7 @@ def launch_script(script: Path) -> Generator[str, None, None]:
 
 def main():
     # TODO: num_runs to args
-    num_runs = 1
+    num_runs = 3
 
     # TODO: 1st step: sync data
     # mkdir -p data

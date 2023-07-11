@@ -9,7 +9,7 @@ fi
 docker run --rm -it --gpus=all \
   -v `pwd`/samples:/opt/savant/samples \
   -v `pwd`/data:/data:ro \
-  -v `pwd`/downloads:/downloads \
+  -v `pwd`/downloads/age_gender_recognition:/downloads \
   -v `pwd`/models/age_gender_recognition:/models \
   $DOCKER_IMAGE \
   samples/age_gender_recognition/module_performance.yml
