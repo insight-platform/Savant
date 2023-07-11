@@ -2,56 +2,75 @@
 
 ## Hardware
 
-| Name      | CPU                                | GPU              | RAM  |
-| --------- | ---------------------------------- | ---------------- | ---- |
-| Setup_1   | AMD Ryzen 7 3700X 8-Core Processor | NVIDIA RTX A4000 | 62Gi |
-| Jetson NX |                                    |                  |      |
+| Name      | CPU                                | GPU              | RAM, Gi |
+|-----------|------------------------------------|------------------|---------|
+| A4000     | AMD Ryzen 7 3700X 8-Core Processor | NVIDIA RTX A4000 | 62      |
+| Jetson NX | MODE 20W, 6 CORE, Clocks On?       |                  | 8       |
 
 ## Pipeline FPS
 
-| Hardware  | Sample                       | Savant ver.                                                   | FPS |
-| --------- |------------------------------|---------------------------------------------------------------|-----|
-| Setup_1   | nvidia_car_classification    | v0.2.3                                                        | 155 |
-| Setup_1   | nvidia_car_classification    | [#207](https://github.com/insight-platform/Savant/issues/207) | 158 |
-| Setup_1   | nvidia_car_classification    | [#208](https://github.com/insight-platform/Savant/issues/208) | 156 |
-| Setup_1   | nvidia_car_classification    | [#84](https://github.com/insight-platform/Savant/issues/84)   | 155 |
-| Setup_1   | peoplenet_detector           | v0.2.3                                                        | 125 |
-| Setup_1   | peoplenet_detector           | [#207](https://github.com/insight-platform/Savant/issues/207) | 113 |
-| Setup_1   | peoplenet_detector           | [#208](https://github.com/insight-platform/Savant/issues/208) | 113 |
-| Setup_1   | peoplenet_detector           | [#84](https://github.com/insight-platform/Savant/issues/84)   | 111 |
-| Setup_1   | traffic_meter-yolov8m        | v0.2.3                                                        | 132 |
-| Setup_1   | traffic_meter-yolov8m        | [#207](https://github.com/insight-platform/Savant/issues/207) | 138 |
-| Setup_1   | traffic_meter-yolov8m        | [#208](https://github.com/insight-platform/Savant/issues/208) | 136 |
-| Setup_1   | traffic_meter-yolov8m        | [#84](https://github.com/insight-platform/Savant/issues/84)   | 136 |
-| Setup_1   | traffic_meter-peoplenet      | v0.2.3                                                        | 118 |
-| Setup_1   | traffic_meter-peoplenet      | [#207](https://github.com/insight-platform/Savant/issues/207) | 127 |
-| Setup_1   | traffic_meter-peoplenet      | [#208](https://github.com/insight-platform/Savant/issues/208) | 125 |
-| Setup_1   | traffic_meter-peoplenet      | [#84](https://github.com/insight-platform/Savant/issues/84)   | 125 |
-| Setup_1   | opencv_cuda_bg_remover_mog2  | v0.2.3                                                        | 675 |
-| Setup_1   | opencv_cuda_bg_remover_mog2  | [#207](https://github.com/insight-platform/Savant/issues/207) | 670 |
-| Setup_1   | opencv_cuda_bg_remover_mog2  | [#208](https://github.com/insight-platform/Savant/issues/208) | 662 |
-| Setup_1   | opencv_cuda_bg_remover_mog2  | [#84](https://github.com/insight-platform/Savant/issues/84)   | 663 |
-| Setup_1   | conditional_video_processing | [#244](https://github.com/insight-platform/Savant/issues/244) | 327 |
-| Setup_1   | age_gender_recognition       | [#166](https://github.com/insight-platform/Savant/issues/166) | 261 |
-| Jetson NX | nvidia_car_classification    | v0.2.3                                                        | 42  |
-| Jetson NX | nvidia_car_classification    | [#207](https://github.com/insight-platform/Savant/issues/207) | 42  |
-| Jetson NX | nvidia_car_classification    | [#208](https://github.com/insight-platform/Savant/issues/208) | 43  |
-| Jetson NX | nvidia_car_classification    | [#84](https://github.com/insight-platform/Savant/issues/84)   | 42  |
-| Jetson NX | peoplenet_detector           | v0.2.3                                                        | 30  |
-| Jetson NX | peoplenet_detector           | [#207](https://github.com/insight-platform/Savant/issues/207) | 30  |
-| Jetson NX | peoplenet_detector           | [#208](https://github.com/insight-platform/Savant/issues/208) | 30  |
-| Jetson NX | peoplenet_detector           | [#84](https://github.com/insight-platform/Savant/issues/84)   | 29  |
-| Jetson NX | traffic_meter-yolov8m        | v0.2.3                                                        | 23  |
-| Jetson NX | traffic_meter-yolov8m        | [#207](https://github.com/insight-platform/Savant/issues/207) | 24  |
-| Jetson NX | traffic_meter-yolov8m        | [#208](https://github.com/insight-platform/Savant/issues/208) | 25  |
-| Jetson NX | traffic_meter-yolov8m        | [#84](https://github.com/insight-platform/Savant/issues/84)   | 24  |
-| Jetson NX | traffic_meter-peoplenet      | v0.2.3                                                        | 28  |
-| Jetson NX | traffic_meter-peoplenet      | [#207](https://github.com/insight-platform/Savant/issues/207) | 28  |
-| Jetson NX | traffic_meter-peoplenet      | [#208](https://github.com/insight-platform/Savant/issues/208) | 27  |
-| Jetson NX | traffic_meter-peoplenet      | [#84](https://github.com/insight-platform/Savant/issues/84)   | 27  |
-| Jetson NX | opencv_cuda_bg_remover_mog2  | v0.2.3                                                        | 65  |
-| Jetson NX | opencv_cuda_bg_remover_mog2  | [#207](https://github.com/insight-platform/Savant/issues/207) | 60  |
-| Jetson NX | opencv_cuda_bg_remover_mog2  | [#208](https://github.com/insight-platform/Savant/issues/208) | 60  |
-| Jetson NX | opencv_cuda_bg_remover_mog2  | [#84](https://github.com/insight-platform/Savant/issues/84)   | 62  |
-| Jetson NX | conditional_video_processing | [#244](https://github.com/insight-platform/Savant/issues/244) | 64  |
-| Jetson NX | age_gender_recognition       | [#166](https://github.com/insight-platform/Savant/issues/166) | 37  |
+### age_gender_recognition
+
+| Savant ver.                                                      | A4000 | Jetson NX |
+|------------------------------------------------------------------|-------|-----------|
+| [#166](https://github.com/insight-platform/Savant/issues/166)    | 261   | 37        |
+| [v0.2.4](https://github.com/insight-platform/Savant/tree/v0.2.4) |       |           |
+
+### conditional_video_processing
+
+| Savant ver.                                                      | A4000 | Jetson NX |
+|------------------------------------------------------------------|-------|-----------|
+| [#244](https://github.com/insight-platform/Savant/issues/244)    | 327   | 64        |
+| [v0.2.4](https://github.com/insight-platform/Savant/tree/v0.2.4) |       |           |
+
+### nvidia_car_classification
+
+| Savant ver.                                                      | A4000 | Jetson NX |
+|------------------------------------------------------------------|-------|-----------|
+| [v0.2.3](https://github.com/insight-platform/Savant/tree/v0.2.3) | 155   | 42        |
+| [#207](https://github.com/insight-platform/Savant/issues/207)    | 158   | 42        |
+| [#208](https://github.com/insight-platform/Savant/issues/208)    | 156   | 43        |
+| [#84](https://github.com/insight-platform/Savant/issues/84)      | 155   | 42        |
+| [v0.2.4](https://github.com/insight-platform/Savant/tree/v0.2.4) |       |           |
+
+### opencv_cuda_bg_remover_mog2
+
+| Savant ver.                                                      | A4000 | Jetson NX |
+|------------------------------------------------------------------|-------|-----------|
+| [v0.2.3](https://github.com/insight-platform/Savant/tree/v0.2.3) | 675   | 65        |
+| [#207](https://github.com/insight-platform/Savant/issues/207)    | 670   | 60        |
+| [#208](https://github.com/insight-platform/Savant/issues/208)    | 662   | 60        |
+| [#84](https://github.com/insight-platform/Savant/issues/84)      | 663   | 62        |
+| [v0.2.4](https://github.com/insight-platform/Savant/tree/v0.2.4) |       |           |
+
+### peoplenet_detector
+
+| Savant ver.                                                      | A4000 | Jetson NX |
+|------------------------------------------------------------------|-------|-----------|
+| [v0.2.3](https://github.com/insight-platform/Savant/tree/v0.2.3) | 125   | 30        |
+| [#207](https://github.com/insight-platform/Savant/issues/207)    | 113   | 30        |
+| [#208](https://github.com/insight-platform/Savant/issues/208)    | 113   | 30        |
+| [#84](https://github.com/insight-platform/Savant/issues/84)      | 111   | 29        |
+| [v0.2.4](https://github.com/insight-platform/Savant/tree/v0.2.4) |       |           |
+
+### traffic_meter
+
+#### yolov8m
+
+| Savant ver.                                                      | A4000 | Jetson NX |
+|------------------------------------------------------------------|-------|-----------|
+| [v0.2.3](https://github.com/insight-platform/Savant/tree/v0.2.3) | 132   | 23        |
+| [#207](https://github.com/insight-platform/Savant/issues/207)    | 138   | 24        |
+| [#208](https://github.com/insight-platform/Savant/issues/208)    | 136   | 25        |
+| [#84](https://github.com/insight-platform/Savant/issues/84)      | 136   | 24        |
+| [v0.2.4](https://github.com/insight-platform/Savant/tree/v0.2.4) |       |           |
+
+#### peoplenet
+
+| Savant ver.                                                      | A4000 | Jetson NX |
+|------------------------------------------------------------------|-------|-----------|
+| [v0.2.3](https://github.com/insight-platform/Savant/tree/v0.2.3) | 118   | 28        |
+| [#207](https://github.com/insight-platform/Savant/issues/207)    | 127   | 28        |
+| [#208](https://github.com/insight-platform/Savant/issues/208)    | 125   | 27        |
+| [#84](https://github.com/insight-platform/Savant/issues/84)      | 125   | 27        |
+| [v0.2.4](https://github.com/insight-platform/Savant/tree/v0.2.4) |       |           |
