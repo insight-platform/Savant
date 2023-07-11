@@ -102,7 +102,7 @@ def log_frame_metadata(pad: Gst.Pad, info: Gst.PadProbeInfo, config: Config):
     frame_idx = savant_frame_meta.idx if savant_frame_meta else None
     frame_pts = buffer.pts
     metadata = metadata_pop_frame_meta(config.source_id, frame_idx, frame_pts)
-    metadata_json = json.dumps(asdict(metadata))
+    metadata_json = json.dumps(asdict(metadata), default=dict)
     if config.metadata_output == 'logger':
         logger.info('Frame metadata: %s', metadata_json)
     else:
