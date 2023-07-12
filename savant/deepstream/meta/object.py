@@ -10,6 +10,7 @@ from savant_rs.utils.symbol_mapper import (
 )
 from savant_rs.primitives.geometry import BBox, RBBox
 
+from savant.deepstream.utils.object import nvds_is_empty_object_meta
 from savant.meta.errors import MetaValueError
 from savant.deepstream.meta.constants import MAX_LABEL_SIZE
 from savant.deepstream.utils import (
@@ -308,7 +309,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         self.ds_object_meta = object_meta
         self._frame_meta = frame_meta
         self._bbox = None
-        if object_meta.parent:
+        if not nvds_is_empty_object_meta(object_meta.parent):
             self._parent_object = _NvDsObjectMetaImpl.from_nv_ds_object_meta(
                 object_meta.parent, frame_meta
             )

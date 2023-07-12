@@ -1,7 +1,7 @@
 """Gst-nvinfer model configuration templates."""
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import List, Optional
 from omegaconf import MISSING
 from savant.base.pyfunc import PyFunc
 from savant.base.model import (
@@ -13,7 +13,6 @@ from savant.base.model import (
     AttributeModel,
     ComplexModel,
 )
-from savant.meta.type import ObjectSelectionType
 from savant.utils.registry import Registry
 
 NVINFER_MODEL_TYPE_REGISTRY = Registry('nvinfer_model_type')
@@ -208,35 +207,6 @@ class NvInferObjectModelOutput(ObjectModelOutput):
     num_detected_classes: Optional[int] = None
     """Number of classes detected by the model. Required for regular detector."""
 
-    selection_type: int = ObjectSelectionType.REGULAR_BBOX
-    """Selection type of the output objects.
-    Fixed value = :py:attr:`savant.meta.type.ObjectSelectionType.REGULAR_BBOX`.
-    """
-
-
-@dataclass
-class NvInferRotatedObjectModelOutput(NvInferObjectModelOutput):
-    """NvInferObjectModel output configuration template for detector with
-    rotated bboxes.
-
-    Example
-
-    .. code-block:: yaml
-
-        model:
-            # model configuration
-            output:
-                num_detected_classes: 4
-                layer_names: [output]
-                objects:
-                    # output objects configuration
-    """
-
-    selection_type: int = ObjectSelectionType.ROTATED_BBOX
-    """Selection type of the output objects.
-    Fixed value = :py:attr:`savant.meta.type.ObjectSelectionType.ROTATED_BBOX`.
-    """
-
 
 @NVINFER_MODEL_TYPE_REGISTRY.register('detector')
 @dataclass
@@ -281,18 +251,6 @@ class NvInferInstanceSegmentation(NvInferDetector):
     """Name of the custom instance segmentation parsing function.
     It is mandatory for instance segmentation network
     as there is no internal function."""
-
-
-@NVINFER_MODEL_TYPE_REGISTRY.register('rotated_object_detector')
-@dataclass
-class NvInferRotatedObjectDetector(NvInferDetector):
-    """Rotated bbox detector configuration template.
-
-    For example look in :py:class:`NvInferDetector`.
-    """
-
-    output: NvInferRotatedObjectModelOutput = NvInferRotatedObjectModelOutput()
-    """Results post-processing configuration."""
 
 
 @NVINFER_MODEL_TYPE_REGISTRY.register('attribute_model')

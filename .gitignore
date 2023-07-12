@@ -1,7 +1,6 @@
 # IDE
 .idea
 .vscode
-.devcontainer
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -59,3 +58,6 @@ generated
 
 # local cached models
 models
+
+# data
+data

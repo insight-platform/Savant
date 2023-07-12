@@ -294,3 +294,18 @@ def nvds_get_obj_draw_label(obj_meta: pyds.NvDsObjectMeta) -> Optional[str]:
     if data is not None:
         return pyds.get_string(data.message)
     return None
+
+
+def nvds_is_empty_object_meta(obj_meta: Optional[pyds.NvDsObjectMeta]) -> bool:
+    """Check if specified object meta is empty.
+    It is a workaround for Deepstream bug when a object meta removed from frame meta.
+    In this case it is not None, but has zero for numeric values and empty
+    label.
+    """
+    if obj_meta is None:
+        return True
+    return (
+        obj_meta.rect_params.width == 0
+        and obj_meta.rect_params.height == 0
+        and obj_meta.obj_label == ''
+    )

@@ -133,7 +133,7 @@ class ModelInput:
 
     .. code-block:: yaml
 
-        offset: [0.0, 0.0, 0.0]
+        offsets: [0.0, 0.0, 0.0]
     """
 
     color_format: ModelColorFormat = ModelColorFormat.RGB

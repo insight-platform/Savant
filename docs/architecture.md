@@ -140,7 +140,6 @@ The pipeline is defined in the module.yml manifest file and includes the followi
 There are number of processing element types that can form a pipeline:
 - detector;
 - attribute_model;
-- rotated_object_detector;
 - pyfunc;
 - complex_model;
 - ... etc ...

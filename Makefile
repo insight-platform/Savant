@@ -102,6 +102,7 @@ run-dev:
 		-e ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc \
 		-v /tmp/.X11-unix:/tmp/.X11-unix \
 		-v /tmp/.docker.xauth:/tmp/.docker.xauth \
+		-v `pwd`/data:/data \
 		-v `pwd`/downloads:/downloads \
 		-v `pwd`/models:/models \
 		-v `pwd`/gst_plugins:$(PROJECT_PATH)/gst_plugins \

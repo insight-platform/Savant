@@ -33,7 +33,6 @@ from savant.deepstream.utils.attribute import nvds_get_all_obj_attrs
 from savant.meta.constants import PRIMARY_OBJECT_KEY
 from savant.config.schema import PipelineElement, ModelElement, FrameParameters
 from savant.deepstream.nvinfer.model import (
-    NvInferRotatedObjectDetector,
     NvInferDetector,
     NvInferAttributeModel,
 )
@@ -470,7 +469,6 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
 
         model_uid = get_model_id(element.name)
         model: Union[
-            NvInferRotatedObjectDetector,
             NvInferDetector,
             NvInferAttributeModel,
         ] = element.model
@@ -536,6 +534,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                         if bbox_tensor is not None and bbox_tensor.shape[0] > 0:
 
                             if bbox_tensor.shape[1] == 6:  # no angle
+                                selection_type = ObjectSelectionType.REGULAR_BBOX
                                 # xc -> left, yc -> top
                                 bbox_tensor[:, 2] -= bbox_tensor[:, 4] / 2
                                 bbox_tensor[:, 3] -= bbox_tensor[:, 5] / 2
@@ -576,6 +575,8 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                                     ],
                                     axis=1,
                                 )
+                            else:
+                                selection_type = ObjectSelectionType.ROTATED_BBOX
 
                             # add index column to further filter attribute values
                             bbox_tensor = np.concatenate(
@@ -612,7 +613,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                                     _nvds_obj_meta = nvds_add_obj_meta_to_frame(
                                         nvds_batch_meta,
                                         nvds_frame_meta,
-                                        model.output.selection_type,
+                                        selection_type,
                                         obj.class_id,
                                         model_uid,
                                         bbox[2:7],
