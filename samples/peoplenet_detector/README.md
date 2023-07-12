@@ -80,13 +80,13 @@ mkdir -p data && curl -o data/Free_City_Street_Footage.mp4 \
 Next, if you haven't run the sample in the default mode yet (following the instructions above), run
 
 ```bash
-docker compose -f samples/peoplenet_detector/docker-compose.x86.yml up module
+docker compose -f samples/peoplenet_detector/docker-compose.x86.yml build module
 ```
 
 or
 
 ```bash
-docker compose -f samples/peoplenet_detector/docker-compose.l4t.yml up module
+docker compose -f samples/peoplenet_detector/docker-compose.l4t.yml build module
 ```
 
 to build the module docker image.
