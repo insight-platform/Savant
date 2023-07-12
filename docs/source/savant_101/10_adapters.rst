@@ -475,7 +475,7 @@ Running with the helper script:
 FFmpeg Source Adapter
 ^^^^^^^^^^^^^^^^^^^^^
 
-The adapter uses delivers video stream using FFmpeg library. It can be used to read video files, RTSP streams, and other sources supported by FFmpeg.
+The adapter delivers video stream using FFmpeg library. It can be used to read video files, RTSP streams, and other sources supported by FFmpeg.
 
 **Parameters**:
 - ``URI`` (**required**): an URI of the stream;
