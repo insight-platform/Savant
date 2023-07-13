@@ -1,5 +1,4 @@
 from savant.gstreamer import GObject, Gst, GstBase
-from savant.deepstream.utils import gst_event_type_to_str
 from savant.utils.logging import LoggerMixin
 
 
@@ -125,13 +124,13 @@ class Logger(LoggerMixin, GstBase.BaseTransform):
 
     def do_src_event(self, event: Gst.Event):
         if self._event:
-            self.logger.info('Got src event %s', _parse_event(event))
+            self.logger.info('Got src event. %s', _parse_event(event))
         # Cannot use `super()` since it is `self`
         return GstBase.BaseTransform.do_src_event(self, event)
 
     def do_sink_event(self, event: Gst.Event):
         if self._event:
-            self.logger.info('Got sink event %s', _parse_event(event))
+            self.logger.info('Got sink event. %s', _parse_event(event))
         # Cannot use `super()` since it is `self`
         return GstBase.BaseTransform.do_sink_event(self, event)
 
@@ -164,7 +163,7 @@ def _parse_event(event: Gst.Event):
     elif event.type == Gst.EventType.LATENCY:
         value = event.parse_latency()
 
-    message = gst_event_type_to_str(event.type)
+    message = f'Type: {event.type.value_name}'
     if value is not None:
         message += f'. Value: {value}'
     struct = event.get_structure()
