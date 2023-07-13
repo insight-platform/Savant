@@ -5,7 +5,7 @@ import logging
 from gi.repository import Gst  # noqa:F401
 
 from savant.gstreamer.buffer_processor import GstBufferProcessor
-from savant.config.schema import PipelineElement, ModelElement
+from savant.config.schema import PipelineElement, BasePipeline, BasicPipeline, CompositePipeline, ModelElement
 from savant.utils.sink_factories import SinkMessage
 from savant.utils.fps_meter import FPSMeter
 from savant.gstreamer.element_factory import CreateElementException, GstElementFactory
@@ -16,8 +16,7 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
     Streamer).
 
     :param name: Pipeline name.
-    :param source: Pipeline source element.
-    :param elements: Pipeline elements.
+    :param pipeline_cfg: Pipeline config.
     :key queue_maxsize: Output queue size.
     :key fps_period: FPS measurement period, in frames.
     """
@@ -28,8 +27,7 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
     def __init__(
         self,
         name: str,
-        source: PipelineElement,
-        elements: List[PipelineElement],
+        pipeline_cfg: BasePipeline,
         **kwargs,
     ):
         self._logger = logging.getLogger(f'savant.{name}')
@@ -56,9 +54,15 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
         self._last_element: Gst.Element = None
 
         # build pipeline: source -> elements -> fakesink
-        self._add_source(source)
-        for element in elements:
-            self.add_element(element, with_probes=isinstance(element, ModelElement))
+        self._add_source(pipeline_cfg.source)
+
+        if isinstance(pipeline_cfg, BasicPipeline):
+            for element in pipeline_cfg.elements:
+                self.add_element(element, with_probes=isinstance(element, ModelElement))
+        elif isinstance(pipeline_cfg, CompositePipeline):
+            for stage in pipeline_cfg.stages:
+                for element in stage.elements:
+                    self.add_element(element, with_probes=isinstance(element, ModelElement))
         self._add_sink()
 
         self._is_running = False

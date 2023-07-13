@@ -233,7 +233,7 @@ class DrawFunc(PyFunc):
 
     rendered_objects: Optional[Dict[str, Dict[str, Any]]] = None
     """Objects that will be rendered on the frame
-    
+
     For example,
 
     .. code-block:: yaml
@@ -328,20 +328,34 @@ class ModelElement(PipelineElement):
 
 
 @dataclass
+class StageCondition:
+    """Determines if a stage should be loaded into the pipeline.
+    If expr evaluates to the value, then the condition is considered to be true
+    and the Stage is enabled.
+    """
+
+    expr: str = MISSING
+    value: str = MISSING
+
+
+@dataclass
 class Stage:
     """One level elements wrapper."""
-
-    # TODO: Do we really need it? -> Implement/Remove
 
     name: Optional[str] = None
     """Stage name."""
 
-    elements: List[PipelineElement] = MISSING
-    """List of stage elements."""
+    init_condition: Optional[StageCondition] = None
+    """Stage init condition. If omitted, stage is enabled."""
+
+    # elements: MISSING?  # Union[] is not supported -> Any
+    elements: List[Any] = field(default_factory=list)
+    """List of stage elements.
+    Can be a :py:class:`PipelineElement` or any subclass of it."""
 
 
 @dataclass
-class Pipeline:
+class BasePipeline:
     """Pipeline configuration template. Validates entries in a module config
     file under ``pipeline``. For example,
 
@@ -352,8 +366,14 @@ class Pipeline:
                 element: uridecodebin
                 properties:
                     uri: file:///data/test.mp4
-            elements:
-                # user-defined pipeline elements
+            stages:
+
+                - init_condition:
+                      expr:
+                      value:
+                  elements:
+                      # user-defined pipeline elements
+                      - element: nvinfer@detector
             sink:
                 - element: console_sink
     """
@@ -363,16 +383,35 @@ class Pipeline:
     source: PipelineElement = MISSING
     """The source element of a pipeline."""
 
-    # elements: MISSING?  # Union[] is not supported -> Any
-    elements: List[Any] = field(default_factory=list)
-    """Pipeline's main contents: sequence of Pipe that implement all frame
-    processing operations. Can be a :py:class:`PipelineElement` or any subclass of it.
-    """
-
     draw_func: Optional[DrawFunc] = None
 
     sink: List[PipelineElement] = field(default_factory=list)
     """Sink elements of a pipeline."""
+
+@dataclass
+class BasicPipeline(BasePipeline):
+    """Pipeline configuration template. Validates entries in a module config
+    file under ``pipeline``. For example,
+
+    """
+
+    # Union[] is not supported -> Any
+    elements: List[Any] = field(default_factory=list)
+    """Main Pipeline contents. Consists of conditionally enabled Stages,
+    which are sequences of pipeline elements that implement various processing operations.
+    """
+
+@dataclass
+class CompositePipeline(BasePipeline):
+    """Pipeline configuration template. Validates entries in a module config
+    file under ``pipeline``. For example,
+
+    """
+
+    stages: List[Stage] = field(default_factory=list)
+    """Main Pipeline contents. Consists of conditionally enabled Stages,
+    which are sequences of pipeline elements that implement various processing operations.
+    """
 
 
 @dataclass
@@ -439,6 +478,6 @@ class Module:
             roi: [960, 540, 1920, 1080, 0]
     """
 
-    pipeline: Pipeline = MISSING
+    pipeline: BasePipeline = MISSING
     """Pipeline configuration.
     """

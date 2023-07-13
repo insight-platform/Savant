@@ -6,6 +6,8 @@ import logging
 from omegaconf import OmegaConf, DictConfig
 from savant.config.schema import (
     Module,
+    BasicPipeline,
+    CompositePipeline,
     PipelineElement,
     PyFuncElement,
     ModelElement,
@@ -123,11 +125,21 @@ def setup_batch_size(config: Module) -> None:
 
     :param config: module config
     """
+
+    def iterate_elements(elements):
+        for element in elements:
+            if isinstance(element, ModelElement):
+                return element.model.batch_size
+        return None
+
     first_model_batch_size = None
-    for element in config.pipeline.elements:
-        if isinstance(element, ModelElement) and first_model_batch_size is None:
-            first_model_batch_size = element.model.batch_size
-            break
+    if isinstance(config.pipeline, BasicPipeline):
+        first_model_batch_size = iterate_elements(config.pipeline.elements)
+    elif isinstance(config.pipeline, CompositePipeline):
+        for stage in config.pipeline.stages:
+            first_model_batch_size = iterate_elements(stage.elements)
+            if first_model_batch_size is not None:
+                break
 
     parameter_batch_size = config.parameters.get('batch_size')
 
@@ -172,46 +184,11 @@ def resolve_parameters(config: DictConfig):
         config.parameters['draw_func'] = draw_func_cfg
 
 
-class ModuleConfig(metaclass=SingletonMeta):
-    """Singleton that provides module configuration loading and access."""
+def elements_type_config(elements):
+    """Convert elements to proper type"""
 
-    def __init__(self):
-        self._config_schema = OmegaConf.structured(Module)
-        self._default_cfg = OmegaConf.load(
-            Path(__file__).parent.resolve() / 'default.yml'
-        )
-        self._config = None
-
-    def load(self, config_file_path: Union[str, Path]) -> Module:
-        """Loads and prepares module configuration.
-
-        :param config_file_path: Module config file path
-        :return: Module configuration, structured
-        """
-        module_cfg = OmegaConf.load(config_file_path)
-
-        logger.info('Configure module...')
-
-        # if source for module is specified,
-        # it should be used instead of default source (not merged)
-        if 'pipeline' in module_cfg and 'source' in module_cfg.pipeline:
-            del self._default_cfg.pipeline.source
-
-        logger.debug('Default conf\n%s', self._default_cfg)
-        logger.debug('Module conf\n%s', module_cfg)
-        module_cfg = OmegaConf.unsafe_merge(
-            self._config_schema, self._default_cfg, module_cfg
-        )
-        logger.debug('Merged conf\n%s', module_cfg)
-        init_param_storage(module_cfg)
-
-        OmegaConf.resolve(module_cfg)  # to resolve parameters for pipeline elements
-        resolve_parameters(module_cfg)
-        logger.debug('Resolved conf\n%s', module_cfg)
-        logger.info('Configure pipeline elements...')
-
-        # convert elements to proper type
-        for i, element_config in enumerate(module_cfg.pipeline.elements):
+    configured_elements = []
+    for element_config in elements:
             try:
                 element, elem_type, elem_ver = get_elem_type_ver(element_config)
 
@@ -231,12 +208,81 @@ class ModuleConfig(metaclass=SingletonMeta):
                 if configurator:
                     element_config = configurator(element_config)
 
-                module_cfg.pipeline.elements[i] = element_config
+                configured_elements.append(element_config)
 
             except Exception as exc:
                 raise ModuleConfigException(
                     f'Element {get_element_name(element_config)}: {exc}'
                 ) from exc
+
+    return configured_elements
+
+class ModuleConfig(metaclass=SingletonMeta):
+    """Singleton that provides module configuration loading and access."""
+
+    def __init__(self):
+        self._config_schema = OmegaConf.structured(Module)
+        self._default_cfg = OmegaConf.load(
+            Path(__file__).parent.resolve() / 'default.yml'
+        )
+        logger.debug('loaded default config\n%s', OmegaConf.to_yaml(self._default_cfg))
+        self._config = None
+
+    def load(self, config_file_path: Union[str, Path]) -> Module:
+        """Loads and prepares module configuration.
+
+        :param config_file_path: Module config file path
+        :return: Module configuration, structured
+        """
+        module_cfg = OmegaConf.load(config_file_path)
+        logger.debug('loaded module config\n%s', OmegaConf.to_yaml(module_cfg))
+
+        # if source for module is specified,
+        # it should be used instead of default source (not merged)
+        if 'pipeline' in module_cfg:
+            if module_cfg.pipeline is None:
+                module_cfg.pipeline = {}
+            if 'source' in module_cfg.pipeline:
+                del self._default_cfg.pipeline.source
+
+        if 'pipeline' in module_cfg:
+            if 'stages' in module_cfg.pipeline and 'elements' in module_cfg.pipeline:
+                raise ModuleConfigException('"stages" and "elements" pipeline config keys are mutually exclusive.')
+
+            if 'stages' in module_cfg.pipeline:
+                pipeline_schema = OmegaConf.structured(CompositePipeline)
+            else:
+                pipeline_schema = OmegaConf.structured(BasicPipeline)
+
+            pipeline_cfg = OmegaConf.merge(
+                pipeline_schema, self._default_cfg.pipeline, module_cfg.pipeline
+            )
+            del module_cfg.pipeline
+        else:
+            pipeline_cfg = OmegaConf.merge(
+                OmegaConf.structured(BasicPipeline), self._default_cfg.pipeline
+            )
+        del self._default_cfg.pipeline
+
+        logger.info('Configure module...')
+
+        module_cfg = OmegaConf.unsafe_merge(
+            self._config_schema, self._default_cfg, module_cfg
+        )
+        module_cfg.pipeline = pipeline_cfg
+
+        init_param_storage(module_cfg)
+
+        OmegaConf.resolve(module_cfg)  # to resolve parameters for pipeline elements
+        resolve_parameters(module_cfg)
+
+        logger.info('Configure pipeline elements...')
+
+        if OmegaConf.get_type(module_cfg.pipeline).__name__ == CompositePipeline.__name__:
+            for stage in module_cfg.pipeline.stages:
+                stage.elements = elements_type_config(stage.elements)
+        else:
+            module_cfg.pipeline.elements = elements_type_config(module_cfg.pipeline.elements)
 
         self._config = OmegaConf.to_object(module_cfg)
 
