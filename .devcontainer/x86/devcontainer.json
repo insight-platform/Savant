@@ -9,9 +9,21 @@
       ]
     }
   },
-  "workspaceMount": "source=${localWorkspaceFolder}/savant,target=/opt/savant,type=bind",
-  "workspaceFolder": "/opt/savant",
+  "workspaceMount": "source=${localWorkspaceFolder}/savant,target=/usr/local/lib/python3.8/dist-packages/savant,type=bind",
+  "workspaceFolder": "/usr/local/lib/python3.8/dist-packages/savant",
   "runArgs": [
     "--gpus=all"
+  ],
+  "containerEnv": {
+    "LOGLEVEL": "DEBUG",
+    "ZMQ_SRC_ENDPOINT": "sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc",
+    "ZMQ_SINK_ENDPOINT": "pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc"
+  },
+  "mounts": [
+    {
+      "source": "/tmp/zmq-sockets",
+      "target": "/tmp/zmq-sockets",
+      "type": "bind"
+    }
   ]
 }
