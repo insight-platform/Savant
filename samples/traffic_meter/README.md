@@ -87,7 +87,7 @@ Now you are ready to run the performance benchmark with the following command:
 
 ```bash
 docker run --rm -it --gpus=all \
--e DETECTOR=yolov8m \
+-e DETECTOR=peoplenet \
 -v `pwd`/samples:/opt/savant/samples \
 -v `pwd`/data:/data:ro \
 -v `pwd`/models/traffic_meter:/models \
