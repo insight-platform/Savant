@@ -252,7 +252,7 @@ class GPUImage:
     def __init__(
         self,
         image: Union[cv2.cuda.GpuMat, np.ndarray, CPUImage],
-        cuda_stream: Optional[cv2.cuda.Stream] = cv2.cuda.Stream_Null(),
+        cuda_stream: Optional[cv2.cuda.Stream] = None,
     ):
         """Image data container.
 
@@ -267,7 +267,9 @@ class GPUImage:
             self._gpu_image = image
         else:
             raise TypeError(f'Unknown type {type(image)}')
-        self._cuda_stream = cuda_stream
+        self._cuda_stream = (
+            cv2.cuda.Stream_Null() if cuda_stream is None else cuda_stream
+        )
 
     @property
     def gpu_mat(self):

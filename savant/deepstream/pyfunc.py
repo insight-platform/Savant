@@ -4,7 +4,11 @@ import cv2
 from savant.base.pyfunc import BasePyFuncPlugin
 from savant.deepstream.utils import (
     nvds_frame_meta_iterator,
+    GST_NVEVENT_PAD_ADDED,
+    GST_NVEVENT_PAD_DELETED,
     GST_NVEVENT_STREAM_EOS,
+    gst_nvevent_parse_pad_added,
+    gst_nvevent_parse_pad_deleted,
     gst_nvevent_parse_stream_eos,
 )
 from savant.deepstream.meta.frame import NvDsFrameMeta
@@ -24,17 +28,34 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
         self._sources = SourceInfoRegistry()
         self.frame_streams = {}
 
-    def on_sink_event(self, event: Gst.Event):
+    def on_event(self, event: Gst.Event):
         """Add stream event callbacks."""
-        if event.type == GST_NVEVENT_STREAM_EOS:
+        # GST_NVEVENT_STREAM_START is not sent,
+        # so use GST_NVEVENT_PAD_ADDED/DELETED
+        if event.type == GST_NVEVENT_PAD_ADDED:
+            pad_idx = gst_nvevent_parse_pad_added(event)
+            source_id = self._sources.get_id_by_pad_index(pad_idx)
+            self.on_source_add(source_id)
+        elif event.type == GST_NVEVENT_PAD_DELETED:
+            pad_idx = gst_nvevent_parse_pad_deleted(event)
+            source_id = self._sources.get_id_by_pad_index(pad_idx)
+            self.on_source_delete(source_id)
+        elif event.type == GST_NVEVENT_STREAM_EOS:
             pad_idx = gst_nvevent_parse_stream_eos(event)
-            if pad_idx is not None:
-                source_id = self._sources.get_id_by_pad_index(pad_idx)
-                self.on_source_eos(source_id)
+            source_id = self._sources.get_id_by_pad_index(pad_idx)
+            self.on_source_eos(source_id)
+
+    def on_source_add(self, source_id: str):
+        """On source add event callback."""
+        # self.logger.debug('Source %s added.', source_id)
 
     def on_source_eos(self, source_id: str):
         """On source EOS event callback."""
-        # self.logger.debug('Got GST_NVEVENT_STREAM_EOS for source %s.', source_id)
+        # self.logger.debug('Source %s EOS.', source_id)
+
+    def on_source_delete(self, source_id: str):
+        """On source delete event callback."""
+        # self.logger.debug('Source %s deleted.', source_id)
 
     def get_cuda_stream(self, frame_meta: NvDsFrameMeta):
         """Get a CUDA stream that can be used to

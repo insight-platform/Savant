@@ -812,7 +812,7 @@ class NvDsPipeline(GstPipeline):
         """Processes EOS events on demuxer src pad."""
 
         pad_idx = gst_nvevent_parse_stream_eos(event)
-        if pad_idx is None or pad != self._demuxer_src_pads[pad_idx]:
+        if pad != self._demuxer_src_pads[pad_idx]:
             # nvstreamdemux redirects GST_NVEVENT_STREAM_EOS on each src pad
             return Gst.PadProbeReturn.PASS
         self._logger.debug(
