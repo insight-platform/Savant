@@ -16,7 +16,7 @@ services:
     entrypoint: /opt/savant/adapters/gst/sources/video_loop.sh
 
   module:
-    build: 
+    build:
       context: .
       dockerfile: docker/Dockerfile.x86
     volumes:
@@ -24,11 +24,13 @@ services:
       - ../../models/traffic_meter:/models
       - ../../downloads/traffic_meter:/downloads
       - .:/opt/savant/samples/traffic_meter
-    command: samples/traffic_meter/module-${DETECTOR}.yml
+    command: samples/traffic_meter/module.yml
     environment:
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
       - FPS_PERIOD=1000
+      - DETECTOR=${DETECTOR}
+      - MODULE_NAME=traffic_meter-${DETECTOR}
     deploy:
       resources:
         reservations:
