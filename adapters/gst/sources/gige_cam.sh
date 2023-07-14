@@ -69,6 +69,7 @@ if [[ "${ENCODE,,}" == "true" ]]; then
         videoconvert !
         x265enc bitrate="${ENCODE_BITRATE}" key-int-max="${ENCODE_KEY_INT_MAX}"
         speed-preset="${ENCODE_SPEED_PRESET}" tune="${ENCODE_TUNE}" !
+        'video/x-h265,profile=main' !
         h265parse config-interval=-1 !
         'video/x-h265,stream-format=byte-stream,alignment=au' !
     )
