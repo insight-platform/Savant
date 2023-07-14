@@ -388,8 +388,9 @@ class BasePipeline:
     sink: List[PipelineElement] = field(default_factory=list)
     """Sink elements of a pipeline."""
 
+
 @dataclass
-class BasicPipeline(BasePipeline):
+class SimplePipeline(BasePipeline):
     """Pipeline configuration template. Validates entries in a module config
     file under ``pipeline``. For example,
 
@@ -400,6 +401,7 @@ class BasicPipeline(BasePipeline):
     """Main Pipeline contents. Consists of conditionally enabled Stages,
     which are sequences of pipeline elements that implement various processing operations.
     """
+
 
 @dataclass
 class CompositePipeline(BasePipeline):

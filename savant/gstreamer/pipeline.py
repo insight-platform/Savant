@@ -5,7 +5,14 @@ import logging
 from gi.repository import Gst  # noqa:F401
 
 from savant.gstreamer.buffer_processor import GstBufferProcessor
-from savant.config.schema import PipelineElement, BasePipeline, BasicPipeline, CompositePipeline, ModelElement
+from savant.config.schema import (
+    PipelineElement,
+    BasePipeline,
+    SimplePipeline,
+    CompositePipeline,
+    ModelElement,
+    Stage,
+)
 from savant.utils.sink_factories import SinkMessage
 from savant.utils.fps_meter import FPSMeter
 from savant.gstreamer.element_factory import CreateElementException, GstElementFactory
@@ -56,13 +63,17 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
         # build pipeline: source -> elements -> fakesink
         self._add_source(pipeline_cfg.source)
 
-        if isinstance(pipeline_cfg, BasicPipeline):
+        self._logger.debug('Adding elements for %s.', type(pipeline_cfg).__name__)
+        if isinstance(pipeline_cfg, SimplePipeline):
             for element in pipeline_cfg.elements:
                 self.add_element(element, with_probes=isinstance(element, ModelElement))
         elif isinstance(pipeline_cfg, CompositePipeline):
-            for stage in pipeline_cfg.stages:
-                for element in stage.elements:
-                    self.add_element(element, with_probes=isinstance(element, ModelElement))
+            for i, stage in enumerate(pipeline_cfg.stages):
+                if self._is_stage_enabled_check_log(stage, i):
+                    for element in stage.elements:
+                        self.add_element(
+                            element, with_probes=isinstance(element, ModelElement)
+                        )
         self._add_sink()
 
         self._is_running = False
@@ -212,3 +223,24 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
     ) -> GstBufferProcessor:
         """Create buffer processor."""
         return GstBufferProcessor(queue, fps_meter)
+
+    def _is_stage_enabled_check_log(self, stage: Stage, stage_idx: int) -> bool:
+        is_enabled = stage.init_condition is None or (
+            stage.init_condition.expr == stage.init_condition.value
+        )
+        if stage.init_condition is None:
+            debug_str = 'no condition, adding'
+        else:
+            debug_str = f'expr "{stage.init_condition.expr}"'
+            if is_enabled:
+                debug_str += f' == value "{stage.init_condition.value}", adding'
+            else:
+                debug_str += f' != value "{stage.init_condition.value}", skipping'
+        self._logger.debug(
+            'Stage %s (name %s): %s %s elements.',
+            stage_idx,
+            stage.name,
+            debug_str,
+            len(stage.elements),
+        )
+        return is_enabled

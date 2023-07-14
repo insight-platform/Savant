@@ -105,7 +105,9 @@ class NvDsPipeline(GstPipeline):
         self._muxer: Optional[Gst.Element] = None
 
         if pipeline_cfg.source.element == 'zeromq_source_bin':
-            pipeline_cfg.source.properties['max-parallel-streams'] = self._max_parallel_streams
+            pipeline_cfg.source.properties[
+                'max-parallel-streams'
+            ] = self._max_parallel_streams
 
         # nvjpegdec decoder is selected in decodebin according to the rank, but
         # there are problems with the plugin:

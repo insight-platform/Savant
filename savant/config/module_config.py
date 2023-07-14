@@ -6,7 +6,7 @@ import logging
 from omegaconf import OmegaConf, DictConfig
 from savant.config.schema import (
     Module,
-    BasicPipeline,
+    SimplePipeline,
     CompositePipeline,
     PipelineElement,
     PyFuncElement,
@@ -133,7 +133,7 @@ def setup_batch_size(config: Module) -> None:
         return None
 
     first_model_batch_size = None
-    if isinstance(config.pipeline, BasicPipeline):
+    if isinstance(config.pipeline, SimplePipeline):
         first_model_batch_size = iterate_elements(config.pipeline.elements)
     elif isinstance(config.pipeline, CompositePipeline):
         for stage in config.pipeline.stages:
@@ -189,33 +189,34 @@ def elements_type_config(elements):
 
     configured_elements = []
     for element_config in elements:
-            try:
-                element, elem_type, elem_ver = get_elem_type_ver(element_config)
+        try:
+            element, elem_type, elem_ver = get_elem_type_ver(element_config)
 
-                element_config.element = element
-                if elem_type:
-                    element_config.element_type = elem_type
-                if elem_ver:
-                    element_config.version = elem_ver
+            element_config.element = element
+            if elem_type:
+                element_config.element_type = elem_type
+            if elem_ver:
+                element_config.version = elem_ver
 
-                element_schema, configurator = get_schema_configurator(element)
+            element_schema, configurator = get_schema_configurator(element)
 
-                element_config = OmegaConf.unsafe_merge(element_schema, element_config)
+            element_config = OmegaConf.unsafe_merge(element_schema, element_config)
 
-                if element_config.version != 'v1':
-                    raise ModuleConfigException('Only version "v1" is supported.')
+            if element_config.version != 'v1':
+                raise ModuleConfigException('Only version "v1" is supported.')
 
-                if configurator:
-                    element_config = configurator(element_config)
+            if configurator:
+                element_config = configurator(element_config)
 
-                configured_elements.append(element_config)
+            configured_elements.append(element_config)
 
-            except Exception as exc:
-                raise ModuleConfigException(
-                    f'Element {get_element_name(element_config)}: {exc}'
-                ) from exc
+        except Exception as exc:
+            raise ModuleConfigException(
+                f'Element {get_element_name(element_config)}: {exc}'
+            ) from exc
 
     return configured_elements
+
 
 class ModuleConfig(metaclass=SingletonMeta):
     """Singleton that provides module configuration loading and access."""
@@ -247,12 +248,14 @@ class ModuleConfig(metaclass=SingletonMeta):
 
         if 'pipeline' in module_cfg:
             if 'stages' in module_cfg.pipeline and 'elements' in module_cfg.pipeline:
-                raise ModuleConfigException('"stages" and "elements" pipeline config keys are mutually exclusive.')
+                raise ModuleConfigException(
+                    '"stages" and "elements" pipeline config keys are mutually exclusive.'
+                )
 
             if 'stages' in module_cfg.pipeline:
                 pipeline_schema = OmegaConf.structured(CompositePipeline)
             else:
-                pipeline_schema = OmegaConf.structured(BasicPipeline)
+                pipeline_schema = OmegaConf.structured(SimplePipeline)
 
             pipeline_cfg = OmegaConf.merge(
                 pipeline_schema, self._default_cfg.pipeline, module_cfg.pipeline
@@ -260,7 +263,7 @@ class ModuleConfig(metaclass=SingletonMeta):
             del module_cfg.pipeline
         else:
             pipeline_cfg = OmegaConf.merge(
-                OmegaConf.structured(BasicPipeline), self._default_cfg.pipeline
+                OmegaConf.structured(SimplePipeline), self._default_cfg.pipeline
             )
         del self._default_cfg.pipeline
 
@@ -278,11 +281,16 @@ class ModuleConfig(metaclass=SingletonMeta):
 
         logger.info('Configure pipeline elements...')
 
-        if OmegaConf.get_type(module_cfg.pipeline).__name__ == CompositePipeline.__name__:
+        if (
+            OmegaConf.get_type(module_cfg.pipeline).__name__
+            == CompositePipeline.__name__
+        ):
             for stage in module_cfg.pipeline.stages:
                 stage.elements = elements_type_config(stage.elements)
         else:
-            module_cfg.pipeline.elements = elements_type_config(module_cfg.pipeline.elements)
+            module_cfg.pipeline.elements = elements_type_config(
+                module_cfg.pipeline.elements
+            )
 
         self._config = OmegaConf.to_object(module_cfg)
 
