@@ -359,13 +359,6 @@ def pictures_source(
     ),
 )
 @click.option(
-    '--calculate-dts',
-    is_flag=True,
-    default=False,
-    help='Calculate DTS for frames. Set this flag when the source has B-frames.',
-    show_default=True,
-)
-@click.option(
     '--rtsp-transport',
     default='tcp',
     help='RTSP transport protocol ("udp" or "tcp").',
@@ -590,6 +583,91 @@ def gige_cam_source(
         envs=envs,
         docker_image=docker_image,
         host_network=host_network,
+    )
+    run_command(cmd)
+
+
+@cli.command('ffmpeg')
+@common_options
+@sync_option
+@click.option(
+    '--sync-delay',
+    type=click.INT,
+    help=(
+        'Delay in seconds before sending frames. '
+        'Ignored when synchronous frames sending is turned off (i.e. no --sync flag).'
+    ),
+)
+@click.option(
+    '--ffmpeg-params',
+    help=(
+        'A comma separated string "key=value" with parameters for FFmpeg '
+        '(e.g. "rtsp_transport=tcp", "input_format=mjpeg,video_size=1280x720").'
+    ),
+)
+@click.option(
+    '--buffer-len',
+    default=50,
+    help='Maximum amount of frames in the buffer.',
+    show_default=True,
+)
+@click.option(
+    '--ffmpeg-loglevel',
+    default='info',
+    help='Log level for FFmpeg.',
+    show_default=True,
+)
+@click.option(
+    '--device',
+    help='Device to mount to the container (e.g. "/dev/video0").',
+)
+@adapter_docker_image_option('gstreamer')
+@click.argument('uri', required=True)
+def ffmpeg_source(
+    source_id: str,
+    out_endpoint: str,
+    out_type: str,
+    out_bind: bool,
+    sync: bool,
+    sync_delay: Optional[int],
+    ffmpeg_params: Optional[str],
+    buffer_len: int,
+    ffmpeg_loglevel: str,
+    device: Optional[str],
+    docker_image: str,
+    fps_period_frames: Optional[int],
+    fps_period_seconds: Optional[float],
+    fps_output: str,
+    uri: str,
+):
+    """Read video stream from URI using FFmpeg library."""
+
+    envs = build_common_envs(
+        source_id=source_id,
+        fps_period_frames=fps_period_frames,
+        fps_period_seconds=fps_period_seconds,
+        fps_output=fps_output,
+    ) + [
+        f'URI={uri}',
+        f'BUFFER_LEN={buffer_len}',
+        f'FFMPEG_LOGLEVEL={ffmpeg_loglevel}',
+    ]
+    if sync and sync_delay is not None:
+        envs.append(f'SYNC_DELAY={sync_delay}')
+    if ffmpeg_params:
+        envs.append(f'FFMPEG_PARAMS={ffmpeg_params}')
+    devices = [device] if device is not None else []
+
+    cmd = build_docker_run_command(
+        f'source-rtsp-{source_id}',
+        zmq_endpoint=out_endpoint,
+        zmq_type=out_type,
+        zmq_bind=out_bind,
+        sync=sync,
+        entrypoint='/opt/savant/adapters/gst/sources/ffmpeg.sh',
+        envs=envs,
+        devices=devices,
+        docker_image=docker_image,
     )
     run_command(cmd)
 

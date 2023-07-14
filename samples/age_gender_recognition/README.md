@@ -74,7 +74,7 @@ Now you are ready to run the performance benchmark with the following command:
 docker run --rm -it --gpus=all \
 -v `pwd`/samples:/opt/savant/samples \
 -v `pwd`/data:/data:ro \
--v `pwd`/downloads:/downloads \
+-v `pwd`/downloads/age_gender_recognition:/downloads \
 -v `pwd`/models/age_gender_recognition:/models \
 ghcr.io/insight-platform/savant-deepstream:latest \
 samples/age_gender_recognition/module_performance.yml
@@ -86,7 +86,7 @@ or for Jetson
 docker run --rm -it --gpus=all \
 -v `pwd`/samples:/opt/savant/samples \
 -v `pwd`/data:/data:ro \
--v `pwd`/downloads:/downloads \
+-v `pwd`/downloads/age_gender_recognition:/downloads \
 -v `pwd`/models/age_gender_recognition:/models \
 ghcr.io/insight-platform/savant-deepstream-l4t:latest \
 samples/age_gender_recognition/module_performance.yml

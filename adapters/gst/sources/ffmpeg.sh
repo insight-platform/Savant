@@ -37,9 +37,12 @@ handler() {
 }
 trap handler SIGINT SIGTERM
 
+FFMPEG_SRC=(ffmpeg_src uri="${URI}" queue-len="${BUFFER_LEN}" loglevel="${FFMPEG_LOGLEVEL}")
+if [[ -n "${FFMPEG_PARAMS}" ]]; then
+    FFMPEG_SRC+=("params=${FFMPEG_PARAMS}")
+fi
 PIPELINE=(
-    ffmpeg_src uri="${URI}" params="${FFMPEG_PARAMS}"
-    queue-len="${BUFFER_LEN}" loglevel="${FFMPEG_LOGLEVEL}" !
+    "${FFMPEG_SRC[@]}" !
     fps_meter "${FPS_PERIOD}" output="${FPS_OUTPUT}" !
     video_to_avro_serializer source-id="${SOURCE_ID}" !
     zeromq_sink socket="${ZMQ_ENDPOINT}" socket-type="${ZMQ_SOCKET_TYPE}" bind="${ZMQ_SOCKET_BIND}"
