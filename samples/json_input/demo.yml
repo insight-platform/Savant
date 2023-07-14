@@ -1,0 +1,44 @@
+# module name, required
+name: ${oc.env:MODULE_NAME, 'demo'}
+
+# base module parameters
+parameters:
+  # pipeline processing frame parameters
+  frame:
+    width: 1280
+    height: 720
+  output_frame:
+    codec: jpeg
+  # PyFunc for drawing on frames (default implementation)
+  draw_func: {}
+  batch_size: 1
+
+# pipeline definition
+pipeline:
+  # source definition is skipped, zeromq source is used by default to connect with source adapters
+
+  # define pipeline's main elements
+  elements:
+    # primary detector element, inference is provided by the nvinfer Deepstream element
+    # model type is detector (other available types are: classifier, custom)
+#    - element: pyfunc
+#      module: samples.json_input.check
+#      class_name: Check
+#      kwargs:
+#        name_output: test
+    # detector
+    - element: nvinfer@detector
+      name: yolov8m
+      model:
+        remote:
+          url: s3://savant-data/models/yolov8m/yolov8m.zip
+          checksum_url: s3://savant-data/models/yolov8m/yolov8m.md5
+          parameters:
+            endpoint: https://eu-central-1.linodeobjects.com
+        format: custom
+        config_file: config_infer_primary_yoloV8.txt
+        custom_lib_path: /opt/savant/lib/libnvdsinfer_custom_impl_Yolo.so
+#        output:
+#          objects:
+#            - class_id: ${parameters.detected_object.id}
+#              label: ${parameters.detected_object.label}
