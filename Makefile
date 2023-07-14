@@ -20,7 +20,6 @@ build:
 	--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
 	-f docker/$(DOCKER_FILE) \
 	-t savant-deepstream$(PLATFORM_SUFFIX) .
-	#docker tag savant-deepstream$(PLATFORM_SUFFIX) savant-deepstream$(PLATFORM_SUFFIX):$(SAVANT_VERSION)-$(DEEPSTREAM_VERSION)
 	#docker tag savant-deepstream$(PLATFORM_SUFFIX) ghcr.io/insight-platform/savant-deepstream$(PLATFORM_SUFFIX)
 
 build-adapters-deepstream:
@@ -30,21 +29,18 @@ build-adapters-deepstream:
 	--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
 	-f docker/$(DOCKER_FILE) \
 	-t savant-adapters-deepstream$(PLATFORM_SUFFIX) .
-	#docker tag savant-adapters-deepstream$(PLATFORM_SUFFIX) savant-adapters-deepstream$(PLATFORM_SUFFIX):$(SAVANT_VERSION)-$(DEEPSTREAM_VERSION)
 	#docker tag savant-adapters-deepstream$(PLATFORM_SUFFIX) ghcr.io/insight-platform/savant-adapters-deepstream$(PLATFORM_SUFFIX)
 
 build-adapters-gstreamer:
 	DOCKER_BUILDKIT=1 docker build \
 	-f docker/Dockerfile.adapters-gstreamer \
 	-t savant-adapters-gstreamer$(PLATFORM_SUFFIX) .
-	#docker tag savant-adapters-gstreamer$(PLATFORM_SUFFIX) savant-adapters-gstreamer$(PLATFORM_SUFFIX):$(SAVANT_VERSION)
 	#docker tag savant-adapters-gstreamer$(PLATFORM_SUFFIX) ghcr.io/insight-platform/savant-adapters-gstreamer$(PLATFORM_SUFFIX)
 
 build-adapters-py:
 	DOCKER_BUILDKIT=1 docker build \
 	-f docker/Dockerfile.adapters-py \
 	-t savant-adapters-py$(PLATFORM_SUFFIX) .
-	#docker tag savant-adapters-py$(PLATFORM_SUFFIX) savant-adapters-py$(PLATFORM_SUFFIX):$(SAVANT_VERSION)
 	#docker tag savant-adapters-py$(PLATFORM_SUFFIX) ghcr.io/insight-platform/savant-adapters-py$(PLATFORM_SUFFIX)
 
 build-adapters-all: build-adapters-py build-adapters-gstreamer build-adapters-deepstream
