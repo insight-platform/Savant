@@ -452,7 +452,13 @@ The adapter is designed to take video streams from Ethernet GigE Vision industri
 * ``GAIN_AUTO``: the auto gain mode for the camera, one of ``off``, ``once``, or ``on``;
 * ``FEATURES``: additional configuration parameters for the camera, as a space-separated list of features;
 * ``HOST_NETWORK``: host network to use;
-* ``CAMERA_NAME``: name of the camera, in the format specified in the command description.
+* ``CAMERA_NAME``: name of the camera, in the format specified in the command description;
+* ``ENCODE``: a flag indicating the need to encode video stream with HEVC codec; default is ``False``;
+* ``ENCODE_BITRATE``: the bitrate for the encoded video stream, in kbit/sec; default is ``2048``;
+* ``ENCODE_KEY_INT_MAX``: the maximum interval between two keyframes, in frames; default is ``30``;
+* ``ENCODE_SPEED_PRESET``: preset name for speed/quality tradeoff options; one of ``ultrafast``, ``superfast``, ``veryfast``, ``faster``, ``fast``, ``medium``, ``slow``, ``slower``, ``veryslow``, ``placebo``; default is ``medium``;
+* ``ENCODE_TUNE``: preset name for tuning options; one of ``psnr``, ``ssim``, ``grain``, ``zerolatency``, ``fastdecode``, ``animation``; default is ``zerolatency``.
+
 
 Running the adapter with Docker:
 
