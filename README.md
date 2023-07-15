@@ -12,6 +12,8 @@ Savant is built on DeepStream and provides a high-level abstraction layer for bu
 
 ## Chat With Us
 
+The best way to approach the Savant team is to join our Discord server. We are always happy to help you with any questions you may have.
+
 [![discord](https://user-images.githubusercontent.com/15047882/229273271-d033e597-06d3-4aeb-b93d-1217e95ca07e.png)](https://discord.gg/KVAfGBsZGd)
 
 
