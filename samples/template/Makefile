@@ -2,7 +2,7 @@
 # Use to build and run module container for your platform.
 
 # module/container name
-MODULE_NAME := module
+IMAGE_NAME := module
 
 SHELL := /bin/bash
 DOCKER_FILE := Dockerfile.x86
@@ -16,14 +16,14 @@ endif
 build:
 	DOCKER_BUILDKIT=1 docker build \
 		-f docker/$(DOCKER_FILE) \
-		-t $(MODULE_NAME) .
+		-t $(IMAGE_NAME) .
 
 # run module
 run:
 	docker run -it --rm --gpus=all \
 		-v $(shell pwd)/models_cache:/models \
 		-v $(shell pwd)/downloads_cache:/downloads \
-		$(MODULE_NAME)
+		$(IMAGE_NAME)
 
 # run module in dev mode
 run-dev:
@@ -38,4 +38,4 @@ run-dev:
 		-v $(shell pwd)/downloads_cache:/downloads \
 		-v $(shell pwd)/module:$(PROJECT_PATH)/module \
 		--entrypoint /bin/bash \
-		$(MODULE_NAME)
+		$(IMAGE_NAME)
