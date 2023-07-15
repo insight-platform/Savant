@@ -8,6 +8,8 @@ Savant is built on DeepStream and provides a high-level abstraction layer for bu
 
 [![discord](https://user-images.githubusercontent.com/15047882/229273271-d033e597-06d3-4aeb-b93d-1217e95ca07e.png)](https://discord.gg/KVAfGBsZGd)
 
+Follow our Twitter to get the latest news about Savant: [SavantFramework](https://twitter.com/SavantFramework).
+
 ## Quick Links
 
 - [Prepare the OS Runtime](https://docs.savant-ai.io/getting_started/0_configure_prod_env.html)
