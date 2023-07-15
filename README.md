@@ -6,9 +6,12 @@ Savant is an open-source, high-level framework for building real-time, streaming
 
 Savant is built on DeepStream and provides a high-level abstraction layer for building inference pipelines. It is designed to be easy to use, flexible, and scalable. It is a great choice for building smart CV and video analytics applications for cities, retail, manufacturing, and more.
 
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/SavantFramework.svg?style=social&label=Follow%20%40SavantFramework)](https://twitter.com/SavantFramework)
+
+
 [![discord](https://user-images.githubusercontent.com/15047882/229273271-d033e597-06d3-4aeb-b93d-1217e95ca07e.png)](https://discord.gg/KVAfGBsZGd)
 
-Follow our Twitter to get the latest news about Savant: [SavantFramework](https://twitter.com/SavantFramework).
+Follow our Twitter to get the latest news about Savant: [SavantFramework](https://).
 
 ## Quick Links
 
