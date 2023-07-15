@@ -1,5 +1,5 @@
-How Savant Communicates With Data
-=================================
+How Savant Communicates With External Video Sources
+===================================================
 
 Let us get acquainted with the top-level components of Savant. A "module" is a docker container where a pipeline running computer vision resides. Modules must somehow communicate with the external world: they capture video or images from cams, files, queues, and streaming servers and send results to other external systems like video archives, databases, broadcast systems, etc. In Savant, **normally** modules don't do these things by themselves, delegating them to adapters, but direct interaction is also possible.
 
