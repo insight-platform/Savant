@@ -20,7 +20,10 @@ build:
 
 # run module
 run:
-	docker run -it --rm --gpus=all -v $(shell pwd)/modelcache:/models $(MODULE_NAME)
+	docker run -it --rm --gpus=all \
+		-v $(shell pwd)/models_cache:/models \
+		-v $(shell pwd)/downloads_cache:/downloads \
+		$(MODULE_NAME)
 
 # run module in dev mode
 run-dev:
@@ -31,7 +34,8 @@ run-dev:
 		-e XAUTHORITY=/tmp/.docker.xauth \
 		-v /tmp/.X11-unix:/tmp/.X11-unix \
 		-v /tmp/.docker.xauth:/tmp/.docker.xauth \
-		-v $(shell pwd)/modelcache:/models \
+		-v $(shell pwd)/models_cache:/models \
+		-v $(shell pwd)/downloads_cache:/downloads \
 		-v $(shell pwd)/module:$(PROJECT_PATH)/module \
 		--entrypoint /bin/bash \
 		$(MODULE_NAME)
