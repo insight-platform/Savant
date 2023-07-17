@@ -328,10 +328,10 @@ class ModelElement(PipelineElement):
 
 
 @dataclass
-class StageCondition:
+class GroupCondition:
     """Determines if a stage should be loaded into the pipeline.
     If expr evaluates to the value, then the condition is considered to be true
-    and the Stage is enabled.
+    and the Group is enabled.
     """
 
     expr: str = MISSING
@@ -339,23 +339,23 @@ class StageCondition:
 
 
 @dataclass
-class Stage:
+class ElementGroup:
     """One level elements wrapper."""
 
     name: Optional[str] = None
     """Stage name."""
 
-    init_condition: Optional[StageCondition] = None
+    init_condition: GroupCondition = MISSING
     """Stage init condition. If omitted, stage is enabled."""
 
     # elements: MISSING?  # Union[] is not supported -> Any
-    elements: List[Any] = field(default_factory=list)
-    """List of stage elements.
+    elements: List[PipelineElement] = field(default_factory=list)
+    """List of group elements.
     Can be a :py:class:`PipelineElement` or any subclass of it."""
 
 
 @dataclass
-class BasePipeline:
+class Pipeline:
     """Pipeline configuration template. Validates entries in a module config
     file under ``pipeline``. For example,
 
@@ -383,37 +383,14 @@ class BasePipeline:
     source: PipelineElement = MISSING
     """The source element of a pipeline."""
 
+    # Union[] is not supported -> Any
+    elements: List[Any] = field(default_factory=list)
+    """Main Pipeline contents. Can include :py:class:`PipelineElement` or :py:class:`ElementGroup` nodes."""
+
     draw_func: Optional[DrawFunc] = None
 
     sink: List[PipelineElement] = field(default_factory=list)
     """Sink elements of a pipeline."""
-
-
-@dataclass
-class SimplePipeline(BasePipeline):
-    """Pipeline configuration template. Validates entries in a module config
-    file under ``pipeline``. For example,
-
-    """
-
-    # Union[] is not supported -> Any
-    elements: List[Any] = field(default_factory=list)
-    """Main Pipeline contents. Consists of conditionally enabled Stages,
-    which are sequences of pipeline elements that implement various processing operations.
-    """
-
-
-@dataclass
-class CompositePipeline(BasePipeline):
-    """Pipeline configuration template. Validates entries in a module config
-    file under ``pipeline``. For example,
-
-    """
-
-    stages: List[Stage] = field(default_factory=list)
-    """Main Pipeline contents. Consists of conditionally enabled Stages,
-    which are sequences of pipeline elements that implement various processing operations.
-    """
 
 
 @dataclass
@@ -480,6 +457,6 @@ class Module:
             roi: [960, 540, 1920, 1080, 0]
     """
 
-    pipeline: BasePipeline = MISSING
+    pipeline: Pipeline = MISSING
     """Pipeline configuration.
     """

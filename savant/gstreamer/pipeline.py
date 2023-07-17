@@ -7,11 +7,9 @@ from gi.repository import Gst  # noqa:F401
 from savant.gstreamer.buffer_processor import GstBufferProcessor
 from savant.config.schema import (
     PipelineElement,
-    BasePipeline,
-    SimplePipeline,
-    CompositePipeline,
+    Pipeline,
     ModelElement,
-    Stage,
+    ElementGroup,
 )
 from savant.utils.sink_factories import SinkMessage
 from savant.utils.fps_meter import FPSMeter
@@ -34,7 +32,7 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
     def __init__(
         self,
         name: str,
-        pipeline_cfg: BasePipeline,
+        pipeline_cfg: Pipeline,
         **kwargs,
     ):
         self._logger = logging.getLogger(f'savant.{name}')
@@ -61,19 +59,21 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
         self._last_element: Gst.Element = None
 
         # build pipeline: source -> elements -> fakesink
+        self._logger.debug('Adding source...')
         self._add_source(pipeline_cfg.source)
 
-        self._logger.debug('Adding elements for %s.', type(pipeline_cfg).__name__)
-        if isinstance(pipeline_cfg, SimplePipeline):
-            for element in pipeline_cfg.elements:
-                self.add_element(element, with_probes=isinstance(element, ModelElement))
-        elif isinstance(pipeline_cfg, CompositePipeline):
-            for i, stage in enumerate(pipeline_cfg.stages):
-                if self._is_stage_enabled_check_log(stage, i):
-                    for element in stage.elements:
+        self._logger.debug('Adding pipeline elements...')
+        for i, item in enumerate(pipeline_cfg.elements):
+            if isinstance(item, PipelineElement):
+                self.add_element(item, with_probes=isinstance(item, ModelElement))
+            elif isinstance(item, ElementGroup):
+                if self._is_group_enabled_check_log(item, i):
+                    for element in item.elements:
                         self.add_element(
-                            element, with_probes=isinstance(element, ModelElement)
+                            element, with_probes=isinstance(item, ModelElement)
                         )
+
+        self._logger.debug('Adding sink...')
         self._add_sink()
 
         self._is_running = False
@@ -224,23 +224,22 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
         """Create buffer processor."""
         return GstBufferProcessor(queue, fps_meter)
 
-    def _is_stage_enabled_check_log(self, stage: Stage, stage_idx: int) -> bool:
-        is_enabled = stage.init_condition is None or (
-            stage.init_condition.expr == stage.init_condition.value
-        )
-        if stage.init_condition is None:
-            debug_str = 'no condition, adding'
-        else:
-            debug_str = f'expr "{stage.init_condition.expr}"'
+    def _is_group_enabled_check_log(self, group: ElementGroup, group_idx: int) -> bool:
+        is_enabled = group.init_condition.expr == group.init_condition.value
+        if self._logger.isEnabledFor(logging.DEBUG):
             if is_enabled:
-                debug_str += f' == value "{stage.init_condition.value}", adding'
+                cmp_symbol = '=='
+                action = 'adding'
+
             else:
-                debug_str += f' != value "{stage.init_condition.value}", skipping'
-        self._logger.debug(
-            'Stage %s (name %s): %s %s elements.',
-            stage_idx,
-            stage.name,
-            debug_str,
-            len(stage.elements),
-        )
+                cmp_symbol = '!='
+                action = 'skipping'
+            debug_str = f'expr "{group.init_condition.expr}" {cmp_symbol} value "{group.init_condition.value}", {action}'
+            self._logger.debug(
+                'Group %s (name %s): %s %s elements.',
+                group_idx,
+                group.name,
+                debug_str,
+                len(group.elements),
+            )
         return is_enabled

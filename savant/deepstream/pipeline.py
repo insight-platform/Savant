@@ -49,7 +49,7 @@ from savant.utils.fps_meter import FPSMeter
 from savant.utils.source_info import SourceInfoRegistry, SourceInfo, Resolution
 from savant.utils.platform import is_aarch64
 from savant.config.schema import (
-    BasePipeline,
+    Pipeline,
     PipelineElement,
     ModelElement,
     FrameParameters,
@@ -72,7 +72,7 @@ class NvDsPipeline(GstPipeline):
     def __init__(
         self,
         name: str,
-        pipeline_cfg: BasePipeline,
+        pipeline_cfg: Pipeline,
         **kwargs,
     ):
         # pipeline internal processing frame size
