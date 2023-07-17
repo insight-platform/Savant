@@ -10,7 +10,40 @@ parameters:
   output_frame:
     codec: jpeg
   # PyFunc for drawing on frames (default implementation)
-  draw_func: {}
+  draw_func:
+    rendered_objects:
+      yolov8m:
+        person:
+          bbox:
+            border_color: 'FF0000FF'  # Red
+            background_color: '00000000'  # transparent
+            thickness: 5
+          label:
+            # RGBA color values for person label's font and background
+            font_color: '000000ff'
+            background_color: 'FF0000FF'
+            position:
+              position: 'TopLeftInside'
+      coco:
+        person:
+          bbox:
+            border_color: '00FF00FF'  # Green
+            background_color: '00000000'  # transparent
+            thickness: 5
+            padding:
+              top: 10
+              left: 10
+              bottom: 10
+              right: 10
+
+
+
+  detected_object:
+    id: 0
+    label: person
+    # id: 2
+    # label: car
+
   batch_size: 1
 
 # pipeline definition
@@ -38,7 +71,7 @@ pipeline:
         format: custom
         config_file: config_infer_primary_yoloV8.txt
         custom_lib_path: /opt/savant/lib/libnvdsinfer_custom_impl_Yolo.so
-#        output:
-#          objects:
-#            - class_id: ${parameters.detected_object.id}
-#              label: ${parameters.detected_object.label}
+        output:
+          objects:
+            - class_id: ${parameters.detected_object.id}
+              label: ${parameters.detected_object.label}

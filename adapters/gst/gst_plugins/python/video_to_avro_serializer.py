@@ -303,7 +303,7 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
                         map(
                             lambda x: (x["pts"], x),
                             filter(
-                                lambda x: x["schema"] == "VideoFrame",
+                                lambda x: x["schema"] == "VideoFrame" if "schema" in x else True,
                                 map(json.loads, fp.readlines()),
                             ),
                         )

@@ -24,8 +24,8 @@ services:
 #      - /tmp/zmq_sockets:/tmp/zmq-sockets
       - ../../savant:/usr/local/lib/python3.8/dist-packages/savant
       - zmq_sockets:/tmp/zmq-sockets
-#      - ../../models/peoplenet_detector:/models
-#      - ../../downloads/peoplenet_detector:/downloads
+      - ../../models/traffic_meter:/models
+      - ../../downloads/traffic_meter:/downloads
       - ..:/opt/savant/samples
     command: samples/json_input/demo.yml
     environment:
@@ -50,7 +50,7 @@ services:
     environment:
       - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output.ipc
       - CHUNK_SIZE=1000
-      - DIR_LOCATION=/results/%source_id
+      - DIR_LOCATION=/results
     entrypoint: /opt/savant/adapters/python/sinks/image_files.py
 
 
