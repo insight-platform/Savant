@@ -9,8 +9,7 @@ DOCKER_FILE := Dockerfile.x86
 PROJECT_PATH := /opt/savant
 
 ifeq ("$(shell uname -m)", "aarch64")
-    PLATFORM_SUFFIX := -l4t
-    DOCKER_FILE := Dockerfile.deepstream-l4t
+    DOCKER_FILE := Dockerfile.l4t
 endif
 
 # build module container

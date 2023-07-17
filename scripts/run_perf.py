@@ -1,5 +1,19 @@
 #!/usr/bin/env python3
-"""Run performance management."""
+"""Run performance management.
+TODO:
+    1. Run with specified docker image, savant version
+    2. Prepare 1st step: sync data
+mkdir -p data
+aws s3 sync --no-sign-request --endpoint-url=https://eu-central-1.linodeobjects.com s3://savant-data/demo data
+OR
+docker run --rm \
+ -v `pwd`/data:/data \
+ -e AWS_CONFIG_FILE \
+ amazon/aws-cli \
+ --no-sign-request \
+ --endpoint-url=https://eu-central-1.linodeobjects.com \
+ s3 sync s3://savant-data/demo /data
+"""
 from pathlib import Path
 from typing import Generator
 import argparse
@@ -38,17 +52,6 @@ def main():
         '-v', '--verbose', action='store_true', help='print script output'
     )
     args = parser.parse_args()
-
-    # TODO: 1st step: sync data
-    # mkdir -p data
-    # aws s3 sync --no-sign-request --endpoint-url=https://eu-central-1.linodeobjects.com s3://savant-data/demo data
-    # docker run --rm \
-    #  -v `pwd`/data:/data \
-    #  -e AWS_CONFIG_FILE \
-    # 	amazon/aws-cli \
-    #   --no-sign-request \
-    # 	--endpoint-url=https://eu-central-1.linodeobjects.com \
-    # 	s3 sync s3://savant-data/demo /data
 
     sample_root = Path('samples')
 
