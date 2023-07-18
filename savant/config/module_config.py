@@ -126,19 +126,31 @@ def setup_batch_size(config: Module) -> None:
     :param config: module config
     """
 
-    first_model_batch_size = None
-    for item in config.pipeline.elements:
-        if isinstance(item, ModelElement):
-            first_model_batch_size = element.model.batch_size
-        elif isinstance(item, ElementGroup):
-            for element in item.elements:
-                if isinstance(item, ModelElement):
-                    first_model_batch_size = element.model.batch_size
-                    break
-        if first_model_batch_size is not None:
-            break
+    def find_first_model_element(pipeline: Pipeline) -> Optional[ModelElement]:
+        for item in pipeline.elements:
+            if isinstance(item, ModelElement):
+                return item
+            elif isinstance(item, ElementGroup):
+                if item.init_condition.is_enabled:
+                    for element in item.elements:
+                        if isinstance(element, ModelElement):
+                            return element
+        return None
+
+    first_model_element = find_first_model_element(config.pipeline)
+    if first_model_element is not None:
+        first_model_batch_size = first_model_element.model.batch_size
+        logger.debug(
+            'Found first ModelElement "%s" of the pipeline with the batch size of %s.',
+            first_model_element.name,
+            first_model_batch_size,
+        )
+    else:
+        first_model_batch_size = None
+        logger.debug('No ModelElements found in the pipeline.')
 
     parameter_batch_size = config.parameters.get('batch_size')
+    logger.debug('Pipeline batch size parameter is %s.', parameter_batch_size)
 
     if first_model_batch_size is not None:
         if (
@@ -161,6 +173,7 @@ def setup_batch_size(config: Module) -> None:
             'for parameter "batch_size". Allowed values: 1 - 1024.'
         )
     config.parameters['batch_size'] = batch_size
+    logger.info('Pipeline batch size is set to %s.', batch_size)
 
 
 def configure_module_parameters(module_cfg: DictConfig) -> None:

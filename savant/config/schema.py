@@ -1,5 +1,4 @@
 """Module and pipeline elements configuration templates."""
-import logging
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
 import json
@@ -336,6 +335,10 @@ class GroupCondition:
 
     expr: str = MISSING
     value: str = MISSING
+
+    @property
+    def is_enabled(self) -> bool:
+        return self.expr == self.value
 
 
 @dataclass

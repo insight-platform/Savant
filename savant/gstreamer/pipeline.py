@@ -225,7 +225,7 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
         return GstBufferProcessor(queue, fps_meter)
 
     def _is_group_enabled_check_log(self, group: ElementGroup, group_idx: int) -> bool:
-        is_enabled = group.init_condition.expr == group.init_condition.value
+        is_enabled = group.init_condition.is_enabled
         if self._logger.isEnabledFor(logging.DEBUG):
             if is_enabled:
                 cmp_symbol = '=='
