@@ -70,7 +70,7 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
                 if self._is_group_enabled_check_log(item, i):
                     for element in item.elements:
                         self.add_element(
-                            element, with_probes=isinstance(item, ModelElement)
+                            element, with_probes=isinstance(element, ModelElement)
                         )
 
         self._logger.debug('Adding sink...')
