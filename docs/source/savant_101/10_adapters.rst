@@ -498,6 +498,12 @@ Running the adapter with Docker:
         -v /tmp/zmq-sockets:/tmp/zmq-sockets \
         ghcr.io/insight-platform/savant-adapters-gstreamer:latest
 
+Running with the helper script:
+
+.. code-block:: bash
+
+    ./scripts/run_source.py ffmpeg --source-id=test --ffmpeg-params=input_format=mjpeg,video_size=1280x720 --device=/dev/video0 /dev/video0
+
 
 Sink Adapters
 -------------
@@ -726,4 +732,3 @@ Running the adapter with the helper script:
 .. code-block:: bash
 
     ./scripts/run_sink.py always-on-rtsp --source-id=test --stub-file-location=/path/to/stub_file/test.jpg rtsp://192.168.1.1
-

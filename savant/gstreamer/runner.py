@@ -157,12 +157,11 @@ class GstPipelineRunner:
         self, bus: Gst.Bus, msg: Gst.Message
     ):
         """Change state callback."""
-        old_state, new_state, _ = msg.parse_state_changed()
-
         if not msg.src == self._gst_pipeline:
             # not from the pipeline, ignore
             return
 
+        old_state, new_state, _ = msg.parse_state_changed()
         old_state_name = Gst.Element.state_get_name(old_state)
         new_state_name = Gst.Element.state_get_name(new_state)
         logger.debug(
