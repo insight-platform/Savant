@@ -1,7 +1,7 @@
 """Module configuration."""
 import re
 from pathlib import Path
-from typing import Callable, Optional, Union, Tuple, Type, Iterable
+from typing import Callable, Optional, Union, Tuple, Type, Iterable, Any
 import logging
 from omegaconf import OmegaConf, DictConfig
 from savant.config.schema import (
@@ -123,7 +123,7 @@ def setup_batch_size(config: Module) -> None:
     """Setup/check module batch size. Call this only after calling to_object
     due to the need to post initialize model.
 
-    :param config: module config
+    :param config: module config.
     """
 
     def find_first_model_element(pipeline: Pipeline) -> Optional[ModelElement]:
@@ -185,7 +185,7 @@ def configure_module_parameters(module_cfg: DictConfig) -> None:
         module_cfg.parameters = {}
         return
 
-    def apply_schema(cfg: dict, node: str, schema_class) -> None:
+    def apply_schema(cfg: dict, node: str, schema_class: Any) -> None:
         schema = OmegaConf.structured(schema_class)
         if node not in cfg or cfg[node] is None:
             cfg[node] = schema
@@ -200,8 +200,11 @@ def configure_module_parameters(module_cfg: DictConfig) -> None:
 
 
 def configure_element(element_config: DictConfig) -> DictConfig:
-    """Convert element to proper type"""
+    """Convert element to proper type.
 
+    :param element_config: element config as read from yaml.
+    :return: finished element config.
+    """
     try:
         element, elem_type, elem_ver = get_elem_type_ver(element_config)
 
@@ -233,6 +236,12 @@ def configure_element(element_config: DictConfig) -> DictConfig:
 def merge_configs(
     user_cfg_parts: Iterable[DictConfig], default_cfg: DictConfig
 ) -> DictConfig:
+    """Merge user config parts with default config.
+
+    :param user_cfg_parts: user config parts.
+    :param default_cfg: default config.
+    :return: merged config.
+    """
     user_cfg = OmegaConf.unsafe_merge(*user_cfg_parts)
 
     # if source for module is specified,
@@ -244,7 +253,10 @@ def merge_configs(
 
 
 def configure_pipeline_elements(module_cfg: DictConfig) -> None:
+    """Convert pipeline elements to proper types.
 
+    :param module_cfg: module config
+    """
     if 'pipeline' not in module_cfg or module_cfg.pipeline is None:
         module_cfg.pipeline = OmegaConf.structured(Pipeline)
         return
@@ -256,7 +268,6 @@ def configure_pipeline_elements(module_cfg: DictConfig) -> None:
     group_schema = OmegaConf.structured(ElementGroup)
 
     for pipeline_el_idx, item in enumerate(module_cfg.pipeline.elements):
-
         if 'element' in item:
             item_cfg = configure_element(item)
         elif 'group' in item:
@@ -269,7 +280,8 @@ def configure_pipeline_elements(module_cfg: DictConfig) -> None:
             item_cfg = OmegaConf.merge(group_schema, item.group)
         else:
             ModuleConfigException(
-                f'Config node under "pipeline.elements" should include either "element" or "group". Config node: {item}.'
+                f'Config node under "pipeline.elements" should include either'
+                f' "element" or "group". Config node: {item}.'
             )
         module_cfg.pipeline.elements[pipeline_el_idx] = item_cfg
 
