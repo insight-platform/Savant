@@ -220,7 +220,7 @@ class DrawFunc(PyFunc):
     .. note::
 
         Default values for :py:attr:`.module` and :py:attr:`.class_name` attributes
-        are set to use :py:class:`~savant.deepstream.drawfunc.NvDsDrawFunc` drawbin
+        are set to use :py:class:`~savant.deepstream.drawfunc.NvDsDrawFunc` drawfunc
         implementation.
     """
 
@@ -231,19 +231,9 @@ class DrawFunc(PyFunc):
     """Python class name to instantiate."""
 
     rendered_objects: Optional[Dict[str, Dict[str, Any]]] = None
-    """Objects that will be rendered on the frame
+    """A specification of objects to be rendered by the default draw function.
 
-    For example,
-
-    .. code-block:: yaml
-
-        - element: drawbin
-            rendered_objects:
-                tracker:
-                    person: red
-                yolov7obb:
-                    person: green
-
+    For more details, look at :ref:`artist-usage`.
     """
 
     kwargs: Optional[Dict[str, Any]] = None
@@ -328,30 +318,35 @@ class ModelElement(PipelineElement):
 
 @dataclass
 class GroupCondition:
-    """Determines if a stage should be loaded into the pipeline.
+    """Determines if a group should be loaded into the pipeline.
     If expr evaluates to the value, then the condition is considered to be true
     and the Group is enabled.
     """
 
     expr: str = MISSING
+    """Expression to evaluate."""
+
     value: str = MISSING
+    """Value to compare with."""
 
     @property
     def is_enabled(self) -> bool:
+        """Returns True if the condition is enabled, False otherwise."""
         return self.expr == self.value
 
 
 @dataclass
 class ElementGroup:
-    """One level elements wrapper."""
+    """Pipeline elements wrapper that can be used to add a condition
+    on whether to load the group into the pipeline.
+    """
 
     name: Optional[str] = None
-    """Stage name."""
+    """Group name."""
 
     init_condition: GroupCondition = MISSING
-    """Stage init condition. If omitted, stage is enabled."""
+    """Group init condition, mandatory."""
 
-    # elements: MISSING?  # Union[] is not supported -> Any
     elements: List[PipelineElement] = field(default_factory=list)
     """List of group elements.
     Can be a :py:class:`PipelineElement` or any subclass of it."""
@@ -388,9 +383,12 @@ class Pipeline:
 
     # Union[] is not supported -> Any
     elements: List[Any] = field(default_factory=list)
-    """Main Pipeline contents. Can include :py:class:`PipelineElement` or :py:class:`ElementGroup` nodes."""
+    """Main Pipeline contents. Can include :py:class:`PipelineElement`
+    or :py:class:`ElementGroup` nodes.
+    """
 
     draw_func: Optional[DrawFunc] = None
+    """Draw function specification."""
 
     sink: List[PipelineElement] = field(default_factory=list)
     """Sink elements of a pipeline."""

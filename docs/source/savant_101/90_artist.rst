@@ -1,3 +1,5 @@
+.. _artist-usage:
+
 Artist Usage
 ============
 
