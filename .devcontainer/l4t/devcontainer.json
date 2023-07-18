@@ -21,6 +21,16 @@
   },
   "mounts": [
     {
+      "source": "${localWorkspaceFolder}/downloads",
+      "target": "/downloads",
+      "type": "bind"
+    },
+    {
+      "source": "${localWorkspaceFolder}/models",
+      "target": "/models",
+      "type": "bind"
+    },
+    {
       "source": "/tmp/zmq-sockets",
       "target": "/tmp/zmq-sockets",
       "type": "bind"
