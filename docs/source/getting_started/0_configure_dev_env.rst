@@ -16,8 +16,8 @@ You can rely on the official documentation on configuring a `docker <https://www
 
 The instruction is created and tested in PyCharm 2023.1 **Professional**.
 
-Project Preparation
-^^^^^^^^^^^^^^^^^^^
+PyCharm Project Preparation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 #. Clone the Savant repo:
 
@@ -114,8 +114,8 @@ IDE Preparation
 
 #. Install the `Remote Development <https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.vscode-remote-extensionpack>`_ extension pack.
 
-Project Preparation
-^^^^^^^^^^^^^^^^^^^
+VS Code Project Preparation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 #. Clone the Savant repo:
 
