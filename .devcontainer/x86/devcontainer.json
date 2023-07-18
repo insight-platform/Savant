@@ -31,6 +31,16 @@
       "type": "bind"
     },
     {
+      "source": "${localWorkspaceFolder}/samples",
+      "target": "/opt/savant/samples/",
+      "type": "bind"
+    },
+    {
+      "source": "${localWorkspaceFolder}/data",
+      "target": "/data",
+      "type": "bind"
+    },
+    {
       "source": "/tmp/zmq-sockets",
       "target": "/tmp/zmq-sockets",
       "type": "bind"
