@@ -31,86 +31,81 @@ pipeline:
     properties:
       uri: file:///data/AVG-TownCentre.mp4
 
-  stages:
-    # common pyfunc stage
-    - elements:
-      # enabled always
-        - element: pyfunc
-          module: samples.traffic_meter.line_crossing
-          class_name: ConditionalDetectorSkip
-          kwargs:
-            config_path: ${oc.env:PROJECT_PATH}/samples/traffic_meter/line_config.yml
+  elements:
 
-    # variant stage: peoplenet
-    - name: detector_peoplenet
-      # enabled if env var DETECTOR==peoplenet
-      init_condition:
-        expr: ${oc.env:DETECTOR}
-        value: peoplenet
-      elements:
-        - element: nvinfer@detector
-          name: peoplenet
-          model:
-            format: etlt
-            remote:
-              url: s3://savant-data/models/peoplenet/peoplenet_pruned_v2.0.zip
-              checksum_url: s3://savant-data/models/peoplenet/peoplenet_pruned_v2.0.md5
-              parameters:
-                endpoint: https://eu-central-1.linodeobjects.com
-            model_file: resnet34_peoplenet_pruned.etlt
-            input:
-                layer_name: input_1
-                shape: [3, 544, 960]
-                scale_factor: 0.0039215697906911373
-            output:
-              layer_names: [output_bbox/BiasAdd, output_cov/Sigmoid]
-              num_detected_classes: 3
-              objects:
-                - class_id: ${parameters.detected_object.id}
-                  label: ${parameters.detected_object.label}
+    - element: pyfunc
+      module: samples.traffic_meter.line_crossing
+      class_name: ConditionalDetectorSkip
+      kwargs:
+        config_path: ${oc.env:PROJECT_PATH}/samples/traffic_meter/line_config.yml
 
-    # variant stage: yolov8m
-    - name: detector_yolov8m
-      # enabled if env var DETECTOR==yolov8m
-      init_condition:
-        expr: ${oc.env:DETECTOR}
-        value: yolov8m
-      elements:
-        - element: nvinfer@detector
-          name: yolov8m
-          model:
-            remote:
-              url: s3://savant-data/models/yolov8m/yolov8m.zip
-              checksum_url: s3://savant-data/models/yolov8m/yolov8m.md5
-              parameters:
-                endpoint: https://eu-central-1.linodeobjects.com
-            format: custom
-            config_file: config_infer_primary_yoloV8.txt
-            custom_lib_path: /opt/savant/lib/libnvdsinfer_custom_impl_Yolo.so
-            output:
-              objects:
-                - class_id: ${parameters.detected_object.id}
-                  label: ${parameters.detected_object.label}
+    # variant group: peoplenet detector
+    - group:
+        # enabled if env var DETECTOR==peoplenet
+        init_condition:
+          expr: ${oc.env:DETECTOR}
+          value: peoplenet
+        elements:
+          - element: nvinfer@detector
+            name: peoplenet
+            model:
+              format: etlt
+              remote:
+                url: s3://savant-data/models/peoplenet/peoplenet_pruned_v2.0.zip
+                checksum_url: s3://savant-data/models/peoplenet/peoplenet_pruned_v2.0.md5
+                parameters:
+                  endpoint: https://eu-central-1.linodeobjects.com
+              model_file: resnet34_peoplenet_pruned.etlt
+              input:
+                  layer_name: input_1
+                  shape: [3, 544, 960]
+                  scale_factor: 0.0039215697906911373
+              output:
+                layer_names: [output_bbox/BiasAdd, output_cov/Sigmoid]
+                num_detected_classes: 3
+                objects:
+                  - class_id: ${parameters.detected_object.id}
+                    label: ${parameters.detected_object.label}
 
-    # common tracker + analytics stage
-    - elements:
-      # enabled always
-        - element: nvtracker
-          properties:
-            ll-lib-file: /opt/nvidia/deepstream/deepstream/lib/libnvds_nvmultiobjecttracker.so
-            ll-config-file: ${oc.env:PROJECT_PATH}/samples/traffic_meter/config_tracker_NvDCF_perf.yml
-            tracker-width: 960  # 640  # must be a multiple of 32
-            tracker-height: 544  # 384
-            display-tracking-id: 0
+    # variant group: yolov8m detector
+    - group:
+        # enabled if env var DETECTOR==yolov8m
+        init_condition:
+          expr: ${oc.env:DETECTOR}
+          value: yolov8m
+        elements:
+          - element: nvinfer@detector
+            name: yolov8m
+            model:
+              remote:
+                url: s3://savant-data/models/yolov8m/yolov8m.zip
+                checksum_url: s3://savant-data/models/yolov8m/yolov8m.md5
+                parameters:
+                  endpoint: https://eu-central-1.linodeobjects.com
+              format: custom
+              config_file: config_infer_primary_yoloV8.txt
+              custom_lib_path: /opt/savant/lib/libnvdsinfer_custom_impl_Yolo.so
+              output:
+                objects:
+                  - class_id: ${parameters.detected_object.id}
+                    label: ${parameters.detected_object.label}
 
-        - element: pyfunc
-          module: samples.traffic_meter.line_crossing
-          class_name: LineCrossing
-          kwargs:
-            config_path: ${oc.env:PROJECT_PATH}/samples/traffic_meter/line_config.yml
-            stale_track_del_period: 5000
-            target_obj_label: ${parameters.detected_object.label}
-            send_stats: True
+    - element: nvtracker
+      properties:
+        ll-lib-file: /opt/nvidia/deepstream/deepstream/lib/libnvds_nvmultiobjecttracker.so
+        ll-config-file: ${oc.env:PROJECT_PATH}/samples/traffic_meter/config_tracker_NvDCF_perf.yml
+        tracker-width: 960  # 640  # must be a multiple of 32
+        tracker-height: 544  # 384
+        display-tracking-id: 0
+
+    - element: pyfunc
+      module: samples.traffic_meter.line_crossing
+      class_name: LineCrossing
+      kwargs:
+        config_path: ${oc.env:PROJECT_PATH}/samples/traffic_meter/line_config.yml
+        stale_track_del_period: 5000
+        target_obj_label: ${parameters.detected_object.label}
+        send_stats: True
 
   # noop pipeline sink, not using sink adapter
   sink:
