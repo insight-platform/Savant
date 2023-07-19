@@ -33,7 +33,6 @@ from savant.meta.constants import PRIMARY_OBJECT_KEY
 from savant.config.schema import PipelineElement, ModelElement, FrameParameters
 from savant.deepstream.nvinfer.model import (
     NvInferDetector,
-    NvInferInstanceSegmentation,
     NvInferAttributeModel,
     NvInferComplexModel,
 )
@@ -473,7 +472,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
             NvInferDetector,
             NvInferAttributeModel,
         ] = element.model
-        is_complex_model = isinstance(model, (NvInferComplexModel, NvInferInstanceSegmentation))
+        is_complex_model = isinstance(model, NvInferComplexModel)
         is_detector = isinstance(model, NvInferDetector)
 
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))

@@ -13,6 +13,9 @@ sys.path.append(str(Path(__file__).parent.parent))
 from savant.utils.version import version
 from savant.utils.platform import is_aarch64
 
+SAVANT_VERSION = 'latest'  # use version.SAVANT or 'latest'
+DEEPSTREAM_VERSION = version.DEEPSTREAM
+
 # docker registry to use with scripts, set to "None" to use local images
 DOCKER_REGISTRY = 'ghcr.io/insight-platform'
 # DOCKER_REGISTRY = None
@@ -20,14 +23,11 @@ DOCKER_REGISTRY = 'ghcr.io/insight-platform'
 
 def docker_image_option(default_docker_image_name: str, tag: Optional[str] = None):
     """Click option for docker image."""
-    SAVANT_VERSION = version.SAVANT
-    DEEPSTREAM_VERSION = version.DEEPSTREAM
-
     if is_aarch64():
         default_docker_image_name += '-l4t'
 
     default_tag = SAVANT_VERSION
-    if 'deepstream' in default_docker_image_name:
+    if 'deepstream' in default_docker_image_name and SAVANT_VERSION != 'latest':
         default_tag += f'-{DEEPSTREAM_VERSION}'
 
     if tag:
