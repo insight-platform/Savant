@@ -1,0 +1,41 @@
+version: "3.3"
+services:
+
+  receiver:
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:latest
+    restart: unless-stopped
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+    environment:
+      - ZMQ_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
+      - FFMPEG_LOGLEVEL=debug
+      - FFMPEG_PARAMS=rtsp_transport=tcp
+      - URI
+      - SOURCE_ID=test
+    entrypoint: /opt/savant/adapters/gst/sources/ffmpeg.sh
+
+  broadcaster:
+    image: ghcr.io/insight-platform/savant-adapters-deepstream-l4t:latest
+    restart: unless-stopped
+    ports:
+      - "888:888"    # HLS
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ../assets/stub_imgs:/stub_imgs
+    environment:
+      - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
+      - SOURCE_ID=test
+      - STUB_FILE_LOCATION=/stub_imgs/smpte100_640x360.jpeg
+      - DEV_MODE=True
+    command: python -m adapters.ds.sinks.always_on_rtsp
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+volumes:
+  zmq_sockets:
+
