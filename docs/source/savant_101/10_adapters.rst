@@ -509,12 +509,13 @@ FFmpeg Source Adapter
 The adapter delivers video stream using FFmpeg library. It can be used to read video files, RTSP streams, and other sources supported by FFmpeg.
 
 **Parameters**:
-- ``URI`` (**required**): an URI of the stream;
-- ``FFMPEG_PARAMS``: a comma separated string ``key=value`` with parameters for FFmpeg (e.g. ``rtsp_transport=tcp``, ``input_format=mjpeg,video_size=1280x720``);
-- ``FFMPEG_LOGLEVEL``: a log level for FFmpeg; default is ``info``;
-- ``BUFFER_LEN``: a maximum amount of frames in FFmpeg buffer; default is ``50``;
-- ``SYNC_OUTPUT``: a flag indicating the need to send frames from source synchronously (i.e. at the source file rate); default is ``False``;
-- ``SYNC_DELAY``: a delay in seconds before sending frames; default is ``0``;
+
+* ``URI`` (**required**): an URI of the stream;
+* ``FFMPEG_PARAMS``: a comma separated string ``key=value`` with parameters for FFmpeg (e.g. ``rtsp_transport=tcp``, ``input_format=mjpeg,video_size=1280x720``);
+* ``FFMPEG_LOGLEVEL``: a log level for FFmpeg; default is ``info``;
+* ``BUFFER_LEN``: a maximum amount of frames in FFmpeg buffer; default is ``50``;
+* ``SYNC_OUTPUT``: a flag indicating the need to send frames from source synchronously (i.e. at the source file rate); default is ``False``;
+* ``SYNC_DELAY``: a delay in seconds before sending frames; default is ``0``.
 
 Running the adapter with Docker:
 
