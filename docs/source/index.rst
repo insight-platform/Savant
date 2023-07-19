@@ -1,4 +1,4 @@
-.. Savant documentation master file,
+z.. Savant documentation master file,
    should at least contain the root `toctree` directive.
 
 Welcome To Savant Documentation
@@ -149,6 +149,7 @@ As for now, we provide images for x86 architecture and for Jetson hardware.
    savant_101/40_cm
    savant_101/43_am
    savant_101/53_complexm
+   savant_101/54_conditional_unit_init
    savant_101/55_preprocessing.rst
    savant_101/60_nv_trackers
    savant_101/70_python
