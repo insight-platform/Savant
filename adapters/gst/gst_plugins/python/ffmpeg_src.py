@@ -189,6 +189,9 @@ class FFmpegSrc(LoggerMixin, GstBase.BaseSrc):
             frame.pts,
             frame.dts,
         )
+        pts = 0 if frame.pts is None else frame.pts
+        dts = 0 if frame.dts is None else frame.dts
+
         self.logger.debug(
             '%s frames in queue, %s frames skipped.',
             frame.queue_len,
@@ -203,7 +206,7 @@ class FFmpegSrc(LoggerMixin, GstBase.BaseSrc):
         frame_params = FrameParams(
             codec_name=frame.codec,
             width=frame.frame_width,
-            height=frame.frame_width,
+            height=frame.frame_height,
             framerate=frame.fps,
         )
         if self._frame_params != frame_params:
@@ -212,14 +215,14 @@ class FFmpegSrc(LoggerMixin, GstBase.BaseSrc):
                 return ret
         buffer: Gst.Buffer = Gst.Buffer.new_wrapped(frame.payload_as_bytes())
         tb_num, tb_denum = frame.time_base
-        buffer.pts = frame.pts * tb_num * Gst.SECOND // tb_denum
-        buffer.dts = frame.dts * tb_num * Gst.SECOND // tb_denum
+        buffer.pts = pts * tb_num * Gst.SECOND // tb_denum
+        buffer.dts = dts * tb_num * Gst.SECOND // tb_denum
 
         self.logger.debug(
             'Pushing buffer of size %s with PTS=%s, DTS=%s and duration=%s to src pad.',
             buffer.get_size(),
-            buffer.pts,
-            buffer.dts,
+            pts,
+            dts,
             buffer.duration,
         )
 
