@@ -21,7 +21,6 @@ from savant_rs.utils.symbol_mapper import (
 )
 
 from savant.base.input_preproc import ObjectsPreprocessing
-from savant.base.model import ObjectModel, ComplexModel
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
 from savant.deepstream.source_output import (
     SourceOutput,
@@ -34,7 +33,9 @@ from savant.meta.constants import PRIMARY_OBJECT_KEY
 from savant.config.schema import PipelineElement, ModelElement, FrameParameters
 from savant.deepstream.nvinfer.model import (
     NvInferDetector,
+    NvInferInstanceSegmentation,
     NvInferAttributeModel,
+    NvInferComplexModel,
 )
 from savant.deepstream.utils import (
     get_nvds_buf_surface,
@@ -472,8 +473,8 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
             NvInferDetector,
             NvInferAttributeModel,
         ] = element.model
-        is_complex_model = isinstance(model, ComplexModel)
-        is_object_model = isinstance(model, ObjectModel)
+        is_complex_model = isinstance(model, (NvInferComplexModel, NvInferInstanceSegmentation))
+        is_detector = isinstance(model, NvInferDetector)
 
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
@@ -519,8 +520,8 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                                 values
                             ), 'Number of detected boxes and attributes do not match.'
 
-                        # object model
-                        elif is_object_model:
+                        # detector
+                        elif is_detector:
                             # output converter returns tensor with
                             # (class_id, confidence, xc, yc, width, height, [angle]),
                             # coordinates in roi scale (parent object scale)
@@ -540,6 +541,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                                 bbox_tensor[:, 3] -= bbox_tensor[:, 5] / 2
 
                                 # clip
+                                # TODO: Consider to move clip to convert
                                 # width to right, height to bottom
                                 bbox_tensor[:, 4] += bbox_tensor[:, 2]
                                 bbox_tensor[:, 5] += bbox_tensor[:, 3]
@@ -648,9 +650,9 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                                         confidence=confidence,
                                     )
 
-                # regular object model (detector)
+                # regular detector
                 # correct nvds_obj_meta.obj_label
-                elif is_object_model:
+                elif is_detector:
                     if nvds_obj_meta.unique_component_id == model_uid:
                         for obj in model.output.objects:
                             if nvds_obj_meta.class_id == obj.class_id:
