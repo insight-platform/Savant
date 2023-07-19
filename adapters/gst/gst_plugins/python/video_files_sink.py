@@ -92,7 +92,10 @@ class VideoFilesWriter(ChunkWriter):
 
         filesink: Gst.Element = sink.get_by_name(filesink_name)
         os.makedirs(self.base_location, exist_ok=True)
-        dst_location = os.path.join(self.base_location, f'{self.chunk_idx:04}.mov')
+        if self.chunk_size > 0:
+            dst_location = os.path.join(self.base_location, f'{self.chunk_idx:04}.mov')
+        else:
+            dst_location = os.path.join(self.base_location, f'video.mov')
         self.logger.info(
             'Writing video from source %s to file %s', self.source_id, dst_location
         )
@@ -177,8 +180,8 @@ class VideoFilesSink(LoggerMixin, Gst.Bin):
         'chunk-size': (
             int,
             'Chunk size',
-            'Chunk size in frames',
-            1,
+            'Chunk size in frames (0 to disable chunks).',
+            0,
             GObject.G_MAXINT,
             DEFAULT_CHUNK_SIZE,
             GObject.ParamFlags.READWRITE,
@@ -307,6 +310,10 @@ class VideoFilesSink(LoggerMixin, Gst.Bin):
         writer = self.writers.get(source_id)
         if writer is None:
             base_location = os.path.join(self.location, source_id)
+            if self.chunk_size > 0:
+                json_filename_pattern = f'{Patterns.CHUNK_IDX}.json'
+            else:
+                json_filename_pattern = 'meta.json'
             video_writer = VideoFilesWriter(
                 base_location,
                 source_id,
@@ -317,7 +324,7 @@ class VideoFilesSink(LoggerMixin, Gst.Bin):
                 [
                     video_writer,
                     MetadataJsonWriter(
-                        os.path.join(base_location, f'{Patterns.CHUNK_IDX}.json'),
+                        os.path.join(base_location, json_filename_pattern),
                         self.chunk_size,
                     ),
                 ],
