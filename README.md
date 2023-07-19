@@ -1,12 +1,22 @@
 # Savant: Supercharged Computer Vision and Video Analytics Framework on DeepStream
 
-:star: Star us on GitHub — it motivates us a lot and helps the project become more visible to developers.
 
 Savant is an open-source, high-level framework for building real-time, streaming, highly efficient multimedia AI applications on the Nvidia stack. It helps to develop dynamic, fault-tolerant inference pipelines that utilize the best Nvidia approaches for data center and edge accelerators.
 
 Savant is built on DeepStream and provides a high-level abstraction layer for building inference pipelines. It is designed to be easy to use, flexible, and scalable. It is a great choice for building smart CV and video analytics applications for cities, retail, manufacturing, and more.
 
+:star: Star us on GitHub — it motivates us a lot and helps the project become more visible to developers.
+
+![GitHub release (with filter)](https://img.shields.io/github/v/release/insight-platform/Savant)
+[![Build status](https://github.com/insight-platform/Savant/actions/workflows/build-docker-latest.yml/badge.svg?branch=develop)](https://github.com/insight-platform/Savant/actions/workflows/build-docker-latest.yml)
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/SavantFramework.svg?style=social&label=Follow%20%40SavantFramework)](https://twitter.com/SavantFramework)
+
+## Chat With Us
+
+The best way to approach the Savant team is to join our Discord server. We are always happy to help you with any questions you may have.
+
 [![discord](https://user-images.githubusercontent.com/15047882/229273271-d033e597-06d3-4aeb-b93d-1217e95ca07e.png)](https://discord.gg/KVAfGBsZGd)
+
 
 ## Quick Links
 
