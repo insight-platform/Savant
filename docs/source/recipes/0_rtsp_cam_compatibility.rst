@@ -1,19 +1,19 @@
 RTSP Cam Compatibility
 ======================
 
-There are many reasons why an RTSP Cam cannot work correctly, starting from incorrect protocol implementation and ending with network issues and latency. To address the possible problems use information from the manual.
+There are many reasons why an RTSP camera might work incorrectly, starting from incorrect protocol implementation and ending with network issues and latency. To address the possible problems, use information from the manual.
 
 Network Tests
 -------------
 
-Poor network connection is often a reason of RTSP problems. RTSP as a protocol designed to deliver video to the viewer in real-time, with lowest latency. Thus, when the underlying network doesn't perform predictably it suffers dramatically.
+A poor network connection is often a reason for RTSP problems. RTSP is a protocol designed to deliver video to the viewer in real-time, with the lowest latency. Thus, when the underlying network doesn't perform predictably, it suffers dramatically.
 
-Run several simple tests to find that network is able to deliver traffic from the cam properly.
+You can run several simple tests to find that network is able to deliver traffic from the cam properly.
 
 Estimate Jitter
 ^^^^^^^^^^^^^^^
 
-The time traffic travels from the device to the receiver is not a real problem. The variation and loss in the time what is real problem. To estimate it, use ping command:
+The time, traffic travels from the device to the receiver, is not a real problem. The variation and loss in time are real problems. To estimate it, use the ping command:
 
 .. code-block:: bash
 
@@ -24,12 +24,12 @@ The time traffic travels from the device to the receiver is not a real problem. 
     50 packets transmitted, 50 received, 0% packet loss, time 49075ms
     rtt min/avg/max/mdev = 1.398/3.695/28.755/3.926 ms
 
-In the above-displayed listing you can see that the loss is 0% which good. Jitter is pretty stable never exceeding a reasonable value of 20-30 ms, which should be normal when serving a video on 30 FPS. If you experience large **mdev** it may cause problems.
+In the above-displayed listing, you can see that the loss is 0% which is good. Jitter is pretty stable, never exceeding a reasonable value of 20-30 ms, which should be normal when serving a video on 30 FPS. If you experience large **mdev**, it may cause problems.
 
 Estimate Actual Playback Performance
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Use ffplay to test video
+Use the ``ffplay`` command to test video visually:
 
 .. code-block:: bash
 
@@ -52,9 +52,9 @@ or
 
     [h264 @ 0x7f7ba8c315c0] concealing 11875 DC, 11875 AC, 11875 MV errors in I frame
 
-or see artifacts on screen, you need to fix your network connection and camera properties. It is unlikely the stream will be processed normally.
+or see artifacts on the screen, you need to fix your network connection and camera properties. It is unlikely the stream will be processed normally.
 
-Evaluate The Playback With The Savant RTSP Source Adapter
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Playback With The Savant RTSP Source Adapter
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Visit `RTSP Compatibility Test Sample <https://github.com/insight-platform/Savant/tree/develop/samples/rtsp_cam_compatibility_test>`__ and launch it for your cam to ensure that there are no problems with the decoding chain, including NVDEC.
