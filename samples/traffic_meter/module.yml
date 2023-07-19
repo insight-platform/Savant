@@ -27,7 +27,7 @@ parameters:
 pipeline:
 
   elements:
-
+    # regular pyfunc unit definition
     - element: pyfunc
       module: samples.traffic_meter.line_crossing
       class_name: ConditionalDetectorSkip
@@ -35,12 +35,14 @@ pipeline:
         config_path: ${oc.env:PROJECT_PATH}/samples/traffic_meter/line_config.yml
 
     # variant group: peoplenet detector
+    # groups are included in the pipeline.elements alongside regular units or other groups
     - group:
         # enabled if env var DETECTOR==peoplenet
         init_condition:
           expr: ${oc.env:DETECTOR}
           value: peoplenet
         elements:
+          # below follows detector unit definition as usual
           - element: nvinfer@detector
             name: peoplenet
             model:
@@ -63,12 +65,14 @@ pipeline:
                     label: ${parameters.detected_object.label}
 
     # variant group: yolov8m detector
+    # groups are included in the pipeline.elements alongside regular units or other groups
     - group:
         # enabled if env var DETECTOR==yolov8m
         init_condition:
           expr: ${oc.env:DETECTOR}
           value: yolov8m
         elements:
+          # below follows detector unit definition as usual
           - element: nvinfer@detector
             name: yolov8m
             model:
@@ -85,6 +89,7 @@ pipeline:
                   - class_id: ${parameters.detected_object.id}
                     label: ${parameters.detected_object.label}
 
+    # regular nvtracker definition
     - element: nvtracker
       properties:
         ll-lib-file: /opt/nvidia/deepstream/deepstream/lib/libnvds_nvmultiobjecttracker.so
@@ -93,6 +98,7 @@ pipeline:
         tracker-height: 544  # 384
         display-tracking-id: 0
 
+    # regular pyfunc unit definition
     - element: pyfunc
       module: samples.traffic_meter.line_crossing
       class_name: LineCrossing
