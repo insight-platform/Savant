@@ -8,7 +8,7 @@ The resulting video is broadcast in 640x360 resolution. You can access it at `ht
 
 ## Specifying the RTSP URL
 
-Edit .env file and set the `URI` variable to the RTSP URL of the camera.
+Edit `.env` file and set the `URI` variable to the RTSP URL of the camera.
 
 ## X86
 
