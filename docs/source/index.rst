@@ -1,4 +1,4 @@
-z.. Savant documentation master file,
+.. Savant documentation master file,
    should at least contain the root `toctree` directive.
 
 Welcome To Savant Documentation
