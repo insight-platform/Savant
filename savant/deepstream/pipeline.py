@@ -444,12 +444,6 @@ class NvDsPipeline(GstPipeline):
         source_info.after_demuxer.append(output_queue)
         self._link_demuxer_src_pad(output_queue.get_static_pad('sink'), source_info)
 
-        source_info.dest_resolution = self._source_output.dest_resolution(source_info)
-        self._logger.debug(
-            'Set dest resolution of the source %s to %s',
-            source_info.source_id,
-            source_info.dest_resolution,
-        )
         self._check_pipeline_is_running()
         output_pad: Gst.Pad = self._source_output.add_output(
             pipeline=self,
@@ -560,7 +554,7 @@ class NvDsPipeline(GstPipeline):
             # second iteration to collect module objects
             for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
                 obj_meta = nvds_obj_meta_output_converter(
-                    nvds_obj_meta, self._frame_params, source_info.dest_resolution
+                    nvds_obj_meta, self._frame_params
                 )
                 for attr_meta_list in nvds_attr_meta_iterator(
                     frame_meta=nvds_frame_meta, obj_meta=nvds_obj_meta
@@ -584,10 +578,10 @@ class NvDsPipeline(GstPipeline):
                         obj_meta['bbox']['height'],
                     )
                     dest_res_bbox = BBox(
-                        source_info.dest_resolution.width / 2,
-                        source_info.dest_resolution.height / 2,
-                        source_info.dest_resolution.width,
-                        source_info.dest_resolution.height,
+                        self._frame_params.output_width / 2,
+                        self._frame_params.output_height / 2,
+                        self._frame_params.output_width,
+                        self._frame_params.output_height,
                     )
                     if not bbox.almost_eq(dest_res_bbox, 1e-6):
                         if self._logger.isEnabledFor(logging.DEBUG):

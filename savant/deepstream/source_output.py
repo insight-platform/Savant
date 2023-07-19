@@ -16,7 +16,7 @@ from savant.gstreamer.codecs import CODEC_BY_NAME, Codec, CodecInfo
 from savant.gstreamer.pipeline import GstPipeline
 from savant.gstreamer.utils import link_pads
 from savant.utils.platform import is_aarch64
-from savant.utils.source_info import SourceInfo, Resolution
+from savant.utils.source_info import SourceInfo
 
 
 class SourceOutput(ABC):
@@ -26,10 +26,6 @@ class SourceOutput(ABC):
         self._logger = logging.getLogger(
             f'{self.__class__.__module__}.{self.__class__.__name__}'
         )
-
-    @abstractmethod
-    def dest_resolution(self, source_info: SourceInfo) -> Resolution:
-        pass
 
     @abstractmethod
     def add_output(
@@ -51,12 +47,6 @@ class SourceOutputOnlyMeta(SourceOutput):
     """Adds an output elements to a DeepStream pipeline.
     Output contains only frames metadata (without the frames).
     """
-
-    def dest_resolution(self, source_info: SourceInfo) -> Resolution:
-        return Resolution(
-            width=source_info.src_resolution.width,
-            height=source_info.src_resolution.height,
-        )
 
     def add_output(
         self,
@@ -83,16 +73,6 @@ class SourceOutputWithFrame(SourceOutput):
         super().__init__()
         self._frame_params = frame_params
         self._condition = condition
-
-    def dest_resolution(self, source_info: SourceInfo) -> Resolution:
-        width = source_info.src_resolution.width
-        height = source_info.src_resolution.height
-        if self._frame_params.padding and self._frame_params.padding.keep:
-            width = width * self._frame_params.total_width // self._frame_params.width
-            height = (
-                height * self._frame_params.total_height // self._frame_params.height
-            )
-        return Resolution(width=width, height=height)
 
     def add_output(
         self,
@@ -152,7 +132,10 @@ class SourceOutputWithFrame(SourceOutput):
         self._add_transform_elems(pipeline, source_info)
 
         output_capsfilter = pipeline.add_element(PipelineElement('capsfilter'))
-        output_caps = self._build_output_caps(source_info)
+        output_caps = self._build_output_caps(
+            self._frame_params.output_width,
+            self._frame_params.output_height,
+        )
         output_capsfilter.set_property('caps', output_caps)
         source_info.after_demuxer.append(output_capsfilter)
         output_capsfilter.sync_state_with_parent()
@@ -259,7 +242,7 @@ class SourceOutputWithFrame(SourceOutput):
         pass
 
     @abstractmethod
-    def _build_output_caps(self, source_info: SourceInfo) -> Gst.Caps:
+    def _build_output_caps(self, width: int, height: int) -> Gst.Caps:
         pass
 
 
@@ -274,14 +257,14 @@ class SourceOutputRawRgba(SourceOutputWithFrame):
     def _add_transform_elems(self, pipeline: GstPipeline, source_info: SourceInfo):
         pass
 
-    def _build_output_caps(self, source_info: SourceInfo) -> Gst.Caps:
+    def _build_output_caps(self, width: int, height: int) -> Gst.Caps:
         return Gst.Caps.from_string(
             ', '.join(
                 [
                     'video/x-raw(memory:NVMM)',
                     'format=RGBA',
-                    f'width={source_info.dest_resolution.width}',
-                    f'height={source_info.dest_resolution.height}',
+                    f'width={width}',
+                    f'height={height}',
                 ]
             )
         )
@@ -322,13 +305,13 @@ class SourceOutputEncoded(SourceOutputWithFrame):
             'Added encoder %s with params %s', self._codec.encoder, self._params
         )
 
-    def _build_output_caps(self, source_info: SourceInfo) -> Gst.Caps:
+    def _build_output_caps(self, width: int, height: int) -> Gst.Caps:
         return Gst.Caps.from_string(
             ', '.join(
                 [
                     self._codec.caps_name,
-                    f'width={source_info.dest_resolution.width}',
-                    f'height={source_info.dest_resolution.height}',
+                    f'width={width}',
+                    f'height={height}',
                 ]
             )
         )
@@ -357,20 +340,6 @@ class SourceOutputH26X(SourceOutputEncoded):
         )
 
 
-class SourceOutputPng(SourceOutputEncoded):
-    """Adds an output elements to a DeepStream pipeline.
-    Output contains frames encoded with PNG codec along with metadata.
-    """
-
-    def dest_resolution(self, source_info: SourceInfo) -> Resolution:
-        # Rounding resolution to the multiple of 8 to avoid cuda errors.
-        dest_resolution = super().dest_resolution(source_info)
-        return Resolution(
-            width=round(dest_resolution.width / 8) * 8,
-            height=round(dest_resolution.height / 8) * 8,
-        )
-
-
 def create_source_output(
     frame_params: FrameParameters,
     output_frame: Optional[Dict[str, Any]],
@@ -388,14 +357,6 @@ def create_source_output(
     condition = FrameProcessingCondition(**(output_frame.get('condition') or {}))
     if codec in [Codec.H264, Codec.HEVC]:
         return SourceOutputH26X(
-            codec=codec.value,
-            params=encoder_params,
-            frame_params=frame_params,
-            condition=condition,
-        )
-
-    if codec == Codec.PNG:
-        return SourceOutputPng(
             codec=codec.value,
             params=encoder_params,
             frame_params=frame_params,

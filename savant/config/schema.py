@@ -55,6 +55,18 @@ class FrameParameters:
             return self.height + self.padding.top + self.padding.bottom
         return self.height
 
+    @property
+    def output_width(self) -> int:
+        if self.padding is not None and self.padding.keep:
+            return self.total_width
+        return self.width
+
+    @property
+    def output_height(self) -> int:
+        if self.padding is not None and self.padding.keep:
+            return self.total_height
+        return self.height
+
 
 @dataclass
 class FrameProcessingCondition:
