@@ -1,7 +1,7 @@
 version: "3.3"
 services:
 
-  rtsp-city-traffic:
+  receiver:
     image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
     restart: unless-stopped
     volumes:
@@ -14,7 +14,7 @@ services:
       - SOURCE_ID=test
     entrypoint: /opt/savant/adapters/gst/sources/ffmpeg.sh
 
-  always-on-sink-city-traffic:
+  broadcaster:
     image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
     restart: unless-stopped
     ports:
