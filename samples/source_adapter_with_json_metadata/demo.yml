@@ -36,7 +36,12 @@ parameters:
               bottom: 10
               right: 10
 
-
+          label:
+            # RGBA color values for person label's font and background
+            font_color: '000000ff'
+            background_color: 'FF0000FF'
+            position:
+              position: 'TopLeftOutside'
 
   detected_object:
     id: 0
@@ -52,13 +57,6 @@ pipeline:
 
   # define pipeline's main elements
   elements:
-    # primary detector element, inference is provided by the nvinfer Deepstream element
-    # model type is detector (other available types are: classifier, custom)
-#    - element: pyfunc
-#      module: samples.json_input.check
-#      class_name: Check
-#      kwargs:
-#        name_output: test
     # detector
     - element: nvinfer@detector
       name: yolov8m
@@ -75,3 +73,10 @@ pipeline:
           objects:
             - class_id: ${parameters.detected_object.id}
               label: ${parameters.detected_object.label}
+
+    - element: pyfunc
+      module: samples.source_adapter_with_json_metadata.metric
+      class_name: IOU
+      kwargs:
+        ground_truth: coco
+        element_name: yolov8m

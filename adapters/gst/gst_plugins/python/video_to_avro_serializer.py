@@ -22,6 +22,13 @@ class FrameParams(NamedTuple):
     framerate: str
 
 
+def is_videoframe_metadata(metadata: Dict[str, Any]) -> bool:
+    """Check that metadata contained if metadata is a video frame metadata. ."""
+    if "schema" in metadata and metadata["schema"] != "VideoFrame":
+        return False
+    return True
+
+
 class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
     """GStreamer plugin to serialize video frames to avro message."""
 
@@ -132,6 +139,7 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
         self.stream_in_progress = False
         self.read_metadata: bool = False
         self.json_metadata = None
+        self.frame_num = 0
 
     def do_set_caps(  # pylint: disable=unused-argument
         self, in_caps: Gst.Caps, out_caps: Gst.Caps
@@ -239,6 +247,7 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
                 self.json_metadata = self.read_json_metadata_file(
                     self.location.parent / f"{self.location.stem}.json"
                 )
+                self.frame_num = 0
                 self.send_end_message()
         self.last_location = self.location
         self.last_frame_params = self.frame_params
@@ -290,6 +299,7 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
                 self.json_metadata = self.read_json_metadata_file(
                     self.location.parent / f"{self.location.stem}.json"
                 )
+                self.frame_num = 0
 
         # Cannot use `super()` since it is `self`
         return GstBase.BaseTransform.do_sink_event(self, event)
@@ -299,11 +309,11 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
         if self.read_metadata:
             if location.is_file():
                 with open(location, 'r') as fp:
-                    json_metadata = dict(
+                    json_metadata = list(
                         map(
-                            lambda x: (x["pts"], x),
+                            lambda x: x["metadata"],
                             filter(
-                                lambda x: x["schema"] == "VideoFrame" if "schema" in x else True,
+                                is_videoframe_metadata,
                                 map(json.loads, fp.readlines()),
                             ),
                         )
@@ -335,7 +345,8 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
             pts = 0
         frame_metadata = None
         if self.read_metadata and self.json_metadata:
-            frame_metadata = self.json_metadata[pts]
+            frame_metadata = self.json_metadata[self.frame_num]
+            self.frame_num += 1
         message = {
             'source_id': self.source_id,
             'framerate': self.frame_params.framerate,
@@ -346,7 +357,7 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
             'dts': dts,
             'duration': duration,
             'frame': frame,
-            'metadata': frame_metadata["metadata"] if self.read_metadata else None,
+            'metadata': frame_metadata if self.read_metadata else None,
             **kwargs,
         }
         if self.location:

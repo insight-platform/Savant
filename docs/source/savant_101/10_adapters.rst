@@ -1,3 +1,5 @@
+.. _adapters Adapters:
+
 Adapters
 ========
 
@@ -235,6 +237,8 @@ All source adapters accept the following common parameters:
 - ``FPS_PERIOD_SECONDS``; a number of seconds between FPS reports; default is ``None`` which means that FPS reporting uses ``FPS_PERIOD_FRAMES``;
 - ``FPS_OUTPUT``; a path to the file for FPS reports; default is ``stdout``.
 
+.. _ifsa Image File Source Adapter:
+
 Image File Source Adapter
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -283,6 +287,9 @@ Running with the helper script:
 .. code-block:: bash
 
     ./scripts/run_source.py pictures --source-id=test /path/to/images
+
+
+.. _vfsa Video File Source Adapter:
 
 Video File Source Adapter
 ^^^^^^^^^^^^^^^^^^^^^^^^^
