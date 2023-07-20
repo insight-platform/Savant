@@ -1,5 +1,5 @@
 numpy~=1.22.4
-numba~=0.56.4
+numba~=0.57
 
 fastavro~=1.4.4
 pyzmq~=22.2.1

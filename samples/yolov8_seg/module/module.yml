@@ -5,7 +5,7 @@ parameters:
     width: 1280
     height: 720
   output_frame:
-    codec: jpeg
+    codec: hevc
   draw_func:
     module: samples.yolov8_seg.module.overlay
     class_name: Overlay
@@ -14,8 +14,8 @@ pipeline:
   source:
     element: uridecodebin
     properties:
-      uri: file:///data/images/zidane.png
-#      uri: file:///data/shuffle_dance.mp4
+#      uri: file:///data/images/zidane.png
+      uri: file:///data/shuffle_dance.mp4
 
   elements:
     - element: nvinfer@instance_segmentation

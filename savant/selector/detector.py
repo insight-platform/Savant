@@ -1,10 +1,10 @@
 """Detector's bbox selectors."""
-from numba import njit, uint8, uint16, float32
+import numba as nb
 import numpy as np
 from savant.base.selector import BaseSelector
 
 
-@njit(uint8[:](float32[:, :], float32[:], float32), nogil=True)
+@nb.njit('u2[:](f4[:, :], f4[:], f4)', nogil=True)
 def nms_cpu(
     bboxes: np.ndarray, confidences: np.ndarray, threshold: float
 ) -> np.ndarray:
@@ -17,7 +17,7 @@ def nms_cpu(
     areas = (x_right - x_left) * (y_bottom - y_top)
     order = confidences.argsort()[::-1]
 
-    keep = np.zeros((len(bboxes),), dtype=np.uint8)
+    keep = np.zeros((len(bboxes),), dtype=np.uint16)
     while order.size > 0:
         idx_self = order[0]
         idx_other = order[1:]
@@ -41,7 +41,7 @@ def nms_cpu(
     return keep
 
 
-@njit(float32[:, :](float32[:, :], uint16, uint16, uint16, uint16), nogil=True)
+@nb.njit('f4[:, :](f4[:, :], u2, u2, u2, u2)', nogil=True)
 def min_max_bbox_size_selector(
     bbox_tensor: np.ndarray,
     min_width: int = 0,
@@ -121,10 +121,7 @@ class MinMaxSizeBBoxSelector(BaseSelector):
         )
 
 
-@njit(
-    float32[:, :](float32[:, :], float32, float32, uint16, uint16, uint16, uint16),
-    nogil=True,
-)
+@nb.njit('f4[:, :](f4[:, :], f4, f4, u2, u2, u2, u2)', nogil=True)
 def default_selector(
     bbox_tensor: np.ndarray,
     confidence_threshold: float = 0.0,
