@@ -85,6 +85,7 @@ pipeline:
               format: custom
               config_file: config_infer_primary_yoloV8.txt
               custom_lib_path: /opt/savant/lib/libnvdsinfer_custom_impl_Yolo.so
+              workspace_size: 6144
               output:
                 objects:
                   - class_id: ${parameters.detected_object.id}

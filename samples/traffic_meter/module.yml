@@ -84,6 +84,9 @@ pipeline:
               format: custom
               config_file: config_infer_primary_yoloV8.txt
               custom_lib_path: /opt/savant/lib/libnvdsinfer_custom_impl_Yolo.so
+              # max GPU RAM used to build the engine, 6GB by default
+              # set lower than total GPU RAM available on your hardware
+              workspace_size: 6144
               output:
                 objects:
                   - class_id: ${parameters.detected_object.id}
