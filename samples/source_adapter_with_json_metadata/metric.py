@@ -1,19 +1,11 @@
 """Analytics module."""
-from typing import Dict, Tuple
-
-from savant.deepstream.utils import nvds_obj_meta_iterator
 from savant.gstreamer import Gst
 from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.deepstream.pyfunc import NvDsPyFuncPlugin
-from savant.meta.constants import PRIMARY_OBJECT_LABEL  # , PRIMARY_OBJECT_KEY
-from savant.parameter_storage import param_storage
 
 
 class IOU(NvDsPyFuncPlugin):
-    """Age and gender smoothing pyfunc.
-    On each frame
-
-    :key history_length: int, Length of the vector of historical values
+    """ IOU metric for object detection.
     """
 
     def __init__(self, ground_truth: str, element_name: str, **kwargs):

@@ -27,19 +27,29 @@ rm ../../data/source_adapter_with_json_metadata.zip
 ```
 
 
-
+Run the module and sink adapter and wait until the message "Pipeline starting ended after" should appear in the message logs:
 ```bash
 # if x86
-../../utils/check-environment-compatible && docker compose -f docker-compose.x86.yml up
+../../utils/check-environment-compatible && docker compose -f docker-compose.x86.yml up module image-json-sink
 
 # if Jetson
-../../utils/check-environment-compatible && docker compose -f docker-compose.l4t.yml up
+../../utils/check-environment-compatible && docker compose -f docker-compose.l4t.yml up module image-json-sink
 
 # Ctrl+C to stop running the compose bundle
 ```
 
+Run the source adapter:
+```bash
+# if x86
+docker compose -f docker-compose.x86.yml up image-json-source
+
+# if Jetson
+docker compose -f docker-compose.l4t.yml up image-json-source
+```
 Note: The source adapter runs on the images directory, so when it sends all the images it will terminate.
 The module and sink adapter run the whole time, so they should be stopped manual.
+
+Results will be saved in the `../../data/results` folder.
 
 You can use the convert_coco_to_savant.py script as a starting point to prepare 
 your input metadata. This script reads data from the COCO dataset annotations, 
