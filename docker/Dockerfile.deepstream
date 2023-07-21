@@ -115,7 +115,14 @@ RUN python -m pip install --no-cache-dir /libs/savant/dist/*.whl
 COPY LICENSE .
 COPY savant/VERSION .
 COPY gst_plugins gst_plugins
-ENV GST_PLUGIN_PATH=$PROJECT_PATH/gst_plugins
+
+COPY adapters/gst/gst_plugins adapters/gst/gst_plugins
+RUN rm -f adapters/gst/gst_plugins/python/video_files_sink.py
+COPY adapters/gst/sources adapters/gst/sources
+
+COPY scripts/uri-input.py scripts/
+ENV PATH=$PROJECT_PATH/scripts:$PATH
+ENV GST_PLUGIN_PATH=$PROJECT_PATH/gst_plugins:$PROJECT_PATH/adapters/gst/gst_plugins
 
 ENTRYPOINT ["python", "-m", "savant.entrypoint"]
 
@@ -134,10 +141,7 @@ FROM base AS adapters
 
 COPY --from=mediamtx /mediamtx/mediamtx mediamtx/mediamtx
 COPY adapters/ds adapters/ds
-COPY adapters/gst/gst_plugins/python/adjust_timestamps.py \
-     adapters/gst/gst_plugins/python/fps_meter.py \
-     adapters/gst/gst_plugins/python/
-ENV GST_PLUGIN_PATH=$GST_PLUGIN_PATH:$PROJECT_PATH/adapters/gst/gst_plugins:$PROJECT_PATH/adapters/ds/gst_plugins
+ENV GST_PLUGIN_PATH=$GST_PLUGIN_PATH:$PROJECT_PATH/adapters/ds/gst_plugins
 
 ENTRYPOINT []
 
