@@ -55,6 +55,8 @@ pipeline:
               # must be internal, output schema doesn't currently support numpy arrays
               internal: true
 
+#    - element: queue
+
 #  sink:
 #    - element: devnull_sink
 #    - element: console_sink

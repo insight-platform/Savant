@@ -61,6 +61,12 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             None,
             GObject.ParamFlags.READWRITE,
         ),
+        'pyobject': (
+            GObject.TYPE_PYOBJECT,
+            'Python object',
+            'Python Object. For internal use.',
+            GObject.ParamFlags.WRITABLE,
+        ),
     }
 
     def __init__(self):
@@ -69,6 +75,8 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
         self.module: Optional[str] = None
         self.class_name: Optional[str] = None
         self.kwargs: Optional[str] = None
+        # pyobject
+        self.pyobject: Any = None
         # pyfunc object
         self.pyfunc: Optional[BasePyFuncPlugin] = None
 
@@ -97,6 +105,8 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             self.class_name = value
         elif prop.name == 'kwargs':
             self.kwargs = value
+        elif prop.name == 'pyobject':
+            self.pyobject = value
         else:
             raise AttributeError(f'Unknown property {prop.name}.')
 

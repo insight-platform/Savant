@@ -9,12 +9,33 @@ import logging
 import pyds
 from savant_rs.primitives.geometry import BBox
 
-from savant.base.input_preproc import ObjectsPreprocessing
-
 from pygstsavantframemeta import (
     add_convert_savant_frame_meta_pad_probe,
     nvds_frame_meta_get_nvds_savant_frame_meta,
 )
+
+from savant.base.input_preproc import ObjectsPreprocessing
+from savant.base.model import AttributeModel, ComplexModel
+from savant.config.schema import (
+    PipelineElement,
+    ModelElement,
+    FrameParameters,
+    DrawFunc,
+)
+from savant.meta.constants import UNTRACKED_OBJECT_ID, PRIMARY_OBJECT_KEY
+from savant.utils.fps_meter import FPSMeter
+from savant.utils.source_info import SourceInfoRegistry, SourceInfo, Resolution
+from savant.utils.platform import is_aarch64
+from savant.utils.sink_factories import SinkEndOfStream
+
+from savant.gstreamer import Gst, GLib  # noqa:F401
+from savant.gstreamer.pipeline import GstPipeline
+from savant.gstreamer.metadata import (
+    SourceFrameMeta,
+    metadata_add_frame_meta,
+    get_source_frame_meta,
+)
+from savant.gstreamer.utils import on_pad_event, pad_to_source_id
 
 from savant.deepstream.buffer_processor import (
     NvDsBufferProcessor,
@@ -24,18 +45,11 @@ from savant.deepstream.source_output import (
     SourceOutputWithFrame,
     create_source_output,
 )
-from savant.gstreamer import Gst, GLib  # noqa:F401
-from savant.gstreamer.pipeline import GstPipeline
 from savant.deepstream.metadata import (
     nvds_obj_meta_output_converter,
     nvds_attr_meta_output_converter,
 )
-from savant.gstreamer.metadata import (
-    SourceFrameMeta,
-    metadata_add_frame_meta,
-    get_source_frame_meta,
-)
-from savant.gstreamer.utils import on_pad_event, pad_to_source_id
+from savant.deepstream.element_factory import NvDsElementFactory
 from savant.deepstream.utils import (
     gst_nvevent_parse_stream_eos,
     GST_NVEVENT_STREAM_EOS,
@@ -44,18 +58,6 @@ from savant.deepstream.utils import (
     nvds_attr_meta_iterator,
     nvds_remove_obj_attrs,
 )
-from savant.meta.constants import UNTRACKED_OBJECT_ID, PRIMARY_OBJECT_KEY
-from savant.utils.fps_meter import FPSMeter
-from savant.utils.source_info import SourceInfoRegistry, SourceInfo, Resolution
-from savant.utils.platform import is_aarch64
-from savant.config.schema import (
-    PipelineElement,
-    ModelElement,
-    FrameParameters,
-    DrawFunc,
-)
-from savant.base.model import AttributeModel, ComplexModel
-from savant.utils.sink_factories import SinkEndOfStream
 
 
 class NvDsPipeline(GstPipeline):
@@ -68,6 +70,8 @@ class NvDsPipeline(GstPipeline):
     :key batch_size: Primary batch size (nvstreammux batch-size)
     :key output_frame: Whether to include frame in module output, not just metadata
     """
+
+    _element_factory = NvDsElementFactory()
 
     def __init__(
         self,
@@ -323,7 +327,9 @@ class NvDsPipeline(GstPipeline):
         source_info: SourceInfo,
     ) -> Gst.Pad:
         self._check_pipeline_is_running()
-        nv_video_converter: Gst.Element = Gst.ElementFactory.make('nvvideoconvert')
+        nv_video_converter = self._element_factory.create(
+            PipelineElement('nvvideoconvert')
+        )
         if not is_aarch64():
             nv_video_converter.set_property(
                 'nvbuf-memory-type', int(pyds.NVBUF_MEM_CUDA_UNIFIED)
@@ -351,7 +357,9 @@ class NvDsPipeline(GstPipeline):
                 new_pad_caps,
             )
             self._check_pipeline_is_running()
-            video_converter: Gst.Element = Gst.ElementFactory.make('videoconvert')
+            video_converter = self._element_factory.create(
+                PipelineElement('videoconvert')
+            )
             self._pipeline.add(video_converter)
             video_converter.sync_state_with_parent()
             assert video_converter.link(nv_video_converter)
@@ -364,14 +372,17 @@ class NvDsPipeline(GstPipeline):
         assert new_pad.link(video_converter_sink) == Gst.PadLinkReturn.OK
 
         self._check_pipeline_is_running()
-        capsfilter: Gst.Element = Gst.ElementFactory.make('capsfilter')
-        capsfilter.set_property(
-            'caps',
-            Gst.Caps.from_string(
-                'video/x-raw(memory:NVMM), format=RGBA, '
-                f'width={self._frame_params.total_width}, '
-                f'height={self._frame_params.total_height}'
-            ),
+        capsfilter = self._element_factory.create(
+            PipelineElement(
+                'capsfilter',
+                properties={
+                    'caps': (
+                        'video/x-raw(memory:NVMM), format=RGBA, '
+                        f'width={self._frame_params.total_width}, '
+                        f'height={self._frame_params.total_height}'
+                    ),
+                },
+            )
         )
         capsfilter.set_state(Gst.State.PLAYING)
         self._pipeline.add(capsfilter)

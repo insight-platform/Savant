@@ -445,252 +445,26 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
             )
 
     def prepare_element_output(self, element: PipelineElement, buffer: Gst.Buffer):
-        """Model output postprocessing.
+        """Restore after model preprocessing.
 
         :param element: element that this probe was added to.
         :param buffer: gstreamer buffer that is being processed.
         """
         if not isinstance(element, ModelElement):
             return
-        self.logger.debug(
-            'Preparing "%s" element output for buffer with PTS %s.',
-            element.name,
-            buffer.pts,
-        )
-        frame_left = 0.0
-        frame_top = 0.0
-        frame_right = self._frame_params.width - 1.0
-        frame_bottom = self._frame_params.height - 1.0
-        if self._frame_params.padding:
-            frame_left += self._frame_params.padding.left
-            frame_top += self._frame_params.padding.top
-            frame_right += self._frame_params.padding.left
-            frame_bottom += self._frame_params.padding.top
 
-        model_uid = get_model_id(element.name)
-        model: Union[
-            NvInferDetector,
-            NvInferAttributeModel,
-        ] = element.model
-        is_complex_model = isinstance(model, NvInferComplexModel)
-        is_detector = isinstance(model, NvInferDetector)
+        if (
+            not element.model.input.preprocess_object_meta
+            and not element.model.input.preprocess_object_image
+        ):
+            return
 
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
             for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
-                # convert custom model output and save meta
-                if model.output.converter:
-                    if not self._is_model_input_object(element, nvds_obj_meta):
-                        continue
-                    parent_nvds_obj_meta = nvds_obj_meta
-                    for tensor_meta in nvds_tensor_output_iterator(
-                        parent_nvds_obj_meta, gie_uid=model_uid
-                    ):
-                        if self.logger.isEnabledFor(logging.DEBUG):
-                            self.logger.debug(
-                                'Converting "%s" element tensor output for frame with PTS %s.',
-                                element.name,
-                                nvds_frame_meta.buf_pts,
-                            )
-                        # parse and post-process model output
-                        output_layers = nvds_infer_tensor_meta_to_outputs(
-                            tensor_meta=tensor_meta,
-                            layer_names=model.output.layer_names,
-                        )
-                        outputs = model.output.converter(
-                            *output_layers,
-                            model=model,
-                            roi=(
-                                parent_nvds_obj_meta.rect_params.left,
-                                parent_nvds_obj_meta.rect_params.top,
-                                parent_nvds_obj_meta.rect_params.width,
-                                parent_nvds_obj_meta.rect_params.height,
-                            ),
-                        )
-                        # for object/complex models output - `bbox_tensor` and
-                        # `selected_bboxes` - indices of selected bboxes and meta
-                        # for attribute/complex models output - `values`
-                        bbox_tensor, selected_bboxes, values = None, None, None
-                        # complex model
-                        if is_complex_model:
-                            # output converter returns tensor and attribute values
-                            bbox_tensor, values = outputs
-                            assert bbox_tensor.shape[0] == len(
-                                values
-                            ), 'Number of detected boxes and attributes do not match.'
-
-                        # detector
-                        elif is_detector:
-                            # output converter returns tensor with
-                            # (class_id, confidence, xc, yc, width, height, [angle]),
-                            # coordinates in roi scale (parent object scale)
-                            bbox_tensor = outputs
-
-                        # attribute model
-                        else:
-                            # output converter returns attribute values
-                            values = outputs
-
-                        if bbox_tensor is not None and bbox_tensor.shape[0] > 0:
-
-                            if bbox_tensor.shape[1] == 6:  # no angle
-                                selection_type = ObjectSelectionType.REGULAR_BBOX
-                                # xc -> left, yc -> top
-                                bbox_tensor[:, 2] -= bbox_tensor[:, 4] / 2
-                                bbox_tensor[:, 3] -= bbox_tensor[:, 5] / 2
-
-                                # clip
-                                # TODO: Consider to move clip to convert
-                                # width to right, height to bottom
-                                bbox_tensor[:, 4] += bbox_tensor[:, 2]
-                                bbox_tensor[:, 5] += bbox_tensor[:, 3]
-                                # clip
-                                bbox_tensor[:, 2][
-                                    bbox_tensor[:, 2] < frame_left
-                                ] = frame_left
-                                bbox_tensor[:, 3][
-                                    bbox_tensor[:, 3] < frame_top
-                                ] = frame_top
-                                bbox_tensor[:, 4][
-                                    bbox_tensor[:, 4] > frame_right
-                                ] = frame_right
-                                bbox_tensor[:, 5][
-                                    bbox_tensor[:, 5] > frame_bottom
-                                ] = frame_bottom
-
-                                # right to width, bottom to height
-                                bbox_tensor[:, 4] -= bbox_tensor[:, 2]
-                                bbox_tensor[:, 5] -= bbox_tensor[:, 3]
-
-                                # left -> xc , top-> yc
-                                bbox_tensor[:, 2] += bbox_tensor[:, 4] / 2
-                                bbox_tensor[:, 3] += bbox_tensor[:, 5] / 2
-
-                                # add 0 angle
-                                bbox_tensor = np.concatenate(
-                                    [
-                                        bbox_tensor,
-                                        np.zeros(
-                                            (bbox_tensor.shape[0], 1), dtype=np.float32
-                                        ),
-                                    ],
-                                    axis=1,
-                                )
-                            else:
-                                selection_type = ObjectSelectionType.ROTATED_BBOX
-
-                            # add index column to further filter attribute values
-                            bbox_tensor = np.concatenate(
-                                [
-                                    bbox_tensor,
-                                    np.arange(
-                                        bbox_tensor.shape[0], dtype=np.float32
-                                    ).reshape(-1, 1),
-                                ],
-                                axis=1,
-                            )
-
-                            selected_bboxes = []
-                            for obj in model.output.objects:
-                                cls_bbox_tensor = bbox_tensor[
-                                    bbox_tensor[:, 0] == obj.class_id
-                                ]
-                                if cls_bbox_tensor.shape[0] == 0:
-                                    continue
-                                if obj.selector:
-                                    cls_bbox_tensor = obj.selector(cls_bbox_tensor)
-
-                                obj_label = build_model_object_key(
-                                    element.name, obj.label
-                                )
-                                for bbox in cls_bbox_tensor:
-                                    # add NvDsObjectMeta
-                                    if self.logger.isEnabledFor(logging.DEBUG):
-                                        self.logger.debug(
-                                            'Adding obj %s into pyds meta for frame with PTS %s.',
-                                            bbox[2:7],
-                                            nvds_frame_meta.buf_pts,
-                                        )
-                                    _nvds_obj_meta = nvds_add_obj_meta_to_frame(
-                                        nvds_batch_meta,
-                                        nvds_frame_meta,
-                                        selection_type,
-                                        obj.class_id,
-                                        model_uid,
-                                        bbox[2:7],
-                                        bbox[1],
-                                        obj_label,
-                                        parent=parent_nvds_obj_meta,
-                                    )
-                                    selected_bboxes.append(
-                                        (int(bbox[7]), _nvds_obj_meta)
-                                    )
-
-                        if values:
-                            if is_complex_model:
-                                values = [
-                                    v
-                                    for i, v in enumerate(values)
-                                    if i in {i for i, o in selected_bboxes}
-                                ]
-                            else:
-                                selected_bboxes = [(0, nvds_obj_meta)]
-                                values = [values]
-                            for (_, _nvds_obj_meta), _values in zip(
-                                selected_bboxes, values
-                            ):
-                                for attr_name, value, confidence in _values:
-                                    nvds_add_attr_meta_to_obj(
-                                        frame_meta=nvds_frame_meta,
-                                        obj_meta=_nvds_obj_meta,
-                                        element_name=element.name,
-                                        name=attr_name,
-                                        value=value,
-                                        confidence=confidence,
-                                    )
-
-                # regular detector
-                # correct nvds_obj_meta.obj_label
-                elif is_detector:
-                    if nvds_obj_meta.unique_component_id == model_uid:
-                        for obj in model.output.objects:
-                            if nvds_obj_meta.class_id == obj.class_id:
-                                nvds_set_obj_selection_type(
-                                    obj_meta=nvds_obj_meta,
-                                    selection_type=ObjectSelectionType.REGULAR_BBOX,
-                                )
-                                nvds_set_obj_uid(
-                                    frame_meta=nvds_frame_meta, obj_meta=nvds_obj_meta
-                                )
-                                nvds_obj_meta.obj_label = build_model_object_key(
-                                    element.name, obj.label
-                                )
-                                break
-
-                # regular attribute model (classifier)
-                # convert nvds_clf_meta to attr_meta
-                else:
-                    for nvds_clf_meta in nvds_clf_meta_iterator(nvds_obj_meta):
-                        if nvds_clf_meta.unique_component_id != model_uid:
-                            continue
-                        for attr, label_info in zip(
-                            model.output.attributes,
-                            nvds_label_info_iterator(nvds_clf_meta),
-                        ):
-                            nvds_add_attr_meta_to_obj(
-                                frame_meta=nvds_frame_meta,
-                                obj_meta=nvds_obj_meta,
-                                element_name=element.name,
-                                name=attr.name,
-                                value=label_info.result_label,
-                                confidence=label_info.result_prob,
-                            )
 
                 # restore nvds_obj_meta.rect_params if there was preprocessing
-                if (
-                    model.input.preprocess_object_meta
-                    or model.input.preprocess_object_image
-                ) and self._is_model_input_object(element, nvds_obj_meta):
+                if self._is_model_input_object(element, nvds_obj_meta):
                     bbox_coords = nvds_obj_meta.detector_bbox_info.org_bbox_coords
                     if nvds_obj_meta.tracker_bbox_info.org_bbox_coords.width > 0:
                         bbox_coords = nvds_obj_meta.tracker_bbox_info.org_bbox_coords
@@ -701,7 +475,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                     rect_params.height = bbox_coords.height
 
         # restore frame
-        if model.input.preprocess_object_image:
+        if element.model.input.preprocess_object_image:
             self._objects_preprocessing.restore_frame(hash(buffer))
 
     def _is_model_input_object(
