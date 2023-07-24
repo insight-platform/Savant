@@ -1,7 +1,7 @@
 """Module configuration."""
 import re
 from pathlib import Path
-from typing import Callable, Optional, Union, Tuple, Type
+from typing import Callable, Dict, Optional, Union, Tuple, Type
 import logging
 from omegaconf import OmegaConf, DictConfig
 from savant.config.schema import (
@@ -172,6 +172,23 @@ def resolve_parameters(config: DictConfig):
         config.parameters['draw_func'] = draw_func_cfg
 
 
+def validate_frame_parameters(config: Module):
+    """Validate frame parameters."""
+
+    frame_parameters: FrameParameters = config.parameters['frame']
+    output_frame: Optional[Dict] = config.parameters['output_frame']
+    if output_frame is not None and output_frame.get('codec') == 'png':
+        if (
+            frame_parameters.output_width % 8 != 0
+            or frame_parameters.output_height % 8 != 0
+        ):
+            raise ModuleConfigException(
+                'Output frame resolution must be divisible by 8 for PNG output. '
+                'Got output frame resolution: '
+                f'{frame_parameters.output_width}x{frame_parameters.output_height}.'
+            )
+
+
 class ModuleConfig(metaclass=SingletonMeta):
     """Singleton that provides module configuration loading and access."""
 
@@ -239,6 +256,7 @@ class ModuleConfig(metaclass=SingletonMeta):
                 ) from exc
 
         self._config = OmegaConf.to_object(module_cfg)
+        validate_frame_parameters(self._config)
 
         setup_batch_size(self._config)
 
