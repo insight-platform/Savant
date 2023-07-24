@@ -5,27 +5,8 @@ import logging.config
 import os
 
 
-LOGLEVEL_PYTHON_TO_RUST = {
-    # rust 'trace' level is left unused
-    logging.DEBUG: 'debug',
-    logging.INFO: 'info',
-    logging.WARNING: 'warn',
-    logging.ERROR: 'error',
-    logging.CRITICAL: 'error',
-}
-
-
 def _get_default_loglevel() -> str:
     return os.environ.get('LOGLEVEL', 'INFO')
-
-
-def _set_rust_loglevel(python_log_level: str):
-    """Set Rust log level according to Python log level."""
-    try:
-        log_level_enum_val = getattr(logging, python_log_level.upper())
-        os.environ['RUST_LOG'] = LOGLEVEL_PYTHON_TO_RUST[log_level_enum_val]
-    except (AttributeError, KeyError):
-        os.environ['RUST_LOG'] = 'error'
 
 
 def _log_conf(log_level: str) -> dict:
