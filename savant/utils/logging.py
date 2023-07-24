@@ -5,8 +5,26 @@ import logging.config
 import os
 
 
+LOGLEVEL_PYTHON_TO_RUST = {
+    logging.DEBUG: 'debug',
+    logging.INFO: 'info',
+    logging.WARNING: 'warn',
+    logging.ERROR: 'error',
+    logging.CRITICAL: 'error',
+}
+
+
 def _get_default_loglevel() -> str:
     return os.environ.get('LOGLEVEL', 'INFO')
+
+
+def _set_rust_loglevel(python_log_level: str):
+    """Set Rust log level according to Python log level."""
+    try:
+        log_level_enum_val = getattr(logging, python_log_level.upper())
+        os.environ['RUST_LOG'] = LOGLEVEL_PYTHON_TO_RUST[log_level_enum_val]
+    except (AttributeError, KeyError):
+        os.environ['RUST_LOG'] = 'error'
 
 
 def _log_conf(log_level: str) -> dict:
@@ -50,6 +68,7 @@ def init_logging(log_level: Optional[str] = None):
     }
     log_config.update(_log_conf(level))
     logging.config.dictConfig(log_config)
+    _set_rust_loglevel(level)
     init_logging.done = True
 
 
@@ -62,6 +81,7 @@ def update_logging(log_level: str):
     :param log_level: One of supported by logging module: INFO, DEBUG, etc.
     """
     logging.config.dictConfig(_log_conf(log_level.upper()))
+    _set_rust_loglevel(log_level)
 
 
 def get_logger(name: Optional[str] = None) -> logging.Logger:
