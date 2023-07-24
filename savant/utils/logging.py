@@ -50,7 +50,6 @@ def init_logging(log_level: Optional[str] = None):
     }
     log_config.update(_log_conf(level))
     logging.config.dictConfig(log_config)
-    _set_rust_loglevel(level)
     init_logging.done = True
 
 
@@ -63,7 +62,6 @@ def update_logging(log_level: str):
     :param log_level: One of supported by logging module: INFO, DEBUG, etc.
     """
     logging.config.dictConfig(_log_conf(log_level.upper()))
-    _set_rust_loglevel(log_level)
 
 
 def get_logger(name: Optional[str] = None) -> logging.Logger:
