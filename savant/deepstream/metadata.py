@@ -10,8 +10,6 @@ from savant.deepstream.utils import nvds_get_obj_bbox
 from savant.deepstream.utils.object import nvds_is_empty_object_meta
 from savant.meta.attribute import AttributeMeta
 from savant.meta.constants import PRIMARY_OBJECT_KEY
-from savant.utils.source_info import Resolution
-
 
 logger = logging.getLogger(__name__)
 
@@ -19,13 +17,11 @@ logger = logging.getLogger(__name__)
 def nvds_obj_meta_output_converter(
     nvds_obj_meta: pyds.NvDsObjectMeta,
     frame_params: FrameParameters,
-    output_resolution: Resolution,
 ) -> Dict[str, Any]:
     """Convert object meta to output format.
 
     :param nvds_obj_meta: NvDsObjectMeta
     :param frame_params: Frame parameters (width/height, to scale to [0..1]
-    :param output_resolution: SourceInfo value associated with given source id
     :return: resolution of output frame
     """
     model_name, label = parse_compound_key(nvds_obj_meta.obj_label)
@@ -36,12 +32,6 @@ def nvds_obj_meta_output_converter(
             model_name,
             label,
         )
-    if frame_params.padding and frame_params.padding.keep:
-        frame_width = frame_params.total_width
-        frame_height = frame_params.total_height
-    else:
-        frame_width = frame_params.width
-        frame_height = frame_params.height
 
     confidence = nvds_obj_meta.confidence
     if 0.0 < nvds_obj_meta.tracker_confidence < 1.0:  # specified confidence
@@ -57,18 +47,6 @@ def nvds_obj_meta_output_converter(
             logger.debug(
                 'Applied frame padding %s, bbox: %s', frame_params.padding, bbox
             )
-    scale_x = output_resolution.width / frame_width
-    scale_y = output_resolution.height / frame_height
-    if logger.isEnabledFor(logging.DEBUG):
-        logger.debug(
-            'Scaling bbox by %s, %s (output res %s, frame w/h %sx%s)',
-            scale_x,
-            scale_y,
-            output_resolution,
-            frame_width,
-            frame_height,
-        )
-    bbox.scale(scale_x, scale_y)
     bbox = dict(
         xc=bbox.xc,
         yc=bbox.yc,
