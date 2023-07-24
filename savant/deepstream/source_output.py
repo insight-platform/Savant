@@ -278,7 +278,7 @@ class SourceOutputEncoded(SourceOutputWithFrame):
     def __init__(
         self,
         codec: CodecInfo,
-        params: Optional[Dict[str, Any]],
+        output_frame: Dict[str, Any],
         frame_params: FrameParameters,
         condition: FrameProcessingCondition,
     ):
@@ -289,7 +289,9 @@ class SourceOutputEncoded(SourceOutputWithFrame):
 
         super().__init__(frame_params=frame_params, condition=condition)
         self._codec = codec
-        self._params = params or {}
+        self._output_frame = output_frame
+        self._encoder = self._codec.encoder(output_frame.get('encoder'))
+        self._params = output_frame.get('encoder_params') or {}
 
     @property
     def codec(self) -> CodecInfo:
@@ -297,19 +299,19 @@ class SourceOutputEncoded(SourceOutputWithFrame):
 
     def _add_transform_elems(self, pipeline: GstPipeline, source_info: SourceInfo):
         encoder = pipeline.add_element(
-            PipelineElement(self._codec.encoder, properties=self._params)
+            PipelineElement(self._encoder, properties=self._params)
         )
         source_info.after_demuxer.append(encoder)
         encoder.sync_state_with_parent()
         self._logger.debug(
-            'Added encoder %s with params %s', self._codec.encoder, self._params
+            'Added encoder %s with params %s', self._encoder, self._params
         )
 
     def _build_output_caps(self, width: int, height: int) -> Gst.Caps:
         return Gst.Caps.from_string(
             ', '.join(
                 [
-                    self._codec.caps_name,
+                    self._codec.caps_with_params,
                     f'width={width}',
                     f'height={height}',
                 ]
@@ -353,19 +355,18 @@ def create_source_output(
     if codec == Codec.RAW_RGBA:
         return SourceOutputRawRgba(frame_params=frame_params)
 
-    encoder_params = output_frame.get('encoder_params', {})
     condition = FrameProcessingCondition(**(output_frame.get('condition') or {}))
     if codec in [Codec.H264, Codec.HEVC]:
         return SourceOutputH26X(
             codec=codec.value,
-            params=encoder_params,
+            output_frame=output_frame,
             frame_params=frame_params,
             condition=condition,
         )
 
     return SourceOutputEncoded(
         codec=codec.value,
-        params=encoder_params,
+        output_frame=output_frame,
         frame_params=frame_params,
         condition=condition,
     )
