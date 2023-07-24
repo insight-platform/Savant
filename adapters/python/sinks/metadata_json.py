@@ -11,6 +11,9 @@ from savant.api import deserialize
 from savant.utils.zeromq import ZeroMQSource, build_topic_prefix
 from savant.utils.logging import get_logger
 
+LOGGER_NAME = 'metadata_json_sink'
+
+
 class Patterns:
     SOURCE_ID = '%source_id'
     SRC_FILENAME = '%src_filename'
@@ -71,7 +74,7 @@ class MetadataJsonSink:
         skip_frames_without_objects: bool = True,
         chunk_size: int = 0,
     ):
-        self.logger = get_logger(f'{self.__class__.__name__}')
+        self.logger = get_logger(f'{LOGGER_NAME}.{self.__class__.__name__}')
         self.skip_frames_without_objects = skip_frames_without_objects
         self.chunk_size = chunk_size
         self.writers: Dict[str, MetadataJsonWriter] = {}
@@ -148,7 +151,7 @@ def frame_has_objects(message: Dict):
 
 
 def main():
-    logger = get_logger(__name__)
+    logger = get_logger(LOGGER_NAME)
     location = os.environ['LOCATION']
     zmq_endpoint = os.environ['ZMQ_ENDPOINT']
     zmq_socket_type = os.environ.get('ZMQ_TYPE', 'SUB')

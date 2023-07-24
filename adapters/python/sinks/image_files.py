@@ -16,6 +16,7 @@ from savant.api.enums import ExternalFrameType
 from savant.utils.zeromq import ZeroMQSource, build_topic_prefix
 from savant.utils.logging import get_logger
 
+LOGGER_NAME = 'image_files_sink'
 DEFAULT_CHUNK_SIZE = 10000
 
 
@@ -83,7 +84,7 @@ class ImageFilesSink:
         chunk_size: int,
         skip_frames_without_objects: bool = False,
     ):
-        self.logger = get_logger(f'{__name__}.{self.__class__.__name__}')
+        self.logger = get_logger(f'{LOGGER_NAME}.{self.__class__.__name__}')
         self.location = location
         self.chunk_size = chunk_size
         self.skip_frames_without_objects = skip_frames_without_objects
@@ -143,7 +144,7 @@ class ImageFilesSink:
 
 
 def main():
-    logger = get_logger(__name__)
+    logger = get_logger(LOGGER_NAME)
 
     dir_location = os.environ['DIR_LOCATION']
     zmq_endpoint = os.environ['ZMQ_ENDPOINT']

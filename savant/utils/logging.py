@@ -6,6 +6,7 @@ import os
 
 
 LOGLEVEL_PYTHON_TO_RUST = {
+    # rust 'trace' level is left unused
     logging.DEBUG: 'debug',
     logging.INFO: 'info',
     logging.WARNING: 'warn',
