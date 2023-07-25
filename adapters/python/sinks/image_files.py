@@ -65,7 +65,13 @@ class ImageFilesWriter(ChunkWriter):
         return True
 
     def _open(self):
-        self.chunk_location = os.path.join(self.base_location, f'{self.chunk_idx:04}')
+        if self.chunk_size > 0:
+            self.chunk_location = os.path.join(
+                self.base_location,
+                f'{self.chunk_idx:04}',
+            )
+        else:
+            self.chunk_location = self.base_location
         self.logger.info('Creating directory %s', self.chunk_location)
         os.makedirs(self.chunk_location, exist_ok=True)
 
@@ -104,11 +110,15 @@ class ImageFilesSink:
         writer = self.writers.get(source_id)
         if writer is None:
             base_location = os.path.join(self.location, source_id)
+            if self.chunk_size > 0:
+                json_filename_pattern = f'{Patterns.CHUNK_IDX}.json'
+            else:
+                json_filename_pattern = 'meta.json'
             writer = CompositeChunkWriter(
                 [
                     ImageFilesWriter(base_location, self.chunk_size),
                     MetadataJsonWriter(
-                        os.path.join(base_location, f'{Patterns.CHUNK_IDX}.json'),
+                        os.path.join(base_location, json_filename_pattern),
                         self.chunk_size,
                     ),
                 ],

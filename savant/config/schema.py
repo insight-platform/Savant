@@ -45,14 +45,34 @@ class FrameParameters:
 
     @property
     def total_width(self) -> int:
+        """Total frame width including paddings."""
+
         if self.padding is not None:
             return self.width + self.padding.left + self.padding.right
         return self.width
 
     @property
     def total_height(self) -> int:
+        """Total frame height including paddings."""
+
         if self.padding is not None:
             return self.height + self.padding.top + self.padding.bottom
+        return self.height
+
+    @property
+    def output_width(self) -> int:
+        """Width of the output frame. Includes paddings if they are set to keep."""
+
+        if self.padding is not None and self.padding.keep:
+            return self.total_width
+        return self.width
+
+    @property
+    def output_height(self) -> int:
+        """Height of the output frame. Includes paddings if they are set to keep."""
+
+        if self.padding is not None and self.padding.keep:
+            return self.total_height
         return self.height
 
 
