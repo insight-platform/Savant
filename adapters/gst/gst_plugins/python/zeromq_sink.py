@@ -17,6 +17,7 @@ from savant.utils.zeromq import (
     SenderSocketTypes,
     ZMQException,
     parse_zmq_socket_uri,
+    receive_response,
 )
 
 
@@ -51,13 +52,31 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
             Defaults.SEND_HWM,
             GObject.ParamFlags.READWRITE,
         ),
-        'eos-confirmation-timeout': (
+        'receive-timeout': (
             int,
-            'Timeout for waiting EOS confirmation message',
-            'Timeout for waiting EOS confirmation message',
+            'Receive timeout socket option',
+            'Receive timeout socket option',
             0,
             GObject.G_MAXINT,
-            Defaults.EOS_CONFIRMATION_TIMEOUT,
+            Defaults.SENDER_RECEIVE_TIMEOUT,
+            GObject.ParamFlags.READWRITE,
+        ),
+        'req-receive-retries': (
+            int,
+            'Retries to receive confirmation message from REQ socket',
+            'Retries to receive confirmation message from REQ socket',
+            1,
+            GObject.G_MAXINT,
+            Defaults.REQ_RECEIVE_RETRIES,
+            GObject.ParamFlags.READWRITE,
+        ),
+        'eos-confirmation-retries': (
+            int,
+            'Retries to receive EOS confirmation message',
+            'Retries to receive EOS confirmation message',
+            1,
+            GObject.G_MAXINT,
+            Defaults.EOS_CONFIRMATION_RETRIES,
             GObject.ParamFlags.READWRITE,
         ),
         'source-id': (
@@ -78,7 +97,9 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
         self.sender: zmq.Socket = None
         self.wait_response = False
         self.send_hwm = Defaults.SEND_HWM
-        self.eos_confirmation_timeout = Defaults.EOS_CONFIRMATION_TIMEOUT
+        self.receive_timeout = Defaults.SENDER_RECEIVE_TIMEOUT
+        self.req_recv_retries = Defaults.REQ_RECEIVE_RETRIES
+        self.eos_confirmation_retries = Defaults.EOS_CONFIRMATION_RETRIES
         self.source_id: str = None
         self.zmq_topic: bytes = None
         self.set_sync(False)
@@ -101,10 +122,14 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
             return self.bind
         if prop.name == 'send-hwm':
             return self.send_hwm
-        if prop.name == 'eos-confirmation-timeout':
-            return self.eos_confirmation_timeout
         if prop.name == 'source-id':
             return self.source_id
+        if prop.name == 'receive-timeout':
+            return self.receive_timeout
+        if prop.name == 'req-receive-retries':
+            return self.req_recv_retries
+        if prop.name == 'eos-confirmation-retries':
+            return self.eos_confirmation_retries
         raise AttributeError(f'Unknown property {prop.name}.')
 
     def do_set_property(self, prop, value):
@@ -123,11 +148,15 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
             self.bind = value
         elif prop.name == 'send-hwm':
             self.send_hwm = value
-        elif prop.name == 'eos-confirmation-timeout':
-            self.eos_confirmation_timeout = value
         elif prop.name == 'source-id':
             self.source_id = value
             self.zmq_topic = f'{value}/'.encode()
+        elif prop.name == 'receive-timeout':
+            self.receive_timeout = value
+        elif prop.name == 'req-receive-retries':
+            self.req_recv_retries = value
+        elif prop.name == 'eos-confirmation-retries':
+            self.eos_confirmation_retries = value
         else:
             raise AttributeError(f'Unknown property {prop.name}.')
 
@@ -152,7 +181,7 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
         self.zmq_context = zmq.Context()
         self.sender = self.zmq_context.socket(self.socket_type.value)
         self.sender.setsockopt(zmq.SNDHWM, self.send_hwm)
-        self.sender.setsockopt(zmq.RCVTIMEO, self.eos_confirmation_timeout)
+        self.sender.setsockopt(zmq.RCVTIMEO, self.receive_timeout)
         if self.bind:
             self.sender.bind(self.socket)
         else:
@@ -182,7 +211,25 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
         )
         self.sender.send_multipart(message)
         if self.wait_response:
-            resp = self.sender.recv()
+            try:
+                resp = receive_response(self.sender, self.req_recv_retries)
+            except zmq.Again:
+                error = (
+                    f"The REP socket hasn't responded in a configured timeframe "
+                    f"{self.receive_timeout * self.receive_timeout} ms."
+                )
+                self.logger.error(error)
+                frame = inspect.currentframe()
+                propagate_gst_error(
+                    gst_element=self,
+                    frame=frame,
+                    file_path=__file__,
+                    domain=Gst.StreamError.quark(),
+                    code=Gst.StreamError.FAILED,
+                    text=error,
+                )
+                return Gst.FlowReturn.ERROR
+
             self.logger.debug(
                 'Received %s bytes from socket %s.', len(resp), self.socket
             )

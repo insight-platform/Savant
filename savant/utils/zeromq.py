@@ -50,9 +50,11 @@ class SenderSocketTypes(Enum):
 
 class Defaults:
     RECEIVE_TIMEOUT = 1000
+    SENDER_RECEIVE_TIMEOUT = 5000
     RECEIVE_HWM = 50
     SEND_HWM = 50
-    EOS_CONFIRMATION_TIMEOUT = 10_000
+    REQ_RECEIVE_RETRIES = 3
+    EOS_CONFIRMATION_RETRIES = 3
 
 
 def get_socket_endpoint(socket_endpoint: str):
@@ -305,3 +307,22 @@ def parse_zmq_socket_uri(
     socket_type = get_socket_type(socket_type_name, socket_type_enum)
 
     return socket_type, bind, endpoint
+
+
+def receive_response(sender: zmq.Socket, retries: int):
+    """Receive response from sender socket.
+
+    Retry until response is received.
+    """
+
+    while retries > 0:
+        try:
+            return sender.recv()
+        except zmq.Again:
+            retries -= 1
+            logger.debug(
+                'Timeout exceeded when receiving response (%s retries left)',
+                retries,
+            )
+            if retries == 0:
+                raise
