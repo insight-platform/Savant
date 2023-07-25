@@ -186,10 +186,13 @@ If the ``output_frame`` section is omitted, video frames will not be sent to sin
 The framework supports several encoding schemes:
 
 - RAW RGBA (not optimal, as it requires large transfers over PCI-E);
-- JPEG (software);
-- PNG (software);
-- H264 (hardware);
-- HEVC (H265, hardware).
+- JPEG (hardware ``nvjpegenc``, software ``jpegenc``);
+- PNG (software ``pngenc``);
+- H264 (hardware ``nvv4l2h264enc``, software ``x264enc``);
+- HEVC (H265, hardware ``nvv4l2h265enc``).
+
+.. note::
+    Hardware encoder for JPEG is available only on Nvidia Jetson.
 
 We highly advise using hardware NVENC-assisted codecs. The only caveat is to steer clear from GeForce GPUs in production as they have a limitation constraining simultaneous encoding to 3 streams. In case you are using GeForce, choose RAW RGBA.
 
@@ -198,6 +201,17 @@ We highly advise using hardware NVENC-assisted codecs. The only caveat is to ste
     parameters:
       output_frame:
         codec: h264
+
+You can choose hardware or software encoder by setting ``encoder`` parameter to ``nvenc`` or ``software`` respectively:
+
+.. code-block:: yaml
+
+    parameters:
+      output_frame:
+        codec: h264
+        encoder: nvenc
+
+When ``encoder`` parameter is specified and the framework doesn't find a suitable encoder, it will end with an error. When ``encoder`` parameter is omitted, the framework will try to use hardware encoder. When it fails, it will fall back to software encoder.
 
 Every codec has its own configuration parameters related to a corresponding GStreamer plugin. Those parameters are defined in ``output_frame.encoder_params``:
 
@@ -213,11 +227,11 @@ Every codec has its own configuration parameters related to a corresponding GStr
 
 .. note::
 
-    On Nvidia Jetson (DS 6.2) I-frame periodicity is regulated with ``idrinterval`` instead of ``iframeinterval``.
+    On Nvidia Jetson (DS 6.2) I-frame periodicity on hardware h264/h265 encoder is regulated with ``idrinterval`` instead of ``iframeinterval``.
 
 Available properties are:
 
-  - For **h264** codec
+  - For hardware **h264** encoder
 
     1. `bitrate`
 
@@ -275,7 +289,68 @@ Available properties are:
 
        (4): LosslessPreset   - Tuning Preset for Lossless
 
-  - For **h265** codec
+  - For software **h264** encoder
+
+    1. `bitrate`
+
+       Bitrate in kbit/sec. Unsigned Integer. Range: 1 - 2048000 Default: 2048
+
+    2. `key-int-max`
+
+       Maximal distance between two key-frames (0 for automatic). Unsigned Integer. Range: 0 - 2147483647 Default: 0
+
+    3. `pass`
+
+       Encoding pass/type. Default: 0, "cbr"
+
+       (0): cbr              - Constant Bitrate Encoding
+
+       (4): quant            - Constant Quantizer
+
+       (5): qual             - Constant Quality
+
+       (17): pass1            - VBR Encoding - Pass 1
+
+       (18): pass2            - VBR Encoding - Pass 2
+
+       (19): pass3            - VBR Encoding - Pass 3
+
+    4. `speed-preset`
+
+       Preset name for speed/quality tradeoff options (can affect decode compatibility - impose restrictions separately for your target decoder). Default: 6, "medium"
+
+       (1): ultrafast        - ultrafast
+
+       (2): superfast        - superfast
+
+       (3): veryfast         - veryfast
+
+       (4): faster           - faster
+
+       (5): fast             - fast
+
+       (6): medium           - medium
+
+       (7): slow             - slow
+
+       (8): slower           - slower
+
+       (9): veryslow         - veryslow
+
+       (10): placebo          - placebo
+
+    5. `tune`
+
+       Preset name for non-psychovisual tuning options. Default: 0x00000000, "(none)"
+
+       (0x00000001): stillimage       - Still image
+
+       (0x00000002): fastdecode       - Fast decode
+
+       (0x00000004): zerolatency      - Zero latency
+
+
+  - For hardware **h265** codec
 
     1. `bitrate`
 
@@ -369,6 +444,8 @@ Example:
         codec: jpeg
         encoder_params:
           quality: 90
+
+To list all available properties run ``gst-inspect-1.0 <encoder-name>``. E.g. ``gst-inspect-1.0 nvv4l2h264enc``.
 
 Conditional Encoding
 ^^^^^^^^^^^^^^^^^^^^
