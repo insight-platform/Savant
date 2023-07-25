@@ -32,7 +32,9 @@ RUN apt-get update \
 RUN python3 -m pip install --upgrade pip setuptools wheel build
 
 WORKDIR /tmp/build
-COPY . .
+COPY pyproject.toml README.md LICENSE ./
+COPY requirements/base.txt requirements/base.txt
+COPY savant savant
 RUN python3 -m build --wheel
 
 
@@ -62,12 +64,15 @@ ARG DEEPSTREAM_VERSION
 # install base packages
 RUN apt-get update \
     && apt-get install --no-install-recommends -y \
-    python3-pip \
-    python3-dev \
-    libcairo2-dev \
-    libgirepository1.0-dev \
-    python3-gst-1.0 \
-    gstreamer1.0-python3-plugin-loader \
+        python3-pip \
+        python3-dev \
+        libcairo2-dev \
+        libgirepository1.0-dev \
+        python3-gst-1.0 \
+        gstreamer1.0-python3-plugin-loader \
+    && apt-get install --reinstall -y \
+        gstreamer1.0-plugins-ugly \
+        libx264-155 \
     && apt-get autoremove -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
