@@ -22,9 +22,6 @@ class BasePyFuncImpl(ABC):
             setattr(self, name, value)
         self.logger = logging.getLogger(self.__module__)
 
-    def is_debug(self):
-        return self.logger.isEnabledFor(logging.DEBUG)
-
 
 class BasePyFuncPlugin(BasePyFuncImpl):
     """Base class for a PyFunc implementation to be used in a ``pyfunc``

@@ -5,6 +5,7 @@ parameters:
     width: 1280
     height: 720
   output_frame:
+#    codec: jpeg
     codec: hevc
   draw_func:
     module: samples.yolov8_seg.module.overlay
@@ -55,7 +56,7 @@ pipeline:
               # must be internal, output schema doesn't currently support numpy arrays
               internal: true
 
-#    - element: queue
+    - element: queue
 
 #  sink:
 #    - element: devnull_sink

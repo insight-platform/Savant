@@ -49,7 +49,6 @@ from savant.deepstream.metadata import (
     nvds_obj_meta_output_converter,
     nvds_attr_meta_output_converter,
 )
-from savant.deepstream.element_factory import NvDsElementFactory
 from savant.deepstream.utils import (
     gst_nvevent_parse_stream_eos,
     GST_NVEVENT_STREAM_EOS,
@@ -70,8 +69,6 @@ class NvDsPipeline(GstPipeline):
     :key batch_size: Primary batch size (nvstreammux batch-size)
     :key output_frame: Whether to include frame in module output, not just metadata
     """
-
-    _element_factory = NvDsElementFactory()
 
     def __init__(
         self,
@@ -560,8 +557,6 @@ class NvDsPipeline(GstPipeline):
                     frame_pts,
                 )
 
-            source_info = self._sources.get_source(source_id)
-
             # second iteration to collect module objects
             for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
                 obj_meta = nvds_obj_meta_output_converter(
@@ -789,15 +784,14 @@ class NvDsPipeline(GstPipeline):
 
         if self._draw_func.condition.tag in frame_meta.tags:
             return True
-        else:
-            self._logger.debug(
-                'Frame from source %s with IDX %s PTS %s does not have tag %s. Skip drawing on it.',
-                source_id,
-                frame_idx,
-                frame_pts,
-                self._draw_func.condition.tag,
-            )
-            return False
+        self._logger.debug(
+            'Frame from source %s with IDX %s PTS %s does not have tag %s. Skip drawing on it.',
+            source_id,
+            frame_idx,
+            frame_pts,
+            self._draw_func.condition.tag,
+        )
+        return False
 
     def _allocate_demuxer_pads(self, demuxer: Gst.Element, n_pads: int):
         """Allocate a fixed number of demuxer src pads."""

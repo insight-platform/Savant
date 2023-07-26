@@ -122,13 +122,14 @@ def _parse_scores(scores: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
 
 @nb.njit('f4[:, ::1](f4[:, :])', nogil=True)
 def sigmoid(a: np.ndarray) -> np.ndarray:
-    return (1.0 / (1.0 + np.exp(-a))).astype(np.float32)
+    ones = np.ones(a.shape, dtype=np.float32)
+    return np.divide(ones, (ones + np.exp(-a)))
 
 
-# @nb.njit(
-#     'Tuple((f4[:, ::1], f4[:, :, ::1]))(f4[:, ::1], f4[:, :, ::1], u2, f4, f4, u2)',
-#     nogil=True,
-# )
+@nb.njit(
+    'Tuple((f4[:, ::1], f4[:, :, ::1]))(f4[:, ::1], f4[:, :, ::1], u2, f4, f4, u2)',
+    nogil=True,
+)
 def _postproc(
     output: np.ndarray,
     protos: np.ndarray,
@@ -182,17 +183,7 @@ def _postproc(
 
     # proto masks postprocessing
     mask_dim, mask_height, mask_width = protos.shape
-    # numba: scipy 0.16+ is required for linear algebra
     masks = sigmoid(np.ascontiguousarray(masks) @ protos.reshape(mask_dim, -1))
     masks = masks.reshape(-1, mask_height, mask_width)
 
     return tensors, masks
-
-
-# @nb.njit('f4[:, :, :](f4[:, :, :], u4, u4)', nogil=True, parallel=True)
-# def upscale_masks(masks: np.ndarray, width: int, height: int) -> np.ndarray:
-#     masks = masks.transpose((1, 2, 0))
-#     masks = cv2.resize(masks, (width, height), cv2.INTER_LINEAR)
-#     return (
-#         masks.transpose((2, 0, 1)) if len(masks.shape) == 3 else masks[None, ...]
-#     )
