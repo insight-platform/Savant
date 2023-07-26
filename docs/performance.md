@@ -74,3 +74,9 @@
 | [v0.2.4](https://github.com/insight-platform/Savant/tree/v0.2.4) | 140.43 | 23.62     |
 | [#61](https://github.com/insight-platform/Savant/issues/61)      | 137.85 | 23.80     |
 | [#285](https://github.com/insight-platform/Savant/issues/285)    | 139.25 | 24.49     |
+
+### yolov8_seg
+
+| Savant ver.                                                   | A4000 | Jetson NX |
+|---------------------------------------------------------------|-------|-----------|
+| [#131](https://github.com/insight-platform/Savant/issues/131) | 45.30 | 17.23     |

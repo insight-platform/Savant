@@ -2,28 +2,13 @@
 
 A simple pipeline using a [YOLOv8 instance segmentation model](https://docs.ultralytics.com/tasks/segment/) to identify the people in a frame and to segment them from the rest of the frame.
 
-Preview:
-
-TBD
+We created an ONNX version of the YOLOv8m-seg model using a script from the original repository (see [Export section](https://docs.ultralytics.com/tasks/segment/#export)). To process the model output, we wrote [convertor](module/converter.py). The segmentation model is a complex model in Savant terms. The model produces objects defined by bounding boxes and corresponding masks. To render the bounding boxes and masks we used cv2.cuda.GpuMat, the implementation code is in the [overlay](module/overlay.py).
 
 Tested on platforms:
-
 - Xavier NX, Xavier AGX;
 - Nvidia Turing, Ampere.
 
-Demonstrated operational modes:
-
-- real-time processing: RTSP streams (multiple sources at once);
-- instance segmentation;
-
-Demonstrated adapters:
-- RTSP source adapter;
-- video file source adapter;
-- Always-ON RTSP sink adapter;
-- Video/Metadata sink adapter.
-
-
-Run the demo:
+## Run the demo
 
 ```bash
 git clone https://github.com/insight-platform/Savant.git
@@ -44,7 +29,6 @@ cd Savant/samples/yolov8_seg
 cd ../..
 ```
 
-
 ## Performance Measurement
 
 Download the video file to your local folder. For example, create a data folder 
@@ -53,8 +37,8 @@ and download the video into it (all commands must be executed from the root dire
 ```bash
 # you are expected to be in Savant/ directory
 
-mkdir -p data && curl -o data/suffle_dance.mp4 \
-   https://eu-central-1.linodeobjects.com/savant-data/demo/suffle_dance.mp4
+mkdir -p data && curl -o data/shuffle_dance.mp4 \
+https://eu-central-1.linodeobjects.com/savant-data/demo/shuffle_dance.mp4
 ```
 
 Now you are ready to run the performance benchmark with the following command:
