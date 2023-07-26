@@ -19,6 +19,6 @@ The groups are initialized based on whether their :py:attr:`~savant.config.schem
 
 Note again, that this behaviour is static, not dynamic. Once the pipeline is initialized its contents do not change, so if the value of ``DETECTOR`` is changed after the pipeline is initialized, the detectors will not be swapped out.
 
-In this example the detector units are conditionally initialized based on the value of an environment variable, but any expression on the config variables can be used as the condition.
+In this example the detector units are conditionally initialized based on the value of an environment variable, but any expression on the config variables can be used as the condition. Expression evaluation is done in the same way as for any other config variable, standard OmegaConf interpolation and resolvers can be used, along with :py:mod:`custom resolvers <savant.config>` from Savant.
 
 In this manner any of the supported :doc:`29_pipeline` units can be conditionally initialized. In addition, the conditions can be applied to mupltiple units at the same time, by listing them together in the :py:attr:`~savant.config.schema.ElementGroup.elements` list of a single group.
