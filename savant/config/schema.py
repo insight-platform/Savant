@@ -253,7 +253,7 @@ class DrawFunc(PyFunc):
     rendered_objects: Optional[Dict[str, Dict[str, Any]]] = None
     """A specification of objects to be rendered by the default draw function.
 
-    For more details, look at :ref:`artist-usage`.
+    For more details, look at :ref:`savant_101/90_draw_func:Declarative Configuration`.
     """
 
     kwargs: Optional[Dict[str, Any]] = None
