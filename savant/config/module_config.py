@@ -1,7 +1,7 @@
 """Module configuration."""
 import re
 from pathlib import Path
-from typing import Callable, Optional, Union, Tuple, Type, Iterable, Any
+from typing import Callable, Optional, Union, Tuple, Dict, Type, Iterable, Any
 import logging
 from omegaconf import OmegaConf, DictConfig
 from savant.config.schema import (
