@@ -35,9 +35,8 @@ def main(config_file_path: str):
         return
 
     pipeline = NvDsPipeline(
-        name=config.name,
-        source=config.pipeline.source,
-        elements=config.pipeline.elements,
+        config.name,
+        config.pipeline,
         **config.parameters,
     )
 
