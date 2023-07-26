@@ -185,17 +185,23 @@ def configure_module_parameters(module_cfg: DictConfig) -> None:
         module_cfg.parameters = {}
         return
 
-    def apply_schema(cfg: dict, node: str, schema_class: Any) -> None:
-        schema = OmegaConf.structured(schema_class)
+    def apply_schema(
+        cfg: dict, node: str, schema_class: Any, default: Any = None
+    ) -> None:
         if node not in cfg or cfg[node] is None:
-            cfg[node] = schema
+            cfg[node] = default
         else:
             cfg[node] = OmegaConf.unsafe_merge(
-                schema,
+                OmegaConf.structured(schema_class),
                 cfg[node],
             )
 
-    apply_schema(module_cfg.parameters, 'frame', FrameParameters)
+    apply_schema(
+        module_cfg.parameters,
+        'frame',
+        FrameParameters,
+        OmegaConf.structured(FrameParameters),
+    )
     apply_schema(module_cfg.parameters, 'draw_func', DrawFunc)
 
 
