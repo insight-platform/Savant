@@ -178,6 +178,7 @@ def main():
     logger.info('Metadata JSON sink started')
 
     try:
+        source.start()
         for message_bin, *data in source:
             schema_name, message = deserialize(message_bin)
             sink.write(schema_name, message)

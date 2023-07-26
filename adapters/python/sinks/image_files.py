@@ -172,6 +172,7 @@ def main():
     logger.info('Image files sink started')
 
     try:
+        source.start()
         for message_bin, *data in source:
             schema_name, message = deserialize(message_bin)
             image_sink.write(schema_name, message, data)
