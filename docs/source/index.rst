@@ -155,7 +155,7 @@ As for now, we provide images for x86 architecture and for Jetson hardware.
    savant_101/75_working_with_metadata
    savant_101/80_opencv_cuda
    savant_101/80_map
-   savant_101/90_artist
+   savant_101/90_draw_func
 
 .. toctree::
    :maxdepth: 1
@@ -172,6 +172,13 @@ As for now, we provide images for x86 architecture and for Jetson hardware.
    advanced_topics/4_etcd
    advanced_topics/6_chaining
    advanced_topics/8_ext_systems
+
+.. toctree::
+   :maxdepth: 0
+   :hidden:
+   :caption: Cookbook
+
+   recipes/index.rst
 
 .. toctree::
    :maxdepth: 1

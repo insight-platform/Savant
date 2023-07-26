@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import logging
 import os
 import traceback
 from distutils.util import strtobool
@@ -15,7 +14,9 @@ from adapters.python.sinks.metadata_json import (
 from savant.api import deserialize
 from savant.api.enums import ExternalFrameType
 from savant.utils.zeromq import ZeroMQSource, build_topic_prefix
+from savant.utils.logging import get_logger
 
+LOGGER_NAME = 'image_files_sink'
 DEFAULT_CHUNK_SIZE = 10000
 
 
@@ -65,7 +66,13 @@ class ImageFilesWriter(ChunkWriter):
         return True
 
     def _open(self):
-        self.chunk_location = os.path.join(self.base_location, f'{self.chunk_idx:04}')
+        if self.chunk_size > 0:
+            self.chunk_location = os.path.join(
+                self.base_location,
+                f'{self.chunk_idx:04}',
+            )
+        else:
+            self.chunk_location = self.base_location
         self.logger.info('Creating directory %s', self.chunk_location)
         os.makedirs(self.chunk_location, exist_ok=True)
 
@@ -77,7 +84,7 @@ class ImageFilesSink:
         chunk_size: int,
         skip_frames_without_objects: bool = False,
     ):
-        self.logger = logging.getLogger(__name__)
+        self.logger = get_logger(f'{LOGGER_NAME}.{self.__class__.__name__}')
         self.location = location
         self.chunk_size = chunk_size
         self.skip_frames_without_objects = skip_frames_without_objects
@@ -104,11 +111,15 @@ class ImageFilesSink:
         writer = self.writers.get(source_id)
         if writer is None:
             base_location = os.path.join(self.location, source_id)
+            if self.chunk_size > 0:
+                json_filename_pattern = f'{Patterns.CHUNK_IDX}.json'
+            else:
+                json_filename_pattern = 'meta.json'
             writer = CompositeChunkWriter(
                 [
                     ImageFilesWriter(base_location, self.chunk_size),
                     MetadataJsonWriter(
-                        os.path.join(base_location, f'{Patterns.CHUNK_IDX}.json'),
+                        os.path.join(base_location, json_filename_pattern),
                         self.chunk_size,
                     ),
                 ],
@@ -133,10 +144,8 @@ class ImageFilesSink:
 
 
 def main():
-    logging.basicConfig(
-        level=os.environ.get('LOGLEVEL', 'INFO'),
-        format='%(asctime)s [%(levelname)s] [%(name)s] [%(threadName)s] %(message)s',
-    )
+    logger = get_logger(LOGGER_NAME)
+
     dir_location = os.environ['DIR_LOCATION']
     zmq_endpoint = os.environ['ZMQ_ENDPOINT']
     zmq_socket_type = os.environ.get('ZMQ_TYPE', 'SUB')
@@ -160,14 +169,14 @@ def main():
     )
 
     image_sink = ImageFilesSink(dir_location, chunk_size, skip_frames_without_objects)
-    logging.info('Image files sink started')
+    logger.info('Image files sink started')
 
     try:
         for message_bin, *data in source:
             schema_name, message = deserialize(message_bin)
             image_sink.write(schema_name, message, data)
     except KeyboardInterrupt:
-        logging.info('Interrupted')
+        logger.info('Interrupted')
     finally:
         image_sink.terminate()
 

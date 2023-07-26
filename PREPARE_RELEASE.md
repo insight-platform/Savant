@@ -20,13 +20,13 @@ While on the `develop` git branch, run
 ./utils/prepare_release.sh
 ```
 
-The script creates a local git branch named `releases/vX.Y.Z` where X.Y.Z is the Savant version defined in the `savant/VERSION` file. The branch will contain a commit that writes X.Y.Z Savant version into the samples Dockerfiles and samples docker-compose files.
+The script creates a local git branch named `releases/X.Y.Z` where X.Y.Z is the Savant version defined in the `savant/VERSION` file. The branch will contain a commit that writes X.Y.Z Savant version into the samples Dockerfiles and samples docker-compose files.
 
 The branch can be pushed to remote
 
 ```
-git push -u origin releases/vX.Y.Z
+git push -u origin releases/X.Y.Z
 ```
 
-Next, create a release (`vX.Y.Z`) from `releases/vX.Y.Z`. The release initiates git workflows that build the Savant package and docker images for the version.
+Next, create a release (`vX.Y.Z`) from `releases/X.Y.Z`. The release initiates git workflows that build the Savant package and docker images for the version.
 

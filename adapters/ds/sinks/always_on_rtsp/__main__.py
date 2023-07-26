@@ -1,5 +1,4 @@
 import json
-import logging
 import os
 import time
 from dataclasses import asdict
@@ -23,8 +22,10 @@ from savant.gstreamer.metadata import metadata_pop_frame_meta
 from savant.gstreamer.runner import GstPipelineRunner
 from savant.utils.platform import is_aarch64
 from savant.utils.zeromq import ReceiverSocketTypes
+from savant.utils.logging import get_logger
 
-logger = logging.getLogger(__name__)
+LOGGER_NAME = 'ao_sink'
+logger = get_logger(LOGGER_NAME)
 
 
 def opt_config(name, default=None, convert=None):
@@ -339,6 +340,7 @@ class PipelineThread:
 
         self.is_running = False
         self.thread: Optional[Thread] = None
+        self.logger = get_logger(f'{LOGGER_NAME}.{self.__class__.__name__}')
 
     def start(self):
         self.is_running = True
@@ -353,20 +355,15 @@ class PipelineThread:
 
     def workload(self):
         pipeline = self.build_pipeline(self.config, self.last_frame, self.factory)
-        logger.info('Starting pipeline %s', pipeline.get_name())
+        self.logger.info('Starting pipeline %s', pipeline.get_name())
         with GstPipelineRunner(pipeline) as runner:
             while self.is_running and runner._is_running:
                 time.sleep(1)
-        logger.info('Pipeline %s is stopped', pipeline.get_name())
+        self.logger.info('Pipeline %s is stopped', pipeline.get_name())
         self.is_running = False
 
 
 def main():
-    logging.basicConfig(
-        level=opt_config('LOGLEVEL', 'INFO'),
-        format='%(asctime)s [%(levelname)s] [%(name)s] [%(threadName)s] %(message)s',
-    )
-
     config = Config()
 
     if config.dev_mode:

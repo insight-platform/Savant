@@ -41,32 +41,35 @@ The ``on_stop`` method is similar to the ``on_start`` method: it is called once 
         """Do on plugin stop."""
         return True
 
-The ``on_src_event`` method is called for GStreamer events received on the src pad of the Python Function Unit and makes it possible to process them:
+The ``on_event`` method is called for GStreamer events received on the sink pad of the Python Function Unit and makes it possible to process them:
 
 .. code-block:: python
 
-    def on_src_event(self, event: Gst.Event):
-        """Do on src event."""
+    def on_event(self, event: Gst.Event):
+        """Do on event."""
 
-It is an analogue of `GstBaseTransform.do_src_event() <https://gstreamer.freedesktop.org/documentation/base/gstbasetransform.html?gi-language=python#GstBaseTransformClass::src_event>`__, however, it does not replace the basic implementation, but is called before it. Therefore, the callback does not require any return value.
+It is an analogue of `GstBaseTransform.do_sink_event() <https://gstreamer.freedesktop.org/documentation/base/gstbasetransform.html?gi-language=python#GstBaseTransformClass::sink_event>`__, however, it does not replace the basic implementation, but is called before it. Therefore, the callback does not require any return value.
 
-The ``on_sink_event`` method is similar to ``on_src_event``, but works for events on the sink pad. Also called just before the base GStreamer implementation of the `GstBaseTransform.do_sink_event() <https://gstreamer.freedesktop.org/documentation/base/gstbasetransform.html?gi-language=python#GstBaseTransformClass::sink_event>`__ method; is defined like this:
+When overriding this method, it is important to note that, by default, the ``NvDsPyFuncPlugin.on_event`` method handles ``GST_NVEVENT_PAD_ADDED``, ``GST_NVEVENT_PAD_DELETED``, and ``GST_NVEVENT_STREAM_EOS`` DeepStream events (gst-nvevent.h `documentation <https://docs.nvidia.com/metropolis/deepstream/dev-guide/sdk-api/gst-nvevent_8h.html>`__), determining which source it refers to, and calls ``on_source_add``, ``on_source_delete``, and ``on_source_eos`` callbacks respectively. Therefore, when implementing your version of the event handler on the sink pad, it is worth including a call to the parent class methods in it.
+
+The ``on_source_add`` and ``on_source_delete`` methods are called for ``GST_NVEVENT_PAD_ADDED`` and ``GST_NVEVENT_PAD_DELETED`` events arriving at the PyFunc sink pad, respectively. The purpose of these methods is to handle the situation in which a source is added or a source is deleted. Methods are useful for state management, such as creating and releasing the state resource allocated to a particular source.
 
 .. code-block:: python
 
-    def on_sink_event(self, event: Gst.Event):
-        """Add stream event callbacks."""
+    def on_source_add(self, source_id: str):
+        """On source add callback."""
 
-When overriding this method, it is important to note that, by default, the ``NvDsPyFuncPlugin.on_sink_event`` method handles the ``GST_NVEVENT_STREAM_EOS`` DeepStream event (gst-nvevent.h `documentation <https://docs.nvidia.com/metropolis/deepstream/dev-guide/sdk-api/gst-nvevent_8h.html>`__), determining which source it refers to, and calls the ``on_source_eos`` method. Therefore, when implementing your version of the event handler on the sink pad, it is worth including a call to the parent class method in it.
+    def on_source_delete(self, source_id: str):
+        """On source delete callback."""
 
-The ``on_source_eos`` method is called for every ``GST_NVEVENT_STREAM_EOS`` event that arrives on the PyFunc sink pad. The purpose of this method is to handle the situation when a data stream corresponding to a particular source ends.
-
-Source addressing is achieved by reading ``frame_meta.source_id`` preperty, which corresponds to the identifier of the source defined by an external system ingesting frames. The ``on_source_eos`` method can be used to release the state resources allocated for a particular source. For example, delete information about the tracks of this source.
+The ``on_source_eos`` method is called for every ``GST_NVEVENT_STREAM_EOS`` event that arrives on the PyFunc sink pad. The purpose of this method is to handle the situation when a data stream corresponding to a particular source ends. The method can be used to free resources that are assigned to a specific source and are relevant within a single stream of the source. For example, delete information about the tracks of this stream.
 
 .. code-block:: python
 
     def on_source_eos(self, source_id: str):
         """On source EOS event callback."""
+
+Source addressing is achieved by reading ``frame_meta.source_id`` property, which corresponds to the identifier of the source defined by an external system ingesting frames.
 
 The Python Function Unit is specified in the configuration by the ``pyfunc`` unit, specifying the required configuration parameters ``module`` and ``class_name``, where:
 

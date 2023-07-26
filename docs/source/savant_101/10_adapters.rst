@@ -1,7 +1,38 @@
+How Savant Communicates With External Video Sources
+===================================================
+
+Let us get acquainted with the top-level components of Savant. A "module" is a docker container where a pipeline running computer vision resides. Modules must somehow communicate with the external world: they capture video or images from cams, files, queues, and streaming servers and send results to other external systems like video archives, databases, broadcast systems, etc. In Savant, **normally** modules don't do these things by themselves, delegating them to adapters, but direct interaction is also possible.
+
+GStreamer implements pluggable architecture. There is a number of plugin types supported: sources, sinks, transformers. By default, it provides ready-to-use plugins to communicate with external data, like ``uridecodebin``, ``videotestsrc`` or ``fakesink``.
+
+Savant also translates its manifest to a GStreamer pipeline, but with custom ZeroMQ source and ZeroMQ sink elements enabling the communication with data via special external processes called adapters (we introduce them in the next sections).
+
+Those elements are defined in the module definition by default and usually are hidden from developers. However, the interested person may change the default source and sink to GStreamer elements like ``uridecodebin`` if the pipeline benefits from it.
+
+The developer may encounter such customizations in our performance-related module definitions like shown in the example below:
+
+.. literalinclude:: ../../../samples/opencv_cuda_bg_remover_mog2/demo_performance.yml
+  :language: YAML
+  :linenos:
+  :caption:
+  :emphasize-lines: 1,5
+  :lines: 31-34, 45-46
+
+Or in the project template:
+
+.. literalinclude:: ../../../samples/template/module/module.yml
+  :language: YAML
+  :linenos:
+  :caption:
+  :emphasize-lines: 2,6,21,25
+  :lines: 24-42, 103-112
+
+The last listing shows default ZeroMQ-based source and sink elements commented. If the source and sink definitions are omitted, such commented elements are actually used.
+
+Currently, the single source- and multiple sink declarations are supported.
+
 Adapters
 ========
-
-Let us begin with two terms to get acquainted with the top-level components of Savant. A "module" is a docker container where a pipeline running computer vision or video analytics runs. Modules must somehow communicate with the external world: they capture video or images from cams, files, queues, and streaming servers and send results to other external systems like video archives, databases, broadcast systems, etc. In Savant, modules don't do these things by themselves, delegating them to adapters.
 
 The adapters are standalone programs executed in separate Docker containers. They communicate with modules via `ZeroMQ <https://zeromq.org/>`__: source adapters ingest data, and sink adapters consume data from modules.
 
@@ -484,12 +515,13 @@ FFmpeg Source Adapter
 The adapter delivers video stream using FFmpeg library. It can be used to read video files, RTSP streams, and other sources supported by FFmpeg.
 
 **Parameters**:
-- ``URI`` (**required**): an URI of the stream;
-- ``FFMPEG_PARAMS``: a comma separated string ``key=value`` with parameters for FFmpeg (e.g. ``rtsp_transport=tcp``, ``input_format=mjpeg,video_size=1280x720``);
-- ``FFMPEG_LOGLEVEL``: a log level for FFmpeg; default is ``info``;
-- ``BUFFER_LEN``: a maximum amount of frames in FFmpeg buffer; default is ``50``;
-- ``SYNC_OUTPUT``: a flag indicating the need to send frames from source synchronously (i.e. at the source file rate); default is ``False``;
-- ``SYNC_DELAY``: a delay in seconds before sending frames; default is ``0``;
+
+* ``URI`` (**required**): an URI of the stream;
+* ``FFMPEG_PARAMS``: a comma separated string ``key=value`` with parameters for FFmpeg (e.g. ``rtsp_transport=tcp``, ``input_format=mjpeg,video_size=1280x720``);
+* ``FFMPEG_LOGLEVEL``: a log level for FFmpeg; default is ``info``;
+* ``BUFFER_LEN``: a maximum amount of frames in FFmpeg buffer; default is ``50``;
+* ``SYNC_OUTPUT``: a flag indicating the need to send frames from source synchronously (i.e. at the source file rate); default is ``False``;
+* ``SYNC_DELAY``: a delay in seconds before sending frames; default is ``0``.
 
 Running the adapter with Docker:
 

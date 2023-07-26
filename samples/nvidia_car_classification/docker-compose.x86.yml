@@ -8,7 +8,7 @@ services:
       - zmq_sockets:/tmp/zmq-sockets
       - /tmp/video-loop-source-downloads:/tmp/video-loop-source-downloads
     environment:
-      - LOCATION=https://eu-central-1.linodeobjects.com/savant-data/nvidia-car-classification/deepstream_sample_720p.mp4
+      - LOCATION=https://eu-central-1.linodeobjects.com/savant-data/demo/deepstream_sample_720p.mp4
       - DOWNLOAD_PATH=/tmp/video-loop-source-downloads
       - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
       - SOURCE_ID=nvidia-sample-processed
