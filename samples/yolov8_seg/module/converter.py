@@ -1,6 +1,4 @@
-"""YOLOv8-seg postprocessing (converter).
-TODO: Add `symmetric-padding` support.
-"""
+"""YOLOv8-seg postprocessing (converter)."""
 from typing import Any, List, Tuple
 import numba as nb
 import numpy as np
