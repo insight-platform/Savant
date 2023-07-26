@@ -74,3 +74,9 @@ Sample Location: [multiple_rtsp](./multiple_rtsp)
 A very primitive source-sink pipeline testing that RTSP cam normally processed by NVDEC and thus, is compatible with Savant.
 
 Location: [rtsp_cam_compatibility_test](./rtsp_cam_compatibility_test)
+
+### Multiple GigE Vision Cameras Demo
+
+A simple pipeline demonstrates how GigE Vision Source Adapter works in Savant. In the demo video from one GigE Vision camera is passed as raw-rgba frames, and another one is passed as HEVC-encoded frames. Both streams are passed to Always-On-RTSP sinks.
+
+Sample Location: [multiple_gige](./multiple_gige)
