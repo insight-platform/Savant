@@ -11,6 +11,11 @@ parameters:
     class_name: Overlay
 
 pipeline:
+  source:
+    element: uridecodebin
+    properties:
+      uri: file:///data/shuffle_dance.mp4
+
   elements:
     - element: nvinfer@instance_segmentation
       name: yolov8_seg
@@ -28,6 +33,7 @@ pipeline:
           maintain_aspect_ratio: true
           scale_factor: 0.0039215697906911373
           offsets: [0.0, 0.0, 0.0]
+
         output:
           layer_names: [output0, output1]
           converter:
@@ -47,9 +53,13 @@ pipeline:
                 class_name: MinMaxSizeBBoxSelector
                 kwargs:
                   min_height: 64
+
           attributes:
             - name: mask
               # must be internal, output schema doesn't currently support numpy arrays
               internal: true
 
     - element: queue
+
+  sink:
+    - element: devnull_sink
