@@ -40,7 +40,7 @@ RUN apt-get update \
 
 RUN python -m pip install --no-cache-dir meson==0.63.3
 
-ARG ARAVIS_VERSION=0.8.22
+ARG ARAVIS_VERSION=0.8.27
 RUN git clone --depth 1 --branch ${ARAVIS_VERSION} https://github.com/AravisProject/aravis.git /build/aravis
 
 WORKDIR /build/aravis

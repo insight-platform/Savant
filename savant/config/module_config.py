@@ -286,6 +286,23 @@ def configure_pipeline_elements(module_cfg: DictConfig) -> None:
         module_cfg.pipeline.elements[pipeline_el_idx] = item_cfg
 
 
+def validate_frame_parameters(config: Module):
+    """Validate frame parameters."""
+
+    frame_parameters: FrameParameters = config.parameters['frame']
+    output_frame: Optional[Dict] = config.parameters['output_frame']
+    if output_frame is not None and output_frame.get('codec') == 'png':
+        if (
+            frame_parameters.output_width % 8 != 0
+            or frame_parameters.output_height % 8 != 0
+        ):
+            raise ModuleConfigException(
+                'Output frame resolution must be divisible by 8 for PNG output. '
+                'Got output frame resolution: '
+                f'{frame_parameters.output_width}x{frame_parameters.output_height}.'
+            )
+
+
 class ModuleConfig(metaclass=SingletonMeta):
     """Singleton that provides module configuration loading and access."""
 
@@ -318,6 +335,7 @@ class ModuleConfig(metaclass=SingletonMeta):
         configure_pipeline_elements(module_cfg)
 
         self._config = OmegaConf.to_object(module_cfg)
+        validate_frame_parameters(self._config)
 
         setup_batch_size(self._config)
 

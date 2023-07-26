@@ -1,18 +1,18 @@
-import logging
 import math
 from typing import Dict, List, Optional
+from savant.utils.logging import get_logger
 
 
 class ChunkWriter:
     """Writes data in chunks."""
 
     def __init__(self, chunk_size: int):
-        self.logger = logging.getLogger(f'{__name__}.{self.__class__.__name__}')
+        self.logger = get_logger(f'{__name__}.{self.__class__.__name__}')
         self.chunk_size = chunk_size
         if chunk_size > 0:
             self.chunk_size_digits = int(math.log10(chunk_size)) + 1
         else:
-            self.chunk_size_digits = 4
+            self.chunk_size_digits = 6
         self.chunk_idx = -1
         self.frames_in_chunk = 0
         self.opened = False

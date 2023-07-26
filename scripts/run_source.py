@@ -499,6 +499,36 @@ def usb_cam_source(
 @click.option(
     '--host-network', default=False, is_flag=True, help='Use the host network'
 )
+@click.option(
+    '--encode',
+    default=False,
+    is_flag=True,
+    help='Encode the video stream with H264',
+)
+@click.option(
+    '--encode-bitrate',
+    default=2048,
+    help='Bitrate of the encoded video stream, in kbit/sec',
+    show_default=True,
+)
+@click.option(
+    '--encode-key-int-max',
+    default=30,
+    help='Maximum interval between two keyframes, in frames',
+    show_default=True,
+)
+@click.option(
+    '--encode-speed-preset',
+    default='medium',
+    help='Speed preset of the encoder, one of "ultrafast", "superfast", "veryfast", "faster", "fast", "medium", "slow", "slower", "veryslow", "placebo"',
+    show_default=True,
+)
+@click.option(
+    '--encode-tune',
+    default='zerolatency',
+    help='Tune of the encoder, one of "psnr", "ssim", "grain", "zerolatency", "psnr", "fastdecode", "animation"',
+    show_default=True,
+)
 @common_options
 @adapter_docker_image_option('gstreamer')
 @click.argument('camera_name', required=False)
@@ -523,6 +553,11 @@ def gige_cam_source(
     gain_auto: Optional[str],
     features: Optional[str],
     host_network: bool,
+    encode: bool,
+    encode_bitrate: int,
+    encode_key_int_max: int,
+    encode_speed_preset: str,
+    encode_tune: str,
     camera_name: Optional[str],
 ):
     """Read video stream from GigE camera CAMERA_NAME.
@@ -549,30 +584,30 @@ def gige_cam_source(
         fps_output=fps_output,
     )
 
-    if camera_name is not None:
-        envs.append(f'CAMERA_NAME={camera_name}')
-    if width is not None:
-        envs.append(f'WIDTH={width}')
-    if height is not None:
-        envs.append(f'HEIGHT={height}')
-    if framerate is not None:
-        envs.append(f'FRAMERATE={framerate}')
-    if input_caps is not None:
-        envs.append(f'INPUT_CAPS={input_caps}')
-    if packet_size is not None:
-        envs.append(f'PACKET_SIZE={packet_size}')
-    if auto_packet_size is not None:
-        envs.append(f'AUTO_PACKET_SIZE={int(auto_packet_size)}')
-    if exposure is not None:
-        envs.append(f'EXPOSURE={exposure}')
-    if exposure_auto is not None:
-        envs.append(f'EXPOSURE_AUTO={exposure_auto}')
-    if gain is not None:
-        envs.append(f'GAIN={gain}')
-    if gain_auto is not None:
-        envs.append(f'GAIN_AUTO={gain_auto}')
-    if features is not None:
-        envs.append(f'FEATURES={features}')
+    envs_dict = {
+        'CAMERA_NAME': camera_name,
+        'WIDTH': width,
+        'HEIGHT': height,
+        'FRAMERATE': framerate,
+        'INPUT_CAPS': input_caps,
+        'PACKET_SIZE': packet_size,
+        'AUTO_PACKET_SIZE': (
+            int(auto_packet_size) if auto_packet_size is not None else None
+        ),
+        'EXPOSURE': exposure,
+        'EXPOSURE_AUTO': exposure_auto,
+        'GAIN': gain,
+        'GAIN_AUTO': gain_auto,
+        'FEATURES': features,
+        'ENCODE': encode,
+        'ENCODE_BITRATE': encode_bitrate,
+        'ENCODE_KEY_INT_MAX': encode_key_int_max,
+        'ENCODE_SPEED_PRESET': encode_speed_preset,
+        'ENCODE_TUNE': encode_tune,
+    }
+    for k, v in envs_dict.items():
+        if v is not None:
+            envs.append(f'{k}={v}')
 
     cmd = build_docker_run_command(
         f'source-gige-{source_id}',
