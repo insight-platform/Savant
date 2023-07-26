@@ -158,8 +158,10 @@ class NvInferModel(Model):
     # symmetric-padding (with maintain-aspect-ratio) -
     #     Indicates whether to pad image symmetrically while scaling input.
     #     DeepStream pads the images asymmetrically by default.
-    # workspace-size - Workspace size to be used by the engine, in MB
     # network-input-order - Order of the network input layer
+
+    workspace_size: int = 6144
+    """Workspace size to be used by the engine, in MB"""
 
     custom_lib_path: Optional[str] = None
     """Absolute pathname of a library containing custom method implementations
