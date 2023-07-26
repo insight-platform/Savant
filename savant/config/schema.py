@@ -384,13 +384,14 @@ class Pipeline:
                 element: uridecodebin
                 properties:
                     uri: file:///data/test.mp4
-            stages:
-
-                - init_condition:
-                      expr:
-                      value:
-                  elements:
-                      # user-defined pipeline elements
+            elements:
+            # user-defined pipeline elements or element groups
+                - element: nvinfer@detector
+                - group:
+                    init_condition:
+                      expr: expression
+                      value: value
+                    elements:
                       - element: nvinfer@detector
             sink:
                 - element: console_sink
