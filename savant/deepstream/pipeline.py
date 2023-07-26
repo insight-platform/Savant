@@ -7,6 +7,7 @@ from typing import Any, List, Optional, Tuple
 import time
 import logging
 import pyds
+
 from savant_rs.primitives.geometry import BBox
 
 from pygstsavantframemeta import (
@@ -17,6 +18,7 @@ from pygstsavantframemeta import (
 from savant.base.input_preproc import ObjectsPreprocessing
 from savant.base.model import AttributeModel, ComplexModel
 from savant.config.schema import (
+    Pipeline,
     PipelineElement,
     ModelElement,
     FrameParameters,
@@ -29,25 +31,25 @@ from savant.utils.platform import is_aarch64
 from savant.utils.sink_factories import SinkEndOfStream
 
 from savant.gstreamer import Gst, GLib  # noqa:F401
-from savant.gstreamer.pipeline import GstPipeline
 from savant.gstreamer.metadata import (
     SourceFrameMeta,
     metadata_add_frame_meta,
     get_source_frame_meta,
 )
+from savant.gstreamer.pipeline import GstPipeline
 from savant.gstreamer.utils import on_pad_event, pad_to_source_id
 
 from savant.deepstream.buffer_processor import (
     NvDsBufferProcessor,
     create_buffer_processor,
 )
-from savant.deepstream.source_output import (
-    SourceOutputWithFrame,
-    create_source_output,
-)
 from savant.deepstream.metadata import (
     nvds_obj_meta_output_converter,
     nvds_attr_meta_output_converter,
+)
+from savant.deepstream.source_output import (
+    SourceOutputWithFrame,
+    create_source_output,
 )
 from savant.deepstream.utils import (
     gst_nvevent_parse_stream_eos,
