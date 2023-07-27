@@ -1,9 +1,21 @@
 import json
 from fractions import Fraction
 from pathlib import Path
-from typing import Any, Dict, NamedTuple, Optional, Union
+from typing import Any, Dict, List, NamedTuple, Optional, Union
 
-from savant.api import serialize, ENCODING_REGISTRY
+from savant_rs.primitives import (
+    Attribute,
+    AttributeValue,
+    EndOfStream,
+    IdCollisionResolutionPolicy,
+    VideoFrame,
+    VideoFrameContent,
+    VideoObject,
+)
+from savant_rs.primitives.geometry import BBox, RBBox
+from savant_rs.utils.serialization import Message, save_message_to_bytes
+from savant_rs.video_object_query import IntExpression, MatchQuery
+
 from savant.api.enums import ExternalFrameType
 from savant.gstreamer import GObject, Gst, GstBase
 from savant.gstreamer.codecs import CODEC_BY_CAPS_NAME, Codec
@@ -113,8 +125,6 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
 
     def __init__(self):
         super().__init__()
-        self.schema = ENCODING_REGISTRY["VideoFrame"]
-        self.eos_schema = ENCODING_REGISTRY["EndOfStream"]
         # properties
         self.source_id: Optional[str] = None
         self.eos_on_file_end: bool = True
@@ -248,22 +258,24 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
         if self.frame_type is None:
             result, frame_mapinfo = in_buf.map(Gst.MapFlags.READ)
             assert result, 'Cannot read buffer.'
-            frame = frame_mapinfo.data
+            content = VideoFrameContent.internal(frame_mapinfo.data)
         elif self.frame_type == ExternalFrameType.ZEROMQ:
-            frame = {'type': self.frame_type.value}
+            content = VideoFrameContent.external(self.frame_type.value)
         else:
             self.logger.error('Unsupported frame type "%s".', self.frame_type.value)
             return Gst.FlowReturn.ERROR
-        message = self.build_message(
+
+        frame = self.build_video_frame(
             in_buf.pts,
             in_buf.dts if in_buf.dts != Gst.CLOCK_TIME_NONE else None,
             in_buf.duration if in_buf.duration != Gst.CLOCK_TIME_NONE else None,
-            frame=frame,
+            content=content,
             keyframe=not in_buf.has_flags(Gst.BufferFlags.DELTA_UNIT),
         )
-        frame_meta = serialize(self.schema, message)
+        message = Message.video_frame(frame)
+        data = save_message_to_bytes(message)
 
-        out_buf: Gst.Buffer = Gst.Buffer.new_wrapped(frame_meta)
+        out_buf: Gst.Buffer = Gst.Buffer.new_wrapped(data)
         if frame_mapinfo is not None:
             in_buf.unmap(frame_mapinfo)
         else:
@@ -314,44 +326,136 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
 
     def send_end_message(self):
         self.logger.info('Sending serialized EOS message')
-        data = serialize(
-            self.eos_schema,
-            {'source_id': self.source_id},
-        )
+        message = Message.end_of_stream(EndOfStream(self.source_id))
+        data = save_message_to_bytes(message)
         out_buf = Gst.Buffer.new_wrapped(data)
         self.srcpad.push(out_buf)
         self.stream_in_progress = False
 
-    def build_message(
+    def build_video_frame(
         self,
         pts: int,
         dts: Optional[int],
         duration: Optional[int],
-        frame: Optional[Union[bytes, Dict[str, Any]]],
-        **kwargs,
-    ):
+        content: VideoFrameContent,
+        keyframe: bool,
+    ) -> VideoFrame:
         if pts == Gst.CLOCK_TIME_NONE:
             # TODO: support CLOCK_TIME_NONE in schema
             pts = 0
         frame_metadata = None
         if self.read_metadata and self.json_metadata:
             frame_metadata = self.json_metadata[pts]
-        message = {
-            'source_id': self.source_id,
-            'framerate': self.frame_params.framerate,
-            'width': self.frame_params.width,
-            'height': self.frame_params.height,
-            'codec': self.frame_params.codec_name,
-            'pts': pts,
-            'dts': dts,
-            'duration': duration,
-            'frame': frame,
-            'metadata': frame_metadata["metadata"] if self.read_metadata else None,
-            **kwargs,
-        }
+
+        frame = VideoFrame(
+            source_id=self.source_id,
+            framerate=self.framerate,
+            width=self.width,
+            height=self.height,
+            content=content,
+            codec=self.codec_name,
+            keyframe=keyframe,
+            pts=pts,
+            dts=dts,
+            duration=duration,
+            time_base=(1, Gst.SECOND),
+        )
+        if frame_metadata:
+            add_objects(frame, frame_metadata['metadata']['objects'])
         if self.location:
-            message['tags'] = {'location': str(self.location)}
-        return message
+            frame.set_attribute(
+                Attribute(
+                    namespace='default',
+                    name='location',
+                    values=[AttributeValue.string(str(self.location))],
+                )
+            )
+
+        return frame
+
+
+def add_objects(frame: VideoFrame, objects: Optional[List[Dict[str, Any]]]):
+    if not objects:
+        return
+
+    obj_dict = {}
+    for obj in objects:
+        obj = build_object(obj)
+        frame.add_object(obj, IdCollisionResolutionPolicy.Error)
+        obj_dict[obj.id] = obj
+
+    for obj in objects:
+        parent_id = obj.get('parent_object_id')
+        if parent_id is None:
+            continue
+        frame.set_parent(
+            MatchQuery.id(IntExpression.eq(obj['object_id'])),
+            obj_dict[parent_id],
+        )
+
+
+def build_object(obj: Dict[str, Any]):
+    return VideoObject(
+        id=obj['object_id'],
+        namespace=obj['model_name'],
+        label=obj['label'],
+        detection_box=build_bbox(obj['bbox']),
+        attributes=build_object_attributes(obj.get('attributes')),
+        confidence=obj['confidence'],
+    )
+
+
+def build_bbox(bbox: Dict[str, Any]):
+    angle = bbox.get('angle')
+    if angle is None:
+        return BBox(
+            x=bbox['x'],
+            y=bbox['y'],
+            width=bbox['width'],
+            height=bbox['height'],
+        )
+    return RBBox(
+        xc=bbox['xc'],
+        yc=bbox['yc'],
+        width=bbox['width'],
+        height=bbox['height'],
+        angle=angle,
+    )
+
+
+def build_object_attributes(attributes: Optional[List[Dict[str, Any]]]):
+    built_attributes = {}
+    if attributes is None:
+        return built_attributes
+    for attr in attributes:
+        value = build_attribute_value(attr['value'], attr.get('confidence'))
+        built_attr = built_attributes.setdefault(
+            (attr['element_name'], attr['name']),
+            Attribute(
+                namespace=attr['element_name'],
+                name=attr['name'],
+                values=[],
+            ),
+        )
+        built_attr.values.append(value)
+
+    return built_attributes
+
+
+def build_attribute_value(
+    value: Union[bool, int, float, str, List[float]],
+    confidence: Optional[float] = None,
+):
+    if isinstance(value, bool):
+        return AttributeValue.boolean(value, confidence=confidence)
+    elif isinstance(value, int):
+        return AttributeValue.integer(value, confidence=confidence)
+    elif isinstance(value, float):
+        return AttributeValue.float(value, confidence=confidence)
+    elif isinstance(value, str):
+        return AttributeValue.string(value, confidence=confidence)
+    elif isinstance(value, list):
+        return AttributeValue.floats(value, confidence=confidence)
 
 
 # register plugin
