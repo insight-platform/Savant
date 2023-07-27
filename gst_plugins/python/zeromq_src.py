@@ -5,7 +5,11 @@ from typing import Optional
 import zmq
 
 from savant.gstreamer import GObject, Gst, GstBase
-from savant.gstreamer.utils import gst_buffer_from_list, propagate_gst_setting_error
+from savant.gstreamer.utils import (
+    gst_buffer_from_list,
+    propagate_gst_error,
+    propagate_gst_setting_error,
+)
 from savant.utils.logging import LoggerMixin
 from savant.utils.zeromq import (
     Defaults,
@@ -144,17 +148,41 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
                 topic_prefix=topic_prefix,
             )
         except ZMQException:
-            self.logger.exception('Element start error.')
+            error = f'Failed to create ZeroMQ source with socket {self.socket}.'
+            self.logger.exception(error, exc_info=True)
             frame = inspect.currentframe()
-            propagate_gst_setting_error(self, frame, __file__)
+            propagate_gst_setting_error(self, frame, __file__, error)
             # prevents pipeline from starting
             return False
 
         return True
 
+    def start_zero_mq_source(self):
+        try:
+            self.source.start()
+        except ZMQException:
+            error = f'Failed to start ZeroMQ source with socket {self.socket}.'
+            self.logger.exception(error, exc_info=True)
+            frame = inspect.currentframe()
+            propagate_gst_error(
+                gst_element=self,
+                frame=frame,
+                file_path=__file__,
+                domain=Gst.StreamError.quark(),
+                code=Gst.StreamError.FAILED,
+                text=error,
+            )
+            propagate_gst_setting_error(self, frame, __file__)
+            return False
+        return True
+
     # pylint: disable=unused-argument
     def do_create(self, offset: int, size: int, buffer: Gst.Buffer = None):
         """Create gst buffer."""
+
+        if not self.source.is_alive:
+            if not self.start_zero_mq_source():
+                return Gst.FlowReturn.ERROR
 
         self.logger.debug('Receiving next message')
 
