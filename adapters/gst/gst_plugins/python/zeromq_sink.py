@@ -98,7 +98,7 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
         self.wait_response = False
         self.send_hwm = Defaults.SEND_HWM
         self.receive_timeout = Defaults.SENDER_RECEIVE_TIMEOUT
-        self.req_recv_retries = Defaults.REQ_RECEIVE_RETRIES
+        self.req_receive_retries = Defaults.REQ_RECEIVE_RETRIES
         self.eos_confirmation_retries = Defaults.EOS_CONFIRMATION_RETRIES
         self.source_id: str = None
         self.zmq_topic: bytes = None
@@ -127,7 +127,7 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
         if prop.name == 'receive-timeout':
             return self.receive_timeout
         if prop.name == 'req-receive-retries':
-            return self.req_recv_retries
+            return self.req_receive_retries
         if prop.name == 'eos-confirmation-retries':
             return self.eos_confirmation_retries
         raise AttributeError(f'Unknown property {prop.name}.')
@@ -154,7 +154,7 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
         elif prop.name == 'receive-timeout':
             self.receive_timeout = value
         elif prop.name == 'req-receive-retries':
-            self.req_recv_retries = value
+            self.req_receive_retries = value
         elif prop.name == 'eos-confirmation-retries':
             self.eos_confirmation_retries = value
         else:
@@ -212,11 +212,11 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
         self.sender.send_multipart(message)
         if self.wait_response:
             try:
-                resp = receive_response(self.sender, self.req_recv_retries)
+                resp = receive_response(self.sender, self.req_receive_retries)
             except zmq.Again:
                 error = (
                     f"The REP socket hasn't responded in a configured timeframe "
-                    f"{self.receive_timeout * self.receive_timeout} ms."
+                    f"{self.receive_timeout * self.req_receive_retries} ms."
                 )
                 self.logger.error(error)
                 frame = inspect.currentframe()
