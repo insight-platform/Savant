@@ -349,11 +349,11 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
 
         frame = VideoFrame(
             source_id=self.source_id,
-            framerate=self.framerate,
-            width=self.width,
-            height=self.height,
+            framerate=self.frame_params.framerate,
+            width=self.frame_params.width,
+            height=self.frame_params.height,
+            codec=self.frame_params.codec_name,
             content=content,
-            codec=self.codec_name,
             keyframe=keyframe,
             pts=pts,
             dts=dts,

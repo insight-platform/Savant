@@ -329,7 +329,7 @@ class AvroVideoDemux(LoggerMixin, Gst.Element):
         if video_frame.content.is_none():
             result = Gst.FlowReturn.OK
         else:
-            if video_frame.content.internal():
+            if video_frame.content.is_internal():
                 frame_buf: Gst.Buffer = Gst.Buffer.new_wrapped(
                     video_frame.content.get_data_as_bytes()
                 )
