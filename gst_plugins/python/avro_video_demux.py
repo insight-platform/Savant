@@ -1,23 +1,30 @@
 """AvroVideoDemux element."""
 import inspect
 import itertools
-
 import time
+from dataclasses import dataclass
 from fractions import Fraction
 from threading import Lock, Thread
-from typing import Dict, NamedTuple, Optional
+from typing import Dict, NamedTuple, Optional, Union
 
-from dataclasses import dataclass
+from savant_rs.primitives import (
+    AttributeValue,
+    AttributeValueType,
+    EndOfStream,
+    VideoFrame,
+)
+from savant_rs.primitives.geometry import BBox, RBBox
+from savant_rs.utils.serialization import Message, load_message_from_bytes
+from savant_rs.video_object_query import MatchQuery
 
-from savant.api import deserialize
 from savant.api.enums import ExternalFrameType
 from savant.gstreamer import GObject, Gst
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
 from savant.gstreamer.metadata import (
     DEFAULT_FRAMERATE,
+    OnlyExtendedDict,
     SourceFrameMeta,
     metadata_add_frame_meta,
-    OnlyExtendedDict,
 )
 from savant.gstreamer.utils import propagate_gst_error
 from savant.utils.logging import LoggerMixin
@@ -227,48 +234,48 @@ class AvroVideoDemux(LoggerMixin, Gst.Element):
 
         # TODO: Pipeline message types might be extended beyond only VideoFrame
         # Additional checks for audio/raw_tensors/etc. may be required
-        schema_name, message = deserialize(frame_meta_mapinfo.data)
-        if self.source_id is not None and message['source_id'] != self.source_id:
-            self.logger.debug('Skipping message from source %s', message['source_id'])
-            result = Gst.FlowReturn.OK
-        elif schema_name == 'VideoFrame':
-            result = self.handle_video_frame(message, buffer)
-        elif schema_name == 'EndOfStream':
-            result = self.handle_eos(message)
+
+        message: Message = load_message_from_bytes(frame_meta_mapinfo.data)
+        if message.is_video_frame():
+            result = self.handle_video_frame(message.as_video_frame(), buffer)
+        elif message.is_end_of_stream():
+            result = self.handle_eos(message.as_end_of_stream())
         else:
-            self.logger.error('Unknown schema "%s"', schema_name)
-            self.is_running = False
-            result = Gst.FlowReturn.ERROR
+            self.logger.debug('Unsupported message type for message %r', message)
+            result = Gst.FlowReturn.OK
 
         buffer.unmap(frame_meta_mapinfo)
         return result
 
-    def handle_video_frame(self, message: Dict, buffer: Gst.Buffer) -> Gst.FlowReturn:
+    def handle_video_frame(
+        self,
+        video_frame: VideoFrame,
+        buffer: Gst.Buffer,
+    ) -> Gst.FlowReturn:
         """Handle VideoFrame message."""
-        source_id = message['source_id']
         frame_params = FrameParams(
-            codec=CODEC_BY_NAME[message['codec']],
-            width=message['width'],
-            height=message['height'],
-            framerate=message['framerate'],
+            codec=CODEC_BY_NAME[video_frame.codec],
+            width=video_frame.width,
+            height=video_frame.height,
+            framerate=video_frame.framerate,
         )
-        frame_pts = message['pts']
-        frame_dts = message['dts']
+        # TODO: respect timebase
+        # tb_num, tb_denum = video_frame.timebase or (1, Gst.SECOND)
+        frame_pts = video_frame.pts
+        frame_dts = video_frame.dts
         if frame_dts is None:
             frame_dts = Gst.CLOCK_TIME_NONE
-        frame_duration = message['duration']
-        frame = message['frame']
+        frame_duration = video_frame.duration
         self.logger.debug(
-            'Received frame %s from source %s; size: %s bytes; frame %s a keyframe',
+            'Received frame %s from source %s; frame %s a keyframe',
             frame_pts,
-            source_id,
-            len(frame) if frame else 0,
-            'is' if message['keyframe'] else 'is not',
+            video_frame.source_id,
+            'is' if video_frame.keyframe else 'is not',
         )
         frame_idx = next(self._frame_idx_gen)
 
         with self.source_lock:
-            source_info: SourceInfo = self.sources.get(source_id)
+            source_info: SourceInfo = self.sources.get(video_frame.source_id)
             if source_info is None:
                 if (
                     self.max_parallel_streams
@@ -276,7 +283,7 @@ class AvroVideoDemux(LoggerMixin, Gst.Element):
                 ):
                     self.is_running = False
                     error = (
-                        f'Failed to add source {source_id!r}: reached maximum '
+                        f'Failed to add source {video_frame.source_id!r}: reached maximum '
                         f'number of streams: {self.max_parallel_streams}.'
                     )
                     self.logger.error(error)
@@ -290,16 +297,16 @@ class AvroVideoDemux(LoggerMixin, Gst.Element):
                         text=error,
                     )
                     return Gst.FlowReturn.ERROR
-                if not message['keyframe']:
+                if not video_frame.keyframe:
                     self.logger.warning(
                         'Frame %s from source %s is not a keyframe, skipping it. '
                         'Stream should start with a keyframe.',
                         frame_pts,
-                        source_id,
+                        video_frame.source_id,
                     )
                     return Gst.FlowReturn.OK
-                source_info = SourceInfo(source_id, frame_params)
-                self.sources[source_id] = source_info
+                source_info = SourceInfo(video_frame.source_id, frame_params)
+                self.sources[video_frame.source_id] = source_info
             source_info.timestamp = time.time()
         if source_info.src_pad is not None and source_info.params != frame_params:
             self.update_frame_params(source_info, frame_params)
@@ -308,22 +315,26 @@ class AvroVideoDemux(LoggerMixin, Gst.Element):
         source_info.last_pts = frame_pts
         source_info.last_dts = frame_dts
         if source_info.src_pad is None:
-            if message['keyframe']:
-                self.add_source(source_id, source_info)
+            if video_frame.keyframe:
+                self.add_source(video_frame.source_id, source_info)
             else:
                 self.logger.warning(
                     'Frame %s from source %s is not a keyframe, skipping it. '
                     'Stream should start with a keyframe.',
                     frame_pts,
-                    source_id,
+                    video_frame.source_id,
                 )
                 return Gst.FlowReturn.OK
 
-        if frame:
-            if isinstance(frame, bytes):
-                frame_buf: Gst.Buffer = Gst.Buffer.new_wrapped(frame)
+        if video_frame.content.is_none():
+            result = Gst.FlowReturn.OK
+        else:
+            if video_frame.content.internal():
+                frame_buf: Gst.Buffer = Gst.Buffer.new_wrapped(
+                    bytes(video_frame.content.get_data())
+                )
             else:
-                frame_type = ExternalFrameType(frame['type'])
+                frame_type = ExternalFrameType(video_frame.content.get_method())
                 if frame_type != ExternalFrameType.ZEROMQ:
                     self.logger.error('Unsupported frame type "%s".', frame_type.value)
                     self.is_running = False
@@ -343,30 +354,33 @@ class AvroVideoDemux(LoggerMixin, Gst.Element):
             frame_buf.duration = (
                 Gst.CLOCK_TIME_NONE if frame_duration is None else frame_duration
             )
-            self.add_frame_meta(frame_idx, frame_buf, message)
+            self.add_frame_meta(frame_idx, frame_buf, video_frame)
             self.logger.debug(
                 'Pushing frame with idx=%s and pts=%s', frame_idx, frame_pts
             )
             result: Gst.FlowReturn = source_info.src_pad.push(frame_buf)
-        else:
-            result = Gst.FlowReturn.OK
         self.logger.debug(
             'end handle_buffer (return buffer with timestamp %d).', frame_pts
         )
         return result
 
-    def handle_eos(self, message: Dict) -> Gst.FlowReturn:
+    def handle_eos(self, eos: EndOfStream) -> Gst.FlowReturn:
         """Handle EndOfStream message."""
-        source_id = message['source_id']
-        self.logger.info('Received EOS from source %s.', source_id)
+        if self.source_id is not None and eos.source_id != self.source_id:
+            self.logger.debug('Skipping message from source %s', eos.source_id)
+            return Gst.FlowReturn.OK
+
+        self.logger.info('Received EOS from source %s.', eos.source_id)
         with self.source_lock:
-            source_info: SourceInfo = self.sources.get(source_id)
+            source_info: SourceInfo = self.sources.get(eos.source_id)
             if source_info is None:
                 return Gst.FlowReturn.OK
             source_info.timestamp = time.time()
+
         if source_info.src_pad is not None:
             self.send_eos(source_info)
-        del self.sources[source_id]
+        del self.sources[eos.source_id]
+
         return Gst.FlowReturn.OK
 
     def add_source(self, source_id: str, source_info: SourceInfo):
@@ -495,22 +509,32 @@ class AvroVideoDemux(LoggerMixin, Gst.Element):
         self.logger.debug('Waiting %s seconds for the next eviction loop', wait)
         time.sleep(wait)
 
-    def add_frame_meta(self, idx: int, frame_buf: Gst.Buffer, message: Dict):
+    def add_frame_meta(self, idx: int, frame_buf: Gst.Buffer, video_frame: VideoFrame):
         """Store metadata of a frame."""
         if self.store_metadata:
             from pygstsavantframemeta import gst_buffer_add_savant_frame_meta
 
-            source_id = message['source_id']
-            pts = message['pts']
             frame_meta = SourceFrameMeta(
-                source_id=source_id,
-                pts=pts,
-                duration=message['duration'],
-                framerate=message['framerate'],
-                metadata=message['metadata'],
-                tags=OnlyExtendedDict(message['tags']),
+                source_id=video_frame.source_id,
+                pts=video_frame.pts,
+                duration=video_frame.duration,
+                framerate=video_frame.framerate,
+                metadata={'objects': parse_savant_rs_video_objects(video_frame)},
+                tags=OnlyExtendedDict(
+                    {
+                        name: parse_savant_rs_attribute_value(
+                            video_frame.get_attribute(namespace, name).values[0]
+                        )
+                        for namespace, name in video_frame.attributes
+                    }
+                ),
             )
-            metadata_add_frame_meta(source_id, idx, pts, frame_meta)
+            metadata_add_frame_meta(
+                video_frame.source_id,
+                idx,
+                video_frame.pts,
+                frame_meta,
+            )
             gst_buffer_add_savant_frame_meta(frame_buf, idx)
 
 
@@ -527,6 +551,96 @@ def build_caps(params: FrameParams) -> Gst.Caps:
     caps.set_value('framerate', framerate)
 
     return caps
+
+
+def parse_savant_rs_attribute_value(value: AttributeValue):
+    # primitive
+    if value.value_type == AttributeValueType.Boolean:
+        return value.as_boolean()
+    if value.value_type == AttributeValueType.Integer:
+        return value.as_integer()
+    if value.value_type == AttributeValueType.Float:
+        return value.as_float()
+    if value.value_type == AttributeValueType.String:
+        return value.as_string()
+    if value.value_type == AttributeValueType.Bytes:
+        return value.as_bytes()
+
+    # list of primitives
+    if value.value_type == AttributeValueType.BooleanList:
+        return value.as_booleans()
+    if value.value_type == AttributeValueType.IntegerList:
+        return value.as_integers()
+    if value.value_type == AttributeValueType.FloatList:
+        return value.as_floats()
+    if value.value_type == AttributeValueType.StringList:
+        return value.as_strings()
+
+    # object
+    if value.value_type == AttributeValueType.BBox:
+        return value.as_bbox()
+    if value.value_type == AttributeValueType.Point:
+        return value.as_point()
+    if value.value_type == AttributeValueType.Polygon:
+        return value.as_polygon()
+    if value.value_type == AttributeValueType.Intersection:
+        return value.as_intersection()
+
+    # list of objects
+    if value.value_type == AttributeValueType.BBoxList:
+        return value.as_bboxes()
+    if value.value_type == AttributeValueType.PointList:
+        return value.as_points()
+    if value.value_type == AttributeValueType.PolygonList:
+        return value.as_polygons()
+
+    raise ValueError(f'Unknown attribute value type: {value.value_type}')
+
+
+def parse_savant_rs_bbox(bbox: Union[BBox, RBBox]):
+    return {
+        'xc': bbox.xc,
+        'yc': bbox.yc,
+        'width': bbox.width,
+        'height': bbox.height,
+        'angle': bbox.angle if isinstance(bbox, RBBox) else 0,
+    }
+
+
+def parse_savant_rs_video_objects(frame: VideoFrame):
+    parents = {}
+    objects = {}
+    for obj in frame.access_objects(MatchQuery.idle()):
+        for child in frame.get_children(obj.id):
+            parents[child.id] = obj
+        objects[obj.id] = {
+            'model_name': obj.namespace,
+            'label': obj.label,
+            'object_id': obj.id,
+            'bbox': parse_savant_rs_bbox(obj.detection_box),
+            'confidence': obj.confidence,
+            'attributes': [
+                {
+                    'element_name': namespace,
+                    'name': name,
+                    'value': parse_savant_rs_attribute_value(value),
+                    'confidence': value.confidence,
+                }
+                for namespace, name in obj.attributes
+                for value in obj.get_attribute(namespace, name).values
+            ],
+            'parent_model_name': None,
+            'parent_label': None,
+            'parent_object_id': None,
+        }
+
+    for obj_id, parent in parents.items():
+        child = objects[obj_id]
+        child['parent_model_name'] = parent.namespace
+        child['parent_label'] = parent.label
+        child['parent_object_id'] = parent.id
+
+    return list(objects.values())
 
 
 # register plugin
