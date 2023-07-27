@@ -428,16 +428,13 @@ def build_object_attributes(attributes: Optional[List[Dict[str, Any]]]):
     if attributes is None:
         return built_attributes
     for attr in attributes:
-        value = build_attribute_value(attr['value'], attr.get('confidence'))
-        built_attr = built_attributes.setdefault(
-            (attr['element_name'], attr['name']),
-            Attribute(
-                namespace=attr['element_name'],
-                name=attr['name'],
-                values=[],
-            ),
+        built_attributes[(attr['element_name'], attr['name'])] = Attribute(
+            namespace=attr['element_name'],
+            name=attr['name'],
+            values=[
+                build_attribute_value(attr['value'], attr.get('confidence')),
+            ],
         )
-        built_attr.values.append(value)
 
     return built_attributes
 

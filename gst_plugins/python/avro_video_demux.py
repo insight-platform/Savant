@@ -8,6 +8,7 @@ from threading import Lock, Thread
 from typing import Dict, NamedTuple, Optional, Union
 
 from savant_rs.primitives import (
+    Attribute,
     AttributeValue,
     AttributeValueType,
     EndOfStream,
@@ -519,10 +520,10 @@ class AvroVideoDemux(LoggerMixin, Gst.Element):
                 pts=video_frame.pts,
                 duration=video_frame.duration,
                 framerate=video_frame.framerate,
-                metadata={'objects': parse_savant_rs_video_objects(video_frame)},
+                metadata={'objects': parse_video_objects(video_frame)},
                 tags=OnlyExtendedDict(
                     {
-                        name: parse_savant_rs_attribute_value(
+                        name: parse_attribute_value(
                             video_frame.get_attribute(namespace, name).values[0]
                         )
                         for namespace, name in video_frame.attributes
@@ -553,7 +554,7 @@ def build_caps(params: FrameParams) -> Gst.Caps:
     return caps
 
 
-def parse_savant_rs_attribute_value(value: AttributeValue):
+def parse_attribute_value(value: AttributeValue):
     # primitive
     if value.value_type == AttributeValueType.Boolean:
         return value.as_boolean()
@@ -597,7 +598,7 @@ def parse_savant_rs_attribute_value(value: AttributeValue):
     raise ValueError(f'Unknown attribute value type: {value.value_type}')
 
 
-def parse_savant_rs_bbox(bbox: Union[BBox, RBBox]):
+def parse_bbox(bbox: Union[BBox, RBBox]):
     return {
         'xc': bbox.xc,
         'yc': bbox.yc,
@@ -607,7 +608,17 @@ def parse_savant_rs_bbox(bbox: Union[BBox, RBBox]):
     }
 
 
-def parse_savant_rs_video_objects(frame: VideoFrame):
+def parse_attribute(attribute: Attribute):
+    value = attribute.values[0]
+    return {
+        'element_name': attribute.namespace,
+        'name': attribute.name,
+        'value': parse_attribute_value(value),
+        'confidence': value.confidence,
+    }
+
+
+def parse_video_objects(frame: VideoFrame):
     parents = {}
     objects = {}
     for obj in frame.access_objects(MatchQuery.idle()):
@@ -617,17 +628,11 @@ def parse_savant_rs_video_objects(frame: VideoFrame):
             'model_name': obj.namespace,
             'label': obj.label,
             'object_id': obj.id,
-            'bbox': parse_savant_rs_bbox(obj.detection_box),
+            'bbox': parse_bbox(obj.detection_box),
             'confidence': obj.confidence,
             'attributes': [
-                {
-                    'element_name': namespace,
-                    'name': name,
-                    'value': parse_savant_rs_attribute_value(value),
-                    'confidence': value.confidence,
-                }
+                parse_attribute(obj.get_attribute(namespace, name))
                 for namespace, name in obj.attributes
-                for value in obj.get_attribute(namespace, name).values
             ],
             'parent_model_name': None,
             'parent_label': None,
