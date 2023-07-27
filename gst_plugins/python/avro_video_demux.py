@@ -331,7 +331,7 @@ class AvroVideoDemux(LoggerMixin, Gst.Element):
         else:
             if video_frame.content.internal():
                 frame_buf: Gst.Buffer = Gst.Buffer.new_wrapped(
-                    bytes(video_frame.content.get_data())
+                    video_frame.content.get_data_as_bytes()
                 )
             else:
                 frame_type = ExternalFrameType(video_frame.content.get_method())
