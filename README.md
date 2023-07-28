@@ -13,7 +13,7 @@ Savant is built on DeepStream and provides a high-level abstraction layer for bu
 
 We are Nvidia Inception Member
 
-![](assets/img/nvidia_inception_badge.png)
+![savant_inception_member](https://github.com/insight-platform/Savant/assets/15047882/12928291-05cc-4639-b43c-6b13d36a01fd)
 
 ## Chat With Us
 
