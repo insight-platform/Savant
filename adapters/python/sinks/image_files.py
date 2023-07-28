@@ -3,18 +3,20 @@
 import os
 import traceback
 from distutils.util import strtobool
-from typing import Dict, List, Optional
+from typing import Dict, List
+
+from savant_rs.primitives import EndOfStream, VideoFrame
+from savant_rs.utils.serialization import Message, load_message_from_bytes
 
 from adapters.python.sinks.chunk_writer import ChunkWriter, CompositeChunkWriter
 from adapters.python.sinks.metadata_json import (
-    frame_has_objects,
     MetadataJsonWriter,
     Patterns,
+    frame_has_objects,
 )
-from savant.api import deserialize
 from savant.api.enums import ExternalFrameType
-from savant.utils.zeromq import ZeroMQSource, build_topic_prefix
 from savant.utils.logging import get_logger
+from savant.utils.zeromq import ZeroMQSource, build_topic_prefix
 
 LOGGER_NAME = 'image_files_sink'
 DEFAULT_CHUNK_SIZE = 10000
@@ -26,43 +28,36 @@ class ImageFilesWriter(ChunkWriter):
         self.chunk_location = None
         super().__init__(chunk_size)
 
-    def _write(
-        self,
-        message: Dict,
-        data: List[bytes],
-        frame_num: Optional[int],
-    ) -> bool:
-        frame = message.get('frame')
-        if frame is None:
-            return True
-        if frame_num is None:
-            # Cannot get file location for frame_num=None
-            self.logger.warning(
-                'Got frame of size %s with PTS %s, but "frame_num" is None. Not saving it to a file.',
-                len(frame),
-                message.get('pts'),
-            )
-            return True
-        if isinstance(frame, dict):
-            frame_type = ExternalFrameType(frame['type'])
+    def _write_video_frame(self, frame: VideoFrame, data, frame_num: int) -> bool:
+        if frame.content.is_external():
+            frame_type = ExternalFrameType(frame.content.get_method())
             if frame_type != ExternalFrameType.ZEROMQ:
                 self.logger.error('Unsupported frame type "%s".', frame_type.value)
                 return False
             if len(data) != 1:
                 self.logger.error('Data has %s parts, expected 1.', len(data))
                 return False
-            frame = data[0]
-        codec = message['codec']
+            content = data[0]
+        elif frame.content.is_internal():
+            content = frame.content.get_data_as_bytes()
+        else:
+            return True
+
         filepath = os.path.join(
-            self.chunk_location, f'{frame_num:0{self.chunk_size_digits}}.{codec}'
+            self.chunk_location,
+            f'{frame_num:0{self.chunk_size_digits}}.{frame.codec}',
         )
         self.logger.debug('Writing frame to file %s', filepath)
         try:
             with open(filepath, 'wb') as f:
-                f.write(frame)
+                f.write(content)
         except Exception:
             traceback.print_exc()
             return False
+
+        return True
+
+    def _write_eos(self, eos: EndOfStream) -> bool:
         return True
 
     def _open(self):
@@ -90,27 +85,24 @@ class ImageFilesSink:
         self.skip_frames_without_objects = skip_frames_without_objects
         self.writers: Dict[str, ChunkWriter] = {}
 
-    def write(self, schema_name: str, message: Dict, data: List[bytes]):
-        message_with_schema = {**message, 'schema': schema_name}
-        if schema_name == 'VideoFrame':
-            return self._write_video_frame(message_with_schema, data)
-        elif schema_name == 'EndOfStream':
-            return self._write_eos(message_with_schema)
-        self.logger.error('Unknown schema "%s"', schema_name)
+    def write(self, message: Message, data: List[bytes]):
+        if message.is_video_frame():
+            return self._write_video_frame(message.as_video_frame(), data)
+        elif message.is_end_of_stream():
+            return self._write_eos(message.as_end_of_stream())
+        self.logger.debug('Unsupported message type for message %r', message)
 
-    def _write_video_frame(self, message: Dict, data: List[bytes]) -> bool:
-        source_id = message['source_id']
-        pts = message['pts']
-        if self.skip_frames_without_objects and not frame_has_objects(message):
+    def _write_video_frame(self, video_frame: VideoFrame, data: List[bytes]) -> bool:
+        if self.skip_frames_without_objects and not frame_has_objects(video_frame):
             self.logger.debug(
                 'Frame %s from source %s does not have objects. Skipping it.',
-                source_id,
-                pts,
+                video_frame.source_id,
+                video_frame.pts,
             )
             return False
-        writer = self.writers.get(source_id)
+        writer = self.writers.get(video_frame.source_id)
         if writer is None:
-            base_location = os.path.join(self.location, source_id)
+            base_location = os.path.join(self.location, video_frame.source_id)
             if self.chunk_size > 0:
                 json_filename_pattern = f'{Patterns.CHUNK_IDX}.json'
             else:
@@ -125,16 +117,15 @@ class ImageFilesSink:
                 ],
                 self.chunk_size,
             )
-            self.writers[source_id] = writer
-        return writer.write(message, data, message.get('keyframe'))
+            self.writers[video_frame.source_id] = writer
+        return writer.write_video_frame(video_frame, data, video_frame.keyframe)
 
-    def _write_eos(self, message: Dict):
-        source_id = message['source_id']
-        self.logger.info('Received EOS from source %s.', source_id)
-        writer = self.writers.get(source_id)
+    def _write_eos(self, eos: EndOfStream):
+        self.logger.info('Received EOS from source %s.', eos.source_id)
+        writer = self.writers.get(eos.source_id)
         if writer is None:
             return False
-        writer.write(message, None, can_start_new_chunk=False, is_frame=False)
+        writer.write_eos(eos)
         writer.flush()
         return True
 
@@ -149,9 +140,9 @@ def main():
     dir_location = os.environ['DIR_LOCATION']
     zmq_endpoint = os.environ['ZMQ_ENDPOINT']
     zmq_socket_type = os.environ.get('ZMQ_TYPE', 'SUB')
-    zmq_bind = strtobool(os.environ.get('ZMQ_BIND', 'false'))
-    skip_frames_without_objects = strtobool(
-        os.environ.get('SKIP_FRAMES_WITHOUT_OBJECTS', 'false')
+    zmq_bind = bool(strtobool(os.environ.get('ZMQ_BIND', 'false')))
+    skip_frames_without_objects = bool(
+        strtobool(os.environ.get('SKIP_FRAMES_WITHOUT_OBJECTS', 'false'))
     )
     chunk_size = int(os.environ.get('CHUNK_SIZE', DEFAULT_CHUNK_SIZE))
     topic_prefix = build_topic_prefix(
@@ -174,8 +165,8 @@ def main():
     try:
         source.start()
         for message_bin, *data in source:
-            schema_name, message = deserialize(message_bin)
-            image_sink.write(schema_name, message, data)
+            message = load_message_from_bytes(message_bin)
+            image_sink.write(message, data)
     except KeyboardInterrupt:
         logger.info('Interrupted')
     finally:

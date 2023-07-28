@@ -5,20 +5,14 @@ import time
 from dataclasses import dataclass
 from fractions import Fraction
 from threading import Lock, Thread
-from typing import Dict, NamedTuple, Optional, Union
+from typing import Dict, NamedTuple, Optional
 
-from savant_rs.primitives import (
-    Attribute,
-    AttributeValue,
-    AttributeValueType,
-    EndOfStream,
-    VideoFrame,
-)
-from savant_rs.primitives.geometry import BBox, RBBox
-from savant_rs.utils.serialization import Message, load_message_from_bytes
-from savant_rs.video_object_query import MatchQuery
+from savant_rs.primitives import EndOfStream, VideoFrame
+from savant_rs.utils import ByteBuffer
+from savant_rs.utils.serialization import Message
 
 from savant.api.enums import ExternalFrameType
+from savant.api.savant_rs import parse_tags, parse_video_objects
 from savant.gstreamer import GObject, Gst
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
 from savant.gstreamer.metadata import (
@@ -27,7 +21,7 @@ from savant.gstreamer.metadata import (
     SourceFrameMeta,
     metadata_add_frame_meta,
 )
-from savant.gstreamer.utils import propagate_gst_error
+from savant.gstreamer.utils import load_message_from_gst_buffer, propagate_gst_error
 from savant.utils.logging import LoggerMixin
 
 DEFAULT_SOURCE_TIMEOUT = 60
@@ -96,6 +90,15 @@ class FrameParams(NamedTuple):
     width: str
     height: str
     framerate: str
+
+    @staticmethod
+    def from_video_frame(frame: VideoFrame):
+        return FrameParams(
+            codec=CODEC_BY_NAME[frame.codec],
+            width=frame.width,
+            height=frame.height,
+            framerate=frame.framerate,
+        )
 
 
 @dataclass
@@ -229,14 +232,10 @@ class AvroVideoDemux(LoggerMixin, Gst.Element):
                 buffer.pts,
             )
             return Gst.FlowReturn.OK
-        frame_meta_mapinfo: Gst.MapInfo
-        result, frame_meta_mapinfo = buffer.map_range(0, 1, Gst.MapFlags.READ)
-        assert result, 'Cannot read buffer.'
 
+        message = load_message_from_gst_buffer(buffer)
         # TODO: Pipeline message types might be extended beyond only VideoFrame
         # Additional checks for audio/raw_tensors/etc. may be required
-
-        message: Message = load_message_from_bytes(frame_meta_mapinfo.data)
         if message.is_video_frame():
             result = self.handle_video_frame(message.as_video_frame(), buffer)
         elif message.is_end_of_stream():
@@ -245,7 +244,6 @@ class AvroVideoDemux(LoggerMixin, Gst.Element):
             self.logger.debug('Unsupported message type for message %r', message)
             result = Gst.FlowReturn.OK
 
-        buffer.unmap(frame_meta_mapinfo)
         return result
 
     def handle_video_frame(
@@ -254,12 +252,7 @@ class AvroVideoDemux(LoggerMixin, Gst.Element):
         buffer: Gst.Buffer,
     ) -> Gst.FlowReturn:
         """Handle VideoFrame message."""
-        frame_params = FrameParams(
-            codec=CODEC_BY_NAME[video_frame.codec],
-            width=video_frame.width,
-            height=video_frame.height,
-            framerate=video_frame.framerate,
-        )
+        frame_params = FrameParams.from_video_frame(video_frame)
         # TODO: respect timebase
         # tb_num, tb_denum = video_frame.timebase or (1, Gst.SECOND)
         frame_pts = video_frame.pts
@@ -521,14 +514,7 @@ class AvroVideoDemux(LoggerMixin, Gst.Element):
                 duration=video_frame.duration,
                 framerate=video_frame.framerate,
                 metadata={'objects': parse_video_objects(video_frame)},
-                tags=OnlyExtendedDict(
-                    {
-                        name: parse_attribute_value(
-                            video_frame.get_attribute(namespace, name).values[0]
-                        )
-                        for namespace, name in video_frame.attributes
-                    }
-                ),
+                tags=OnlyExtendedDict(parse_tags(video_frame)),
             )
             metadata_add_frame_meta(
                 video_frame.source_id,
@@ -552,100 +538,6 @@ def build_caps(params: FrameParams) -> Gst.Caps:
     caps.set_value('framerate', framerate)
 
     return caps
-
-
-def parse_attribute_value(value: AttributeValue):
-    # primitive
-    if value.value_type == AttributeValueType.Boolean:
-        return value.as_boolean()
-    if value.value_type == AttributeValueType.Integer:
-        return value.as_integer()
-    if value.value_type == AttributeValueType.Float:
-        return value.as_float()
-    if value.value_type == AttributeValueType.String:
-        return value.as_string()
-    if value.value_type == AttributeValueType.Bytes:
-        return value.as_bytes()
-
-    # list of primitives
-    if value.value_type == AttributeValueType.BooleanList:
-        return value.as_booleans()
-    if value.value_type == AttributeValueType.IntegerList:
-        return value.as_integers()
-    if value.value_type == AttributeValueType.FloatList:
-        return value.as_floats()
-    if value.value_type == AttributeValueType.StringList:
-        return value.as_strings()
-
-    # object
-    if value.value_type == AttributeValueType.BBox:
-        return value.as_bbox()
-    if value.value_type == AttributeValueType.Point:
-        return value.as_point()
-    if value.value_type == AttributeValueType.Polygon:
-        return value.as_polygon()
-    if value.value_type == AttributeValueType.Intersection:
-        return value.as_intersection()
-
-    # list of objects
-    if value.value_type == AttributeValueType.BBoxList:
-        return value.as_bboxes()
-    if value.value_type == AttributeValueType.PointList:
-        return value.as_points()
-    if value.value_type == AttributeValueType.PolygonList:
-        return value.as_polygons()
-
-    raise ValueError(f'Unknown attribute value type: {value.value_type}')
-
-
-def parse_bbox(bbox: Union[BBox, RBBox]):
-    return {
-        'xc': bbox.xc,
-        'yc': bbox.yc,
-        'width': bbox.width,
-        'height': bbox.height,
-        'angle': bbox.angle if isinstance(bbox, RBBox) else 0,
-    }
-
-
-def parse_attribute(attribute: Attribute):
-    value = attribute.values[0]
-    return {
-        'element_name': attribute.namespace,
-        'name': attribute.name,
-        'value': parse_attribute_value(value),
-        'confidence': value.confidence,
-    }
-
-
-def parse_video_objects(frame: VideoFrame):
-    parents = {}
-    objects = {}
-    for obj in frame.access_objects(MatchQuery.idle()):
-        for child in frame.get_children(obj.id):
-            parents[child.id] = obj
-        objects[obj.id] = {
-            'model_name': obj.namespace,
-            'label': obj.label,
-            'object_id': obj.id,
-            'bbox': parse_bbox(obj.detection_box),
-            'confidence': obj.confidence,
-            'attributes': [
-                parse_attribute(obj.get_attribute(namespace, name))
-                for namespace, name in obj.attributes
-            ],
-            'parent_model_name': None,
-            'parent_label': None,
-            'parent_object_id': None,
-        }
-
-    for obj_id, parent in parents.items():
-        child = objects[obj_id]
-        child['parent_model_name'] = parent.namespace
-        child['parent_label'] = parent.label
-        child['parent_object_id'] = parent.id
-
-    return list(objects.values())
 
 
 # register plugin
