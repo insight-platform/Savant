@@ -2,7 +2,7 @@ version: "3.3"
 services:
 
   image-json-source:
-    image: savant-adapters-gstreamer:latest
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
     depends_on:
       - module
     volumes:

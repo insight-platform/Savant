@@ -26,26 +26,20 @@ unzip ../../data/source_adapter_with_json_metadata.zip -d ../../data && \
 rm ../../data/source_adapter_with_json_metadata.zip
 ```
 
-
-Run the module and sink adapter and wait until the message "Pipeline starting ended after" should appear in the message logs:
+Run the demo:
 ```bash
 # if x86
-../../utils/check-environment-compatible && docker compose -f docker-compose.x86.yml up module image-json-sink
+../../utils/check-environment-compatible && docker compose -f docker-compose.x86.yml up
 
-# if Jetson
+# if Jetson. The nvv4l2decoder has a bug in the nvv4l2decoder on 
+the Jetson platform so the example currently does not work correctly on that platform.
+https://github.com/insight-platform/Savant/issues/314
+
 ../../utils/check-environment-compatible && docker compose -f docker-compose.l4t.yml up module image-json-sink
 
 # Ctrl+C to stop running the compose bundle
 ```
 
-Run the source adapter:
-```bash
-# if x86
-docker compose -f docker-compose.x86.yml up image-json-source
-
-# if Jetson
-docker compose -f docker-compose.l4t.yml up image-json-source
-```
 Note: The source adapter runs on the images directory, so when it sends all the images it will terminate.
 The module and sink adapter run the whole time, so they should be stopped manual.
 

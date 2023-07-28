@@ -43,14 +43,6 @@ parameters:
             position:
               position: 'TopLeftOutside'
 
-  detected_object:
-    id: 0
-    label: person
-    # id: 2
-    # label: car
-
-  batch_size: 1
-
 # pipeline definition
 pipeline:
   # source definition is skipped, zeromq source is used by default to connect with source adapters
@@ -62,17 +54,19 @@ pipeline:
       name: yolov8m
       model:
         remote:
-          url: s3://savant-data/models/yolov8m/yolov8m.zip
-          checksum_url: s3://savant-data/models/yolov8m/yolov8m.md5
+          url: s3://savant-data/models/yolov8m/yolov8m_f630b10.zip
+          checksum_url: s3://savant-data/models/yolov8m/yolov8m_f630b10.md5
           parameters:
             endpoint: https://eu-central-1.linodeobjects.com
-        format: custom
+        format: onnx
         config_file: config_infer_primary_yoloV8.txt
-        custom_lib_path: /opt/savant/lib/libnvdsinfer_custom_impl_Yolo.so
+        # max GPU RAM used to build the engine, 6GB by default
+        # set lower than total GPU RAM available on your hardware
+        workspace_size: 6144
         output:
           objects:
-            - class_id: ${parameters.detected_object.id}
-              label: ${parameters.detected_object.label}
+            - class_id: 0
+              label: person
 
     - element: pyfunc
       module: samples.source_adapter_with_json_metadata.metric
