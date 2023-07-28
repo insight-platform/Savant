@@ -98,7 +98,7 @@ Savant provides the configuration means to run the pipeline in a real-time mode,
 Ready-To-Use API
 ^^^^^^^^^^^^^^^^
 
-From a user perspective, the Savant pipeline is a self-contained service that accepts input data through Apache Avro API. It makes Savant ideal and ready for deployment within the systems. Whether developers use provided handy adapters or send data into a pipeline directly, both cases use API provided by the Savant.
+From a user perspective, the Savant pipeline is a self-contained service that accepts input data through Savant-RS API. It makes Savant ideal and ready for deployment within the systems. Whether developers use provided handy adapters or send data into a pipeline directly, both cases use API provided by the Savant.
 
 Handy Source and Sink Adapters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -187,7 +187,6 @@ As for now, we provide images for x86 architecture and for Jetson hardware.
    :caption: Reference
 
    reference/api/index
-   reference/avro
 
 
 .. Indices and tables

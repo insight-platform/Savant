@@ -209,7 +209,7 @@ There are basic sink adapters implemented:
 - [image directory (per source)](docs/adapters.md#the-image-file-sink-adapter);
 - [Always-On RTSP Stream Sink](docs/adapters.md#the-always-on-rtsp-sink-adapter).
 
-The framework uses an established protocol based on Apache Avro, both for sources and sinks. The sources and sinks talk to Savant through ZeroMQ sockets.
+The framework uses a Savant-RS protocol, both for sources and sinks. The sources and sinks talk to Savant through ZeroMQ sockets.
 
 ### Easy to Deploy
 

@@ -65,4 +65,8 @@ The classification results will be added to the ``yolo.car`` objects as addition
 In this way, as frames go through the pipeline, new objects are detected and added as metadata,
 which is then being extended with various attributes.
 
-After the frame was processed by all the elements of the pipeline the meta-information for each object in the frame is passed into ZeroMQ Sink element in the output format (:ref:`reference/avro:VideoFrameMetadata Schema`).
+After the frame was processed by all the elements of the pipeline the meta-information for each object in the frame is passed into ZeroMQ Sink element in the output format.
+
+.. todo::
+
+   Describe output format.
