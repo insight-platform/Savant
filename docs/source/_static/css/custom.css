@@ -6,3 +6,8 @@
 .wy-nav-content {
     max-width: 85% !important;
 }
+
+.rst-content .code-block-caption {
+    font-style: normal !important;
+    text-align: left !important;
+}

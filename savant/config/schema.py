@@ -1,5 +1,4 @@
 """Module and pipeline elements configuration templates."""
-import logging
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
 import json
@@ -45,14 +44,34 @@ class FrameParameters:
 
     @property
     def total_width(self) -> int:
+        """Total frame width including paddings."""
+
         if self.padding is not None:
             return self.width + self.padding.left + self.padding.right
         return self.width
 
     @property
     def total_height(self) -> int:
+        """Total frame height including paddings."""
+
         if self.padding is not None:
             return self.height + self.padding.top + self.padding.bottom
+        return self.height
+
+    @property
+    def output_width(self) -> int:
+        """Width of the output frame. Includes paddings if they are set to keep."""
+
+        if self.padding is not None and self.padding.keep:
+            return self.total_width
+        return self.width
+
+    @property
+    def output_height(self) -> int:
+        """Height of the output frame. Includes paddings if they are set to keep."""
+
+        if self.padding is not None and self.padding.keep:
+            return self.total_height
         return self.height
 
 
@@ -221,7 +240,7 @@ class DrawFunc(PyFunc):
     .. note::
 
         Default values for :py:attr:`.module` and :py:attr:`.class_name` attributes
-        are set to use :py:class:`~savant.deepstream.drawfunc.NvDsDrawFunc` drawbin
+        are set to use :py:class:`~savant.deepstream.drawfunc.NvDsDrawFunc` drawfunc
         implementation.
     """
 
@@ -232,19 +251,9 @@ class DrawFunc(PyFunc):
     """Python class name to instantiate."""
 
     rendered_objects: Optional[Dict[str, Dict[str, Any]]] = None
-    """Objects that will be rendered on the frame
-    
-    For example,
+    """A specification of objects to be rendered by the default draw function.
 
-    .. code-block:: yaml
-
-        - element: drawbin
-            rendered_objects:
-                tracker:
-                    person: red
-                yolov7obb:
-                    person: green
-
+    For more details, look at :ref:`savant_101/90_draw_func:Declarative Configuration`.
     """
 
     kwargs: Optional[Dict[str, Any]] = None
@@ -328,16 +337,39 @@ class ModelElement(PipelineElement):
 
 
 @dataclass
-class Stage:
-    """One level elements wrapper."""
+class GroupCondition:
+    """Determines if a group should be loaded into the pipeline.
+    If expr evaluates to the value, then the condition is considered to be true
+    and the Group is enabled.
+    """
 
-    # TODO: Do we really need it? -> Implement/Remove
+    expr: str = MISSING
+    """Expression to evaluate."""
+
+    value: str = MISSING
+    """Value to compare with."""
+
+    @property
+    def is_enabled(self) -> bool:
+        """Returns True if the condition is enabled, False otherwise."""
+        return self.expr == self.value
+
+
+@dataclass
+class ElementGroup:
+    """Pipeline elements wrapper that can be used to add a condition
+    on whether to load the group into the pipeline.
+    """
 
     name: Optional[str] = None
-    """Stage name."""
+    """Group name."""
 
-    elements: List[PipelineElement] = MISSING
-    """List of stage elements."""
+    init_condition: GroupCondition = MISSING
+    """Group init condition, mandatory."""
+
+    elements: List[PipelineElement] = field(default_factory=list)
+    """List of group elements.
+    Can be a :py:class:`PipelineElement` or any subclass of it."""
 
 
 @dataclass
@@ -353,7 +385,14 @@ class Pipeline:
                 properties:
                     uri: file:///data/test.mp4
             elements:
-                # user-defined pipeline elements
+            # user-defined pipeline elements or element groups
+                - element: nvinfer@detector
+                - group:
+                    init_condition:
+                      expr: expression
+                      value: value
+                    elements:
+                      - element: nvinfer@detector
             sink:
                 - element: console_sink
     """
@@ -363,13 +402,14 @@ class Pipeline:
     source: PipelineElement = MISSING
     """The source element of a pipeline."""
 
-    # elements: MISSING?  # Union[] is not supported -> Any
+    # Union[] is not supported -> Any
     elements: List[Any] = field(default_factory=list)
-    """Pipeline's main contents: sequence of Pipe that implement all frame
-    processing operations. Can be a :py:class:`PipelineElement` or any subclass of it.
+    """Main Pipeline contents. Can include :py:class:`PipelineElement`
+    or :py:class:`ElementGroup` nodes.
     """
 
     draw_func: Optional[DrawFunc] = None
+    """Draw function specification."""
 
     sink: List[PipelineElement] = field(default_factory=list)
     """Sink elements of a pipeline."""

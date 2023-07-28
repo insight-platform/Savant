@@ -1,0 +1,112 @@
+name: ${oc.env:MODULE_NAME, 'traffic-meter'}
+
+parameters:
+  frame:
+    width: 1280
+    height: 720
+    padding:
+      # Paddings are kept on the output frame
+      keep: true
+      left: 0
+      right: 0
+      # Padding size is 180px on the top of the frame
+      top: 180
+      bottom: 0
+  output_frame:
+    codec: h264
+  draw_func:
+    module: samples.traffic_meter.overlay
+    # specify the drawfunc's python class from the module
+    class_name: Overlay
+    kwargs:
+      overlay_height: 180
+  detected_object:
+    id: 0
+    label: person
+
+pipeline:
+
+  elements:
+    # regular pyfunc unit definition
+    - element: pyfunc
+      module: samples.traffic_meter.line_crossing
+      class_name: ConditionalDetectorSkip
+      kwargs:
+        config_path: ${oc.env:PROJECT_PATH}/samples/traffic_meter/line_config.yml
+
+    # variant group: peoplenet detector
+    # groups are included in the pipeline.elements alongside regular units or other groups
+    - group:
+        # enabled if env var DETECTOR==peoplenet
+        init_condition:
+          expr: ${oc.env:DETECTOR}
+          value: peoplenet
+        elements:
+          # below follows detector unit definition as usual
+          - element: nvinfer@detector
+            name: peoplenet
+            model:
+              format: etlt
+              remote:
+                url: s3://savant-data/models/peoplenet/peoplenet_pruned_v2.0.zip
+                checksum_url: s3://savant-data/models/peoplenet/peoplenet_pruned_v2.0.md5
+                parameters:
+                  endpoint: https://eu-central-1.linodeobjects.com
+              model_file: resnet34_peoplenet_pruned.etlt
+              input:
+                layer_name: input_1
+                shape: [3, 544, 960]
+                scale_factor: 0.0039215697906911373
+              output:
+                layer_names: [output_bbox/BiasAdd, output_cov/Sigmoid]
+                num_detected_classes: 3
+                objects:
+                  - class_id: ${parameters.detected_object.id}
+                    label: ${parameters.detected_object.label}
+
+    # variant group: yolov8m detector
+    # groups are included in the pipeline.elements alongside regular units or other groups
+    - group:
+        # enabled if env var DETECTOR==yolov8m
+        init_condition:
+          expr: ${oc.env:DETECTOR}
+          value: yolov8m
+        elements:
+          # below follows detector unit definition as usual
+          - element: nvinfer@detector
+            name: yolov8m
+            model:
+              remote:
+                url: s3://savant-data/models/yolov8m/yolov8m_f630b10.zip
+                checksum_url: s3://savant-data/models/yolov8m/yolov8m_f630b10.md5
+                parameters:
+                  endpoint: https://eu-central-1.linodeobjects.com
+              format: onnx
+              model_file: yolov8m.onnx
+              config_file: config_infer_primary_yoloV8.txt
+              # max GPU RAM used to build the engine, 6GB by default
+              # set lower than total GPU RAM available on your hardware
+              workspace_size: 6144
+              output:
+                objects:
+                  - class_id: ${parameters.detected_object.id}
+                    label: ${parameters.detected_object.label}
+
+    # regular nvtracker definition
+    - element: nvtracker
+      properties:
+        ll-lib-file: /opt/nvidia/deepstream/deepstream/lib/libnvds_nvmultiobjecttracker.so
+        ll-config-file: ${oc.env:PROJECT_PATH}/samples/traffic_meter/config_tracker_NvDCF_perf.yml
+        tracker-width: 960  # 640  # must be a multiple of 32
+        tracker-height: 544  # 384
+        display-tracking-id: 0
+
+    # regular pyfunc unit definition
+    - element: pyfunc
+      module: samples.traffic_meter.line_crossing
+      class_name: LineCrossing
+      kwargs:
+        config_path: ${oc.env:PROJECT_PATH}/samples/traffic_meter/line_config.yml
+        stale_track_del_period: 5000
+        target_obj_label: ${parameters.detected_object.label}
+        send_stats: True

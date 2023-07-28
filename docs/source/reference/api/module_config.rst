@@ -24,6 +24,8 @@ Main module configuration entities
     PipelineElement
     PyFuncElement
     ModelElement
+    ElementGroup
+    GroupCondition
     DrawFunc
     DynamicGstProperty
 

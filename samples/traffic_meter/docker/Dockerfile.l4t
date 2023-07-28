@@ -3,7 +3,7 @@
 FROM nvcr.io/nvidia/deepstream-l4t:6.2-triton as builder
 
 ENV CUDA_VER=11.4
-ARG DS_YOLO_VER=68f762d5bdeae7ac3458529bfe6fed72714336ca
+ARG DS_YOLO_VER=f630b10a8088398251bca7f2f50064b57fab06bb
 ARG DS_YOLO_PATH=/opt/yolo
 ARG NVDSINFER_PATH=/opt/nvidia/deepstream/deepstream/sources/libs/nvdsinfer
 
