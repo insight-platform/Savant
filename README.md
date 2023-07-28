@@ -84,10 +84,10 @@ If your task is to implement high-performance production-ready computer vision a
 
 ## Runs On Nvidia Hardware
 
-- Nvidia Jetson NX, Xavier AGX;
+- Nvidia Jetson NX/AGX, Orin Nano/NX/AGX;
 - Nvidia Turing GPU;
 - Nvidia Ampere GPU;
-- Nvidia Hopper, hopefully - haven't chance to get it yet :-)
+- Nvidia Hopper, hopefully, we did not have a chance to try it yet :-)
 
 ## About Nvidia DeepStream
 
