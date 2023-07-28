@@ -17,7 +17,8 @@ from savant_rs.utils.serialization import Message, load_message_from_bytes
 from savant_rs.video_object_query import MatchQuery
 
 from adapters.python.sinks.chunk_writer import ChunkWriter
-from savant.api.savant_rs import DEFAULT_NAMESPACE, parse_video_frame
+from savant.api.constants import DEFAULT_NAMESPACE
+from savant.api.parser import parse_video_frame
 from savant.utils.logging import get_logger
 from savant.utils.zeromq import ZeroMQSource, build_topic_prefix
 

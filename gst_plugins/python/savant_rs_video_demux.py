@@ -10,7 +10,7 @@ from typing import Dict, NamedTuple, Optional
 from savant_rs.primitives import EndOfStream, VideoFrame
 
 from savant.api.enums import ExternalFrameType
-from savant.api.savant_rs import parse_tags, parse_video_objects
+from savant.api.parser import parse_tags, parse_video_objects
 from savant.gstreamer import GObject, Gst
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
 from savant.gstreamer.metadata import (

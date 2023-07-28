@@ -1,16 +1,16 @@
 """Sink factories."""
 import json
+import logging
 from abc import ABC, abstractmethod
 from dataclasses import asdict
 from typing import Any, Callable, Dict, List, NamedTuple, Optional, Union
-import logging
 
 import zmq
 from savant_rs.primitives import EndOfStream
 from savant_rs.utils.serialization import Message, save_message_to_bytes
 
+from savant.api.builder import build_video_frame
 from savant.api.enums import ExternalFrameType
-from savant.api.savant_rs import build_video_frame
 from savant.config.schema import PipelineElement
 from savant.gstreamer.codecs import CodecInfo
 from savant.gstreamer.metadata import SourceFrameMeta
