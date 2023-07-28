@@ -1,4 +1,4 @@
-"""AvroVideoDemux element."""
+"""SavantRsVideoDemux element."""
 import inspect
 import itertools
 import time
@@ -8,8 +8,6 @@ from threading import Lock, Thread
 from typing import Dict, NamedTuple, Optional
 
 from savant_rs.primitives import EndOfStream, VideoFrame
-from savant_rs.utils import ByteBuffer
-from savant_rs.utils.serialization import Message
 
 from savant.api.enums import ExternalFrameType
 from savant.api.savant_rs import parse_tags, parse_video_objects
@@ -28,7 +26,7 @@ DEFAULT_SOURCE_TIMEOUT = 60
 DEFAULT_SOURCE_EVICTION_INTERVAL = 15
 OUT_CAPS = Gst.Caps.from_string(';'.join(x.value.caps_with_params for x in Codec))
 
-AVRO_VIDEO_DEMUX_PROPERTIES = {
+SAVANT_RS_VIDEO_DEMUX_PROPERTIES = {
     'source-timeout': (
         int,
         'Source timeout',
@@ -113,15 +111,15 @@ class SourceInfo:
     last_dts: int = 0
 
 
-class AvroVideoDemux(LoggerMixin, Gst.Element):
-    """AvroVideoDemux GstPlugin."""
+class SavantRsVideoDemux(LoggerMixin, Gst.Element):
+    """Deserializes savant-rs video stream and demultiplex them by source ID."""
 
-    GST_PLUGIN_NAME = 'avro_video_demux'
+    GST_PLUGIN_NAME = 'savant_rs_video_demux'
 
     __gstmetadata__ = (
-        'Avro video demuxer',
+        'Savant-rs video demuxer',
         'Demuxer',
-        'Deserializes avro video frames and demultiplex them by source ID. '
+        'Deserializes savant-rs video stream and demultiplex them by source ID. '
         'Outputs encoded video frames to src pad "src_<source_id>".',
         'Pavel Tomskikh <tomskih_pa@bw-sw.com>',
     )
@@ -141,7 +139,7 @@ class AvroVideoDemux(LoggerMixin, Gst.Element):
         ),
     )
 
-    __gproperties__ = AVRO_VIDEO_DEMUX_PROPERTIES
+    __gproperties__ = SAVANT_RS_VIDEO_DEMUX_PROPERTIES
 
     def __init__(self):
         super().__init__()
@@ -541,9 +539,9 @@ def build_caps(params: FrameParams) -> Gst.Caps:
 
 
 # register plugin
-GObject.type_register(AvroVideoDemux)
+GObject.type_register(SavantRsVideoDemux)
 __gstelementfactory__ = (
-    AvroVideoDemux.GST_PLUGIN_NAME,
+    SavantRsVideoDemux.GST_PLUGIN_NAME,
     Gst.Rank.NONE,
-    AvroVideoDemux,
+    SavantRsVideoDemux,
 )

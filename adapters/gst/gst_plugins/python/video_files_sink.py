@@ -5,7 +5,7 @@ from savant_rs.primitives import EndOfStream, VideoFrame
 
 from adapters.python.sinks.chunk_writer import ChunkWriter, CompositeChunkWriter
 from adapters.python.sinks.metadata_json import MetadataJsonWriter, Patterns
-from gst_plugins.python.avro_video_demux import FrameParams, build_caps
+from gst_plugins.python.savant_rs_video_demux import FrameParams, build_caps
 from savant.api.enums import ExternalFrameType
 from savant.gstreamer import GLib, GObject, Gst, GstApp
 from savant.gstreamer.codecs import Codec

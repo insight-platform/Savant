@@ -25,15 +25,15 @@ class FrameParams(NamedTuple):
     framerate: str
 
 
-class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
-    """GStreamer plugin to serialize video frames to avro message."""
+class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
+    """GStreamer plugin to serialize video stream to savant-rs message."""
 
-    GST_PLUGIN_NAME: str = 'video_to_avro_serializer'
+    GST_PLUGIN_NAME: str = 'savant_rs_serializer'
 
     __gstmetadata__ = (
-        'Serializes video frames to avro messages',
+        'Serializes video stream to savant-rs messages',
         'Transform',
-        'Serializes video frame to avro message',
+        'Serializes video stream to savant-rs message',
         'Pavel Tomskikh <tomskih_pa@bw-sw.com>',
     )
 
@@ -359,9 +359,9 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
 
 
 # register plugin
-GObject.type_register(VideoToAvroSerializer)
+GObject.type_register(SavantRsSerializer)
 __gstelementfactory__ = (
-    VideoToAvroSerializer.GST_PLUGIN_NAME,
+    SavantRsSerializer.GST_PLUGIN_NAME,
     Gst.Rank.NONE,
-    VideoToAvroSerializer,
+    SavantRsSerializer,
 )
