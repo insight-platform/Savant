@@ -17,6 +17,7 @@
 | [v0.2.4](https://github.com/insight-platform/Savant/tree/v0.2.4) | 255.73 | 41.08     |
 | [#61](https://github.com/insight-platform/Savant/issues/61)      | 257.52 | 40.78     |
 | [#285](https://github.com/insight-platform/Savant/issues/285)    | 255.25 | 40.01     |
+| [#290](https://github.com/insight-platform/Savant/issues/290)    | 253.25 | 40.05     |
 
 ### conditional_video_processing
 
