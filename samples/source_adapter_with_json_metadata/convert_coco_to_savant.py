@@ -3,8 +3,6 @@ from pathlib import Path
 import click
 from pycocotools.coco import COCO
 
-# from savant.meta.constants import UNTRACKED_OBJECT_ID
-
 
 @click.command()
 @click.option(
@@ -29,6 +27,7 @@ def main(annotation_folder, output_folder: str):
         ann_ids = coco.getAnnIds(imgIds=img_info['id'], catIds=cat_ids, iscrowd=False)
         anns = coco.loadAnns(ann_ids)
         objects_savant = []
+        object_id = 1
         for obj in anns:
             bbox = obj["bbox"]
             x = bbox[0]
@@ -37,10 +36,11 @@ def main(annotation_folder, output_folder: str):
             height = bbox[3]
             label = coco.cats[obj["category_id"]]["name"]
             if label == "person":
+                object_id += 1
                 obj_savant = dict(
                     model_name="coco",
                     label=label,
-                    object_id=1,
+                    object_id=object_id,
                     bbox=dict(
                         xc=x + width / 2,
                         yc=y + height / 2,

@@ -1,4 +1,4 @@
-# Using json medadata in source adamtera
+# Using json medadata in source adapter
 
 A simple pipeline demonstrates how you can add metadata to input frames using source 
 adapter. In the demo, ground truth boxes are added to images 
@@ -18,7 +18,7 @@ cd Savant/samples/source_adapter_with_json_metadata
 git lfs pull
 ```
 
-Download prepared data (run the command from the folder with the example:
+Download prepared data (run the command from the folder with the example):
 ```bash
 mkdir -p ../../data && \
 wget -P ../../data https://eu-central-1.linodeobjects.com/savant-data/demo/source_adapter_with_json_metadata.zip  && \
@@ -32,10 +32,10 @@ Run the demo:
 ../../utils/check-environment-compatible && docker compose -f docker-compose.x86.yml up
 
 # if Jetson. The nvv4l2decoder has a bug in the nvv4l2decoder on 
-the Jetson platform so the example currently does not work correctly on that platform.
-https://github.com/insight-platform/Savant/issues/314
+# the Jetson platform so the example currently does not work correctly on that platform.
+# https://github.com/insight-platform/Savant/issues/314
 
-../../utils/check-environment-compatible && docker compose -f docker-compose.l4t.yml up module image-json-sink
+# ../../utils/check-environment-compatible && docker compose -f docker-compose.l4t.yml up module image-json-sink
 
 # Ctrl+C to stop running the compose bundle
 ```
