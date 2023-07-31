@@ -12,6 +12,25 @@ from savant_rs.video_object_query import MatchQuery
 
 from savant.meta.constants import UNTRACKED_OBJECT_ID
 
+_attribute_value_to_python = {
+    AttributeValueType.BBox: lambda x: x.as_bbox(),
+    AttributeValueType.BBoxList: lambda x: x.as_bboxes(),
+    AttributeValueType.Boolean: lambda x: x.as_boolean(),
+    AttributeValueType.BooleanList: lambda x: x.as_booleans(),
+    AttributeValueType.Bytes: lambda x: x.as_bytes(),
+    AttributeValueType.Float: lambda x: x.as_float(),
+    AttributeValueType.FloatList: lambda x: x.as_floats(),
+    AttributeValueType.Integer: lambda x: x.as_integer(),
+    AttributeValueType.IntegerList: lambda x: x.as_integers(),
+    AttributeValueType.Intersection: lambda x: x.as_intersection(),
+    AttributeValueType.Point: lambda x: x.as_point(),
+    AttributeValueType.PointList: lambda x: x.as_points(),
+    AttributeValueType.Polygon: lambda x: x.as_polygon(),
+    AttributeValueType.PolygonList: lambda x: x.as_polygons(),
+    AttributeValueType.String: lambda x: x.as_string(),
+    AttributeValueType.StringList: lambda x: x.as_strings(),
+}
+
 
 def parse_video_frame(frame: VideoFrame):
     # TODO: add content to metadata if its not embedded
@@ -86,47 +105,10 @@ def parse_attribute(attribute: Attribute):
 
 
 def parse_attribute_value(value: AttributeValue):
-    # primitive
-    if value.value_type == AttributeValueType.Boolean:
-        return value.as_boolean()
-    if value.value_type == AttributeValueType.Integer:
-        return value.as_integer()
-    if value.value_type == AttributeValueType.Float:
-        return value.as_float()
-    if value.value_type == AttributeValueType.String:
-        return value.as_string()
-    if value.value_type == AttributeValueType.Bytes:
-        return value.as_bytes()
-
-    # list of primitives
-    if value.value_type == AttributeValueType.BooleanList:
-        return value.as_booleans()
-    if value.value_type == AttributeValueType.IntegerList:
-        return value.as_integers()
-    if value.value_type == AttributeValueType.FloatList:
-        return value.as_floats()
-    if value.value_type == AttributeValueType.StringList:
-        return value.as_strings()
-
-    # object
-    if value.value_type == AttributeValueType.BBox:
-        return value.as_bbox()
-    if value.value_type == AttributeValueType.Point:
-        return value.as_point()
-    if value.value_type == AttributeValueType.Polygon:
-        return value.as_polygon()
-    if value.value_type == AttributeValueType.Intersection:
-        return value.as_intersection()
-
-    # list of objects
-    if value.value_type == AttributeValueType.BBoxList:
-        return value.as_bboxes()
-    if value.value_type == AttributeValueType.PointList:
-        return value.as_points()
-    if value.value_type == AttributeValueType.PolygonList:
-        return value.as_polygons()
-
-    raise ValueError(f'Unknown attribute value type: {value.value_type}')
+    try:
+        return _attribute_value_to_python[value.value_type](value)
+    except KeyError:
+        raise ValueError(f'Unknown attribute value type: {value.value_type}')
 
 
 def parse_bbox(bbox: Union[BBox, RBBox]):

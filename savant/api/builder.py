@@ -9,10 +9,22 @@ from savant_rs.primitives import (
     VideoObject,
 )
 from savant_rs.primitives.geometry import BBox, RBBox
-from savant_rs.video_object_query import IntExpression, MatchQuery
 
 from savant.api.constants import DEFAULT_NAMESPACE, DEFAULT_TIME_BASE
 from savant.meta.constants import UNTRACKED_OBJECT_ID
+
+_python_to_attribute_value = {
+    bool: AttributeValue.boolean,
+    int: AttributeValue.integer,
+    float: AttributeValue.float,
+    str: AttributeValue.string,
+}
+_python_to_attribute_value_list = {
+    bool: AttributeValue.booleans,
+    int: AttributeValue.integers,
+    float: AttributeValue.floats,
+    str: AttributeValue.strings,
+}
 
 
 def build_video_frame(
@@ -67,9 +79,7 @@ def add_objects_to_video_frame(
         frame.add_object(video_object, IdCollisionResolutionPolicy.Error)
         track_id = video_object.get_track_id()
         if track_id is not None:
-            parents[
-                (video_object.namespace, video_object.label, track_id)
-            ] = video_object
+            parents[(video_object.namespace, video_object.label, track_id)] = obj_id
 
     for obj_id, obj in enumerate(objects):
         parent_id = obj.get('parent_object_id')
@@ -77,8 +87,8 @@ def add_objects_to_video_frame(
         parent_label = obj.get('parent_label')
         if parent_id is None or parent_model_name is None or parent_label is None:
             continue
-        frame.set_parent(
-            MatchQuery.id(IntExpression.eq(obj_id)),
+        frame.set_parent_by_id(
+            obj_id,
             parents[(parent_model_name, parent_label, parent_id)],
         )
 
@@ -136,20 +146,18 @@ def build_object_attributes(attributes: List[Dict[str, Any]]):
     }
 
 
-def build_attribute_value(
-    value: Union[bool, int, float, str, List[float]],
-    confidence: Optional[float] = None,
-):
-    if isinstance(value, bool):
-        return AttributeValue.boolean(value, confidence=confidence)
-    elif isinstance(value, int):
-        return AttributeValue.integer(value, confidence=confidence)
-    elif isinstance(value, float):
-        return AttributeValue.float(value, confidence=confidence)
-    elif isinstance(value, str):
-        return AttributeValue.string(value, confidence=confidence)
-    elif isinstance(value, list):
-        return AttributeValue.floats(value, confidence=confidence)
+def build_attribute_value(value: Any, confidence: Optional[float] = None):
+    if isinstance(value, list):
+        item_type = type(value[0]) if value else float
+        try:
+            return _python_to_attribute_value_list[item_type](value, confidence)
+        except KeyError:
+            raise ValueError(f'Unknown attribute value type: List[{item_type}]')
+    else:
+        try:
+            return _python_to_attribute_value[type(value)](value, confidence)
+        except KeyError:
+            raise ValueError(f'Unknown attribute value type: {type(value)}')
 
 
 def add_tags_to_video_frame(
