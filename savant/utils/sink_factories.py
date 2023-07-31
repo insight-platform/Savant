@@ -19,6 +19,7 @@ from savant.utils.zeromq import (
     Defaults,
     SenderSocketTypes,
     parse_zmq_socket_uri,
+    receive_response,
 )
 
 logger = logging.getLogger(__name__)
@@ -101,6 +102,8 @@ class ZeroMQSinkFactory(SinkFactory):
         socket_type: str = SenderSocketTypes.PUB.name,
         bind: bool = True,
         send_hwm: int = Defaults.SEND_HWM,
+        receive_timeout: int = Defaults.SENDER_RECEIVE_TIMEOUT,
+        req_receive_retries: int = Defaults.REQ_RECEIVE_RETRIES,
     ):
         logger.debug(
             'Initializing ZMQ sink: socket %s, type %s, bind %s.',
@@ -109,6 +112,8 @@ class ZeroMQSinkFactory(SinkFactory):
             bind,
         )
 
+        self.receive_timeout = receive_timeout
+        self.req_receive_retries = req_receive_retries
         # might raise exceptions
         # will be handled in savant.entrypoint
         self.socket_type, self.bind, self.socket = parse_zmq_socket_uri(
@@ -125,6 +130,7 @@ class ZeroMQSinkFactory(SinkFactory):
         context = zmq.Context()
         output_zmq_socket = context.socket(self.socket_type.value)
         output_zmq_socket.setsockopt(zmq.SNDHWM, self.send_hwm)
+        output_zmq_socket.setsockopt(zmq.RCVTIMEO, self.receive_timeout)
         if self.bind:
             output_zmq_socket.bind(self.socket)
         else:
@@ -186,7 +192,7 @@ class ZeroMQSinkFactory(SinkFactory):
                 return
             output_zmq_socket.send_multipart(zmq_message)
             if self.wait_response:
-                resp = output_zmq_socket.recv()
+                resp = receive_response(output_zmq_socket, self.req_receive_retries)
                 logger.debug(
                     'Received %s bytes from socket %s.', len(resp), self.socket
                 )
