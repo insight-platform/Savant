@@ -14,7 +14,7 @@ Prerequisites:
 
 ```bash
 git clone https://github.com/insight-platform/Savant.git
-cd Savant/samples/multiple_rtsp
+cd Savant/samples/source_adapter_with_json_metadata
 git lfs pull
 ```
 
