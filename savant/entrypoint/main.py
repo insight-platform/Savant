@@ -1,4 +1,6 @@
 """Module entrypoint function."""
+import os
+
 from savant.config import ModuleConfig
 from savant.gstreamer import Gst
 from savant.deepstream.encoding import check_encoder_is_available
@@ -43,7 +45,14 @@ def main(config_file_path: str):
 
     try:
         with NvDsPipelineRunner(pipeline):
-            for msg in pipeline.stream():
-                sink(msg, **dict(module_name=config.name))
+            try:
+                for msg in pipeline.stream():
+                    sink(msg, **dict(module_name=config.name))
+            except Exception as exc:  # pylint: disable=broad-except
+                logger.error(exc, exc_info=True)
+                # TODO: Sometimes pipeline hangs when exit(1) or not exit at all is called.
+                #       E.g. when the module has "req+connect" socket at the sink and
+                #       sink adapter is not available.
+                os._exit(1)  # pylint: disable=protected-access
     except Exception as exc:  # pylint: disable=broad-except
         logger.error(exc, exc_info=True)

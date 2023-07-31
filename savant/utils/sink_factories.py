@@ -101,9 +101,7 @@ class ZeroMQSinkFactory(SinkFactory):
         bind: bool = True,
         send_hwm: int = Defaults.SEND_HWM,
         receive_timeout: int = Defaults.SENDER_RECEIVE_TIMEOUT,
-        # TODO: Pipeline hangs on shutdown when zmq.Again raised.
-        #       Fix this and change default vlue to to Defaults.REQ_RECEIVE_RETRIES.
-        req_receive_retries: int =  1000,
+        req_receive_retries: int = Defaults.REQ_RECEIVE_RETRIES,
     ):
         logger.debug(
             'Initializing ZMQ sink: socket %s, type %s, bind %s.',
