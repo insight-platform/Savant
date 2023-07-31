@@ -10,7 +10,7 @@ from typing import Dict, NamedTuple, Optional
 from savant_rs.primitives import EndOfStream, VideoFrame
 
 from savant.api.enums import ExternalFrameType
-from savant.api.parser import parse_tags, parse_video_objects
+from savant.api.parser import convert_ts, parse_tags, parse_video_objects
 from savant.gstreamer import GObject, Gst
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
 from savant.gstreamer.metadata import (
@@ -251,13 +251,17 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
     ) -> Gst.FlowReturn:
         """Handle VideoFrame message."""
         frame_params = FrameParams.from_video_frame(video_frame)
-        # TODO: respect timebase
-        # tb_num, tb_denum = video_frame.timebase or (1, Gst.SECOND)
-        frame_pts = video_frame.pts
-        frame_dts = video_frame.dts
-        if frame_dts is None:
-            frame_dts = Gst.CLOCK_TIME_NONE
-        frame_duration = video_frame.duration
+        frame_pts = convert_ts(video_frame.pts, video_frame.timebase)
+        frame_dts = (
+            convert_ts(video_frame.dts, video_frame.timebase)
+            if video_frame.dts is not None
+            else Gst.CLOCK_TIME_NONE
+        )
+        frame_duration = (
+            convert_ts(video_frame.duration, video_frame.timebase)
+            if video_frame.duration is not None
+            else Gst.CLOCK_TIME_NONE
+        )
         self.logger.debug(
             'Received frame %s from source %s; frame %s a keyframe',
             frame_pts,

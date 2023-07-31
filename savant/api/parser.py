@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Tuple, Union
 
 from savant_rs.primitives import (
     Attribute,
@@ -10,6 +10,7 @@ from savant_rs.primitives import (
 from savant_rs.primitives.geometry import BBox, RBBox
 from savant_rs.video_object_query import MatchQuery
 
+from savant.api.constants import DEFAULT_TIME_BASE
 from savant.meta.constants import UNTRACKED_OBJECT_ID
 
 _attribute_value_to_python = {
@@ -39,14 +40,22 @@ def parse_video_frame(frame: VideoFrame):
         'framerate': frame.framerate,
         'width': frame.width,
         'height': frame.height,
-        'pts': frame.pts,
+        'pts': convert_ts(frame.pts, frame.timebase),
         'keyframe': frame.keyframe,
         'codec': frame.codec,
-        'dts': frame.dts,
-        'duration': frame.duration,
+        'dts': convert_ts(frame.dts, frame.timebase) if frame.dts is not None else None,
+        'duration': convert_ts(frame.duration, frame.timebase),
         'metadata': {'objects': parse_video_objects(frame)},
         'tags': parse_tags(frame),
     }
+
+
+def convert_ts(ts: int, time_base: Tuple[int, int]):
+    if time_base == DEFAULT_TIME_BASE:
+        return ts
+    tb_num, tb_denum = time_base
+    target_num, target_denum = DEFAULT_TIME_BASE
+    return ts * target_num * tb_denum // (target_denum * tb_num)
 
 
 def parse_tags(frame: VideoFrame):

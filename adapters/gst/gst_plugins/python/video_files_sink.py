@@ -7,6 +7,7 @@ from adapters.python.sinks.chunk_writer import ChunkWriter, CompositeChunkWriter
 from adapters.python.sinks.metadata_json import MetadataJsonWriter, Patterns
 from gst_plugins.python.savant_rs_video_demux import FrameParams, build_caps
 from savant.api.enums import ExternalFrameType
+from savant.api.parser import convert_ts
 from savant.gstreamer import GLib, GObject, Gst, GstApp
 from savant.gstreamer.codecs import Codec
 from savant.gstreamer.utils import load_message_from_gst_buffer, on_pad_event
@@ -46,10 +47,16 @@ class VideoFilesWriter(ChunkWriter):
             frame_buf: Gst.Buffer = Gst.Buffer.new()
             frame_buf.append_memory(data)
 
-        frame_buf.pts = frame.pts
-        frame_buf.dts = Gst.CLOCK_TIME_NONE if frame.dts is None else frame.dts
+        frame_buf.pts = convert_ts(frame.pts, frame.timebase)
+        frame_buf.dts = (
+            convert_ts(frame.dts, frame.timebase)
+            if frame.dts is not None
+            else Gst.CLOCK_TIME_NONE
+        )
         frame_buf.duration = (
-            Gst.CLOCK_TIME_NONE if frame.duration is None else frame.duration
+            convert_ts(frame.duration, frame.timebase)
+            if frame.duration is not None
+            else Gst.CLOCK_TIME_NONE
         )
         self.logger.debug(
             'Sending frame with pts=%s to %s',
