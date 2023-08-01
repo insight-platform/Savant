@@ -1,0 +1,112 @@
+name: face_reid_index_builder
+
+parameters:
+  frame:
+    width: 1280
+    height: 720
+
+  # output_frame:
+  #   codec: jpeg
+  # draw_func: {}
+
+  face_width: 112
+  face_height: 112
+  detection_model_name: yolov5nface
+
+  reid_model_name: adaface
+  feature_len: 512
+
+  model_path: /models/face_reid
+
+pipeline:
+
+  source:
+    element: zeromq_source_bin
+    properties:
+      socket: ${oc.env:ZMQ_SRC_ENDPOINT}
+      socket_type: SUB
+      bind: ${oc.decode:${oc.env:ZMQ_SRC_BIND, True}}
+      # Filter inbound frames by source ID.
+      source_id: ${oc.decode:${oc.env:SOURCE_ID, null}}
+      # Filter inbound frames by source ID prefix.
+      source_id_prefix: ${oc.decode:${oc.env:SOURCE_ID_PREFIX, null}}
+      # Timeout before deleting stale source (in seconds).
+      source_timeout: ${oc.decode:${oc.env:SOURCE_TIMEOUT, 10}}
+      # Interval between source eviction checks (in seconds).
+      source_eviction_interval: ${oc.decode:${oc.env:SOURCE_EVICTION_INTERVAL, 1}}
+
+  elements:
+    # detector
+    - element: nvinfer@complex_model
+      name: ${parameters.detection_model_name}
+      model:
+        remote:
+          url: s3://savant-data/models/yolov5face/${parameters.detection_model_name}.zip
+          checksum_url: s3://savant-data/models/yolov5face/${parameters.detection_model_name}.md5
+          parameters:
+            endpoint: https://eu-central-1.linodeobjects.com
+        format: onnx
+        config_file: yolov5n-face.txt
+        input:
+          shape: [3, 640, 640]
+        output:
+          layer_names: [ 'output' ]
+          converter:
+            module: savant.converter.yolo_v5face
+            class_name: YoloV5faceConverter
+            kwargs:
+              confidence_threshold: 0.6
+              nms_iou_threshold: 0.5
+          objects:
+            - class_id: 0
+              label: face
+              selector:
+                module: samples.face_reid.selector
+                class_name: MinMaxSizeBBoxSelector
+                kwargs:
+                  min_width: 40
+                  min_height: 40
+          attributes:
+            - name: landmarks
+
+    - element: nvinfer@attribute_model
+      name: ${parameters.reid_model_name}
+      model:
+        # remote:
+        #   url: s3://savant-data/models/webface_r50/webface_r50.zip
+        #   checksum_url: s3://savant-data/models/webface_r50/webface_r50.md5
+        #   parameters:
+        #     endpoint: https://eu-central-1.linodeobjects.com
+        format: onnx
+        model_file: adaface_ir50_webface4m.onnx
+
+        input:
+          object: ${parameters.detection_model_name}.face
+          shape: [3, 112, 112]
+          offsets: [127.5, 127.5, 127.5]
+          scale_factor: 0.007843137254902
+          color_format: bgr
+          preprocess_object_image:
+            module: samples.face_reid.face_preproc
+            class_name: FacePreprocessingObjectImageGPU
+        output:
+          layer_names: [ 'feature', 'norm' ]
+          converter:
+            module: savant.converter
+            class_name: TensorToVectorConverter
+          attributes:
+            - name: feature
+
+    - element: pyfunc
+      module: samples.face_reid.index_builder
+      class_name: IndexBuilder
+      kwargs:
+        index_space: cosine
+        index_dim: ${parameters.feature_len}
+        index_max_elements: 100
+
+  sink:
+    # - element: console_sink
+    #   properties:
+    #     json_mode: true
+    - element: devnull_sink
