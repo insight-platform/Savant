@@ -40,11 +40,17 @@ def parse_video_frame(frame: VideoFrame):
         'framerate': frame.framerate,
         'width': frame.width,
         'height': frame.height,
-        'pts': convert_ts(frame.pts, frame.timebase),
+        'pts': convert_ts(frame.pts, frame.time_base),
         'keyframe': frame.keyframe,
         'codec': frame.codec,
-        'dts': convert_ts(frame.dts, frame.timebase) if frame.dts is not None else None,
-        'duration': convert_ts(frame.duration, frame.timebase),
+        'dts': (
+            convert_ts(frame.dts, frame.time_base) if frame.dts is not None else None
+        ),
+        'duration': (
+            convert_ts(frame.duration, frame.time_base)
+            if frame.duration is not None
+            else None
+        ),
         'metadata': {'objects': parse_video_objects(frame)},
         'tags': parse_tags(frame),
     }

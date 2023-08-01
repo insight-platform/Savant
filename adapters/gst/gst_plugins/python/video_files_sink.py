@@ -47,14 +47,14 @@ class VideoFilesWriter(ChunkWriter):
             frame_buf: Gst.Buffer = Gst.Buffer.new()
             frame_buf.append_memory(data)
 
-        frame_buf.pts = convert_ts(frame.pts, frame.timebase)
+        frame_buf.pts = convert_ts(frame.pts, frame.time_base)
         frame_buf.dts = (
-            convert_ts(frame.dts, frame.timebase)
+            convert_ts(frame.dts, frame.time_base)
             if frame.dts is not None
             else Gst.CLOCK_TIME_NONE
         )
         frame_buf.duration = (
-            convert_ts(frame.duration, frame.timebase)
+            convert_ts(frame.duration, frame.time_base)
             if frame.duration is not None
             else Gst.CLOCK_TIME_NONE
         )

@@ -251,14 +251,14 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
     ) -> Gst.FlowReturn:
         """Handle VideoFrame message."""
         frame_params = FrameParams.from_video_frame(video_frame)
-        frame_pts = convert_ts(video_frame.pts, video_frame.timebase)
+        frame_pts = convert_ts(video_frame.pts, video_frame.time_base)
         frame_dts = (
-            convert_ts(video_frame.dts, video_frame.timebase)
+            convert_ts(video_frame.dts, video_frame.time_base)
             if video_frame.dts is not None
             else Gst.CLOCK_TIME_NONE
         )
         frame_duration = (
-            convert_ts(video_frame.duration, video_frame.timebase)
+            convert_ts(video_frame.duration, video_frame.time_base)
             if video_frame.duration is not None
             else Gst.CLOCK_TIME_NONE
         )
