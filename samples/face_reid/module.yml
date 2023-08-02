@@ -7,7 +7,8 @@ parameters:
     padding:
       keep: true
       left: 0
-      right: 360
+      # for 2x112px mini-portraits + 3x25px paddings
+      right: 299
       top: 0
       bottom: 0
 
