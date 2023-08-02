@@ -14,6 +14,7 @@ def pack_person_id_img_n(person_id, img_n) -> int:
 
 
 def unpack_person_id_img_n(packed: int) -> Tuple[int, int]:
+    packed = np.uint64(packed)
     person_id = np.right_shift(packed, BIT_SHIFT)
     img_n = np.bitwise_and(packed, BIT_MASK)
-    return person_id, img_n
+    return int(person_id), int(img_n)
