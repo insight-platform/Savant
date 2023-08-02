@@ -304,6 +304,18 @@ class ArtistGPUMat(AbstractContextManager):
 
         gaussian_filter.apply(roi_mat, roi_mat, stream=self.stream)
 
+    def copy_frame_region(self, bbox: BBox,padding: Tuple[int, int, int, int] = (0, 0, 0, 0)) -> cv2.cuda_GpuMat:
+        """Copy a region of the frame to a new GpuMat.
+
+        :param bbox: ROI specified as Savant bbox.
+        :return: GpuMat with the specified region.
+        """
+        left, top, width, height = bbox.visual_box(
+            PaddingDraw(*padding), 0, self.max_col, self.max_row
+        ).as_ltwh_int()
+        roi_mat = cv2.cuda_GpuMat(self.frame, (left, top, width, height))
+        return roi_mat
+
     def add_graphic(self, img: cv2.cuda.GpuMat, origin: Tuple[int, int]):
         """Overlays an image onto the frame, e.g. a logo.
 
