@@ -12,6 +12,7 @@ Data structure:
 * json file names, image or video names must be identical.
 * The files must be in the same directory
 
+
 Example:
 
 .. code-block:: yaml
@@ -28,8 +29,8 @@ Or
 
 As input meta-information can be used:
 
-* json files generated with sink adapters
-* prepare json files with metainformation in accordance with the format requirements.
+* json files generated with sink adapters. These files should be used together with the generated video recorded by the sink adapter.
+* prepare json files with metainformation in accordance with the format requirements. Video files should be without b-frames or you should prepare a json file with correct frame order before decoding. Otherwise there will be incorrect mapping of metadata and frames.
 
 Requirements for json files:
 

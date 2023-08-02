@@ -5,8 +5,7 @@ from savant.deepstream.pyfunc import NvDsPyFuncPlugin
 
 
 class IOU(NvDsPyFuncPlugin):
-    """ IOU metric for object detection.
-    """
+    """IOU metric for object detection."""
 
     def __init__(self, ground_truth: str, element_name: str, **kwargs):
         super().__init__(**kwargs)
