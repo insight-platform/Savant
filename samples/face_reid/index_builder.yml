@@ -5,10 +5,6 @@ parameters:
     width: 1280
     height: 720
 
-  # output_frame:
-  #   codec: jpeg
-  # draw_func: {}
-
   face_width: 112
   face_height: 112
   detection_model_name: yolov5nface
@@ -16,24 +12,7 @@ parameters:
   reid_model_name: adaface
   feature_len: 512
 
-  model_path: /models/face_reid
-
 pipeline:
-
-  source:
-    element: zeromq_source_bin
-    properties:
-      socket: ${oc.env:ZMQ_SRC_ENDPOINT}
-      socket_type: SUB
-      bind: ${oc.decode:${oc.env:ZMQ_SRC_BIND, True}}
-      # Filter inbound frames by source ID.
-      source_id: ${oc.decode:${oc.env:SOURCE_ID, null}}
-      # Filter inbound frames by source ID prefix.
-      source_id_prefix: ${oc.decode:${oc.env:SOURCE_ID_PREFIX, null}}
-      # Timeout before deleting stale source (in seconds).
-      source_timeout: ${oc.decode:${oc.env:SOURCE_TIMEOUT, 10}}
-      # Interval between source eviction checks (in seconds).
-      source_eviction_interval: ${oc.decode:${oc.env:SOURCE_EVICTION_INTERVAL, 1}}
 
   elements:
     # detector
@@ -72,14 +51,13 @@ pipeline:
     - element: nvinfer@attribute_model
       name: ${parameters.reid_model_name}
       model:
-        # remote:
-        #   url: s3://savant-data/models/webface_r50/webface_r50.zip
-        #   checksum_url: s3://savant-data/models/webface_r50/webface_r50.md5
-        #   parameters:
-        #     endpoint: https://eu-central-1.linodeobjects.com
+        remote:
+          url: s3://savant-data/models/${parameters.reid_model_name}/${parameters.reid_model_name}_ir50_webface4m_90fb74c.zip
+          checksum_url: s3://savant-data/models/${parameters.reid_model_name}/${parameters.reid_model_name}_ir50_webface4m_90fb74c.md5
+          parameters:
+            endpoint: https://eu-central-1.linodeobjects.com
         format: onnx
         model_file: adaface_ir50_webface4m.onnx
-
         input:
           object: ${parameters.detection_model_name}.face
           shape: [3, 112, 112]
@@ -106,7 +84,4 @@ pipeline:
         index_max_elements: 100
 
   sink:
-    # - element: console_sink
-    #   properties:
-    #     json_mode: true
     - element: devnull_sink
