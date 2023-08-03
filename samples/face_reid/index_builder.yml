@@ -10,7 +10,6 @@ parameters:
   detection_model_name: yolov5nface
 
   reid_model_name: adaface
-  feature_len: 512
 
 pipeline:
 
@@ -79,9 +78,15 @@ pipeline:
       module: samples.face_reid.index_builder
       class_name: IndexBuilder
       kwargs:
+        index_dir: /opt/savant/samples/face_reid/index_files/
         index_space: cosine
-        index_dim: ${parameters.feature_len}
+        # index_dim is set according to the reid model output dimensions
+        index_dim: 512
+        # hnswlib index parameters
         index_max_elements: 100
+        index_ef_construction: 200
+        index_m: 16
 
+  # output sink adapter is not used
   sink:
     - element: devnull_sink

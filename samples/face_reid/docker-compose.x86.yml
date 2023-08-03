@@ -5,7 +5,7 @@ services:
     image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
-      - ./gallery:/gallery
+      - ./assets/gallery:/gallery
     environment:
       - LOCATION=/gallery
       - FILE_TYPE=picture

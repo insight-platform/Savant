@@ -304,7 +304,9 @@ class ArtistGPUMat(AbstractContextManager):
 
         gaussian_filter.apply(roi_mat, roi_mat, stream=self.stream)
 
-    def copy_frame_region(self, bbox: BBox,padding: Tuple[int, int, int, int] = (0, 0, 0, 0)) -> cv2.cuda_GpuMat:
+    def copy_frame_region(
+        self, bbox: BBox, padding: Tuple[int, int, int, int] = (0, 0, 0, 0)
+    ) -> cv2.cuda_GpuMat:
         """Copy a region of the frame to a new GpuMat.
 
         :param bbox: ROI specified as Savant bbox.
