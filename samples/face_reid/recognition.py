@@ -1,4 +1,5 @@
 """Recognition module."""
+import os
 import hnswlib
 
 from savant.gstreamer import Gst
@@ -9,7 +10,7 @@ from savant.meta.constants import UNTRACKED_OBJECT_ID
 from samples.face_reid.utils import unpack_person_id_img_n
 
 MODEL_NAME = param_storage()['reid_model_name']
-INDEX_PATH = '/opt/savant/samples/face_reid/person_index/index.bin'
+
 
 class Recognition(NvDsPyFuncPlugin):
     """ """
@@ -17,13 +18,14 @@ class Recognition(NvDsPyFuncPlugin):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.last_match_for_track = {}
-
+        self.index_file_path = os.path.join(self.index_dir, 'index.bin')
 
     def on_start(self) -> bool:
         """Do on plugin start."""
         self.index = hnswlib.Index(space=self.index_space, dim=self.index_dim)
-        self.index.load_index(INDEX_PATH, max_elements=self.index_max_elements)
-
+        self.index.load_index(
+            self.index_file_path, max_elements=self.index_max_elements
+        )
         return True
 
     def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
@@ -33,6 +35,7 @@ class Recognition(NvDsPyFuncPlugin):
         :param frame_meta: This frame's metadata.
         """
 
+        # gather all face feature vectors from this frame
         features = []
         for obj_meta in frame_meta.objects:
             if obj_meta.label == 'face':
@@ -41,6 +44,7 @@ class Recognition(NvDsPyFuncPlugin):
         if len(features) < 1:
             return
 
+        # search for nearest neighbor for each feature vector
         labels, distances = self.index.knn_query(features, k=1)
 
         person_idx = 0
@@ -52,7 +56,10 @@ class Recognition(NvDsPyFuncPlugin):
 
                 if distance > self.dist_threshold:
                     # current frame match unsuccessful
-                    if obj_meta.track_id != UNTRACKED_OBJECT_ID and obj_meta.track_id in self.last_match_for_track:
+                    if (
+                        obj_meta.track_id != UNTRACKED_OBJECT_ID
+                        and obj_meta.track_id in self.last_match_for_track
+                    ):
                         # fallback on last successful match
                         person_id, img_n = self.last_match_for_track[obj_meta.track_id]
                     else:

@@ -8,26 +8,29 @@ parameters:
       keep: true
       left: 0
       # for 2x112px mini-portraits + 3x25px paddings
-      right: 299
+      right: ${calc:"2*arg_0 + 3*arg_1", ${parameters.face_width}, ${parameters.face_tile_padding}}
       top: 0
       bottom: 0
 
   output_frame:
     codec: h264
 
+  face_tile_padding: 25
   face_width: 112
   face_height: 112
   detection_model_name: yolov5nface
 
   reid_model_name: adaface
-  feature_len: 512
 
   draw_func:
     module: samples.face_reid.overlay
-    # specify the drawfunc's python class from the module
     class_name: Overlay
     kwargs:
-      padding_width: ${parameters.frame.padding.right}
+      gallery_path: /opt/savant/samples/face_reid/index_files/processed_gallery
+      face_width: ${parameters.face_width}
+      face_height: ${parameters.face_height}
+      face_tile_padding: ${parameters.face_tile_padding}
+      frame_padding_width: ${parameters.frame.padding.right}
 
 pipeline:
 
@@ -104,7 +107,11 @@ pipeline:
       module: samples.face_reid.recognition
       class_name: Recognition
       kwargs:
+        index_dir: /opt/savant/samples/face_reid/index_files/
         index_space: cosine
-        index_dim: ${parameters.feature_len}
+        # index_dim is set according to the reid model output dimensions
+        index_dim: 512
+        # hnswlib index parameter
         index_max_elements: 100
+        # maximum successful match distance
         dist_threshold: 0.5

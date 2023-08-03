@@ -6,22 +6,19 @@ from savant.deepstream.meta.frame import NvDsFrameMeta, BBox
 from savant.utils.artist import Artist
 from savant.meta.constants import UNTRACKED_OBJECT_ID
 
-FACE_SIZE = (112,112)
-LEFT_OFFSET = 25
-TOP_OFFSET = 25
-
-GALLERY_PATH = '/opt/savant/samples/face_reid/processed_gallery'
 
 class Overlay(NvDsDrawFunc):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.unknown_face = np.ones(FACE_SIZE + (4,), dtype=np.uint8) * 255
+        self.face_size = self.face_width, self.face_height
+        self.unknown_face = np.ones(self.face_size + (4,), dtype=np.uint8) * 255
         self.unknown_face = cv2.cuda.GpuMat(self.unknown_face)
         self.processed_gallery = {}
         self.person_id_to_name = {}
         self.prev_used_gallery = {}
         self.prev_used_counter = {}
-        for img_path in pathlib.Path(GALLERY_PATH).glob('*.jpeg'):
+        # load gallery images to display face matches
+        for img_path in pathlib.Path(self.gallery_path).glob('*.jpeg'):
             person_name, person_id, img_n = img_path.stem.rsplit('_', maxsplit=2)
             person_id = int(person_id)
             img_n = int(img_n)
@@ -29,10 +26,9 @@ class Overlay(NvDsDrawFunc):
                 self.person_id_to_name[person_id] = person_name
             img = cv2.imread(str(img_path))
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGBA)
-            img = cv2.resize(img, FACE_SIZE)
+            img = cv2.resize(img, self.face_size)
             img = cv2.cuda.GpuMat(img)
             self.processed_gallery[(person_id, img_n)] = img
-
 
     def draw_on_frame(self, frame_meta: NvDsFrameMeta, artist: Artist):
         # manually refresh (by filling with black) frame padding used for drawing
@@ -41,9 +37,9 @@ class Overlay(NvDsDrawFunc):
         frame_w, frame_h = artist.frame_wh
         artist.add_bbox(
             BBox(
-                frame_w - self.padding_width // 2,
+                frame_w - self.frame_padding_width // 2,
                 frame_h // 2,
-                self.padding_width,
+                self.frame_padding_width,
                 frame_h,
             ),
             border_width=0,
@@ -71,19 +67,22 @@ class Overlay(NvDsDrawFunc):
                 distance = obj_meta.get_attr_meta('recognition', 'distance').value
 
                 face_img = artist.copy_frame_region(obj_meta.bbox)
-                face_img = cv2.cuda.resize(face_img, FACE_SIZE, stream=artist.stream)
+                face_img = cv2.cuda.resize(
+                    face_img, self.face_size, stream=artist.stream
+                )
 
                 tile_y = face_rows[face_idx]
 
-                face_top = TOP_OFFSET * (tile_y + 1) + tile_y * FACE_SIZE[1]
-                face_left = frame_w - self.padding_width + LEFT_OFFSET
+                face_top = (
+                    self.face_tile_padding * (tile_y + 1) + tile_y * self.face_size[1]
+                )
+                face_left = frame_w - self.frame_padding_width + self.face_tile_padding
                 artist.add_graphic(face_img, (face_left, face_top))
 
-                face_left += FACE_SIZE[0] + LEFT_OFFSET
+                face_left += self.face_size[0] + self.face_tile_padding
                 if person_id >= 0 and image_n >= 0:
                     # person was recognized
                     # get a face image from the gallery
-
                     track_id = obj_meta.track_id
                     if track_id != UNTRACKED_OBJECT_ID:
                         # do not use the same image for less than 20 frames
@@ -94,7 +93,9 @@ class Overlay(NvDsDrawFunc):
 
                         elif self.prev_used_gallery[track_id] != (person_id, image_n):
                             # previous image used for this track is different
-                            prev_person_id, prev_img_n = self.prev_used_gallery[track_id]
+                            prev_person_id, prev_img_n = self.prev_used_gallery[
+                                track_id
+                            ]
                             prev_used_count = self.prev_used_counter[track_id]
                             if prev_person_id != person_id or prev_used_count > 20:
                                 # if the track switched to a different person
@@ -118,10 +119,10 @@ class Overlay(NvDsDrawFunc):
                     color = (255, 0, 0, 255)
 
                 artist.add_bbox(
-                        obj_meta.bbox,
-                        border_color=color,
+                    obj_meta.bbox,
+                    border_color=color,
                 )
                 artist.add_graphic(face_img, (face_left, face_top))
-                artist.add_text(text, (face_left, face_top + FACE_SIZE[1] + 10))
+                artist.add_text(text, (face_left, face_top + self.face_size[1] + 10))
 
                 face_idx += 1
