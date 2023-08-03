@@ -2,6 +2,10 @@
 
 The sample demonstrates how to use [Yolov5face](https://github.com/deepcam-cn/yolov5-face) face detector with landmarks and [Adaface](https://github.com/mk-minchul/AdaFace) face recognition model to build a facial ReID pipeline that can be utilized, for example, in doorbell security systems.
 
+Preview:
+
+![](assets/face-reid-loop.webp)
+
 The sample is split into two parts: Index Builder and Demo modules.
 
 ## Index Builder
