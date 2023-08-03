@@ -189,7 +189,7 @@ The framework supports several encoding schemes:
 - JPEG (hardware ``nvjpegenc``, software ``jpegenc``);
 - PNG (software ``pngenc``);
 - H264 (hardware ``nvv4l2h264enc``, software ``x264enc``);
-- HEVC (H265, hardware ``nvv4l2h265enc``).
+- HEVC/H265 (hardware ``nvv4l2h265enc``).
 
 .. note::
     Hardware encoder for JPEG is available only on Nvidia Jetson.
