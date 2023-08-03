@@ -24,7 +24,7 @@ Nvidia supports very fast hardware-accelerated decoding for several video/image 
 Hardware-accelerated with NVDEC, preferred to be used:
 
 - H264 - default;
-- HEVC (H265) - preferred (performance, bandwidth);
+- HEVC/H265 - preferred (performance, bandwidth);
 - MJPEG, JPEG - when image streams or USB/CSI-cams are used.
 
 Software-decoded (not recommended to use):
