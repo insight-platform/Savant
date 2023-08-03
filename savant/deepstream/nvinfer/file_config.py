@@ -161,6 +161,7 @@ class NvInferConfig:
         _FieldMap('network-mode', 'precision', lambda v: ModelPrecision(int(v)), 0),
         _FieldMap('custom-lib-path', 'custom_lib_path'),
         _FieldMap('engine-create-func-name', 'engine_create_func_name'),
+        _FieldMap('workspace-size', 'workspace_size'),
         _FieldMap(
             'parse-bbox-instance-mask-func-name', 'parse_bbox_instance_mask_func_name'
         ),

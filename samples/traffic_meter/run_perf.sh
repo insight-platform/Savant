@@ -8,9 +8,10 @@ else
 fi
 
 docker run --rm -it --gpus=all \
+  -e DETECTOR=yolov8m \
   -v `pwd`/samples:/opt/savant/samples \
   -v `pwd`/data:/data:ro \
   -v `pwd`/models/traffic_meter:/models \
   -v `pwd`/downloads/traffic_meter:/downloads \
   traffic_meter-module \
-  samples/traffic_meter/module-yolov8m-performance.yml
+  samples/traffic_meter/module-performance.yml

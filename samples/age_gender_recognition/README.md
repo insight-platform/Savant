@@ -64,8 +64,8 @@ and download the video into it (all commands must be executed from the root dire
 ```bash
 # you are expected to be in Savant/ directory
 
-mkdir -p data && curl -o data/elon_musk.mp4 \
-   https://eu-central-1.linodeobjects.com/savant-data/demo/elon_musk.mp4
+mkdir -p data && curl -o data/elon_musk_perf.mp4 \
+   https://eu-central-1.linodeobjects.com/savant-data/demo/elon_musk_perf.mp4
 ```
 
 Now you are ready to run the performance benchmark with the following command:

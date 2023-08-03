@@ -49,6 +49,7 @@ from savant.utils.fps_meter import FPSMeter
 from savant.utils.source_info import SourceInfoRegistry, SourceInfo, Resolution
 from savant.utils.platform import is_aarch64
 from savant.config.schema import (
+    Pipeline,
     PipelineElement,
     ModelElement,
     FrameParameters,
@@ -61,19 +62,17 @@ from savant.utils.sink_factories import SinkEndOfStream
 class NvDsPipeline(GstPipeline):
     """Base class for managing the DeepStream Pipeline.
 
-    :param name: Pipeline name
-    :param source: Pipeline source element
-    :param elements: Pipeline elements
-    :key frame: Processing frame parameters (after nvstreammux)
-    :key batch_size: Primary batch size (nvstreammux batch-size)
-    :key output_frame: Whether to include frame in module output, not just metadata
+    :param name: Pipeline name.
+    :param pipeline_cfg: Pipeline config.
+    :key frame: Processing frame parameters (after nvstreammux).
+    :key batch_size: Primary batch size (nvstreammux batch-size).
+    :key output_frame: Whether to include frame in module output, not just metadata.
     """
 
     def __init__(
         self,
         name: str,
-        source: PipelineElement,
-        elements: List[PipelineElement],
+        pipeline_cfg: Pipeline,
         **kwargs,
     ):
         # pipeline internal processing frame size
@@ -105,8 +104,10 @@ class NvDsPipeline(GstPipeline):
         self._free_pad_indices: List[int] = []
         self._muxer: Optional[Gst.Element] = None
 
-        if source.element == 'zeromq_source_bin':
-            source.properties['max-parallel-streams'] = self._max_parallel_streams
+        if pipeline_cfg.source.element == 'zeromq_source_bin':
+            pipeline_cfg.source.properties[
+                'max-parallel-streams'
+            ] = self._max_parallel_streams
 
         # nvjpegdec decoder is selected in decodebin according to the rank, but
         # there are problems with the plugin:
@@ -118,7 +119,7 @@ class NvDsPipeline(GstPipeline):
         factory = Gst.ElementFactory.find('nvjpegdec')
         factory.set_rank(Gst.Rank.NONE)
 
-        super().__init__(name=name, source=source, elements=elements, **kwargs)
+        super().__init__(name, pipeline_cfg, **kwargs)
 
     def _build_buffer_processor(
         self,
