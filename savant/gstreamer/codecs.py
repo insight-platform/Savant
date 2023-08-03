@@ -25,9 +25,15 @@ class CodecInfo:
     parser: Optional[str] = None
     """Gstreamer parser element."""
 
-    encoder_elements: Optional[List[str]] = None
-    """Gstreamer encoder elements.
-    Savant will use the first available element.
+    nv_encoder: Optional[str] = None
+    """Nvenc gstreamer encoder element.
+    Savant will use the it when encoder type is not specified.
+    """
+
+    sw_encoder: Optional[str] = None
+    """Software gstreamer encoder element.
+    Savant will use the it when encoder type is not specified and codec 
+    does not have NvEnc encoder.
     """
 
     @property
@@ -35,53 +41,89 @@ class CodecInfo:
         """Caps with caps params string."""
         return ','.join([self.caps_name] + self.caps_params)
 
-    @property
-    def encoder(self) -> Optional[str]:
-        if not hasattr(self, '_encoder'):
-            if not self.encoder_elements:
-                encoder = None
-            elif len(self.encoder_elements) == 1:
-                encoder = self.encoder_elements[0]
+    def encoder(self, encoder_type: Optional[str]) -> Optional[str]:
+        """Get Gstreamer encoder element name.
+
+        :param encoder_type: Encoder type. Can be 'nvenc' or 'software'.
+                             When not specified nv_encoder will be used if codec has it
+                             or sw_encoder when codec does not have nv_encoder.
+        """
+
+        if not hasattr(self, '_nv_encoder'):
+            if self.nv_encoder is not None and _check_element_exists(self.nv_encoder):
+                self._nv_encoder = self.nv_encoder
             else:
-                for element_name in self.encoder_elements:
-                    logger.debug('Check if element %r exists', element_name)
-                    elem_factory = Gst.ElementFactory.find(element_name)
-                    if elem_factory is not None:
-                        logger.debug('Found element %r', element_name)
-                        encoder = element_name
-                        break
-                    logger.debug('Element %r not found', element_name)
-                else:
-                    encoder = self.encoder_elements[-1]
+                self._nv_encoder = None
 
-            self._encoder = encoder
+        if not hasattr(self, '_sw_encoder'):
+            if self.sw_encoder is not None and _check_element_exists(self.sw_encoder):
+                self._sw_encoder = self.sw_encoder
+            else:
+                self._sw_encoder = None
 
-        return self._encoder
+        if encoder_type is None:
+            return self._nv_encoder or self._sw_encoder
+
+        if encoder_type == 'nvenc':
+            if self._nv_encoder is None:
+                raise ValueError(f'Codec {self.name} does not have nvenc encoder.')
+            return self._nv_encoder
+
+        if encoder_type == 'software':
+            if self._sw_encoder is None:
+                raise ValueError(f'Codec {self.name} does not have software encoder.')
+            return self._sw_encoder
+
+        raise ValueError(f'Unknown encoder type: {encoder_type}')
 
 
 class Codec(Enum):
     """Codec enum."""
 
-    value: CodecInfo
     H264 = CodecInfo(
         'h264',
         'video/x-h264',
         ['stream-format=byte-stream', 'alignment=au'],
         'h264parse',
-        ['nvv4l2h264enc'],
+        nv_encoder='nvv4l2h264enc',
+        sw_encoder='x264enc',
     )
     HEVC = CodecInfo(
         'hevc',
         'video/x-h265',
         ['stream-format=byte-stream', 'alignment=au'],
         'h265parse',
-        ['nvv4l2h265enc'],
+        nv_encoder='nvv4l2h265enc',
     )
     # TODO: add support for other raw formats (RGB, etc.)
     RAW_RGBA = CodecInfo('raw-rgba', 'video/x-raw', ['format=RGBA'])
-    PNG = CodecInfo('png', 'image/png', [], 'pngparse', ['pngenc'])
-    JPEG = CodecInfo('jpeg', 'image/jpeg', [], 'jpegparse', ['nvjpegenc', 'jpegenc'])
+    PNG = CodecInfo(
+        'png',
+        'image/png',
+        [],
+        'pngparse',
+        sw_encoder='pngenc',
+    )
+    JPEG = CodecInfo(
+        'jpeg',
+        'image/jpeg',
+        [],
+        'jpegparse',
+        nv_encoder='nvjpegenc',
+        sw_encoder='jpegenc',
+    )
 
 
 CODEC_BY_NAME: Dict[str, Codec] = {x.value.name: x for x in Codec}
 CODEC_BY_CAPS_NAME: Dict[str, Codec] = {x.value.caps_name: x for x in Codec}
+
+
+def _check_element_exists(element_name: str):
+    logger.debug('Check if element %r exists', element_name)
+    elem_factory = Gst.ElementFactory.find(element_name)
+    if elem_factory is not None:
+        logger.debug('Found element %r', element_name)
+        return True
+    else:
+        logger.debug('Element %r not found', element_name)
+        return False
