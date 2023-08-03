@@ -11,7 +11,15 @@ class Overlay(NvDsDrawFunc):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.face_size = self.face_width, self.face_height
-        self.unknown_face = np.ones(self.face_size + (4,), dtype=np.uint8) * 255
+        self.unknown_face = np.zeros(self.face_size + (4,), dtype=np.uint8)
+        cv2.drawMarker(
+            self.unknown_face,
+            (self.face_width // 2, self.face_height // 2),
+            (255, 255, 255, 255),
+            cv2.MARKER_TILTED_CROSS,
+            75,
+            3,
+        )
         self.unknown_face = cv2.cuda.GpuMat(self.unknown_face)
         self.processed_gallery = {}
         self.person_id_to_name = {}
