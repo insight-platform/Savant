@@ -1,1 +1,2 @@
 ffmpeg-input==0.1.5
+splitstream==1.2.6

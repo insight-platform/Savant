@@ -2,6 +2,7 @@ import json
 from fractions import Fraction
 from pathlib import Path
 from typing import Any, Dict, NamedTuple, Optional, Union
+from splitstream import splitfile
 
 from savant.api import serialize, ENCODING_REGISTRY
 from savant.api.enums import ExternalFrameType
@@ -314,7 +315,7 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
                             lambda x: x["metadata"],
                             filter(
                                 is_videoframe_metadata,
-                                map(json.loads, fp.readlines()),
+                                map(json.loads, splitfile(fp, format="json")),
                             ),
                         )
                     )

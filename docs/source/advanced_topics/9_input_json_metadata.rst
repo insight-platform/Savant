@@ -40,8 +40,8 @@ Requirements for json files
 
 General requirements:
 
-* In the file, each individual line must be a json format record for one image or frame. `Newline-Delimited_JSON <https://en.wikipedia.org/wiki/JSON_streaming#Newline-Delimited_JSON>`_
-* For images there should be only 1 line in the file. For video files, the number of lines should be equal to the number of frames in the video file.
+* The JSON file must be in `Newline-Delimited_JSON <https://en.wikipedia.org/wiki/JSON_streaming#Newline-Delimited_JSON>`_ format or Pretty-Print Newline-Delimited JSON format
+* For images there should be only with 1 records. For video files, the number of records should be equal to the number of frames in the video file.
 
 The JSON format:
 

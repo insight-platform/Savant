@@ -7,11 +7,6 @@ from savant.deepstream.pyfunc import NvDsPyFuncPlugin
 class IOU(NvDsPyFuncPlugin):
     """IOU metric for object detection."""
 
-    def __init__(self, ground_truth: str, element_name: str, **kwargs):
-        super().__init__(**kwargs)
-        self.element_name = element_name
-        self.ground_truth = ground_truth
-
     def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
         """Process frame metadata.
 
