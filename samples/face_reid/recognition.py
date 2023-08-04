@@ -13,7 +13,7 @@ MODEL_NAME = param_storage()['reid_model_name']
 
 
 class Recognition(NvDsPyFuncPlugin):
-    """ """
+    """Uses HNSW index to find nearest neighbor for each face feature vector."""
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
