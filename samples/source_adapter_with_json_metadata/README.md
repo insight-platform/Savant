@@ -41,7 +41,7 @@ Run the demo:
 ```
 
 Note: The source adapter runs on the images directory, so when it sends all the images it will terminate.
-The module and sink adapter run the whole time, so they should be stopped manual.
+The module and sink adapter run the whole time, so they should be stopped manually.
 
 Results will be saved in the `../../data/results` folder.
 
@@ -49,7 +49,7 @@ You can use the convert_coco_to_savant.py script as a starting point to prepare
 your input metadata. This script reads data from the COCO dataset annotations, 
 selects only objects with "person" label, and converts it into an input data format 
 for the framework. A detailed description of the input JSON file format with metadata 
-for the adapter is described in the documentation (link). 
+for the adapter is described in the documentation ([link](https://docs.savant-ai.io/advanced_topics/9_input_json_metadata.html)). 
 Install the pycocotools library before running it.
 
 ```bash

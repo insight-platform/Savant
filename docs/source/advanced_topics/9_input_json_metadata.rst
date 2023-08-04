@@ -1,13 +1,16 @@
-Using of object metadata files in Image and Video source adapters
-=================================================================
+Source adapters with metadata files
+===================================
 
-:ref:`ifsa Image File Source Adapter` and :ref:`vfsa Video File Source Adapter`  support sending metadata
+:ref:`savant_101/10_adapters:Image File Source Adapter` and :ref:`savant_101/10_adapters:Video File Source Adapter` support sending metadata
 along with frames. The READ_METADATA option must be specified when starting the adapters.
 
 The input data must have a certain structure and format, so that the adapter can
 correctly read and match images or video files with metadata in json format.
 
-Data structure:
+File structure
+^^^^^^^^^^^^^^
+
+The location and naming of files must meet the following requirements:
 
 * json file names, image or video names must be identical.
 * The files must be in the same directory
@@ -27,16 +30,17 @@ Or
     /input_data/street_people.json
     /input_data/street_people.mp4
 
-As input meta-information can be used:
+Metadata files can be generated:
 
-* json files generated with sink adapters. These files should be used together with the generated video recorded by the sink adapter.
-* prepare json files with metainformation in accordance with the format requirements. Video files should be without b-frames or you should prepare a json file with correct frame order before decoding. Otherwise there will be incorrect mapping of metadata and frames.
+* By the Savant sink adapters. These files should be used together with the generated video recorded by the sink adapter.
+* Manually by the user. Json files should be prepared accordance to the format requirements. Video files should be without b-frames or you should prepare a json file with correct frame order before decoding. Otherwise there will be incorrect mapping of metadata and frames.
 
-Requirements for json files:
+Requirements for json files
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 General requirements:
 
-* In the file, each individual line must be a json format record for one image or frame
+* In the file, each individual line must be a json format record for one image or frame. `Newline-Delimited_JSON <https://en.wikipedia.org/wiki/JSON_streaming#Newline-Delimited_JSON>`_
 * For images there should be only 1 line in the file. For video files, the number of lines should be equal to the number of frames in the video file.
 
 The JSON format:
@@ -56,7 +60,7 @@ Each json record in the file must be of the following format.
 - ``objects`` - list of objects on the frame. If there are no objects on the frame or image, the list should be empty.
 
 Each item in the ``objects`` list must satisfy the format and data type of the AVRO specification
-schema for the metadata of the object `link <https://docs.savant-ai.io/reference/avro.html#object-schema>`__.
+schema for the metadata of the object (:ref:`reference/avro:Object Schema`).
 
 Example of metadata for one object
 
@@ -86,7 +90,7 @@ Example of metadata for one object
 - ``object_id`` - unique object identifier within one frame or unique object track number;
 - ``bbox`` - bbox coordinates and angle of the object.
 - ``confidence`` - object confidence
-- ``attributes`` - list of object attributes. The list of attributes can be empty. Each attribute must correspond to the AVRO schema (`link <https://docs.savant-ai.io/reference/avro.html#attribute-schema>`__)
+- ``attributes`` - list of object attributes. The list of attributes can be empty. Each attribute must correspond to the AVRO schema (:ref:`reference/avro:Attribute Schema`)
 - ``parent_model_name`` - name of the model that created the parent object. If you're converting some data you can specify any name you want;
 - ``parent_label`` - parent object label;
 - ``parent_object_id`` - unique object identifier within one frame or unique object track number.
@@ -148,7 +152,7 @@ A complete example json file with metadata for an image file:
     }
 
 
-A complete example json file with metadata for an video file with two frames:
+A complete example json file with metadata for a video file with two frames:
 
 .. code-block:: json
 

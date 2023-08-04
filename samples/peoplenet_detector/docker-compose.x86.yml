@@ -1,19 +1,19 @@
 version: "3.3"
 services:
 
-  video-loop-source:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
-    restart: unless-stopped
-    volumes:
-      - zmq_sockets:/tmp/zmq-sockets
-      - /tmp/video-loop-source-downloads:/tmp/video-loop-source-downloads
-    environment:
-      - LOCATION=https://eu-central-1.linodeobjects.com/savant-data/demo/Free_City_Street_Footage.mp4
-      - DOWNLOAD_PATH=/tmp/video-loop-source-downloads
-      - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
-      - SOURCE_ID=city-traffic
-      - SYNC_OUTPUT=True
-    entrypoint: /opt/savant/adapters/gst/sources/video_loop.sh
+#  video-loop-source:
+#    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+#    restart: unless-stopped
+#    volumes:
+#      - zmq_sockets:/tmp/zmq-sockets
+#      - /tmp/video-loop-source-downloads:/tmp/video-loop-source-downloads
+#    environment:
+#      - LOCATION=https://eu-central-1.linodeobjects.com/savant-data/demo/Free_City_Street_Footage.mp4
+#      - DOWNLOAD_PATH=/tmp/video-loop-source-downloads
+#      - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
+#      - SOURCE_ID=city-traffic
+#      - SYNC_OUTPUT=True
+#    entrypoint: /opt/savant/adapters/gst/sources/video_loop.sh
 
   module:
     build:
@@ -21,7 +21,7 @@ services:
       dockerfile: docker/Dockerfile.x86
     restart: unless-stopped
     volumes:
-      - zmq_sockets:/tmp/zmq-sockets
+      - /tmp/zmq-sockets:/tmp/zmq-sockets
       - ../../models/peoplenet_detector:/models
       - ../../downloads/peoplenet_detector:/downloads
       - ..:/opt/savant/samples
@@ -38,31 +38,18 @@ services:
               count: 1
               capabilities: [gpu]
 
-  always-on-sink:
-    image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
-    restart: unless-stopped
-    ports:
-      - "554:554"    # RTSP
-      - "1935:1935"  # RTMP
-      - "888:888"    # HLS
-      - "8889:8889"  # WebRTC
-    volumes:
-      - zmq_sockets:/tmp/zmq-sockets
-      - ../assets/stub_imgs:/stub_imgs
-    environment:
-      - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
-      - SOURCE_ID=city-traffic
-      - FRAMERATE=25/1
-      - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x900.jpeg
-      - DEV_MODE=True
-    command: python -m adapters.ds.sinks.always_on_rtsp
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+#  image-json-sink:
+#    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+#    restart: unless-stopped
+#    volumes:
+#      - zmq_sockets:/tmp/zmq-sockets
+#      - ../../data/results:/results
+#    environment:
+#      - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output.ipc
+#      - CHUNK_SIZE=1000
+#      - DIR_LOCATION=/results
+#    entrypoint: /opt/savant/adapters/gst/sinks/video_files.sh
+
 
 volumes:
   zmq_sockets:
