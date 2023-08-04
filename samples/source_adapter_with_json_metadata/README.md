@@ -20,9 +20,9 @@ git lfs pull
 
 Download prepared data (run the command from the folder with the example):
 ```bash
-mkdir -p ../../data && \
-wget -P ../../data https://eu-central-1.linodeobjects.com/savant-data/demo/source_adapter_with_json_metadata.zip  && \
-unzip ../../data/source_adapter_with_json_metadata.zip -d ../../data && \
+mkdir -p ../../data 
+wget -P ../../data https://eu-central-1.linodeobjects.com/savant-data/demo/source_adapter_with_json_metadata.zip
+unzip ../../data/source_adapter_with_json_metadata.zip -d ../../data
 rm ../../data/source_adapter_with_json_metadata.zip
 ```
 
