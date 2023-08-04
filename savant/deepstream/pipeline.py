@@ -20,10 +20,7 @@ from savant.deepstream.buffer_processor import (
     NvDsBufferProcessor,
     create_buffer_processor,
 )
-from savant.deepstream.source_output import (
-    SourceOutputWithFrame,
-    create_source_output,
-)
+from savant.deepstream.source_output import create_source_output
 from savant.gstreamer import Gst, GLib  # noqa:F401
 from savant.gstreamer.pipeline import GstPipeline
 from savant.deepstream.metadata import (
@@ -54,6 +51,7 @@ from savant.config.schema import (
     ModelElement,
     FrameParameters,
     DrawFunc,
+    PyFuncElement,
 )
 from savant.base.model import AttributeModel, ComplexModel
 from savant.utils.sink_factories import SinkEndOfStream
@@ -84,6 +82,9 @@ class NvDsPipeline(GstPipeline):
 
         self._max_parallel_streams = kwargs.get('max_parallel_streams', 64)
 
+        # max number of buffers in queues between muxer and demuxer
+        self._queue_max_size_buffers = kwargs.get('queue_max_size_buffers', 10)
+
         # model artifacts path
         self._model_path = Path(kwargs['model_path'])
 
@@ -95,7 +96,9 @@ class NvDsPipeline(GstPipeline):
 
         self._internal_attrs = set()
 
-        self._draw_func: Optional[DrawFunc] = kwargs.get('draw_func')
+        draw_func: Optional[DrawFunc] = kwargs.get('draw_func')
+        if draw_func is not None:
+            pipeline_cfg.elements.append(draw_func)
 
         output_frame = kwargs.get('output_frame')
         self._source_output = create_source_output(self._frame_params, output_frame)
@@ -109,6 +112,8 @@ class NvDsPipeline(GstPipeline):
                 'max-parallel-streams'
             ] = self._max_parallel_streams
 
+        self._add_queues_to_pipeline(pipeline_cfg)
+
         # nvjpegdec decoder is selected in decodebin according to the rank, but
         # there are problems with the plugin:
         # 1) https://forums.developer.nvidia.com/t/nvvideoconvert-memory-compatibility-error/226138;
@@ -120,6 +125,31 @@ class NvDsPipeline(GstPipeline):
         factory.set_rank(Gst.Rank.NONE)
 
         super().__init__(name, pipeline_cfg, **kwargs)
+
+    def _add_queues_to_pipeline(self, pipeline_cfg: Pipeline):
+        """Add queues to the pipeline before and after pyfunc elements."""
+
+        queue_properties = {
+            'max-size-buffers': self._queue_max_size_buffers,
+            'max-size-bytes': 0,
+            'max-size-time': 0,
+        }
+        elements = []
+        for i, element in enumerate(pipeline_cfg.elements):
+            if isinstance(element, PyFuncElement) and not (
+                elements and elements[-1].element != 'queue'
+            ):
+                elements.append(PipelineElement('queue', properties=queue_properties))
+
+            elements.append(element)
+
+            if isinstance(element, PyFuncElement) and not (
+                len(pipeline_cfg.elements) < i + 1
+                and pipeline_cfg.elements[i + 1].element != 'queue'
+            ):
+                elements.append(PipelineElement('queue', properties=queue_properties))
+
+        pipeline_cfg.elements = elements
 
     def _build_buffer_processor(
         self,
@@ -735,10 +765,6 @@ class NvDsPipeline(GstPipeline):
 
         :param link: Whether to automatically link demuxer to the last pipeline element.
         """
-
-        if self._draw_func and isinstance(self._source_output, SourceOutputWithFrame):
-            self.add_element(self._draw_func, link=link)
-            link = True
 
         demuxer = self.add_element(
             PipelineElement(
