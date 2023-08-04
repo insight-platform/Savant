@@ -20,7 +20,10 @@ from savant.deepstream.buffer_processor import (
     NvDsBufferProcessor,
     create_buffer_processor,
 )
-from savant.deepstream.source_output import create_source_output
+from savant.deepstream.source_output import (
+    SourceOutputWithFrame,
+    create_source_output,
+)
 from savant.gstreamer import Gst, GLib  # noqa:F401
 from savant.gstreamer.pipeline import GstPipeline
 from savant.deepstream.metadata import (
@@ -96,12 +99,14 @@ class NvDsPipeline(GstPipeline):
 
         self._internal_attrs = set()
 
-        draw_func: Optional[DrawFunc] = kwargs.get('draw_func')
-        if draw_func is not None:
-            pipeline_cfg.elements.append(draw_func)
-
         output_frame = kwargs.get('output_frame')
         self._source_output = create_source_output(self._frame_params, output_frame)
+
+        draw_func: Optional[DrawFunc] = kwargs.get('draw_func')
+        if draw_func is not None and isinstance(
+            self._source_output, SourceOutputWithFrame
+        ):
+            pipeline_cfg.elements.append(draw_func)
 
         self._demuxer_src_pads: List[Gst.Pad] = []
         self._free_pad_indices: List[int] = []
