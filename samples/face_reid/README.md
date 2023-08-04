@@ -37,11 +37,14 @@ curl --silent -O -- https://hello.savant.video/face_reid.html
 
 ### Index Builder
 
+Note, there is a bug in the nvv4l2decoder on the Jetson platform so the example currently does not work correctly on that platform. See https://github.com/insight-platform/Savant/issues/314
+
 ```bash
 # if x86
 docker compose -f docker-compose.x86.yml --profile index up
 
 # if Jetson
+# currently not supported
 docker compose -f docker-compose.l4t.yml --profile index up
 
 # Ctrl+C to stop running the compose bundle
