@@ -1,6 +1,5 @@
 """Default implementation PyFunc for drawing on frame."""
 from typing import Any, Dict, Optional
-import pyds
 import cv2
 from savant_rs.draw_spec import (
     ObjectDraw,
@@ -41,20 +40,11 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
             self.default_spec_track_id = get_default_draw_spec(track_id=True)
             self.default_spec_no_track_id = get_default_draw_spec(track_id=False)
 
-        self.frame_streams = []
-
-    def __call__(self, nvds_frame_meta: pyds.NvDsFrameMeta, buffer: Gst.Buffer):
-        with nvds_to_gpu_mat(buffer, nvds_frame_meta) as frame_mat:
-            stream = cv2.cuda.Stream()
-            self.frame_streams.append(stream)
+    def draw(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
+        with nvds_to_gpu_mat(buffer, frame_meta.frame_meta) as frame_mat:
+            stream = self.get_cuda_stream(frame_meta)
             with Artist(frame_mat, stream) as artist:
-                self.draw_on_frame(NvDsFrameMeta(nvds_frame_meta), artist)
-
-    def finalize(self):
-        """Finalize batch processing. Wait for all frame CUDA streams to finish."""
-        for stream in self.frame_streams:
-            stream.waitForCompletion()
-        self.frame_streams = []
+                self.draw_on_frame(frame_meta, artist)
 
     def override_draw_spec(
         self, object_meta: ObjectMeta, draw_spec: ObjectDraw

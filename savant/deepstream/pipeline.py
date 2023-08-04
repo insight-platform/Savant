@@ -736,6 +736,10 @@ class NvDsPipeline(GstPipeline):
         :param link: Whether to automatically link demuxer to the last pipeline element.
         """
 
+        if self._draw_func and isinstance(self._source_output, SourceOutputWithFrame):
+            self.add_element(self._draw_func, link=link)
+            link = True
+
         demuxer = self.add_element(
             PipelineElement(
                 element='nvstreamdemux',
@@ -747,47 +751,8 @@ class NvDsPipeline(GstPipeline):
             demuxer, self._max_parallel_streams
         )
         sink_peer_pad: Gst.Pad = demuxer.get_static_pad('sink').get_peer()
-        if self._draw_func and isinstance(self._source_output, SourceOutputWithFrame):
-            sink_peer_pad.add_probe(Gst.PadProbeType.BUFFER, self._draw_on_frame_probe)
         sink_peer_pad.add_probe(Gst.PadProbeType.BUFFER, self.update_frame_meta)
         return demuxer
-
-    def _draw_on_frame_probe(
-        self,
-        pad: Gst.Pad,
-        info: Gst.PadProbeInfo,
-    ) -> Gst.PadProbeReturn:
-        """Pad probe to draw on frames."""
-
-        buffer: Gst.Buffer = info.get_buffer()
-        nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
-        for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
-            if self._can_draw_on_frame(nvds_frame_meta):
-                self._draw_func(nvds_frame_meta, buffer)
-        self._draw_func.instance.finalize()
-        return Gst.PadProbeReturn.OK
-
-    def _can_draw_on_frame(self, nvds_frame_meta: pyds.NvDsFrameMeta) -> bool:
-        """Check whether we can draw on this specific frame."""
-
-        if self._draw_func.condition.tag is None:
-            return True
-
-        source_id, frame_pts, frame_idx, frame_meta = self._get_nvds_savant_frame_meta(
-            nvds_frame_meta
-        )
-
-        if self._draw_func.condition.tag in frame_meta.tags:
-            return True
-        else:
-            self._logger.debug(
-                'Frame from source %s with IDX %s PTS %s does not have tag %s. Skip drawing on it.',
-                source_id,
-                frame_idx,
-                frame_pts,
-                self._draw_func.condition.tag,
-            )
-            return False
 
     def _allocate_demuxer_pads(self, demuxer: Gst.Element, n_pads: int):
         """Allocate a fixed number of demuxer src pads."""
