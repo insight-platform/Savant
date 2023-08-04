@@ -7,7 +7,8 @@ parameters:
     padding:
       keep: true
       left: 0
-      # for 2x112px mini-portraits + 3x25px paddings
+      # for 2x112px mini-portraits + 3x22px paddings
+      # total width of 1570 is expected
       right: ${calc:"2*arg_0 + 3*arg_1", ${parameters.face_width}, ${parameters.face_tile_padding}}
       top: 0
       bottom: 0
@@ -15,7 +16,7 @@ parameters:
   output_frame:
     codec: h264
 
-  face_tile_padding: 25
+  face_tile_padding: 22
   face_width: 112
   face_height: 112
   detection_model_name: yolov5nface
@@ -98,7 +99,7 @@ pipeline:
         output:
           layer_names: [ 'feature', 'norm' ]
           converter:
-            module:  savant.converter
+            module: savant.converter
             class_name: TensorToVectorConverter
           attributes:
             - name: feature

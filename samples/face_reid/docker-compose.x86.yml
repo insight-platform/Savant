@@ -25,7 +25,6 @@ services:
       - ../../models/face_reid:/models
       - ../../downloads/face_reid:/downloads
       - ..:/opt/savant/samples
-      - ../../savant:/usr/local/lib/python3.8/dist-packages/savant
     command: samples/face_reid/index_builder.yml
     environment:
       - ZMQ_SRC_ENDPOINT=rep+bind:ipc:///tmp/zmq-sockets/input-video.ipc
@@ -46,7 +45,6 @@ services:
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - /tmp/video-loop-source-downloads:/tmp/video-loop-source-downloads
-      - ../../data/modules/face_reid/:/data
     environment:
       - LOCATION=https://eu-central-1.linodeobjects.com/savant-data/demo/jumanji_cast.mp4
       - DOWNLOAD_PATH=/tmp/video-loop-source-downloads
@@ -66,7 +64,6 @@ services:
       - ../../models/face_reid:/models
       - ../../downloads/face_reid:/downloads
       - ..:/opt/savant/samples
-      - ../../savant:/usr/local/lib/python3.8/dist-packages/savant
     command: samples/face_reid/module.yml
     environment:
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
@@ -98,7 +95,7 @@ services:
       - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
       - SOURCE_ID=video
       - FRAMERATE=25/1
-      - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x720.jpeg
+      - STUB_FILE_LOCATION=/stub_imgs/smpte100_1570x720.jpeg
       - DEV_MODE=True
     command: python -m adapters.ds.sinks.always_on_rtsp
     runtime: nvidia
