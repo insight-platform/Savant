@@ -46,7 +46,7 @@ def check_encoder_is_available(parameters: Dict[str, Any]) -> bool:
             properties=converter_props,
         ),
         PipelineElement(
-            codec.value.encoder,
+            codec.value.encoder(output_frame.get('encoder')),
             properties=output_frame.get('encoder_params', {}),
         ),
         PipelineElement('fakesink'),

@@ -2,6 +2,8 @@ import json
 from fractions import Fraction
 from pathlib import Path
 from typing import Any, NamedTuple, Optional, Tuple, Union
+from typing import Any, Dict, NamedTuple, Optional, Union
+from splitstream import splitfile
 
 from savant_rs.primitives import EndOfStream, VideoFrame
 from savant_rs.utils.serialization import Message, save_message_to_bytes
@@ -23,6 +25,13 @@ class FrameParams(NamedTuple):
     width: int
     height: int
     framerate: str
+
+
+def is_videoframe_metadata(metadata: Dict[str, Any]) -> bool:
+    """Check that metadata contained if metadata is a video frame metadata. ."""
+    if "schema" in metadata and metadata["schema"] != "VideoFrame":
+        return False
+    return True
 
 
 class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
@@ -133,6 +142,7 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
         self.stream_in_progress = False
         self.read_metadata: bool = False
         self.json_metadata = None
+        self.frame_num = 0
 
     def do_set_caps(  # pylint: disable=unused-argument
         self, in_caps: Gst.Caps, out_caps: Gst.Caps
@@ -240,6 +250,7 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
                 self.json_metadata = self.read_json_metadata_file(
                     self.location.parent / f"{self.location.stem}.json"
                 )
+                self.frame_num = 0
                 self.send_end_message()
         self.last_location = self.location
         self.last_frame_params = self.frame_params
@@ -293,6 +304,7 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
                 self.json_metadata = self.read_json_metadata_file(
                     self.location.parent / f"{self.location.stem}.json"
                 )
+                self.frame_num = 0
 
         # Cannot use `super()` since it is `self`
         return GstBase.BaseTransform.do_sink_event(self, event)
@@ -302,12 +314,12 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
         if self.read_metadata:
             if location.is_file():
                 with open(location, 'r') as fp:
-                    json_metadata = dict(
+                    json_metadata = list(
                         map(
-                            lambda x: (x["pts"], x),
+                            lambda x: x["metadata"],
                             filter(
-                                lambda x: x["schema"] == "VideoFrame",
-                                map(json.loads, fp.readlines()),
+                                is_videoframe_metadata,
+                                map(json.loads, splitfile(fp, format="json")),
                             ),
                         )
                     )
@@ -336,7 +348,9 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
             pts = 0
         objects = None
         if self.read_metadata and self.json_metadata:
-            objects = self.json_metadata[pts]['metadata']['objects']
+            frame_metadata = self.json_metadata[self.frame_num]
+            self.frame_num += 1
+            objects = frame_metadata['objects']
 
         tags = {}
         if self.location:

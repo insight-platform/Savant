@@ -77,12 +77,40 @@ pipeline:
             name: yolov8m
             model:
               remote:
-                url: s3://savant-data/models/yolov8m/yolov8m_f630b10.zip
-                checksum_url: s3://savant-data/models/yolov8m/yolov8m_f630b10.md5
+                url: s3://savant-data/models/yolov8m_f630b10/yolov8m_f630b10.zip
+                checksum_url: s3://savant-data/models/yolov8m_f630b10/yolov8m_f630b10.md5
                 parameters:
                   endpoint: https://eu-central-1.linodeobjects.com
               format: onnx
               model_file: yolov8m.onnx
+              config_file: config_infer_primary_yoloV8.txt
+              # max GPU RAM used to build the engine, 6GB by default
+              # set lower than total GPU RAM available on your hardware
+              workspace_size: 6144
+              output:
+                objects:
+                  - class_id: ${parameters.detected_object.id}
+                    label: ${parameters.detected_object.label}
+
+    # variant group: yolov8s detector
+    # groups are included in the pipeline.elements alongside regular units or other groups
+    - group:
+        # enabled if env var DETECTOR==yolov8s
+        init_condition:
+          expr: ${oc.env:DETECTOR}
+          value: yolov8s
+        elements:
+          # below follows detector unit definition as usual
+          - element: nvinfer@detector
+            name: yolov8s
+            model:
+              remote:
+                url: s3://savant-data/models/yolov8s_f630b10/yolov8s_f630b10.zip
+                checksum_url: s3://savant-data/models/yolov8s_f630b10/yolov8s_f630b10.md5
+                parameters:
+                  endpoint: https://eu-central-1.linodeobjects.com
+              format: onnx
+              model_file: yolov8s.onnx
               config_file: config_infer_primary_yoloV8.txt
               # max GPU RAM used to build the engine, 6GB by default
               # set lower than total GPU RAM available on your hardware

@@ -104,6 +104,7 @@ run-dev:
 		-v `pwd`/gst_plugins:$(PROJECT_PATH)/gst_plugins \
 		-v `pwd`/samples:$(PROJECT_PATH)/samples \
 		-v `pwd`/savant:$(PROJECT_PATH)/savant \
+		-v `pwd`/scripts:$(PROJECT_PATH)/scripts \
 		-v `pwd`/var:$(PROJECT_PATH)/var \
 		-v /tmp/zmq-sockets:/tmp/zmq-sockets \
 		--entrypoint /bin/bash \
