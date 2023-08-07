@@ -16,15 +16,15 @@ class BranchInfo:
     sink: Optional[Gst.Bin] = None
 
 
-class AvroVideoPlayer(LoggerMixin, Gst.Bin):
-    """Plays avro video on display."""
+class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
+    """Plays savant-rs video on display."""
 
-    GST_PLUGIN_NAME = 'avro_video_player'
+    GST_PLUGIN_NAME = 'savant_rs_video_player'
 
     __gstmetadata__ = (
-        'Avro video player',
+        'Savant-rs video player',
         'Bin/Sink/Player',
-        'Deserializes avro video and plays it on display',
+        'Deserializes savant-rs video and plays it on display',
         'Pavel Tomskikh <tomskih_pa@bw-sw.com>',
     )
 
@@ -65,7 +65,9 @@ class AvroVideoPlayer(LoggerMixin, Gst.Bin):
         self._sync = False
         self._closing_delay = 0
 
-        self._decoder: Gst.Element = Gst.ElementFactory.make('avro_video_decode_bin')
+        self._decoder: Gst.Element = Gst.ElementFactory.make(
+            'savant_rs_video_decode_bin'
+        )
         self._decoder.set_property('pass-eos', True)
         self.add(self._decoder)
         self._decoder.connect('pad-added', self.on_pad_added)
@@ -226,9 +228,9 @@ class AvroVideoPlayer(LoggerMixin, Gst.Bin):
 
 
 # register plugin
-GObject.type_register(AvroVideoPlayer)
+GObject.type_register(SavantRsVideoPlayer)
 __gstelementfactory__ = (
-    AvroVideoPlayer.GST_PLUGIN_NAME,
+    SavantRsVideoPlayer.GST_PLUGIN_NAME,
     Gst.Rank.NONE,
-    AvroVideoPlayer,
+    SavantRsVideoPlayer,
 )

@@ -79,7 +79,7 @@ Muxed Virtual Stream block accepts the streaming data from the outside world via
 
 Virtual Stream Manager investigates the packets from the Muxed Virtual Stream and dynamically manages corresponding Gstreamer elements to integrate streams into the pipeline.
 
-Each message received by Muxed Virtual Stream is in AVRO format, including stream information, payload, and metadata attributes. While stream information and payload are mandatory, metadata attributes are optional elements that provide two features:
+Each message received by Muxed Virtual Stream is in Savant-RS format, including stream information, payload, and metadata attributes. While stream information and payload are mandatory, metadata attributes are optional elements that provide two features:
 - ability to adjust the processing on a frame-by-frame basis;
 - ability to split pipelines into a decoupled parts;
 
@@ -89,7 +89,7 @@ As an example of decoupling, you can imagine a pipeline that requires enriching 
 
 ![metadata](https://user-images.githubusercontent.com/15047882/168040020-e87f288d-8cad-4b6c-8ec7-a27dc4b649f5.png)
 
-Sink streams are also muxed and virtualized. The data is in AVRO format and is sent to a single ZeroMQ socket, which also can be:
+Sink streams are also muxed and virtualized. The data is in Savant-RS format and is sent to a single ZeroMQ socket, which also can be:
 - Pub/Sub - when one needs to drop the excessive output data but continue running the inference in real-time (fits for processing of already-decoded, raw streams);
 - Dealer/Router - when one needs to use back-pressure to stop the pipeline from sending the data too fast because receiving part is too slow to keep up;
 - Req/Rep - when one needs to ensure that the packet is delivered to the receiver before the next one is transferred.
@@ -178,4 +178,3 @@ The whole pipeline of elements works as shown in the picture:
 ![module](https://user-images.githubusercontent.com/15047882/168824194-fa7da94a-6a99-443d-814f-4d16b38d8aee.png)
 
 Ideally, heavyweight image frames do not leave the GPU RAM, being handled by CUDA kernels, while the system CPU executes metadata operations. However, sometimes, the image frames or at least parts of them may be copied to the CPU. When an element doesn't have a CUDA kernel implemented, less-efficient processing is accomplished in the system CPU. Another case is when a highly efficient model implemented in CPU exists - e.g., a model from OpenVino Zoo, so it can be effective to copy part of a frame to run CPU inference. 
-

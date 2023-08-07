@@ -3,6 +3,9 @@ from contextlib import contextmanager
 from typing import Any, Callable, Dict, List, Optional
 
 from gi.repository import Gst  # noqa:F401
+from savant_rs.utils import ByteBuffer
+from savant_rs.utils.serialization import Message, load_message_from_bytebuffer
+
 from savant.gstreamer.ffi import LIBGST, GstMapInfo
 
 
@@ -136,3 +139,13 @@ def link_pads(src_pad: Gst.Pad, sink_pad: Gst.Pad):
         f'Unable to link {src_pad.get_parent_element().get_name()}.{src_pad.get_name()} '
         f'to {sink_pad.get_parent_element().get_name()}.{sink_pad.get_name()}'
     )
+
+
+def load_message_from_gst_buffer(buffer: Gst.Buffer) -> Message:
+    frame_meta_mapinfo: Gst.MapInfo
+    result, frame_meta_mapinfo = buffer.map_range(0, 1, Gst.MapFlags.READ)
+    assert result, f'Cannot read buffer with PTS={buffer.pts}.'
+    try:
+        return load_message_from_bytebuffer(ByteBuffer(frame_meta_mapinfo.data))
+    finally:
+        buffer.unmap(frame_meta_mapinfo)

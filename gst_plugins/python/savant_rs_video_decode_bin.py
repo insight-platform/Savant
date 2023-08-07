@@ -1,4 +1,4 @@
-"""AvroVideoDecodeBin element."""
+"""SavantRsVideoDecodeBin element."""
 import time
 
 from threading import Event, Lock
@@ -11,16 +11,16 @@ from savant.gstreamer.codecs import Codec, CODEC_BY_CAPS_NAME
 from savant.gstreamer.utils import on_pad_event, pad_to_source_id
 from savant.utils.logging import LoggerMixin
 from savant.utils.platform import is_aarch64
-from gst_plugins.python.avro_video_demux import AVRO_VIDEO_DEMUX_PROPERTIES
+from gst_plugins.python.savant_rs_video_demux import SAVANT_RS_VIDEO_DEMUX_PROPERTIES
 
 OUT_CAPS = Gst.Caps.from_string('video/x-raw(memory:NVMM);video/x-raw')
 DEFAULT_PASS_EOS = True
 NESTED_DEMUX_PROPERTIES = {
     k: v
-    for k, v in AVRO_VIDEO_DEMUX_PROPERTIES.items()
+    for k, v in SAVANT_RS_VIDEO_DEMUX_PROPERTIES.items()
     if k in ['source-timeout', 'source-eviction-interval', 'max-parallel-streams']
 }
-AVRO_VIDEO_DECODE_BIN_PROPERTIES = {
+SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES = {
     'low-latency-decoding': (
         bool,
         'Enable low-latency mode for decoding',
@@ -38,13 +38,13 @@ AVRO_VIDEO_DECODE_BIN_PROPERTIES = {
     ),
     **NESTED_DEMUX_PROPERTIES,
 }
-AVRO_VIDEO_DECODE_BIN_SINK_PAD_TEMPLATE = Gst.PadTemplate.new(
+SAVANT_RS_VIDEO_DECODE_BIN_SINK_PAD_TEMPLATE = Gst.PadTemplate.new(
     'sink',
     Gst.PadDirection.SINK,
     Gst.PadPresence.ALWAYS,
     Gst.Caps.new_any(),
 )
-AVRO_VIDEO_DECODE_BIN_SRC_PAD_TEMPLATE = Gst.PadTemplate.new(
+SAVANT_RS_VIDEO_DECODE_BIN_SRC_PAD_TEMPLATE = Gst.PadTemplate.new(
     'src_%s',
     Gst.PadDirection.SRC,
     Gst.PadPresence.SOMETIMES,
@@ -69,25 +69,25 @@ class BranchInfo:
         return self.caps[0].get_name()
 
 
-class AvroVideoDecodeBin(LoggerMixin, Gst.Bin):
-    """Decodes avro video."""
+class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
+    """'Decodes savant-rs video stream."""
 
-    GST_PLUGIN_NAME = 'avro_video_decode_bin'
+    GST_PLUGIN_NAME = 'savant_rs_video_decode_bin'
 
     __gstmetadata__ = (
-        'Avro video decode bin',
+        'Savant-rs video decode bin',
         'Bin/Decoder',
-        'Decodes avro video. '
+        'Decodes savant-rs video stream. '
         'Outputs decoded video frames to src pad "src_<source_id>".',
         'Pavel Tomskikh <tomskih_pa@bw-sw.com>',
     )
 
     __gsttemplates__ = (
-        AVRO_VIDEO_DECODE_BIN_SINK_PAD_TEMPLATE,
-        AVRO_VIDEO_DECODE_BIN_SRC_PAD_TEMPLATE,
+        SAVANT_RS_VIDEO_DECODE_BIN_SINK_PAD_TEMPLATE,
+        SAVANT_RS_VIDEO_DECODE_BIN_SRC_PAD_TEMPLATE,
     )
 
-    __gproperties__ = AVRO_VIDEO_DECODE_BIN_PROPERTIES
+    __gproperties__ = SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -99,7 +99,7 @@ class AvroVideoDecodeBin(LoggerMixin, Gst.Bin):
         self._low_latency_decoding = False
         self._pass_eos = DEFAULT_PASS_EOS
 
-        self._demuxer: Gst.Element = Gst.ElementFactory.make('avro_video_demux')
+        self._demuxer: Gst.Element = Gst.ElementFactory.make('savant_rs_video_demux')
         self._demuxer.set_property('store-metadata', True)
         self._demuxer.set_property('eos-on-timestamps-reset', True)
         self.add(self._demuxer)
@@ -216,9 +216,9 @@ class AvroVideoDecodeBin(LoggerMixin, Gst.Bin):
                     self._max_parallel_streams
                     and len(self._branches) >= self._max_parallel_streams
                 ):
-                    # Avro_video_demux already sent EOS for some stream
+                    # savant_rs_video_demux already sent EOS for some stream
                     # and adding a new one, but the former stream did not complete
-                    # in avro_video_decode_bin yet.
+                    # in savant_rs_video_decode_bin yet.
                     self.logger.warning(
                         'Reached maximum number of streams: %s. '
                         'Waiting resources for source %s.',
@@ -374,9 +374,9 @@ class AvroVideoDecodeBin(LoggerMixin, Gst.Bin):
 
 
 # register plugin
-GObject.type_register(AvroVideoDecodeBin)
+GObject.type_register(SavantRsVideoDecodeBin)
 __gstelementfactory__ = (
-    AvroVideoDecodeBin.GST_PLUGIN_NAME,
+    SavantRsVideoDecodeBin.GST_PLUGIN_NAME,
     Gst.Rank.NONE,
-    AvroVideoDecodeBin,
+    SavantRsVideoDecodeBin,
 )

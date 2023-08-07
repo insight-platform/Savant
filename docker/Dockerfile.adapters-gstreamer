@@ -73,7 +73,7 @@ RUN apt-get update \
 
 COPY adapters/requirements.txt adapters/requirements-gst.txt $PROJECT_PATH/adapters/
 # gstreamer1.0-python3-plugin-loader requires python 3.10
-# fastavro and pyzmq don't have built wheels for python 3.10 for aarch64
+# pyzmq don't have built wheels for python 3.10 for aarch64
 # need gcc and python3-dev to build them
 RUN if [ "$(arch)" = "aarch64" ]; then \
         apt-get update && \

@@ -346,7 +346,7 @@ class NvDsPipeline(GstPipeline):
                     with self._source_adding_lock:
                         source_info.pad_idx = self._free_pad_indices.pop(0)
                 except IndexError:
-                    # avro_video_decode_bin already sent EOS for some stream and adding a
+                    # savant_rs_video_decode_bin already sent EOS for some stream and adding a
                     # new one, but the former stream did not complete in this pipeline yet.
                     self._logger.warning(
                         'Reached maximum number of streams: %s. '
