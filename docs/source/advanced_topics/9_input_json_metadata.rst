@@ -59,8 +59,7 @@ Each json record in the file must be of the following format.
 - ``metadata`` - mandatory key
 - ``objects`` - list of objects on the frame. If there are no objects on the frame or image, the list should be empty.
 
-Each item in the ``objects`` list must satisfy the format and data type of the AVRO specification
-schema for the metadata of the object (:ref:`reference/avro:Object Schema`).
+Each item in the ``objects`` list must satisfy the specified format.
 
 Example of metadata for one object
 
@@ -90,7 +89,7 @@ Example of metadata for one object
 - ``object_id`` - unique object identifier within one frame or unique object track number;
 - ``bbox`` - bbox coordinates and angle of the object.
 - ``confidence`` - object confidence
-- ``attributes`` - list of object attributes. The list of attributes can be empty. Each attribute must correspond to the AVRO schema (:ref:`reference/avro:Attribute Schema`)
+- ``attributes`` - list of object attributes. The list of attributes can be empty. Each attribute must correspond to the specified format;
 - ``parent_model_name`` - name of the model that created the parent object. If you're converting some data you can specify any name you want;
 - ``parent_label`` - parent object label;
 - ``parent_object_id`` - unique object identifier within one frame or unique object track number.

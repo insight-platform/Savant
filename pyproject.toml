@@ -29,7 +29,7 @@ documentation = 'https://insight-platform.github.io/Savant/'
 include = ['savant*']
 
 [tool.setuptools.package-data]
-savant = ['VERSION', '**/*.yml', 'api/avro-schemas/**/*.avsc']
+savant = ['VERSION', '**/*.yml']
 
 [tool.setuptools.dynamic]
 version = {attr = 'savant.__version__'}

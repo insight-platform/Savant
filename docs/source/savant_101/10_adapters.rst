@@ -43,7 +43,7 @@ Adapters transfer video streams and metadata over network or locally. We impleme
 Savant Adapter Protocol
 -----------------------
 
-Savant uses a protocol based on `ZeroMQ <https://zeromq.org/>`__ and Apache `Avro <https://avro.apache.org/>`__ for communication between adapters and modules. It can be used to connect an adapter with other adapter, an adapter with a module, a module with a module, etc. The protocol is universal for source- and sink adapters.
+Savant uses a protocol based on `ZeroMQ <https://zeromq.org/>`__ and `Savant-RS <https://insight-platform.github.io/savant-rs/>`__ for communication between adapters and modules. It can be used to connect an adapter with other adapter, an adapter with a module, a module with a module, etc. The protocol is universal for source- and sink adapters.
 
 With the protocol, one may build oriented graphs representing data sources, sinks, and modules, arranging them within a single host or in a distributed environment like ``K8s``.
 
@@ -54,7 +54,7 @@ It supports transferring:
 - frame-related metadata (global per-frame attributes);
 - the hierarchy of objects and their attributes related to the frame.
 
-The protocol is described in the :doc:`API <../reference/avro>` section.
+The protocol is described in the `Savant-RS serialization <https://insight-platform.github.io/savant-rs/modules/savant_rs/utils_serialization.html#savant_rs.utils.serialization.Message>`__ section.
 
 Communication Sockets
 ---------------------

@@ -1,8 +1,7 @@
 """Metadata constants."""
-import numpy as np
 from savant_rs.utils.symbol_mapper import build_model_object_key
 
-UNTRACKED_OBJECT_ID = np.iinfo(np.uint64).max
+UNTRACKED_OBJECT_ID = 2**64 - 1
 """This track id is assigned to objects that have not been tracked."""
 
 DEFAULT_CONFIDENCE = 1.0
