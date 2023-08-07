@@ -687,6 +687,11 @@ class NvDsPipeline(GstPipeline):
         # input processor (post-muxer)
         muxer_src_pad: Gst.Pad = self._muxer.get_static_pad('src')
         muxer_src_pad.add_probe(
+            Gst.PadProbeType.EVENT_DOWNSTREAM,
+            on_pad_event,
+            {GST_NVEVENT_STREAM_EOS: self._on_muxer_src_pad_eos},
+        )
+        muxer_src_pad.add_probe(
             Gst.PadProbeType.BUFFER,
             self._buffer_processor.input_probe,
         )
@@ -722,12 +727,6 @@ class NvDsPipeline(GstPipeline):
             )
             self._check_pipeline_is_running()
             sink_pad: Gst.Pad = self._muxer.get_request_pad(sink_pad_name)
-            sink_pad.add_probe(
-                Gst.PadProbeType.EVENT_DOWNSTREAM,
-                on_pad_event,
-                {Gst.EventType.EOS: self._on_muxer_sink_pad_eos},
-                source_info.source_id,
-            )
 
         return sink_pad
 
@@ -747,19 +746,23 @@ class NvDsPipeline(GstPipeline):
         # Releasing muxer.sink pad to trigger nv-pad-deleted event on muxer.src pad
         element.release_request_pad(pad)
 
-    def _on_muxer_sink_pad_eos(self, pad: Gst.Pad, event: Gst.Event, source_id: str):
-        """Processes EOS event on muxer sink pad."""
+    def _on_muxer_src_pad_eos(self, pad: Gst.Pad, event: Gst.Event):
+        """Processes EOS event on muxer src pad."""
 
         self._logger.debug(
-            'Got EOS on pad %s.%s', pad.get_parent().get_name(), pad.get_name()
+            'Got GST_NVEVENT_STREAM_EOS on %s.%s',
+            pad.get_parent().get_name(),
+            pad.get_name(),
         )
+        pad_idx = gst_nvevent_parse_stream_eos(event)
+        source_id = self._sources.get_id_by_pad_index(pad_idx)
         source_info = self._sources.get_source(source_id)
         try:
             self._check_pipeline_is_running()
             GLib.idle_add(self._remove_input_elements, source_info, pad)
         except PipelineIsNotRunningError:
             self._logger.info(
-                'Pipeline is not running. Do not remove output elements for source %s.',
+                'Pipeline is not running. Do not remove input elements for source %s.',
                 source_info.source_id,
             )
         return Gst.PadProbeReturn.PASS
