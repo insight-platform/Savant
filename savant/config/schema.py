@@ -90,6 +90,17 @@ class FrameProcessingCondition:
 
 
 @dataclass
+class BufferQueuesParameters:
+    """Configure queues before and after pyfunc elements."""
+
+    length: int = 10
+    """Length of the queue in buffers (0 - no limit)."""
+
+    byte_size: int = 0
+    """Size of the queue in bytes (0 - no limit)."""
+
+
+@dataclass
 class DynamicGstProperty:
     """Allows configuring a gstreamer element property to be automatically
     updated to current value of a dynamic parameter from parameter storage."""

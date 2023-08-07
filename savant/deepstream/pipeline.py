@@ -49,6 +49,7 @@ from savant.utils.fps_meter import FPSMeter
 from savant.utils.source_info import SourceInfoRegistry, SourceInfo, Resolution
 from savant.utils.platform import is_aarch64
 from savant.config.schema import (
+    BufferQueuesParameters,
     Pipeline,
     PipelineElement,
     ModelElement,
@@ -85,9 +86,6 @@ class NvDsPipeline(GstPipeline):
 
         self._max_parallel_streams = kwargs.get('max_parallel_streams', 64)
 
-        # max number of buffers in queues between muxer and demuxer
-        self._queue_max_size_buffers = kwargs.get('queue_max_size_buffers', 10)
-
         # model artifacts path
         self._model_path = Path(kwargs['model_path'])
 
@@ -117,7 +115,9 @@ class NvDsPipeline(GstPipeline):
                 'max-parallel-streams'
             ] = self._max_parallel_streams
 
-        self._add_queues_to_pipeline(pipeline_cfg)
+        buffer_queues: Optional[BufferQueuesParameters] = kwargs.get('buffer_queues')
+        if buffer_queues is not None:
+            self._add_queues_to_pipeline(pipeline_cfg, buffer_queues)
 
         # nvjpegdec decoder is selected in decodebin according to the rank, but
         # there are problems with the plugin:
@@ -131,12 +131,16 @@ class NvDsPipeline(GstPipeline):
 
         super().__init__(name, pipeline_cfg, **kwargs)
 
-    def _add_queues_to_pipeline(self, pipeline_cfg: Pipeline):
+    def _add_queues_to_pipeline(
+        self,
+        pipeline_cfg: Pipeline,
+        buffer_queues: BufferQueuesParameters,
+    ):
         """Add queues to the pipeline before and after pyfunc elements."""
 
         queue_properties = {
-            'max-size-buffers': self._queue_max_size_buffers,
-            'max-size-bytes': 0,
+            'max-size-buffers': buffer_queues.length,
+            'max-size-bytes': buffer_queues.byte_size,
             'max-size-time': 0,
         }
         elements = []
