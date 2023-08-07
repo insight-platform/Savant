@@ -3,7 +3,7 @@ from collections import defaultdict
 from pathlib import Path
 from queue import Queue
 from threading import Lock
-from typing import Any, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 import time
 import logging
 import pyds
@@ -50,6 +50,7 @@ from savant.utils.source_info import SourceInfoRegistry, SourceInfo, Resolution
 from savant.utils.platform import is_aarch64
 from savant.config.schema import (
     BufferQueuesParameters,
+    ElementGroup,
     Pipeline,
     PipelineElement,
     ModelElement,
@@ -143,22 +144,54 @@ class NvDsPipeline(GstPipeline):
             'max-size-bytes': buffer_queues.byte_size,
             'max-size-time': 0,
         }
+        self._add_queues_to_element_group(
+            element_group=pipeline_cfg,
+            queue_properties=queue_properties,
+            last_is_queue=False,
+            next_should_be_queue=False,
+        )
+
+    def _add_queues_to_element_group(
+        self,
+        element_group: Union[Pipeline, ElementGroup],
+        queue_properties: Dict[str, Any],
+        last_is_queue: bool,
+        next_should_be_queue: bool,
+    ):
+        """Add queues to the pipeline or an element group before and after pyfunc elements."""
+
         elements = []
-        for i, element in enumerate(pipeline_cfg.elements):
-            if isinstance(element, PyFuncElement) and not (
-                elements and elements[-1].element != 'queue'
+        for i, element in enumerate(element_group.elements):
+            if isinstance(element, ElementGroup):
+                if not element.init_condition.is_enabled:
+                    continue
+
+                last_is_queue = self._add_queues_to_element_group(
+                    element,
+                    queue_properties,
+                    last_is_queue,
+                    next_should_be_queue,
+                )
+                next_should_be_queue = False
+                elements.append(element)
+                continue
+
+            if (next_should_be_queue and element.element != 'queue') or (
+                isinstance(element, PyFuncElement) and not last_is_queue
             ):
                 elements.append(PipelineElement('queue', properties=queue_properties))
 
             elements.append(element)
+            last_is_queue = element.element == 'queue'
+            next_should_be_queue = isinstance(element, PyFuncElement)
 
-            if isinstance(element, PyFuncElement) and not (
-                len(pipeline_cfg.elements) < i + 1
-                and pipeline_cfg.elements[i + 1].element != 'queue'
-            ):
-                elements.append(PipelineElement('queue', properties=queue_properties))
+        if next_should_be_queue:
+            elements.append(PipelineElement('queue', properties=queue_properties))
+            last_is_queue = True
 
-        pipeline_cfg.elements = elements
+        element_group.elements = elements
+
+        return last_is_queue
 
     def _build_buffer_processor(
         self,
