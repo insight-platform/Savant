@@ -1,7 +1,5 @@
 import os
 import re
-import subprocess
-from enum import Enum
 from fractions import Fraction
 from pathlib import Path
 from typing import List, Optional, Union
@@ -12,13 +10,8 @@ from savant.gstreamer import GLib, GObject, Gst
 from savant.gstreamer.codecs import Codec, CODEC_BY_CAPS_NAME
 from savant.gstreamer.metadata import DEFAULT_FRAMERATE
 from savant.gstreamer.utils import on_pad_event
+from savant.utils.file_types import FileType, parse_mime_types
 from savant.utils.logging import LoggerMixin
-
-
-class FileType(Enum):
-    VIDEO = 'video'
-    PICTURE = 'picture'
-
 
 MIME_TYPE_REGEX = {
     FileType.VIDEO: re.compile(r'video/.*'),
@@ -230,9 +223,12 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
             raise RuntimeError(f'"{self.location}" is not file or directory')
 
         files = [
-            Path(filepath)
-            for filepath, mime_type in parse_file_types(all_files)
-            if MIME_TYPE_REGEX[self.file_type].fullmatch(mime_type) is not None
+            filepath
+            for filepath, mime_type in parse_mime_types(all_files)
+            if (
+                FileType.from_mime_type(mime_type) == self.file_type
+                and MIME_TYPE_REGEX[self.file_type].fullmatch(mime_type) is not None
+            )
         ]
         self.logger.info('Reading %s %s files', len(files), self.file_type.value)
         assert files, f'No {self.file_type.value} files found'
@@ -439,13 +435,6 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
         buffer: Gst.Buffer = info.get_buffer()
         buffer.duration = self.frame_duration
         return Gst.PadProbeReturn.OK
-
-
-def parse_file_types(files: List[Path]):
-    output = subprocess.check_output(
-        ['file', '--no-pad', '--mime-type'] + [str(x) for x in files]
-    )
-    return [x.rsplit(': ', 1) for x in output.decode().strip().split('\n')]
 
 
 # register plugin

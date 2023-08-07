@@ -34,6 +34,7 @@ else
     EOS_ON_FILE_END="${EOS_ON_FILE_END:="true"}"
 fi
 SORT_BY_TIME="${SORT_BY_TIME:="false"}"
+READ_METADATA="${READ_METADATA:="false"}"
 
 handler() {
     kill -s SIGINT "${child_pid}"
