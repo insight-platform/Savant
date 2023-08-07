@@ -483,7 +483,13 @@ The adapter is designed to take video streams from Ethernet GigE Vision industri
 * ``GAIN_AUTO``: the auto gain mode for the camera, one of ``off``, ``once``, or ``on``;
 * ``FEATURES``: additional configuration parameters for the camera, as a space-separated list of features;
 * ``HOST_NETWORK``: host network to use;
-* ``CAMERA_NAME``: name of the camera, in the format specified in the command description.
+* ``CAMERA_NAME``: name of the camera, in the format specified in the command description;
+* ``ENCODE``: a flag indicating the need to encode video stream with HEVC codec; default is ``False``;
+* ``ENCODE_BITRATE``: the bitrate for the encoded video stream, in kbit/sec; default is ``2048``;
+* ``ENCODE_KEY_INT_MAX``: the maximum interval between two keyframes, in frames; default is ``30``;
+* ``ENCODE_SPEED_PRESET``: preset name for speed/quality tradeoff options; one of ``ultrafast``, ``superfast``, ``veryfast``, ``faster``, ``fast``, ``medium``, ``slow``, ``slower``, ``veryslow``, ``placebo``; default is ``medium``;
+* ``ENCODE_TUNE``: preset name for tuning options; one of ``psnr``, ``ssim``, ``grain``, ``zerolatency``, ``fastdecode``, ``animation``; default is ``zerolatency``.
+
 
 Running the adapter with Docker:
 
@@ -509,12 +515,13 @@ FFmpeg Source Adapter
 The adapter delivers video stream using FFmpeg library. It can be used to read video files, RTSP streams, and other sources supported by FFmpeg.
 
 **Parameters**:
-- ``URI`` (**required**): an URI of the stream;
-- ``FFMPEG_PARAMS``: a comma separated string ``key=value`` with parameters for FFmpeg (e.g. ``rtsp_transport=tcp``, ``input_format=mjpeg,video_size=1280x720``);
-- ``FFMPEG_LOGLEVEL``: a log level for FFmpeg; default is ``info``;
-- ``BUFFER_LEN``: a maximum amount of frames in FFmpeg buffer; default is ``50``;
-- ``SYNC_OUTPUT``: a flag indicating the need to send frames from source synchronously (i.e. at the source file rate); default is ``False``;
-- ``SYNC_DELAY``: a delay in seconds before sending frames; default is ``0``;
+
+* ``URI`` (**required**): an URI of the stream;
+* ``FFMPEG_PARAMS``: a comma separated string ``key=value`` with parameters for FFmpeg (e.g. ``rtsp_transport=tcp``, ``input_format=mjpeg,video_size=1280x720``);
+* ``FFMPEG_LOGLEVEL``: a log level for FFmpeg; default is ``info``;
+* ``BUFFER_LEN``: a maximum amount of frames in FFmpeg buffer; default is ``50``;
+* ``SYNC_OUTPUT``: a flag indicating the need to send frames from source synchronously (i.e. at the source file rate); default is ``False``;
+* ``SYNC_DELAY``: a delay in seconds before sending frames; default is ``0``.
 
 Running the adapter with Docker:
 

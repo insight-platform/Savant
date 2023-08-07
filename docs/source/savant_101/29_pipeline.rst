@@ -17,7 +17,7 @@ Default module configuration file already defines the :py:attr:`~savant.config.s
 
 .. literalinclude:: ../../../savant/config/default.yml
   :language: YAML
-  :lines: 86-
+  :lines: 87-
 
 It is possible to redefine them, but the encouraged operation mode assumes the use of ZeroMQ source and sink.
 
@@ -33,6 +33,8 @@ When writing a module, a user normally defines only pipeline :py:attr:`~savant.c
 #. other DeepStream plugins (except for sinks or sources).
 
 The units are discussed in detail in the following sections.
+
+Along with the listed units, pipeline definition may include :py:class:`~savant.config.schema.ElementGroup` nodes, which are used to introduce a condition on including the elements into the pipeline. Read more about this in the :doc:`54_conditional_unit_init` section.
 
 Frame Processing Workflow
 -------------------------

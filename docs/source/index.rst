@@ -149,6 +149,7 @@ As for now, we provide images for x86 architecture and for Jetson hardware.
    savant_101/40_cm
    savant_101/43_am
    savant_101/53_complexm
+   savant_101/54_conditional_unit_init
    savant_101/55_preprocessing.rst
    savant_101/60_nv_trackers
    savant_101/70_python
@@ -172,6 +173,14 @@ As for now, we provide images for x86 architecture and for Jetson hardware.
    advanced_topics/4_etcd
    advanced_topics/6_chaining
    advanced_topics/8_ext_systems
+   advanced_topics/9_input_json_metadata
+
+.. toctree::
+   :maxdepth: 0
+   :hidden:
+   :caption: Cookbook
+
+   recipes/index.rst
 
 .. toctree::
    :maxdepth: 1

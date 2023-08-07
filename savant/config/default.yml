@@ -55,6 +55,7 @@ parameters:
   # E.g.:
   # output_frame:
   #   codec: h264
+  #   encoder: nvenc
   #   encoder_params:
   #     iframeinterval: 25
   #   condition:

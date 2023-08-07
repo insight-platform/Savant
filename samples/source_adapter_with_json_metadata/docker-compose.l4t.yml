@@ -1,0 +1,57 @@
+version: "3.3"
+services:
+
+  image-json-source:
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:latest
+    depends_on:
+      - module
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ../../data/source_adapter_with_json_metadata:/data/
+    environment:
+      - READ_METADATA=TRUE
+      - ZMQ_ENDPOINT=req+connect:ipc:///tmp/zmq-sockets/input.ipc
+      - SOURCE_ID=coco-images
+      - LOCATION=/data
+      - FILE_TYPE=picture
+    entrypoint: /opt/savant/adapters/gst/sources/media_files.sh
+
+  module:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.x86
+    restart: unless-stopped
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ../../models/traffic_meter:/models
+      - ../../downloads/traffic_meter:/downloads
+      - ..:/opt/savant/samples
+    command: samples/source_adapter_with_json_metadata/demo.yml
+    environment:
+      - ZMQ_SRC_ENDPOINT=rep+bind:ipc:///tmp/zmq-sockets/input.ipc
+      - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output.ipc
+      - FPS_PERIOD=1000
+      - LOGLEVEL=INFO
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  image-json-sink:
+    image: ghcr.io/insight-platform/savant-adapters-py-l4t:latest
+    restart: unless-stopped
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ../../data/results:/results
+    environment:
+      - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output.ipc
+      - CHUNK_SIZE=1000
+      - DIR_LOCATION=/results
+    entrypoint: /opt/savant/adapters/python/sinks/image_files.py
+
+
+volumes:
+  zmq_sockets:

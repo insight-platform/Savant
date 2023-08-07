@@ -9,7 +9,11 @@ Savant is built on DeepStream and provides a high-level abstraction layer for bu
 
 ![GitHub release (with filter)](https://img.shields.io/github/v/release/insight-platform/Savant)
 [![Build status](https://github.com/insight-platform/Savant/actions/workflows/build-docker-latest.yml/badge.svg?branch=develop)](https://github.com/insight-platform/Savant/actions/workflows/build-docker-latest.yml)
-[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/SavantFramework.svg?style=social&label=Follow%20%40SavantFramework)](https://twitter.com/SavantFramework)
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/SavantFramework.svg?style=social&label=Follow%20%40SavantFramework)](https://twitter.com/SavantFramework) [![Blog](https://img.shields.io/badge/Inside%20InSight%20Blog-444444?logo=medium)](https://blog.savant-ai.io/)
+
+Savant is a member of Nvidia Inception Program:
+
+![savant_inception_member](https://github.com/insight-platform/Savant/assets/15047882/12928291-05cc-4639-b43c-6b13d36a01fd)
 
 ## Chat With Us
 
@@ -80,10 +84,10 @@ If your task is to implement high-performance production-ready computer vision a
 
 ## Runs On Nvidia Hardware
 
-- Nvidia Jetson NX, Xavier AGX;
+- Nvidia Jetson NX/AGX, Orin Nano/NX/AGX;
 - Nvidia Turing GPU;
 - Nvidia Ampere GPU;
-- Nvidia Hopper, hopefully - haven't chance to get it yet :-)
+- Nvidia Hopper, hopefully, we did not have a chance to try it yet :-)
 
 ## About Nvidia DeepStream
 

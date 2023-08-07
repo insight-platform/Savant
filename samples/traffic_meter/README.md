@@ -58,6 +58,14 @@ cd ../..
 
 To create a custom Grafana dashboard, sign in with `admin\admin` credentials.
 
+## Switch detector model
+
+The sample includes an option to choose the model used for object detection. Choose between NVIDIA [peoplenet](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/peoplenet) and YOLOv8 by changing the env variable in `.env` file:
+
+- `DETECTOR=peoplenet` for peoplnet
+- `DETECTOR=yolov8m` for yolov8m
+- `DETECTOR=yolov8s` for yolov8s
+
 ## Performance Measurement
 
 Download the video file to your local folder. For example, create a data folder and download the video into it (all commands must be executed from the root directory of the project Savant)
@@ -85,24 +93,41 @@ to build the module docker image.
 
 Now you are ready to run the performance benchmark with the following command:
 
+Peoplenet:
+
 ```bash
 docker run --rm -it --gpus=all \
+-e DETECTOR=peoplenet \
 -v `pwd`/samples:/opt/savant/samples \
 -v `pwd`/data:/data:ro \
 -v `pwd`/models/traffic_meter:/models \
 -v `pwd`/downloads/traffic_meter:/downloads \
 traffic_meter-module \
-samples/traffic_meter/module-peoplenet-performance.yml
+samples/traffic_meter/module-performance.yml
 ```
 
-or
+Yolov8m:
 
 ```bash
 docker run --rm -it --gpus=all \
+-e DETECTOR=yolov8m \
 -v `pwd`/samples:/opt/savant/samples \
 -v `pwd`/data:/data:ro \
 -v `pwd`/models/traffic_meter:/models \
 -v `pwd`/downloads/traffic_meter:/downloads \
 traffic_meter-module \
-samples/traffic_meter/module-yolov8m-performance.yml
+samples/traffic_meter/module-performance.yml
+```
+
+Yolov8s:
+
+```bash
+docker run --rm -it --gpus=all \
+-e DETECTOR=yolov8s \
+-v `pwd`/samples:/opt/savant/samples \
+-v `pwd`/data:/data:ro \
+-v `pwd`/models/traffic_meter:/models \
+-v `pwd`/downloads/traffic_meter:/downloads \
+traffic_meter-module \
+samples/traffic_meter/module-performance.yml
 ```
