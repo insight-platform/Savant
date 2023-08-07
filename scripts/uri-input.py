@@ -15,7 +15,7 @@ from savant.utils.file_types import FileType, parse_mime_types
 
 logger = logging.getLogger('uri-input')
 
-adapters_dir = Path(__file__).parent.parent / 'adapters' / 'gst' / 'sources'
+ADAPTERS_DIR = Path(__file__).parent.parent / 'adapters' / 'gst' / 'sources'
 
 
 class SourceAdapter(Enum):
@@ -196,7 +196,7 @@ def run_media_file_source(
 
 
 def _run_source_adapter(adapter: str, env: Dict[str, Any]):
-    command = [str((adapters_dir / adapter).absolute())]
+    command = [str((ADAPTERS_DIR / adapter).absolute())]
     env = {k: str(v) for k, v in env.items() if v is not None}
     env.update(os.environ)
 
