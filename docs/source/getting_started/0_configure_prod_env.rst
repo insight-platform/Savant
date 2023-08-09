@@ -17,6 +17,11 @@ You can look for detailed environment setup instructions in the Nvidia `Quicksta
 
 The recommended spare space in a filesystem where docker images are stored is **15 GB**.
 
+Nvidia Jetson
+-------------
+
+An Nvidia Jetson device is ready to run Savant after installing the system.
+
 Ubuntu 22.04
 ------------
 
