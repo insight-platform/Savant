@@ -20,9 +20,7 @@ parameters:
     # Frame is output without any encoding
     # this is to circumvent 3 hardware decoding processes limit on NVIDIA consumer hardware
     codec: hevc
-  # PyFunc for drawing on frames
   batch_size: 1
-  draw_func: {}
 
 
 # pipeline definition
@@ -35,11 +33,13 @@ pipeline:
 
   # define pipeline's main elements
   elements:
+#    - element: queue
     - element: pyfunc
       # specify the pyfunc's python module
       module: samples.opencv_cuda_bg_remover_mog2.bgremover
       # specify the pyfunc's python class from the module
       class_name: BgRemover
+#    - element: queue
 
   # noop pipeline sink, not using sink adapter
   sink:
