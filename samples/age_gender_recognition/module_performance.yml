@@ -39,7 +39,7 @@ pipeline:
   source:
     element: uridecodebin
     properties:
-      uri: file:///data/elon_musk.mp4
+      uri: file:///data/elon_musk_perf.mp4
 
   elements:
 

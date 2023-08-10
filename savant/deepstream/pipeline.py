@@ -276,7 +276,7 @@ class NvDsPipeline(GstPipeline):
                     with self._source_adding_lock:
                         source_info.pad_idx = self._free_pad_indices.pop(0)
                 except IndexError:
-                    # avro_video_decode_bin already sent EOS for some stream and adding a
+                    # savant_rs_video_decode_bin already sent EOS for some stream and adding a
                     # new one, but the former stream did not complete in this pipeline yet.
                     self._logger.warning(
                         'Reached maximum number of streams: %s. '
@@ -333,6 +333,13 @@ class NvDsPipeline(GstPipeline):
             nv_video_converter.set_property(
                 'nvbuf-memory-type', int(pyds.NVBUF_MEM_CUDA_UNIFIED)
             )
+        elif new_pad_caps.get_structure(0).get_value("format") == "RGB":
+            #   https://forums.developer.nvidia.com/t/buffer-transform-failed-for-nvvideoconvert-for-num-input-channels-num-output-channels-on-jetson/237578
+            #   https://forums.developer.nvidia.com/t/nvvideoconvert-buffer-transform-failed-on-jetson/261370
+            self._logger.info(
+                "Input stream is RGB, using  compute-hw=1 as recommended by Nvidia"
+            )
+            nv_video_converter.set_property('compute-hw', 1)
         if self._frame_params.padding:
             dest_crop = ':'.join(
                 str(x)

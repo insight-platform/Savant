@@ -50,9 +50,11 @@ class SenderSocketTypes(Enum):
 
 class Defaults:
     RECEIVE_TIMEOUT = 1000
+    SENDER_RECEIVE_TIMEOUT = 5000
     RECEIVE_HWM = 50
     SEND_HWM = 50
-    EOS_CONFIRMATION_TIMEOUT = 10_000
+    REQ_RECEIVE_RETRIES = 3
+    EOS_CONFIRMATION_RETRIES = 3
 
 
 def get_socket_endpoint(socket_endpoint: str):
@@ -114,11 +116,12 @@ class ZeroMQSource:
         )
 
         self.topic_prefix = topic_prefix.encode() if topic_prefix else b''
+        self.receive_hwm = receive_hwm
 
         # might raise exceptions
         # will be handled in ZeromqSrc element
         # or image_files.py / metadata_json.py Python sinks
-        self.socket_type, bind, socket = parse_zmq_socket_uri(
+        self.socket_type, self.bind, self.socket = parse_zmq_socket_uri(
             uri=socket,
             socket_type_name=socket_type,
             socket_type_enum=ReceiverSocketTypes,
@@ -126,22 +129,43 @@ class ZeroMQSource:
         )
 
         self.receive_timeout = receive_timeout
+        self.zmq_context: Optional[zmq.Context] = None
+        self.receiver: Optional[zmq.Socket] = None
+        self.routing_id_filter = RoutingIdFilter(routing_ids_cache_size)
+        self.is_alive = False
+        self._always_respond = self.socket_type == ReceiverSocketTypes.REP
+
+    def start(self):
+        """Start ZeroMQ source."""
+
+        if self.is_alive:
+            logger.warning('ZeroMQ source is already started.')
+            return
+
+        logger.info(
+            'Starting ZMQ source: socket %s, type %s, bind %s.',
+            self.socket,
+            self.socket_type,
+            self.bind,
+        )
+
         self.zmq_context = zmq.Context()
         self.receiver = self.zmq_context.socket(self.socket_type.value)
-        self.receiver.setsockopt(zmq.RCVHWM, receive_hwm)
-        if bind:
-            self.receiver.bind(socket)
+        self.receiver.setsockopt(zmq.RCVHWM, self.receive_hwm)
+        if self.bind:
+            self.receiver.bind(self.socket)
         else:
-            self.receiver.connect(socket)
+            self.receiver.connect(self.socket)
         if self.socket_type == ReceiverSocketTypes.SUB:
             self.receiver.setsockopt(zmq.SUBSCRIBE, self.topic_prefix)
-        self.routing_id_filter = RoutingIdFilter(routing_ids_cache_size)
         self.receiver.setsockopt(zmq.RCVTIMEO, self.receive_timeout)
         self.is_alive = True
-        self._always_respond = self.socket_type == ReceiverSocketTypes.REP
 
     def next_message(self) -> Optional[List[bytes]]:
         """Try to receive next message."""
+        if not self.is_alive:
+            raise RuntimeError('ZeroMQ source is not started.')
+
         try:
             message = self.receiver.recv_multipart()
         except zmq.Again:
@@ -191,11 +215,16 @@ class ZeroMQSource:
 
     def terminate(self):
         """Finish and free zmq socket."""
+        if not self.is_alive:
+            logger.warning('ZeroMQ source is not started.')
+            return
         self.is_alive = False
         logger.info('Closing ZeroMQ socket')
         self.receiver.close()
+        self.receiver = None
         logger.info('Terminating ZeroMQ context.')
         self.zmq_context.term()
+        self.zmq_context = None
         logger.info('ZeroMQ context terminated')
 
 
@@ -305,3 +334,22 @@ def parse_zmq_socket_uri(
     socket_type = get_socket_type(socket_type_name, socket_type_enum)
 
     return socket_type, bind, endpoint
+
+
+def receive_response(sender: zmq.Socket, retries: int):
+    """Receive response from sender socket.
+
+    Retry until response is received.
+    """
+
+    while retries > 0:
+        try:
+            return sender.recv()
+        except zmq.Again:
+            retries -= 1
+            logger.debug(
+                'Timeout exceeded when receiving response (%s retries left)',
+                retries,
+            )
+            if retries == 0:
+                raise

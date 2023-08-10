@@ -6,8 +6,10 @@ import json
 import logging
 import numpy as np
 import zmq
+from savant_rs.primitives import EndOfStream
+from savant_rs.utils.serialization import Message, save_message_to_bytes
 
-from savant.api import ENCODING_REGISTRY, serialize
+from savant.api.builder import build_video_frame
 from savant.api.enums import ExternalFrameType
 from savant.config.schema import PipelineElement
 from savant.gstreamer.codecs import CodecInfo
@@ -17,6 +19,7 @@ from savant.utils.zeromq import (
     Defaults,
     SenderSocketTypes,
     parse_zmq_socket_uri,
+    receive_response,
 )
 
 logger = logging.getLogger(__name__)
@@ -99,6 +102,8 @@ class ZeroMQSinkFactory(SinkFactory):
         socket_type: str = SenderSocketTypes.PUB.name,
         bind: bool = True,
         send_hwm: int = Defaults.SEND_HWM,
+        receive_timeout: int = Defaults.SENDER_RECEIVE_TIMEOUT,
+        req_receive_retries: int = Defaults.REQ_RECEIVE_RETRIES,
     ):
         logger.debug(
             'Initializing ZMQ sink: socket %s, type %s, bind %s.',
@@ -107,6 +112,8 @@ class ZeroMQSinkFactory(SinkFactory):
             bind,
         )
 
+        self.receive_timeout = receive_timeout
+        self.req_receive_retries = req_receive_retries
         # might raise exceptions
         # will be handled in savant.entrypoint
         self.socket_type, self.bind, self.socket = parse_zmq_socket_uri(
@@ -120,11 +127,10 @@ class ZeroMQSinkFactory(SinkFactory):
         self.wait_response = self.socket_type == SenderSocketTypes.REQ
 
     def get_sink(self) -> SinkCallable:
-        schema = ENCODING_REGISTRY['VideoFrame']
-        eos_schema = ENCODING_REGISTRY['EndOfStream']
         context = zmq.Context()
         output_zmq_socket = context.socket(self.socket_type.value)
         output_zmq_socket.setsockopt(zmq.SNDHWM, self.send_hwm)
+        output_zmq_socket.setsockopt(zmq.RCVTIMEO, self.receive_timeout)
         if self.bind:
             output_zmq_socket.bind(self.socket)
         else:
@@ -144,7 +150,7 @@ class ZeroMQSinkFactory(SinkFactory):
                 )
 
                 if msg.frame:
-                    frame = {'type': ExternalFrameType.ZEROMQ.value}
+                    content = ExternalFrameType.ZEROMQ.value, None
                     logger.debug(
                         'Size of frame of source %r with PTS %s is %s bytes',
                         msg.source_id,
@@ -157,35 +163,36 @@ class ZeroMQSinkFactory(SinkFactory):
                         msg.source_id,
                         msg.frame_meta.pts,
                     )
-                    frame = None
+                    content = None
 
-                message = {
-                    'source_id': msg.frame_meta.source_id,
-                    'pts': msg.frame_meta.pts,
-                    'dts': msg.dts,
-                    'duration': msg.frame_meta.duration,
-                    'framerate': msg.frame_meta.framerate,
-                    'width': msg.frame_width,
-                    'height': msg.frame_height,
-                    'codec': msg.frame_codec.name if msg.frame_codec else None,
-                    'frame': frame,
-                    'metadata': msg.frame_meta.metadata,
-                    'tags': msg.frame_meta.tags,
-                    'keyframe': msg.keyframe,
-                }
-                zmq_message.append(serialize(schema, message))
+                video_frame = build_video_frame(
+                    source_id=msg.frame_meta.source_id,
+                    pts=msg.frame_meta.pts,
+                    dts=msg.dts,
+                    duration=msg.frame_meta.duration,
+                    framerate=msg.frame_meta.framerate,
+                    width=msg.frame_width,
+                    height=msg.frame_height,
+                    codec=msg.frame_codec.name if msg.frame_codec else None,
+                    content=content,
+                    objects=msg.frame_meta.metadata['objects'],
+                    tags=msg.frame_meta.tags,
+                    keyframe=msg.keyframe,
+                )
+                message = Message.video_frame(video_frame)
+                zmq_message.append(save_message_to_bytes(message))
                 if msg.frame:
                     zmq_message.append(msg.frame)
             elif isinstance(msg, SinkEndOfStream):
                 logger.debug('Sending EOS of source %s to ZeroMQ sink', msg.source_id)
-                message = {'source_id': msg.source_id}
-                zmq_message.append(serialize(eos_schema, message))
+                message = Message.end_of_stream(EndOfStream(msg.source_id))
+                zmq_message.append(save_message_to_bytes(message))
             else:
                 logger.warning('Unknown message type %s', type(msg))
                 return
             output_zmq_socket.send_multipart(zmq_message)
             if self.wait_response:
-                resp = output_zmq_socket.recv()
+                resp = receive_response(output_zmq_socket, self.req_receive_retries)
                 logger.debug(
                     'Received %s bytes from socket %s.', len(resp), self.socket
                 )

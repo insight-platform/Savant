@@ -36,7 +36,9 @@ RUN apt-get update \
 RUN python3 -m pip install setuptools wheel build
 
 WORKDIR /tmp/build
-COPY . .
+COPY pyproject.toml README.md LICENSE ./
+COPY requirements/base.txt requirements/base.txt
+COPY savant savant
 RUN python3 -m build --wheel
 
 
@@ -69,13 +71,16 @@ RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 10
 # install base packages
 RUN apt-get update \
     && apt-get install --no-install-recommends -y \
-    curl \
-    python3-pip \
-    python3-dev \
-    libcairo2-dev \
-    libgirepository1.0-dev \
-    python3-gst-1.0 \
-    gstreamer1.0-python3-plugin-loader \
+        curl \
+        python3-pip \
+        python3-dev \
+        libcairo2-dev \
+        libgirepository1.0-dev \
+        python3-gst-1.0 \
+        gstreamer1.0-python3-plugin-loader \
+    && apt-get install --reinstall -y \
+        gstreamer1.0-plugins-ugly \
+        libx264-155 \
     && apt-get autoremove -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
@@ -115,7 +120,14 @@ RUN python -m pip install --no-cache-dir /libs/savant/dist/*.whl
 COPY LICENSE .
 COPY savant/VERSION .
 COPY gst_plugins gst_plugins
-ENV GST_PLUGIN_PATH=$PROJECT_PATH/gst_plugins
+
+COPY adapters/gst/gst_plugins adapters/gst/gst_plugins
+RUN rm -f adapters/gst/gst_plugins/python/video_files_sink.py
+COPY adapters/gst/sources adapters/gst/sources
+
+COPY scripts/uri-input.py scripts/
+ENV PATH=$PROJECT_PATH/scripts:$PATH
+ENV GST_PLUGIN_PATH=$PROJECT_PATH/gst_plugins:$PROJECT_PATH/adapters/gst/gst_plugins
 
 ENTRYPOINT ["python", "-m", "savant.entrypoint"]
 
@@ -134,10 +146,7 @@ FROM base AS adapters
 
 COPY --from=mediamtx /mediamtx/mediamtx mediamtx/mediamtx
 COPY adapters/ds adapters/ds
-COPY adapters/gst/gst_plugins/python/adjust_timestamps.py \
-     adapters/gst/gst_plugins/python/fps_meter.py \
-     adapters/gst/gst_plugins/python/
-ENV GST_PLUGIN_PATH=$GST_PLUGIN_PATH:$PROJECT_PATH/adapters/gst/gst_plugins:$PROJECT_PATH/adapters/ds/gst_plugins
+ENV GST_PLUGIN_PATH=$GST_PLUGIN_PATH:$PROJECT_PATH/adapters/ds/gst_plugins
 
 ENTRYPOINT []
 

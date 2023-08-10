@@ -11,6 +11,10 @@ Savant is built on DeepStream and provides a high-level abstraction layer for bu
 [![Build status](https://github.com/insight-platform/Savant/actions/workflows/build-docker-latest.yml/badge.svg?branch=develop)](https://github.com/insight-platform/Savant/actions/workflows/build-docker-latest.yml)
 [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/SavantFramework.svg?style=social&label=Follow%20%40SavantFramework)](https://twitter.com/SavantFramework) [![Blog](https://img.shields.io/badge/Inside%20InSight%20Blog-444444?logo=medium)](https://blog.savant-ai.io/)
 
+Savant is a member of Nvidia Inception Program:
+
+![savant_inception_member](https://github.com/insight-platform/Savant/assets/15047882/12928291-05cc-4639-b43c-6b13d36a01fd)
+
 ## Chat With Us
 
 The best way to approach the Savant team is to join our Discord server. We are always happy to help you with any questions you may have.
@@ -80,10 +84,10 @@ If your task is to implement high-performance production-ready computer vision a
 
 ## Runs On Nvidia Hardware
 
-- Nvidia Jetson NX, Xavier AGX;
+- Nvidia Jetson NX/AGX, Orin Nano/NX/AGX;
 - Nvidia Turing GPU;
 - Nvidia Ampere GPU;
-- Nvidia Hopper, hopefully - haven't chance to get it yet :-)
+- Nvidia Hopper, hopefully, we did not have a chance to try it yet :-)
 
 ## About Nvidia DeepStream
 
@@ -205,7 +209,7 @@ There are basic sink adapters implemented:
 - [image directory (per source)](docs/adapters.md#the-image-file-sink-adapter);
 - [Always-On RTSP Stream Sink](docs/adapters.md#the-always-on-rtsp-sink-adapter).
 
-The framework uses an established protocol based on Apache Avro, both for sources and sinks. The sources and sinks talk to Savant through ZeroMQ sockets.
+The framework uses a Savant-RS protocol, both for sources and sinks. The sources and sinks talk to Savant through ZeroMQ sockets.
 
 ### Easy to Deploy
 

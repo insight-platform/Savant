@@ -1,9 +1,14 @@
 import json
 from fractions import Fraction
 from pathlib import Path
+from typing import Any, NamedTuple, Optional, Tuple, Union
 from typing import Any, Dict, NamedTuple, Optional, Union
+from splitstream import splitfile
 
-from savant.api import serialize, ENCODING_REGISTRY
+from savant_rs.primitives import EndOfStream, VideoFrame
+from savant_rs.utils.serialization import Message, save_message_to_bytes
+
+from savant.api.builder import build_video_frame
 from savant.api.enums import ExternalFrameType
 from savant.gstreamer import GObject, Gst, GstBase
 from savant.gstreamer.codecs import CODEC_BY_CAPS_NAME, Codec
@@ -17,20 +22,27 @@ class FrameParams(NamedTuple):
     """Frame parameters."""
 
     codec_name: str
-    width: str
-    height: str
+    width: int
+    height: int
     framerate: str
 
 
-class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
-    """GStreamer plugin to serialize video frames to avro message."""
+def is_videoframe_metadata(metadata: Dict[str, Any]) -> bool:
+    """Check that metadata contained if metadata is a video frame metadata. ."""
+    if "schema" in metadata and metadata["schema"] != "VideoFrame":
+        return False
+    return True
 
-    GST_PLUGIN_NAME: str = 'video_to_avro_serializer'
+
+class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
+    """GStreamer plugin to serialize video stream to savant-rs message."""
+
+    GST_PLUGIN_NAME: str = 'savant_rs_serializer'
 
     __gstmetadata__ = (
-        'Serializes video frames to avro messages',
+        'Serializes video stream to savant-rs messages',
         'Transform',
-        'Serializes video frame to avro message',
+        'Serializes video stream to savant-rs message',
         'Pavel Tomskikh <tomskih_pa@bw-sw.com>',
     )
 
@@ -113,8 +125,6 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
 
     def __init__(self):
         super().__init__()
-        self.schema = ENCODING_REGISTRY["VideoFrame"]
-        self.eos_schema = ENCODING_REGISTRY["EndOfStream"]
         # properties
         self.source_id: Optional[str] = None
         self.eos_on_file_end: bool = True
@@ -132,6 +142,7 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
         self.stream_in_progress = False
         self.read_metadata: bool = False
         self.json_metadata = None
+        self.frame_num = 0
 
     def do_set_caps(  # pylint: disable=unused-argument
         self, in_caps: Gst.Caps, out_caps: Gst.Caps
@@ -239,6 +250,7 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
                 self.json_metadata = self.read_json_metadata_file(
                     self.location.parent / f"{self.location.stem}.json"
                 )
+                self.frame_num = 0
                 self.send_end_message()
         self.last_location = self.location
         self.last_frame_params = self.frame_params
@@ -248,22 +260,24 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
         if self.frame_type is None:
             result, frame_mapinfo = in_buf.map(Gst.MapFlags.READ)
             assert result, 'Cannot read buffer.'
-            frame = frame_mapinfo.data
+            content = frame_mapinfo.data
         elif self.frame_type == ExternalFrameType.ZEROMQ:
-            frame = {'type': self.frame_type.value}
+            content = self.frame_type.value, None
         else:
             self.logger.error('Unsupported frame type "%s".', self.frame_type.value)
             return Gst.FlowReturn.ERROR
-        message = self.build_message(
+
+        frame = self.build_video_frame(
             in_buf.pts,
             in_buf.dts if in_buf.dts != Gst.CLOCK_TIME_NONE else None,
             in_buf.duration if in_buf.duration != Gst.CLOCK_TIME_NONE else None,
-            frame=frame,
+            content=content,
             keyframe=not in_buf.has_flags(Gst.BufferFlags.DELTA_UNIT),
         )
-        frame_meta = serialize(self.schema, message)
+        message = Message.video_frame(frame)
+        data = save_message_to_bytes(message)
 
-        out_buf: Gst.Buffer = Gst.Buffer.new_wrapped(frame_meta)
+        out_buf: Gst.Buffer = Gst.Buffer.new_wrapped(data)
         if frame_mapinfo is not None:
             in_buf.unmap(frame_mapinfo)
         else:
@@ -290,6 +304,7 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
                 self.json_metadata = self.read_json_metadata_file(
                     self.location.parent / f"{self.location.stem}.json"
                 )
+                self.frame_num = 0
 
         # Cannot use `super()` since it is `self`
         return GstBase.BaseTransform.do_sink_event(self, event)
@@ -299,12 +314,12 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
         if self.read_metadata:
             if location.is_file():
                 with open(location, 'r') as fp:
-                    json_metadata = dict(
+                    json_metadata = list(
                         map(
-                            lambda x: (x["pts"], x),
+                            lambda x: x["metadata"],
                             filter(
-                                lambda x: x["schema"] == "VideoFrame",
-                                map(json.loads, fp.readlines()),
+                                is_videoframe_metadata,
+                                map(json.loads, splitfile(fp, format="json")),
                             ),
                         )
                     )
@@ -314,50 +329,53 @@ class VideoToAvroSerializer(LoggerMixin, GstBase.BaseTransform):
 
     def send_end_message(self):
         self.logger.info('Sending serialized EOS message')
-        data = serialize(
-            self.eos_schema,
-            {'source_id': self.source_id},
-        )
+        message = Message.end_of_stream(EndOfStream(self.source_id))
+        data = save_message_to_bytes(message)
         out_buf = Gst.Buffer.new_wrapped(data)
         self.srcpad.push(out_buf)
         self.stream_in_progress = False
 
-    def build_message(
+    def build_video_frame(
         self,
         pts: int,
         dts: Optional[int],
         duration: Optional[int],
-        frame: Optional[Union[bytes, Dict[str, Any]]],
-        **kwargs,
-    ):
+        content: Union[bytes, Tuple[str, Optional[str]]],
+        keyframe: bool,
+    ) -> VideoFrame:
         if pts == Gst.CLOCK_TIME_NONE:
             # TODO: support CLOCK_TIME_NONE in schema
             pts = 0
-        frame_metadata = None
+        objects = None
         if self.read_metadata and self.json_metadata:
-            frame_metadata = self.json_metadata[pts]
-        message = {
-            'source_id': self.source_id,
-            'framerate': self.frame_params.framerate,
-            'width': self.frame_params.width,
-            'height': self.frame_params.height,
-            'codec': self.frame_params.codec_name,
-            'pts': pts,
-            'dts': dts,
-            'duration': duration,
-            'frame': frame,
-            'metadata': frame_metadata["metadata"] if self.read_metadata else None,
-            **kwargs,
-        }
+            frame_metadata = self.json_metadata[self.frame_num]
+            self.frame_num += 1
+            objects = frame_metadata['objects']
+
+        tags = {}
         if self.location:
-            message['tags'] = {'location': str(self.location)}
-        return message
+            tags['location'] = str(self.location)
+
+        return build_video_frame(
+            source_id=self.source_id,
+            framerate=self.frame_params.framerate,
+            width=self.frame_params.width,
+            height=self.frame_params.height,
+            codec=self.frame_params.codec_name,
+            content=content,
+            keyframe=keyframe,
+            pts=pts,
+            dts=dts,
+            duration=duration,
+            objects=objects,
+            tags=tags,
+        )
 
 
 # register plugin
-GObject.type_register(VideoToAvroSerializer)
+GObject.type_register(SavantRsSerializer)
 __gstelementfactory__ = (
-    VideoToAvroSerializer.GST_PLUGIN_NAME,
+    SavantRsSerializer.GST_PLUGIN_NAME,
     Gst.Rank.NONE,
-    VideoToAvroSerializer,
+    SavantRsSerializer,
 )
