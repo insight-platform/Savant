@@ -335,7 +335,7 @@ class NvDsPipeline(GstPipeline):
             self._logger.info(
                 "Input stream is RGB, using  compute-hw=1 as recommended by Nvidia"
             )
-            nv_video_converter.set_property('compute-hw', int(1))
+            nv_video_converter.set_property('compute-hw', 1)
         if self._frame_params.padding:
             dest_crop = ':'.join(
                 str(x)
