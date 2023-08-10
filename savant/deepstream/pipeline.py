@@ -3,7 +3,7 @@ from collections import defaultdict
 from pathlib import Path
 from queue import Queue
 from threading import Lock
-from typing import Any, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 import time
 import logging
 import pyds
@@ -97,10 +97,14 @@ class NvDsPipeline(GstPipeline):
 
         self._internal_attrs = set()
 
-        self._draw_func: Optional[DrawFunc] = kwargs.get('draw_func')
-
         output_frame = kwargs.get('output_frame')
         self._source_output = create_source_output(self._frame_params, output_frame)
+
+        draw_func: Optional[DrawFunc] = kwargs.get('draw_func')
+        if draw_func is not None and isinstance(
+            self._source_output, SourceOutputWithFrame
+        ):
+            pipeline_cfg.elements.append(draw_func)
 
         self._demuxer_src_pads: List[Gst.Pad] = []
         self._free_pad_indices: List[int] = []
@@ -110,6 +114,10 @@ class NvDsPipeline(GstPipeline):
             pipeline_cfg.source.properties[
                 'max-parallel-streams'
             ] = self._max_parallel_streams
+
+        buffer_queues: Optional[BufferQueuesParameters] = kwargs.get('buffer_queues')
+        if buffer_queues is not None:
+            self._add_queues_to_pipeline(pipeline_cfg, buffer_queues)
 
         # nvjpegdec decoder is selected in decodebin according to the rank, but
         # there are problems with the plugin:
@@ -122,6 +130,67 @@ class NvDsPipeline(GstPipeline):
         factory.set_rank(Gst.Rank.NONE)
 
         super().__init__(name, pipeline_cfg, **kwargs)
+
+    def _add_queues_to_pipeline(
+        self,
+        pipeline_cfg: Pipeline,
+        buffer_queues: BufferQueuesParameters,
+    ):
+        """Add queues to the pipeline before and after pyfunc elements."""
+
+        queue_properties = {
+            'max-size-buffers': buffer_queues.length,
+            'max-size-bytes': buffer_queues.byte_size,
+            'max-size-time': 0,
+        }
+        self._add_queues_to_element_group(
+            element_group=pipeline_cfg,
+            queue_properties=queue_properties,
+            last_is_queue=False,
+            next_should_be_queue=False,
+        )
+
+    def _add_queues_to_element_group(
+        self,
+        element_group: Union[Pipeline, ElementGroup],
+        queue_properties: Dict[str, Any],
+        last_is_queue: bool,
+        next_should_be_queue: bool,
+    ):
+        """Add queues to the pipeline or an element group before and after pyfunc elements."""
+
+        elements = []
+        for i, element in enumerate(element_group.elements):
+            if isinstance(element, ElementGroup):
+                if not element.init_condition.is_enabled:
+                    continue
+
+                last_is_queue = self._add_queues_to_element_group(
+                    element,
+                    queue_properties,
+                    last_is_queue,
+                    next_should_be_queue,
+                )
+                next_should_be_queue = False
+                elements.append(element)
+                continue
+
+            if (next_should_be_queue and element.element != 'queue') or (
+                isinstance(element, PyFuncElement) and not last_is_queue
+            ):
+                elements.append(PipelineElement('queue', properties=queue_properties))
+
+            elements.append(element)
+            last_is_queue = element.element == 'queue'
+            next_should_be_queue = isinstance(element, PyFuncElement)
+
+        if next_should_be_queue:
+            elements.append(PipelineElement('queue', properties=queue_properties))
+            last_is_queue = True
+
+        element_group.elements = elements
+
+        return last_is_queue
 
     def _build_buffer_processor(
         self,
@@ -666,6 +735,11 @@ class NvDsPipeline(GstPipeline):
         # input processor (post-muxer)
         muxer_src_pad: Gst.Pad = self._muxer.get_static_pad('src')
         muxer_src_pad.add_probe(
+            Gst.PadProbeType.EVENT_DOWNSTREAM,
+            on_pad_event,
+            {GST_NVEVENT_STREAM_EOS: self._on_muxer_src_pad_eos},
+        )
+        muxer_src_pad.add_probe(
             Gst.PadProbeType.BUFFER,
             self._buffer_processor.input_probe,
         )
@@ -701,12 +775,6 @@ class NvDsPipeline(GstPipeline):
             )
             self._check_pipeline_is_running()
             sink_pad: Gst.Pad = self._muxer.get_request_pad(sink_pad_name)
-            sink_pad.add_probe(
-                Gst.PadProbeType.EVENT_DOWNSTREAM,
-                on_pad_event,
-                {Gst.EventType.EOS: self._on_muxer_sink_pad_eos},
-                source_info.source_id,
-            )
 
         return sink_pad
 
@@ -726,19 +794,23 @@ class NvDsPipeline(GstPipeline):
         # Releasing muxer.sink pad to trigger nv-pad-deleted event on muxer.src pad
         element.release_request_pad(pad)
 
-    def _on_muxer_sink_pad_eos(self, pad: Gst.Pad, event: Gst.Event, source_id: str):
-        """Processes EOS event on muxer sink pad."""
+    def _on_muxer_src_pad_eos(self, pad: Gst.Pad, event: Gst.Event):
+        """Processes EOS event on muxer src pad."""
 
         self._logger.debug(
-            'Got EOS on pad %s.%s', pad.get_parent().get_name(), pad.get_name()
+            'Got GST_NVEVENT_STREAM_EOS on %s.%s',
+            pad.get_parent().get_name(),
+            pad.get_name(),
         )
+        pad_idx = gst_nvevent_parse_stream_eos(event)
+        source_id = self._sources.get_id_by_pad_index(pad_idx)
         source_info = self._sources.get_source(source_id)
         try:
             self._check_pipeline_is_running()
             GLib.idle_add(self._remove_input_elements, source_info, pad)
         except PipelineIsNotRunningError:
             self._logger.info(
-                'Pipeline is not running. Do not remove output elements for source %s.',
+                'Pipeline is not running. Do not remove input elements for source %s.',
                 source_info.source_id,
             )
         return Gst.PadProbeReturn.PASS
@@ -761,46 +833,8 @@ class NvDsPipeline(GstPipeline):
             demuxer, self._max_parallel_streams
         )
         sink_peer_pad: Gst.Pad = demuxer.get_static_pad('sink').get_peer()
-        if self._draw_func and isinstance(self._source_output, SourceOutputWithFrame):
-            sink_peer_pad.add_probe(Gst.PadProbeType.BUFFER, self._draw_on_frame_probe)
         sink_peer_pad.add_probe(Gst.PadProbeType.BUFFER, self.update_frame_meta)
         return demuxer
-
-    def _draw_on_frame_probe(
-        self,
-        pad: Gst.Pad,
-        info: Gst.PadProbeInfo,
-    ) -> Gst.PadProbeReturn:
-        """Pad probe to draw on frames."""
-
-        buffer: Gst.Buffer = info.get_buffer()
-        nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
-        for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
-            if self._can_draw_on_frame(nvds_frame_meta):
-                self._draw_func(nvds_frame_meta, buffer)
-        self._draw_func.instance.finalize()
-        return Gst.PadProbeReturn.OK
-
-    def _can_draw_on_frame(self, nvds_frame_meta: pyds.NvDsFrameMeta) -> bool:
-        """Check whether we can draw on this specific frame."""
-
-        if self._draw_func.condition.tag is None:
-            return True
-
-        source_id, frame_pts, frame_idx, frame_meta = self._get_nvds_savant_frame_meta(
-            nvds_frame_meta
-        )
-
-        if self._draw_func.condition.tag in frame_meta.tags:
-            return True
-        self._logger.debug(
-            'Frame from source %s with IDX %s PTS %s does not have tag %s. Skip drawing on it.',
-            source_id,
-            frame_idx,
-            frame_pts,
-            self._draw_func.condition.tag,
-        )
-        return False
 
     def _allocate_demuxer_pads(self, demuxer: Gst.Element, n_pads: int):
         """Allocate a fixed number of demuxer src pads."""
