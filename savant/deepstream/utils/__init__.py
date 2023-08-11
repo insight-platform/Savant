@@ -43,5 +43,6 @@ from .object import (
     nvds_get_obj_draw_label,
     nvds_init_obj_draw_label,
 )
+from .pipeline import add_queues_to_pipeline
 from .surface import get_nvds_buf_surface
 from .tensor import nvds_infer_tensor_meta_to_outputs
