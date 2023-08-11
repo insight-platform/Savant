@@ -44,11 +44,11 @@ class BaseNvDsDrawFunc(NvDsPyFuncPlugin):
 
         if self.condition.tag in frame_meta.tags:
             return True
-        else:
-            self.logger.debug(
-                'Frame from source %s with PTS %s does not have tag %s. Skip drawing on it.',
-                frame_meta.source_id,
-                frame_meta.pts,
-                self.condition.tag,
-            )
-            return False
+
+        self.logger.debug(
+            'Frame from source %s with PTS %s does not have tag %s. Skip drawing on it.',
+            frame_meta.source_id,
+            frame_meta.pts,
+            self.condition.tag,
+        )
+        return False

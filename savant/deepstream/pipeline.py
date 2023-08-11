@@ -3,54 +3,40 @@ from collections import defaultdict
 from pathlib import Path
 from queue import Queue
 from threading import Lock
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple
 import time
 import logging
 import pyds
-
 from savant_rs.primitives.geometry import BBox
+
+from savant.base.input_preproc import ObjectsPreprocessing
 
 from pygstsavantframemeta import (
     add_convert_savant_frame_meta_pad_probe,
     nvds_frame_meta_get_nvds_savant_frame_meta,
 )
 
-from savant.base.input_preproc import ObjectsPreprocessing
-from savant.base.model import AttributeModel, ComplexModel
-from savant.config.schema import (
-    Pipeline,
-    PipelineElement,
-    ModelElement,
-    FrameParameters,
-    DrawFunc,
-)
-from savant.meta.constants import UNTRACKED_OBJECT_ID, PRIMARY_OBJECT_KEY
-from savant.utils.fps_meter import FPSMeter
-from savant.utils.source_info import SourceInfoRegistry, SourceInfo, Resolution
-from savant.utils.platform import is_aarch64
-from savant.utils.sink_factories import SinkEndOfStream
-
-from savant.gstreamer import Gst, GLib  # noqa:F401
-from savant.gstreamer.metadata import (
-    SourceFrameMeta,
-    metadata_add_frame_meta,
-    get_source_frame_meta,
-)
-from savant.gstreamer.pipeline import GstPipeline
-from savant.gstreamer.utils import on_pad_event, pad_to_source_id
-
 from savant.deepstream.buffer_processor import (
     NvDsBufferProcessor,
     create_buffer_processor,
-)
-from savant.deepstream.metadata import (
-    nvds_obj_meta_output_converter,
-    nvds_attr_meta_output_converter,
 )
 from savant.deepstream.source_output import (
     SourceOutputWithFrame,
     create_source_output,
 )
+from savant.deepstream.utils.pipeline import add_queues_to_pipeline
+from savant.gstreamer import Gst, GLib  # noqa:F401
+from savant.gstreamer.pipeline import GstPipeline
+from savant.deepstream.metadata import (
+    nvds_obj_meta_output_converter,
+    nvds_attr_meta_output_converter,
+)
+from savant.gstreamer.metadata import (
+    SourceFrameMeta,
+    metadata_add_frame_meta,
+    get_source_frame_meta,
+)
+from savant.gstreamer.utils import on_pad_event, pad_to_source_id
 from savant.deepstream.utils import (
     gst_nvevent_parse_stream_eos,
     GST_NVEVENT_STREAM_EOS,
@@ -59,6 +45,20 @@ from savant.deepstream.utils import (
     nvds_attr_meta_iterator,
     nvds_remove_obj_attrs,
 )
+from savant.meta.constants import UNTRACKED_OBJECT_ID, PRIMARY_OBJECT_KEY
+from savant.utils.fps_meter import FPSMeter
+from savant.utils.source_info import SourceInfoRegistry, SourceInfo, Resolution
+from savant.utils.platform import is_aarch64
+from savant.config.schema import (
+    BufferQueuesParameters,
+    Pipeline,
+    PipelineElement,
+    ModelElement,
+    FrameParameters,
+    DrawFunc,
+)
+from savant.base.model import AttributeModel, ComplexModel
+from savant.utils.sink_factories import SinkEndOfStream
 
 
 class NvDsPipeline(GstPipeline):
@@ -117,7 +117,7 @@ class NvDsPipeline(GstPipeline):
 
         buffer_queues: Optional[BufferQueuesParameters] = kwargs.get('buffer_queues')
         if buffer_queues is not None:
-            self._add_queues_to_pipeline(pipeline_cfg, buffer_queues)
+            add_queues_to_pipeline(pipeline_cfg, buffer_queues)
 
         # nvjpegdec decoder is selected in decodebin according to the rank, but
         # there are problems with the plugin:
@@ -130,67 +130,6 @@ class NvDsPipeline(GstPipeline):
         factory.set_rank(Gst.Rank.NONE)
 
         super().__init__(name, pipeline_cfg, **kwargs)
-
-    def _add_queues_to_pipeline(
-        self,
-        pipeline_cfg: Pipeline,
-        buffer_queues: BufferQueuesParameters,
-    ):
-        """Add queues to the pipeline before and after pyfunc elements."""
-
-        queue_properties = {
-            'max-size-buffers': buffer_queues.length,
-            'max-size-bytes': buffer_queues.byte_size,
-            'max-size-time': 0,
-        }
-        self._add_queues_to_element_group(
-            element_group=pipeline_cfg,
-            queue_properties=queue_properties,
-            last_is_queue=False,
-            next_should_be_queue=False,
-        )
-
-    def _add_queues_to_element_group(
-        self,
-        element_group: Union[Pipeline, ElementGroup],
-        queue_properties: Dict[str, Any],
-        last_is_queue: bool,
-        next_should_be_queue: bool,
-    ):
-        """Add queues to the pipeline or an element group before and after pyfunc elements."""
-
-        elements = []
-        for i, element in enumerate(element_group.elements):
-            if isinstance(element, ElementGroup):
-                if not element.init_condition.is_enabled:
-                    continue
-
-                last_is_queue = self._add_queues_to_element_group(
-                    element,
-                    queue_properties,
-                    last_is_queue,
-                    next_should_be_queue,
-                )
-                next_should_be_queue = False
-                elements.append(element)
-                continue
-
-            if (next_should_be_queue and element.element != 'queue') or (
-                isinstance(element, PyFuncElement) and not last_is_queue
-            ):
-                elements.append(PipelineElement('queue', properties=queue_properties))
-
-            elements.append(element)
-            last_is_queue = element.element == 'queue'
-            next_should_be_queue = isinstance(element, PyFuncElement)
-
-        if next_should_be_queue:
-            elements.append(PipelineElement('queue', properties=queue_properties))
-            last_is_queue = True
-
-        element_group.elements = elements
-
-        return last_is_queue
 
     def _build_buffer_processor(
         self,
@@ -395,9 +334,7 @@ class NvDsPipeline(GstPipeline):
         source_info: SourceInfo,
     ) -> Gst.Pad:
         self._check_pipeline_is_running()
-        nv_video_converter = self._element_factory.create(
-            PipelineElement('nvvideoconvert')
-        )
+        nv_video_converter: Gst.Element = Gst.ElementFactory.make('nvvideoconvert')
         if not is_aarch64():
             nv_video_converter.set_property(
                 'nvbuf-memory-type', int(pyds.NVBUF_MEM_CUDA_UNIFIED)
@@ -432,9 +369,7 @@ class NvDsPipeline(GstPipeline):
                 new_pad_caps,
             )
             self._check_pipeline_is_running()
-            video_converter = self._element_factory.create(
-                PipelineElement('videoconvert')
-            )
+            video_converter: Gst.Element = Gst.ElementFactory.make('videoconvert')
             self._pipeline.add(video_converter)
             video_converter.sync_state_with_parent()
             assert video_converter.link(nv_video_converter)
@@ -447,17 +382,14 @@ class NvDsPipeline(GstPipeline):
         assert new_pad.link(video_converter_sink) == Gst.PadLinkReturn.OK
 
         self._check_pipeline_is_running()
-        capsfilter = self._element_factory.create(
-            PipelineElement(
-                'capsfilter',
-                properties={
-                    'caps': (
-                        'video/x-raw(memory:NVMM), format=RGBA, '
-                        f'width={self._frame_params.total_width}, '
-                        f'height={self._frame_params.total_height}'
-                    ),
-                },
-            )
+        capsfilter: Gst.Element = Gst.ElementFactory.make('capsfilter')
+        capsfilter.set_property(
+            'caps',
+            Gst.Caps.from_string(
+                'video/x-raw(memory:NVMM), format=RGBA, '
+                f'width={self._frame_params.total_width}, '
+                f'height={self._frame_params.total_height}'
+            ),
         )
         capsfilter.set_state(Gst.State.PLAYING)
         self._pipeline.add(capsfilter)
@@ -466,11 +398,7 @@ class NvDsPipeline(GstPipeline):
 
         return capsfilter.get_static_pad('src')
 
-    def _remove_input_elements(
-        self,
-        source_info: SourceInfo,
-        sink_pad: Gst.Pad,
-    ):
+    def _remove_input_elements(self, source_info: SourceInfo):
         self._logger.debug(
             'Removing input elements for source %s', source_info.source_id
         )
@@ -483,7 +411,6 @@ class NvDsPipeline(GstPipeline):
                 elem.set_state(Gst.State.NULL)
                 self._pipeline.remove(elem)
             source_info.before_muxer = []
-            self._release_muxer_sink_pad(sink_pad)
 
         except PipelineIsNotRunningError:
             self._logger.info(
@@ -635,6 +562,8 @@ class NvDsPipeline(GstPipeline):
                     frame_pts,
                 )
 
+            source_info = self._sources.get_source(source_id)
+
             # second iteration to collect module objects
             for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
                 obj_meta = nvds_obj_meta_output_converter(
@@ -735,11 +664,6 @@ class NvDsPipeline(GstPipeline):
         # input processor (post-muxer)
         muxer_src_pad: Gst.Pad = self._muxer.get_static_pad('src')
         muxer_src_pad.add_probe(
-            Gst.PadProbeType.EVENT_DOWNSTREAM,
-            on_pad_event,
-            {GST_NVEVENT_STREAM_EOS: self._on_muxer_src_pad_eos},
-        )
-        muxer_src_pad.add_probe(
             Gst.PadProbeType.BUFFER,
             self._buffer_processor.input_probe,
         )
@@ -775,42 +699,28 @@ class NvDsPipeline(GstPipeline):
             )
             self._check_pipeline_is_running()
             sink_pad: Gst.Pad = self._muxer.get_request_pad(sink_pad_name)
+            sink_pad.add_probe(
+                Gst.PadProbeType.EVENT_DOWNSTREAM,
+                on_pad_event,
+                {Gst.EventType.EOS: self._on_muxer_sink_pad_eos},
+                source_info.source_id,
+            )
 
         return sink_pad
 
-    def _release_muxer_sink_pad(self, pad: Gst.Pad):
-        """Release sink pad of muxer.
-
-        :param pad: Sink pad to release.
-        """
-
-        self._check_pipeline_is_running()
-        element: Gst.Element = pad.get_parent()
-        self._logger.debug(
-            'Releasing pad %s.%s',
-            element.get_name(),
-            pad.get_name(),
-        )
-        # Releasing muxer.sink pad to trigger nv-pad-deleted event on muxer.src pad
-        element.release_request_pad(pad)
-
-    def _on_muxer_src_pad_eos(self, pad: Gst.Pad, event: Gst.Event):
-        """Processes EOS event on muxer src pad."""
+    def _on_muxer_sink_pad_eos(self, pad: Gst.Pad, event: Gst.Event, source_id: str):
+        """Processes EOS event on muxer sink pad."""
 
         self._logger.debug(
-            'Got GST_NVEVENT_STREAM_EOS on %s.%s',
-            pad.get_parent().get_name(),
-            pad.get_name(),
+            'Got EOS on pad %s.%s', pad.get_parent().get_name(), pad.get_name()
         )
-        pad_idx = gst_nvevent_parse_stream_eos(event)
-        source_id = self._sources.get_id_by_pad_index(pad_idx)
         source_info = self._sources.get_source(source_id)
         try:
             self._check_pipeline_is_running()
-            GLib.idle_add(self._remove_input_elements, source_info, pad)
+            GLib.idle_add(self._remove_input_elements, source_info)
         except PipelineIsNotRunningError:
             self._logger.info(
-                'Pipeline is not running. Do not remove input elements for source %s.',
+                'Pipeline is not running. Do not remove output elements for source %s.',
                 source_info.source_id,
             )
         return Gst.PadProbeReturn.PASS
