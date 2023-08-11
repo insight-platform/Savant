@@ -3,7 +3,7 @@ from collections import defaultdict
 from pathlib import Path
 from queue import Queue
 from threading import Lock
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple
 import time
 import logging
 import pyds
@@ -24,6 +24,7 @@ from savant.deepstream.source_output import (
     SourceOutputWithFrame,
     create_source_output,
 )
+from savant.deepstream.utils.pipeline import add_queues_to_pipeline
 from savant.gstreamer import Gst, GLib  # noqa:F401
 from savant.gstreamer.pipeline import GstPipeline
 from savant.deepstream.metadata import (
@@ -50,13 +51,11 @@ from savant.utils.source_info import SourceInfoRegistry, SourceInfo, Resolution
 from savant.utils.platform import is_aarch64
 from savant.config.schema import (
     BufferQueuesParameters,
-    ElementGroup,
     Pipeline,
     PipelineElement,
     ModelElement,
     FrameParameters,
     DrawFunc,
-    PyFuncElement,
 )
 from savant.base.model import AttributeModel, ComplexModel
 from savant.utils.sink_factories import SinkEndOfStream
@@ -118,7 +117,7 @@ class NvDsPipeline(GstPipeline):
 
         buffer_queues: Optional[BufferQueuesParameters] = kwargs.get('buffer_queues')
         if buffer_queues is not None:
-            self._add_queues_to_pipeline(pipeline_cfg, buffer_queues)
+            add_queues_to_pipeline(pipeline_cfg, buffer_queues)
 
         # nvjpegdec decoder is selected in decodebin according to the rank, but
         # there are problems with the plugin:
@@ -131,68 +130,6 @@ class NvDsPipeline(GstPipeline):
         factory.set_rank(Gst.Rank.NONE)
 
         super().__init__(name, pipeline_cfg, **kwargs)
-
-    def _add_queues_to_pipeline(
-        self,
-        pipeline_cfg: Pipeline,
-        buffer_queues: BufferQueuesParameters,
-    ):
-        """Add queues to the pipeline before and after pyfunc elements."""
-
-        queue_properties = {
-            'max-size-buffers': buffer_queues.length,
-            'max-size-bytes': buffer_queues.byte_size,
-            'max-size-time': 0,
-        }
-        self._add_queues_to_element_group(
-            element_group=pipeline_cfg,
-            queue_properties=queue_properties,
-            last_is_queue=False,
-            next_should_be_queue=False,
-            first_element=True,
-        )
-
-    def _add_queues_to_element_group(
-        self,
-        element_group: Union[Pipeline, ElementGroup],
-        queue_properties: Dict[str, Any],
-        last_is_queue: bool,
-        next_should_be_queue: bool,
-        first_element: bool,
-    ):
-        """Add queues to the pipeline or an element group before and after pyfunc elements."""
-
-        elements = []
-        for i, element in enumerate(element_group.elements):
-            if isinstance(element, ElementGroup):
-                if not element.init_condition.is_enabled:
-                    continue
-
-                last_is_queue, next_should_be_queue = self._add_queues_to_element_group(
-                    element_group=element,
-                    queue_properties=queue_properties,
-                    last_is_queue=last_is_queue,
-                    next_should_be_queue=next_should_be_queue,
-                    first_element=first_element,
-                )
-                first_element = False
-                elements.append(element)
-                continue
-
-            if (
-                (next_should_be_queue and element.element != 'queue')
-                or (isinstance(element, PyFuncElement) and not last_is_queue)
-            ) and not first_element:
-                elements.append(PipelineElement('queue', properties=queue_properties))
-
-            elements.append(element)
-            last_is_queue = element.element == 'queue'
-            next_should_be_queue = isinstance(element, PyFuncElement)
-            first_element = False
-
-        element_group.elements = elements
-
-        return last_is_queue, next_should_be_queue
 
     def _build_buffer_processor(
         self,
