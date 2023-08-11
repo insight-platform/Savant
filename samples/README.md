@@ -80,3 +80,9 @@ Location: [rtsp_cam_compatibility_test](./rtsp_cam_compatibility_test)
 A simple pipeline demonstrates how GigE Vision Source Adapter works in Savant. In the demo video from one GigE Vision camera is passed as raw-rgba frames, and another one is passed as HEVC-encoded frames. Both streams are passed to Always-On-RTSP sinks.
 
 Sample Location: [multiple_gige](./multiple_gige)
+
+### Source Adapter With JSON Metadata
+
+A demo showing how to inject ground truth metadata into frames and use them to estimate the model performance.
+
+Sample location: [source_adapter_with_json_metadata](./source_adapter_with_json_metadata)
