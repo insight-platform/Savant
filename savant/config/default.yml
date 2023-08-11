@@ -86,6 +86,15 @@ parameters:
   # Class to draw on frames must implement savant.deepstream.base_drawfunc.BaseNvDsDrawFunc.
   draw_func: null
 
+  # When set queue elements will be added in the pipeline before and after pyfunc elements.
+  # It can be used to run pyfunc elements in separate threads.
+  # buffer_queues:
+  #   # Length of the queue in buffers (0 - no limit), default 10.
+  #   length: 10
+  #   # Size of the queue in bytes (0 - no limit), default 0.
+  #   byte_size: 0
+  buffer_queues: null
+
 
 # pipeline definition
 pipeline:

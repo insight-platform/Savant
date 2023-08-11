@@ -24,6 +24,7 @@ from savant.deepstream.source_output import (
     SourceOutputWithFrame,
     create_source_output,
 )
+from savant.deepstream.utils.pipeline import add_queues_to_pipeline
 from savant.gstreamer import Gst, GLib  # noqa:F401
 from savant.gstreamer.pipeline import GstPipeline
 from savant.deepstream.metadata import (
@@ -49,6 +50,7 @@ from savant.utils.fps_meter import FPSMeter
 from savant.utils.source_info import SourceInfoRegistry, SourceInfo, Resolution
 from savant.utils.platform import is_aarch64
 from savant.config.schema import (
+    BufferQueuesParameters,
     Pipeline,
     PipelineElement,
     ModelElement,
@@ -95,10 +97,14 @@ class NvDsPipeline(GstPipeline):
 
         self._internal_attrs = set()
 
-        self._draw_func: Optional[DrawFunc] = kwargs.get('draw_func')
-
         output_frame = kwargs.get('output_frame')
         self._source_output = create_source_output(self._frame_params, output_frame)
+
+        draw_func: Optional[DrawFunc] = kwargs.get('draw_func')
+        if draw_func is not None and isinstance(
+            self._source_output, SourceOutputWithFrame
+        ):
+            pipeline_cfg.elements.append(draw_func)
 
         self._demuxer_src_pads: List[Gst.Pad] = []
         self._free_pad_indices: List[int] = []
@@ -108,6 +114,10 @@ class NvDsPipeline(GstPipeline):
             pipeline_cfg.source.properties[
                 'max-parallel-streams'
             ] = self._max_parallel_streams
+
+        buffer_queues: Optional[BufferQueuesParameters] = kwargs.get('buffer_queues')
+        if buffer_queues is not None:
+            add_queues_to_pipeline(pipeline_cfg, buffer_queues)
 
         # nvjpegdec decoder is selected in decodebin according to the rank, but
         # there are problems with the plugin:
@@ -388,11 +398,7 @@ class NvDsPipeline(GstPipeline):
 
         return capsfilter.get_static_pad('src')
 
-    def _remove_input_elements(
-        self,
-        source_info: SourceInfo,
-        sink_pad: Gst.Pad,
-    ):
+    def _remove_input_elements(self, source_info: SourceInfo):
         self._logger.debug(
             'Removing input elements for source %s', source_info.source_id
         )
@@ -405,7 +411,6 @@ class NvDsPipeline(GstPipeline):
                 elem.set_state(Gst.State.NULL)
                 self._pipeline.remove(elem)
             source_info.before_muxer = []
-            self._release_muxer_sink_pad(sink_pad)
 
         except PipelineIsNotRunningError:
             self._logger.info(
@@ -703,22 +708,6 @@ class NvDsPipeline(GstPipeline):
 
         return sink_pad
 
-    def _release_muxer_sink_pad(self, pad: Gst.Pad):
-        """Release sink pad of muxer.
-
-        :param pad: Sink pad to release.
-        """
-
-        self._check_pipeline_is_running()
-        element: Gst.Element = pad.get_parent()
-        self._logger.debug(
-            'Releasing pad %s.%s',
-            element.get_name(),
-            pad.get_name(),
-        )
-        # Releasing muxer.sink pad to trigger nv-pad-deleted event on muxer.src pad
-        element.release_request_pad(pad)
-
     def _on_muxer_sink_pad_eos(self, pad: Gst.Pad, event: Gst.Event, source_id: str):
         """Processes EOS event on muxer sink pad."""
 
@@ -728,7 +717,7 @@ class NvDsPipeline(GstPipeline):
         source_info = self._sources.get_source(source_id)
         try:
             self._check_pipeline_is_running()
-            GLib.idle_add(self._remove_input_elements, source_info, pad)
+            GLib.idle_add(self._remove_input_elements, source_info)
         except PipelineIsNotRunningError:
             self._logger.info(
                 'Pipeline is not running. Do not remove output elements for source %s.',
@@ -754,47 +743,8 @@ class NvDsPipeline(GstPipeline):
             demuxer, self._max_parallel_streams
         )
         sink_peer_pad: Gst.Pad = demuxer.get_static_pad('sink').get_peer()
-        if self._draw_func and isinstance(self._source_output, SourceOutputWithFrame):
-            sink_peer_pad.add_probe(Gst.PadProbeType.BUFFER, self._draw_on_frame_probe)
         sink_peer_pad.add_probe(Gst.PadProbeType.BUFFER, self.update_frame_meta)
         return demuxer
-
-    def _draw_on_frame_probe(
-        self,
-        pad: Gst.Pad,
-        info: Gst.PadProbeInfo,
-    ) -> Gst.PadProbeReturn:
-        """Pad probe to draw on frames."""
-
-        buffer: Gst.Buffer = info.get_buffer()
-        nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
-        for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
-            if self._can_draw_on_frame(nvds_frame_meta):
-                self._draw_func(nvds_frame_meta, buffer)
-        self._draw_func.instance.finalize()
-        return Gst.PadProbeReturn.OK
-
-    def _can_draw_on_frame(self, nvds_frame_meta: pyds.NvDsFrameMeta) -> bool:
-        """Check whether we can draw on this specific frame."""
-
-        if self._draw_func.condition.tag is None:
-            return True
-
-        source_id, frame_pts, frame_idx, frame_meta = self._get_nvds_savant_frame_meta(
-            nvds_frame_meta
-        )
-
-        if self._draw_func.condition.tag in frame_meta.tags:
-            return True
-        else:
-            self._logger.debug(
-                'Frame from source %s with IDX %s PTS %s does not have tag %s. Skip drawing on it.',
-                source_id,
-                frame_idx,
-                frame_pts,
-                self._draw_func.condition.tag,
-            )
-            return False
 
     def _allocate_demuxer_pads(self, demuxer: Gst.Element, n_pads: int):
         """Allocate a fixed number of demuxer src pads."""
