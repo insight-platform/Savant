@@ -4,20 +4,51 @@ from pathlib import Path
 from queue import Queue
 from threading import Lock
 from typing import Any, List, Optional, Tuple
-import logging
 import time
-
+import logging
 import pyds
-
 from savant_rs.primitives.geometry import BBox
+
+from savant.base.input_preproc import ObjectsPreprocessing
 
 from pygstsavantframemeta import (
     add_convert_savant_frame_meta_pad_probe,
     nvds_frame_meta_get_nvds_savant_frame_meta,
 )
 
-from savant.base.input_preproc import ObjectsPreprocessing
-from savant.base.model import AttributeModel, ComplexModel
+from savant.deepstream.buffer_processor import (
+    NvDsBufferProcessor,
+    create_buffer_processor,
+)
+from savant.deepstream.source_output import (
+    SourceOutputWithFrame,
+    create_source_output,
+)
+from savant.deepstream.utils.pipeline import add_queues_to_pipeline
+from savant.gstreamer import Gst, GLib  # noqa:F401
+from savant.gstreamer.pipeline import GstPipeline
+from savant.deepstream.metadata import (
+    nvds_obj_meta_output_converter,
+    nvds_attr_meta_output_converter,
+)
+from savant.gstreamer.metadata import (
+    SourceFrameMeta,
+    metadata_add_frame_meta,
+    get_source_frame_meta,
+)
+from savant.gstreamer.utils import on_pad_event, pad_to_source_id
+from savant.deepstream.utils import (
+    gst_nvevent_parse_stream_eos,
+    GST_NVEVENT_STREAM_EOS,
+    nvds_frame_meta_iterator,
+    nvds_obj_meta_iterator,
+    nvds_attr_meta_iterator,
+    nvds_remove_obj_attrs,
+)
+from savant.meta.constants import UNTRACKED_OBJECT_ID, PRIMARY_OBJECT_KEY
+from savant.utils.fps_meter import FPSMeter
+from savant.utils.source_info import SourceInfoRegistry, SourceInfo, Resolution
+from savant.utils.platform import is_aarch64
 from savant.config.schema import (
     BufferQueuesParameters,
     Pipeline,
@@ -26,42 +57,8 @@ from savant.config.schema import (
     FrameParameters,
     DrawFunc,
 )
-from savant.meta.constants import UNTRACKED_OBJECT_ID, PRIMARY_OBJECT_KEY
-from savant.utils.fps_meter import FPSMeter
-from savant.utils.platform import is_aarch64
+from savant.base.model import AttributeModel, ComplexModel
 from savant.utils.sink_factories import SinkEndOfStream
-from savant.utils.source_info import SourceInfoRegistry, SourceInfo, Resolution
-
-from savant.gstreamer import Gst, GLib  # noqa:F401
-from savant.gstreamer.metadata import (
-    SourceFrameMeta,
-    metadata_add_frame_meta,
-    get_source_frame_meta,
-)
-from savant.gstreamer.pipeline import GstPipeline
-from savant.gstreamer.utils import on_pad_event, pad_to_source_id
-
-from savant.deepstream.buffer_processor import (
-    NvDsBufferProcessor,
-    create_buffer_processor,
-)
-from savant.deepstream.metadata import (
-    nvds_obj_meta_output_converter,
-    nvds_attr_meta_output_converter,
-)
-from savant.deepstream.source_output import (
-    SourceOutputWithFrame,
-    create_source_output,
-)
-from savant.deepstream.utils import (
-    gst_nvevent_parse_stream_eos,
-    GST_NVEVENT_STREAM_EOS,
-    nvds_frame_meta_iterator,
-    nvds_obj_meta_iterator,
-    nvds_attr_meta_iterator,
-    nvds_remove_obj_attrs,
-    add_queues_to_pipeline,
-)
 
 
 class NvDsPipeline(GstPipeline):
