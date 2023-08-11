@@ -10,6 +10,7 @@ import subprocess
 import click
 
 sys.path.append(str(Path(__file__).parent.parent))
+from savant.utils.re_patterns import socket_uri_pattern
 from savant.utils.version import version
 from savant.utils.platform import is_aarch64
 
@@ -68,7 +69,8 @@ def get_ipc_mounts(zmq_sockets: Iterable[str]) -> List[str]:
     ipc_mounts = []
 
     for zmq_socket in zmq_sockets:
-        transport, address = zmq_socket.split('://')
+        _, endpoint = socket_uri_pattern.fullmatch(zmq_socket).groups()
+        transport, address = endpoint.split('://')
         if transport == 'ipc':
             ipc_mounts.append(get_ipc_mount(address))
 
