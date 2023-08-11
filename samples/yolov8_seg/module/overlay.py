@@ -17,12 +17,9 @@ class Overlay(NvDsDrawFunc):
         self.mask_color = np.array([0, 255, 0, 64], dtype=np.uint8)
         self.bg_color = np.array([0, 0, 0, 0], dtype=np.uint8)
 
-    def __call__(self, nvds_frame_meta: pyds.NvDsFrameMeta, buffer: Gst.Buffer):
-        with nvds_to_gpu_mat(buffer, nvds_frame_meta) as frame_mat:
-            stream = cv2.cuda.Stream()
-            self.frame_streams.append(stream)
-
-            frame_meta = NvDsFrameMeta(nvds_frame_meta)
+    def draw(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
+        with nvds_to_gpu_mat(buffer, frame_meta.frame_meta) as frame_mat:
+            stream = self.get_cuda_stream(frame_meta)
             for obj_meta in frame_meta.objects:
                 if obj_meta.is_primary:
                     continue

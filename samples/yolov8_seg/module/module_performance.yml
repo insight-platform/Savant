@@ -9,14 +9,12 @@ parameters:
   draw_func:
     module: samples.yolov8_seg.module.overlay
     class_name: Overlay
-  # FPS measurement period, to measure FPS after `shuffle_dance.mp4` has been processed
-  fps_period: 1550
 
 pipeline:
   source:
     element: uridecodebin
     properties:
-      uri: file:///data/shuffle_dance.mp4
+      uri: file:///data/images/zidane.png
 
   elements:
     - element: nvinfer@instance_segmentation
