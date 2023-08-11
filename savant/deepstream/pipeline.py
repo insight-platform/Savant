@@ -453,11 +453,7 @@ class NvDsPipeline(GstPipeline):
 
         return capsfilter.get_static_pad('src')
 
-    def _remove_input_elements(
-        self,
-        source_info: SourceInfo,
-        sink_pad: Gst.Pad,
-    ):
+    def _remove_input_elements(self, source_info: SourceInfo):
         self._logger.debug(
             'Removing input elements for source %s', source_info.source_id
         )
@@ -470,7 +466,6 @@ class NvDsPipeline(GstPipeline):
                 elem.set_state(Gst.State.NULL)
                 self._pipeline.remove(elem)
             source_info.before_muxer = []
-            self._release_muxer_sink_pad(sink_pad)
 
         except PipelineIsNotRunningError:
             self._logger.info(
@@ -768,22 +763,6 @@ class NvDsPipeline(GstPipeline):
 
         return sink_pad
 
-    def _release_muxer_sink_pad(self, pad: Gst.Pad):
-        """Release sink pad of muxer.
-
-        :param pad: Sink pad to release.
-        """
-
-        self._check_pipeline_is_running()
-        element: Gst.Element = pad.get_parent()
-        self._logger.debug(
-            'Releasing pad %s.%s',
-            element.get_name(),
-            pad.get_name(),
-        )
-        # Releasing muxer.sink pad to trigger nv-pad-deleted event on muxer.src pad
-        element.release_request_pad(pad)
-
     def _on_muxer_sink_pad_eos(self, pad: Gst.Pad, event: Gst.Event, source_id: str):
         """Processes EOS event on muxer sink pad."""
 
@@ -793,7 +772,7 @@ class NvDsPipeline(GstPipeline):
         source_info = self._sources.get_source(source_id)
         try:
             self._check_pipeline_is_running()
-            GLib.idle_add(self._remove_input_elements, source_info, pad)
+            GLib.idle_add(self._remove_input_elements, source_info)
         except PipelineIsNotRunningError:
             self._logger.info(
                 'Pipeline is not running. Do not remove output elements for source %s.',
