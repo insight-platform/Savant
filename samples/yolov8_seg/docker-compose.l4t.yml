@@ -8,7 +8,7 @@ services:
       - zmq_sockets:/tmp/zmq-sockets
       - /tmp/video-loop-source-downloads:/tmp/video-loop-source-downloads
     environment:
-      - LOCATION=https://eu-central-1.linodeobjects.com/savant-data/demo/elon_musk.mp4
+      - LOCATION=https://eu-central-1.linodeobjects.com/savant-data/demo/shuffle_dance.mp4
       - DOWNLOAD_PATH=/tmp/video-loop-source-downloads
       - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
       - SOURCE_ID=video
@@ -20,10 +20,10 @@ services:
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
-      - ../../models/age_gender_recognition:/models
-      - ../../downloads/age_gender_recognition:/downloads
+      - ../../models/yolov8_seg:/models
+      - ../../downloads/yolov8_seg:/downloads
       - ..:/opt/savant/samples
-    command: samples/age_gender_recognition/module.yml
+    command: samples/yolov8_seg/module/module.yml
     environment:
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc

@@ -14,7 +14,7 @@ pipeline:
   source:
     element: uridecodebin
     properties:
-      uri: file:///data/images/zidane.png
+      uri: file:///data/shuffle_dance.mp4
 
   elements:
     - element: nvinfer@instance_segmentation

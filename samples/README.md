@@ -45,6 +45,14 @@ Preview:
 
 ![](age_gender_recognition/assets/age-gender-recognition-loop-400.webp)
 
+### YOLOv8 Instance Segmentation
+
+Sample Location: [yolov8_seg](./yolov8_seg)
+
+Preview:
+
+![](yolov8_seg/assets/shuffle_dance-400.webp)
+
 ## Utility And Coding Examples 
 
 ### OpenCV CUDA MOG2 Background Segmentation Demo
