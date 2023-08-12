@@ -12,7 +12,7 @@ Regular GIL-keeping Python operations looks like as follows:
 
     op:
       Acquire_GIL  # takes time to wait when GIL is unlocked
-      do_something
+        do_something
       Release_GIL  # free of charge
 
 The operation releasing GIL looks like as follows:
@@ -22,7 +22,7 @@ The operation releasing GIL looks like as follows:
     op:
       Acquire_GIL # takes time to wait when GIL is unlocked
         Release_GIL
-        do_something # free of charge
+          do_something # free of charge
         Acquire_GIL # takes time to wait when GIL is unlocked
       Release_GIL # free of charge
 
@@ -69,4 +69,4 @@ Python multithreading can be enabled by placing GStreamer ``queue`` elements bef
         length: 1        # keep in mind that every buffered frame occupies GPU
         byte_size: 0     # we don't recommend setting byte_size to specific values other than 0
 
-
+You may want setting ``length` to a larger number to endure traffic bursts, but remember that every buffer has an associated raw frame in GPU, so, e.g. two ``pyfuncs``, one ``draw_func`` with ``length`` set to ``10`` and 16 of 720p sources processed may result in ``3 x 10 x 16 x 1280 x 720 x 4 (RGBA)`` which is almost ``1.7`` GB of GPU RAM.
