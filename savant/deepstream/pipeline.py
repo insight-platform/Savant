@@ -636,7 +636,6 @@ class NvDsPipeline(GstPipeline):
             )
             # TODO: handle savant_frame_meta==None
             frame_idx = savant_frame_meta.idx if savant_frame_meta else None
-            frame_pts = nvds_frame_meta.buf_pts
             video_frame: VideoFrame
             video_frame, video_frame_span = self._video_pipeline.get_batched_frame(
                 'process-batch',
@@ -644,78 +643,90 @@ class NvDsPipeline(GstPipeline):
                 frame_idx,
             )
 
+            with video_frame_span.nested_span('update-frame-meta'):
+                self._update_meta_for_single_frame(
+                    frame_idx=frame_idx,
+                    nvds_frame_meta=nvds_frame_meta,
+                    video_frame=video_frame,
+                )
+
+        return Gst.PadProbeReturn.PASS
+
+    def _update_meta_for_single_frame(
+        self,
+        frame_idx: int,
+        nvds_frame_meta: pyds.NvDsFrameMeta,
+        video_frame: VideoFrame,
+    ):
+        frame_pts = nvds_frame_meta.buf_pts
+        if self._logger.isEnabledFor(logging.DEBUG):
+            self._logger.debug(
+                'Preparing output for frame of source %s with IDX %s and PTS %s.',
+                video_frame.source_id,
+                frame_idx,
+                frame_pts,
+            )
+
+        parents = {}
+
+        # second iteration to collect module objects
+        for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
+            obj_meta, parent_id = nvds_obj_meta_output_converter(
+                nvds_frame_meta,
+                nvds_obj_meta,
+                self._frame_params,
+            )
+            if parent_id is not None:
+                parents[obj_meta.id] = parent_id
+            for attr_meta_list in nvds_attr_meta_iterator(
+                frame_meta=nvds_frame_meta, obj_meta=nvds_obj_meta
+            ):
+                for attr_meta in attr_meta_list:
+                    if (
+                        attr_meta.element_name,
+                        attr_meta.name,
+                    ) not in self._internal_attrs:
+                        obj_meta.set_attribute(
+                            nvds_attr_meta_output_converter(attr_meta)
+                        )
+            nvds_remove_obj_attrs(nvds_frame_meta, nvds_obj_meta)
+
+            # skip empty primary object that equals to frame
+            if nvds_obj_meta.obj_label == PRIMARY_OBJECT_KEY:
+                bbox = obj_meta.detection_box
+                dest_res_bbox = RBBox(
+                    self._frame_params.output_width / 2,
+                    self._frame_params.output_height / 2,
+                    self._frame_params.output_width,
+                    self._frame_params.output_height,
+                )
+                if not bbox.almost_eq(dest_res_bbox, 1e-6):
+                    if self._logger.isEnabledFor(logging.DEBUG):
+                        self._logger.debug(
+                            'Adding primary object, bbox %s != dest res bbox %s.',
+                            bbox,
+                            dest_res_bbox,
+                        )
+                elif obj_meta.attributes:
+                    self._logger.debug('Adding primary object, attributes not empty.')
+                else:
+                    self._logger.debug('Skipping empty primary object.')
+                    continue
             if self._logger.isEnabledFor(logging.DEBUG):
                 self._logger.debug(
-                    'Preparing output for frame of source %s with IDX %s and PTS %s.',
+                    'Collecting object (frame src %s, IDX %s, PTS %s): %s',
                     video_frame.source_id,
                     frame_idx,
                     frame_pts,
+                    re.sub('\s+', ' ', str(obj_meta)),  # convert to single line
                 )
+            video_frame.add_object(obj_meta, IdCollisionResolutionPolicy.Overwrite)
 
-            parents = {}
-
-            # second iteration to collect module objects
-            for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
-                obj_meta, parent_id = nvds_obj_meta_output_converter(
-                    nvds_frame_meta,
-                    nvds_obj_meta,
-                    self._frame_params,
-                )
-                if parent_id is not None:
-                    parents[obj_meta.id] = parent_id
-                for attr_meta_list in nvds_attr_meta_iterator(
-                    frame_meta=nvds_frame_meta, obj_meta=nvds_obj_meta
-                ):
-                    for attr_meta in attr_meta_list:
-                        if (
-                            attr_meta.element_name,
-                            attr_meta.name,
-                        ) not in self._internal_attrs:
-                            obj_meta.set_attribute(
-                                nvds_attr_meta_output_converter(attr_meta)
-                            )
-                nvds_remove_obj_attrs(nvds_frame_meta, nvds_obj_meta)
-
-                # skip empty primary object that equals to frame
-                if nvds_obj_meta.obj_label == PRIMARY_OBJECT_KEY:
-                    bbox = obj_meta.detection_box
-                    dest_res_bbox = RBBox(
-                        self._frame_params.output_width / 2,
-                        self._frame_params.output_height / 2,
-                        self._frame_params.output_width,
-                        self._frame_params.output_height,
-                    )
-                    if not bbox.almost_eq(dest_res_bbox, 1e-6):
-                        if self._logger.isEnabledFor(logging.DEBUG):
-                            self._logger.debug(
-                                'Adding primary object, bbox %s != dest res bbox %s.',
-                                bbox,
-                                dest_res_bbox,
-                            )
-                    elif obj_meta.attributes:
-                        self._logger.debug(
-                            'Adding primary object, attributes not empty.'
-                        )
-                    else:
-                        self._logger.debug('Skipping empty primary object.')
-                        continue
-                if self._logger.isEnabledFor(logging.DEBUG):
-                    self._logger.debug(
-                        'Collecting object (frame src %s, IDX %s, PTS %s): %s',
-                        video_frame.source_id,
-                        frame_idx,
-                        frame_pts,
-                        re.sub('\s+', ' ', str(obj_meta)),  # convert to single line
-                    )
-                video_frame.add_object(obj_meta, IdCollisionResolutionPolicy.Overwrite)
-
-            self._logger.debug('Setting parents to objects')
-            for obj_id, parent_id in parents.items():
-                if self._logger.isEnabledFor(logging.DEBUG):
-                    self._logger.debug('%s is a parent of %s', parent_id, obj_id)
-                video_frame.set_parent(obj_id, parent_id)
-
-        return Gst.PadProbeReturn.PASS
+        self._logger.debug('Setting parents to objects')
+        for obj_id, parent_id in parents.items():
+            if self._logger.isEnabledFor(logging.DEBUG):
+                self._logger.debug('%s is a parent of %s', parent_id, obj_id)
+            video_frame.set_parent(obj_id, parent_id)
 
     # Muxer
     def _create_muxer(self, live_source: bool) -> Gst.Element:

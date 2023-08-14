@@ -13,6 +13,7 @@ from pygstsavantframemeta import (
     nvds_frame_meta_get_nvds_savant_frame_meta,
 )
 from savant_rs.pipeline import VideoPipeline
+from savant_rs.primitives import VideoFrame
 from savant_rs.primitives.geometry import BBox, RBBox
 from savant_rs.utils.symbol_mapper import (
     parse_compound_key,
@@ -124,132 +125,144 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                 batch_id,
                 frame_idx,
             )
-            frame_pts = nvds_frame_meta.buf_pts
-
-            self.logger.debug(
-                'Preparing input for frame of source %s with IDX %s and PTS %s.',
-                video_frame.source_id,
-                frame_idx,
-                frame_pts,
-            )
-
-            # full frame primary object by default
-            source_info = self._sources.get_source(video_frame.source_id)
-            scale_factor_x = self._frame_params.width / source_info.src_resolution.width
-            scale_factor_y = (
-                self._frame_params.height / source_info.src_resolution.height
-            )
-            primary_bbox = BBox(
-                self._frame_params.width / 2,
-                self._frame_params.height / 2,
-                self._frame_params.width,
-                self._frame_params.height,
-            )
-            self.logger.debug(
-                'Init primary bbox for frame with PTS %s: %s', frame_pts, primary_bbox
-            )
-
-            all_nvds_obj_metas = {}
-            # add external objects to nvds meta
-            for obj_meta in video_frame.access_objects(MatchQuery.idle()):
-                obj_key = build_model_object_key(obj_meta.namespace, obj_meta.label)
-                bbox = obj_meta.detection_box
-                if isinstance(bbox, RBBox) and not bbox.angle:
-                    bbox = BBox(*bbox.as_xcycwh())
-                # skip primary object for now, will be added later
-                if obj_key == PRIMARY_OBJECT_KEY:
-                    # if not a full frame then correct primary object
-                    if not bbox.almost_eq(primary_bbox, 1e-6):
-                        primary_bbox = bbox
-                        primary_bbox.scale(scale_factor_x, scale_factor_y)
-                        self.logger.debug(
-                            'Corrected primary bbox for frame with PTS %s: %s',
-                            frame_pts,
-                            primary_bbox,
-                        )
-                    continue
-                # obj_key was only registered if
-                # it was required by the pipeline model elements (this case)
-                # or equaled the output object of one of the pipeline model elements
-                model_name, label = parse_compound_key(obj_key)
-                model_uid, class_id = get_object_id(model_name, label)
-                if isinstance(bbox, RBBox):
-                    selection_type = ObjectSelectionType.ROTATED_BBOX
-                else:
-                    selection_type = ObjectSelectionType.REGULAR_BBOX
-
-                bbox.scale(scale_factor_x, scale_factor_y)
-                if self._frame_params.padding:
-                    bbox.left += self._frame_params.padding.left
-                    bbox.top += self._frame_params.padding.top
-
-                track_id = obj_meta.get_track_id()
-                if track_id is None:
-                    track_id = UNTRACKED_OBJECT_ID
-                # create nvds obj meta
-                nvds_obj_meta = nvds_add_obj_meta_to_frame(
-                    nvds_batch_meta,
-                    nvds_frame_meta,
-                    selection_type,
-                    class_id,
-                    model_uid,
-                    bbox,
-                    obj_meta.confidence,
-                    obj_key,
-                    track_id,
+            with video_frame_span.nested_span('prepare-input'):
+                self._prepare_input_frame(
+                    frame_idx=frame_idx,
+                    nvds_batch_meta=nvds_batch_meta,
+                    nvds_frame_meta=nvds_frame_meta,
+                    video_frame=video_frame,
                 )
 
-                # save nvds obj meta ref in case it is some other obj's parent
-                # and save nvds obj meta ref in case it has a parent
-                # this is done to avoid one more full iteration of frame's objects
-                # because the parent meta may be created after the child
-                all_nvds_obj_metas[obj_meta.id] = nvds_obj_meta
+    def _prepare_input_frame(
+        self,
+        frame_idx: int,
+        nvds_batch_meta: pyds.NvDsBatchMeta,
+        nvds_frame_meta: pyds.NvDsFrameMeta,
+        video_frame: VideoFrame,
+    ):
+        frame_pts = nvds_frame_meta.buf_pts
+        self.logger.debug(
+            'Preparing input for frame of source %s with IDX %s and PTS %s.',
+            video_frame.source_id,
+            frame_idx,
+            frame_pts,
+        )
 
-                for namespace, name in obj_meta.attributes:
-                    attr = obj_meta.get_attribute(namespace, name)
-                    value = attr.values[0]
-                    nvds_add_attr_meta_to_obj(
-                        frame_meta=nvds_frame_meta,
-                        obj_meta=nvds_obj_meta,
-                        element_name=namespace,
-                        name=name,
-                        value=parse_attribute_value(value),
-                        confidence=value.confidence,
+        # full frame primary object by default
+        source_info = self._sources.get_source(video_frame.source_id)
+        scale_factor_x = self._frame_params.width / source_info.src_resolution.width
+        scale_factor_y = self._frame_params.height / source_info.src_resolution.height
+        primary_bbox = BBox(
+            self._frame_params.width / 2,
+            self._frame_params.height / 2,
+            self._frame_params.width,
+            self._frame_params.height,
+        )
+        self.logger.debug(
+            'Init primary bbox for frame with PTS %s: %s', frame_pts, primary_bbox
+        )
+
+        all_nvds_obj_metas = {}
+        # add external objects to nvds meta
+        for obj_meta in video_frame.access_objects(MatchQuery.idle()):
+            obj_key = build_model_object_key(obj_meta.namespace, obj_meta.label)
+            bbox = obj_meta.detection_box
+            if isinstance(bbox, RBBox) and not bbox.angle:
+                bbox = BBox(*bbox.as_xcycwh())
+            # skip primary object for now, will be added later
+            if obj_key == PRIMARY_OBJECT_KEY:
+                # if not a full frame then correct primary object
+                if not bbox.almost_eq(primary_bbox, 1e-6):
+                    primary_bbox = bbox
+                    primary_bbox.scale(scale_factor_x, scale_factor_y)
+                    self.logger.debug(
+                        'Corrected primary bbox for frame with PTS %s: %s',
+                        frame_pts,
+                        primary_bbox,
                     )
-
-            # finish configuring obj metas by assigning the parents
-            # TODO: fix query to iterate only objects with children
-            for parent in video_frame.access_objects(MatchQuery.idle()):
-                for child in video_frame.get_children(parent.id):
-                    all_nvds_obj_metas[child.id].parent = all_nvds_obj_metas[parent.id]
-
-            video_frame.clear_objects()
-            # add primary frame object
-            model_name, label = parse_compound_key(PRIMARY_OBJECT_KEY)
+                continue
+            # obj_key was only registered if
+            # it was required by the pipeline model elements (this case)
+            # or equaled the output object of one of the pipeline model elements
+            model_name, label = parse_compound_key(obj_key)
             model_uid, class_id = get_object_id(model_name, label)
+            if isinstance(bbox, RBBox):
+                selection_type = ObjectSelectionType.ROTATED_BBOX
+            else:
+                selection_type = ObjectSelectionType.REGULAR_BBOX
+
+            bbox.scale(scale_factor_x, scale_factor_y)
             if self._frame_params.padding:
-                primary_bbox.xc += self._frame_params.padding.left
-                primary_bbox.yc += self._frame_params.padding.top
-            self.logger.debug(
-                'Add primary object to frame meta with PTS %s, bbox: %s',
-                frame_pts,
-                primary_bbox,
-            )
-            nvds_add_obj_meta_to_frame(
+                bbox.left += self._frame_params.padding.left
+                bbox.top += self._frame_params.padding.top
+
+            track_id = obj_meta.get_track_id()
+            if track_id is None:
+                track_id = UNTRACKED_OBJECT_ID
+            # create nvds obj meta
+            nvds_obj_meta = nvds_add_obj_meta_to_frame(
                 nvds_batch_meta,
                 nvds_frame_meta,
-                ObjectSelectionType.REGULAR_BBOX,
+                selection_type,
                 class_id,
                 model_uid,
-                primary_bbox,
-                # confidence should be bigger than tracker minDetectorConfidence
-                # to prevent the tracker from deleting the object
-                # use tracker display-tracking-id=0 to avoid labelling
-                0.999,
-                PRIMARY_OBJECT_KEY,
+                bbox,
+                obj_meta.confidence,
+                obj_key,
+                track_id,
             )
 
-            nvds_frame_meta.bInferDone = True  # required for tracker (DS 6.0)
+            # save nvds obj meta ref in case it is some other obj's parent
+            # and save nvds obj meta ref in case it has a parent
+            # this is done to avoid one more full iteration of frame's objects
+            # because the parent meta may be created after the child
+            all_nvds_obj_metas[obj_meta.id] = nvds_obj_meta
+
+            for namespace, name in obj_meta.attributes:
+                attr = obj_meta.get_attribute(namespace, name)
+                value = attr.values[0]
+                nvds_add_attr_meta_to_obj(
+                    frame_meta=nvds_frame_meta,
+                    obj_meta=nvds_obj_meta,
+                    element_name=namespace,
+                    name=name,
+                    value=parse_attribute_value(value),
+                    confidence=value.confidence,
+                )
+
+        # finish configuring obj metas by assigning the parents
+        # TODO: fix query to iterate only objects with children
+        for parent in video_frame.access_objects(MatchQuery.idle()):
+            for child in video_frame.get_children(parent.id):
+                all_nvds_obj_metas[child.id].parent = all_nvds_obj_metas[parent.id]
+
+        video_frame.clear_objects()
+        # add primary frame object
+        model_name, label = parse_compound_key(PRIMARY_OBJECT_KEY)
+        model_uid, class_id = get_object_id(model_name, label)
+        if self._frame_params.padding:
+            primary_bbox.xc += self._frame_params.padding.left
+            primary_bbox.yc += self._frame_params.padding.top
+        self.logger.debug(
+            'Add primary object to frame meta with PTS %s, bbox: %s',
+            frame_pts,
+            primary_bbox,
+        )
+        nvds_add_obj_meta_to_frame(
+            nvds_batch_meta,
+            nvds_frame_meta,
+            ObjectSelectionType.REGULAR_BBOX,
+            class_id,
+            model_uid,
+            primary_bbox,
+            # confidence should be bigger than tracker minDetectorConfidence
+            # to prevent the tracker from deleting the object
+            # use tracker display-tracking-id=0 to avoid labelling
+            0.999,
+            PRIMARY_OBJECT_KEY,
+        )
+
+        nvds_frame_meta.bInferDone = True  # required for tracker (DS 6.0)
 
     def prepare_output(
         self,
@@ -288,15 +301,16 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
             'sink',
             output_frame.idx,
         )
-        # TODO: use VideoFrameUpdate
-        video_frame.dts = output_frame.dts
-        video_frame.width = self._frame_params.output_width
-        video_frame.height = self._frame_params.output_height
-        if output_frame.codec is not None:
-            video_frame.codec = output_frame.codec.name
-        video_frame.keyframe = output_frame.keyframe
-        # TODO: Do we need to delete frame after it was sent to sink?
-        self._video_pipeline.delete('sink', output_frame.idx)
+        with video_frame_span.nested_span('prepare_output'):
+            # TODO: use VideoFrameUpdate
+            video_frame.dts = output_frame.dts
+            video_frame.width = self._frame_params.output_width
+            video_frame.height = self._frame_params.output_height
+            if output_frame.codec is not None:
+                video_frame.codec = output_frame.codec.name
+            video_frame.keyframe = output_frame.keyframe
+            # TODO: Do we need to delete frame after it was sent to sink?
+            self._video_pipeline.delete('sink', output_frame.idx)
 
         return SinkVideoFrame(video_frame=video_frame, frame=output_frame.frame)
 

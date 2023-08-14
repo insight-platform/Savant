@@ -211,17 +211,22 @@ class FrameTagFilter(LoggerMixin, Gst.Element):
                 self.pipeline_stage_name,
                 frame_idx,
             )
-            frame_meta = NvDsFrameMeta(video_frame, nvds_frame_meta)
-            if frame_meta.get_tag(self.tag) is not None:
-                self.logger.debug('Frame PTS=%s has tag "%s"', frame_meta.pts, self.tag)
-                return None
+            with video_frame_span.nested_span('frame-tag-filter/parse-buffer'):
+                frame_meta = NvDsFrameMeta(video_frame, nvds_frame_meta)
+                if frame_meta.get_tag(self.tag) is not None:
+                    self.logger.debug(
+                        'Frame PTS=%s has tag "%s"',
+                        frame_meta.pts,
+                        self.tag,
+                    )
+                    return None
 
-            not_tagged_buffer: Gst.Buffer = Gst.Buffer.new()
-            not_tagged_buffer.pts = frame_meta.pts
-            not_tagged_buffer.set_flags(Gst.BufferFlags.DELTA_UNIT)
-            if frame_idx is not None:
-                gst_buffer_add_savant_frame_meta(not_tagged_buffer, frame_idx)
-            not_tagged_buffers.append(not_tagged_buffer)
+                not_tagged_buffer: Gst.Buffer = Gst.Buffer.new()
+                not_tagged_buffer.pts = frame_meta.pts
+                not_tagged_buffer.set_flags(Gst.BufferFlags.DELTA_UNIT)
+                if frame_idx is not None:
+                    gst_buffer_add_savant_frame_meta(not_tagged_buffer, frame_idx)
+                not_tagged_buffers.append(not_tagged_buffer)
 
         self.logger.debug(
             'Frames PTS=%s do not have tag "%s"',
