@@ -12,6 +12,7 @@ from pygstsavantframemeta import (
     gst_buffer_get_savant_frame_meta,
     nvds_frame_meta_get_nvds_savant_frame_meta,
 )
+from savant_rs.pipeline import VideoPipeline
 from savant_rs.primitives.geometry import BBox, RBBox
 from savant_rs.utils.symbol_mapper import (
     parse_compound_key,
@@ -19,7 +20,9 @@ from savant_rs.utils.symbol_mapper import (
     get_object_id,
     build_model_object_key,
 )
+from savant_rs.video_object_query import MatchQuery
 
+from savant.api.parser import parse_attribute_value
 from savant.base.input_preproc import ObjectsPreprocessing
 from savant.base.model import ObjectModel, ComplexModel
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
@@ -30,7 +33,7 @@ from savant.deepstream.source_output import (
     SourceOutputWithFrame,
 )
 from savant.deepstream.utils.attribute import nvds_get_all_obj_attrs
-from savant.meta.constants import PRIMARY_OBJECT_KEY
+from savant.meta.constants import PRIMARY_OBJECT_KEY, UNTRACKED_OBJECT_ID
 from savant.config.schema import PipelineElement, ModelElement, FrameParameters
 from savant.deepstream.nvinfer.model import (
     NvInferDetector,
@@ -52,7 +55,6 @@ from savant.deepstream.utils import (
 from savant.gstreamer import Gst  # noqa:F401
 from savant.gstreamer.buffer_processor import GstBufferProcessor
 from savant.gstreamer.codecs import CodecInfo, Codec
-from savant.gstreamer.metadata import get_source_frame_meta, metadata_pop_frame_meta
 from savant.meta.object import ObjectMeta
 from savant.meta.type import ObjectSelectionType
 from savant.utils.fps_meter import FPSMeter
@@ -81,6 +83,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
         sources: SourceInfoRegistry,
         objects_preprocessing: ObjectsPreprocessing,
         frame_params: FrameParameters,
+        video_pipeline: VideoPipeline,
     ):
         """Buffer processor for DeepStream pipeline.
 
@@ -96,6 +99,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
         self._objects_preprocessing = objects_preprocessing
         self._frame_params = frame_params
         self._queue = queue
+        self._video_pipeline = video_pipeline
 
     def prepare_input(self, buffer: Gst.Buffer):
         """Input meta processor.
@@ -104,27 +108,33 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
         """
 
         self.logger.debug('Preparing input for buffer with PTS %s.', buffer.pts)
+        savant_frame_meta_batch = gst_buffer_get_savant_frame_meta(buffer)
+        # TODO: handle savant_frame_meta_batch==None
+        batch_id = savant_frame_meta_batch.idx if savant_frame_meta_batch else None
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
             # TODO: add source_id to SavantFrameMeta and always attach SavantFrameMeta to the buffers
-            source_id = self._sources.get_id_by_pad_index(nvds_frame_meta.pad_index)
             savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(
                 nvds_frame_meta
             )
+            # TODO: handle savant_frame_meta==None
             frame_idx = savant_frame_meta.idx if savant_frame_meta else None
+            video_frame, video_frame_span = self._video_pipeline.get_batched_frame(
+                'process-batch',
+                batch_id,
+                frame_idx,
+            )
             frame_pts = nvds_frame_meta.buf_pts
 
             self.logger.debug(
                 'Preparing input for frame of source %s with IDX %s and PTS %s.',
-                source_id,
+                video_frame.source_id,
                 frame_idx,
                 frame_pts,
             )
 
-            frame_meta = get_source_frame_meta(source_id, frame_idx, frame_pts)
-
             # full frame primary object by default
-            source_info = self._sources.get_source(source_id)
+            source_info = self._sources.get_source(video_frame.source_id)
             scale_factor_x = self._frame_params.width / source_info.src_resolution.width
             scale_factor_y = (
                 self._frame_params.height / source_info.src_resolution.height
@@ -140,20 +150,14 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
             )
 
             all_nvds_obj_metas = {}
-            nvds_obj_metas_w_parent = {}
             # add external objects to nvds meta
-            for obj_meta in frame_meta.metadata['objects']:
-                obj_key = build_model_object_key(
-                    obj_meta['model_name'], obj_meta['label']
-                )
+            for obj_meta in video_frame.access_objects(MatchQuery.idle()):
+                obj_key = build_model_object_key(obj_meta.namespace, obj_meta.label)
+                bbox = obj_meta.detection_box
+                if isinstance(bbox, RBBox) and not bbox.angle:
+                    bbox = BBox(*bbox.as_xcycwh())
                 # skip primary object for now, will be added later
                 if obj_key == PRIMARY_OBJECT_KEY:
-                    bbox = BBox(
-                        obj_meta['bbox']['xc'],
-                        obj_meta['bbox']['yc'],
-                        obj_meta['bbox']['width'],
-                        obj_meta['bbox']['height'],
-                    )
                     # if not a full frame then correct primary object
                     if not bbox.almost_eq(primary_bbox, 1e-6):
                         primary_bbox = bbox
@@ -169,22 +173,9 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                 # or equaled the output object of one of the pipeline model elements
                 model_name, label = parse_compound_key(obj_key)
                 model_uid, class_id = get_object_id(model_name, label)
-                if obj_meta['bbox']['angle']:
-                    bbox = RBBox(
-                        obj_meta['bbox']['xc'],
-                        obj_meta['bbox']['yc'],
-                        obj_meta['bbox']['width'],
-                        obj_meta['bbox']['height'],
-                        obj_meta['bbox']['angle'],
-                    )
+                if isinstance(bbox, RBBox):
                     selection_type = ObjectSelectionType.ROTATED_BBOX
                 else:
-                    bbox = BBox(
-                        obj_meta['bbox']['xc'],
-                        obj_meta['bbox']['yc'],
-                        obj_meta['bbox']['width'],
-                        obj_meta['bbox']['height'],
-                    )
                     selection_type = ObjectSelectionType.REGULAR_BBOX
 
                 bbox.scale(scale_factor_x, scale_factor_y)
@@ -192,6 +183,9 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                     bbox.left += self._frame_params.padding.left
                     bbox.top += self._frame_params.padding.top
 
+                track_id = obj_meta.get_track_id()
+                if track_id is None:
+                    track_id = UNTRACKED_OBJECT_ID
                 # create nvds obj meta
                 nvds_obj_meta = nvds_add_obj_meta_to_frame(
                     nvds_batch_meta,
@@ -199,53 +193,37 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                     selection_type,
                     class_id,
                     model_uid,
-                    (
-                        bbox.xc,
-                        bbox.yc,
-                        bbox.width,
-                        bbox.height,
-                        bbox.angle
-                        if selection_type == ObjectSelectionType.ROTATED_BBOX
-                        else 0.0,
-                    ),
-                    obj_meta['confidence'],
+                    bbox,
+                    obj_meta.confidence,
                     obj_key,
-                    obj_meta['object_id'],
+                    track_id,
                 )
 
                 # save nvds obj meta ref in case it is some other obj's parent
                 # and save nvds obj meta ref in case it has a parent
                 # this is done to avoid one more full iteration of frame's objects
                 # because the parent meta may be created after the child
-                all_nvds_obj_metas[
-                    obj_meta['model_name'], obj_meta['label'], obj_meta['object_id']
-                ] = nvds_obj_meta
-                if (
-                    obj_meta['parent_model_name'] is not None
-                    and obj_meta['parent_label'] is not None
-                    and obj_meta['parent_object_id'] is not None
-                ):
-                    nvds_obj_metas_w_parent[
-                        obj_meta['parent_model_name'],
-                        obj_meta['parent_label'],
-                        obj_meta['parent_object_id'],
-                    ] = nvds_obj_meta
+                all_nvds_obj_metas[obj_meta.id] = nvds_obj_meta
 
-                for attr in obj_meta['attributes']:
+                for namespace, name in obj_meta.attributes:
+                    attr = obj_meta.get_attribute(namespace, name)
+                    value = attr.values[0]
                     nvds_add_attr_meta_to_obj(
                         frame_meta=nvds_frame_meta,
                         obj_meta=nvds_obj_meta,
-                        element_name=attr['element_name'],
-                        name=attr['name'],
-                        value=attr['value'],
-                        confidence=attr['confidence'],
+                        element_name=namespace,
+                        name=name,
+                        value=parse_attribute_value(value),
+                        confidence=value.confidence,
                     )
 
             # finish configuring obj metas by assigning the parents
-            for parent_key, nvds_obj_meta in nvds_obj_metas_w_parent.items():
-                nvds_obj_meta.parent = all_nvds_obj_metas[parent_key]
+            # TODO: fix query to iterate only objects with children
+            for parent in video_frame.access_objects(MatchQuery.idle()):
+                for child in video_frame.get_children(parent.id):
+                    all_nvds_obj_metas[child.id].parent = all_nvds_obj_metas[parent.id]
 
-            frame_meta.metadata['objects'] = []
+            video_frame.clear_objects()
             # add primary frame object
             model_name, label = parse_compound_key(PRIMARY_OBJECT_KEY)
             model_uid, class_id = get_object_id(model_name, label)
@@ -263,13 +241,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                 ObjectSelectionType.REGULAR_BBOX,
                 class_id,
                 model_uid,
-                (
-                    primary_bbox.xc,
-                    primary_bbox.yc,
-                    primary_bbox.width,
-                    primary_bbox.height,
-                    0.0,
-                ),
+                primary_bbox,
                 # confidence should be bigger than tracker minDetectorConfidence
                 # to prevent the tracker from deleting the object
                 # use tracker display-tracking-id=0 to avoid labelling
@@ -311,21 +283,22 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
             output_frame.pts,
             output_frame.dts,
         )
-        frame_meta = metadata_pop_frame_meta(
-            source_info.source_id,
+
+        video_frame, video_frame_span = self._video_pipeline.get_independent_frame(
+            'sink',
             output_frame.idx,
-            output_frame.pts,
         )
-        return SinkVideoFrame(
-            source_id=source_info.source_id,
-            frame_meta=frame_meta,
-            frame_width=self._frame_params.output_width,
-            frame_height=self._frame_params.output_height,
-            frame=output_frame.frame,
-            frame_codec=output_frame.codec,
-            dts=output_frame.dts,
-            keyframe=output_frame.keyframe,
-        )
+        # TODO: use VideoFrameUpdate
+        video_frame.dts = output_frame.dts
+        video_frame.width = self._frame_params.output_width
+        video_frame.height = self._frame_params.output_height
+        if output_frame.codec is not None:
+            video_frame.codec = output_frame.codec.name
+        video_frame.keyframe = output_frame.keyframe
+        # TODO: Do we need to delete frame after it was sent to sink?
+        self._video_pipeline.delete('sink', output_frame.idx)
+
+        return SinkVideoFrame(video_frame=video_frame, frame=output_frame.frame)
 
     def on_eos(self, source_info: SourceInfo) -> SinkVideoFrame:
         """Pipeline EOS handler."""
@@ -730,6 +703,7 @@ class NvDsEncodedBufferProcessor(NvDsBufferProcessor):
         objects_preprocessing: ObjectsPreprocessing,
         frame_params: FrameParameters,
         codec: CodecInfo,
+        video_pipeline: VideoPipeline,
     ):
         """Buffer processor for DeepStream pipeline.
 
@@ -748,6 +722,7 @@ class NvDsEncodedBufferProcessor(NvDsBufferProcessor):
             sources=sources,
             objects_preprocessing=objects_preprocessing,
             frame_params=frame_params,
+            video_pipeline=video_pipeline,
         )
 
     def _iterate_output_frames(
@@ -892,6 +867,7 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
         objects_preprocessing: ObjectsPreprocessing,
         frame_params: FrameParameters,
         output_frame: bool,
+        video_pipeline: VideoPipeline,
     ):
         """Buffer processor for DeepStream pipeline.
 
@@ -911,6 +887,7 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
             sources=sources,
             objects_preprocessing=objects_preprocessing,
             frame_params=frame_params,
+            video_pipeline=video_pipeline,
         )
 
     def _iterate_output_frames(
@@ -974,6 +951,7 @@ def create_buffer_processor(
     objects_preprocessing: ObjectsPreprocessing,
     frame_params: FrameParameters,
     source_output: SourceOutput,
+    video_pipeline: VideoPipeline,
 ):
     """Create buffer processor."""
 
@@ -989,6 +967,7 @@ def create_buffer_processor(
             objects_preprocessing=objects_preprocessing,
             frame_params=frame_params,
             codec=source_output.codec,
+            video_pipeline=video_pipeline,
         )
 
     return NvDsRawBufferProcessor(
@@ -998,4 +977,5 @@ def create_buffer_processor(
         objects_preprocessing=objects_preprocessing,
         frame_params=frame_params,
         output_frame=isinstance(source_output, SourceOutputWithFrame),
+        video_pipeline=video_pipeline,
     )

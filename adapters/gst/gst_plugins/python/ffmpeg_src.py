@@ -159,7 +159,7 @@ class FFmpegSrc(LoggerMixin, GstBase.BaseSrc):
         """Gst plugin start function."""
 
         try:
-            required_property(self._uri, 'uri')
+            required_property('uri', self._uri)
             self.logger.info('Creating FFMpegSource.')
             self._ffmpeg_source = FFMpegSource(
                 self._uri,

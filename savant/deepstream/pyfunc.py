@@ -1,6 +1,14 @@
 """Base implementation of user-defined PyFunc class."""
+from typing import Optional
+
 import pyds
 import cv2
+from pygstsavantframemeta import (
+    gst_buffer_get_savant_frame_meta,
+    nvds_frame_meta_get_nvds_savant_frame_meta,
+)
+from savant_rs.pipeline import VideoPipeline
+
 from savant.base.pyfunc import BasePyFuncPlugin
 from savant.deepstream.utils import (
     nvds_frame_meta_iterator,
@@ -26,7 +34,15 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._sources = SourceInfoRegistry()
+        self._video_pipeline: Optional[VideoPipeline] = None
+        self._pipeline_stage_name: Optional[str] = None
         self.frame_streams = {}
+
+    def on_start(self) -> bool:
+        """Do on plugin start."""
+        self._video_pipeline = self.gst_element.get_property('pipeline')
+        self._pipeline_stage_name = self.gst_element.get_property('pipeline-stage-name')
+        return True
 
     def on_event(self, event: Gst.Event):
         """Add stream event callbacks."""
@@ -84,6 +100,9 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
         :param buffer: Gstreamer buffer.
         """
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
+        savant_batch_meta = gst_buffer_get_savant_frame_meta(buffer)
+        # TODO: handle savant_batch_meta==None
+        batch_id = savant_batch_meta.idx if savant_batch_meta else None
 
         self.logger.debug(
             'Processing batch id=%d, with %d frames',
@@ -91,7 +110,17 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
             nvds_batch_meta.num_frames_in_batch,
         )
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
-            with NvDsFrameMeta(nvds_frame_meta) as frame_meta:
+            savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(
+                nvds_frame_meta
+            )
+            # TODO: handle savant_frame_meta==None
+            frames_id = savant_frame_meta.idx if savant_frame_meta else None
+            video_frame, video_frame_span = self._video_pipeline.get_batched_frame(
+                self._pipeline_stage_name,
+                batch_id,
+                frames_id,
+            )
+            with NvDsFrameMeta(video_frame, nvds_frame_meta) as frame_meta:
                 self.process_frame(buffer, frame_meta)
 
         for stream in self.frame_streams.values():

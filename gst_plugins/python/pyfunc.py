@@ -5,6 +5,9 @@ other tasks.
 """
 from typing import Any, Optional
 import json
+
+from savant_rs.pipeline import VideoPipeline
+
 from savant.base.pyfunc import PyFunc, BasePyFuncPlugin
 from savant.gstreamer import GLib, Gst, GstBase, GObject  # noqa: F401
 from savant.utils.logging import LoggerMixin
@@ -61,6 +64,19 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             None,
             GObject.ParamFlags.READWRITE,
         ),
+        'pipeline': (
+            object,
+            'VideoPipeline object from savant-rs.',
+            'VideoPipeline object from savant-rs.',
+            GObject.ParamFlags.READWRITE,
+        ),
+        'pipeline-stage-name': (
+            str,
+            'Name of the pipeline stage.',
+            'Name of the pipeline stage.',
+            None,
+            GObject.ParamFlags.READWRITE,
+        ),
     }
 
     def __init__(self):
@@ -71,6 +87,9 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
         self.kwargs: Optional[str] = None
         # pyfunc object
         self.pyfunc: Optional[BasePyFuncPlugin] = None
+        self.video_pipeline: Optional[VideoPipeline] = None
+        self.pipeline_stage_name: Optional[str] = None
+
 
     def do_get_property(self, prop: GObject.GParamSpec) -> Any:
         """Gst plugin get property function.
@@ -83,6 +102,10 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             return self.class_name
         if prop.name == 'kwargs':
             return self.kwargs
+        if prop.name == 'pipeline':
+            return self.video_pipeline
+        if prop.name == 'pipeline-stage-name':
+            return self.pipeline_stage_name
         raise AttributeError(f'Unknown property {prop.name}.')
 
     def do_set_property(self, prop: GObject.GParamSpec, value: Any):
@@ -97,6 +120,10 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             self.class_name = value
         elif prop.name == 'kwargs':
             self.kwargs = value
+        elif prop.name == 'pipeline':
+            self.video_pipeline = value
+        elif prop.name == 'pipeline-stage-name':
+            self.pipeline_stage_name = value
         else:
             raise AttributeError(f'Unknown property {prop.name}.')
 

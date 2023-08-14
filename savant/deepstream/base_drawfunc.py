@@ -42,7 +42,13 @@ class BaseNvDsDrawFunc(NvDsPyFuncPlugin):
         if self.condition.tag is None:
             return True
 
-        if self.condition.tag in frame_meta.tags:
+        if frame_meta.get_tag(self.condition.tag) is not None:
+            self.logger.debug(
+                'Frame from source %s with PTS %s has tag %s. Drawing on it.',
+                frame_meta.source_id,
+                frame_meta.pts,
+                self.condition.tag,
+            )
             return True
 
         self.logger.debug(

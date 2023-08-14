@@ -1,7 +1,5 @@
-import json
 import os
 import time
-from dataclasses import asdict
 from datetime import datetime
 from distutils.util import strtobool
 from pathlib import Path
@@ -11,6 +9,7 @@ from typing import Callable, List, Optional
 
 import pyds
 from pygstsavantframemeta import gst_buffer_get_savant_frame_meta
+from savant_rs.pipeline import VideoPipeline, VideoPipelineStagePayloadType
 
 from adapters.ds.sinks.always_on_rtsp.last_frame import LastFrame
 from savant.config.schema import PipelineElement
@@ -18,7 +17,6 @@ from savant.deepstream.encoding import check_encoder_is_available
 from savant.gstreamer import Gst
 from savant.gstreamer.codecs import CODEC_BY_CAPS_NAME, Codec
 from savant.gstreamer.element_factory import GstElementFactory
-from savant.gstreamer.metadata import metadata_pop_frame_meta
 from savant.gstreamer.runner import GstPipelineRunner
 from savant.utils.platform import is_aarch64
 from savant.utils.zeromq import ReceiverSocketTypes
@@ -76,6 +74,18 @@ class Config:
         self.fps_output = opt_config('FPS_OUTPUT', 'stdout')
 
         self.metadata_output = opt_config('METADATA_OUTPUT')
+        if self.metadata_output:
+            self.pipeline_stage_name = 'source'
+            self.video_pipeline: Optional[VideoPipeline] = VideoPipeline(
+                'always-on-sink'
+            )
+            self.video_pipeline.add_stage(
+                self.pipeline_stage_name,
+                VideoPipelineStagePayloadType.Frame,
+            )
+        else:
+            self.pipeline_stage_name = None
+            self.video_pipeline: Optional[VideoPipeline] = None
 
         self.framerate = opt_config('FRAMERATE', '30/1')
         self.sync = opt_config('SYNC_OUTPUT', False, strtobool)
@@ -100,10 +110,14 @@ class Config:
 def log_frame_metadata(pad: Gst.Pad, info: Gst.PadProbeInfo, config: Config):
     buffer: Gst.Buffer = info.get_buffer()
     savant_frame_meta = gst_buffer_get_savant_frame_meta(buffer)
+    # TODO: handle savant_frame_meta==None
     frame_idx = savant_frame_meta.idx if savant_frame_meta else None
-    frame_pts = buffer.pts
-    metadata = metadata_pop_frame_meta(config.source_id, frame_idx, frame_pts)
-    metadata_json = json.dumps(asdict(metadata), default=dict)
+    video_frame, video_frame_span = config.video_pipeline.get_independent_frame(
+        config.pipeline_stage_name,
+        frame_idx,
+    )
+    config.video_pipeline.delete(config.pipeline_stage_name, frame_idx)
+    metadata_json = video_frame.json
     if config.metadata_output == 'logger':
         logger.info('Frame metadata: %s', metadata_json)
     else:
@@ -165,6 +179,11 @@ def build_input_pipeline(
     factory: GstElementFactory,
 ):
     pipeline: Gst.Pipeline = Gst.Pipeline.new('input-pipeline')
+    pipeline_stage_name = 'source'
+
+    savant_rs_video_demux_properties = {'source-id': config.source_id}
+    if config.pipeline_stage_name is not None:
+        savant_rs_video_demux_properties['pipeline-stage-name'] = pipeline_stage_name
 
     source_elements = [
         PipelineElement(
@@ -177,10 +196,7 @@ def build_input_pipeline(
         ),
         PipelineElement(
             'savant_rs_video_demux',
-            properties={
-                'source-id': config.source_id,
-                'store-metadata': bool(config.metadata_output),
-            },
+            properties=savant_rs_video_demux_properties,
         ),
     ]
     sink_elements = [
@@ -217,6 +233,8 @@ def build_input_pipeline(
     gst_source_elements = add_elements(pipeline, source_elements, factory)
     gst_sink_elements = add_elements(pipeline, sink_elements, factory)
     savant_rs_video_demux = gst_source_elements[-1]
+    if config.video_pipeline is not None:
+        savant_rs_video_demux.set_property('pipeline', config.video_pipeline)
     nvvideoconvert = gst_sink_elements[0]
 
     savant_rs_video_demux.connect(

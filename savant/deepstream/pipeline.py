@@ -1,18 +1,23 @@
 """DeepStream pipeline."""
+import re
 from collections import defaultdict
 from pathlib import Path
 from queue import Queue
 from threading import Lock
-from typing import Any, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 import time
 import logging
 import pyds
-from savant_rs.primitives.geometry import BBox
+from savant_rs.pipeline import VideoPipeline, VideoPipelineStagePayloadType
+from savant_rs.primitives import EndOfStream, IdCollisionResolutionPolicy, VideoFrame
+from savant_rs.primitives.geometry import RBBox
 
 from savant.base.input_preproc import ObjectsPreprocessing
 
 from pygstsavantframemeta import (
     add_convert_savant_frame_meta_pad_probe,
+    gst_buffer_add_savant_frame_meta,
+    gst_buffer_get_savant_frame_meta,
     nvds_frame_meta_get_nvds_savant_frame_meta,
 )
 
@@ -30,11 +35,6 @@ from savant.gstreamer.pipeline import GstPipeline
 from savant.deepstream.metadata import (
     nvds_obj_meta_output_converter,
     nvds_attr_meta_output_converter,
-)
-from savant.gstreamer.metadata import (
-    SourceFrameMeta,
-    metadata_add_frame_meta,
-    get_source_frame_meta,
 )
 from savant.gstreamer.utils import on_pad_event, pad_to_source_id
 from savant.deepstream.utils import (
@@ -56,6 +56,7 @@ from savant.config.schema import (
     ModelElement,
     FrameParameters,
     DrawFunc,
+    PyFuncElement,
 )
 from savant.base.model import AttributeModel, ComplexModel
 from savant.utils.sink_factories import SinkEndOfStream
@@ -97,8 +98,13 @@ class NvDsPipeline(GstPipeline):
 
         self._internal_attrs = set()
 
+        self._video_pipeline = VideoPipeline(name)
         output_frame = kwargs.get('output_frame')
-        self._source_output = create_source_output(self._frame_params, output_frame)
+        self._source_output = create_source_output(
+            frame_params=self._frame_params,
+            output_frame=output_frame,
+            video_pipeline=self._video_pipeline,
+        )
 
         draw_func: Optional[DrawFunc] = kwargs.get('draw_func')
         if draw_func is not None and isinstance(
@@ -109,11 +115,19 @@ class NvDsPipeline(GstPipeline):
         self._demuxer_src_pads: List[Gst.Pad] = []
         self._free_pad_indices: List[int] = []
         self._muxer: Optional[Gst.Element] = None
+        for stage in ['source', 'decode', 'source-convert']:
+            self._video_pipeline.add_stage(stage, VideoPipelineStagePayloadType.Frame)
+        self._video_pipeline.add_stage(
+            'process-batch', VideoPipelineStagePayloadType.Batch
+        )
 
         if pipeline_cfg.source.element == 'zeromq_source_bin':
-            pipeline_cfg.source.properties[
-                'max-parallel-streams'
-            ] = self._max_parallel_streams
+            pipeline_cfg.source.properties.update(
+                {
+                    'max-parallel-streams': self._max_parallel_streams,
+                    'pipeline-stage-name': 'source',
+                }
+            )
 
         buffer_queues: Optional[BufferQueuesParameters] = kwargs.get('buffer_queues')
         if buffer_queues is not None:
@@ -145,6 +159,7 @@ class NvDsPipeline(GstPipeline):
             objects_preprocessing=self._objects_preprocessing,
             frame_params=self._frame_params,
             source_output=self._source_output,
+            video_pipeline=self._video_pipeline,
         )
 
     def add_element(
@@ -163,7 +178,16 @@ class NvDsPipeline(GstPipeline):
                 for attr in element.model.output.attributes:
                     if attr.internal:
                         self._internal_attrs.add((element.name, attr.name))
-        return super().add_element(element=element, with_probes=with_probes, link=link)
+        gst_element = super().add_element(
+            element=element,
+            with_probes=with_probes,
+            link=link,
+        )
+        if isinstance(element, PyFuncElement):
+            gst_element.set_property('pipeline', self._video_pipeline)
+            gst_element.set_property('pipeline-stage-name', 'process-batch')
+
+        return gst_element
 
     def before_shutdown(self):
         super().before_shutdown()
@@ -176,6 +200,9 @@ class NvDsPipeline(GstPipeline):
     def _add_source(self, source: PipelineElement):
         source.name = 'source'
         _source = self.add_element(source)
+        if source.element == 'zeromq_source_bin':
+            _source.set_property('pipeline', self._video_pipeline)
+        # TODO: add probe to add frames to VideoPipeline when element is not zeromq_source_bin
         _source.connect('pad-added', self.on_source_added)
 
         # Need to suppress EOS on nvstreammux sink pad
@@ -225,6 +252,12 @@ class NvDsPipeline(GstPipeline):
         if caps and not caps.get_structure(0).get_name().startswith('video'):
             return
 
+        new_pad.add_probe(
+            Gst.PadProbeType.BUFFER,
+            self._move_frame_as_is,
+            'source',
+            'source-convert',
+        )
         # new_pad.name example `src_camera1` => source_id == `camera1` (real source_id)
         source_id = pad_to_source_id(new_pad)
         self._logger.debug(
@@ -307,6 +340,12 @@ class NvDsPipeline(GstPipeline):
                     source_info,
                 )
                 self._check_pipeline_is_running()
+                input_src_pad.add_probe(
+                    Gst.PadProbeType.BUFFER,
+                    self._move_frame_as_is,
+                    'source-convert',
+                    'muxer',
+                )
                 add_convert_savant_frame_meta_pad_probe(
                     input_src_pad,
                     True,
@@ -440,9 +479,9 @@ class NvDsPipeline(GstPipeline):
             link=False,
             probe_data=source_info,
         )
+        fakesink_pad: Gst.Pad = fakesink.get_static_pad('sink')
         fakesink.sync_state_with_parent()
 
-        fakesink_pad: Gst.Pad = fakesink.get_static_pad('sink')
         self._check_pipeline_is_running()
         fakesink_pad.add_probe(
             Gst.PadProbeType.EVENT_DOWNSTREAM,
@@ -522,7 +561,7 @@ class NvDsPipeline(GstPipeline):
                 source_info.source_id,
             )
 
-        self._queue.put(SinkEndOfStream(source_info.source_id))
+        self._queue.put(SinkEndOfStream(EndOfStream(source_info.source_id)))
 
         return (
             Gst.PadProbeReturn.DROP if self._suppress_eos else Gst.PadProbeReturn.PASS
@@ -534,6 +573,9 @@ class NvDsPipeline(GstPipeline):
 
         self._logger.debug('Prepare meta output for buffer with PTS %s', buffer.pts)
 
+        savant_batch_meta = gst_buffer_get_savant_frame_meta(buffer)
+        # TODO: handle savant_batch_meta==None
+        batch_id = savant_batch_meta.idx if savant_batch_meta else None
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         # convert output meta
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
@@ -547,28 +589,38 @@ class NvDsPipeline(GstPipeline):
                     object_ids[nvds_obj_meta.obj_label] += 1
 
             # will extend source metadata
-            (
-                source_id,
-                frame_pts,
+            savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(
+                nvds_frame_meta
+            )
+            # TODO: handle savant_frame_meta==None
+            frame_idx = savant_frame_meta.idx if savant_frame_meta else None
+            frame_pts = nvds_frame_meta.buf_pts
+            video_frame: VideoFrame
+            video_frame, video_frame_span = self._video_pipeline.get_batched_frame(
+                'process-batch',
+                batch_id,
                 frame_idx,
-                frame_meta,
-            ) = self._get_nvds_savant_frame_meta(nvds_frame_meta)
+            )
 
             if self._logger.isEnabledFor(logging.DEBUG):
                 self._logger.debug(
                     'Preparing output for frame of source %s with IDX %s and PTS %s.',
-                    source_id,
+                    video_frame.source_id,
                     frame_idx,
                     frame_pts,
                 )
 
-            source_info = self._sources.get_source(source_id)
+            parents = {}
 
             # second iteration to collect module objects
             for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
-                obj_meta = nvds_obj_meta_output_converter(
-                    nvds_obj_meta, self._frame_params
+                obj_meta, parent_id = nvds_obj_meta_output_converter(
+                    nvds_frame_meta,
+                    nvds_obj_meta,
+                    self._frame_params,
                 )
+                if parent_id is not None:
+                    parents[obj_meta.id] = parent_id
                 for attr_meta_list in nvds_attr_meta_iterator(
                     frame_meta=nvds_frame_meta, obj_meta=nvds_obj_meta
                 ):
@@ -577,20 +629,15 @@ class NvDsPipeline(GstPipeline):
                             attr_meta.element_name,
                             attr_meta.name,
                         ) not in self._internal_attrs:
-                            obj_meta['attributes'].append(
+                            obj_meta.set_attribute(
                                 nvds_attr_meta_output_converter(attr_meta)
                             )
                 nvds_remove_obj_attrs(nvds_frame_meta, nvds_obj_meta)
 
                 # skip empty primary object that equals to frame
                 if nvds_obj_meta.obj_label == PRIMARY_OBJECT_KEY:
-                    bbox = BBox(
-                        obj_meta['bbox']['xc'],
-                        obj_meta['bbox']['yc'],
-                        obj_meta['bbox']['width'],
-                        obj_meta['bbox']['height'],
-                    )
-                    dest_res_bbox = BBox(
+                    bbox = obj_meta.detection_box
+                    dest_res_bbox = RBBox(
                         self._frame_params.output_width / 2,
                         self._frame_params.output_height / 2,
                         self._frame_params.output_width,
@@ -603,7 +650,7 @@ class NvDsPipeline(GstPipeline):
                                 bbox,
                                 dest_res_bbox,
                             )
-                    elif obj_meta['attributes']:
+                    elif obj_meta.attributes:
                         self._logger.debug(
                             'Adding primary object, attributes not empty.'
                         )
@@ -613,14 +660,18 @@ class NvDsPipeline(GstPipeline):
                 if self._logger.isEnabledFor(logging.DEBUG):
                     self._logger.debug(
                         'Collecting object (frame src %s, IDX %s, PTS %s): %s',
-                        source_id,
+                        video_frame.source_id,
                         frame_idx,
                         frame_pts,
-                        obj_meta,
+                        re.sub('\s+', ' ', str(obj_meta)),  # convert to single line
                     )
-                frame_meta.metadata['objects'].append(obj_meta)
+                video_frame.add_object(obj_meta, IdCollisionResolutionPolicy.Overwrite)
 
-            metadata_add_frame_meta(source_id, frame_idx, frame_pts, frame_meta)
+            self._logger.debug('Setting parents to objects')
+            for obj_id, parent_id in parents.items():
+                if self._logger.isEnabledFor(logging.DEBUG):
+                    self._logger.debug('%s is a parent of %s', parent_id, obj_id)
+                video_frame.set_parent(obj_id, parent_id)
 
         return Gst.PadProbeReturn.PASS
 
@@ -631,6 +682,7 @@ class NvDsPipeline(GstPipeline):
         :param live_source: Whether source is live or not.
         """
 
+        self._video_pipeline.add_stage('muxer', VideoPipelineStagePayloadType.Frame)
         frame_processing_parameters = {
             'width': self._frame_params.total_width,
             'height': self._frame_params.total_height,
@@ -663,6 +715,12 @@ class NvDsPipeline(GstPipeline):
         )
         # input processor (post-muxer)
         muxer_src_pad: Gst.Pad = self._muxer.get_static_pad('src')
+        muxer_src_pad.add_probe(
+            Gst.PadProbeType.BUFFER,
+            self._move_frames_to_batch,
+            'muxer',
+            'process-batch',
+        )
         muxer_src_pad.add_probe(
             Gst.PadProbeType.BUFFER,
             self._buffer_processor.input_probe,
@@ -732,6 +790,7 @@ class NvDsPipeline(GstPipeline):
         :param link: Whether to automatically link demuxer to the last pipeline element.
         """
 
+        self._video_pipeline.add_stage('demuxer', VideoPipelineStagePayloadType.Frame)
         demuxer = self.add_element(
             PipelineElement(
                 element='nvstreamdemux',
@@ -744,6 +803,12 @@ class NvDsPipeline(GstPipeline):
         )
         sink_peer_pad: Gst.Pad = demuxer.get_static_pad('sink').get_peer()
         sink_peer_pad.add_probe(Gst.PadProbeType.BUFFER, self.update_frame_meta)
+        sink_peer_pad.add_probe(
+            Gst.PadProbeType.BUFFER,
+            self._move_batch_to_frames,
+            'process-batch',
+            'demuxer',
+        )
         return demuxer
 
     def _allocate_demuxer_pads(self, demuxer: Gst.Element, n_pads: int):
@@ -820,19 +885,182 @@ class NvDsPipeline(GstPipeline):
         if not self._is_running:
             raise PipelineIsNotRunningError('Pipeline is not running')
 
-    def _get_nvds_savant_frame_meta(
+    def _move_frame_as_is(
         self,
-        nvds_frame_meta: pyds.NvDsFrameMeta,
-    ) -> Tuple[str, Optional[int], int, SourceFrameMeta]:
-        """Extract source frame meta by NvDs frame meta."""
+        pad: Gst.Pad,
+        info: Gst.PadProbeInfo,
+        stage_from: str,
+        stage_to: str,
+    ) -> Gst.PadProbeReturn:
+        buffer: Gst.Buffer = info.get_buffer()
+        self._logger.debug(
+            'Moving frame from %s to %s in buffer with PTS %s.',
+            stage_from,
+            stage_to,
+            buffer.pts,
+        )
+        savant_frame_meta = gst_buffer_get_savant_frame_meta(buffer)
+        # TODO: handle savant_frame_meta==None
+        frame_id = savant_frame_meta.idx if savant_frame_meta else None
+        self._logger.debug(
+            'Moving frame from %s to %s in buffer with PTS %s. Frame ID: %s.',
+            stage_from,
+            stage_to,
+            buffer.pts,
+            frame_id,
+        )
+        self._video_pipeline.move_as_is(stage_from, stage_to, [frame_id])
 
-        source_id = self._sources.get_id_by_pad_index(nvds_frame_meta.pad_index)
-        savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(nvds_frame_meta)
-        frame_idx = savant_frame_meta.idx if savant_frame_meta else None
-        frame_pts = nvds_frame_meta.buf_pts
-        frame_meta = get_source_frame_meta(source_id, frame_idx, frame_pts)
+        return Gst.PadProbeReturn.OK
 
-        return source_id, frame_pts, frame_idx, frame_meta
+    def _move_frames_to_batch(
+        self,
+        pad: Gst.Pad,
+        info: Gst.PadProbeInfo,
+        stage_from: str,
+        stage_to: str,
+    ) -> Gst.PadProbeReturn:
+        buffer: Gst.Buffer = info.get_buffer()
+        self._logger.debug(
+            'Moving frames to batch from %s to %s in buffer with PTS %s.',
+            stage_from,
+            stage_to,
+            buffer.pts,
+        )
+        frames_ids = []
+        nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
+        for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
+            # TODO: handle savant_frame_meta==None
+            savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(
+                nvds_frame_meta
+            )
+            frames_ids.append(savant_frame_meta.idx if savant_frame_meta else None)
+        if not frames_ids:
+            self._logger.debug(
+                'Moving frames to batch from %s to %s in buffer with PTS %s. Batch is empty.',
+                stage_from,
+                stage_to,
+                buffer.pts,
+            )
+            return Gst.PadProbeReturn.OK
+
+        self._logger.debug(
+            'Moving frames to batch from %s to %s in buffer with PTS %s. Frames IDs: %s.',
+            stage_from,
+            stage_to,
+            buffer.pts,
+            frames_ids,
+        )
+        batch_id = self._video_pipeline.move_and_pack_frames(
+            stage_from,
+            stage_to,
+            frames_ids,
+        )
+        self._logger.debug(
+            'Moving frames to batch from %s to %s in buffer with PTS %s. Batch ID: %s.',
+            stage_from,
+            stage_to,
+            buffer.pts,
+            batch_id,
+        )
+        savant_frame_meta = gst_buffer_get_savant_frame_meta(buffer)
+        if savant_frame_meta is not None:
+            savant_frame_meta.idx = batch_id
+        else:
+            gst_buffer_add_savant_frame_meta(buffer, batch_id)
+
+        return Gst.PadProbeReturn.OK
+
+    def _move_batch_as_is(
+        self,
+        pad: Gst.Pad,
+        info: Gst.PadProbeInfo,
+        stage_from: str,
+        stage_to: str,
+    ) -> Gst.PadProbeReturn:
+        buffer: Gst.Buffer = info.get_buffer()
+        self._logger.debug(
+            'Moving batch from %s to %s in buffer with PTS %s.',
+            stage_from,
+            stage_to,
+            buffer.pts,
+        )
+        nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
+        try:
+            next(nvds_frame_meta_iterator(nvds_batch_meta))
+        except StopIteration:
+            self._logger.debug(
+                'Moving batch from %s to %s in buffer with PTS %s. Batch is empty.',
+                stage_from,
+                stage_to,
+                buffer.pts,
+            )
+            return Gst.PadProbeReturn.OK
+
+        savant_frame_meta = gst_buffer_get_savant_frame_meta(buffer)
+        # TODO: handle savant_frame_meta==None
+        batch_id = savant_frame_meta.idx if savant_frame_meta else None
+        self._logger.debug(
+            'Moving batch from %s to %s in buffer with PTS %s. Batch ID: %s.',
+            stage_from,
+            stage_to,
+            buffer.pts,
+            batch_id,
+        )
+        self._video_pipeline.move_as_is(stage_from, stage_to, [batch_id])
+
+        return Gst.PadProbeReturn.OK
+
+    def _move_batch_to_frames(
+        self,
+        pad: Gst.Pad,
+        info: Gst.PadProbeInfo,
+        stage_from: str,
+        stage_to: str,
+    ) -> Gst.PadProbeReturn:
+        buffer: Gst.Buffer = info.get_buffer()
+        self._logger.debug(
+            'Moving batch to frames from %s to %s in buffer with PTS %s.',
+            stage_from,
+            stage_to,
+            buffer.pts,
+        )
+        nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
+        try:
+            next(nvds_frame_meta_iterator(nvds_batch_meta))
+        except StopIteration:
+            self._logger.debug(
+                'Moving batch to frames from %s to %s in buffer with PTS %s. Batch is empty.',
+                stage_from,
+                stage_to,
+                buffer.pts,
+            )
+            return Gst.PadProbeReturn.OK
+
+        savant_frame_meta = gst_buffer_get_savant_frame_meta(buffer)
+        # TODO: handle savant_frame_meta==None
+        batch_id = savant_frame_meta.idx if savant_frame_meta else None
+        self._logger.debug(
+            'Moving batch to frames from %s to %s in buffer with PTS %s. Batch ID: %s.',
+            stage_from,
+            stage_to,
+            buffer.pts,
+            batch_id,
+        )
+        frame_map: Dict[str, int] = self._video_pipeline.move_and_unpack_batch(
+            stage_from,
+            stage_to,
+            batch_id,
+        )
+        self._logger.debug(
+            'Moving batch to frames from %s to %s in buffer with PTS %s. Frame map: %s.',
+            stage_from,
+            stage_to,
+            buffer.pts,
+            frame_map,
+        )
+
+        return Gst.PadProbeReturn.OK
 
 
 class PipelineIsNotRunningError(Exception):

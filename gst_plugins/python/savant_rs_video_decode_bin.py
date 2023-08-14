@@ -18,7 +18,14 @@ DEFAULT_PASS_EOS = True
 NESTED_DEMUX_PROPERTIES = {
     k: v
     for k, v in SAVANT_RS_VIDEO_DEMUX_PROPERTIES.items()
-    if k in ['source-timeout', 'source-eviction-interval', 'max-parallel-streams']
+    if k
+    in [
+        'source-timeout',
+        'source-eviction-interval',
+        'max-parallel-streams',
+        'pipeline',
+        'pipeline-stage-name',
+    ]
 }
 SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES = {
     'low-latency-decoding': (
@@ -100,7 +107,6 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
         self._pass_eos = DEFAULT_PASS_EOS
 
         self._demuxer: Gst.Element = Gst.ElementFactory.make('savant_rs_video_demux')
-        self._demuxer.set_property('store-metadata', True)
         self._demuxer.set_property('eos-on-timestamps-reset', True)
         self.add(self._demuxer)
         self._demuxer.connect('pad-added', self.on_pad_added)

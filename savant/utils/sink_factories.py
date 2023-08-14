@@ -1,19 +1,14 @@
 """Sink factories."""
-import json
 import logging
 from abc import ABC, abstractmethod
-from dataclasses import asdict
 from typing import Any, Callable, Dict, List, NamedTuple, Optional, Union
 
 import zmq
-from savant_rs.primitives import EndOfStream
+from savant_rs.primitives import EndOfStream, VideoFrame, VideoFrameContent
 from savant_rs.utils.serialization import Message, save_message_to_bytes
 
-from savant.api.builder import build_video_frame
 from savant.api.enums import ExternalFrameType
 from savant.config.schema import PipelineElement
-from savant.gstreamer.codecs import CodecInfo
-from savant.gstreamer.metadata import SourceFrameMeta
 from savant.utils.registry import Registry
 from savant.utils.zeromq import (
     Defaults,
@@ -28,26 +23,30 @@ logger = logging.getLogger(__name__)
 class SinkMessage:
     """Sink message."""
 
-    source_id: str
+    @property
+    def source_id(self) -> str:
+        pass
 
 
 class SinkVideoFrame(SinkMessage, NamedTuple):
     """Message for VideoFrame message schema."""
 
-    source_id: str
-    frame_meta: SourceFrameMeta
-    frame_width: int
-    frame_height: int
+    video_frame: VideoFrame
     frame: Optional[bytes]
-    frame_codec: Optional[CodecInfo]
-    dts: Optional[int]
-    keyframe: bool
+
+    @property
+    def source_id(self) -> str:
+        return self.video_frame.source_id
 
 
 class SinkEndOfStream(SinkMessage, NamedTuple):
     """Message for EndOfStream message schema."""
 
-    source_id: str
+    eos: EndOfStream
+
+    @property
+    def source_id(self) -> str:
+        return self.eos.source_id
 
 
 SinkCallable = Callable[[SinkMessage, Dict[str, Any]], None]
@@ -146,46 +145,34 @@ class ZeroMQSinkFactory(SinkFactory):
                 logger.debug(
                     'Sending frame of source %s with PTS %s to ZeroMQ sink',
                     msg.source_id,
-                    msg.frame_meta.pts,
+                    msg.video_frame.pts,
                 )
 
                 if msg.frame:
-                    content = ExternalFrameType.ZEROMQ.value, None
                     logger.debug(
                         'Size of frame of source %r with PTS %s is %s bytes',
                         msg.source_id,
-                        msg.frame_meta.pts,
+                        msg.video_frame.pts,
                         len(msg.frame),
+                    )
+                    msg.video_frame.content = VideoFrameContent.external(
+                        ExternalFrameType.ZEROMQ.value, None
                     )
                 else:
                     logger.debug(
                         'Frame of source %r with PTS %s is empty',
                         msg.source_id,
-                        msg.frame_meta.pts,
+                        msg.video_frame.pts,
                     )
-                    content = None
+                    msg.video_frame.content = VideoFrameContent.none()
 
-                video_frame = build_video_frame(
-                    source_id=msg.frame_meta.source_id,
-                    pts=msg.frame_meta.pts,
-                    dts=msg.dts,
-                    duration=msg.frame_meta.duration,
-                    framerate=msg.frame_meta.framerate,
-                    width=msg.frame_width,
-                    height=msg.frame_height,
-                    codec=msg.frame_codec.name if msg.frame_codec else None,
-                    content=content,
-                    objects=msg.frame_meta.metadata['objects'],
-                    tags=msg.frame_meta.tags,
-                    keyframe=msg.keyframe,
-                )
-                message = Message.video_frame(video_frame)
+                message = Message.video_frame(msg.video_frame)
                 zmq_message.append(save_message_to_bytes(message))
                 if msg.frame:
                     zmq_message.append(msg.frame)
             elif isinstance(msg, SinkEndOfStream):
                 logger.debug('Sending EOS of source %s to ZeroMQ sink', msg.source_id)
-                message = Message.end_of_stream(EndOfStream(msg.source_id))
+                message = Message.end_of_stream(msg.eos)
                 zmq_message.append(save_message_to_bytes(message))
             else:
                 logger.warning('Unknown message type %s', type(msg))
@@ -210,44 +197,25 @@ class ConsoleSinkFactory(SinkFactory):
     def get_sink(self) -> SinkCallable:
         if self.json_mode:
 
-            def format_meta(msg) -> str:
-                if 'objects' in msg.frame_meta.metadata:
-                    for obj in msg.frame_meta.metadata['objects']:
-                        for key, val in obj['bbox'].items():
-                            obj['bbox'][key] = round(val, ndigits=3)
-                        obj['confidence'] = round(obj['confidence'], ndigits=5)
-
-                        for attr in obj['attributes']:
-                            if isinstance(attr['value'], tuple):
-                                attr['value'] = f"tuple len {len(attr['value'])}"
-                            elif isinstance(attr['value'], list):
-                                attr['value'] = f"list len {len(attr['value'])}"
-                            elif isinstance(attr['value'], float):
-                                attr['value'] = round(attr['value'], ndigits=3)
-                            if isinstance(attr['confidence'], float):
-                                attr['confidence'] = round(
-                                    attr['confidence'], ndigits=5
-                                )
-                frame_meta_out = asdict(msg.frame_meta)
-                frame_meta_out['tags'] = dict(frame_meta_out['tags'])
-                return json.dumps(frame_meta_out, indent=4)
+            def format_meta(video_frame: VideoFrame) -> str:
+                return video_frame.json_pretty
 
         else:
 
-            def format_meta(msg) -> str:
-                return f'{msg.frame_meta}'
+            def format_meta(video_frame: VideoFrame) -> str:
+                return str(video_frame)
 
         def send_message(
             msg: SinkMessage,
             **kwargs,
         ):
             if isinstance(msg, SinkVideoFrame):
-                message = f'Frame shape(WxH): {msg.frame_width}x{msg.frame_height}'
-                if msg.frame_codec is not None:
-                    message += f', codec: {msg.frame_codec.name}'
+                message = f'Frame shape(WxH): {msg.video_frame.width}x{msg.video_frame.height}'
+                if msg.video_frame.codec is not None:
+                    message += f', codec: {msg.video_frame.codec}'
                 if msg.frame is not None:
                     message += f', size (bytes): {len(msg.frame)}'
-                message += f'.\nMeta: {format_meta(msg)}.\n'
+                message += f'.\nMeta: {format_meta(msg.video_frame)}.\n'
                 print(message)
 
             elif isinstance(msg, SinkEndOfStream):
@@ -268,11 +236,11 @@ class JsonWriter:
         self._json_file.write('[')
         self._first = True
 
-    def write(self, message: Dict):
+    def write(self, message: str):
         """Write message to a file in json format."""
         if not self._first:
             self._json_file.write(',')
-        self._json_file.write(json.dumps(message))
+        self._json_file.write(message)
         self._first = False
 
     def __del__(self):
@@ -297,7 +265,7 @@ class FileSinkFactory(SinkFactory):
         ):
             if not isinstance(msg, SinkVideoFrame):
                 return
-            self._json_writer.write(asdict(msg.frame_meta))
+            self._json_writer.write(msg.video_frame.json)
 
         return send_message
 

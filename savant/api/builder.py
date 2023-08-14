@@ -8,7 +8,7 @@ from savant_rs.primitives import (
     VideoFrameContent,
     VideoObject,
 )
-from savant_rs.primitives.geometry import BBox, RBBox
+from savant_rs.primitives.geometry import RBBox
 
 from savant.api.constants import DEFAULT_NAMESPACE, DEFAULT_TIME_BASE
 from savant.meta.constants import UNTRACKED_OBJECT_ID
@@ -116,20 +116,12 @@ def build_video_object(obj_id: int, obj: Dict[str, Any]):
 
 
 def build_bbox(bbox: Dict[str, Any]):
-    angle = bbox.get('angle')
-    if angle is None:
-        return BBox(
-            x=bbox['x'],
-            y=bbox['y'],
-            width=bbox['width'],
-            height=bbox['height'],
-        )
     return RBBox(
         xc=bbox['xc'],
         yc=bbox['yc'],
         width=bbox['width'],
         height=bbox['height'],
-        angle=angle,
+        angle=bbox.get('angle'),
     )
 
 

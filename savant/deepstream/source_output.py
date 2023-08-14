@@ -4,7 +4,11 @@ from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional
 
 import pyds
-from pygstsavantframemeta import add_convert_savant_frame_meta_pad_probe
+from pygstsavantframemeta import (
+    add_convert_savant_frame_meta_pad_probe,
+    gst_buffer_get_savant_frame_meta,
+)
+from savant_rs.pipeline import VideoPipeline, VideoPipelineStagePayloadType
 
 from savant.config.schema import (
     FrameProcessingCondition,
@@ -22,10 +26,12 @@ from savant.utils.source_info import SourceInfo
 class SourceOutput(ABC):
     """Adds an output elements to a DeepStream pipeline."""
 
-    def __init__(self):
+    def __init__(self, video_pipeline: VideoPipeline):
         self._logger = logging.getLogger(
             f'{self.__class__.__module__}.{self.__class__.__name__}'
         )
+        self._video_pipeline = video_pipeline
+        self._video_pipeline.add_stage('sink', VideoPipelineStagePayloadType.Frame)
 
     @abstractmethod
     def add_output(
@@ -42,6 +48,34 @@ class SourceOutput(ABC):
         :returns Src pad that will be connected to fakesink element.
         """
 
+    def _move_frame_as_is(
+        self,
+        pad: Gst.Pad,
+        info: Gst.PadProbeInfo,
+        stage_from: str,
+        stage_to: str,
+    ) -> Gst.PadProbeReturn:
+        buffer: Gst.Buffer = info.get_buffer()
+        self._logger.debug(
+            'Moving frame from %s to %s in buffer with PTS %s.',
+            stage_from,
+            stage_to,
+            buffer.pts,
+        )
+        savant_frame_meta = gst_buffer_get_savant_frame_meta(buffer)
+        # TODO: handle savant_frame_meta==None
+        frame_id = savant_frame_meta.idx if savant_frame_meta else None
+        self._logger.debug(
+            'Moving frame from %s to %s in buffer with PTS %s. Frame ID: %s.',
+            stage_from,
+            stage_to,
+            buffer.pts,
+            frame_id,
+        )
+        self._video_pipeline.move_as_is(stage_from, stage_to, [frame_id])
+
+        return Gst.PadProbeReturn.OK
+
 
 class SourceOutputOnlyMeta(SourceOutput):
     """Adds an output elements to a DeepStream pipeline.
@@ -57,6 +91,13 @@ class SourceOutputOnlyMeta(SourceOutput):
         self._logger.debug(
             'Do not add additional output elements since we output only frame metadata'
         )
+        add_convert_savant_frame_meta_pad_probe(input_pad, False)
+        input_pad.add_probe(
+            Gst.PadProbeType.BUFFER,
+            self._move_frame_as_is,
+            'demuxer',
+            'sink',
+        )
         return input_pad
 
 
@@ -69,10 +110,14 @@ class SourceOutputWithFrame(SourceOutput):
         self,
         frame_params: FrameParameters,
         condition: FrameProcessingCondition,
+        video_pipeline: VideoPipeline,
     ):
-        super().__init__()
+        super().__init__(video_pipeline)
         self._frame_params = frame_params
         self._condition = condition
+        self._video_pipeline.add_stage(
+            'sink-convert', VideoPipelineStagePayloadType.Frame
+        )
 
     def add_output(
         self,
@@ -90,8 +135,14 @@ class SourceOutputWithFrame(SourceOutput):
             if self._condition.tag
             else None
         )
+        if src_pad_not_tagged is not None:
+            src_pad_not_tagged.add_probe(
+                Gst.PadProbeType.BUFFER,
+                self._move_frame_as_is,
+                'demuxer',
+                'sink-convert',
+            )
 
-        add_convert_savant_frame_meta_pad_probe(input_pad, False)
         self._logger.debug(
             'Added pad probe to convert savant frame meta from NvDsMeta to GstMeta (source_id=%s)',
             source_info.source_id,
@@ -122,6 +173,14 @@ class SourceOutputWithFrame(SourceOutput):
                 properties=output_converter_props,
             ),
         )
+        output_converter_sink_pad: Gst.Pad = output_converter.get_static_pad('sink')
+        add_convert_savant_frame_meta_pad_probe(output_converter_sink_pad, False)
+        output_converter_sink_pad.add_probe(
+            Gst.PadProbeType.BUFFER,
+            self._move_frame_as_is,
+            'demuxer',
+            'sink-convert',
+        )
         source_info.after_demuxer.append(output_converter)
         output_converter.sync_state_with_parent()
         self._logger.debug(
@@ -144,17 +203,24 @@ class SourceOutputWithFrame(SourceOutput):
             output_caps,
             source_info.source_id,
         )
-        capsfilter_src_pad = output_capsfilter.get_static_pad('src')
+        src_pad = output_capsfilter.get_static_pad('src')
 
         if src_pad_not_tagged is not None:
-            return self._add_frame_tag_funnel(
+            src_pad = self._add_frame_tag_funnel(
                 pipeline=pipeline,
                 source_info=source_info,
-                src_pad_tagged=capsfilter_src_pad,
+                src_pad_tagged=src_pad,
                 src_pad_not_tagged=src_pad_not_tagged,
             )
 
-        return capsfilter_src_pad
+        src_pad.add_probe(
+            Gst.PadProbeType.BUFFER,
+            self._move_frame_as_is,
+            'sink-convert',
+            'sink',
+        )
+
+        return src_pad
 
     def _add_frame_tag_filter(
         self,
@@ -172,9 +238,11 @@ class SourceOutputWithFrame(SourceOutput):
                 properties={
                     'source-id': source_info.source_id,
                     'tag': self._condition.tag,
+                    'pipeline-stage-name': 'demuxer',
                 },
             )
         )
+        frame_tag_filter.set_property('pipeline', self._video_pipeline)
         self._logger.debug(
             'Added frame_tag_filter for video frames (source_id=%s)',
             source_info.source_id,
@@ -251,8 +319,12 @@ class SourceOutputRawRgba(SourceOutputWithFrame):
     Output contains raw-rgba frames along with metadata.
     """
 
-    def __init__(self, frame_params: FrameParameters):
-        super().__init__(frame_params, condition=FrameProcessingCondition())
+    def __init__(self, frame_params: FrameParameters, video_pipeline: VideoPipeline):
+        super().__init__(
+            frame_params,
+            condition=FrameProcessingCondition(),
+            video_pipeline=video_pipeline,
+        )
 
     def _add_transform_elems(self, pipeline: GstPipeline, source_info: SourceInfo):
         pass
@@ -281,13 +353,18 @@ class SourceOutputEncoded(SourceOutputWithFrame):
         output_frame: Dict[str, Any],
         frame_params: FrameParameters,
         condition: FrameProcessingCondition,
+        video_pipeline: VideoPipeline,
     ):
         """
         :param codec: Codec for output frames.
         :param params: Parameters of the encoder.
         """
 
-        super().__init__(frame_params=frame_params, condition=condition)
+        super().__init__(
+            frame_params=frame_params,
+            condition=condition,
+            video_pipeline=video_pipeline,
+        )
         self._codec = codec
         self._output_frame = output_frame
         self._encoder = self._codec.encoder(output_frame.get('encoder'))
@@ -345,15 +422,19 @@ class SourceOutputH26X(SourceOutputEncoded):
 def create_source_output(
     frame_params: FrameParameters,
     output_frame: Optional[Dict[str, Any]],
+    video_pipeline: VideoPipeline,
 ) -> SourceOutput:
     """Create an instance of SourceOutput class based on the output_frame config."""
 
     if not output_frame:
-        return SourceOutputOnlyMeta()
+        return SourceOutputOnlyMeta(video_pipeline=video_pipeline)
 
     codec = CODEC_BY_NAME[output_frame['codec']]
     if codec == Codec.RAW_RGBA:
-        return SourceOutputRawRgba(frame_params=frame_params)
+        return SourceOutputRawRgba(
+            frame_params=frame_params,
+            video_pipeline=video_pipeline,
+        )
 
     condition = FrameProcessingCondition(**(output_frame.get('condition') or {}))
     if codec in [Codec.H264, Codec.HEVC]:
@@ -362,6 +443,7 @@ def create_source_output(
             output_frame=output_frame,
             frame_params=frame_params,
             condition=condition,
+            video_pipeline=video_pipeline,
         )
 
     return SourceOutputEncoded(
@@ -369,4 +451,5 @@ def create_source_output(
         output_frame=output_frame,
         frame_params=frame_params,
         condition=condition,
+        video_pipeline=video_pipeline,
     )

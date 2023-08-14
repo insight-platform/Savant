@@ -1,11 +1,8 @@
 from typing import Dict, List, Set
 
-from pygstsavantframemeta import nvds_frame_meta_get_nvds_savant_frame_meta
-
 from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.deepstream.pyfunc import NvDsPyFuncPlugin
 from savant.gstreamer import Gst
-from savant.gstreamer.metadata import get_source_frame_meta, metadata_add_frame_meta
 
 
 class ConditionalVideoProcessing(NvDsPyFuncPlugin):
@@ -58,27 +55,11 @@ class ConditionalVideoProcessing(NvDsPyFuncPlugin):
             pass
 
     def set_frame_tag(self, frame_meta: NvDsFrameMeta):
-        savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(
-            frame_meta.frame_meta
-        )
-        frame_idx = savant_frame_meta.idx if savant_frame_meta else None
         self.logger.debug(
-            'Setting tags %s for frame %s/%s/%s.',
+            'Setting tags %s for frame %s/%s.',
             self.set_tags,
             frame_meta.source_id,
-            frame_idx,
-            frame_meta.pts,
-        )
-        source_frame_meta = get_source_frame_meta(
-            frame_meta.source_id,
-            frame_idx,
             frame_meta.pts,
         )
         for k, v in self.set_tags.items():
-            source_frame_meta.tags[k] = v
-        metadata_add_frame_meta(
-            frame_meta.source_id,
-            frame_idx,
-            frame_meta.pts,
-            source_frame_meta,
-        )
+            frame_meta.set_tag(k, v)
