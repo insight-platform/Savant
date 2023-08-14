@@ -9,6 +9,8 @@ parameters:
   draw_func:
     module: samples.yolov8_seg.module.overlay
     class_name: Overlay
+  buffer_queues:
+    length: 10
 
 pipeline:
   elements:
@@ -48,5 +50,3 @@ pipeline:
             - name: mask
               # must be internal, output schema doesn't currently support numpy arrays
               internal: true
-
-    - element: queue
