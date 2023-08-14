@@ -203,7 +203,11 @@ class NvDsPipeline(GstPipeline):
         if source.element == 'zeromq_source_bin':
             _source.set_property('pipeline', self._video_pipeline)
         # TODO: add probe to add frames to VideoPipeline when element is not zeromq_source_bin
-        _source.connect('pad-added', self.on_source_added)
+        _source.connect(
+            'pad-added',
+            self.on_source_added,
+            source.element != 'zeromq_source_bin',  # add_frames_to_pipeline
+        )
 
         # Need to suppress EOS on nvstreammux sink pad
         # to prevent pipeline from shutting down
@@ -231,7 +235,10 @@ class NvDsPipeline(GstPipeline):
 
     # Input
     def on_source_added(  # pylint: disable=unused-argument
-        self, element: Gst.Element, new_pad: Gst.Pad
+        self,
+        element: Gst.Element,
+        new_pad: Gst.Pad,
+        add_frames_to_pipeline: bool,
     ):
         """Handle adding new video source.
 
@@ -252,12 +259,6 @@ class NvDsPipeline(GstPipeline):
         if caps and not caps.get_structure(0).get_name().startswith('video'):
             return
 
-        new_pad.add_probe(
-            Gst.PadProbeType.BUFFER,
-            self._move_frame_as_is,
-            'source',
-            'source-convert',
-        )
         # new_pad.name example `src_camera1` => source_id == `camera1` (real source_id)
         source_id = pad_to_source_id(new_pad)
         self._logger.debug(
@@ -290,10 +291,15 @@ class NvDsPipeline(GstPipeline):
             on_pad_event,
             {Gst.EventType.CAPS: self._on_source_caps},
             source_info,
+            add_frames_to_pipeline,
         )
 
     def _on_source_caps(
-        self, new_pad: Gst.Pad, event: Gst.Event, source_info: SourceInfo
+        self,
+        new_pad: Gst.Pad,
+        event: Gst.Event,
+        source_info: SourceInfo,
+        add_frames_to_pipeline: bool,
     ):
         """Handle adding caps to video source pad."""
 
@@ -338,6 +344,7 @@ class NvDsPipeline(GstPipeline):
                     new_pad,
                     new_pad_caps,
                     source_info,
+                    add_frames_to_pipeline,
                 )
                 self._check_pipeline_is_running()
                 input_src_pad.add_probe(
@@ -371,8 +378,36 @@ class NvDsPipeline(GstPipeline):
         new_pad: Gst.Pad,
         new_pad_caps: Gst.Caps,
         source_info: SourceInfo,
+        add_frames_to_pipeline: bool,
     ) -> Gst.Pad:
         self._check_pipeline_is_running()
+        if add_frames_to_pipeline:
+            # Add savant frames to VideoPipeline when source element is not zeromq_source_bin
+            # (e.g. uridecodebin).
+            # Cannot add frames with a probe since Gst.Buffer is not writable,
+            # and it's impossible to make it writable in a probe.
+            savant_rs_add_frames: Gst.Element = Gst.ElementFactory.make(
+                'savant_rs_add_frames'
+            )
+            savant_rs_add_frames.set_property('source-info', source_info)
+            savant_rs_add_frames.set_property('pipeline', self._video_pipeline)
+            savant_rs_add_frames.set_property('pipeline-stage-name', 'source')
+            self._pipeline.add(savant_rs_add_frames)
+            source_info.before_muxer.append(savant_rs_add_frames)
+            savant_rs_add_frames.sync_state_with_parent()
+            savant_rs_add_frames_sink: Gst.Pad = savant_rs_add_frames.get_static_pad(
+                'sink'
+            )
+            assert new_pad.link(savant_rs_add_frames_sink) == Gst.PadLinkReturn.OK
+            new_pad = savant_rs_add_frames.get_static_pad('src')
+
+        new_pad.add_probe(
+            Gst.PadProbeType.BUFFER,
+            self._move_frame_as_is,
+            'source',
+            'source-convert',
+        )
+
         nv_video_converter: Gst.Element = Gst.ElementFactory.make('nvvideoconvert')
         if not is_aarch64():
             nv_video_converter.set_property(

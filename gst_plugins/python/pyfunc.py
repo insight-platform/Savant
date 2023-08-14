@@ -85,10 +85,10 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
         self.module: Optional[str] = None
         self.class_name: Optional[str] = None
         self.kwargs: Optional[str] = None
-        # pyfunc object
-        self.pyfunc: Optional[BasePyFuncPlugin] = None
         self.video_pipeline: Optional[VideoPipeline] = None
         self.pipeline_stage_name: Optional[str] = None
+        # pyfunc object
+        self.pyfunc: Optional[BasePyFuncPlugin] = None
 
 
     def do_get_property(self, prop: GObject.GParamSpec) -> Any:
