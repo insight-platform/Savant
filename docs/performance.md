@@ -104,4 +104,4 @@
 
 | Savant ver.                                                   | A4000 | Jetson NX |
 |---------------------------------------------------------------|-------|-----------|
-| [#131](https://github.com/insight-platform/Savant/issues/131) | 45.30 | 17.23     |
+| [#131](https://github.com/insight-platform/Savant/issues/131) | 45.78 | 14.84     |

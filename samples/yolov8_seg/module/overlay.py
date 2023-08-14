@@ -32,7 +32,7 @@ class Overlay(NvDsDrawFunc):
 
                 mask_overlay = np.where(
                     mask_attr.value[..., None], self.mask_color, self.bg_color
-                )
+                )[0 : bbox[3] - bbox[1], 0 : bbox[2] - bbox[0]]
 
                 alpha_comp(
                     frame_mat,
