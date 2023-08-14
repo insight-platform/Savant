@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional
 import time
 import logging
 import pyds
+from savant_rs import init_jaeger_tracer
 from savant_rs.pipeline import VideoPipeline, VideoPipelineStagePayloadType
 from savant_rs.primitives import EndOfStream, IdCollisionResolutionPolicy, VideoFrame
 from savant_rs.primitives.geometry import RBBox
@@ -57,6 +58,7 @@ from savant.config.schema import (
     FrameParameters,
     DrawFunc,
     PyFuncElement,
+    TelemetryParameters,
 )
 from savant.base.model import AttributeModel, ComplexModel
 from savant.utils.sink_factories import SinkEndOfStream
@@ -97,8 +99,13 @@ class NvDsPipeline(GstPipeline):
         self._objects_preprocessing = ObjectsPreprocessing()
 
         self._internal_attrs = set()
+        telemetry: TelemetryParameters = kwargs['telemetry']
+        _init_telemetry(name, telemetry)
 
         self._video_pipeline = VideoPipeline(name)
+        self._video_pipeline.sampling_period = telemetry.sampling_period
+        self._video_pipeline.root_span_name = f'{name}-root'
+
         output_frame = kwargs.get('output_frame')
         self._source_output = create_source_output(
             frame_params=self._frame_params,
@@ -1100,3 +1107,19 @@ class NvDsPipeline(GstPipeline):
 
 class PipelineIsNotRunningError(Exception):
     """Pipeline is not running."""
+
+
+def _init_telemetry(module_name: str, telemetry: TelemetryParameters):
+    provider_params = telemetry.provider_params or {}
+    if telemetry.provider == 'jaeger':
+        service_name = provider_params.get('service_name', module_name)
+        try:
+            endpoint = provider_params['endpoint']
+        except KeyError:
+            raise ValueError(
+                'Jaeger endpoint is not specified. Please specify it in the config file.'
+            )
+        init_jaeger_tracer(service_name, endpoint)
+
+    elif telemetry.provider is not None:
+        raise ValueError(f'Unknown telemetry provider: {telemetry.provider}')

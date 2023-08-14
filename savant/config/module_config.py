@@ -12,6 +12,7 @@ from savant.config.schema import (
     PipelineElement,
     PyFuncElement,
     ModelElement,
+    TelemetryParameters,
     get_element_name,
     DrawFunc,
     FrameParameters,
@@ -205,6 +206,12 @@ def configure_module_parameters(module_cfg: DictConfig) -> None:
     )
     apply_schema(module_cfg.parameters, 'draw_func', DrawFunc)
     apply_schema(module_cfg.parameters, 'buffer_queues', BufferQueuesParameters)
+    apply_schema(
+        module_cfg.parameters,
+        'telemetry',
+        TelemetryParameters,
+        OmegaConf.structured(TelemetryParameters),
+    )
 
 
 def configure_element(element_config: DictConfig) -> DictConfig:

@@ -101,6 +101,13 @@ class BufferQueuesParameters:
 
 
 @dataclass
+class TelemetryParameters:
+    sampling_period: int = 100
+    provider: Optional[str] = None
+    provider_params: Optional[Dict[str, Any]] = None
+
+
+@dataclass
 class DynamicGstProperty:
     """Allows configuring a gstreamer element property to be automatically
     updated to current value of a dynamic parameter from parameter storage."""
