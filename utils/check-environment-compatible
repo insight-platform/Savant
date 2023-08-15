@@ -6,8 +6,15 @@ test_img=ubuntu
 docker_run=$(docker inspect --type=image $test_img)
 image_exists=$?
 
+platform=$(uname -m)
+
+docker_runtime="--gpus=all"
+if [[ $platform == "aarch64" ]]; then
+  docker_runtime="--runtime=nvidia"
+fi
+
 # check docker engine & nvidia-container-runtime
-docker_run=$(docker run --rm --gpus all $test_img)
+docker_run=$(docker run --rm $docker_runtime $test_img)
 retVal=$?
 
 # delete only if the test image did not exist locally
@@ -20,8 +27,6 @@ if [ $retVal -ne 0 ]; then
     echo "Environment is not configured properly"
     exit 1
 fi
-
-platform=$(uname -m)
 
 if [[ $platform == "x86_64" ]]; then
     echo "PC platform"
