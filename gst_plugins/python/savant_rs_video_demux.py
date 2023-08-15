@@ -14,7 +14,7 @@ from savant.api.enums import ExternalFrameType
 from savant.api.parser import convert_ts
 from savant.gstreamer import GObject, Gst
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
-from savant.gstreamer.metadata import DEFAULT_FRAMERATE
+from savant.api.constants import DEFAULT_FRAMERATE
 from savant.gstreamer.utils import load_message_from_gst_buffer, propagate_gst_error
 from savant.utils.logging import LoggerMixin
 
@@ -156,7 +156,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
         self.store_metadata = False
         self.max_parallel_streams: int = 0
         self.source_id: Optional[str] = None
-        self.pipeline: Optional[VideoPipeline] = None
+        self.video_pipeline: Optional[VideoPipeline] = None
         self.pipeline_stage_name: Optional[str] = None
 
         self._frame_idx_gen = itertools.count()
@@ -196,7 +196,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
         if prop.name == 'source-id':
             return self.source_id
         if prop.name == 'pipeline':
-            return self.pipeline
+            return self.video_pipeline
         if prop.name == 'pipeline-stage-name':
             return self.pipeline_stage_name
         raise AttributeError(f'Unknown property {prop.name}')
@@ -214,7 +214,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
         elif prop.name == 'source-id':
             self.source_id = value
         elif prop.name == 'pipeline':
-            self.pipeline = value
+            self.video_pipeline = value
         elif prop.name == 'pipeline-stage-name':
             self.pipeline_stage_name = value
         else:
@@ -259,8 +259,10 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
     ) -> Gst.FlowReturn:
         """Handle VideoFrame message."""
 
-        if self.pipeline is not None:
-            frame_idx = self.pipeline.add_frame(self.pipeline_stage_name, video_frame)
+        if self.video_pipeline is not None:
+            frame_idx = self.video_pipeline.add_frame(
+                self.pipeline_stage_name, video_frame
+            )
         else:
             frame_idx = next(self._frame_idx_gen)
         frame_params = FrameParams.from_video_frame(video_frame)
@@ -519,14 +521,14 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
 
     def add_frame_meta(self, idx: int, frame_buf: Gst.Buffer):
         """Store metadata of a frame."""
-        if self.pipeline is not None:
+        if self.video_pipeline is not None:
             from pygstsavantframemeta import gst_buffer_add_savant_frame_meta
 
             gst_buffer_add_savant_frame_meta(frame_buf, idx)
 
     def _delete_frame_with_error(self, frame_idx: int):
-        if self.pipeline is not None:
-            self.pipeline.delete(self.pipeline_stage_name, frame_idx)
+        if self.video_pipeline is not None:
+            self.video_pipeline.delete(self.pipeline_stage_name, frame_idx)
         return Gst.FlowReturn.ERROR
 
 

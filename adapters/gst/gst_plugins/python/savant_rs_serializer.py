@@ -9,10 +9,10 @@ from savant_rs.primitives import EndOfStream, VideoFrame
 from savant_rs.utils.serialization import Message, save_message_to_bytes
 
 from savant.api.builder import build_video_frame
+from savant.api.constants import DEFAULT_FRAMERATE
 from savant.api.enums import ExternalFrameType
 from savant.gstreamer import GObject, Gst, GstBase
 from savant.gstreamer.codecs import CODEC_BY_CAPS_NAME, Codec
-from savant.gstreamer.metadata import DEFAULT_FRAMERATE
 from savant.utils.logging import LoggerMixin
 
 EMBEDDED_FRAME_TYPE = 'embedded'

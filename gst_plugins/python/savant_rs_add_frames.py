@@ -5,9 +5,8 @@ from pygstsavantframemeta import gst_buffer_add_savant_frame_meta
 from savant_rs.pipeline import VideoPipeline
 from savant_rs.primitives import VideoFrame, VideoFrameContent
 
-from savant.api.constants import DEFAULT_TIME_BASE
+from savant.api.constants import DEFAULT_FRAMERATE, DEFAULT_TIME_BASE
 from savant.gstreamer import GObject, Gst, GstBase  # noqa: F401
-from savant.gstreamer.metadata import DEFAULT_FRAMERATE
 from savant.gstreamer.utils import (
     RequiredPropertyError,
     propagate_gst_setting_error,
@@ -81,7 +80,7 @@ class SavantRsAddFrames(LoggerMixin, GstBase.BaseTransform):
         self._video_pipeline: Optional[VideoPipeline] = None
         self._pipeline_stage_name: Optional[str] = None
         # will be set after caps negotiation
-        self.frame_params: Optional[FrameParams] = None
+        self._frame_params: Optional[FrameParams] = None
 
     def do_get_property(self, prop: GObject.GParamSpec) -> Any:
         """Gst plugin get property function.
@@ -126,10 +125,6 @@ class SavantRsAddFrames(LoggerMixin, GstBase.BaseTransform):
 
         return True
 
-    # def do_sink_event(self, event: Gst.Event) -> bool:
-    #     """Do on sink event."""
-    #     return self.srcpad.push_event(event)
-
     def do_set_caps(  # pylint: disable=unused-argument
         self,
         in_caps: Gst.Caps,
@@ -145,7 +140,7 @@ class SavantRsAddFrames(LoggerMixin, GstBase.BaseTransform):
             framerate = f'{framerate_num}/{framerate_demon}'
         else:
             framerate = DEFAULT_FRAMERATE
-        self.frame_params = FrameParams(
+        self._frame_params = FrameParams(
             width=frame_width,
             height=frame_height,
             framerate=framerate,
@@ -164,9 +159,9 @@ class SavantRsAddFrames(LoggerMixin, GstBase.BaseTransform):
         video_frame = VideoFrame(
             source_id=self._source_info.source_id,
             # TODO: framerate and resolution get from caps
-            framerate=self.frame_params.framerate,
-            width=self.frame_params.width,
-            height=self.frame_params.height,
+            framerate=self._frame_params.framerate,
+            width=self._frame_params.width,
+            height=self._frame_params.height,
             content=VideoFrameContent.none(),
             keyframe=keyframe,
             pts=buffer.pts,

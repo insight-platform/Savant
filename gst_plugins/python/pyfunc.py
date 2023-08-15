@@ -90,7 +90,6 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
         # pyfunc object
         self.pyfunc: Optional[BasePyFuncPlugin] = None
 
-
     def do_get_property(self, prop: GObject.GParamSpec) -> Any:
         """Gst plugin get property function.
 

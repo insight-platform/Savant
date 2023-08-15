@@ -121,7 +121,7 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
         # properties
         self._low_latency_decoding = False
         self._pass_eos = DEFAULT_PASS_EOS
-        self._pipeline: Optional[VideoPipeline] = None
+        self._video_pipeline: Optional[VideoPipeline] = None
         self._pipeline_source_stage_name: Optional[str] = None
         self._pipeline_decoder_stage_name: Optional[str] = None
 
@@ -152,7 +152,7 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
         if prop.name == 'max-parallel-streams':
             return self._max_parallel_streams
         if prop.name == 'pipeline':
-            return self._pipeline
+            return self._video_pipeline
         if prop.name == 'pipeline-source-stage-name':
             return self._pipeline_source_stage_name
         if prop.name == 'pipeline-decoder-stage-name':
@@ -176,7 +176,7 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
             self._max_parallel_streams = value
             self._demuxer.set_property(prop.name, value)
         elif prop.name == 'pipeline':
-            self._pipeline = value
+            self._video_pipeline = value
             self._demuxer.set_property(prop.name, value)
         elif prop.name == 'pipeline-source-stage-name':
             self._pipeline_source_stage_name = value
@@ -224,7 +224,7 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
         new_pad.add_probe(
             Gst.PadProbeType.BUFFER,
             move_frame_as_is_pad_probe,
-            self._pipeline,
+            self._video_pipeline,
             self._pipeline_source_stage_name,
             self._pipeline_decoder_stage_name,
         )
