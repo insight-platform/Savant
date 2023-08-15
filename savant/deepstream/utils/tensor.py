@@ -29,7 +29,7 @@ def nvds_infer_tensor_meta_to_outputs(
                     f'Unsupported layer "{layer_info.layerName}" '
                     f'data type {layer_info.dataType}.'
                 )
-            layers[layer_names.index(layer_info.layerName)] = np.copy(
+            layers[layer_names.index(layer_info.layerName)] = np.ascontiguousarray(
                 np.ctypeslib.as_array(
                     ctypes.cast(
                         pyds.get_ptr(layer_info.buffer),

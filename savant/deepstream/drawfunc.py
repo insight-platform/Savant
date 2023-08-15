@@ -50,12 +50,12 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
         self, object_meta: ObjectMeta, draw_spec: ObjectDraw
     ) -> ObjectDraw:
         """Override draw specification for an object
-        based on dynamically changning object properties.
+        based on dynamically changing object properties.
         For example, re-assign bbox color from default per object class one
         to custom per track id one.
 
         :param object_meta: Object's meta
-        :param specification: Draw specification
+        :param draw_spec: Draw specification
         :return: Overridden draw specification
         """
         return draw_spec

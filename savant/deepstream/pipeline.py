@@ -334,7 +334,9 @@ class NvDsPipeline(GstPipeline):
         source_info: SourceInfo,
     ) -> Gst.Pad:
         self._check_pipeline_is_running()
-        nv_video_converter: Gst.Element = Gst.ElementFactory.make('nvvideoconvert')
+        nv_video_converter = self._element_factory.create(
+            PipelineElement('nvvideoconvert')
+        )
         if not is_aarch64():
             nv_video_converter.set_property(
                 'nvbuf-memory-type', int(pyds.NVBUF_MEM_CUDA_UNIFIED)
@@ -369,7 +371,9 @@ class NvDsPipeline(GstPipeline):
                 new_pad_caps,
             )
             self._check_pipeline_is_running()
-            video_converter: Gst.Element = Gst.ElementFactory.make('videoconvert')
+            video_converter = self._element_factory.create(
+                PipelineElement('videoconvert')
+            )
             self._pipeline.add(video_converter)
             video_converter.sync_state_with_parent()
             assert video_converter.link(nv_video_converter)
@@ -382,14 +386,17 @@ class NvDsPipeline(GstPipeline):
         assert new_pad.link(video_converter_sink) == Gst.PadLinkReturn.OK
 
         self._check_pipeline_is_running()
-        capsfilter: Gst.Element = Gst.ElementFactory.make('capsfilter')
-        capsfilter.set_property(
-            'caps',
-            Gst.Caps.from_string(
-                'video/x-raw(memory:NVMM), format=RGBA, '
-                f'width={self._frame_params.total_width}, '
-                f'height={self._frame_params.total_height}'
-            ),
+        capsfilter = self._element_factory.create(
+            PipelineElement(
+                'capsfilter',
+                properties={
+                    'caps': (
+                        'video/x-raw(memory:NVMM), format=RGBA, '
+                        f'width={self._frame_params.total_width}, '
+                        f'height={self._frame_params.total_height}'
+                    ),
+                },
+            )
         )
         capsfilter.set_state(Gst.State.PLAYING)
         self._pipeline.add(capsfilter)
@@ -561,8 +568,6 @@ class NvDsPipeline(GstPipeline):
                     frame_idx,
                     frame_pts,
                 )
-
-            source_info = self._sources.get_source(source_id)
 
             # second iteration to collect module objects
             for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):

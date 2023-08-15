@@ -1,10 +1,10 @@
 """Sink factories."""
-import json
-import logging
 from abc import ABC, abstractmethod
 from dataclasses import asdict
 from typing import Any, Callable, Dict, List, NamedTuple, Optional, Union
-
+import json
+import logging
+import numpy as np
 import zmq
 from savant_rs.primitives import EndOfStream
 from savant_rs.utils.serialization import Message, save_message_to_bytes
@@ -222,6 +222,11 @@ class ConsoleSinkFactory(SinkFactory):
                                 attr['value'] = f"tuple len {len(attr['value'])}"
                             elif isinstance(attr['value'], list):
                                 attr['value'] = f"list len {len(attr['value'])}"
+                            elif isinstance(attr['value'], np.ndarray):
+                                attr['value'] = (
+                                    f"ndarray shape{attr['value'].shape}, "
+                                    f"type {attr['value'].dtype}"
+                                )
                             elif isinstance(attr['value'], float):
                                 attr['value'] = round(attr['value'], ndigits=3)
                             if isinstance(attr['confidence'], float):
