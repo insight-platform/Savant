@@ -128,14 +128,13 @@ class NvDsPipeline(GstPipeline):
         self._demuxer_src_pads: List[Gst.Pad] = []
         self._free_pad_indices: List[int] = []
         self._muxer: Optional[Gst.Element] = None
-        for stage in ['source', 'decode', 'source-convert']:
-            self._video_pipeline.add_stage(stage, VideoPipelineStagePayloadType.Frame)
 
         if pipeline_cfg.source.element == 'zeromq_source_bin':
             pipeline_cfg.source.properties.update(
                 {
                     'max-parallel-streams': self._max_parallel_streams,
-                    'pipeline-stage-name': 'source',
+                    'pipeline-source-stage-name': 'source',
+                    'pipeline-decoder-stage-name': 'decode',
                 }
             )
 
@@ -225,13 +224,24 @@ class NvDsPipeline(GstPipeline):
     def _add_source(self, source: PipelineElement):
         source.name = 'source'
         _source = self.add_element(source)
+        for stage in ['source', 'source-convert', 'source-capsfilter']:
+            self._video_pipeline.add_stage(stage, VideoPipelineStagePayloadType.Frame)
         if source.element == 'zeromq_source_bin':
+            self._video_pipeline.add_stage(
+                'decode',
+                VideoPipelineStagePayloadType.Frame,
+            )
             _source.set_property('pipeline', self._video_pipeline)
-        # TODO: add probe to add frames to VideoPipeline when element is not zeromq_source_bin
+            add_frames_to_pipeline = False
+            last_stage = 'decode'
+        else:
+            add_frames_to_pipeline = True
+            last_stage = 'source'
         _source.connect(
             'pad-added',
             self.on_source_added,
-            source.element != 'zeromq_source_bin',  # add_frames_to_pipeline
+            add_frames_to_pipeline,
+            last_stage,
         )
 
         # Need to suppress EOS on nvstreammux sink pad
@@ -264,6 +274,7 @@ class NvDsPipeline(GstPipeline):
         element: Gst.Element,
         new_pad: Gst.Pad,
         add_frames_to_pipeline: bool,
+        last_stage: str,
     ):
         """Handle adding new video source.
 
@@ -317,6 +328,7 @@ class NvDsPipeline(GstPipeline):
             {Gst.EventType.CAPS: self._on_source_caps},
             source_info,
             add_frames_to_pipeline,
+            last_stage,
         )
 
     def _on_source_caps(
@@ -325,6 +337,7 @@ class NvDsPipeline(GstPipeline):
         event: Gst.Event,
         source_info: SourceInfo,
         add_frames_to_pipeline: bool,
+        last_stage: str,
     ):
         """Handle adding caps to video source pad."""
 
@@ -370,13 +383,14 @@ class NvDsPipeline(GstPipeline):
                     new_pad_caps,
                     source_info,
                     add_frames_to_pipeline,
+                    last_stage,
                 )
                 self._check_pipeline_is_running()
                 input_src_pad.add_probe(
                     Gst.PadProbeType.BUFFER,
                     move_frame_as_is_pad_probe,
                     self._video_pipeline,
-                    'source-convert',
+                    'source-capsfilter',
                     'muxer',
                 )
                 add_convert_savant_frame_meta_pad_probe(
@@ -405,6 +419,7 @@ class NvDsPipeline(GstPipeline):
         new_pad_caps: Gst.Caps,
         source_info: SourceInfo,
         add_frames_to_pipeline: bool,
+        last_stage: str,
     ) -> Gst.Pad:
         self._check_pipeline_is_running()
         if add_frames_to_pipeline:
@@ -431,7 +446,7 @@ class NvDsPipeline(GstPipeline):
             Gst.PadProbeType.BUFFER,
             move_frame_as_is_pad_probe,
             self._video_pipeline,
-            'source',
+            last_stage,
             'source-convert',
         )
 
@@ -492,6 +507,14 @@ class NvDsPipeline(GstPipeline):
                 f'height={self._frame_params.total_height}'
             ),
         )
+        capsfilter.get_static_pad('sink').add_probe(
+            Gst.PadProbeType.BUFFER,
+            move_frame_as_is_pad_probe,
+            self._video_pipeline,
+            'source-convert',
+            'source-capsfilter',
+        )
+
         capsfilter.set_state(Gst.State.PLAYING)
         self._pipeline.add(capsfilter)
         source_info.before_muxer.append(capsfilter)

@@ -6,6 +6,9 @@ from typing import Dict, Optional
 
 from dataclasses import dataclass
 
+from savant_rs.pipeline import VideoPipeline
+
+from savant.deepstream.gst_probes import move_frame_as_is_pad_probe
 from savant.gstreamer import GLib, GObject, Gst  # noqa:F401
 from savant.gstreamer.codecs import Codec, CODEC_BY_CAPS_NAME
 from savant.gstreamer.utils import on_pad_event, pad_to_source_id
@@ -18,14 +21,7 @@ DEFAULT_PASS_EOS = True
 NESTED_DEMUX_PROPERTIES = {
     k: v
     for k, v in SAVANT_RS_VIDEO_DEMUX_PROPERTIES.items()
-    if k
-    in [
-        'source-timeout',
-        'source-eviction-interval',
-        'max-parallel-streams',
-        'pipeline',
-        'pipeline-stage-name',
-    ]
+    if k in ['source-timeout', 'source-eviction-interval', 'max-parallel-streams']
 }
 SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES = {
     'low-latency-decoding': (
@@ -41,6 +37,26 @@ SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES = {
         'Whether to pass EOS event downstream or not',
         'Whether to pass EOS event downstream or not',
         DEFAULT_PASS_EOS,
+        GObject.ParamFlags.READWRITE,
+    ),
+    'pipeline': (
+        object,
+        'VideoPipeline object from savant-rs.',
+        'VideoPipeline object from savant-rs.',
+        GObject.ParamFlags.READWRITE,
+    ),
+    'pipeline-source-stage-name': (
+        str,
+        'Name of the pipeline stage for source.',
+        'Name of the pipeline stage for source.',
+        None,
+        GObject.ParamFlags.READWRITE,
+    ),
+    'pipeline-decoder-stage-name': (
+        str,
+        'Name of the pipeline stage for decoder.',
+        'Name of the pipeline stage for decoder.',
+        None,
         GObject.ParamFlags.READWRITE,
     ),
     **NESTED_DEMUX_PROPERTIES,
@@ -105,6 +121,9 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
         # properties
         self._low_latency_decoding = False
         self._pass_eos = DEFAULT_PASS_EOS
+        self._pipeline: Optional[VideoPipeline] = None
+        self._pipeline_source_stage_name: Optional[str] = None
+        self._pipeline_decoder_stage_name: Optional[str] = None
 
         self._demuxer: Gst.Element = Gst.ElementFactory.make('savant_rs_video_demux')
         self._demuxer.set_property('eos-on-timestamps-reset', True)
@@ -132,6 +151,12 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
             return self._pass_eos
         if prop.name == 'max-parallel-streams':
             return self._max_parallel_streams
+        if prop.name == 'pipeline':
+            return self._pipeline
+        if prop.name == 'pipeline-source-stage-name':
+            return self._pipeline_source_stage_name
+        if prop.name == 'pipeline-decoder-stage-name':
+            return self._pipeline_decoder_stage_name
         if prop.name in NESTED_DEMUX_PROPERTIES:
             return self._demuxer.get_property(prop.name)
         raise AttributeError(f'Unknown property {prop.name}')
@@ -150,6 +175,14 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
         elif prop.name == 'max-parallel-streams':
             self._max_parallel_streams = value
             self._demuxer.set_property(prop.name, value)
+        elif prop.name == 'pipeline':
+            self._pipeline = value
+            self._demuxer.set_property(prop.name, value)
+        elif prop.name == 'pipeline-source-stage-name':
+            self._pipeline_source_stage_name = value
+            self._demuxer.set_property('pipeline-stage-name', value)
+        elif prop.name == 'pipeline-decoder-stage-name':
+            self._pipeline_decoder_stage_name = value
         elif prop.name in NESTED_DEMUX_PROPERTIES:
             self._demuxer.set_property(prop.name, value)
         else:
@@ -187,6 +220,13 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
 
         self.logger.debug(
             'Added pad %s on element %s', new_pad.get_name(), element.get_name()
+        )
+        new_pad.add_probe(
+            Gst.PadProbeType.BUFFER,
+            move_frame_as_is_pad_probe,
+            self._pipeline,
+            self._pipeline_source_stage_name,
+            self._pipeline_decoder_stage_name,
         )
         source_id = pad_to_source_id(new_pad)
         caps = new_pad.get_pad_template_caps()
