@@ -158,7 +158,6 @@ class SavantRsAddFrames(LoggerMixin, GstBase.BaseTransform):
         keyframe = not buffer.has_flags(Gst.BufferFlags.DELTA_UNIT)
         video_frame = VideoFrame(
             source_id=self._source_info.source_id,
-            # TODO: framerate and resolution get from caps
             framerate=self._frame_params.framerate,
             width=self._frame_params.width,
             height=self._frame_params.height,
