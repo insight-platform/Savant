@@ -211,7 +211,7 @@ class FrameTagFilter(LoggerMixin, Gst.Element):
                 self.pipeline_stage_name,
                 frame_idx,
             )
-            with video_frame_span.nested_span('frame-tag-filter/parse-buffer'):
+            with video_frame_span.nested_span('parse-buffer'):
                 frame_meta = NvDsFrameMeta(video_frame, nvds_frame_meta)
                 if frame_meta.get_tag(self.tag) is not None:
                     self.logger.debug(
