@@ -37,9 +37,6 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
         self._video_pipeline: Optional[VideoPipeline] = None
         self._pipeline_stage_name: Optional[str] = None
         self.frame_streams = {}
-        self._frame_span_name = (
-            f'pyfunc/{self.__class__.__module__}.{self.__class__.__name__}'
-        )
 
     def on_start(self) -> bool:
         """Do on plugin start."""
@@ -123,7 +120,7 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
                 batch_id,
                 frames_id,
             )
-            with video_frame_span.nested_span(self._frame_span_name):
+            with video_frame_span.nested_span('process-frame'):
                 with NvDsFrameMeta(video_frame, nvds_frame_meta) as frame_meta:
                     self.process_frame(buffer, frame_meta)
 

@@ -65,12 +65,18 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
         self._logger.debug('Adding pipeline elements...')
         for i, item in enumerate(pipeline_cfg.elements):
             if isinstance(item, PipelineElement):
-                self.add_element(item, with_probes=isinstance(item, ModelElement))
+                self.add_element(
+                    item,
+                    with_probes=isinstance(item, ModelElement),
+                    pipeline_stage=True,
+                )
             elif isinstance(item, ElementGroup):
                 if self._is_group_enabled_check_log(item, i):
                     for element in item.elements:
                         self.add_element(
-                            element, with_probes=isinstance(element, ModelElement)
+                            element,
+                            with_probes=isinstance(element, ModelElement),
+                            pipeline_stage=True,
                         )
 
         self._logger.debug('Adding sink...')
@@ -89,6 +95,7 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
         element: PipelineElement,
         with_probes: bool = False,
         link: bool = True,
+        pipeline_stage: bool = False,
     ) -> Gst.Element:
         """Creates, adds to pipeline and links element to the last one."""
         if element.name and self._pipeline.get_by_name(element.name):

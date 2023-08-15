@@ -121,7 +121,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
             # TODO: handle savant_frame_meta==None
             frame_idx = savant_frame_meta.idx if savant_frame_meta else None
             video_frame, video_frame_span = self._video_pipeline.get_batched_frame(
-                'process-batch',
+                'prepare-input',
                 batch_id,
                 frame_idx,
             )

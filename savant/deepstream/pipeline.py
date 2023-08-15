@@ -102,6 +102,7 @@ class NvDsPipeline(GstPipeline):
         telemetry: TelemetryParameters = kwargs['telemetry']
         _init_telemetry(name, telemetry)
 
+        self._last_stage = None
         self._video_pipeline = VideoPipeline(name)
         self._video_pipeline.sampling_period = telemetry.sampling_period
         self._video_pipeline.root_span_name = f'{name}-root'
@@ -124,9 +125,6 @@ class NvDsPipeline(GstPipeline):
         self._muxer: Optional[Gst.Element] = None
         for stage in ['source', 'decode', 'source-convert']:
             self._video_pipeline.add_stage(stage, VideoPipelineStagePayloadType.Frame)
-        self._video_pipeline.add_stage(
-            'process-batch', VideoPipelineStagePayloadType.Batch
-        )
 
         if pipeline_cfg.source.element == 'zeromq_source_bin':
             pipeline_cfg.source.properties.update(
@@ -174,6 +172,7 @@ class NvDsPipeline(GstPipeline):
         element: PipelineElement,
         with_probes: bool = False,
         link: bool = True,
+        pipeline_stage: bool = False,
     ) -> Gst.Element:
         if isinstance(element, ModelElement):
             if element.model.input.preprocess_object_image:
@@ -189,10 +188,23 @@ class NvDsPipeline(GstPipeline):
             element=element,
             with_probes=with_probes,
             link=link,
+            pipeline_stage=pipeline_stage,
         )
-        if isinstance(element, PyFuncElement):
-            gst_element.set_property('pipeline', self._video_pipeline)
-            gst_element.set_property('pipeline-stage-name', 'process-batch')
+        if pipeline_stage:
+            if isinstance(element, PyFuncElement):
+                stage = f'pyfunc/{element.module}.{element.class_name}'
+                gst_element.set_property('pipeline', self._video_pipeline)
+                gst_element.set_property('pipeline-stage-name', stage)
+            else:
+                stage = gst_element.get_name()
+            self._video_pipeline.add_stage(stage, VideoPipelineStagePayloadType.Batch)
+            gst_element.get_static_pad('sink').add_probe(
+                Gst.PadProbeType.BUFFER,
+                self._move_batch_as_is,
+                self._last_stage,
+                stage,
+            )
+            self._last_stage = stage
 
         return gst_element
 
@@ -536,7 +548,14 @@ class NvDsPipeline(GstPipeline):
         output_queue = self.add_element(PipelineElement('queue'), link=False)
         output_queue.sync_state_with_parent()
         source_info.after_demuxer.append(output_queue)
-        self._link_demuxer_src_pad(output_queue.get_static_pad('sink'), source_info)
+        output_queue_sink_pad: Gst.Pad = output_queue.get_static_pad('sink')
+        output_queue_sink_pad.add_probe(
+            Gst.PadProbeType.BUFFER,
+            self._move_frame_as_is,
+            'demuxer',
+            'output-queue',
+        )
+        self._link_demuxer_src_pad(output_queue_sink_pad, source_info)
 
         self._check_pipeline_is_running()
         output_pad: Gst.Pad = self._source_output.add_output(
@@ -609,7 +628,7 @@ class NvDsPipeline(GstPipeline):
             Gst.PadProbeReturn.DROP if self._suppress_eos else Gst.PadProbeReturn.PASS
         )
 
-    def update_frame_meta(self, pad: Gst.Pad, info: Gst.PadProbeInfo):
+    def update_frame_meta(self, pad: Gst.Pad, info: Gst.PadProbeInfo, stage: str):
         """Prepare frame meta for output."""
         buffer: Gst.Buffer = info.get_buffer()
 
@@ -638,7 +657,7 @@ class NvDsPipeline(GstPipeline):
             frame_idx = savant_frame_meta.idx if savant_frame_meta else None
             video_frame: VideoFrame
             video_frame, video_frame_span = self._video_pipeline.get_batched_frame(
-                'process-batch',
+                stage,
                 batch_id,
                 frame_idx,
             )
@@ -735,7 +754,6 @@ class NvDsPipeline(GstPipeline):
         :param live_source: Whether source is live or not.
         """
 
-        self._video_pipeline.add_stage('muxer', VideoPipelineStagePayloadType.Frame)
         frame_processing_parameters = {
             'width': self._frame_params.total_width,
             'height': self._frame_params.total_height,
@@ -767,13 +785,19 @@ class NvDsPipeline(GstPipeline):
             'Pipeline frame processing parameters: %s.', frame_processing_parameters
         )
         # input processor (post-muxer)
+        self._video_pipeline.add_stage('muxer', VideoPipelineStagePayloadType.Frame)
+        self._video_pipeline.add_stage(
+            'prepare-input',
+            VideoPipelineStagePayloadType.Batch,
+        )
         muxer_src_pad: Gst.Pad = self._muxer.get_static_pad('src')
         muxer_src_pad.add_probe(
             Gst.PadProbeType.BUFFER,
             self._move_frames_to_batch,
             'muxer',
-            'process-batch',
+            'prepare-input',
         )
+        self._last_stage = 'prepare-input'
         muxer_src_pad.add_probe(
             Gst.PadProbeType.BUFFER,
             self._buffer_processor.input_probe,
@@ -843,7 +867,6 @@ class NvDsPipeline(GstPipeline):
         :param link: Whether to automatically link demuxer to the last pipeline element.
         """
 
-        self._video_pipeline.add_stage('demuxer', VideoPipelineStagePayloadType.Frame)
         demuxer = self.add_element(
             PipelineElement(
                 element='nvstreamdemux',
@@ -854,12 +877,29 @@ class NvDsPipeline(GstPipeline):
         self._demuxer_src_pads = self._allocate_demuxer_pads(
             demuxer, self._max_parallel_streams
         )
+        self._video_pipeline.add_stage(
+            'update-frame-meta', VideoPipelineStagePayloadType.Batch
+        )
+        self._video_pipeline.add_stage('demuxer', VideoPipelineStagePayloadType.Frame)
+        self._video_pipeline.add_stage(
+            'output-queue', VideoPipelineStagePayloadType.Frame
+        )
         sink_peer_pad: Gst.Pad = demuxer.get_static_pad('sink').get_peer()
-        sink_peer_pad.add_probe(Gst.PadProbeType.BUFFER, self.update_frame_meta)
+        sink_peer_pad.add_probe(
+            Gst.PadProbeType.BUFFER,
+            self._move_batch_as_is,
+            self._last_stage,
+            'update-frame-meta',
+        )
+        sink_peer_pad.add_probe(
+            Gst.PadProbeType.BUFFER,
+            self.update_frame_meta,
+            'update-frame-meta',
+        )
         sink_peer_pad.add_probe(
             Gst.PadProbeType.BUFFER,
             self._move_batch_to_frames,
-            'process-batch',
+            'update-frame-meta',
             'demuxer',
         )
         return demuxer
@@ -870,6 +910,7 @@ class NvDsPipeline(GstPipeline):
         pads = []
         for pad_idx in range(n_pads):
             pad: Gst.Pad = demuxer.get_request_pad(f'src_{pad_idx}')
+            add_convert_savant_frame_meta_pad_probe(pad, False)
             pad.add_probe(
                 Gst.PadProbeType.EVENT_DOWNSTREAM,
                 on_pad_event,
