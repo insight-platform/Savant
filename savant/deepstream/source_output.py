@@ -4,7 +4,6 @@ from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional
 
 import pyds
-from pygstsavantframemeta import gst_buffer_get_savant_frame_meta
 from savant_rs.pipeline import VideoPipeline, VideoPipelineStagePayloadType
 
 from savant.config.schema import (
@@ -12,6 +11,7 @@ from savant.config.schema import (
     PipelineElement,
     FrameParameters,
 )
+from savant.deepstream.gst_probes import move_frame_as_is_pad_probe
 from savant.gstreamer import Gst  # noqa:F401
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec, CodecInfo
 from savant.gstreamer.pipeline import GstPipeline
@@ -45,34 +45,6 @@ class SourceOutput(ABC):
         :returns Src pad that will be connected to fakesink element.
         """
 
-    def _move_frame_as_is(
-        self,
-        pad: Gst.Pad,
-        info: Gst.PadProbeInfo,
-        stage_from: str,
-        stage_to: str,
-    ) -> Gst.PadProbeReturn:
-        buffer: Gst.Buffer = info.get_buffer()
-        self._logger.debug(
-            'Moving frame from %s to %s in buffer with PTS %s.',
-            stage_from,
-            stage_to,
-            buffer.pts,
-        )
-        savant_frame_meta = gst_buffer_get_savant_frame_meta(buffer)
-        # TODO: handle savant_frame_meta==None
-        frame_id = savant_frame_meta.idx if savant_frame_meta else None
-        self._logger.debug(
-            'Moving frame from %s to %s in buffer with PTS %s. Frame ID: %s.',
-            stage_from,
-            stage_to,
-            buffer.pts,
-            frame_id,
-        )
-        self._video_pipeline.move_as_is(stage_from, stage_to, [frame_id])
-
-        return Gst.PadProbeReturn.OK
-
 
 class SourceOutputOnlyMeta(SourceOutput):
     """Adds an output elements to a DeepStream pipeline.
@@ -90,7 +62,8 @@ class SourceOutputOnlyMeta(SourceOutput):
         )
         input_pad.add_probe(
             Gst.PadProbeType.BUFFER,
-            self._move_frame_as_is,
+            move_frame_as_is_pad_probe,
+            self._video_pipeline,
             'output-queue',
             'sink',
         )
@@ -174,7 +147,8 @@ class SourceOutputWithFrame(SourceOutput):
         output_converter_sink_pad: Gst.Pad = output_converter.get_static_pad('sink')
         output_converter_sink_pad.add_probe(
             Gst.PadProbeType.BUFFER,
-            self._move_frame_as_is,
+            move_frame_as_is_pad_probe,
+            self._video_pipeline,
             last_stage,
             'sink-convert',
         )
@@ -202,7 +176,8 @@ class SourceOutputWithFrame(SourceOutput):
         )
         output_capsfilter.get_static_pad('sink').add_probe(
             Gst.PadProbeType.BUFFER,
-            self._move_frame_as_is,
+            move_frame_as_is_pad_probe,
+            self._video_pipeline,
             last_stage,
             'sink-capsfilter',
         )
@@ -217,14 +192,16 @@ class SourceOutputWithFrame(SourceOutput):
             )
             src_pad.add_probe(
                 Gst.PadProbeType.BUFFER,
-                self._move_frame_as_is,
+                move_frame_as_is_pad_probe,
+                self._video_pipeline,
                 'frame-tag-funnel',
                 'sink',
             )
         else:
             src_pad.add_probe(
                 Gst.PadProbeType.BUFFER,
-                self._move_frame_as_is,
+                move_frame_as_is_pad_probe,
+                self._video_pipeline,
                 'sink-capsfilter',
                 'sink',
             )
@@ -253,7 +230,8 @@ class SourceOutputWithFrame(SourceOutput):
         )
         frame_tag_filter.get_static_pad('sink').add_probe(
             Gst.PadProbeType.BUFFER,
-            self._move_frame_as_is,
+            move_frame_as_is_pad_probe,
+            self._video_pipeline,
             'output-queue',
             'frame-tag-filter',
         )
@@ -272,7 +250,8 @@ class SourceOutputWithFrame(SourceOutput):
         src_pad_tagged: Gst.Pad = frame_tag_filter.get_static_pad('src_tagged')
         src_pad_tagged.add_probe(
             Gst.PadProbeType.BUFFER,
-            self._move_frame_as_is,
+            move_frame_as_is_pad_probe,
+            self._video_pipeline,
             'frame-tag-filter',
             'queue-tagged',
         )
@@ -297,13 +276,15 @@ class SourceOutputWithFrame(SourceOutput):
 
         src_pad_tagged.add_probe(
             Gst.PadProbeType.BUFFER,
-            self._move_frame_as_is,
+            move_frame_as_is_pad_probe,
+            self._video_pipeline,
             'sink-capsfilter',
             'frame-tag-funnel',
         )
         src_pad_not_tagged.add_probe(
             Gst.PadProbeType.BUFFER,
-            self._move_frame_as_is,
+            move_frame_as_is_pad_probe,
+            self._video_pipeline,
             'frame-tag-filter',
             'queue-not-tagged',
         )
@@ -314,7 +295,8 @@ class SourceOutputWithFrame(SourceOutput):
         queue_not_tagged_src_pad: Gst.Pad = queue_not_tagged.get_static_pad('src')
         queue_not_tagged_src_pad.add_probe(
             Gst.PadProbeType.BUFFER,
-            self._move_frame_as_is,
+            move_frame_as_is_pad_probe,
+            self._video_pipeline,
             'queue-not-tagged',
             'frame-tag-funnel',
         )
@@ -432,7 +414,8 @@ class SourceOutputEncoded(SourceOutputWithFrame):
         )
         encoder.get_static_pad('src').add_probe(
             Gst.PadProbeType.BUFFER,
-            self._move_frame_as_is,
+            move_frame_as_is_pad_probe,
+            self._video_pipeline,
             'sink-convert',
             'encode',
         )
@@ -473,7 +456,8 @@ class SourceOutputH26X(SourceOutputEncoded):
         )
         parser.get_static_pad('src').add_probe(
             Gst.PadProbeType.BUFFER,
-            self._move_frame_as_is,
+            move_frame_as_is_pad_probe,
+            self._video_pipeline,
             last_stage,
             'parse',
         )
