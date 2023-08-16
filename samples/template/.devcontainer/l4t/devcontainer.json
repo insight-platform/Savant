@@ -14,5 +14,5 @@
   },
   "workspaceMount": "source=${localWorkspaceFolder}/module,target=/opt/savant/module,type=bind",
   "workspaceFolder": "/opt/savant/module",
-  "runArgs": [ "--gpus=all" ]
+  "runArgs": [ "--runtime=nvidia" ]
 }

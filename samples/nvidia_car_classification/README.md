@@ -71,7 +71,7 @@ samples/nvidia_car_classification/module_performance.yml
 or for Jetson
 
 ```bash
-docker run --rm -it --gpus=all \
+docker run --rm -it --runtime=nvidia \
 -v `pwd`/samples:/opt/savant/samples \
 -v `pwd`/data:/data:ro \
 -v `pwd`/models/nvidia_car_classification:/models \

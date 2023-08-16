@@ -96,7 +96,7 @@ Now you are ready to run the performance benchmark with the following command:
 Peoplenet:
 
 ```bash
-docker run --rm -it --gpus=all \
+docker run --rm -it --runtime=nvidia \
 -e DETECTOR=peoplenet \
 -v `pwd`/samples:/opt/savant/samples \
 -v `pwd`/data:/data:ro \
@@ -109,7 +109,7 @@ samples/traffic_meter/module-performance.yml
 Yolov8m:
 
 ```bash
-docker run --rm -it --gpus=all \
+docker run --rm -it --runtime=nvidia \
 -e DETECTOR=yolov8m \
 -v `pwd`/samples:/opt/savant/samples \
 -v `pwd`/data:/data:ro \
@@ -122,7 +122,7 @@ samples/traffic_meter/module-performance.yml
 Yolov8s:
 
 ```bash
-docker run --rm -it --gpus=all \
+docker run --rm -it --runtime=nvidia \
 -e DETECTOR=yolov8s \
 -v `pwd`/samples:/opt/savant/samples \
 -v `pwd`/data:/data:ro \
