@@ -1,14 +1,14 @@
 """Parameter storage package."""
 from typing import Optional
-import logging
 from omegaconf import OmegaConf, DictConfig
 from .etcd_storage import EtcdStorage, EtcdStorageConfig
 from .parameter_storage import ParameterStorage
-
+from savant.utils.logging import get_logger
 
 __all__ = ['param_storage', 'init_param_storage', 'STORAGE_TYPES']
 
-logger = logging.getLogger(__name__)
+
+logger = get_logger(__name__)
 __PARAM_STORAGE: Optional[ParameterStorage] = None
 STORAGE_TYPES = frozenset(['etcd'])
 

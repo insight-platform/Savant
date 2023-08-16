@@ -1,10 +1,10 @@
 """Gstreamer metadata."""
-import logging
 from collections import defaultdict, UserDict
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional
 
-logger = logging.getLogger(__name__)
+from savant.utils.logging import get_logger
+logger = get_logger(__name__)
 
 DEFAULT_FRAMERATE = '30/1'
 

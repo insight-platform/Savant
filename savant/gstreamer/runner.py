@@ -2,13 +2,12 @@
 from datetime import timedelta
 from time import time
 from typing import Optional, Union
-import logging
 import os
 import threading
 from gi.repository import GLib, Gst  # noqa:F401
 from .pipeline import GstPipeline
-
-logger = logging.getLogger(__name__)
+from savant.utils.logging import get_logger
+logger = get_logger(__name__)
 
 
 class StateChangeError(Exception):

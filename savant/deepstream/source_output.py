@@ -1,5 +1,4 @@
 """Classes for adding output elements to a DeepStream pipeline."""
-import logging
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional
 
@@ -17,13 +16,14 @@ from savant.gstreamer.pipeline import GstPipeline
 from savant.gstreamer.utils import link_pads
 from savant.utils.platform import is_aarch64
 from savant.utils.source_info import SourceInfo
+from savant.utils.logging import get_logger
 
 
 class SourceOutput(ABC):
     """Adds an output elements to a DeepStream pipeline."""
 
     def __init__(self):
-        self._logger = logging.getLogger(
+        self._logger = get_logger(
             f'{self.__class__.__module__}.{self.__class__.__name__}'
         )
 

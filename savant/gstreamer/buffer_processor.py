@@ -1,5 +1,4 @@
 """Buffer processor for GStreamer pipeline."""
-import logging
 from abc import ABC, abstractmethod
 from queue import Queue
 from typing import Iterator
@@ -9,6 +8,7 @@ from gi.repository import Gst
 from savant.config.schema import PipelineElement
 from savant.utils.fps_meter import FPSMeter
 from savant.utils.sink_factories import SinkMessage
+from savant.utils.logging import get_logger
 
 
 class GstBufferProcessor(ABC):
@@ -19,7 +19,7 @@ class GstBufferProcessor(ABC):
         :param fps_meter: FPS meter.
         """
 
-        self._logger = logging.getLogger(
+        self._logger = get_logger(
             f'{self.__class__.__module__}.{self.__class__.__name__}'
         )
         self._queue = queue
