@@ -32,6 +32,10 @@ parameters:
       face_height: ${parameters.face_height}
       face_tile_padding: ${parameters.face_tile_padding}
       frame_padding_width: ${parameters.frame.padding.right}
+      # this parameter forces a minimum number of frames
+      # that a matched gallery image will be displayed
+      # this is to prevent flickering when gallery images are equally close to a detected face
+      match_linger_frames: 20
 
 pipeline:
 
