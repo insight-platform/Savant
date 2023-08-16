@@ -28,15 +28,16 @@ from savant.deepstream.nvinfer.model import (
     NvInferModel,
     NvInferInstanceSegmentation,
 )
+from savant.utils.logging import get_logger
 
-__all__ = ['nvinfer_configure_element']
+__all__ = ['nvinfer_element_configurator']
 
 
 class NvInferConfigException(Exception):
     """NvInfer config exception class."""
 
 
-def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
+def nvinfer_element_configurator(element_config: DictConfig, module_config: DictConfig) -> DictConfig:
     """Configure nvinfer element.
 
     :param element_config: Element configuration
@@ -51,7 +52,7 @@ def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
             return f'Element {element_name}: {msg}', kwargs
 
     logger = _LoggerAdapter(
-        logging.getLogger(__name__), dict(element_name=element_name)
+        get_logger(__name__), dict(element_name=element_name)
     )
 
     logger.debug('Configuring nvinfer element %s', element_config)

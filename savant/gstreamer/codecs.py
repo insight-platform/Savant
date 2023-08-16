@@ -1,13 +1,11 @@
 """Gst codecs."""
-import logging
 from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Optional
 
 from savant.gstreamer import Gst
-
-logger = logging.getLogger(__name__)
-
+from savant.utils.logging import get_logger
+logger = get_logger(__name__)
 
 @dataclass
 class CodecInfo:
@@ -32,7 +30,7 @@ class CodecInfo:
 
     sw_encoder: Optional[str] = None
     """Software gstreamer encoder element.
-    Savant will use the it when encoder type is not specified and codec 
+    Savant will use the it when encoder type is not specified and codec
     does not have NvEnc encoder.
     """
 

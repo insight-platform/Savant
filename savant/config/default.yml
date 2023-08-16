@@ -95,6 +95,11 @@ parameters:
   #   byte_size: 0
   buffer_queues: null
 
+  # Flag controls whether user python modules (pyfuncs and drawfuncs)
+  # are monitored for changes during runtime
+  # and reloaded in case changes are detected
+  dynamic_reload: ${oc.decode:${oc.env:DYNAMIC_RELOAD, False}}
+
 
 # pipeline definition
 pipeline:

@@ -1,12 +1,16 @@
 """PyFunc definitions."""
+import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from importlib import util as importlib_util, import_module
+from importlib import util as importlib_util, import_module, reload
 from pathlib import Path
-from typing import Any, Dict, Optional
-import logging
+from typing import Any, Dict, Optional, Tuple, Callable
+from types import ModuleType
 from savant.gstreamer import Gst  # noqa: F401
+from savant.utils.inotify_manager import INotifyManager
+from savant.utils.logging import get_logger
 
+logger = get_logger(__name__)
 
 class BasePyFuncImpl(ABC):
     """Base class for a PyFunc implementation. PyFunc implementations are
@@ -20,7 +24,7 @@ class BasePyFuncImpl(ABC):
     def __init__(self, **kwargs):
         for name, value in kwargs.items():
             setattr(self, name, value)
-        self.logger = logging.getLogger(self.__module__)
+        self.logger = get_logger(self.__module__)
 
 
 class BasePyFuncPlugin(BasePyFuncImpl):
@@ -108,12 +112,9 @@ class PyFunc:
     """Class initialization keyword arguments."""
 
     def __post_init__(self):
-        self._instance: BasePyFuncImpl = resolve_pyfunc(self)
-        self._callable = (
-            self._instance
-            if isinstance(self._instance, BasePyFuncCallableImpl)
-            else lambda *args, **kwargs: None
-        )
+        module_instance = pyfunc_module_factory(self)
+        self._instance: BasePyFuncImpl = pyfunc_impl_factory(self, module_instance)
+        self._callable = callable_factory(self._instance)
 
     @property
     def instance(self) -> BasePyFuncImpl:
@@ -126,26 +127,83 @@ class PyFunc:
         """
         return self._callable(*args, **kwargs)
 
+@dataclass
+class PyFuncDynamicReloadable(PyFunc):
 
-def resolve_pyfunc(pyfunc: PyFunc) -> BasePyFuncImpl:
-    """Resolves PyFunc. Takes PyFunc definition and returns PyFunc
-    implementation.
+    def __post_init__(self):
+        self._module_instance = pyfunc_module_factory(self)
+        self._instance: BasePyFuncImpl = pyfunc_impl_factory(self, self._module_instance)
+        self._callable = callable_factory(self._instance)
+        INotifyManager().add_watch(self._module_instance.__file__, id(self))
 
-    :param pyfunc: PyFunc structure.
-    :return: PyFunc implementation object.
+    @property
+    def instance(self) -> BasePyFuncImpl:
+        """Returns resolved PyFunc implementation."""
+        self._check_reload()
+        return self._instance
+
+    def __call__(self, *args, **kwargs) -> Any:
+        """Calls resolved PyFunc implementation if its a subclass of
+        :py:class:`BasePyFuncCallableImpl`, otherwise no-op.
+        """
+        self._check_reload()
+        return self._callable(*args, **kwargs)
+
+    def _check_reload(self):
+        py_target = self.module, self.class_name
+        if INotifyManager().is_changed(id(self)):
+            logger.info('Pyfunc %s Reload %s', id(self), py_target)
+            self._module_instance = reload_module(self._module_instance)
+            self._instance: BasePyFuncImpl = pyfunc_impl_factory(self, self._module_instance)
+            self._callable = callable_factory(self._instance)
+        else:
+            logger.info('Pyfunc %s Unchanged %s', id(self), py_target)
+
+def reload_module(module: ModuleType) -> ModuleType:
     """
+
+    .. note::
+
+        When a module is reloaded, its dictionary (containing the module's global variables) is retained.
+        Redefinitions of names will override the old definitions, so this is generally not a problem.
+        If the new version of a module does not define a name that was defined by the old version, the old definition remains.
+
+        https://docs.python.org/3/library/importlib.html#importlib.reload
+
+        This is the reason for clearing module's attributes before reloading.
+
+    """
+    for attr in dir(module):
+        if attr not in ('__name__', '__file__'):
+            delattr(module, attr)
+    return reload(module)
+
+def pyfunc_factory(module, class_name, dynamic_reload, **kwargs) -> PyFunc:
+    """Whether to reload the module and re-instantiate the class
+    on changes detected in the source file.
+    """
+    if dynamic_reload:
+        return PyFuncDynamicReloadable(module, class_name, **kwargs)
+    return PyFunc(module, class_name, **kwargs)
+
+def pyfunc_module_factory(pyfunc: PyFunc) -> ModuleType:
     assert pyfunc.module, 'Python module name or path is required.'
     assert pyfunc.class_name, 'Python class name is required.'
 
     module_path = Path(pyfunc.module).resolve()
 
     if module_path.exists():
-        spec = importlib_util.spec_from_file_location(module_path.stem, module_path)
+        module_name = module_path.stem
+        spec = importlib_util.spec_from_file_location(module_name, module_path)
         module_instance = importlib_util.module_from_spec(spec)
+        sys.modules[module_name] = module_instance
         spec.loader.exec_module(module_instance)
     else:
         module_instance = import_module(pyfunc.module)
 
+    return module_instance
+
+def pyfunc_impl_factory(pyfunc: PyFunc, module_instance: ModuleType) -> BasePyFuncImpl:
     pyfunc_class = getattr(module_instance, pyfunc.class_name)
     if pyfunc.kwargs:
         pyfunc_instance = pyfunc_class(**pyfunc.kwargs)
@@ -157,3 +215,8 @@ def resolve_pyfunc(pyfunc: PyFunc) -> BasePyFuncImpl:
     ), f'"{pyfunc_instance}" should be an instance of "BasePyFuncImpl" subclass.'
 
     return pyfunc_instance
+
+def callable_factory(pyfunc_impl: BasePyFuncImpl) -> Callable[...,Any]:
+    if isinstance(pyfunc_impl, BasePyFuncCallableImpl):
+        return pyfunc_impl
+    return lambda *args, **kwargs: None
