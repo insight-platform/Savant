@@ -24,6 +24,6 @@ def move_frame_as_is_pad_probe(
         buffer.pts,
         frame_id,
     )
-    video_pipeline.move_as_is(stage, [frame_id])
+    video_pipeline.move_as_is(stage, [frame_id], no_gil=False)
 
     return Gst.PadProbeReturn.OK

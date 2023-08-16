@@ -47,7 +47,7 @@ def move_frames_to_batch_pad_probe(
         buffer.pts,
         frames_ids,
     )
-    batch_id = video_pipeline.move_and_pack_frames(stage, frames_ids)
+    batch_id = video_pipeline.move_and_pack_frames(stage, frames_ids, no_gil=False)
     logger.debug(
         'Moving frames to batch to %s in buffer with PTS %s. Batch ID: %s.',
         stage,
@@ -91,7 +91,7 @@ def move_batch_as_is_pad_probe(
         buffer.pts,
         batch_id,
     )
-    video_pipeline.move_as_is(stage, [batch_id])
+    video_pipeline.move_as_is(stage, [batch_id], no_gil=False)
 
     return Gst.PadProbeReturn.OK
 
@@ -128,7 +128,11 @@ def move_batch_to_frames_pad_probe(
         buffer.pts,
         batch_id,
     )
-    frame_map: Dict[str, int] = video_pipeline.move_and_unpack_batch(stage, batch_id)
+    frame_map: Dict[str, int] = video_pipeline.move_and_unpack_batch(
+        stage,
+        batch_id,
+        no_gil=False,
+    )
     logger.debug(
         'Moving batch to frames to %s in buffer with PTS %s. Frame map: %s.',
         stage,
