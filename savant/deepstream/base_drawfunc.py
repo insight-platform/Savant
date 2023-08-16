@@ -1,30 +1,54 @@
-"""Base PyFunc for drawing on frame."""
+"""Base NvDsPyFuncPlugin for drawing on frame."""
 
 from abc import abstractmethod
+from typing import Any, Dict
 
-import pyds
-
-from savant.base.pyfunc import BasePyFuncCallableImpl
+from savant.config.schema import FrameProcessingCondition
+from savant.deepstream.meta.frame import NvDsFrameMeta
+from savant.deepstream.pyfunc import NvDsPyFuncPlugin
 from savant.gstreamer import Gst  # noqa: F401
 
 
-class BaseNvDsDrawFunc(BasePyFuncCallableImpl):
+class BaseNvDsDrawFunc(NvDsPyFuncPlugin):
     """Base PyFunc for drawing on frame.
 
     PyFunc implementations are defined in and instantiated by a
     :py:class:`.PyFunc` structure.
+
+    :param condition: Conditions for filtering frames to be processed by the
+        draw function. The draw function will be applied only to frames when
+        all conditions are met.
     """
 
-    @abstractmethod
-    def __call__(self, nvds_frame_meta: pyds.NvDsFrameMeta, buffer: Gst.Buffer):
-        """Processes gstreamer buffer with Deepstream batch structure. Draws
-        Deepstream metadata objects for each frame in the batch. Throws an
-        exception if fatal error has occurred.
+    def __init__(self, condition: Dict[str, Any], **kwargs):
+        self.condition = FrameProcessingCondition(**condition)
+        super().__init__(**kwargs)
 
-        :param nvds_frame_meta: NvDs metadata for a frame.
+    @abstractmethod
+    def draw(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
+        """Draw metadata on a frame in a batch.
+
         :param buffer: Gstreamer buffer.
+        :param frame_meta: Frame metadata for a frame in a batch.
         """
 
-    @abstractmethod
-    def finalize(self):
-        """Finalize batch processing."""
+    def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
+        if self.can_draw_on_frame(frame_meta):
+            self.draw(buffer, frame_meta)
+
+    def can_draw_on_frame(self, frame_meta: NvDsFrameMeta) -> bool:
+        """Check whether we can draw on this specific frame."""
+
+        if self.condition.tag is None:
+            return True
+
+        if self.condition.tag in frame_meta.tags:
+            return True
+
+        self.logger.debug(
+            'Frame from source %s with PTS %s does not have tag %s. Skip drawing on it.',
+            frame_meta.source_id,
+            frame_meta.pts,
+            self.condition.tag,
+        )
+        return False

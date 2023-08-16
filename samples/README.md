@@ -45,6 +45,14 @@ Preview:
 
 ![](age_gender_recognition/assets/age-gender-recognition-loop-400.webp)
 
+### YOLOv8 Instance Segmentation
+
+Sample Location: [yolov8_seg](./yolov8_seg)
+
+Preview:
+
+![](yolov8_seg/assets/shuffle_dance-400.webp)
+
 ## Utility And Coding Examples
 
 ### OpenCV CUDA MOG2 Background Segmentation Demo
@@ -88,3 +96,8 @@ Sample location: [face_reid](./face_reid)
 Preview:
 
 ![](face_reid/assets/face-reid-loop-400.webp)
+### Source Adapter With JSON Metadata
+
+A demo showing how to inject ground truth metadata into frames and use them to estimate the model performance.
+
+Sample location: [source_adapter_with_json_metadata](./source_adapter_with_json_metadata)

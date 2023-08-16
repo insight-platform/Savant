@@ -176,7 +176,7 @@ def build_input_pipeline(
             },
         ),
         PipelineElement(
-            'avro_video_demux',
+            'savant_rs_video_demux',
             properties={
                 'source-id': config.source_id,
                 'store-metadata': bool(config.metadata_output),
@@ -216,10 +216,10 @@ def build_input_pipeline(
 
     gst_source_elements = add_elements(pipeline, source_elements, factory)
     gst_sink_elements = add_elements(pipeline, sink_elements, factory)
-    avro_video_demux = gst_source_elements[-1]
+    savant_rs_video_demux = gst_source_elements[-1]
     nvvideoconvert = gst_sink_elements[0]
 
-    avro_video_demux.connect(
+    savant_rs_video_demux.connect(
         'pad-added',
         on_demuxer_pad_added,
         config,

@@ -1,5 +1,5 @@
 """Module and pipeline elements configuration templates."""
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List, Optional, Union
 import json
 from omegaconf import MISSING, DictConfig, OmegaConf
@@ -87,6 +87,17 @@ class FrameProcessingCondition:
     If specified, frame will be processes only if it has the specified tag.
     If not specified, all frames will be processed.
     """
+
+
+@dataclass
+class BufferQueuesParameters:
+    """Configure queues before and after pyfunc elements."""
+
+    length: int = 10
+    """Length of the queue in buffers (0 - no limit)."""
+
+    byte_size: int = 0
+    """Size of the queue in bytes (0 - no limit)."""
 
 
 @dataclass
@@ -232,49 +243,6 @@ def get_element_name(element: Union[DictConfig, PipelineElement]) -> str:
 
 
 @dataclass
-class DrawFunc(PyFunc):
-    """A callable PyFunc that will use an object implementing
-    :py:class:`~savant.deepstream.base_drawfunc.BaseNvDsDrawFunc`
-    to draw metadata on frames.
-
-    .. note::
-
-        Default values for :py:attr:`.module` and :py:attr:`.class_name` attributes
-        are set to use :py:class:`~savant.deepstream.drawfunc.NvDsDrawFunc` drawfunc
-        implementation.
-    """
-
-    module: str = 'savant.deepstream.drawfunc'
-    """Module name to import."""
-
-    class_name: str = 'NvDsDrawFunc'
-    """Python class name to instantiate."""
-
-    rendered_objects: Optional[Dict[str, Dict[str, Any]]] = None
-    """A specification of objects to be rendered by the default draw function.
-
-    For more details, look at :ref:`savant_101/90_draw_func:Declarative Configuration`.
-    """
-
-    kwargs: Optional[Dict[str, Any]] = None
-    """Class initialization keyword arguments."""
-
-    condition: FrameProcessingCondition = field(
-        default_factory=FrameProcessingCondition
-    )
-    """Conditions for filtering frames to be processed by the draw function.
-
-    The draw function will be applied only to frames when all conditions are met.
-    """
-
-    def __post_init__(self):
-        if self.kwargs is None:
-            self.kwargs = {}
-        self.kwargs.update({'rendered_objects': self.rendered_objects})
-        super().__post_init__()
-
-
-@dataclass
 class PyFuncElement(PipelineElement, PyFunc):
     """A pipeline element that will use an object implementing
     :py:class:`~savant.base.pyfunc.BasePyFuncPlugin` to apply custom processing to
@@ -306,6 +274,51 @@ class PyFuncElement(PipelineElement, PyFunc):
                 'kwargs': json.dumps(kwargs),
             }
         )
+
+
+@dataclass
+class DrawFunc(PyFuncElement):
+    """A pipeline element that will use an object implementing
+    :py:class:`~savant.deepstream.base_drawfunc.BaseNvDsDrawFunc`
+    to draw metadata on frames.
+
+    .. note::
+
+        Default values for :py:attr:`.module` and :py:attr:`.class_name` attributes
+        are set to use :py:class:`~savant.deepstream.drawfunc.NvDsDrawFunc` drawfunc
+        implementation.
+    """
+
+    module: str = 'savant.deepstream.drawfunc'
+    """Module name to import."""
+
+    class_name: str = 'NvDsDrawFunc'
+    """Python class name to instantiate."""
+
+    rendered_objects: Optional[Dict[str, Dict[str, Any]]] = None
+    """A specification of objects to be rendered by the default draw function.
+
+    For more details, look at :ref:`savant_101/90_draw_func:Declarative Configuration`.
+    """
+
+    condition: FrameProcessingCondition = field(
+        default_factory=FrameProcessingCondition
+    )
+    """Conditions for filtering frames to be processed by the draw function.
+
+    The draw function will be applied only to frames when all conditions are met.
+    """
+
+    def __post_init__(self):
+        if self.kwargs is None:
+            self.kwargs = {}
+        self.kwargs.update(
+            {
+                'rendered_objects': self.rendered_objects,
+                'condition': asdict(self.condition),
+            }
+        )
+        super().__post_init__()
 
 
 @dataclass

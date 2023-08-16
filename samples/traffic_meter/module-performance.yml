@@ -57,9 +57,9 @@ pipeline:
                   endpoint: https://eu-central-1.linodeobjects.com
               model_file: resnet34_peoplenet_pruned.etlt
               input:
-                  layer_name: input_1
-                  shape: [3, 544, 960]
-                  scale_factor: 0.0039215697906911373
+                layer_name: input_1
+                shape: [3, 544, 960]
+                scale_factor: 0.0039215697906911373
               output:
                 layer_names: [output_bbox/BiasAdd, output_cov/Sigmoid]
                 num_detected_classes: 3
@@ -74,17 +74,45 @@ pipeline:
           expr: ${oc.env:DETECTOR}
           value: yolov8m
         elements:
+          # below follows detector unit definition as usual
           - element: nvinfer@detector
             name: yolov8m
             model:
               remote:
-                url: s3://savant-data/models/yolov8m/yolov8m.zip
-                checksum_url: s3://savant-data/models/yolov8m/yolov8m.md5
+                url: s3://savant-data/models/yolov8m_f630b10/yolov8m_f630b10.zip
+                checksum_url: s3://savant-data/models/yolov8m_f630b10/yolov8m_f630b10.md5
                 parameters:
                   endpoint: https://eu-central-1.linodeobjects.com
-              format: custom
+              format: onnx
+              model_file: yolov8m.onnx
               config_file: config_infer_primary_yoloV8.txt
-              custom_lib_path: /opt/savant/lib/libnvdsinfer_custom_impl_Yolo.so
+              # max GPU RAM used to build the engine, 6GB by default
+              # set lower than total GPU RAM available on your hardware
+              workspace_size: 6144
+              output:
+                objects:
+                  - class_id: ${parameters.detected_object.id}
+                    label: ${parameters.detected_object.label}
+
+    # variant group: yolov8s detector
+    - group:
+        # enabled if env var DETECTOR==yolov8s
+        init_condition:
+          expr: ${oc.env:DETECTOR}
+          value: yolov8s
+        elements:
+          # below follows detector unit definition as usual
+          - element: nvinfer@detector
+            name: yolov8s
+            model:
+              remote:
+                url: s3://savant-data/models/yolov8s_f630b10/yolov8s_f630b10.zip
+                checksum_url: s3://savant-data/models/yolov8s_f630b10/yolov8s_f630b10.md5
+                parameters:
+                  endpoint: https://eu-central-1.linodeobjects.com
+              format: onnx
+              model_file: yolov8s.onnx
+              config_file: config_infer_primary_yoloV8.txt
               # max GPU RAM used to build the engine, 6GB by default
               # set lower than total GPU RAM available on your hardware
               workspace_size: 6144

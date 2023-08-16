@@ -1,5 +1,8 @@
 import math
-from typing import Dict, List, Optional
+from typing import List
+
+from savant_rs.primitives import EndOfStream, VideoFrame
+
 from savant.utils.logging import get_logger
 
 
@@ -17,21 +20,25 @@ class ChunkWriter:
         self.frames_in_chunk = 0
         self.opened = False
 
-    def write(
+    def write_video_frame(
         self,
-        message,
+        frame: VideoFrame,
         data,
         can_start_new_chunk: bool,
-        is_frame: bool = True,
     ) -> bool:
         if can_start_new_chunk and 0 < self.chunk_size <= self.frames_in_chunk:
             self.close()
         if not self.opened:
             self.open()
-        frame_num = self.frames_in_chunk if is_frame else None
-        result = self._write(message, data, frame_num)
-        if is_frame:
-            self.frames_in_chunk += 1
+        frame_num = self.frames_in_chunk
+        result = self._write_video_frame(frame, data, frame_num)
+        self.frames_in_chunk += 1
+        return result
+
+    def write_eos(self, eos: EndOfStream) -> bool:
+        if not self.opened:
+            self.open()
+        result = self._write_eos(eos)
         return result
 
     def open(self):
@@ -63,7 +70,10 @@ class ChunkWriter:
     def _flush(self):
         pass
 
-    def _write(self, message, data, frame_num: Optional[int]) -> bool:
+    def _write_video_frame(self, frame: VideoFrame, data, frame_num: int) -> bool:
+        pass
+
+    def _write_eos(self, eos: EndOfStream) -> bool:
         pass
 
 
@@ -84,13 +94,14 @@ class CompositeChunkWriter(ChunkWriter):
         for writer in self.writers:
             writer.flush()
 
-    def _write(
-        self,
-        message: Dict,
-        data: List[bytes],
-        frame_num: Optional[int],
-    ) -> bool:
+    def _write_video_frame(self, frame: VideoFrame, data, frame_num: int) -> bool:
         for writer in self.writers:
-            if not writer._write(message, data, frame_num):
+            if not writer._write_video_frame(frame, data, frame_num):
+                return False
+        return True
+
+    def _write_eos(self, eos: EndOfStream) -> bool:
+        for writer in self.writers:
+            if not writer._write_eos(eos):
                 return False
         return True

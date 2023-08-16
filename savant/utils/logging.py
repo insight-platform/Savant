@@ -33,6 +33,7 @@ def _log_conf(log_level: str) -> dict:
                 'propagate': False,
             },
         },
+        'disable_existing_loggers': False,
     }
 
 

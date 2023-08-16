@@ -19,7 +19,7 @@ class NvDsPipelineRunner(GstPipelineRunner):
             and 'Device is in streaming mode' in debug
             and (
                 message.src.get_factory().get_name()
-                in Codec.H264.value.encoder_elements + Codec.HEVC.value.encoder_elements
+                in [Codec.H264.value.nv_encoder, Codec.HEVC.value.nv_encoder]
             )
         ):
             return f'{error} Reached the limit of encoders sessions.'

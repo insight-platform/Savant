@@ -19,9 +19,7 @@ parameters:
     # Frame is output without any encoding
     # this is to circumvent 3 hardware decoding processes limit on NVIDIA consumer hardware
     codec: raw-rgba
-  # PyFunc for drawing on frames
   batch_size: 1
-  draw_func: {}
 
 
 # pipeline definition

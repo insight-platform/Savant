@@ -1,9 +1,9 @@
 """ZeroMQ src bin."""
 from savant.gstreamer import GObject, Gst
 from savant.utils.logging import LoggerMixin
-from gst_plugins.python.avro_video_decode_bin import (
-    AVRO_VIDEO_DECODE_BIN_PROPERTIES,
-    AVRO_VIDEO_DECODE_BIN_SRC_PAD_TEMPLATE,
+from gst_plugins.python.savant_rs_video_decode_bin import (
+    SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES,
+    SAVANT_RS_VIDEO_DECODE_BIN_SRC_PAD_TEMPLATE,
 )
 from gst_plugins.python.zeromq_src import ZEROMQ_SRC_PROPERTIES
 
@@ -11,7 +11,7 @@ from gst_plugins.python.zeromq_src import ZEROMQ_SRC_PROPERTIES
 class ZeroMQSourceBin(LoggerMixin, Gst.Bin):
     """Wrapper for "zeromq_src !
 
-    avro_video_decode_bin".
+    savant_rs_video_decode_bin".
     """
 
     GST_PLUGIN_NAME = 'zeromq_source_bin'
@@ -19,15 +19,15 @@ class ZeroMQSourceBin(LoggerMixin, Gst.Bin):
     __gstmetadata__ = (
         'ZeroMQ video source bin',
         'Bin/Source',
-        'Wrapper for "zeromq_src ! avro_video_decode_bin"',
+        'Wrapper for "zeromq_src ! savant_rs_video_decode_bin"',
         'Pavel Tomskikh <tomskih_pa@bw-sw.com>',
     )
 
-    __gsttemplates__ = AVRO_VIDEO_DECODE_BIN_SRC_PAD_TEMPLATE
+    __gsttemplates__ = SAVANT_RS_VIDEO_DECODE_BIN_SRC_PAD_TEMPLATE
 
     __gproperties__ = {
         **ZEROMQ_SRC_PROPERTIES,
-        **AVRO_VIDEO_DECODE_BIN_PROPERTIES,
+        **SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES,
     }
 
     def __init__(self, *args, **kwargs):
@@ -39,7 +39,9 @@ class ZeroMQSourceBin(LoggerMixin, Gst.Bin):
         self._queue: Gst.Element = Gst.ElementFactory.make('queue')
         self.add(self._queue)
 
-        self._decodebin: Gst.Element = Gst.ElementFactory.make('avro_video_decode_bin')
+        self._decodebin: Gst.Element = Gst.ElementFactory.make(
+            'savant_rs_video_decode_bin'
+        )
         self.add(self._decodebin)
         assert self._source.link(self._queue)
         assert self._queue.link(self._decodebin)
@@ -54,7 +56,7 @@ class ZeroMQSourceBin(LoggerMixin, Gst.Bin):
         """
         if prop.name in ZEROMQ_SRC_PROPERTIES:
             return self._source.get_property(prop.name)
-        if prop.name in AVRO_VIDEO_DECODE_BIN_PROPERTIES:
+        if prop.name in SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES:
             return self._decodebin.get_property(prop.name)
         raise AttributeError(f'Unknown property {prop.name}')
 
@@ -67,7 +69,7 @@ class ZeroMQSourceBin(LoggerMixin, Gst.Bin):
         """
         if prop.name in ZEROMQ_SRC_PROPERTIES:
             self._source.set_property(prop.name, value)
-        elif prop.name in AVRO_VIDEO_DECODE_BIN_PROPERTIES:
+        elif prop.name in SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES:
             self._decodebin.set_property(prop.name, value)
         else:
             raise AttributeError(f'Unknown property {prop.name}')

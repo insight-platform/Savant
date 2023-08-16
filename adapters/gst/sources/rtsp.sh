@@ -42,7 +42,7 @@ PIPELINE=(
     ffmpeg_src uri="${RTSP_URI}" params="rtsp_transport=${RTSP_TRANSPORT}"
     queue-len="${BUFFER_LEN}" loglevel="${FFMPEG_LOGLEVEL}" !
     fps_meter "${FPS_PERIOD}" output="${FPS_OUTPUT}" !
-    video_to_avro_serializer source-id="${SOURCE_ID}" !
+    savant_rs_serializer source-id="${SOURCE_ID}" !
     zeromq_sink socket="${ZMQ_ENDPOINT}" socket-type="${ZMQ_SOCKET_TYPE}" bind="${ZMQ_SOCKET_BIND}"
     sync="${SYNC_OUTPUT}" ts-offset="${SYNC_DELAY}" source-id="${SOURCE_ID}"
 )

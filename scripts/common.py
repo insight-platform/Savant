@@ -10,8 +10,12 @@ import subprocess
 import click
 
 sys.path.append(str(Path(__file__).parent.parent))
+from savant.utils.re_patterns import socket_uri_pattern
 from savant.utils.version import version
 from savant.utils.platform import is_aarch64
+
+SAVANT_VERSION = 'latest'  # use version.SAVANT or 'latest'
+DEEPSTREAM_VERSION = version.DEEPSTREAM
 
 # docker registry to use with scripts, set to "None" to use local images
 DOCKER_REGISTRY = 'ghcr.io/insight-platform'
@@ -20,14 +24,11 @@ DOCKER_REGISTRY = 'ghcr.io/insight-platform'
 
 def docker_image_option(default_docker_image_name: str, tag: Optional[str] = None):
     """Click option for docker image."""
-    SAVANT_VERSION = version.SAVANT
-    DEEPSTREAM_VERSION = version.DEEPSTREAM
-
     if is_aarch64():
         default_docker_image_name += '-l4t'
 
     default_tag = SAVANT_VERSION
-    if 'deepstream' in default_docker_image_name:
+    if 'deepstream' in default_docker_image_name and SAVANT_VERSION != 'latest':
         default_tag += f'-{DEEPSTREAM_VERSION}'
 
     if tag:
@@ -68,7 +69,8 @@ def get_ipc_mounts(zmq_sockets: Iterable[str]) -> List[str]:
     ipc_mounts = []
 
     for zmq_socket in zmq_sockets:
-        transport, address = zmq_socket.split('://')
+        _, endpoint = socket_uri_pattern.fullmatch(zmq_socket).groups()
+        transport, address = endpoint.split('://')
         if transport == 'ipc':
             ipc_mounts.append(get_ipc_mount(address))
 

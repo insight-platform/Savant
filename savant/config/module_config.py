@@ -5,6 +5,7 @@ from typing import Callable, Optional, Union, Tuple, Dict, Type, Iterable, Any
 import logging
 from omegaconf import OmegaConf, DictConfig
 from savant.config.schema import (
+    BufferQueuesParameters,
     Module,
     Pipeline,
     ElementGroup,
@@ -203,6 +204,7 @@ def configure_module_parameters(module_cfg: DictConfig) -> None:
         OmegaConf.structured(FrameParameters),
     )
     apply_schema(module_cfg.parameters, 'draw_func', DrawFunc)
+    apply_schema(module_cfg.parameters, 'buffer_queues', BufferQueuesParameters)
 
 
 def configure_element(element_config: DictConfig) -> DictConfig:
