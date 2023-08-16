@@ -67,7 +67,7 @@ pipeline:
             module: samples.face_reid.face_preproc
             class_name: FacePreprocessingObjectImageGPU
         output:
-          layer_names: [ 'feature', 'norm' ]
+          layer_names: [ 'feature' ]
           converter:
             module: savant.converter
             class_name: TensorToVectorConverter
