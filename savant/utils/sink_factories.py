@@ -5,6 +5,7 @@ from typing import Any, Callable, Dict, List, NamedTuple, Optional, Union
 
 import zmq
 from savant_rs.primitives import EndOfStream, VideoFrame, VideoFrameContent
+from savant_rs.utils import PropagatedContext
 from savant_rs.utils.serialization import Message, save_message_to_bytes
 
 from savant.api.enums import ExternalFrameType
@@ -33,6 +34,7 @@ class SinkVideoFrame(SinkMessage, NamedTuple):
 
     video_frame: VideoFrame
     frame: Optional[bytes]
+    span_context: PropagatedContext
 
     @property
     def source_id(self) -> str:
@@ -167,6 +169,7 @@ class ZeroMQSinkFactory(SinkFactory):
                     msg.video_frame.content = VideoFrameContent.none()
 
                 message = Message.video_frame(msg.video_frame)
+                message.span_context = msg.span_context
                 zmq_message.append(save_message_to_bytes(message))
                 if msg.frame:
                     zmq_message.append(msg.frame)

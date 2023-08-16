@@ -9,6 +9,7 @@ from typing import Dict, NamedTuple, Optional
 
 from savant_rs.pipeline import VideoPipeline
 from savant_rs.primitives import EndOfStream, VideoFrame
+from savant_rs.utils import PropagatedContext
 
 from savant.api.enums import ExternalFrameType
 from savant.api.parser import convert_ts
@@ -243,7 +244,11 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
         # TODO: Pipeline message types might be extended beyond only VideoFrame
         # Additional checks for audio/raw_tensors/etc. may be required
         if message.is_video_frame():
-            result = self.handle_video_frame(message.as_video_frame(), buffer)
+            result = self.handle_video_frame(
+                message.as_video_frame(),
+                message.span_context,
+                buffer,
+            )
         elif message.is_end_of_stream():
             result = self.handle_eos(message.as_end_of_stream())
         else:
@@ -255,16 +260,26 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
     def handle_video_frame(
         self,
         video_frame: VideoFrame,
+        span_context: PropagatedContext,
         buffer: Gst.Buffer,
     ) -> Gst.FlowReturn:
         """Handle VideoFrame message."""
 
         if self.video_pipeline is not None:
-            frame_idx = self.video_pipeline.add_frame(
-                self.pipeline_stage_name, video_frame
-            )
+            if span_context.as_dict():
+                frame_idx = self.video_pipeline.add_frame_with_telemetry(
+                    self.pipeline_stage_name,
+                    video_frame,
+                    span_context.nested_span(self.video_pipeline.root_span_name),
+                )
+            else:
+                frame_idx = self.video_pipeline.add_frame(
+                    self.pipeline_stage_name,
+                    video_frame,
+                )
         else:
             frame_idx = next(self._frame_idx_gen)
+
         frame_params = FrameParams.from_video_frame(video_frame)
         frame_pts = convert_ts(video_frame.pts, video_frame.time_base)
         frame_dts = (

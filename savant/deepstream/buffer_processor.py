@@ -56,6 +56,7 @@ from savant.deepstream.utils import (
 from savant.gstreamer import Gst  # noqa:F401
 from savant.gstreamer.buffer_processor import GstBufferProcessor
 from savant.gstreamer.codecs import CodecInfo, Codec
+from savant.meta.errors import UIDError
 from savant.meta.object import ObjectMeta
 from savant.meta.type import ObjectSelectionType
 from savant.utils.fps_meter import FPSMeter
@@ -316,7 +317,6 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
             output_frame.idx,
         )
         with video_frame_span.nested_span('prepare_output'):
-            # TODO: use VideoFrameUpdate
             video_frame.dts = output_frame.dts
             video_frame.width = self._frame_params.output_width
             video_frame.height = self._frame_params.output_height
@@ -324,9 +324,14 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                 video_frame.codec = output_frame.codec.name
             video_frame.keyframe = output_frame.keyframe
             # TODO: Do we need to delete frame after it was sent to sink?
-            self._video_pipeline.delete(output_frame.idx)
+            spans = self._video_pipeline.delete(output_frame.idx)
+            span_context = spans[output_frame.idx].propagate()
 
-        return SinkVideoFrame(video_frame=video_frame, frame=output_frame.frame)
+        return SinkVideoFrame(
+            video_frame=video_frame,
+            frame=output_frame.frame,
+            span_context=span_context,
+        )
 
     def on_eos(self, source_info: SourceInfo) -> SinkVideoFrame:
         """Pipeline EOS handler."""
@@ -659,9 +664,13 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                                     obj_meta=nvds_obj_meta,
                                     selection_type=ObjectSelectionType.REGULAR_BBOX,
                                 )
-                                nvds_set_obj_uid(
-                                    frame_meta=nvds_frame_meta, obj_meta=nvds_obj_meta
-                                )
+                                try:
+                                    nvds_set_obj_uid(
+                                        frame_meta=nvds_frame_meta,
+                                        obj_meta=nvds_obj_meta,
+                                    )
+                                except UIDError:
+                                    pass
                                 nvds_obj_meta.obj_label = build_model_object_key(
                                     element.name, obj.label
                                 )
