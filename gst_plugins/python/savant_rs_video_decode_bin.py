@@ -8,7 +8,7 @@ from dataclasses import dataclass
 
 from savant_rs.pipeline import VideoPipeline
 
-from savant.deepstream.gst_probes import move_frame_as_is_pad_probe
+from savant.deepstream.gst_probes import add_move_frame_as_is_pad_probe
 from savant.gstreamer import GLib, GObject, Gst  # noqa:F401
 from savant.gstreamer.codecs import Codec, CODEC_BY_CAPS_NAME
 from savant.gstreamer.utils import on_pad_event, pad_to_source_id
@@ -219,9 +219,8 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
         self.logger.debug(
             'Added pad %s on element %s', new_pad.get_name(), element.get_name()
         )
-        new_pad.add_probe(
-            Gst.PadProbeType.BUFFER,
-            move_frame_as_is_pad_probe,
+        add_move_frame_as_is_pad_probe(
+            new_pad,
             self._video_pipeline,
             self._pipeline_decoder_stage_name,
         )

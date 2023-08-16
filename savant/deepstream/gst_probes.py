@@ -27,3 +27,16 @@ def move_frame_as_is_pad_probe(
     video_pipeline.move_as_is(stage, [frame_id], no_gil=False)
 
     return Gst.PadProbeReturn.OK
+
+
+def add_move_frame_as_is_pad_probe(
+    pad: Gst.Pad,
+    video_pipeline: VideoPipeline,
+    stage: str,
+):
+    pad.add_probe(
+        Gst.PadProbeType.BUFFER,
+        move_frame_as_is_pad_probe,
+        video_pipeline,
+        stage,
+    )

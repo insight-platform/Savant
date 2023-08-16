@@ -141,3 +141,42 @@ def move_batch_to_frames_pad_probe(
     )
 
     return Gst.PadProbeReturn.OK
+
+
+def add_move_frames_to_batch_pad_probe(
+    pad: Gst.Pad,
+    video_pipeline: VideoPipeline,
+    stage: str,
+):
+    pad.add_probe(
+        Gst.PadProbeType.BUFFER,
+        move_frames_to_batch_pad_probe,
+        video_pipeline,
+        stage,
+    )
+
+
+def add_move_batch_as_is_pad_probe(
+    pad: Gst.Pad,
+    video_pipeline: VideoPipeline,
+    stage: str,
+):
+    pad.add_probe(
+        Gst.PadProbeType.BUFFER,
+        move_batch_as_is_pad_probe,
+        video_pipeline,
+        stage,
+    )
+
+
+def add_move_batch_to_frames_pad_probe(
+    pad: Gst.Pad,
+    video_pipeline: VideoPipeline,
+    stage: str,
+):
+    pad.add_probe(
+        Gst.PadProbeType.BUFFER,
+        move_batch_to_frames_pad_probe,
+        video_pipeline,
+        stage,
+    )

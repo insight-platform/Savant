@@ -26,11 +26,11 @@ from savant.deepstream.buffer_processor import (
     create_buffer_processor,
 )
 from savant.deepstream.ds_probes import (
-    move_batch_as_is_pad_probe,
-    move_batch_to_frames_pad_probe,
-    move_frames_to_batch_pad_probe,
+    add_move_batch_as_is_pad_probe,
+    add_move_batch_to_frames_pad_probe,
+    add_move_frames_to_batch_pad_probe,
 )
-from savant.deepstream.gst_probes import move_frame_as_is_pad_probe
+from savant.deepstream.gst_probes import add_move_frame_as_is_pad_probe
 from savant.deepstream.source_output import (
     SourceOutputWithFrame,
     create_source_output,
@@ -200,9 +200,8 @@ class NvDsPipeline(GstPipeline):
             else:
                 stage = gst_element.get_name()
             self._video_pipeline.add_stage(stage, VideoPipelineStagePayloadType.Batch)
-            gst_element.get_static_pad('sink').add_probe(
-                Gst.PadProbeType.BUFFER,
-                move_batch_as_is_pad_probe,
+            add_move_batch_as_is_pad_probe(
+                gst_element.get_static_pad('sink'),
                 self._video_pipeline,
                 stage,
             )
@@ -375,9 +374,8 @@ class NvDsPipeline(GstPipeline):
                     add_frames_to_pipeline,
                 )
                 self._check_pipeline_is_running()
-                input_src_pad.add_probe(
-                    Gst.PadProbeType.BUFFER,
-                    move_frame_as_is_pad_probe,
+                add_move_frame_as_is_pad_probe(
+                    input_src_pad,
                     self._video_pipeline,
                     'muxer',
                 )
@@ -429,12 +427,7 @@ class NvDsPipeline(GstPipeline):
             assert new_pad.link(savant_rs_add_frames_sink) == Gst.PadLinkReturn.OK
             new_pad = savant_rs_add_frames.get_static_pad('src')
 
-        new_pad.add_probe(
-            Gst.PadProbeType.BUFFER,
-            move_frame_as_is_pad_probe,
-            self._video_pipeline,
-            'source-convert',
-        )
+        add_move_frame_as_is_pad_probe(new_pad, self._video_pipeline, 'source-convert')
 
         nv_video_converter: Gst.Element = Gst.ElementFactory.make('nvvideoconvert')
         if not is_aarch64():
@@ -493,9 +486,8 @@ class NvDsPipeline(GstPipeline):
                 f'height={self._frame_params.total_height}'
             ),
         )
-        capsfilter.get_static_pad('sink').add_probe(
-            Gst.PadProbeType.BUFFER,
-            move_frame_as_is_pad_probe,
+        add_move_frame_as_is_pad_probe(
+            capsfilter.get_static_pad('sink'),
             self._video_pipeline,
             'source-capsfilter',
         )
@@ -565,9 +557,8 @@ class NvDsPipeline(GstPipeline):
         output_queue.sync_state_with_parent()
         source_info.after_demuxer.append(output_queue)
         output_queue_sink_pad: Gst.Pad = output_queue.get_static_pad('sink')
-        output_queue_sink_pad.add_probe(
-            Gst.PadProbeType.BUFFER,
-            move_frame_as_is_pad_probe,
+        add_move_frame_as_is_pad_probe(
+            output_queue_sink_pad,
             self._video_pipeline,
             'output-queue',
         )
@@ -806,9 +797,8 @@ class NvDsPipeline(GstPipeline):
             VideoPipelineStagePayloadType.Batch,
         )
         muxer_src_pad: Gst.Pad = self._muxer.get_static_pad('src')
-        muxer_src_pad.add_probe(
-            Gst.PadProbeType.BUFFER,
-            move_frames_to_batch_pad_probe,
+        add_move_frames_to_batch_pad_probe(
+            muxer_src_pad,
             self._video_pipeline,
             'prepare-input',
         )
@@ -899,16 +889,14 @@ class NvDsPipeline(GstPipeline):
             'output-queue', VideoPipelineStagePayloadType.Frame
         )
         sink_peer_pad: Gst.Pad = demuxer.get_static_pad('sink').get_peer()
-        sink_peer_pad.add_probe(
-            Gst.PadProbeType.BUFFER,
-            move_batch_as_is_pad_probe,
+        add_move_batch_as_is_pad_probe(
+            sink_peer_pad,
             self._video_pipeline,
             'update-frame-meta',
         )
         sink_peer_pad.add_probe(Gst.PadProbeType.BUFFER, self.update_frame_meta)
-        sink_peer_pad.add_probe(
-            Gst.PadProbeType.BUFFER,
-            move_batch_to_frames_pad_probe,
+        add_move_batch_to_frames_pad_probe(
+            sink_peer_pad,
             self._video_pipeline,
             'demuxer',
         )
