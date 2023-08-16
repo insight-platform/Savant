@@ -64,7 +64,6 @@ class SourceOutputOnlyMeta(SourceOutput):
             Gst.PadProbeType.BUFFER,
             move_frame_as_is_pad_probe,
             self._video_pipeline,
-            'output-queue',
             'sink',
         )
         return input_pad
@@ -104,15 +103,12 @@ class SourceOutputWithFrame(SourceOutput):
             'Adding additional output elements (source_id=%s)',
             source_info.source_id,
         )
-        last_stage = 'output-queue'
 
         src_pad_not_tagged = (
             self._add_frame_tag_filter(pipeline, source_info)
             if self._condition.tag
             else None
         )
-        if src_pad_not_tagged is not None:
-            last_stage = 'queue-tagged'
 
         self._logger.debug(
             'Added pad probe to convert savant frame meta from NvDsMeta to GstMeta (source_id=%s)',
@@ -149,7 +145,6 @@ class SourceOutputWithFrame(SourceOutput):
             Gst.PadProbeType.BUFFER,
             move_frame_as_is_pad_probe,
             self._video_pipeline,
-            last_stage,
             'sink-convert',
         )
         source_info.after_demuxer.append(output_converter)
@@ -159,7 +154,7 @@ class SourceOutputWithFrame(SourceOutput):
             source_info.source_id,
         )
 
-        last_stage = self._add_transform_elems(pipeline, source_info)
+        self._add_transform_elems(pipeline, source_info)
 
         output_capsfilter = pipeline.add_element(PipelineElement('capsfilter'))
         output_caps = self._build_output_caps(
@@ -178,7 +173,6 @@ class SourceOutputWithFrame(SourceOutput):
             Gst.PadProbeType.BUFFER,
             move_frame_as_is_pad_probe,
             self._video_pipeline,
-            last_stage,
             'sink-capsfilter',
         )
         src_pad = output_capsfilter.get_static_pad('src')
@@ -190,21 +184,13 @@ class SourceOutputWithFrame(SourceOutput):
                 src_pad_tagged=src_pad,
                 src_pad_not_tagged=src_pad_not_tagged,
             )
-            src_pad.add_probe(
-                Gst.PadProbeType.BUFFER,
-                move_frame_as_is_pad_probe,
-                self._video_pipeline,
-                'frame-tag-funnel',
-                'sink',
-            )
-        else:
-            src_pad.add_probe(
-                Gst.PadProbeType.BUFFER,
-                move_frame_as_is_pad_probe,
-                self._video_pipeline,
-                'sink-capsfilter',
-                'sink',
-            )
+
+        src_pad.add_probe(
+            Gst.PadProbeType.BUFFER,
+            move_frame_as_is_pad_probe,
+            self._video_pipeline,
+            'sink',
+        )
 
         return src_pad
 
@@ -224,7 +210,6 @@ class SourceOutputWithFrame(SourceOutput):
                 properties={
                     'source-id': source_info.source_id,
                     'tag': self._condition.tag,
-                    'pipeline-stage-name': 'frame-tag-filter',
                 },
             )
         )
@@ -232,7 +217,6 @@ class SourceOutputWithFrame(SourceOutput):
             Gst.PadProbeType.BUFFER,
             move_frame_as_is_pad_probe,
             self._video_pipeline,
-            'output-queue',
             'frame-tag-filter',
         )
         frame_tag_filter.set_property('pipeline', self._video_pipeline)
@@ -252,7 +236,6 @@ class SourceOutputWithFrame(SourceOutput):
             Gst.PadProbeType.BUFFER,
             move_frame_as_is_pad_probe,
             self._video_pipeline,
-            'frame-tag-filter',
             'queue-tagged',
         )
         link_pads(src_pad_tagged, queue_tagged.get_static_pad('sink'))
@@ -278,14 +261,12 @@ class SourceOutputWithFrame(SourceOutput):
             Gst.PadProbeType.BUFFER,
             move_frame_as_is_pad_probe,
             self._video_pipeline,
-            'sink-capsfilter',
             'frame-tag-funnel',
         )
         src_pad_not_tagged.add_probe(
             Gst.PadProbeType.BUFFER,
             move_frame_as_is_pad_probe,
             self._video_pipeline,
-            'frame-tag-filter',
             'queue-not-tagged',
         )
         queue_not_tagged = pipeline.add_element(
@@ -297,7 +278,6 @@ class SourceOutputWithFrame(SourceOutput):
             Gst.PadProbeType.BUFFER,
             move_frame_as_is_pad_probe,
             self._video_pipeline,
-            'queue-not-tagged',
             'frame-tag-funnel',
         )
         self._logger.debug(
@@ -326,11 +306,7 @@ class SourceOutputWithFrame(SourceOutput):
         return frame_tag_funnel.get_static_pad('src')
 
     @abstractmethod
-    def _add_transform_elems(
-        self,
-        pipeline: GstPipeline,
-        source_info: SourceInfo,
-    ) -> str:
+    def _add_transform_elems(self, pipeline: GstPipeline, source_info: SourceInfo):
         pass
 
     @abstractmethod
@@ -404,11 +380,7 @@ class SourceOutputEncoded(SourceOutputWithFrame):
     def codec(self) -> CodecInfo:
         return self._codec
 
-    def _add_transform_elems(
-        self,
-        pipeline: GstPipeline,
-        source_info: SourceInfo,
-    ) -> str:
+    def _add_transform_elems(self, pipeline: GstPipeline, source_info: SourceInfo):
         encoder = pipeline.add_element(
             PipelineElement(self._encoder, properties=self._params)
         )
@@ -416,7 +388,6 @@ class SourceOutputEncoded(SourceOutputWithFrame):
             Gst.PadProbeType.BUFFER,
             move_frame_as_is_pad_probe,
             self._video_pipeline,
-            'sink-convert',
             'encode',
         )
         source_info.after_demuxer.append(encoder)
@@ -424,7 +395,6 @@ class SourceOutputEncoded(SourceOutputWithFrame):
         self._logger.debug(
             'Added encoder %s with params %s', self._encoder, self._params
         )
-        return 'encode'
 
     def _build_output_caps(self, width: int, height: int) -> Gst.Caps:
         return Gst.Caps.from_string(
@@ -444,7 +414,7 @@ class SourceOutputH26X(SourceOutputEncoded):
     """
 
     def _add_transform_elems(self, pipeline: GstPipeline, source_info: SourceInfo):
-        last_stage = super()._add_transform_elems(pipeline, source_info)
+        super()._add_transform_elems(pipeline, source_info)
         # A parser for codecs h264, h265 is added to include
         # the Sequence Parameter Set (SPS) and the Picture Parameter Set (PPS)
         # to IDR frames in the video stream. SPS and PPS are needed
@@ -458,7 +428,6 @@ class SourceOutputH26X(SourceOutputEncoded):
             Gst.PadProbeType.BUFFER,
             move_frame_as_is_pad_probe,
             self._video_pipeline,
-            last_stage,
             'parse',
         )
         source_info.after_demuxer.append(parser)
@@ -466,7 +435,6 @@ class SourceOutputH26X(SourceOutputEncoded):
         self._logger.debug(
             'Added parser %s with params %s', self._codec.parser, parser_params
         )
-        return 'parse'
 
 
 def create_source_output(

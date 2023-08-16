@@ -107,7 +107,6 @@ class NvDsPipeline(GstPipeline):
         telemetry: TelemetryParameters = kwargs['telemetry']
         _init_telemetry(name, telemetry)
 
-        self._last_stage = None
         self._video_pipeline = VideoPipeline(name)
         self._video_pipeline.sampling_period = telemetry.sampling_period
         self._video_pipeline.root_span_name = f'{name}-root'
@@ -198,7 +197,6 @@ class NvDsPipeline(GstPipeline):
             if isinstance(element, PyFuncElement):
                 stage = f'pyfunc/{element.module}.{element.class_name}'
                 gst_element.set_property('pipeline', self._video_pipeline)
-                gst_element.set_property('pipeline-stage-name', stage)
             else:
                 stage = gst_element.get_name()
             self._video_pipeline.add_stage(stage, VideoPipelineStagePayloadType.Batch)
@@ -206,10 +204,8 @@ class NvDsPipeline(GstPipeline):
                 Gst.PadProbeType.BUFFER,
                 move_batch_as_is_pad_probe,
                 self._video_pipeline,
-                self._last_stage,
                 stage,
             )
-            self._last_stage = stage
 
         return gst_element
 
@@ -233,15 +229,12 @@ class NvDsPipeline(GstPipeline):
             )
             _source.set_property('pipeline', self._video_pipeline)
             add_frames_to_pipeline = False
-            last_stage = 'decode'
         else:
             add_frames_to_pipeline = True
-            last_stage = 'source'
         _source.connect(
             'pad-added',
             self.on_source_added,
             add_frames_to_pipeline,
-            last_stage,
         )
 
         # Need to suppress EOS on nvstreammux sink pad
@@ -274,7 +267,6 @@ class NvDsPipeline(GstPipeline):
         element: Gst.Element,
         new_pad: Gst.Pad,
         add_frames_to_pipeline: bool,
-        last_stage: str,
     ):
         """Handle adding new video source.
 
@@ -328,7 +320,6 @@ class NvDsPipeline(GstPipeline):
             {Gst.EventType.CAPS: self._on_source_caps},
             source_info,
             add_frames_to_pipeline,
-            last_stage,
         )
 
     def _on_source_caps(
@@ -337,7 +328,6 @@ class NvDsPipeline(GstPipeline):
         event: Gst.Event,
         source_info: SourceInfo,
         add_frames_to_pipeline: bool,
-        last_stage: str,
     ):
         """Handle adding caps to video source pad."""
 
@@ -383,14 +373,12 @@ class NvDsPipeline(GstPipeline):
                     new_pad_caps,
                     source_info,
                     add_frames_to_pipeline,
-                    last_stage,
                 )
                 self._check_pipeline_is_running()
                 input_src_pad.add_probe(
                     Gst.PadProbeType.BUFFER,
                     move_frame_as_is_pad_probe,
                     self._video_pipeline,
-                    'source-capsfilter',
                     'muxer',
                 )
                 add_convert_savant_frame_meta_pad_probe(
@@ -419,7 +407,6 @@ class NvDsPipeline(GstPipeline):
         new_pad_caps: Gst.Caps,
         source_info: SourceInfo,
         add_frames_to_pipeline: bool,
-        last_stage: str,
     ) -> Gst.Pad:
         self._check_pipeline_is_running()
         if add_frames_to_pipeline:
@@ -446,7 +433,6 @@ class NvDsPipeline(GstPipeline):
             Gst.PadProbeType.BUFFER,
             move_frame_as_is_pad_probe,
             self._video_pipeline,
-            last_stage,
             'source-convert',
         )
 
@@ -511,7 +497,6 @@ class NvDsPipeline(GstPipeline):
             Gst.PadProbeType.BUFFER,
             move_frame_as_is_pad_probe,
             self._video_pipeline,
-            'source-convert',
             'source-capsfilter',
         )
 
@@ -584,7 +569,6 @@ class NvDsPipeline(GstPipeline):
             Gst.PadProbeType.BUFFER,
             move_frame_as_is_pad_probe,
             self._video_pipeline,
-            'demuxer',
             'output-queue',
         )
         self._link_demuxer_src_pad(output_queue_sink_pad, source_info)
@@ -660,7 +644,7 @@ class NvDsPipeline(GstPipeline):
             Gst.PadProbeReturn.DROP if self._suppress_eos else Gst.PadProbeReturn.PASS
         )
 
-    def update_frame_meta(self, pad: Gst.Pad, info: Gst.PadProbeInfo, stage: str):
+    def update_frame_meta(self, pad: Gst.Pad, info: Gst.PadProbeInfo):
         """Prepare frame meta for output."""
         buffer: Gst.Buffer = info.get_buffer()
 
@@ -689,7 +673,6 @@ class NvDsPipeline(GstPipeline):
             frame_idx = savant_frame_meta.idx if savant_frame_meta else None
             video_frame: VideoFrame
             video_frame, video_frame_span = self._video_pipeline.get_batched_frame(
-                stage,
                 batch_id,
                 frame_idx,
             )
@@ -827,10 +810,8 @@ class NvDsPipeline(GstPipeline):
             Gst.PadProbeType.BUFFER,
             move_frames_to_batch_pad_probe,
             self._video_pipeline,
-            'muxer',
             'prepare-input',
         )
-        self._last_stage = 'prepare-input'
         muxer_src_pad.add_probe(
             Gst.PadProbeType.BUFFER,
             self._buffer_processor.input_probe,
@@ -922,19 +903,13 @@ class NvDsPipeline(GstPipeline):
             Gst.PadProbeType.BUFFER,
             move_batch_as_is_pad_probe,
             self._video_pipeline,
-            self._last_stage,
             'update-frame-meta',
         )
-        sink_peer_pad.add_probe(
-            Gst.PadProbeType.BUFFER,
-            self.update_frame_meta,
-            'update-frame-meta',
-        )
+        sink_peer_pad.add_probe(Gst.PadProbeType.BUFFER, self.update_frame_meta)
         sink_peer_pad.add_probe(
             Gst.PadProbeType.BUFFER,
             move_batch_to_frames_pad_probe,
             self._video_pipeline,
-            'update-frame-meta',
             'demuxer',
         )
         return demuxer

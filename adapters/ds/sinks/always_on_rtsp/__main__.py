@@ -113,10 +113,9 @@ def log_frame_metadata(pad: Gst.Pad, info: Gst.PadProbeInfo, config: Config):
     # TODO: handle savant_frame_meta==None
     frame_idx = savant_frame_meta.idx if savant_frame_meta else None
     video_frame, video_frame_span = config.video_pipeline.get_independent_frame(
-        config.pipeline_stage_name,
         frame_idx,
     )
-    config.video_pipeline.delete(config.pipeline_stage_name, frame_idx)
+    config.video_pipeline.delete(frame_idx)
     metadata_json = video_frame.json
     if config.metadata_output == 'logger':
         logger.info('Frame metadata: %s', metadata_json)

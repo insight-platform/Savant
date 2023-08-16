@@ -528,7 +528,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
 
     def _delete_frame_with_error(self, frame_idx: int):
         if self.video_pipeline is not None:
-            self.video_pipeline.delete(self.pipeline_stage_name, frame_idx)
+            self.video_pipeline.delete(frame_idx)
         return Gst.FlowReturn.ERROR
 
 

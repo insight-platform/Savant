@@ -35,13 +35,11 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
         super().__init__(**kwargs)
         self._sources = SourceInfoRegistry()
         self._video_pipeline: Optional[VideoPipeline] = None
-        self._pipeline_stage_name: Optional[str] = None
         self.frame_streams = {}
 
     def on_start(self) -> bool:
         """Do on plugin start."""
         self._video_pipeline = self.gst_element.get_property('pipeline')
-        self._pipeline_stage_name = self.gst_element.get_property('pipeline-stage-name')
         return True
 
     def on_event(self, event: Gst.Event):
@@ -116,7 +114,6 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
             # TODO: handle savant_frame_meta==None
             frames_id = savant_frame_meta.idx if savant_frame_meta else None
             video_frame, video_frame_span = self._video_pipeline.get_batched_frame(
-                self._pipeline_stage_name,
                 batch_id,
                 frames_id,
             )

@@ -70,13 +70,6 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             'VideoPipeline object from savant-rs.',
             GObject.ParamFlags.READWRITE,
         ),
-        'pipeline-stage-name': (
-            str,
-            'Name of the pipeline stage.',
-            'Name of the pipeline stage.',
-            None,
-            GObject.ParamFlags.READWRITE,
-        ),
     }
 
     def __init__(self):
@@ -86,7 +79,6 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
         self.class_name: Optional[str] = None
         self.kwargs: Optional[str] = None
         self.video_pipeline: Optional[VideoPipeline] = None
-        self.pipeline_stage_name: Optional[str] = None
         # pyfunc object
         self.pyfunc: Optional[BasePyFuncPlugin] = None
 
@@ -103,8 +95,6 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             return self.kwargs
         if prop.name == 'pipeline':
             return self.video_pipeline
-        if prop.name == 'pipeline-stage-name':
-            return self.pipeline_stage_name
         raise AttributeError(f'Unknown property {prop.name}.')
 
     def do_set_property(self, prop: GObject.GParamSpec, value: Any):
@@ -121,8 +111,6 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             self.kwargs = value
         elif prop.name == 'pipeline':
             self.video_pipeline = value
-        elif prop.name == 'pipeline-stage-name':
-            self.pipeline_stage_name = value
         else:
             raise AttributeError(f'Unknown property {prop.name}.')
 

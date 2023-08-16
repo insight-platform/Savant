@@ -85,13 +85,6 @@ class FrameTagFilter(LoggerMixin, Gst.Element):
             'VideoPipeline object from savant-rs.',
             GObject.ParamFlags.READWRITE,
         ),
-        'pipeline-stage-name': (
-            str,
-            'Name of the pipeline stage.',
-            'Name of the pipeline stage.',
-            None,
-            GObject.ParamFlags.READWRITE,
-        ),
     }
 
     def __init__(self):
@@ -101,7 +94,6 @@ class FrameTagFilter(LoggerMixin, Gst.Element):
         self.source_id: Optional[str] = None
         self.tag: Optional[str] = None
         self.video_pipeline: Optional[VideoPipeline] = None
-        self.pipeline_stage_name: Optional[str] = None
 
         self.sink_pad: Gst.Pad = Gst.Pad.new_from_template(SINK_PAD_TEMPLATE, 'sink')
         self.src_pad_tagged: Gst.Pad = Gst.Pad.new_from_template(
@@ -145,8 +137,6 @@ class FrameTagFilter(LoggerMixin, Gst.Element):
             return self.source_id
         if prop.name == 'pipeline':
             return self.video_pipeline
-        if prop.name == 'pipeline-stage-name':
-            return self.pipeline_stage_name
         raise AttributeError(f'Unknown property {prop.name}')
 
     def do_set_property(self, prop, value):
@@ -159,8 +149,6 @@ class FrameTagFilter(LoggerMixin, Gst.Element):
             self.source_id = value
         elif prop.name == 'pipeline':
             self.video_pipeline = value
-        elif prop.name == 'pipeline-stage-name':
-            self.pipeline_stage_name = value
         else:
             raise AttributeError(f'Unknown property {prop.name}')
 
@@ -208,7 +196,6 @@ class FrameTagFilter(LoggerMixin, Gst.Element):
             frame_idx = savant_frame_meta.idx if savant_frame_meta else None
             self.logger.debug('Frame IDX: %s, PTS: %s.', frame_idx, buffer.pts)
             video_frame, video_frame_span = self.video_pipeline.get_independent_frame(
-                self.pipeline_stage_name,
                 frame_idx,
             )
             with video_frame_span.nested_span('parse-buffer'):

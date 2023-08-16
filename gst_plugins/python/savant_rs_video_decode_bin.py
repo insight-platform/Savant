@@ -122,7 +122,6 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
         self._low_latency_decoding = False
         self._pass_eos = DEFAULT_PASS_EOS
         self._video_pipeline: Optional[VideoPipeline] = None
-        self._pipeline_source_stage_name: Optional[str] = None
         self._pipeline_decoder_stage_name: Optional[str] = None
 
         self._demuxer: Gst.Element = Gst.ElementFactory.make('savant_rs_video_demux')
@@ -154,7 +153,7 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
         if prop.name == 'pipeline':
             return self._video_pipeline
         if prop.name == 'pipeline-source-stage-name':
-            return self._pipeline_source_stage_name
+            return self._demuxer.get_property('pipeline-stage-name')
         if prop.name == 'pipeline-decoder-stage-name':
             return self._pipeline_decoder_stage_name
         if prop.name in NESTED_DEMUX_PROPERTIES:
@@ -179,7 +178,6 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
             self._video_pipeline = value
             self._demuxer.set_property(prop.name, value)
         elif prop.name == 'pipeline-source-stage-name':
-            self._pipeline_source_stage_name = value
             self._demuxer.set_property('pipeline-stage-name', value)
         elif prop.name == 'pipeline-decoder-stage-name':
             self._pipeline_decoder_stage_name = value
@@ -225,7 +223,6 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
             Gst.PadProbeType.BUFFER,
             move_frame_as_is_pad_probe,
             self._video_pipeline,
-            self._pipeline_source_stage_name,
             self._pipeline_decoder_stage_name,
         )
         source_id = pad_to_source_id(new_pad)

@@ -121,7 +121,6 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
             # TODO: handle savant_frame_meta==None
             frame_idx = savant_frame_meta.idx if savant_frame_meta else None
             video_frame, video_frame_span = self._video_pipeline.get_batched_frame(
-                'prepare-input',
                 batch_id,
                 frame_idx,
             )
@@ -298,7 +297,6 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
         )
 
         video_frame, video_frame_span = self._video_pipeline.get_independent_frame(
-            'sink',
             output_frame.idx,
         )
         with video_frame_span.nested_span('prepare_output'):
@@ -310,7 +308,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                 video_frame.codec = output_frame.codec.name
             video_frame.keyframe = output_frame.keyframe
             # TODO: Do we need to delete frame after it was sent to sink?
-            self._video_pipeline.delete('sink', output_frame.idx)
+            self._video_pipeline.delete(output_frame.idx)
 
         return SinkVideoFrame(video_frame=video_frame, frame=output_frame.frame)
 
