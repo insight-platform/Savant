@@ -45,9 +45,9 @@ class IndexBuilder(NvDsPyFuncPlugin):
         # which contains image file name
         location = frame_meta.tags['location']
 
-        if frame_meta.objects_number < 2:
-            # no faces detected and
-            # only primary object is present
+        if frame_meta.objects_number != 2:
+            # no faces detected and only primary object is present
+            # or more than 1 face detected
             self.logger.warn(
                 '%s faces detected on %s, 1 is expected. Not adding features to index.',
                 frame_meta.objects_number - 1,
