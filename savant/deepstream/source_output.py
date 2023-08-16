@@ -309,12 +309,8 @@ class SourceOutputRawRgba(SourceOutputWithFrame):
             video_pipeline=video_pipeline,
         )
 
-    def _add_transform_elems(
-        self,
-        pipeline: GstPipeline,
-        source_info: SourceInfo,
-    ) -> str:
-        return 'sink-convert'
+    def _add_transform_elems(self, pipeline: GstPipeline, source_info: SourceInfo):
+        pass
 
     def _build_output_caps(self, width: int, height: int) -> Gst.Caps:
         return Gst.Caps.from_string(
@@ -344,7 +340,6 @@ class SourceOutputEncoded(SourceOutputWithFrame):
     ):
         """
         :param codec: Codec for output frames.
-        :param params: Parameters of the encoder.
         """
 
         super().__init__(

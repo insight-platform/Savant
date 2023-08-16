@@ -102,9 +102,27 @@ class BufferQueuesParameters:
 
 @dataclass
 class TelemetryParameters:
+    """Configure telemetry.
+
+    Example:
+    .. code-block:: yaml
+
+        sampling_period: 100
+        provider: jaeger
+        provider_params:
+          service_name: demo-pipeline
+          endpoint: jaeger:6831
+
+    """
+
     sampling_period: int = 100
+    """Sampling period in frames."""
+
     provider: Optional[str] = None
+    """Telemetry provider name."""
+
     provider_params: Optional[Dict[str, Any]] = None
+    """Parameters for telemetry provider."""
 
 
 @dataclass

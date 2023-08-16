@@ -1,5 +1,4 @@
 """DeepStream pipeline."""
-import re
 from collections import defaultdict
 from pathlib import Path
 from queue import Queue
@@ -415,7 +414,7 @@ class NvDsPipeline(GstPipeline):
             savant_rs_add_frames: Gst.Element = Gst.ElementFactory.make(
                 'savant_rs_add_frames'
             )
-            savant_rs_add_frames.set_property('source-info', source_info)
+            savant_rs_add_frames.set_property('source-id', source_info.source_id)
             savant_rs_add_frames.set_property('pipeline', self._video_pipeline)
             savant_rs_add_frames.set_property('pipeline-stage-name', 'source')
             self._pipeline.add(savant_rs_add_frames)
@@ -758,7 +757,7 @@ class NvDsPipeline(GstPipeline):
                     video_frame.source_id,
                     frame_idx,
                     frame_pts,
-                    re.sub('\s+', ' ', str(obj_meta)),  # convert to single line
+                    obj_meta,
                 )
             video_frame.add_object(obj_meta, IdCollisionResolutionPolicy.Overwrite)
 
@@ -998,6 +997,8 @@ class PipelineIsNotRunningError(Exception):
 
 
 def _init_telemetry(module_name: str, telemetry: TelemetryParameters):
+    """Initialize telemetry provider."""
+
     provider_params = telemetry.provider_params or {}
     if telemetry.provider == 'jaeger':
         service_name = provider_params.get('service_name', module_name)

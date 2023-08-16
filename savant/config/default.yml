@@ -95,6 +95,19 @@ parameters:
   #   byte_size: 0
   buffer_queues: null
 
+  # Configure telemetry
+  # Example:
+  # telemetry:
+  #   sampling_period: 100
+  #   provider: jaeger
+  #   provider_params:
+  #     service_name: demo-pipeline
+  #     endpoint: jaeger:6831
+  telemetry:
+    sampling_period: ${oc.decode:${oc.env:TELEMETRY_SAMPLING_PERIOD, 100}}
+    provider: ${oc.decode:${oc.env:TELEMETRY_PROVIDER, null}}
+    provider_params: ${json:${oc.env:TELEMETRY_PROVIDER_PARAMS, null}}
+
 
 # pipeline definition
 pipeline:

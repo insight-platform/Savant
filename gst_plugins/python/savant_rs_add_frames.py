@@ -1,3 +1,4 @@
+"""SavantRsAddFrames element."""
 import inspect
 from typing import Any, NamedTuple, Optional
 
@@ -13,7 +14,6 @@ from savant.gstreamer.utils import (
     required_property,
 )
 from savant.utils.logging import LoggerMixin
-from savant.utils.source_info import SourceInfo
 
 
 class FrameParams(NamedTuple):
@@ -25,14 +25,14 @@ class FrameParams(NamedTuple):
 
 
 class SavantRsAddFrames(LoggerMixin, GstBase.BaseTransform):
-    """SavantRsAddFrames GStreamer plugin."""
+    """Adds Savant-rs VideoFrame to VideoPipeline."""
 
     GST_PLUGIN_NAME: str = 'savant_rs_add_frames'
 
     __gstmetadata__ = (
-        'savant_rs_add_frames',
+        'Savant-rs VideoFrame adder',
         'Transform',
-        'savant_rs_add_frames',
+        'Adds Savant-rs VideoFrame to VideoPipeline.',
         'Pavel Tomskikh <tomskih_pa@bw-sw.com>',
     )
 
@@ -52,10 +52,11 @@ class SavantRsAddFrames(LoggerMixin, GstBase.BaseTransform):
     )
 
     __gproperties__ = {
-        'source-info': (
-            object,
-            'SourceInfo.',
-            'SourceInfo.',
+        'source-id': (
+            str,
+            'Source ID.',
+            'Set this source ID to video frames.',
+            None,
             GObject.ParamFlags.READWRITE,
         ),
         'pipeline': (
@@ -76,7 +77,7 @@ class SavantRsAddFrames(LoggerMixin, GstBase.BaseTransform):
     def __init__(self):
         super().__init__()
         # properties
-        self._source_info: Optional[SourceInfo] = None
+        self._source_id: Optional[str] = None
         self._video_pipeline: Optional[VideoPipeline] = None
         self._pipeline_stage_name: Optional[str] = None
         # will be set after caps negotiation
@@ -87,8 +88,8 @@ class SavantRsAddFrames(LoggerMixin, GstBase.BaseTransform):
 
         :param prop: structure that encapsulates the parameter info
         """
-        if prop.name == 'source-info':
-            return self._source_info
+        if prop.name == 'source-id':
+            return self._source_id
         if prop.name == 'pipeline':
             return self._video_pipeline
         if prop.name == 'pipeline-stage-name':
@@ -101,8 +102,8 @@ class SavantRsAddFrames(LoggerMixin, GstBase.BaseTransform):
         :param prop: structure that encapsulates the parameter info
         :param value: new value for parameter, type dependents on parameter
         """
-        if prop.name == 'source-info':
-            self._source_info = value
+        if prop.name == 'source-id':
+            self._source_id = value
         elif prop.name == 'pipeline':
             self._video_pipeline = value
         elif prop.name == 'pipeline-stage-name':
@@ -114,7 +115,7 @@ class SavantRsAddFrames(LoggerMixin, GstBase.BaseTransform):
         """Do on plugin start."""
 
         try:
-            required_property('source-info', self._source_info)
+            required_property('source-id', self._source_id)
             required_property('pipeline', self._video_pipeline)
             required_property('pipeline-stage-name', self._pipeline_stage_name)
         except RequiredPropertyError as exc:
@@ -157,7 +158,7 @@ class SavantRsAddFrames(LoggerMixin, GstBase.BaseTransform):
         )
         keyframe = not buffer.has_flags(Gst.BufferFlags.DELTA_UNIT)
         video_frame = VideoFrame(
-            source_id=self._source_info.source_id,
+            source_id=self._source_id,
             framerate=self._frame_params.framerate,
             width=self._frame_params.width,
             height=self._frame_params.height,
