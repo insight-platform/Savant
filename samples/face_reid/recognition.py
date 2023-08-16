@@ -41,7 +41,7 @@ class Recognition(NvDsPyFuncPlugin):
             if obj_meta.label == 'face':
                 features.append(obj_meta.get_attr_meta(MODEL_NAME, 'feature').value)
 
-        if len(features) < 1:
+        if not features:
             return
 
         # search for nearest neighbor for each feature vector
