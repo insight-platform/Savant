@@ -110,7 +110,13 @@ class Config:
 def log_frame_metadata(pad: Gst.Pad, info: Gst.PadProbeInfo, config: Config):
     buffer: Gst.Buffer = info.get_buffer()
     savant_frame_meta = gst_buffer_get_savant_frame_meta(buffer)
-    # TODO: handle savant_frame_meta==None
+    if savant_frame_meta is None:
+        logger.warning(
+            'No Savant Frame Metadata found on buffer with PTS %s.',
+            buffer.pts,
+        )
+        return Gst.PadProbeReturn.PASS
+
     frame_idx = savant_frame_meta.idx if savant_frame_meta else None
     video_frame, video_frame_span = config.video_pipeline.get_independent_frame(
         frame_idx,

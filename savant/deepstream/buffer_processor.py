@@ -109,16 +109,32 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
         """
 
         self.logger.debug('Preparing input for buffer with PTS %s.', buffer.pts)
-        savant_frame_meta_batch = gst_buffer_get_savant_frame_meta(buffer)
-        # TODO: handle savant_frame_meta_batch==None
-        batch_id = savant_frame_meta_batch.idx if savant_frame_meta_batch else None
+        savant_batch_meta = gst_buffer_get_savant_frame_meta(buffer)
+        if savant_batch_meta is None:
+            # TODO: add VideoFrame to VideoPipeline?
+            self.logger.warning(
+                'Failed to prepare input for batch at buffer %s. '
+                'Batch has no Savant Frame Meta.',
+                buffer.pts,
+            )
+            return
+
+        batch_id = savant_batch_meta.idx if savant_batch_meta else None
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
-            # TODO: add source_id to SavantFrameMeta and always attach SavantFrameMeta to the buffers
             savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(
                 nvds_frame_meta
             )
-            # TODO: handle savant_frame_meta==None
+            if savant_frame_meta is None:
+                # TODO: add VideoFrame to VideoPipeline?
+                self.logger.warning(
+                    'Failed to prepare input for frame %s at buffer %s. '
+                    'Frame has no Savant Frame Meta.',
+                    nvds_frame_meta.buf_pts,
+                    buffer.pts,
+                )
+                continue
+
             frame_idx = savant_frame_meta.idx if savant_frame_meta else None
             video_frame, video_frame_span = self._video_pipeline.get_batched_frame(
                 batch_id,

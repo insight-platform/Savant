@@ -642,7 +642,14 @@ class NvDsPipeline(GstPipeline):
         self._logger.debug('Prepare meta output for buffer with PTS %s', buffer.pts)
 
         savant_batch_meta = gst_buffer_get_savant_frame_meta(buffer)
-        # TODO: handle savant_batch_meta==None
+        if savant_batch_meta is None:
+            self._logger.warning(
+                'Failed to update frame meta for batch at buffer %s. '
+                'Batch has no Savant Frame Meta.',
+                buffer.pts,
+            )
+            return Gst.PadProbeReturn.PASS
+
         batch_id = savant_batch_meta.idx if savant_batch_meta else None
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         # convert output meta
@@ -660,7 +667,15 @@ class NvDsPipeline(GstPipeline):
             savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(
                 nvds_frame_meta
             )
-            # TODO: handle savant_frame_meta==None
+            if savant_frame_meta is None:
+                self._logger.warning(
+                    'Failed to update frame meta for frame %s at buffer %s. '
+                    'Frame has no Savant Frame Meta.',
+                    nvds_frame_meta.buf_pts,
+                    buffer.pts,
+                )
+                continue
+
             frame_idx = savant_frame_meta.idx if savant_frame_meta else None
             video_frame: VideoFrame
             video_frame, video_frame_span = self._video_pipeline.get_batched_frame(

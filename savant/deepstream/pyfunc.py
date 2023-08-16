@@ -99,7 +99,14 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
         """
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         savant_batch_meta = gst_buffer_get_savant_frame_meta(buffer)
-        # TODO: handle savant_batch_meta==None
+        if savant_batch_meta is None:
+            self.logger.warning(
+                'Failed to process batch at buffer %s. '
+                'Batch has no Savant Frame Meta.',
+                buffer.pts,
+            )
+            return
+
         batch_id = savant_batch_meta.idx if savant_batch_meta else None
 
         self.logger.debug(
@@ -111,7 +118,15 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
             savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(
                 nvds_frame_meta
             )
-            # TODO: handle savant_frame_meta==None
+            if savant_frame_meta is None:
+                self.logger.warning(
+                    'Failed to process frame %s at buffer %s. '
+                    'Frame has no Savant Frame Meta.',
+                    nvds_frame_meta.buf_pts,
+                    buffer.pts,
+                )
+                continue
+
             frames_id = savant_frame_meta.idx if savant_frame_meta else None
             video_frame, video_frame_span = self._video_pipeline.get_batched_frame(
                 batch_id,

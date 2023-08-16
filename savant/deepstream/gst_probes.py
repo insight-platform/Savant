@@ -14,17 +14,25 @@ def move_frame_as_is_pad_probe(
     stage: str,
 ) -> Gst.PadProbeReturn:
     buffer: Gst.Buffer = info.get_buffer()
-    logger.debug('Moving frame to %s in buffer with PTS %s.', stage, buffer.pts)
+    logger.debug('Pipeline stage %s. Moving frame from buffer %s.', stage, buffer.pts)
     savant_frame_meta = gst_buffer_get_savant_frame_meta(buffer)
-    # TODO: handle savant_frame_meta==None
+    if savant_frame_meta is None:
+        logger.warning(
+            'Pipeline stage %s. Failed to move frame at buffer %s. '
+            'Frame has no Savant Frame Meta.',
+            stage,
+            buffer.pts,
+        )
+        return Gst.PadProbeReturn.PASS
+
     frame_id = savant_frame_meta.idx if savant_frame_meta else None
-    logger.debug(
-        'Moving frame to %s in buffer with PTS %s. Frame ID: %s.',
-        stage,
-        buffer.pts,
-        frame_id,
-    )
     video_pipeline.move_as_is(stage, [frame_id], no_gil=False)
+    logger.debug(
+        'Pipeline stage %s. Frame %s at buffer %s moved.',
+        stage,
+        frame_id,
+        buffer.pts,
+    )
 
     return Gst.PadProbeReturn.OK
 

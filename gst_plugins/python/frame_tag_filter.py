@@ -192,7 +192,13 @@ class FrameTagFilter(LoggerMixin, Gst.Element):
             savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(
                 nvds_frame_meta
             )
-            # TODO: handle savant_frame_meta==None
+            if savant_frame_meta is None:
+                self.logger.warning(
+                    'Failed to parse buffer %s. Frame has no Savant Frame Meta.',
+                    buffer.pts,
+                )
+                return None
+
             frame_idx = savant_frame_meta.idx if savant_frame_meta else None
             self.logger.debug('Frame IDX: %s, PTS: %s.', frame_idx, buffer.pts)
             video_frame, video_frame_span = self.video_pipeline.get_independent_frame(
@@ -202,7 +208,8 @@ class FrameTagFilter(LoggerMixin, Gst.Element):
                 frame_meta = NvDsFrameMeta(video_frame, nvds_frame_meta)
                 if frame_meta.get_tag(self.tag) is not None:
                     self.logger.debug(
-                        'Frame PTS=%s has tag "%s"',
+                        'Frame %s (PTS=%s) has tag "%s"',
+                        frame_idx,
                         frame_meta.pts,
                         self.tag,
                     )
