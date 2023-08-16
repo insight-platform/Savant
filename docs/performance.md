@@ -99,3 +99,9 @@
 | [#322](https://github.com/insight-platform/Savant/issues/322) (no queues)        | 139.75 | 26.00     |
 | [#322](https://github.com/insight-platform/Savant/issues/322) (buffer length 1)  | 115.21 | 24.97     |
 | [#322](https://github.com/insight-platform/Savant/issues/322) (buffer length 10) | 114.61 | 25.19     |
+
+### yolov8_seg
+
+| Savant ver.                                                   | A4000 | Jetson NX |
+|---------------------------------------------------------------|-------|-----------|
+| [#131](https://github.com/insight-platform/Savant/issues/131) | 45.78 | 14.84     |

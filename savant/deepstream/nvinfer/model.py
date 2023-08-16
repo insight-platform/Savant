@@ -11,6 +11,7 @@ from savant.base.model import (
     ObjectModelOutput,
     ObjectModelOutputObject,
     AttributeModel,
+    ComplexModelOutput,
     ComplexModel,
 )
 from savant.utils.registry import Registry
@@ -210,6 +211,11 @@ class NvInferObjectModelOutput(ObjectModelOutput):
     """Number of classes detected by the model. Required for regular detector."""
 
 
+@dataclass
+class NvInferComplexModelOutput(ComplexModelOutput, NvInferObjectModelOutput):
+    """ComplexModel output configuration template."""
+
+
 @NVINFER_MODEL_TYPE_REGISTRY.register('detector')
 @dataclass
 class NvInferDetector(NvInferModel, ObjectModel):
@@ -242,17 +248,6 @@ class NvInferDetector(NvInferModel, ObjectModel):
 
     output: NvInferObjectModelOutput = NvInferObjectModelOutput()
     """Results post-processing configuration."""
-
-
-@NVINFER_MODEL_TYPE_REGISTRY.register('instance_segmentation')
-@dataclass
-class NvInferInstanceSegmentation(NvInferDetector):
-    """Instance segmentation model configuration template."""
-
-    parse_bbox_instance_mask_func_name: Optional[str] = None
-    """Name of the custom instance segmentation parsing function.
-    It is mandatory for instance segmentation network
-    as there is no internal function."""
 
 
 @NVINFER_MODEL_TYPE_REGISTRY.register('attribute_model')
@@ -328,3 +323,17 @@ class NvInferComplexModel(NvInferModel, ComplexModel):
               attributes:
                 - name: landmarks
     """
+
+    output: NvInferComplexModelOutput = NvInferComplexModelOutput()
+    """Configuration for post-processing of a complex model's results."""
+
+
+@NVINFER_MODEL_TYPE_REGISTRY.register('instance_segmentation')
+@dataclass
+class NvInferInstanceSegmentation(NvInferComplexModel):
+    """Instance segmentation model configuration template."""
+
+    parse_bbox_instance_mask_func_name: Optional[str] = None
+    """Name of the custom instance segmentation parsing function.
+    It is mandatory for instance segmentation network
+    as there is no internal function."""

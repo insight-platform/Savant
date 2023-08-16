@@ -16,9 +16,7 @@ services:
     entrypoint: /opt/savant/adapters/gst/sources/video_loop.sh
 
   module:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.l4t
+    image: ghcr.io/insight-platform/savant-deepstream-l4t:latest
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
