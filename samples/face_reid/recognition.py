@@ -18,15 +18,11 @@ class Recognition(NvDsPyFuncPlugin):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.last_match_for_track = {}
-        self.index_file_path = os.path.join(self.index_dir, 'index.bin')
-
-    def on_start(self) -> bool:
-        """Do on plugin start."""
+        index_file_path = os.path.join(self.index_dir, 'index.bin')
         self.index = hnswlib.Index(space=self.index_space, dim=self.index_dim)
         self.index.load_index(
-            self.index_file_path, max_elements=self.index_max_elements
+            index_file_path, max_elements=self.index_max_elements
         )
-        return True
 
     def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
         """Process frame metadata.
