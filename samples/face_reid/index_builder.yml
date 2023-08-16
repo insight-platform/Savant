@@ -9,7 +9,7 @@ parameters:
   face_height: 112
   detection_model_name: yolov5nface
 
-  reid_model_name: adaface
+  reid_model_name: adaface_ir50_webface4m_90fb74c
 
 pipeline:
 
@@ -39,7 +39,7 @@ pipeline:
             - class_id: 0
               label: face
               selector:
-                module: samples.face_reid.selector
+                module: savant.selector.detector
                 class_name: MinMaxSizeBBoxSelector
                 kwargs:
                   min_width: 40
@@ -51,8 +51,8 @@ pipeline:
       name: ${parameters.reid_model_name}
       model:
         remote:
-          url: s3://savant-data/models/${parameters.reid_model_name}/${parameters.reid_model_name}_ir50_webface4m_90fb74c.zip
-          checksum_url: s3://savant-data/models/${parameters.reid_model_name}/${parameters.reid_model_name}_ir50_webface4m_90fb74c.md5
+          url: s3://savant-data/models/${parameters.reid_model_name}/${parameters.reid_model_name}.zip
+          checksum_url: s3://savant-data/models/${parameters.reid_model_name}/${parameters.reid_model_name}.md5
           parameters:
             endpoint: https://eu-central-1.linodeobjects.com
         format: onnx

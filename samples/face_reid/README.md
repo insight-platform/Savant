@@ -50,13 +50,13 @@ docker compose -f docker-compose.l4t.yml --profile index up
 # Ctrl+C to stop running the compose bundle
 ```
 
-Index Builder module will not stop automatically and will require manual exit. It is safe to do so once the `face_reid-index-builder` container begins repeatedly logging messages like
+Index Builder module does not stop automatically and requires manual exit. It is safe to do so once the `face_reid-index-builder` container logs a message like
 
 ```
-...No Sources found at the input of muxer. Waiting for sources.
+... Resources for source gallery has been released.
 ```
 
-Check that the `index_files` directory is created and `index.bin` file and `processed_gallery` image directory were written into it.
+Check that the `index_files` directory is created and `index.bin` file and `processed_gallery` image directory is written into it.
 
 ### Demo
 

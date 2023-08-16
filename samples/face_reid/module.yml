@@ -61,7 +61,7 @@ pipeline:
             - class_id: 0
               label: face
               selector:
-                module: samples.face_reid.selector
+                module: savant.selector.detector
                 class_name: MinMaxSizeBBoxSelector
                 kwargs:
                   min_width: 40
