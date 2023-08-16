@@ -101,11 +101,5 @@ docker compose -f docker-compose.l4t.yml --profile demo build
 Now you are ready to run the performance benchmark with the following command:
 
 ```bash
-docker run --rm -it --gpus=all \
--v `pwd`/samples:/opt/savant/samples \
--v `pwd`/data:/data:ro \
--v `pwd`/downloads/face_reid:/downloads \
--v `pwd`/models/face_reid:/models \
-face_reid-module \
-samples/face_reid/module_performance.yml
+./samples/face_reid/run_perf.sh
 ```
