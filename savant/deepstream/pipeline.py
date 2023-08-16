@@ -108,7 +108,10 @@ class NvDsPipeline(GstPipeline):
 
         self._video_pipeline = VideoPipeline(name)
         self._video_pipeline.sampling_period = telemetry.sampling_period
-        self._video_pipeline.root_span_name = f'{name}-root'
+        if telemetry.root_span_name is not None:
+            self._video_pipeline.root_span_name = telemetry.root_span_name
+        else:
+            self._video_pipeline.root_span_name = f'{name}-root'
 
         output_frame = kwargs.get('output_frame')
         self._source_output = create_source_output(

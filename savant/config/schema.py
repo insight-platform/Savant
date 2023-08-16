@@ -108,6 +108,7 @@ class TelemetryParameters:
     .. code-block:: yaml
 
         sampling_period: 100
+        root_span_name: demo-pipeline-root
         provider: jaeger
         provider_params:
           service_name: demo-pipeline
@@ -117,6 +118,9 @@ class TelemetryParameters:
 
     sampling_period: int = 100
     """Sampling period in frames."""
+
+    root_span_name: Optional[str] = None
+    """Name for root span."""
 
     provider: Optional[str] = None
     """Telemetry provider name."""
