@@ -100,3 +100,4 @@ class IndexBuilder(NvDsPyFuncPlugin):
         shutil.rmtree(self.index_file_path, ignore_errors=True)
         os.makedirs(os.path.dirname(self.index_file_path), exist_ok=True)
         self.index.save_index(self.index_file_path)
+        self.logger.info('Face processed, index file refreshed.')

@@ -50,9 +50,12 @@ docker compose -f docker-compose.l4t.yml --profile index up
 # Ctrl+C to stop running the compose bundle
 ```
 
-Index Builder module does not stop automatically and requires manual exit. It is safe to do so once the `face_reid-index-builder` container logs a message like
+Index Builder module does not stop automatically and requires manual exit. It is safe to do so once the `face_reid-index-builder` container logs the message following messages (assuming the default gallery image set)
 
 ```
+... Successfully handled EOS for source_id=9
+...
+... Face processed, index file refreshed
 ... Resources for source gallery has been released.
 ```
 
