@@ -58,6 +58,7 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile.x86
+    restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../models/face_reid:/models
