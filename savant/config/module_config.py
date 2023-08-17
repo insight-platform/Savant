@@ -2,6 +2,7 @@
 import re
 from pathlib import Path
 from typing import Callable, Optional, Union, Tuple, Dict, Type, Iterable, Any
+import logging
 from omegaconf import OmegaConf, DictConfig
 from savant.config.schema import (
     BufferQueuesParameters,
@@ -18,18 +19,25 @@ from savant.config.schema import (
 from savant.deepstream.nvinfer.element_config import nvinfer_element_configurator
 from savant.parameter_storage import init_param_storage
 from savant.utils.singleton import SingletonMeta
-from savant.utils.logging import get_logger
-logger = get_logger(__name__)
+
+
+logger = logging.getLogger(__name__)
 
 
 class ModuleConfigException(Exception):
     """Module config exception class."""
 
-def pyfunc_element_configurator(element_config: DictConfig, module_config: DictConfig) -> DictConfig:
+
+def pyfunc_element_configurator(
+    element_config: DictConfig, module_config: DictConfig
+) -> DictConfig:
     if module_config.parameters.dynamic_reload:
-        logger.debug('Set dynamic reload for PyFunc named "%s" to True.', element_config.name)
+        logger.debug(
+            'Set dynamic reload for PyFunc named "%s" to True.', element_config.name
+        )
         element_config.properties['dynamic_reload'] = True
     return element_config
+
 
 def parse_element_short_notation(
     short_notation: str,
@@ -211,7 +219,9 @@ def configure_module_parameters(module_cfg: DictConfig) -> None:
     apply_schema(module_cfg.parameters, 'buffer_queues', BufferQueuesParameters)
 
 
-def configure_element(element_config: DictConfig, module_config: DictConfig) -> DictConfig:
+def configure_element(
+    element_config: DictConfig, module_config: DictConfig
+) -> DictConfig:
     """Convert element to proper type.
 
     :param element_config: element config as read from yaml.

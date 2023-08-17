@@ -20,8 +20,9 @@ from savant.utils.zeromq import (
     parse_zmq_socket_uri,
     receive_response,
 )
-from savant.utils.logging import get_logger
-logger = get_logger(__name__)
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class SinkMessage:

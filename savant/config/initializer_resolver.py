@@ -3,9 +3,9 @@ import os
 import json
 from typing import Any
 from savant.parameter_storage import param_storage, STORAGE_TYPES
-from savant.utils.logging import get_logger
+import logging
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def initializer_resolver(param_name: str, default_val: Any, _parent_, _root_) -> Any:

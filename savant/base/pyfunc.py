@@ -6,11 +6,13 @@ from importlib import util as importlib_util, import_module, reload
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Callable
 from types import ModuleType
+import logging
 from savant.gstreamer import Gst  # noqa: F401
 from savant.utils.inotify_manager import INotifyManager
-from savant.utils.logging import get_logger
 
-logger = get_logger(__name__)
+
+logger = logging.getLogger(__name__)
+
 
 class BasePyFuncImpl(ABC):
     """Base class for a PyFunc implementation. PyFunc implementations are
@@ -24,7 +26,7 @@ class BasePyFuncImpl(ABC):
     def __init__(self, **kwargs):
         for name, value in kwargs.items():
             setattr(self, name, value)
-        self.logger = get_logger(self.__module__)
+        self.logger = logging.getLogger(self.__module__)
 
 
 class BasePyFuncPlugin(BasePyFuncImpl):
@@ -127,12 +129,14 @@ class PyFunc:
         """
         return self._callable(*args, **kwargs)
 
+
 @dataclass
 class PyFuncDynamicReloadable(PyFunc):
-
     def __post_init__(self):
         self._module_instance = pyfunc_module_factory(self)
-        self._instance: BasePyFuncImpl = pyfunc_impl_factory(self, self._module_instance)
+        self._instance: BasePyFuncImpl = pyfunc_impl_factory(
+            self, self._module_instance
+        )
         self._callable = callable_factory(self._instance)
         INotifyManager().add_watch(self._module_instance.__file__, id(self))
 
@@ -154,10 +158,13 @@ class PyFuncDynamicReloadable(PyFunc):
         if INotifyManager().is_changed(id(self)):
             logger.info('Pyfunc %s Reload %s', id(self), py_target)
             self._module_instance = reload_module(self._module_instance)
-            self._instance: BasePyFuncImpl = pyfunc_impl_factory(self, self._module_instance)
+            self._instance: BasePyFuncImpl = pyfunc_impl_factory(
+                self, self._module_instance
+            )
             self._callable = callable_factory(self._instance)
         else:
             logger.info('Pyfunc %s Unchanged %s', id(self), py_target)
+
 
 def reload_module(module: ModuleType) -> ModuleType:
     """
@@ -178,6 +185,7 @@ def reload_module(module: ModuleType) -> ModuleType:
             delattr(module, attr)
     return reload(module)
 
+
 def pyfunc_factory(module, class_name, dynamic_reload, **kwargs) -> PyFunc:
     """Whether to reload the module and re-instantiate the class
     on changes detected in the source file.
@@ -185,6 +193,7 @@ def pyfunc_factory(module, class_name, dynamic_reload, **kwargs) -> PyFunc:
     if dynamic_reload:
         return PyFuncDynamicReloadable(module, class_name, **kwargs)
     return PyFunc(module, class_name, **kwargs)
+
 
 def pyfunc_module_factory(pyfunc: PyFunc) -> ModuleType:
     assert pyfunc.module, 'Python module name or path is required.'
@@ -203,6 +212,7 @@ def pyfunc_module_factory(pyfunc: PyFunc) -> ModuleType:
 
     return module_instance
 
+
 def pyfunc_impl_factory(pyfunc: PyFunc, module_instance: ModuleType) -> BasePyFuncImpl:
     pyfunc_class = getattr(module_instance, pyfunc.class_name)
     if pyfunc.kwargs:
@@ -216,7 +226,8 @@ def pyfunc_impl_factory(pyfunc: PyFunc, module_instance: ModuleType) -> BasePyFu
 
     return pyfunc_instance
 
-def callable_factory(pyfunc_impl: BasePyFuncImpl) -> Callable[...,Any]:
+
+def callable_factory(pyfunc_impl: BasePyFuncImpl) -> Callable[..., Any]:
     if isinstance(pyfunc_impl, BasePyFuncCallableImpl):
         return pyfunc_impl
     return lambda *args, **kwargs: None

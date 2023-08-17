@@ -1,20 +1,21 @@
 """Remote file management."""
 from typing import Union
 from pathlib import Path
+import logging
 from omegaconf import DictConfig, OmegaConf
 from savant.remote_file.schema import RemoteFile
 from savant.remote_file.base import RemoteFileManagerType, RemoteFileError
 from savant.remote_file.http import HTTPFileHandler
 from savant.remote_file.s3 import S3FileHandler
 from savant.remote_file.utils import unpack_archive, read_file_checksum
-from savant.utils.logging import get_logger
+
 
 __all__ = ['process_remote', 'RemoteFile']
 
 
 RemoteFileManagerType.add_handler(S3FileHandler)
 RemoteFileManagerType.add_handler(HTTPFileHandler)
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def process_remote(

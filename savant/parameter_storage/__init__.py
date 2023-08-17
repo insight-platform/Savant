@@ -3,12 +3,11 @@ from typing import Optional
 from omegaconf import OmegaConf, DictConfig
 from .etcd_storage import EtcdStorage, EtcdStorageConfig
 from .parameter_storage import ParameterStorage
-from savant.utils.logging import get_logger
+
 
 __all__ = ['param_storage', 'init_param_storage', 'STORAGE_TYPES']
 
 
-logger = get_logger(__name__)
 __PARAM_STORAGE: Optional[ParameterStorage] = None
 STORAGE_TYPES = frozenset(['etcd'])
 

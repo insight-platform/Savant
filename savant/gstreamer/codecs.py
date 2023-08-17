@@ -2,10 +2,12 @@
 from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Optional
-
+import logging
 from savant.gstreamer import Gst
-from savant.utils.logging import get_logger
-logger = get_logger(__name__)
+
+
+logger = logging.getLogger(__name__)
+
 
 @dataclass
 class CodecInfo:

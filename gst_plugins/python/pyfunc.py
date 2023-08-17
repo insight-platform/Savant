@@ -70,7 +70,7 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             ),
             False,
             GObject.ParamFlags.READWRITE,
-        )
+        ),
     }
 
     def __init__(self):

@@ -28,8 +28,8 @@ def get_log_conf(log_level: str) -> dict:
             },
             'savantrs': {
                 'class': 'savant.utils.logging.savant_rs_handler.SavantRsLoggingHandler',
-                'formatter': 'basic'
-            }
+                'formatter': 'basic',
+            },
         },
         'loggers': {
             'savant': {
@@ -40,6 +40,7 @@ def get_log_conf(log_level: str) -> dict:
         },
         'disable_existing_loggers': False,
     }
+
 
 def init_logging(log_level: Optional[str] = None):
     """Initialize logging with specified log level or set default.
@@ -52,6 +53,7 @@ def init_logging(log_level: Optional[str] = None):
     # install pretty traceback hook
     try:
         import pretty_traceback
+
         pretty_traceback.install()
     except ImportError:
         pass
@@ -82,9 +84,3 @@ def update_logging(log_level: str):
     :param log_level: One of supported by logging module: INFO, DEBUG, etc.
     """
     logging.config.dictConfig(get_log_conf(log_level.upper()))
-
-
-def get_logger(name: Optional[str] = None) -> logging.Logger:
-    init_logging()
-    return logging.getLogger(name)
-

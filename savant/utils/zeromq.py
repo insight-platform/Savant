@@ -2,12 +2,12 @@
 import re
 from enum import Enum
 from typing import List, Optional, Tuple, Type, Union
-
+import logging
 import zmq
 from cachetools import LRUCache
-from savant.utils.logging import get_logger
 
-logger = get_logger(__name__)
+
+logger = logging.getLogger(__name__)
 
 socket_uri_pattern = re.compile('([a-z]+\\+[a-z]+:)?([a-z]+://.*)')
 socket_options_pattern = re.compile('([a-z]+)\\+([a-z]+):')

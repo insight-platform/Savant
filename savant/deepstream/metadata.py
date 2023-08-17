@@ -10,8 +10,9 @@ from savant.deepstream.utils import nvds_get_obj_bbox
 from savant.deepstream.utils.object import nvds_is_empty_object_meta
 from savant.meta.attribute import AttributeMeta
 from savant.meta.constants import PRIMARY_OBJECT_KEY
-from savant.utils.logging import get_logger
-logger = get_logger(__name__)
+
+
+logger = logging.getLogger(__name__)
 
 
 def nvds_obj_meta_output_converter(
@@ -26,8 +27,8 @@ def nvds_obj_meta_output_converter(
     """
     model_name, label = parse_compound_key(nvds_obj_meta.obj_label)
 
-    if logger.isEnabledFor(logging.DEBUG):
-        logger.debug(
+    if logger.isEnabledFor(logging.TRACE):
+        logger.trace(
             'Converting object meta for model "%s", label "%s".',
             model_name,
             label,
@@ -38,13 +39,13 @@ def nvds_obj_meta_output_converter(
         confidence = nvds_obj_meta.tracker_confidence
 
     bbox = nvds_get_obj_bbox(nvds_obj_meta)
-    if logger.isEnabledFor(logging.DEBUG):
-        logger.debug('Object DS bbox %s', bbox)
+    if logger.isEnabledFor(logging.TRACE):
+        logger.trace('Object DS bbox %s', bbox)
     if frame_params.padding and not frame_params.padding.keep:
         bbox.xc -= frame_params.padding.left
         bbox.yc -= frame_params.padding.top
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug(
+        if logger.isEnabledFor(logging.TRACE):
+            logger.trace(
                 'Applied frame padding %s, bbox: %s', frame_params.padding, bbox
             )
     bbox = dict(
@@ -54,8 +55,8 @@ def nvds_obj_meta_output_converter(
         height=bbox.height,
         angle=bbox.angle if isinstance(bbox, RBBox) else 0.0,
     )
-    if logger.isEnabledFor(logging.DEBUG):
-        logger.debug('Object corrected bbox %s', bbox)
+    if logger.isEnabledFor(logging.TRACE):
+        logger.trace('Object corrected bbox %s', bbox)
     # parse parent object
     parent_model_name, parent_label, parent_object_id = None, None, None
     if (

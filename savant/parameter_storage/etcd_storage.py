@@ -6,8 +6,9 @@ import logging
 from omegaconf import MISSING
 import etcd3
 from .parameter_storage import ParameterStorage
-from savant.utils.logging import get_logger
-logger = get_logger(__name__)
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass

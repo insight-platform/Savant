@@ -4,10 +4,12 @@ from time import time
 from typing import Optional, Union
 import os
 import threading
+import logging
 from gi.repository import GLib, Gst  # noqa:F401
 from .pipeline import GstPipeline
-from savant.utils.logging import get_logger
-logger = get_logger(__name__)
+
+
+logger = logging.getLogger(__name__)
 
 
 class StateChangeError(Exception):

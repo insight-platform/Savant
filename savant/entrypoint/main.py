@@ -1,12 +1,12 @@
 """Module entrypoint function."""
 import os
-
+import logging
 from savant.config import ModuleConfig
 from savant.gstreamer import Gst
 from savant.deepstream.encoding import check_encoder_is_available
 from savant.deepstream.pipeline import NvDsPipeline
 from savant.deepstream.runner import NvDsPipelineRunner
-from savant.utils.logging import init_logging, update_logging, get_logger
+from savant.utils.logging import init_logging, update_logging
 from savant.utils.sink_factories import sink_factory
 
 
@@ -25,7 +25,7 @@ def main(config_file_path: str):
 
     # reconfigure savant logger with updated loglevel
     update_logging(config.parameters['log_level'])
-    logger = get_logger('savant')
+    logger = logging.getLogger('savant.main')
 
     # possible exceptions will cause app to crash and log error by default
     # no need to handle exceptions here

@@ -1,6 +1,6 @@
 import time
 from typing import Any, Dict
-
+import logging
 import pyds
 
 from savant.config.schema import PipelineElement
@@ -8,14 +8,13 @@ from savant.deepstream.runner import NvDsPipelineRunner
 from savant.gstreamer import Gst  # noqa:F401
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
 from savant.gstreamer.element_factory import GstElementFactory
-from savant.utils.logging import get_logger
 from savant.utils.platform import is_aarch64
 
 
 def check_encoder_is_available(parameters: Dict[str, Any]) -> bool:
     """Check if encoder is available."""
 
-    logger = get_logger(__name__)
+    logger = logging.getLogger(__name__)
 
     output_frame = parameters.get('output_frame')
     if not output_frame:

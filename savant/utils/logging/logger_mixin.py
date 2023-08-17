@@ -1,5 +1,6 @@
 import logging
-from .log_setup import get_logger
+from .log_setup import init_logging
+
 
 class LoggerMixin:
     """Mixes logger in GStreamer element.
@@ -28,6 +29,8 @@ class LoggerMixin:
         logger_name = f'savant.{self.__module__}'
         if hasattr(self, 'get_name') and self.get_name():
             logger_name += f'.{self.get_name()}'
-        self._logger = get_logger(logger_name)
+
+        init_logging()
+        self._logger = logging.getLogger(logger_name)
 
         self._logger_initialized = True
