@@ -28,7 +28,6 @@ services:
     command: samples/face_reid/index_builder.yml
     environment:
       - ZMQ_SRC_ENDPOINT=rep+bind:ipc:///tmp/zmq-sockets/input-video.ipc
-    runtime: nvidia
     deploy:
       resources:
         reservations:
