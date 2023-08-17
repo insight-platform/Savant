@@ -12,6 +12,7 @@ services:
       - ZMQ_ENDPOINT=req+connect:ipc:///tmp/zmq-sockets/input-video.ipc
       - SOURCE_ID=gallery
       - READ_METADATA=False
+      - RECEIVE_TIMEOUT_MSECS=20000
     entrypoint: /opt/savant/adapters/gst/sources/media_files.sh
     profiles:
       - index
