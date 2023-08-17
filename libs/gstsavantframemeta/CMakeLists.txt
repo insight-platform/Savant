@@ -23,6 +23,10 @@ if(NOT DEFINED DeepStream_DIR)
     set(DeepStream_DIR /opt/nvidia/deepstream/deepstream)
 endif()
 
+if(NOT DEFINED SavantRsCapi_DIR)
+    set(SavantRsCapi_DIR /opt/savant_capi)
+endif()
+
 pkg_check_modules(GLIB REQUIRED glib-2.0)
 pkg_check_modules(GSTREAMER REQUIRED gstreamer-1.0)
 
@@ -32,6 +36,7 @@ include_directories(
         ${GSTREAMER_INCLUDE_DIRS}
         ${CUDA_INCLUDE_DIRS}
         ${DeepStream_DIR}/sources/includes
+        ${SavantRsCapi_DIR}/include
         ${CMAKE_SOURCE_DIR}/gstsavantframemeta/include
         ${CMAKE_SOURCE_DIR}/pygstsavantframemeta
  )
@@ -41,7 +46,8 @@ link_directories(
         ${GLIB_LIBRARY_DIRS}
         ${GSTREAMER_LIBRARY_DIRS}
         ${CUDA_LIBRARY_DIRS}
-        "${DeepStream_DIR}/lib"
+        ${DeepStream_DIR}/lib
+        ${SavantRsCapi_DIR}/lib
  )
 
 add_subdirectory(gstsavantframemeta ../build/gstsavantframemeta)
@@ -65,6 +71,7 @@ target_link_libraries(${python_module_name} PRIVATE
     ${CUDA_LIBRARIES}
     nvds_meta
     nvdsgst_meta
+    savant_capi
     pybind11::module
     pybind11::lto
     gstsavantframemeta

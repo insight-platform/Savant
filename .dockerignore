@@ -11,6 +11,7 @@ Makefile
 **/dist/
 **/*.egg-info/
 **/build/
+**/cmake-build-debug/
 downloads/
 models/
 var/

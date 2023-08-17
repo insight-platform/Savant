@@ -13,6 +13,10 @@ if(NOT DEFINED DeepStream_DIR)
     set(DeepStream_DIR /opt/nvidia/deepstream/deepstream)
 endif()
 
+if(NOT DEFINED SavantRsCapi_DIR)
+    set(SavantRsCapi_DIR /opt/savant_capi)
+endif()
+
 pkg_check_modules(GLIB REQUIRED glib-2.0)
 pkg_check_modules(GSTREAMER REQUIRED gstreamer-1.0)
 
@@ -21,13 +25,15 @@ include_directories(
         ${GSTREAMER_INCLUDE_DIRS}
         ${CUDA_INCLUDE_DIRS}
         ${DeepStream_DIR}/sources/includes
+        ${SavantRsCapi_DIR}/include
 )
 
 link_directories(
         ${GLIB_LIBRARY_DIRS}
         ${GSTREAMER_LIBRARY_DIRS}
         ${CUDA_LIBRARY_DIRS}
-        "${DeepStream_DIR}/lib"
+        ${DeepStream_DIR}/lib
+        ${SavantRsCapi_DIR}/lib
 )
 
 AUX_SOURCE_DIRECTORY(src SRC_FILES)
@@ -37,7 +43,9 @@ set(PROJECT_INCLUDE_DIR "include")
 
 set(SOURCE_FILES
     ${PROJECT_INCLUDE_DIR}/gstsavantframemeta.h
+    ${PROJECT_INCLUDE_DIR}/savantrsprobes.h
     ${PROJECT_SOURCE_DIR}/gstsavantframemeta.cpp
+    ${PROJECT_SOURCE_DIR}/savantrsprobes.cpp
 )
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${SOURCE_FILES})
@@ -50,6 +58,7 @@ target_link_libraries(
         ${CUDA_LIBRARIES}
         nvds_meta
         nvdsgst_meta
+        savant_capi
 )
 
 target_include_directories(gstsavantframemeta PUBLIC include)

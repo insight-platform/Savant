@@ -25,9 +25,9 @@ from savant.deepstream.buffer_processor import (
     create_buffer_processor,
 )
 from savant.deepstream.ds_probes import (
+    add_move_and_pack_frames_pad_probe,
     add_move_batch_as_is_pad_probe,
-    add_move_batch_to_frames_pad_probe,
-    add_move_frames_to_batch_pad_probe,
+    add_pipeline_move_and_unpack_batch,
 )
 from savant.deepstream.gst_probes import add_move_frame_as_is_pad_probe
 from savant.deepstream.source_output import (
@@ -825,7 +825,7 @@ class NvDsPipeline(GstPipeline):
             VideoPipelineStagePayloadType.Batch,
         )
         muxer_src_pad: Gst.Pad = self._muxer.get_static_pad('src')
-        add_move_frames_to_batch_pad_probe(
+        add_move_and_pack_frames_pad_probe(
             muxer_src_pad,
             self._video_pipeline,
             'prepare-input',
@@ -923,7 +923,7 @@ class NvDsPipeline(GstPipeline):
             'update-frame-meta',
         )
         sink_peer_pad.add_probe(Gst.PadProbeType.BUFFER, self.update_frame_meta)
-        add_move_batch_to_frames_pad_probe(
+        add_pipeline_move_and_unpack_batch(
             sink_peer_pad,
             self._video_pipeline,
             'demuxer',

@@ -1,4 +1,4 @@
-from pygstsavantframemeta import gst_buffer_get_savant_frame_meta
+from pygstsavantframemeta import pygstsavantframemeta
 from savant_rs.pipeline import VideoPipeline
 
 from savant.gstreamer import Gst  # noqa:F401
@@ -13,25 +13,11 @@ def move_frame_as_is_pad_probe(
     video_pipeline: VideoPipeline,
     stage: str,
 ) -> Gst.PadProbeReturn:
-    buffer: Gst.Buffer = info.get_buffer()
-    logger.debug('Pipeline stage %s. Moving frame from buffer %s.', stage, buffer.pts)
-    savant_frame_meta = gst_buffer_get_savant_frame_meta(buffer)
-    if savant_frame_meta is None:
-        logger.warning(
-            'Pipeline stage %s. Failed to move frame at buffer %s. '
-            'Frame has no Savant Frame Meta.',
-            stage,
-            buffer.pts,
-        )
-        return Gst.PadProbeReturn.PASS
-
-    frame_id = savant_frame_meta.idx if savant_frame_meta else None
-    video_pipeline.move_as_is(stage, [frame_id], no_gil=False)
-    logger.debug(
-        'Pipeline stage %s. Frame %s at buffer %s moved.',
+    pygstsavantframemeta.move_frame_as_is_pad_probe(
+        hash(pad),
+        hash(info),
+        video_pipeline.memory_handle,
         stage,
-        frame_id,
-        buffer.pts,
     )
 
     return Gst.PadProbeReturn.OK
@@ -42,7 +28,8 @@ def add_move_frame_as_is_pad_probe(
     video_pipeline: VideoPipeline,
     stage: str,
 ):
-    pad.add_probe(
+    logger.debug('Pipeline stage %s. Adding move frame as is pad probe.', stage)
+    return pad.add_probe(
         Gst.PadProbeType.BUFFER,
         move_frame_as_is_pad_probe,
         video_pipeline,
