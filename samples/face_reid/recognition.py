@@ -20,9 +20,7 @@ class Recognition(NvDsPyFuncPlugin):
         self.last_match_for_track = {}
         index_file_path = os.path.join(self.index_dir, 'index.bin')
         self.index = hnswlib.Index(space=self.index_space, dim=self.index_dim)
-        self.index.load_index(
-            index_file_path, max_elements=self.index_max_elements
-        )
+        self.index.load_index(index_file_path, max_elements=self.index_max_elements)
 
     def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
         """Process frame metadata.

@@ -105,7 +105,10 @@ class Overlay(NvDsDrawFunc):
                                 track_id
                             ]
                             prev_used_count = self.prev_used_counter[track_id]
-                            if prev_person_id != person_id or prev_used_count > self.match_linger_frames:
+                            if (
+                                prev_person_id != person_id
+                                or prev_used_count > self.match_linger_frames
+                            ):
                                 # if the track switched to a different person
                                 # or the previous image was used for more than `match_linger_frames` frames
                                 # use the new image
