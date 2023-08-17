@@ -105,3 +105,9 @@
 | Savant ver.                                                   | A4000 | Jetson NX |
 |---------------------------------------------------------------|-------|-----------|
 | [#131](https://github.com/insight-platform/Savant/issues/131) | 45.78 | 14.84     |
+
+### face_reid
+
+| Savant ver.                                                   | A4000 | Jetson NX |
+|---------------------------------------------------------------|-------|-----------|
+| [#142](https://github.com/insight-platform/Savant/issues/142) |  124  |           |
