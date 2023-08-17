@@ -1,14 +1,15 @@
-from typing import Optional, Tuple
 import copy
+from typing import Optional, Tuple
+
 from savant_rs.draw_spec import (
     BoundingBoxDraw,
     ColorDraw,
-    LabelDraw,
     DotDraw,
-    PaddingDraw,
-    ObjectDraw,
+    LabelDraw,
     LabelPosition,
     LabelPositionKind,
+    ObjectDraw,
+    PaddingDraw,
 )
 
 

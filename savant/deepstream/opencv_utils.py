@@ -1,7 +1,7 @@
 """Utils for working OpenCV representation of CUDA memory (cv2.cuda.GpuMat)."""
 
 from contextlib import contextmanager
-from typing import ContextManager, Tuple, Union, Optional
+from typing import ContextManager, Optional, Tuple, Union
 
 import cv2
 import numpy as np

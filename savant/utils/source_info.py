@@ -1,7 +1,8 @@
 """SourceInfo structure and SourceInfoRegistry singleton."""
-from typing import List, Optional, Dict
-from threading import Event
 from dataclasses import dataclass
+from threading import Event
+from typing import Dict, List, Optional
+
 from savant.gstreamer import Gst
 from savant.utils.singleton import SingletonMeta
 

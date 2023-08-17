@@ -14,11 +14,11 @@ docker run --rm \
  --endpoint-url=https://eu-central-1.linodeobjects.com \
  s3 sync s3://savant-data/demo /data
 """
-from pathlib import Path
-from typing import Generator
 import argparse
 import re
 import subprocess
+from pathlib import Path
+from typing import Generator
 
 
 def launch_script(script: Path) -> Generator[str, None, None]:

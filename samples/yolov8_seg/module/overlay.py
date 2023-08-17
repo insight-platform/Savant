@@ -2,10 +2,11 @@
 import cv2
 import numpy as np
 import pyds
-from savant.gstreamer import Gst  # noqa: F401
-from savant.deepstream.opencv_utils import nvds_to_gpu_mat, alpha_comp, draw_rect
+
 from savant.deepstream.drawfunc import NvDsDrawFunc
 from savant.deepstream.meta.frame import NvDsFrameMeta
+from savant.deepstream.opencv_utils import alpha_comp, draw_rect, nvds_to_gpu_mat
+from savant.gstreamer import Gst  # noqa: F401
 
 
 class Overlay(NvDsDrawFunc):

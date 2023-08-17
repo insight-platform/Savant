@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """Run sink adapter."""
 import os
-from typing import Optional
 import uuid
+from typing import Optional
 
 import click
-
 from common import (
     adapter_docker_image_option,
     build_common_envs,

@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 from urllib.request import urlretrieve
 
 from savant.gstreamer import GLib, GObject, Gst
-from savant.gstreamer.codecs import Codec, CODEC_BY_CAPS_NAME
+from savant.gstreamer.codecs import CODEC_BY_CAPS_NAME, Codec
 from savant.gstreamer.metadata import DEFAULT_FRAMERATE
 from savant.gstreamer.utils import on_pad_event
 from savant.utils.file_types import FileType, parse_mime_types

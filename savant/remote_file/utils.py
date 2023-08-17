@@ -1,10 +1,10 @@
 """Remote file utils."""
-from pathlib import Path
-from typing import List, Optional
 import hashlib
 import shutil
 import tarfile
 import zipfile
+from pathlib import Path
+from typing import List, Optional
 
 
 def get_file_checksum(file_path: Path) -> str:

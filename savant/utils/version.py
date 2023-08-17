@@ -1,5 +1,6 @@
 """Parses VERSION file."""
 from pathlib import Path
+
 from savant.utils.singleton import SingletonMeta
 
 VERSION_FILE_PATH = Path(__file__).parent.parent / 'VERSION'

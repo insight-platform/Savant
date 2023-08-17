@@ -20,9 +20,9 @@ from savant.gstreamer.codecs import CODEC_BY_CAPS_NAME, Codec
 from savant.gstreamer.element_factory import GstElementFactory
 from savant.gstreamer.metadata import metadata_pop_frame_meta
 from savant.gstreamer.runner import GstPipelineRunner
+from savant.utils.logging import get_logger
 from savant.utils.platform import is_aarch64
 from savant.utils.zeromq import ReceiverSocketTypes
-from savant.utils.logging import get_logger
 
 LOGGER_NAME = 'ao_sink'
 logger = get_logger(LOGGER_NAME)

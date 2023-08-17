@@ -2,7 +2,7 @@
 import inspect
 from typing import Dict, NamedTuple, Optional
 
-from ffmpeg_input import FFMpegSource, FFmpegLogLevel, VideoFrameEnvelope
+from ffmpeg_input import FFmpegLogLevel, FFMpegSource, VideoFrameEnvelope
 
 from savant.gstreamer import GObject, Gst, GstBase
 from savant.gstreamer.codecs import Codec
