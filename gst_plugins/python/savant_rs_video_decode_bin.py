@@ -1,17 +1,15 @@
 """SavantRsVideoDecodeBin element."""
 import time
-
+from dataclasses import dataclass
 from threading import Event, Lock
 from typing import Dict, Optional
 
-from dataclasses import dataclass
-
+from gst_plugins.python.savant_rs_video_demux import SAVANT_RS_VIDEO_DEMUX_PROPERTIES
 from savant.gstreamer import GLib, GObject, Gst  # noqa:F401
-from savant.gstreamer.codecs import Codec, CODEC_BY_CAPS_NAME
+from savant.gstreamer.codecs import CODEC_BY_CAPS_NAME, Codec
 from savant.gstreamer.utils import on_pad_event, pad_to_source_id
 from savant.utils.logging import LoggerMixin
 from savant.utils.platform import is_aarch64
-from gst_plugins.python.savant_rs_video_demux import SAVANT_RS_VIDEO_DEMUX_PROPERTIES
 
 OUT_CAPS = Gst.Caps.from_string('video/x-raw(memory:NVMM);video/x-raw')
 DEFAULT_PASS_EOS = True

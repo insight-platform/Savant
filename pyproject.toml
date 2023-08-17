@@ -40,3 +40,6 @@ skip-string-normalization = true
 
 [tool.pylint.messages_control]
 max-line-length = 88
+
+[tool.isort]
+profile = "black"

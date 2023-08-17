@@ -1,14 +1,15 @@
 """Line crossing trackers."""
-from collections import deque, defaultdict
-from enum import Enum
-from typing import Optional, Sequence, List, Tuple
-import random
 import math
+import random
+from collections import defaultdict, deque
+from enum import Enum
+from typing import List, Optional, Sequence, Tuple
+
 from savant_rs.primitives.geometry import (
-    PolygonalArea,
-    Segment,
     IntersectionKind,
     Point,
+    PolygonalArea,
+    Segment,
 )
 
 

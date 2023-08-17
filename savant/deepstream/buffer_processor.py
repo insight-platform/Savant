@@ -1,11 +1,10 @@
 """Buffer processor for DeepStream pipeline."""
+import logging
 from collections import deque
 from heapq import heappop, heappush
 from queue import Queue
-from typing import Deque, Dict, List, Tuple
+from typing import Deque, Dict, Iterator, List, NamedTuple, Optional, Tuple, Union
 
-from typing import Optional, Union, NamedTuple, Iterator
-import logging
 import numpy as np
 import pyds
 from pygstsavantframemeta import (
@@ -14,52 +13,49 @@ from pygstsavantframemeta import (
 )
 from savant_rs.primitives.geometry import BBox, RBBox
 from savant_rs.utils.symbol_mapper import (
-    parse_compound_key,
+    build_model_object_key,
     get_model_id,
     get_object_id,
-    build_model_object_key,
+    parse_compound_key,
 )
 
 from savant.base.input_preproc import ObjectsPreprocessing
-from savant.base.model import ObjectModel, ComplexModel
+from savant.base.model import ComplexModel, ObjectModel
+from savant.config.schema import FrameParameters, ModelElement, PipelineElement
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
+from savant.deepstream.nvinfer.model import NvInferAttributeModel, NvInferDetector
 from savant.deepstream.source_output import (
     SourceOutput,
     SourceOutputEncoded,
     SourceOutputH26X,
     SourceOutputWithFrame,
 )
-from savant.deepstream.utils.attribute import nvds_get_all_obj_attrs
-from savant.meta.constants import PRIMARY_OBJECT_KEY
-from savant.config.schema import PipelineElement, ModelElement, FrameParameters
-from savant.deepstream.nvinfer.model import (
-    NvInferDetector,
-    NvInferAttributeModel,
-)
 from savant.deepstream.utils import (
     get_nvds_buf_surface,
-    nvds_frame_meta_iterator,
-    nvds_obj_meta_iterator,
-    nvds_clf_meta_iterator,
-    nvds_label_info_iterator,
-    nvds_tensor_output_iterator,
-    nvds_infer_tensor_meta_to_outputs,
-    nvds_add_obj_meta_to_frame,
     nvds_add_attr_meta_to_obj,
+    nvds_add_obj_meta_to_frame,
+    nvds_clf_meta_iterator,
+    nvds_frame_meta_iterator,
+    nvds_infer_tensor_meta_to_outputs,
+    nvds_label_info_iterator,
+    nvds_obj_meta_iterator,
     nvds_set_obj_selection_type,
     nvds_set_obj_uid,
+    nvds_tensor_output_iterator,
 )
+from savant.deepstream.utils.attribute import nvds_get_all_obj_attrs
 from savant.gstreamer import Gst  # noqa:F401
 from savant.gstreamer.buffer_processor import GstBufferProcessor
-from savant.gstreamer.codecs import CodecInfo, Codec
+from savant.gstreamer.codecs import Codec, CodecInfo
 from savant.gstreamer.metadata import get_source_frame_meta, metadata_pop_frame_meta
+from savant.meta.constants import PRIMARY_OBJECT_KEY
 from savant.meta.object import ObjectMeta
 from savant.meta.type import ObjectSelectionType
 from savant.utils.fps_meter import FPSMeter
 from savant.utils.logging import LoggerMixin
 from savant.utils.platform import is_aarch64
 from savant.utils.sink_factories import SinkVideoFrame
-from savant.utils.source_info import SourceInfoRegistry, SourceInfo
+from savant.utils.source_info import SourceInfo, SourceInfoRegistry
 
 
 class _OutputFrame(NamedTuple):

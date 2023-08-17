@@ -1,9 +1,10 @@
 """Sink factories."""
+import json
+import logging
 from abc import ABC, abstractmethod
 from dataclasses import asdict
 from typing import Any, Callable, Dict, List, NamedTuple, Optional, Union
-import json
-import logging
+
 import numpy as np
 import zmq
 from savant_rs.primitives import EndOfStream

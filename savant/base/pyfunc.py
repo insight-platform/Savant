@@ -1,10 +1,12 @@
 """PyFunc definitions."""
+import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from importlib import util as importlib_util, import_module
+from importlib import import_module
+from importlib import util as importlib_util
 from pathlib import Path
 from typing import Any, Dict, Optional
-import logging
+
 from savant.gstreamer import Gst  # noqa: F401
 
 

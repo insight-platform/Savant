@@ -1,10 +1,10 @@
 """Initializer resolver for OmegaConf."""
-import os
 import json
 import logging
+import os
 from typing import Any
-from savant.parameter_storage import param_storage, STORAGE_TYPES
 
+from savant.parameter_storage import STORAGE_TYPES, param_storage
 
 logger = logging.getLogger(__name__)
 

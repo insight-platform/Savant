@@ -2,9 +2,9 @@
 from typing import Dict, Tuple
 
 from samples.age_gender_recognition.smoothed_counter import SmoothedCounter
-from savant.gstreamer import Gst
 from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.deepstream.pyfunc import NvDsPyFuncPlugin
+from savant.gstreamer import Gst
 from savant.parameter_storage import param_storage
 
 MODEL_NAME = param_storage()['detection_model_name']

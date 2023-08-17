@@ -2,8 +2,8 @@ from enum import Enum
 from typing import Any, Optional
 
 from savant.gstreamer import GObject, Gst, GstBase
-from savant.utils.logging import LoggerMixin
 from savant.utils.fps_meter import FPSMeter
+from savant.utils.logging import LoggerMixin
 
 
 class Output(Enum):

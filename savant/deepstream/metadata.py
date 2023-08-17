@@ -1,10 +1,11 @@
 """Convert deepstream object meta to output format."""
-from typing import Any, Dict
 import logging
+from typing import Any, Dict
+
 import pyds
+from savant_rs.primitives.geometry import RBBox
 from savant_rs.utils.symbol_mapper import parse_compound_key
 
-from savant_rs.primitives.geometry import RBBox
 from savant.config.schema import FrameParameters
 from savant.deepstream.utils import nvds_get_obj_bbox
 from savant.deepstream.utils.object import nvds_is_empty_object_meta

@@ -1,17 +1,20 @@
 """DeepStream object utils."""
 from typing import Optional, Tuple, Union
+
 import pyds
+from pysavantboost import NvRBboxCoords, add_rbbox_to_object_meta, get_rbbox
 from savant_rs.primitives.geometry import BBox, RBBox
-from pysavantboost import add_rbbox_to_object_meta, NvRBboxCoords, get_rbbox
+
+from savant.deepstream.meta.constants import MAX_LABEL_SIZE
+from savant.meta.constants import DEFAULT_CONFIDENCE, UNTRACKED_OBJECT_ID
 from savant.meta.errors import (
     IncorrectSelectionType,
-    UIDError,
     MetaPoolError,
     MetaValueError,
+    UIDError,
 )
-from savant.meta.constants import UNTRACKED_OBJECT_ID, DEFAULT_CONFIDENCE
 from savant.meta.type import InformationType, ObjectSelectionType
-from savant.deepstream.meta.constants import MAX_LABEL_SIZE
+
 from .iterator import nvds_obj_user_meta_iterator
 from .meta_types import OBJ_DRAW_LABEL_META_TYPE
 

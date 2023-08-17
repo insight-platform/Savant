@@ -4,7 +4,6 @@ import os
 from typing import List, Optional
 
 import click
-
 from common import (
     adapter_docker_image_option,
     build_common_envs,

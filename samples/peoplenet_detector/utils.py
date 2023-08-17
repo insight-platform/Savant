@@ -1,7 +1,8 @@
 """Utilies module."""
 from typing import Tuple
-import numpy as np
+
 import cv2
+import numpy as np
 
 
 def load_sprite(path: str, target_height: int) -> cv2.cuda.GpuMat:
