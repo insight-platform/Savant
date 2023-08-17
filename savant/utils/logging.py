@@ -32,6 +32,12 @@ def _log_conf(log_level: str) -> dict:
                 'handlers': ['console'],
                 'propagate': False,
             },
+            # replace debug with warning, numba debug logs cause vlf tests to fail
+            'numba': {
+                'level': 'WARNING' if log_level == 'DEBUG' else log_level,
+                'handlers': ['console'],
+                'propagate': False,
+            }
         },
         'disable_existing_loggers': False,
     }
