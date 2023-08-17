@@ -16,7 +16,7 @@ from savant.base.input_preproc import ObjectsPreprocessing
 
 from pygstsavantframemeta import (
     add_convert_savant_frame_meta_pad_probe,
-    gst_buffer_get_savant_frame_meta,
+    gst_buffer_get_savant_batch_meta,
     nvds_frame_meta_get_nvds_savant_frame_meta,
 )
 
@@ -654,7 +654,7 @@ class NvDsPipeline(GstPipeline):
 
         self._logger.debug('Prepare meta output for buffer with PTS %s', buffer.pts)
 
-        savant_batch_meta = gst_buffer_get_savant_frame_meta(buffer)
+        savant_batch_meta = gst_buffer_get_savant_batch_meta(buffer)
         if savant_batch_meta is None:
             self._logger.warning(
                 'Failed to update frame meta for batch at buffer %s. '

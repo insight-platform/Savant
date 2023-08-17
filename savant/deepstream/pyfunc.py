@@ -4,7 +4,7 @@ from typing import Optional
 import pyds
 import cv2
 from pygstsavantframemeta import (
-    gst_buffer_get_savant_frame_meta,
+    gst_buffer_get_savant_batch_meta,
     nvds_frame_meta_get_nvds_savant_frame_meta,
 )
 from savant_rs.pipeline import VideoPipeline
@@ -98,7 +98,7 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
         :param buffer: Gstreamer buffer.
         """
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
-        savant_batch_meta = gst_buffer_get_savant_frame_meta(buffer)
+        savant_batch_meta = gst_buffer_get_savant_batch_meta(buffer)
         if savant_batch_meta is None:
             self.logger.warning(
                 'Failed to process batch at buffer %s. '

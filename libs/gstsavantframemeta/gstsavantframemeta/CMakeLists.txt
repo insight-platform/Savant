@@ -42,9 +42,11 @@ set(PROJECT_SOURCE_DIR "src")
 set(PROJECT_INCLUDE_DIR "include")
 
 set(SOURCE_FILES
+    ${PROJECT_INCLUDE_DIR}/gstsavantbatchmeta.h
+    ${PROJECT_SOURCE_DIR}/gstsavantbatchmeta.cpp
     ${PROJECT_INCLUDE_DIR}/gstsavantframemeta.h
-    ${PROJECT_INCLUDE_DIR}/savantrsprobes.h
     ${PROJECT_SOURCE_DIR}/gstsavantframemeta.cpp
+    ${PROJECT_INCLUDE_DIR}/savantrsprobes.h
     ${PROJECT_SOURCE_DIR}/savantrsprobes.cpp
 )
 

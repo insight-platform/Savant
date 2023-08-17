@@ -1,4 +1,5 @@
 #include "savantrsprobes.h"
+#include "gstsavantbatchmeta.h"
 #include "gstsavantframemeta.h"
 
 #include <glib.h>
@@ -74,7 +75,7 @@ GstPadProbeReturn move_frame_as_is_pad_probe(GstPad *pad,
 GstPadProbeReturn move_and_pack_frames_pad_probe(GstPad *pad,
                                                  GstPadProbeInfo *info,
                                                  gpointer user_data) {
-    GstSavantFrameMeta *savant_frame_meta, *savant_batch_meta;
+    GstSavantFrameMeta *savant_frame_meta;
     int64_t *idx_list;
     int64_t batch_id;
     NvDsBatchMeta *batch_meta;
@@ -130,13 +131,7 @@ GstPadProbeReturn move_and_pack_frames_pad_probe(GstPad *pad,
     batch_id = pipeline_move_and_pack_frames(
         data->handle, data->stage, idx_list, batch_meta->num_frames_in_batch);
 
-    // TODO: Create separate GstMeta for batch_id
-    savant_batch_meta = gst_buffer_get_savant_frame_meta(buffer);
-    if (savant_batch_meta != nullptr) {
-        savant_batch_meta->idx = batch_id;
-    } else {
-        gst_buffer_add_savant_frame_meta(buffer, batch_id);
-    }
+    gst_buffer_add_savant_batch_meta(buffer, batch_id);
     GST_INFO_OBJECT(
         pad,
         "Pipeline stage %s. %d frames at buffer %ld are packed to batch %ld.",
@@ -149,7 +144,7 @@ GstPadProbeReturn move_and_pack_frames_pad_probe(GstPad *pad,
 GstPadProbeReturn move_batch_as_is_pad_probe(GstPad *pad,
                                              GstPadProbeInfo *info,
                                              gpointer user_data) {
-    GstSavantFrameMeta *savant_batch_meta;
+    GstSavantBatchMeta *savant_batch_meta;
     int64_t *idx_list;
     NvDsBatchMeta *batch_meta;
     auto *data = (SavantRsPadProbeData *)user_data;
@@ -173,8 +168,7 @@ GstPadProbeReturn move_batch_as_is_pad_probe(GstPad *pad,
         return GST_PAD_PROBE_PASS;
     }
 
-    // TODO: Create separate GstMeta for batch_id
-    savant_batch_meta = gst_buffer_get_savant_frame_meta(buffer);
+    savant_batch_meta = gst_buffer_get_savant_batch_meta(buffer);
     if (!savant_batch_meta) {
         GST_WARNING_OBJECT(
             pad,
@@ -199,7 +193,7 @@ GstPadProbeReturn move_batch_as_is_pad_probe(GstPad *pad,
 GstPadProbeReturn move_and_unpack_batch_pad_probe(GstPad *pad,
                                                   GstPadProbeInfo *info,
                                                   gpointer user_data) {
-    GstSavantFrameMeta *savant_batch_meta;
+    GstSavantBatchMeta *savant_batch_meta;
     int64_t *resulting_ids;
     NvDsBatchMeta *batch_meta;
     auto *data = (SavantRsPadProbeData *)user_data;
@@ -230,8 +224,7 @@ GstPadProbeReturn move_and_unpack_batch_pad_probe(GstPad *pad,
         return GST_PAD_PROBE_PASS;
     }
 
-    // TODO: Create separate GstMeta for batch_id
-    savant_batch_meta = gst_buffer_get_savant_frame_meta(buffer);
+    savant_batch_meta = gst_buffer_get_savant_batch_meta(buffer);
     if (!savant_batch_meta) {
         GST_WARNING_OBJECT(
             pad,

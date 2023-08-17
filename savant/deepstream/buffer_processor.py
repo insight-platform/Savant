@@ -9,6 +9,7 @@ import logging
 import numpy as np
 import pyds
 from pygstsavantframemeta import (
+    gst_buffer_get_savant_batch_meta,
     gst_buffer_get_savant_frame_meta,
     nvds_frame_meta_get_nvds_savant_frame_meta,
 )
@@ -110,7 +111,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
         """
 
         self.logger.debug('Preparing input for buffer with PTS %s.', buffer.pts)
-        savant_batch_meta = gst_buffer_get_savant_frame_meta(buffer)
+        savant_batch_meta = gst_buffer_get_savant_batch_meta(buffer)
         if savant_batch_meta is None:
             # TODO: add VideoFrame to VideoPipeline?
             self.logger.warning(

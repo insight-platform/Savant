@@ -9,6 +9,30 @@ gi.require_version('Gst', '1.0')
 from gi.repository import Gst
 
 
+def gst_buffer_add_savant_batch_meta(
+    buffer: Gst.Buffer,
+    idx: int,
+) -> Optional[pygstsavantframemeta.GstSavantBatchMeta]:
+    """Add savant batch metadata to GStreamer buffer as GstMeta.
+
+    :param buffer: GStreamer buffer.
+    :param idx: Batch IDX.
+    :return: Added metadata.
+    """
+    return pygstsavantframemeta.gst_buffer_add_savant_batch_meta(hash(buffer), idx)
+
+
+def gst_buffer_get_savant_batch_meta(
+    buffer: Gst.Buffer,
+) -> Optional[pygstsavantframemeta.GstSavantBatchMeta]:
+    """Get savant batch metadata to GStreamer buffer.
+
+    :param buffer: GStreamer buffer.
+    :return: Metadata.
+    """
+    return pygstsavantframemeta.gst_buffer_get_savant_batch_meta(hash(buffer))
+
+
 def gst_buffer_add_nvds_savant_frame_meta(
     buffer: Gst.Buffer,
     idx: int,

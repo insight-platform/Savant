@@ -1,3 +1,4 @@
+#include "gstsavantbatchmeta.h"
 #include "gstsavantframemeta.h"
 #include "savantrsprobes.h"
 #include <pybind11/pybind11.h>
@@ -6,6 +7,26 @@ namespace py = pybind11;
 
 PYBIND11_MODULE(pygstsavantframemeta, m) {
     m.doc() = "GstSavantFrameMeta library";
+
+    py::class_<GstSavantBatchMeta>(m, "GstSavantBatchMeta",
+                                   "Contains batch related metadata.")
+        .def_readwrite("idx", &GstSavantBatchMeta::idx, "Batch IDX.");
+
+    m.def(
+        "gst_buffer_get_savant_batch_meta",
+        [](size_t gst_buffer) {
+            auto *buffer = reinterpret_cast<GstBuffer *>(gst_buffer);
+            return gst_buffer_get_savant_batch_meta(buffer);
+        },
+        py::return_value_policy::reference);
+
+    m.def(
+        "gst_buffer_add_savant_batch_meta",
+        [](size_t gst_buffer, int idx) {
+            auto *buffer = reinterpret_cast<GstBuffer *>(gst_buffer);
+            return gst_buffer_add_savant_batch_meta(buffer, idx);
+        },
+        py::return_value_policy::reference);
 
     py::class_<GstSavantFrameMeta>(m, "GstSavantFrameMeta",
                                    "Contains frame related metadata.")
