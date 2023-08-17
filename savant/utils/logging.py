@@ -1,8 +1,8 @@
 """Logger utils."""
-from typing import Optional
 import logging
 import logging.config
 import os
+from typing import Optional
 
 
 def _get_default_loglevel() -> str:

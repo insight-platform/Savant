@@ -1,12 +1,7 @@
 from typing import Any, Dict, Union
 
-from savant.config.schema import (
-    BufferQueuesParameters,
-    ElementGroup,
-    Pipeline,
-    PipelineElement,
-    PyFuncElement,
-)
+from savant.config.schema import (BufferQueuesParameters, ElementGroup,
+                                  Pipeline, PipelineElement, PyFuncElement)
 
 
 def add_queues_to_pipeline(

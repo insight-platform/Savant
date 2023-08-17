@@ -1,6 +1,8 @@
 """Age gender converter module."""
-from typing import Any, List, Tuple, Optional
+from typing import Any, List, Optional, Tuple
+
 import numpy as np
+
 from savant.base.converter import BaseAttributeModelOutputConverter
 from savant.base.model import AttributeModel
 from savant.parameter_storage import param_storage

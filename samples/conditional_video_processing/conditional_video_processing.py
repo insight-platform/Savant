@@ -5,7 +5,8 @@ from pygstsavantframemeta import nvds_frame_meta_get_nvds_savant_frame_meta
 from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.deepstream.pyfunc import NvDsPyFuncPlugin
 from savant.gstreamer import Gst
-from savant.gstreamer.metadata import get_source_frame_meta, metadata_add_frame_meta
+from savant.gstreamer.metadata import (get_source_frame_meta,
+                                       metadata_add_frame_meta)
 
 
 class ConditionalVideoProcessing(NvDsPyFuncPlugin):

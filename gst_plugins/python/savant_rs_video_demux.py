@@ -13,13 +13,11 @@ from savant.api.enums import ExternalFrameType
 from savant.api.parser import convert_ts, parse_tags, parse_video_objects
 from savant.gstreamer import GObject, Gst
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
-from savant.gstreamer.metadata import (
-    DEFAULT_FRAMERATE,
-    OnlyExtendedDict,
-    SourceFrameMeta,
-    metadata_add_frame_meta,
-)
-from savant.gstreamer.utils import load_message_from_gst_buffer, propagate_gst_error
+from savant.gstreamer.metadata import (DEFAULT_FRAMERATE, OnlyExtendedDict,
+                                       SourceFrameMeta,
+                                       metadata_add_frame_meta)
+from savant.gstreamer.utils import (load_message_from_gst_buffer,
+                                    propagate_gst_error)
 from savant.utils.logging import LoggerMixin
 
 DEFAULT_SOURCE_TIMEOUT = 60

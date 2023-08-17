@@ -7,17 +7,14 @@ import statistics
 import sys
 import time
 from dataclasses import dataclass
-from typing import List, Dict, Callable, Tuple, Optional
+from typing import Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 
-from savant.deepstream.opencv_utils import (
-    nvds_to_gpu_mat,
-    alpha_comp,
-    draw_rect,
-    apply_cuda_filter,
-)
-from savant.deepstream.utils import nvds_frame_meta_iterator, get_nvds_buf_surface
+from savant.deepstream.opencv_utils import (alpha_comp, apply_cuda_filter,
+                                            draw_rect, nvds_to_gpu_mat)
+from savant.deepstream.utils import (get_nvds_buf_surface,
+                                     nvds_frame_meta_iterator)
 
 sys.path.append('../../')
 
@@ -25,8 +22,8 @@ import cv2
 import gi
 
 gi.require_version('Gst', '1.0')
-from gi.repository import GLib, Gst
 import pyds
+from gi.repository import GLib, Gst
 
 scale = 10**6  # milliseconds
 RECT_COLOR = (127, 127, 127, 255)  # gray

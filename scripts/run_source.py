@@ -4,15 +4,9 @@ import os
 from typing import List, Optional
 
 import click
-
-from common import (
-    adapter_docker_image_option,
-    build_common_envs,
-    build_docker_run_command,
-    fps_meter_options,
-    run_command,
-    source_id_option,
-)
+from common import (adapter_docker_image_option, build_common_envs,
+                    build_docker_run_command, fps_meter_options, run_command,
+                    source_id_option)
 
 
 @click.group()

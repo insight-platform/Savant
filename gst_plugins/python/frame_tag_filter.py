@@ -3,21 +3,16 @@ from itertools import count
 from typing import List, Optional
 
 import pyds
-from pygstsavantframemeta import (
-    gst_buffer_add_savant_frame_meta,
-    nvds_frame_meta_get_nvds_savant_frame_meta,
-)
+from pygstsavantframemeta import (gst_buffer_add_savant_frame_meta,
+                                  nvds_frame_meta_get_nvds_savant_frame_meta)
 
 from gst_plugins.python.frame_tag_filter_common import build_stream_part_event
 from savant.deepstream.utils import nvds_frame_meta_iterator
 from savant.gstreamer import GObject, Gst
 from savant.gstreamer.metadata import get_source_frame_meta
-from savant.gstreamer.utils import (
-    RequiredPropertyError,
-    on_pad_event,
-    propagate_gst_setting_error,
-    required_property,
-)
+from savant.gstreamer.utils import (RequiredPropertyError, on_pad_event,
+                                    propagate_gst_setting_error,
+                                    required_property)
 from savant.utils.logging import LoggerMixin
 
 SINK_PAD_TEMPLATE = Gst.PadTemplate.new(

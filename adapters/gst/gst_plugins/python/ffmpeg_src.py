@@ -2,15 +2,13 @@
 import inspect
 from typing import Dict, NamedTuple, Optional
 
-from ffmpeg_input import FFMpegSource, FFmpegLogLevel, VideoFrameEnvelope
+from ffmpeg_input import FFmpegLogLevel, FFMpegSource, VideoFrameEnvelope
 
 from savant.gstreamer import GObject, Gst, GstBase
 from savant.gstreamer.codecs import Codec
-from savant.gstreamer.utils import (
-    propagate_gst_error,
-    propagate_gst_setting_error,
-    required_property,
-)
+from savant.gstreamer.utils import (propagate_gst_error,
+                                    propagate_gst_setting_error,
+                                    required_property)
 from savant.utils.logging import LoggerMixin
 
 DEFAULT_QUEUE_LEN = 100

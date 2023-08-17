@@ -1,11 +1,13 @@
 """Analytics module."""
 from collections import defaultdict
+
 import numpy as np
-from savant.gstreamer import Gst
+
+from samples.peoplenet_detector.person_face_matching import match_person_faces
+from samples.peoplenet_detector.smoothed_counter import SmoothedCounter
 from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.deepstream.pyfunc import NvDsPyFuncPlugin
-from samples.peoplenet_detector.smoothed_counter import SmoothedCounter
-from samples.peoplenet_detector.person_face_matching import match_person_faces
+from savant.gstreamer import Gst
 
 
 class Analytics(NvDsPyFuncPlugin):

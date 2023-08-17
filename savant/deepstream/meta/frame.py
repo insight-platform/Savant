@@ -1,20 +1,18 @@
 """Wrapper of deepstream frame meta information."""
-from typing import Iterator, Optional, Dict
 from contextlib import AbstractContextManager
-import pyds
-from savant_rs.primitives.geometry import BBox
-from savant.gstreamer.metadata import (
-    get_source_frame_meta,
-    SourceFrameMeta,
-    OnlyExtendedDict,
-)
-from savant.meta.errors import MetaValueError
-from savant.deepstream.meta.object import _NvDsObjectMetaImpl
+from typing import Dict, Iterator, Optional
 
-from savant.meta.object import ObjectMeta
-from savant.utils.source_info import SourceInfoRegistry
-from savant.utils.logging import LoggerMixin
+import pyds
 from pygstsavantframemeta import nvds_frame_meta_get_nvds_savant_frame_meta
+from savant_rs.primitives.geometry import BBox
+
+from savant.deepstream.meta.object import _NvDsObjectMetaImpl
+from savant.gstreamer.metadata import (OnlyExtendedDict, SourceFrameMeta,
+                                       get_source_frame_meta)
+from savant.meta.errors import MetaValueError
+from savant.meta.object import ObjectMeta
+from savant.utils.logging import LoggerMixin
+from savant.utils.source_info import SourceInfoRegistry
 
 
 def nvds_obj_meta_generator(

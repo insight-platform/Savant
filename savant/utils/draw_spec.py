@@ -1,15 +1,9 @@
-from typing import Optional, Tuple
 import copy
-from savant_rs.draw_spec import (
-    BoundingBoxDraw,
-    ColorDraw,
-    LabelDraw,
-    DotDraw,
-    PaddingDraw,
-    ObjectDraw,
-    LabelPosition,
-    LabelPositionKind,
-)
+from typing import Optional, Tuple
+
+from savant_rs.draw_spec import (BoundingBoxDraw, ColorDraw, DotDraw,
+                                 LabelDraw, LabelPosition, LabelPositionKind,
+                                 ObjectDraw, PaddingDraw)
 
 
 def convert_hex_to_rgba(hex_color: str) -> Tuple[int, int, int, int]:

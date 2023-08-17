@@ -1,13 +1,8 @@
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-from savant_rs.primitives import (
-    Attribute,
-    AttributeValue,
-    IdCollisionResolutionPolicy,
-    VideoFrame,
-    VideoFrameContent,
-    VideoObject,
-)
+from savant_rs.primitives import (Attribute, AttributeValue,
+                                  IdCollisionResolutionPolicy, VideoFrame,
+                                  VideoFrameContent, VideoObject)
 from savant_rs.primitives.geometry import BBox, RBBox
 
 from savant.api.constants import DEFAULT_NAMESPACE, DEFAULT_TIME_BASE

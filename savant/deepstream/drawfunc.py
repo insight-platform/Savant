@@ -1,22 +1,19 @@
 """Default implementation PyFunc for drawing on frame."""
 from typing import Any, Dict, Optional
+
 import cv2
-from savant_rs.draw_spec import (
-    ObjectDraw,
-    LabelDraw,
-    BoundingBoxDraw,
-    DotDraw,
-    LabelPositionKind,
-)
+from savant_rs.draw_spec import (BoundingBoxDraw, DotDraw, LabelDraw,
+                                 LabelPositionKind, ObjectDraw)
 from savant_rs.primitives.geometry import RBBox
-from savant.meta.object import ObjectMeta
+
 from savant.deepstream.base_drawfunc import BaseNvDsDrawFunc
 from savant.deepstream.meta.frame import NvDsFrameMeta
-from savant.meta.constants import UNTRACKED_OBJECT_ID
-from savant.utils.artist import Position, Artist
-from savant.utils.draw_spec import get_obj_draw_spec, get_default_draw_spec
-from savant.gstreamer import Gst  # noqa: F401
 from savant.deepstream.opencv_utils import nvds_to_gpu_mat
+from savant.gstreamer import Gst  # noqa: F401
+from savant.meta.constants import UNTRACKED_OBJECT_ID
+from savant.meta.object import ObjectMeta
+from savant.utils.artist import Artist, Position
+from savant.utils.draw_spec import get_default_draw_spec, get_obj_draw_spec
 
 
 class NvDsDrawFunc(BaseNvDsDrawFunc):

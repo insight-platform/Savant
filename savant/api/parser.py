@@ -1,12 +1,7 @@
 from typing import Tuple, Union
 
-from savant_rs.primitives import (
-    Attribute,
-    AttributeValue,
-    AttributeValueType,
-    VideoFrame,
-    VideoObject,
-)
+from savant_rs.primitives import (Attribute, AttributeValue,
+                                  AttributeValueType, VideoFrame, VideoObject)
 from savant_rs.primitives.geometry import BBox, RBBox
 from savant_rs.video_object_query import MatchQuery
 

@@ -1,5 +1,6 @@
 """Model input metadata preprocessing: cropping variations."""
 from savant_rs.primitives.geometry import BBox
+
 from savant.base.input_preproc import BasePreprocessObjectMeta
 from savant.meta.object import ObjectMeta
 

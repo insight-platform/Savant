@@ -1,9 +1,11 @@
 """DeepStream object attribute utils."""
 from typing import Any, Dict, Iterable, List, Optional, Tuple
-import pyds
-from savant.meta.attribute import AttributeMeta
-from .object import nvds_get_obj_uid
 
+import pyds
+
+from savant.meta.attribute import AttributeMeta
+
+from .object import nvds_get_obj_uid
 
 # attribute storage, workaround
 NVDS_OBJ_ATTR_STORAGE: Dict[int, Dict[Tuple[str, str], List[AttributeMeta]]] = {}

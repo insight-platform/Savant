@@ -4,24 +4,14 @@ from typing import Optional
 
 import zmq
 
+from gst_plugins.python.zeromq_properties import (ZEROMQ_PROPERTIES,
+                                                  socket_type_property)
 from savant.gstreamer import GObject, Gst, GstBase
-from savant.gstreamer.utils import (
-    gst_buffer_from_list,
-    propagate_gst_error,
-    propagate_gst_setting_error,
-)
+from savant.gstreamer.utils import (gst_buffer_from_list, propagate_gst_error,
+                                    propagate_gst_setting_error)
 from savant.utils.logging import LoggerMixin
-from savant.utils.zeromq import (
-    Defaults,
-    ReceiverSocketTypes,
-    ZeroMQSource,
-    ZMQException,
-    build_topic_prefix,
-)
-from gst_plugins.python.zeromq_properties import (
-    socket_type_property,
-    ZEROMQ_PROPERTIES,
-)
+from savant.utils.zeromq import (Defaults, ReceiverSocketTypes, ZeroMQSource,
+                                 ZMQException, build_topic_prefix)
 
 ZEROMQ_SRC_PROPERTIES = {
     **ZEROMQ_PROPERTIES,

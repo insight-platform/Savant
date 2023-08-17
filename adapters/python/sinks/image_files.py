@@ -8,12 +8,10 @@ from typing import Dict, List
 from savant_rs.primitives import EndOfStream, VideoFrame
 from savant_rs.utils.serialization import Message, load_message_from_bytes
 
-from adapters.python.sinks.chunk_writer import ChunkWriter, CompositeChunkWriter
-from adapters.python.sinks.metadata_json import (
-    MetadataJsonWriter,
-    Patterns,
-    frame_has_objects,
-)
+from adapters.python.sinks.chunk_writer import (ChunkWriter,
+                                                CompositeChunkWriter)
+from adapters.python.sinks.metadata_json import (MetadataJsonWriter, Patterns,
+                                                 frame_has_objects)
 from savant.api.enums import ExternalFrameType
 from savant.utils.logging import get_logger
 from savant.utils.zeromq import ZeroMQSource, build_topic_prefix

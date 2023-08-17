@@ -15,12 +15,8 @@ from savant.config.schema import PipelineElement
 from savant.gstreamer.codecs import CodecInfo
 from savant.gstreamer.metadata import SourceFrameMeta
 from savant.utils.registry import Registry
-from savant.utils.zeromq import (
-    Defaults,
-    SenderSocketTypes,
-    parse_zmq_socket_uri,
-    receive_response,
-)
+from savant.utils.zeromq import (Defaults, SenderSocketTypes,
+                                 parse_zmq_socket_uri, receive_response)
 
 logger = logging.getLogger(__name__)
 

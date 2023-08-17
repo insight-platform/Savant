@@ -1,20 +1,13 @@
 #!/usr/bin/env python3
 """Run sink adapter."""
 import os
-from typing import Optional
 import uuid
+from typing import Optional
 
 import click
-
-from common import (
-    adapter_docker_image_option,
-    build_common_envs,
-    build_docker_run_command,
-    fps_meter_options,
-    run_command,
-    source_id_option,
-    validate_source_id,
-)
+from common import (adapter_docker_image_option, build_common_envs,
+                    build_docker_run_command, fps_meter_options, run_command,
+                    source_id_option, validate_source_id)
 
 
 @click.group()

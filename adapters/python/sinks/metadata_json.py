@@ -6,13 +6,8 @@ import traceback
 from distutils.util import strtobool
 from typing import Any, Dict, Optional
 
-from savant_rs.primitives import (
-    Attribute,
-    AttributeValue,
-    AttributeValueType,
-    EndOfStream,
-    VideoFrame,
-)
+from savant_rs.primitives import (Attribute, AttributeValue,
+                                  AttributeValueType, EndOfStream, VideoFrame)
 from savant_rs.utils.serialization import Message, load_message_from_bytes
 from savant_rs.video_object_query import MatchQuery
 
