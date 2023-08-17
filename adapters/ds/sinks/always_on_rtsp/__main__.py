@@ -8,7 +8,7 @@ from pathlib import Path
 from subprocess import Popen
 from threading import Thread
 from typing import Callable, List, Optional
-
+import logging
 import pyds
 from pygstsavantframemeta import gst_buffer_get_savant_frame_meta
 
@@ -22,10 +22,10 @@ from savant.gstreamer.metadata import metadata_pop_frame_meta
 from savant.gstreamer.runner import GstPipelineRunner
 from savant.utils.platform import is_aarch64
 from savant.utils.zeromq import ReceiverSocketTypes
-from savant.utils.logging import get_logger
+from savant.utils.logging import init_logging
 
 LOGGER_NAME = 'ao_sink'
-logger = get_logger(LOGGER_NAME)
+logger = logging.getLogger(LOGGER_NAME)
 
 
 def opt_config(name, default=None, convert=None):
@@ -340,7 +340,7 @@ class PipelineThread:
 
         self.is_running = False
         self.thread: Optional[Thread] = None
-        self.logger = get_logger(f'{LOGGER_NAME}.{self.__class__.__name__}')
+        self.logger = logging.getLogger(f'{LOGGER_NAME}.{self.__class__.__name__}')
 
     def start(self):
         self.is_running = True
@@ -364,6 +364,7 @@ class PipelineThread:
 
 
 def main():
+    init_logging()
     config = Config()
 
     if config.dev_mode:

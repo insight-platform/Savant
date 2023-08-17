@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from importlib import util as importlib_util, import_module, reload
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple, Callable
+from typing import Any, Dict, Optional, Callable
 from types import ModuleType
 import logging
 from savant.gstreamer import Gst  # noqa: F401
@@ -163,7 +163,7 @@ class PyFuncDynamicReloadable(PyFunc):
             )
             self._callable = callable_factory(self._instance)
         else:
-            logger.info('Pyfunc %s Unchanged %s', id(self), py_target)
+            logger.debug('Pyfunc %s Unchanged %s', id(self), py_target)
 
 
 def reload_module(module: ModuleType) -> ModuleType:
