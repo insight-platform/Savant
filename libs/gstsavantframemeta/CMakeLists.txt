@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 
-project(pygstsavantframemeta VERSION "0.0.1" LANGUAGES CXX CUDA)
+project(pygstsavantframemeta VERSION "0.0.2" LANGUAGES CXX CUDA)
 set(python_module_name pygstsavantframemeta)
 
 set(CMAKE_CXX_STANDARD 14)

@@ -16,6 +16,10 @@ from savant.base.input_preproc import ObjectsPreprocessing
 
 from pygstsavantframemeta import (
     add_convert_savant_frame_meta_pad_probe,
+    add_move_and_pack_frames_pad_probe,
+    add_move_and_unpack_batch_pad_probe,
+    add_move_batch_as_is_pad_probe,
+    add_move_frame_as_is_pad_probe,
     gst_buffer_get_savant_batch_meta,
     nvds_frame_meta_get_nvds_savant_frame_meta,
 )
@@ -24,12 +28,6 @@ from savant.deepstream.buffer_processor import (
     NvDsBufferProcessor,
     create_buffer_processor,
 )
-from savant.deepstream.ds_probes import (
-    add_move_and_pack_frames_pad_probe,
-    add_move_batch_as_is_pad_probe,
-    add_pipeline_move_and_unpack_batch,
-)
-from savant.deepstream.gst_probes import add_move_frame_as_is_pad_probe
 from savant.deepstream.source_output import (
     SourceOutputWithFrame,
     create_source_output,
@@ -923,7 +921,7 @@ class NvDsPipeline(GstPipeline):
             'update-frame-meta',
         )
         sink_peer_pad.add_probe(Gst.PadProbeType.BUFFER, self.update_frame_meta)
-        add_pipeline_move_and_unpack_batch(
+        add_move_and_unpack_batch_pad_probe(
             sink_peer_pad,
             self._video_pipeline,
             'demuxer',

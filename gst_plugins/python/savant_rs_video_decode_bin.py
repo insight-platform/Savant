@@ -6,9 +6,9 @@ from typing import Dict, Optional
 
 from dataclasses import dataclass
 
+from pygstsavantframemeta import add_move_frame_as_is_pad_probe
 from savant_rs.pipeline import VideoPipeline
 
-from savant.deepstream.gst_probes import add_move_frame_as_is_pad_probe
 from savant.gstreamer import GLib, GObject, Gst  # noqa:F401
 from savant.gstreamer.codecs import Codec, CODEC_BY_CAPS_NAME
 from savant.gstreamer.utils import on_pad_event, pad_to_source_id

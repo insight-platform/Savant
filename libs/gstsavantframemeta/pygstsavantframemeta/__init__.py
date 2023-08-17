@@ -2,6 +2,7 @@ from typing import Optional
 
 import gi
 import pyds
+from savant_rs.pipeline import VideoPipeline
 
 from . import pygstsavantframemeta
 
@@ -100,3 +101,51 @@ def add_convert_savant_frame_meta_pad_probe(pad: Gst.Pad, to_nvds: bool):
     :param to_nvds: Whether convert metadata from GstMeta to NvDsMeta or vice versa.
     """
     pygstsavantframemeta.add_convert_savant_frame_meta_pad_probe(hash(pad), to_nvds)
+
+
+def add_move_frame_as_is_pad_probe(
+    pad: Gst.Pad,
+    video_pipeline: VideoPipeline,
+    stage: str,
+):
+    pygstsavantframemeta.add_move_frame_as_is_pad_probe(
+        hash(pad),
+        video_pipeline.memory_handle,
+        stage,
+    )
+
+
+def add_move_and_pack_frames_pad_probe(
+    pad: Gst.Pad,
+    video_pipeline: VideoPipeline,
+    stage: str,
+):
+    pygstsavantframemeta.add_move_and_pack_frames_pad_probe(
+        hash(pad),
+        video_pipeline.memory_handle,
+        stage,
+    )
+
+
+def add_move_batch_as_is_pad_probe(
+    pad: Gst.Pad,
+    video_pipeline: VideoPipeline,
+    stage: str,
+):
+    pygstsavantframemeta.add_move_batch_as_is_pad_probe(
+        hash(pad),
+        video_pipeline.memory_handle,
+        stage,
+    )
+
+
+def add_move_and_unpack_batch_pad_probe(
+    pad: Gst.Pad,
+    video_pipeline: VideoPipeline,
+    stage: str,
+):
+    pygstsavantframemeta.add_move_and_unpack_batch_pad_probe(
+        hash(pad),
+        video_pipeline.memory_handle,
+        stage,
+    )

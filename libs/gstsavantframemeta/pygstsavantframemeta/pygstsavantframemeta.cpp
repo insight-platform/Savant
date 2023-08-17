@@ -84,51 +84,59 @@ PYBIND11_MODULE(pygstsavantframemeta, m) {
                           convert_savant_frame_meta_pad_probe, conv_func, NULL);
     });
 
-    m.def("move_frame_as_is_pad_probe", [](size_t gst_pad,
-                                           size_t probe_info,
-                                           uintptr_t video_pipeline,
-                                           const char *stage) {
-        auto *pad = reinterpret_cast<GstPad *>(gst_pad);
-        auto *info = reinterpret_cast<GstPadProbeInfo *>(probe_info);
-        SavantRsPadProbeData *data = create_savant_rs_pad_probe_data(
-            video_pipeline, stage);
-        move_frame_as_is_pad_probe(pad, info, (gpointer)data);
-        release_savant_rs_pad_probe_data(data);
-    });
-
-    m.def("move_and_pack_frames_pad_probe", [](size_t gst_pad,
-                                               size_t probe_info,
+    m.def("add_move_frame_as_is_pad_probe", [](size_t gst_pad,
                                                uintptr_t video_pipeline,
                                                const char *stage) {
         auto *pad = reinterpret_cast<GstPad *>(gst_pad);
-        auto *info = reinterpret_cast<GstPadProbeInfo *>(probe_info);
         SavantRsPadProbeData *data = create_savant_rs_pad_probe_data(
             video_pipeline, stage);
-        move_and_pack_frames_pad_probe(pad, info, (gpointer)data);
-        release_savant_rs_pad_probe_data(data);
+        gst_pad_add_probe(
+            pad,
+            GST_PAD_PROBE_TYPE_BUFFER,
+            move_frame_as_is_pad_probe,
+            (gpointer)data,
+            (GDestroyNotify)release_savant_rs_pad_probe_data);
     });
 
-    m.def("move_batch_as_is_pad_probe", [](size_t gst_pad,
-                                           size_t probe_info,
-                                           uintptr_t video_pipeline,
-                                           const char *stage) {
+    m.def("add_move_and_pack_frames_pad_probe", [](size_t gst_pad,
+                                                   uintptr_t video_pipeline,
+                                                   const char *stage) {
         auto *pad = reinterpret_cast<GstPad *>(gst_pad);
-        auto *info = reinterpret_cast<GstPadProbeInfo *>(probe_info);
         SavantRsPadProbeData *data = create_savant_rs_pad_probe_data(
             video_pipeline, stage);
-        move_batch_as_is_pad_probe(pad, info, (gpointer)data);
-        release_savant_rs_pad_probe_data(data);
+        gst_pad_add_probe(
+            pad,
+            GST_PAD_PROBE_TYPE_BUFFER,
+            move_and_pack_frames_pad_probe,
+            (gpointer)data,
+            (GDestroyNotify)release_savant_rs_pad_probe_data);
     });
 
-    m.def("move_and_unpack_batch_pad_probe", [](size_t gst_pad,
-                                                size_t probe_info,
-                                                uintptr_t video_pipeline,
-                                                const char *stage) {
+    m.def("add_move_batch_as_is_pad_probe", [](size_t gst_pad,
+                                               uintptr_t video_pipeline,
+                                               const char *stage) {
         auto *pad = reinterpret_cast<GstPad *>(gst_pad);
-        auto *info = reinterpret_cast<GstPadProbeInfo *>(probe_info);
         SavantRsPadProbeData *data = create_savant_rs_pad_probe_data(
             video_pipeline, stage);
-        move_and_unpack_batch_pad_probe(pad, info, (gpointer)data);
-        release_savant_rs_pad_probe_data(data);
+        gst_pad_add_probe(
+            pad,
+            GST_PAD_PROBE_TYPE_BUFFER,
+            move_batch_as_is_pad_probe,
+            (gpointer)data,
+            (GDestroyNotify)release_savant_rs_pad_probe_data);
+    });
+
+    m.def("add_move_and_unpack_batch_pad_probe", [](size_t gst_pad,
+                                                    uintptr_t video_pipeline,
+                                                    const char *stage) {
+        auto *pad = reinterpret_cast<GstPad *>(gst_pad);
+        SavantRsPadProbeData *data = create_savant_rs_pad_probe_data(
+            video_pipeline, stage);
+        gst_pad_add_probe(
+            pad,
+            GST_PAD_PROBE_TYPE_BUFFER,
+            move_and_unpack_batch_pad_probe,
+            (gpointer)data,
+            (GDestroyNotify)release_savant_rs_pad_probe_data);
     });
 }

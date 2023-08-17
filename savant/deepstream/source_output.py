@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional
 
 import pyds
+from pygstsavantframemeta import add_move_frame_as_is_pad_probe
 from savant_rs.pipeline import VideoPipeline, VideoPipelineStagePayloadType
 
 from savant.config.schema import (
@@ -11,7 +12,6 @@ from savant.config.schema import (
     PipelineElement,
     FrameParameters,
 )
-from savant.deepstream.gst_probes import add_move_frame_as_is_pad_probe
 from savant.gstreamer import Gst  # noqa:F401
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec, CodecInfo
 from savant.gstreamer.pipeline import GstPipeline
