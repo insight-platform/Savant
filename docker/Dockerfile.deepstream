@@ -9,6 +9,9 @@ RUN mkdir -p /tmp/cmake \
     && wget --progress=bar:force:noscroll https://github.com/Kitware/CMake/releases/download/v$CMAKE_VER/cmake-$CMAKE_VER-linux-x86_64.sh \
     && sh cmake-$CMAKE_VER-linux-x86_64.sh --skip-license --prefix=/usr/local/
 
+# remove nvidia repos (sometimes break down)
+RUN rm -r /etc/apt/sources.list.d/* && apt-get clean
+
 # need python headers
 RUN apt-get update \
     && apt-get install --no-install-recommends -y \
@@ -67,6 +70,9 @@ ARG DEEPSTREAM_VERSION
 
 # python to python3 by default
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 10
+
+# remove nvidia repos (sometimes break down)
+RUN rm -r /etc/apt/sources.list.d/* && apt-get clean
 
 # install base packages
 RUN apt-get update \
