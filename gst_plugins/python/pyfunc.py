@@ -75,6 +75,7 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
 
     def __init__(self):
         super().__init__()
+        self.dev_mode = True
         # properties
         self.module: Optional[str] = None
         self.class_name: Optional[str] = None
@@ -117,16 +118,22 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
 
     def do_start(self):
         """Do on plugin start."""
-        self.pyfunc = pyfunc_factory(
-            module=self.module,
-            class_name=self.class_name,
-            dynamic_reload=self.dynamic_reload,
-            kwargs=json.loads(self.kwargs) if self.kwargs else None,
-        )
+        try:
+            self.pyfunc = pyfunc_factory(
+                module=self.module,
+                class_name=self.class_name,
+                dynamic_reload=self.dynamic_reload,
+                kwargs=json.loads(self.kwargs) if self.kwargs else None,
+            )
+        except Exception as e:
+            self.logger.exception('Got exception while instantiating pyfunc')
+            return True
+
         assert isinstance(
             self.pyfunc.instance, BasePyFuncPlugin
         ), f'"{self.pyfunc}" should be an instance of "BasePyFuncPlugin" subclass.'
         self.pyfunc.instance.gst_element = self
+
         return self.pyfunc.instance.on_start()
 
     def do_stop(self):

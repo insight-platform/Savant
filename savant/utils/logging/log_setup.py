@@ -18,17 +18,20 @@ def get_log_conf(log_level: str) -> dict:
                 'format': '%(asctime)s [%(levelname)s] [%(name)s] [%(threadName)s] '
                 '%(message)s',
             },
+            'pretty_traceback': {
+                'class': 'pretty_traceback.LoggingFormatter'
+            }
         },
         'handlers': {
             'console': {
                 'class': 'logging.StreamHandler',
                 'level': log_level,
-                'formatter': 'detailed',
+                'formatter': 'pretty_traceback',
                 'stream': 'ext://sys.stdout',
             },
             'savantrs': {
                 'class': 'savant.utils.logging.savant_rs_handler.SavantRsLoggingHandler',
-                'formatter': 'basic',
+                # 'formatter': 'pretty_traceback',
             },
         },
         'loggers': {

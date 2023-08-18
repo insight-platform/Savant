@@ -205,8 +205,8 @@ def pyfunc_module_factory(pyfunc: PyFunc) -> ModuleType:
         module_name = module_path.stem
         spec = importlib_util.spec_from_file_location(module_name, module_path)
         module_instance = importlib_util.module_from_spec(spec)
-        sys.modules[module_name] = module_instance
         spec.loader.exec_module(module_instance)
+        sys.modules[module_name] = module_instance
     else:
         module_instance = import_module(pyfunc.module)
 
