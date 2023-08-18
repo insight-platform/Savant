@@ -83,7 +83,7 @@ samples/age_gender_recognition/module_performance.yml
 or for Jetson
 
 ```bash
-docker run --rm -it --gpus=all \
+docker run --rm -it --runtime=nvidia \
 -v `pwd`/samples:/opt/savant/samples \
 -v `pwd`/data:/data:ro \
 -v `pwd`/downloads/age_gender_recognition:/downloads \

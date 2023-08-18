@@ -8,7 +8,7 @@ from urllib.request import urlretrieve
 
 from savant.api.constants import DEFAULT_FRAMERATE
 from savant.gstreamer import GLib, GObject, Gst
-from savant.gstreamer.codecs import Codec, CODEC_BY_CAPS_NAME
+from savant.gstreamer.codecs import CODEC_BY_CAPS_NAME, Codec
 from savant.gstreamer.utils import on_pad_event
 from savant.utils.file_types import FileType, parse_mime_types
 from savant.utils.logging import LoggerMixin

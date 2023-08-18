@@ -1,21 +1,23 @@
 """Module configuration."""
+import logging
 import re
 from pathlib import Path
-from typing import Callable, Optional, Union, Tuple, Dict, Type, Iterable, Any
-import logging
-from omegaconf import OmegaConf, DictConfig
+from typing import Any, Callable, Dict, Iterable, Optional, Tuple, Type, Union
+
+from omegaconf import DictConfig, OmegaConf
+
 from savant.config.schema import (
     BufferQueuesParameters,
+    DrawFunc,
+    ElementGroup,
+    FrameParameters,
+    ModelElement,
     Module,
     Pipeline,
-    ElementGroup,
     PipelineElement,
     PyFuncElement,
-    ModelElement,
     TelemetryParameters,
     get_element_name,
-    DrawFunc,
-    FrameParameters,
 )
 from savant.deepstream.nvinfer.element_config import nvinfer_configure_element
 from savant.parameter_storage import init_param_storage

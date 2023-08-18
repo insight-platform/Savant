@@ -18,13 +18,8 @@ services:
     ports:
       - "3331:3331"
       - "3332:3332"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+    runtime: nvidia
+
   graphite:
     image: graphiteapp/graphite-statsd
     volumes:

@@ -8,7 +8,8 @@ https://docs.nvidia.com/metropolis/deepstream/dev-guide/sdk-api/group__gstreamer
   defines GstNvCustomEventType and create/parse functions
 """
 import ctypes
-from savant.gstreamer import Gst, GObject  # noqa:F401
+
+from savant.gstreamer import GObject, Gst  # noqa:F401
 
 
 def _make_nvevent_type(event_type: int):

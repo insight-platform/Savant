@@ -11,11 +11,11 @@ from savant_rs.pipeline import VideoPipeline
 from savant_rs.primitives import EndOfStream, VideoFrame
 from savant_rs.utils import PropagatedContext
 
+from savant.api.constants import DEFAULT_FRAMERATE
 from savant.api.enums import ExternalFrameType
 from savant.api.parser import convert_ts
 from savant.gstreamer import GObject, Gst
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
-from savant.api.constants import DEFAULT_FRAMERATE
 from savant.gstreamer.utils import load_message_from_gst_buffer, propagate_gst_error
 from savant.utils.logging import LoggerMixin
 

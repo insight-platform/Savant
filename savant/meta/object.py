@@ -1,15 +1,15 @@
 """Object meta."""
 from abc import ABC, abstractmethod
-from typing import Optional, Any, List, Union
+from typing import Any, List, Optional, Union
 
 from savant_rs.primitives.geometry import BBox, RBBox
 
 from savant.meta.attribute import AttributeMeta
 from savant.meta.constants import (
-    UNTRACKED_OBJECT_ID,
     DEFAULT_CONFIDENCE,
-    PRIMARY_OBJECT_LABEL,
     DEFAULT_MODEL_NAME,
+    PRIMARY_OBJECT_LABEL,
+    UNTRACKED_OBJECT_ID,
 )
 
 

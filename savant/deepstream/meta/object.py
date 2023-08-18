@@ -1,38 +1,36 @@
 """Deepstream-specific ObjectMeta interface implementation."""
-from typing import Any, List, Optional, Union
 import logging
+from typing import Any, List, Optional, Union
+
 import pyds
+from savant_rs.primitives.geometry import BBox, RBBox
 from savant_rs.utils.symbol_mapper import (
-    parse_compound_key,
-    get_object_id,
     build_model_object_key,
     get_model_name,
+    get_object_id,
+    parse_compound_key,
 )
-from savant_rs.primitives.geometry import BBox, RBBox
 
-from savant.deepstream.utils.object import nvds_is_empty_object_meta
-from savant.meta.errors import MetaValueError
 from savant.deepstream.meta.constants import MAX_LABEL_SIZE
 from savant.deepstream.utils import (
+    nvds_add_attr_meta_to_obj,
     nvds_get_obj_attr_meta,
     nvds_get_obj_attr_meta_list,
-    nvds_add_attr_meta_to_obj,
-    nvds_set_obj_uid,
-    nvds_get_obj_uid,
-    nvds_set_obj_draw_label,
-    nvds_get_obj_draw_label,
-    nvds_init_obj_draw_label,
     nvds_get_obj_bbox,
+    nvds_get_obj_draw_label,
+    nvds_get_obj_uid,
+    nvds_init_obj_draw_label,
     nvds_set_obj_bbox,
+    nvds_set_obj_draw_label,
+    nvds_set_obj_uid,
     nvds_upd_obj_bbox,
 )
-from savant.utils.logging import LoggerMixin
+from savant.deepstream.utils.object import nvds_is_empty_object_meta
 from savant.meta.attribute import AttributeMeta
-from savant.meta.constants import (
-    UNTRACKED_OBJECT_ID,
-    DEFAULT_CONFIDENCE,
-)
-from savant.meta.object import ObjectMeta, BaseObjectMetaImpl
+from savant.meta.constants import DEFAULT_CONFIDENCE, UNTRACKED_OBJECT_ID
+from savant.meta.errors import MetaValueError
+from savant.meta.object import BaseObjectMetaImpl, ObjectMeta
+from savant.utils.logging import LoggerMixin
 
 
 class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):

@@ -1,12 +1,11 @@
 """Background remover module."""
-from savant.gstreamer import Gst
-from savant.deepstream.meta.frame import NvDsFrameMeta
-from savant.deepstream.pyfunc import NvDsPyFuncPlugin
-from savant.utils.artist import Artist
-from savant.deepstream.opencv_utils import (
-    nvds_to_gpu_mat,
-)
 import cv2
+
+from savant.deepstream.meta.frame import NvDsFrameMeta
+from savant.deepstream.opencv_utils import nvds_to_gpu_mat
+from savant.deepstream.pyfunc import NvDsPyFuncPlugin
+from savant.gstreamer import Gst
+from savant.utils.artist import Artist
 
 
 class BgRemover(NvDsPyFuncPlugin):

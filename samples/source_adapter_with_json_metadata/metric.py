@@ -1,7 +1,7 @@
 """Analytics module."""
-from savant.gstreamer import Gst
 from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.deepstream.pyfunc import NvDsPyFuncPlugin
+from savant.gstreamer import Gst
 
 
 class IOU(NvDsPyFuncPlugin):

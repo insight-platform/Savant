@@ -1,10 +1,12 @@
-from itertools import chain
 from collections import defaultdict
+from itertools import chain
+
 import cv2
-from savant.deepstream.drawfunc import NvDsDrawFunc
-from savant.deepstream.meta.frame import NvDsFrameMeta, BBox
-from savant.utils.artist import Position, Artist
+
 from samples.traffic_meter.utils import Direction, RandColorIterator
+from savant.deepstream.drawfunc import NvDsDrawFunc
+from savant.deepstream.meta.frame import BBox, NvDsFrameMeta
+from savant.utils.artist import Artist, Position
 
 
 class Overlay(NvDsDrawFunc):

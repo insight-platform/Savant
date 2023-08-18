@@ -1,8 +1,10 @@
 """Module and pipeline elements configuration templates."""
+import json
 from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List, Optional, Union
-import json
+
 from omegaconf import MISSING, DictConfig, OmegaConf
+
 from savant.base.pyfunc import PyFunc
 
 

@@ -1,7 +1,8 @@
 """Sink factories."""
+import logging
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, NamedTuple, Optional, Union
-import logging
+
 import zmq
 from savant_rs.primitives import EndOfStream, VideoFrame, VideoFrameContent
 from savant_rs.utils import PropagatedContext

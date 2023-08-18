@@ -1,16 +1,16 @@
 """Classes for adding output elements to a DeepStream pipeline."""
 import logging
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
 import pyds
 from pygstsavantframemeta import add_move_frame_as_is_pad_probe
 from savant_rs.pipeline import VideoPipeline, VideoPipelineStagePayloadType
 
 from savant.config.schema import (
+    FrameParameters,
     FrameProcessingCondition,
     PipelineElement,
-    FrameParameters,
 )
 from savant.gstreamer import Gst  # noqa:F401
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec, CodecInfo

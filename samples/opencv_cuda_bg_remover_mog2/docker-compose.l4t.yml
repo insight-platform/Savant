@@ -26,13 +26,7 @@ services:
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
       - FPS_PERIOD=1000
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+    runtime: nvidia
 
   always-on-sink:
     image: ghcr.io/insight-platform/savant-adapters-deepstream-l4t:latest
@@ -51,13 +45,7 @@ services:
       - STUB_FILE_LOCATION=/stub_img/smpte100_2560x720.jpeg
       - DEV_MODE=True
     command: python -m adapters.ds.sinks.always_on_rtsp
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+    runtime: nvidia
 
 volumes:
   zmq_sockets:

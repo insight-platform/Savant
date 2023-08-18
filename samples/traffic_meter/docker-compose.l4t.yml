@@ -31,13 +31,7 @@ services:
       - FPS_PERIOD=1000
       - DETECTOR=${DETECTOR}
       - MODULE_NAME=traffic_meter-${DETECTOR}
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+    runtime: nvidia
 
   always-on-sink:
     image: ghcr.io/insight-platform/savant-adapters-deepstream-l4t:latest
@@ -56,15 +50,11 @@ services:
       - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x720.jpeg
       - DEV_MODE=True
     command: python -m adapters.ds.sinks.always_on_rtsp
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+    runtime: nvidia
+
   graphite:
     image: graphiteapp/graphite-statsd
+
   grafana:
     image: grafana/grafana-oss
     volumes:

@@ -3,6 +3,7 @@
 >>> python -m savant.entrypoint {config_file_path}
 """
 import sys
+
 from savant.entrypoint.main import main
 
 if __name__ == '__main__':

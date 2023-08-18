@@ -1,8 +1,10 @@
 """DeepStream surface utils."""
 from contextlib import contextmanager
 from typing import ContextManager
-import pyds
+
 import numpy as np
+import pyds
+
 from savant.gstreamer import Gst  # noqa:F401
 
 

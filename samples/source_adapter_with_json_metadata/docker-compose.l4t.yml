@@ -32,13 +32,7 @@ services:
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output.ipc
       - FPS_PERIOD=1000
       - LOGLEVEL=INFO
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+    runtime: nvidia
 
   image-json-sink:
     image: ghcr.io/insight-platform/savant-adapters-py-l4t:latest

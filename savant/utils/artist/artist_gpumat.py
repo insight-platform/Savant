@@ -1,10 +1,12 @@
 """Artist implementation using OpenCV GpuMat."""
-from typing import Tuple, Optional, Union, List
 from contextlib import AbstractContextManager
-import numpy as np
+from typing import List, Optional, Tuple, Union
+
 import cv2
-from savant_rs.primitives.geometry import BBox, RBBox
+import numpy as np
 from savant_rs.draw_spec import PaddingDraw
+from savant_rs.primitives.geometry import BBox, RBBox
+
 from .position import Position, get_bottom_left_point
 
 

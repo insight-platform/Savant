@@ -5,7 +5,7 @@ from typing import Any
 from adapters.ds.sinks.always_on_rtsp.last_frame import LastFrame
 from adapters.ds.sinks.always_on_rtsp.timestamp_overlay import TimestampOverlay
 from savant.deepstream.opencv_utils import nvds_to_gpu_mat
-from savant.gstreamer import Gst, GstBase, GObject
+from savant.gstreamer import GObject, Gst, GstBase
 from savant.gstreamer.utils import propagate_gst_setting_error
 from savant.utils.logging import LoggerMixin
 

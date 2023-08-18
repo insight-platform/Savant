@@ -10,10 +10,4 @@ gi.require_version('GstApp', '1.0')
 gi.require_version('GstVideo', '1.0')
 
 # pylint:disable=wrong-import-position
-from gi.repository import (
-    GObject,
-    GLib,
-    Gst,
-    GstBase,
-    GstApp,
-)
+from gi.repository import GLib, GObject, Gst, GstApp, GstBase

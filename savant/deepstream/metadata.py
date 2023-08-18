@@ -1,6 +1,7 @@
 """Convert deepstream object meta to output format."""
-from typing import Optional, Tuple
 import logging
+from typing import Optional, Tuple
+
 import pyds
 from savant_rs.primitives import Attribute, VideoObject
 from savant_rs.primitives.geometry import BBox

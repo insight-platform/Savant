@@ -1,19 +1,16 @@
 """GStreamer base pipeline."""
-from queue import Queue, Empty as EmptyException
-from typing import Any, List, Generator, Optional, Tuple
 import logging
+from queue import Empty as EmptyException
+from queue import Queue
+from typing import Any, Generator, List, Optional, Tuple
+
 from gi.repository import Gst  # noqa:F401
 
+from savant.config.schema import ElementGroup, ModelElement, Pipeline, PipelineElement
 from savant.gstreamer.buffer_processor import GstBufferProcessor
-from savant.config.schema import (
-    PipelineElement,
-    Pipeline,
-    ModelElement,
-    ElementGroup,
-)
-from savant.utils.sink_factories import SinkMessage
-from savant.utils.fps_meter import FPSMeter
 from savant.gstreamer.element_factory import CreateElementException, GstElementFactory
+from savant.utils.fps_meter import FPSMeter
+from savant.utils.sink_factories import SinkMessage
 
 
 class GstPipeline:  # pylint: disable=too-many-instance-attributes

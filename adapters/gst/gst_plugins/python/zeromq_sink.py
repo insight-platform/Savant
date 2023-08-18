@@ -4,16 +4,13 @@ from typing import List, Union
 
 import zmq
 
-from gst_plugins.python.zeromq_properties import (
-    socket_type_property,
-    ZEROMQ_PROPERTIES,
-)
+from gst_plugins.python.zeromq_properties import ZEROMQ_PROPERTIES, socket_type_property
 from savant.gstreamer import GObject, Gst, GstBase
 from savant.gstreamer.utils import propagate_gst_error, propagate_gst_setting_error
 from savant.utils.logging import LoggerMixin
 from savant.utils.zeromq import (
-    Defaults,
     END_OF_STREAM_MESSAGE,
+    Defaults,
     SenderSocketTypes,
     ZMQException,
     parse_zmq_socket_uri,

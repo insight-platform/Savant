@@ -2,7 +2,9 @@
 TODO: Add `symmetric-padding` support.
 """
 from typing import Tuple
+
 import numpy as np
+
 from savant.base.converter import BaseObjectModelOutputConverter
 from savant.base.model import ObjectModel
 

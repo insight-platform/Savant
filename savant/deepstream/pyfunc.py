@@ -1,8 +1,8 @@
 """Base implementation of user-defined PyFunc class."""
 from typing import Optional
 
-import pyds
 import cv2
+import pyds
 from pygstsavantframemeta import (
     gst_buffer_get_savant_batch_meta,
     nvds_frame_meta_get_nvds_savant_frame_meta,
@@ -10,16 +10,16 @@ from pygstsavantframemeta import (
 from savant_rs.pipeline import VideoPipeline
 
 from savant.base.pyfunc import BasePyFuncPlugin
+from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.deepstream.utils import (
-    nvds_frame_meta_iterator,
     GST_NVEVENT_PAD_ADDED,
     GST_NVEVENT_PAD_DELETED,
     GST_NVEVENT_STREAM_EOS,
     gst_nvevent_parse_pad_added,
     gst_nvevent_parse_pad_deleted,
     gst_nvevent_parse_stream_eos,
+    nvds_frame_meta_iterator,
 )
-from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.gstreamer import Gst  # noqa: F401
 from savant.utils.source_info import SourceInfoRegistry
 

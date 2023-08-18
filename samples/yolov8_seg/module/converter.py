@@ -1,8 +1,9 @@
 """YOLOv8-seg postprocessing (converter)."""
 from typing import Any, List, Tuple
+
+import cv2
 import numba as nb
 import numpy as np
-import cv2
 
 from savant.base.converter import BaseComplexModelOutputConverter
 from savant.deepstream.nvinfer.model import NvInferInstanceSegmentation

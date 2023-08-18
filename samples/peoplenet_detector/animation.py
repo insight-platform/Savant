@@ -1,6 +1,8 @@
 """Animation module."""
 from pathlib import Path
+
 import cv2
+
 from samples.peoplenet_detector.utils import load_sprite
 
 

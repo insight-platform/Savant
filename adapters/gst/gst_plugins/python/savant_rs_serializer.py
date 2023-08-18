@@ -1,12 +1,11 @@
 import json
 from fractions import Fraction
 from pathlib import Path
-from typing import Any, NamedTuple, Optional, Tuple, Union
-from typing import Any, Dict, NamedTuple, Optional, Union
-from splitstream import splitfile
+from typing import Any, Dict, NamedTuple, Optional, Tuple, Union
 
 from savant_rs.primitives import EndOfStream, VideoFrame
 from savant_rs.utils.serialization import Message, save_message_to_bytes
+from splitstream import splitfile
 
 from savant.api.builder import build_video_frame
 from savant.api.constants import DEFAULT_FRAMERATE

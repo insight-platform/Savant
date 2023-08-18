@@ -59,7 +59,7 @@ samples/conditional_video_processing/demo_performance.yml
 or for Jetson
 
 ```bash
-docker run --rm -it --gpus=all \
+docker run --rm -it --runtime=nvidia \
 -v `pwd`/samples:/opt/savant/samples \
 -v `pwd`/data:/data:ro \
 -v `pwd`/models/peoplenet_detector:/models \

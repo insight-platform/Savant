@@ -1,6 +1,7 @@
 """Detector's bbox selectors."""
 import numba as nb
 import numpy as np
+
 from savant.base.selector import BaseSelector
 
 

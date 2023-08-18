@@ -1,6 +1,7 @@
 """Wrapper of deepstream frame meta information."""
-from typing import Iterator, Optional, Dict, Union
 from contextlib import AbstractContextManager
+from typing import Dict, Iterator, Optional, Union
+
 import pyds
 from savant_rs.primitives import Attribute, VideoFrame
 from savant_rs.primitives.geometry import BBox
@@ -8,9 +9,8 @@ from savant_rs.primitives.geometry import BBox
 from savant.api.builder import build_attribute_value
 from savant.api.constants import DEFAULT_NAMESPACE
 from savant.api.parser import parse_attribute_value
-from savant.meta.errors import MetaValueError
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
-
+from savant.meta.errors import MetaValueError
 from savant.meta.object import ObjectMeta
 from savant.utils.logging import LoggerMixin
 
