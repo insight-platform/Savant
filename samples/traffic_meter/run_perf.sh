@@ -10,6 +10,7 @@ else
 fi
 
 docker run --rm -it $DOCKER_RUNTIME \
+  -e BUFFER_QUEUES \
   -e DETECTOR=yolov8m \
   -v `pwd`/samples:/opt/savant/samples \
   -v `pwd`/data:/data:ro \

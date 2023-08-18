@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """Run performance management.
+
+Set BUFFER_QUEUES environment variable to enable queues in buffer. E.g.:
+BUFFER_QUEUES='{"length":10}' ./scripts/run_perf.py
+
 TODO:
     1. Run with specified docker image, savant version
     2. Prepare 1st step: sync data
