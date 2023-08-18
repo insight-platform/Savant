@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 
-project(gstsavantframemeta VERSION "0.0.1" LANGUAGES CXX CUDA)
+project(gstsavantframemeta VERSION "0.0.2" LANGUAGES CXX CUDA)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined" )
@@ -8,13 +8,28 @@ set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,--no-undefined" 
 
 find_package(PkgConfig REQUIRED)
 find_package(CUDA REQUIRED)
+find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+
+# Find savant-rs package
+execute_process(
+        COMMAND ${Python3_EXECUTABLE} -c "import savant_rs; print(savant_rs.__path__[0], end='')"
+        OUTPUT_VARIABLE SAVANT_RS_LIB_DIR
+        RESULT_VARIABLE EXIT_CODE
+)
+if (NOT ${EXIT_CODE} EQUAL 0)
+    message(
+            FATAL_ERROR
+            "The \"savant_rs\" Python3 package is not installed. Please install it using the following command: \"pip3 install savant_rs\"."
+    )
+endif()
+file(GLOB SAVANT_RS_LIB_FILES "${SAVANT_RS_LIB_DIR}/savant_rs.cpython*.so")
+message(STATUS "Found library for savant-rs: ${SAVANT_RS_LIB_FILES}")
+if(NOT DEFINED SAVANT_RS_CAPI_INCLUDE_DIR)
+    set(SAVANT_RS_CAPI_INCLUDE_DIR /opt/savant_capi/include)
+endif()
 
 if(NOT DEFINED DeepStream_DIR)
     set(DeepStream_DIR /opt/nvidia/deepstream/deepstream)
-endif()
-
-if(NOT DEFINED SavantRsCapi_DIR)
-    set(SavantRsCapi_DIR /opt/savant_capi)
 endif()
 
 pkg_check_modules(GLIB REQUIRED glib-2.0)
@@ -25,7 +40,7 @@ include_directories(
         ${GSTREAMER_INCLUDE_DIRS}
         ${CUDA_INCLUDE_DIRS}
         ${DeepStream_DIR}/sources/includes
-        ${SavantRsCapi_DIR}/include
+        ${SAVANT_RS_CAPI_INCLUDE_DIR}
 )
 
 link_directories(
@@ -33,7 +48,7 @@ link_directories(
         ${GSTREAMER_LIBRARY_DIRS}
         ${CUDA_LIBRARY_DIRS}
         ${DeepStream_DIR}/lib
-        ${SavantRsCapi_DIR}/lib
+        ${SAVANT_RS_LIB_DIR}
 )
 
 AUX_SOURCE_DIRECTORY(src SRC_FILES)
@@ -52,6 +67,9 @@ set(SOURCE_FILES
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${SOURCE_FILES})
 
+add_library(savant_rs UNKNOWN IMPORTED)
+set_property(TARGET savant_rs PROPERTY IMPORTED_LOCATION ${SAVANT_RS_LIB_FILES})
+
 add_library(gstsavantframemeta SHARED ${SOURCE_FILES})
 target_link_libraries(
         gstsavantframemeta
@@ -60,7 +78,7 @@ target_link_libraries(
         ${CUDA_LIBRARIES}
         nvds_meta
         nvdsgst_meta
-        savant_capi
+        savant_rs
 )
 
 target_include_directories(gstsavantframemeta PUBLIC include)
