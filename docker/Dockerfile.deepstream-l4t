@@ -34,6 +34,7 @@ RUN python3 -m pip install --upgrade pip setuptools wheel build
 WORKDIR /tmp/build
 COPY pyproject.toml README.md LICENSE ./
 COPY requirements/base.txt requirements/base.txt
+COPY requirements/savant-rs.txt requirements/savant-rs.txt
 COPY savant savant
 RUN python3 -m build --wheel
 
@@ -43,6 +44,8 @@ FROM base_builder AS pygstsavantframemeta_build
 WORKDIR /libs/gstsavantframemeta
 COPY libs/gstsavantframemeta/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements/savant-rs.txt requirements-savant-rs.txt
+RUN pip install --no-cache-dir -r requirements-savant-rs.txt
 
 COPY libs/gstsavantframemeta .
 RUN python setup.py bdist_wheel && rm -rf _skbuild
@@ -99,15 +102,19 @@ RUN curl -fsS \
     && dpkg -i OpenCV* \
     && rm OpenCV*
 
-COPY --from=pygstsavantframemeta_build /libs/gstsavantframemeta/dist /libs/gstsavantframemeta/dist
-RUN python -m pip install --no-cache-dir /libs/gstsavantframemeta/dist/*.whl
+COPY requirements/base.txt requirements-base.txt
+RUN python -m pip install --no-cache-dir -r requirements-base.txt \
+    && rm requirements-base.txt
 
 COPY --from=savantboost_build /libs/savanboost/dist /libs/savanboost/dist
 RUN python -m pip install --no-cache-dir /libs/savanboost/dist/*.whl
 
-COPY requirements/base.txt requirements-base.txt
-RUN python -m pip install --no-cache-dir -r requirements-base.txt \
-    && rm requirements-base.txt
+COPY requirements/savant-rs.txt requirements-savant-rs.txt
+RUN python -m pip install --no-cache-dir -r requirements-savant-rs.txt \
+    && rm requirements-savant-rs.txt
+
+COPY --from=pygstsavantframemeta_build /libs/gstsavantframemeta/dist /libs/gstsavantframemeta/dist
+RUN python -m pip install --no-cache-dir /libs/gstsavantframemeta/dist/*.whl
 
 COPY --from=savant_build /tmp/build/dist /libs/savant/dist/
 RUN python -m pip install --no-cache-dir /libs/savant/dist/*.whl

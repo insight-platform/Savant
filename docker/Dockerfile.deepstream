@@ -139,7 +139,6 @@ COPY adapters/gst/sources adapters/gst/sources
 COPY scripts/uri-input.py scripts/
 ENV PATH=$PROJECT_PATH/scripts:$PATH
 ENV GST_PLUGIN_PATH=$PROJECT_PATH/gst_plugins:$PROJECT_PATH/adapters/gst/gst_plugins
-ENV LD_LIBRARY_PATH=/opt/savant_capi/lib:$LD_LIBRARY_PATH
 
 ENTRYPOINT ["python", "-m", "savant.entrypoint"]
 
