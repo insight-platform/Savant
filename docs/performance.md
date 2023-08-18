@@ -22,6 +22,8 @@
 | [#322](https://github.com/insight-platform/Savant/issues/322) (no queues)        | 260.56 | 39.19     |
 | [#322](https://github.com/insight-platform/Savant/issues/322) (buffer length 1)  | 251.76 | 38.98     |
 | [#322](https://github.com/insight-platform/Savant/issues/322) (buffer length 10) | 250.58 | 38.75     |
+| [#334](https://github.com/insight-platform/Savant/issues/334) (no queues)        | 246.53 | 28.18     |
+| [#334](https://github.com/insight-platform/Savant/issues/334) (buffer length 10) | 244.91 | 36.13     |
 
 ### conditional_video_processing
 
@@ -35,6 +37,8 @@
 | [#322](https://github.com/insight-platform/Savant/issues/322) (no queues)        | 324.69 | 63.51     |
 | [#322](https://github.com/insight-platform/Savant/issues/322) (buffer length 1)  | 284.06 | 60.10     |
 | [#322](https://github.com/insight-platform/Savant/issues/322) (buffer length 10) | 281.90 | 60.11     |
+| [#334](https://github.com/insight-platform/Savant/issues/334) (no queues)        | 319.66 | 50.27     |
+| [#334](https://github.com/insight-platform/Savant/issues/334) (buffer length 10) | 292.49 | 60.54     |
 
 ### nvidia_car_classification
 
@@ -51,6 +55,8 @@
 | [#322](https://github.com/insight-platform/Savant/issues/322) (no queues)        | 163.02 | 44.09     |
 | [#322](https://github.com/insight-platform/Savant/issues/322) (buffer length 1)  | 152.65 | 43.40     |
 | [#322](https://github.com/insight-platform/Savant/issues/322) (buffer length 10) | 153.99 | 43.17     |
+| [#334](https://github.com/insight-platform/Savant/issues/334) (no queues)        | 157.55 | 29.04     |
+| [#334](https://github.com/insight-platform/Savant/issues/334) (buffer length 10) | 156.90 | 39.31     |
 
 ### opencv_cuda_bg_remover_mog2
 
@@ -67,6 +73,8 @@
 | [#322](https://github.com/insight-platform/Savant/issues/322) (no queues)        | 689.34 | 86.16     |
 | [#322](https://github.com/insight-platform/Savant/issues/322) (buffer length 1)  | 530.94 | 86.68     |
 | [#322](https://github.com/insight-platform/Savant/issues/322) (buffer length 10) | 575.76 | 87.05     |
+| [#334](https://github.com/insight-platform/Savant/issues/334) (no queues)        | 672.04 | 51.22     |
+| [#334](https://github.com/insight-platform/Savant/issues/334) (buffer length 10) | 662.38 | 66.50     |
 
 ### peoplenet_detector
 
@@ -83,6 +91,8 @@
 | [#322](https://github.com/insight-platform/Savant/issues/322) (no queues)        | 119.79 | 30.57     |
 | [#322](https://github.com/insight-platform/Savant/issues/322) (buffer length 1)  | 102.02 | 26.38     |
 | [#322](https://github.com/insight-platform/Savant/issues/322) (buffer length 10) | 109.95 | 26.58     |
+| [#334](https://github.com/insight-platform/Savant/issues/334) (no queues)        | 116.79 | 20.25     |
+| [#334](https://github.com/insight-platform/Savant/issues/334) (buffer length 10) | 116.94 | 27.26     |
 
 ### traffic_meter (yolov8m)
 
@@ -99,9 +109,13 @@
 | [#322](https://github.com/insight-platform/Savant/issues/322) (no queues)        | 139.75 | 26.00     |
 | [#322](https://github.com/insight-platform/Savant/issues/322) (buffer length 1)  | 115.21 | 24.97     |
 | [#322](https://github.com/insight-platform/Savant/issues/322) (buffer length 10) | 114.61 | 25.19     |
+| [#334](https://github.com/insight-platform/Savant/issues/334) (no queues)        | 138.01 | 19.82     |
+| [#334](https://github.com/insight-platform/Savant/issues/334) (buffer length 10) | 124.53 | 24.99     |
 
 ### yolov8_seg
 
-| Savant ver.                                                   | A4000 | Jetson NX |
-|---------------------------------------------------------------|-------|-----------|
-| [#131](https://github.com/insight-platform/Savant/issues/131) | 45.78 | 14.84     |
+| Savant ver.                                                                       | A4000 | Jetson NX |
+|-----------------------------------------------------------------------------------|-------|-----------|
+| [#131](https://github.com/insight-platform/Savant/issues/131) (buffer length 10)  | 45.78 | 14.84     |
+| [#334](https://github.com/insight-platform/Savant/issues/334) (no queues)         | 37.75 | 12.20     |
+| [#334](https://github.com/insight-platform/Savant/issues/334) (buffer length 10)  | 44.71 | 14.15     |
