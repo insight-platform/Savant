@@ -51,10 +51,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY requirements/savant-rs.txt requirements-savant-rs.txt
 RUN pip install --no-cache-dir -r requirements-savant-rs.txt
 
-RUN mkdir -p /opt/savant_capi/include \
-    && curl "https://raw.githubusercontent.com/insight-platform/savant-rs/0.1.55/savant_python/capi/savant_capi.h" \
-        -o /opt/savant_capi/include/savant_capi.h
-
 COPY libs/gstsavantframemeta .
 RUN python setup.py bdist_wheel && rm -rf _skbuild
 

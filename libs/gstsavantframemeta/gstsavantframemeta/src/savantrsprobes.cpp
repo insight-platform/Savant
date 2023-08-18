@@ -9,7 +9,7 @@
 #include "nvdsmeta.h"
 
 extern "C" {
-#include "savant_capi.h"
+#include "savant_rs.h"
 }
 
 // SavantRsPadProbeData

@@ -24,9 +24,6 @@ if (NOT ${EXIT_CODE} EQUAL 0)
 endif()
 file(GLOB SAVANT_RS_LIB_FILES "${SAVANT_RS_LIB_DIR}/savant_rs.cpython*.so")
 message(STATUS "Found library for savant-rs: ${SAVANT_RS_LIB_FILES}")
-if(NOT DEFINED SAVANT_RS_CAPI_INCLUDE_DIR)
-    set(SAVANT_RS_CAPI_INCLUDE_DIR /opt/savant_capi/include)
-endif()
 
 if(NOT DEFINED DeepStream_DIR)
     set(DeepStream_DIR /opt/nvidia/deepstream/deepstream)
@@ -40,7 +37,7 @@ include_directories(
         ${GSTREAMER_INCLUDE_DIRS}
         ${CUDA_INCLUDE_DIRS}
         ${DeepStream_DIR}/sources/includes
-        ${SAVANT_RS_CAPI_INCLUDE_DIR}
+        ${SAVANT_RS_LIB_DIR}/include
 )
 
 link_directories(
