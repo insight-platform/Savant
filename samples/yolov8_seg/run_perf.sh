@@ -8,6 +8,7 @@ if [ "$(uname -m)" = "aarch64" ]; then
 fi
 
 docker run --rm -it $RUNTIME \
+  -e BUFFER_QUEUES \
   -v `pwd`/samples:/opt/savant/samples \
   -v `pwd`/data:/data:ro \
   -v `pwd`/downloads/yolov8_seg:/downloads \

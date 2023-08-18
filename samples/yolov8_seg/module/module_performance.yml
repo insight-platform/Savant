@@ -9,8 +9,7 @@ parameters:
   draw_func:
     module: samples.yolov8_seg.module.overlay
     class_name: Overlay
-  buffer_queues:
-    length: 10
+  buffer_queues: ${json:${oc.env:BUFFER_QUEUES, null}}
 
 pipeline:
   source:
