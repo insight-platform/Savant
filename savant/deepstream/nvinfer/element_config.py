@@ -415,7 +415,7 @@ def nvinfer_configure_element(element_config: DictConfig) -> DictConfig:
             obj.class_id: obj.label for obj in model_config.output.get('objects')
         }
     model_uid = register_model_objects(
-        element_config.name, object_labels, RegistrationPolicy.ErrorIfNonUnique
+        element_config.name, object_labels, RegistrationPolicy.Override
     )
     nvinfer_config['property']['gie-unique-id'] = model_uid
 
