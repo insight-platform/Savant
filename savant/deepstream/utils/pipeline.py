@@ -93,10 +93,10 @@ def get_pipeline_element_stages(
             else:
                 stage = element.element
             if stage not in stage_idx_cache:
-                stage_idx_cache[stage] = 1
+                stage_idx_cache[stage] = 0
             else:
-                stage = f'{stage}_{stage_idx_cache[stage]}'
                 stage_idx_cache[stage] += 1
+                stage = f'{stage}_{stage_idx_cache[stage]}'
             stages.append(stage)
 
     return stages
