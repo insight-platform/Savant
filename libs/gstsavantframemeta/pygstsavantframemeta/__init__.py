@@ -2,7 +2,7 @@ from typing import Optional
 
 import gi
 import pyds
-from savant_rs.pipeline import VideoPipeline
+from savant_rs.pipeline2 import VideoPipeline
 
 from . import pygstsavantframemeta
 

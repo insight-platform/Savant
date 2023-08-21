@@ -9,7 +9,7 @@ from typing import Callable, List, Optional
 
 import pyds
 from pygstsavantframemeta import gst_buffer_get_savant_frame_meta
-from savant_rs.pipeline import VideoPipeline, VideoPipelineStagePayloadType
+from savant_rs.pipeline2 import VideoPipeline, VideoPipelineStagePayloadType
 
 from adapters.ds.sinks.always_on_rtsp.last_frame import LastFrame
 from savant.config.schema import PipelineElement
@@ -77,11 +77,8 @@ class Config:
         if self.metadata_output:
             self.pipeline_stage_name = 'source'
             self.video_pipeline: Optional[VideoPipeline] = VideoPipeline(
-                'always-on-sink'
-            )
-            self.video_pipeline.add_stage(
-                self.pipeline_stage_name,
-                VideoPipelineStagePayloadType.Frame,
+                'always-on-sink',
+                [(self.pipeline_stage_name, VideoPipelineStagePayloadType.Frame)],
             )
         else:
             self.pipeline_stage_name = None

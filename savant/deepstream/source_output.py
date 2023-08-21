@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional
 
 import pyds
 from pygstsavantframemeta import add_move_frame_as_is_pad_probe
-from savant_rs.pipeline import VideoPipeline, VideoPipelineStagePayloadType
+from savant_rs.pipeline2 import VideoPipeline
 
 from savant.config.schema import (
     FrameParameters,
@@ -28,7 +28,6 @@ class SourceOutput(ABC):
             f'{self.__class__.__module__}.{self.__class__.__name__}'
         )
         self._video_pipeline = video_pipeline
-        self._video_pipeline.add_stage('sink', VideoPipelineStagePayloadType.Frame)
 
     @abstractmethod
     def add_output(
@@ -78,15 +77,6 @@ class SourceOutputWithFrame(SourceOutput):
         super().__init__(video_pipeline)
         self._frame_params = frame_params
         self._condition = condition
-        for stage in [
-            'frame-tag-filter',
-            'queue-tagged',
-            'queue-not-tagged',
-            'sink-convert',
-            'sink-capsfilter',
-            'frame-tag-funnel',
-        ]:
-            self._video_pipeline.add_stage(stage, VideoPipelineStagePayloadType.Frame)
 
     def add_output(
         self,
@@ -351,8 +341,6 @@ class SourceOutputEncoded(SourceOutputWithFrame):
         self._output_frame = output_frame
         self._encoder = self._codec.encoder(output_frame.get('encoder'))
         self._params = output_frame.get('encoder_params') or {}
-        for stage in ['encode', 'parse']:
-            self._video_pipeline.add_stage(stage, VideoPipelineStagePayloadType.Frame)
 
     @property
     def codec(self) -> CodecInfo:
@@ -363,7 +351,7 @@ class SourceOutputEncoded(SourceOutputWithFrame):
             PipelineElement(self._encoder, properties=self._params)
         )
         add_move_frame_as_is_pad_probe(
-            encoder.get_static_pad('src'),
+            encoder.get_static_pad('sink'),
             self._video_pipeline,
             'encode',
         )
@@ -402,7 +390,7 @@ class SourceOutputH26X(SourceOutputEncoded):
             PipelineElement(self._codec.parser, properties=parser_params)
         )
         add_move_frame_as_is_pad_probe(
-            parser.get_static_pad('src'),
+            parser.get_static_pad('sink'),
             self._video_pipeline,
             'parse',
         )

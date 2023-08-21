@@ -62,7 +62,7 @@ GstPadProbeReturn move_frame_as_is_pad_probe(GstPad *pad,
 
     idx_list = (int64_t *)malloc(sizeof(int64_t));
     idx_list[0] = savant_frame_meta->idx;
-    pipeline_move_as_is(data->handle, data->stage, idx_list, 1);
+    pipeline2_move_as_is(data->handle, data->stage, idx_list, 1);
     GST_INFO_OBJECT(
         pad,
         "Pipeline stage %s. Frame %d at buffer %ld moved.",
@@ -128,7 +128,7 @@ GstPadProbeReturn move_and_pack_frames_pad_probe(GstPad *pad,
         l_frame = l_frame->next;
     }
 
-    batch_id = pipeline_move_and_pack_frames(
+    batch_id = pipeline2_move_and_pack_frames(
         data->handle, data->stage, idx_list, batch_meta->num_frames_in_batch);
 
     gst_buffer_add_savant_batch_meta(buffer, batch_id);
@@ -180,7 +180,7 @@ GstPadProbeReturn move_batch_as_is_pad_probe(GstPad *pad,
 
     idx_list = (int64_t *)malloc(sizeof(int64_t));
     idx_list[0] = savant_batch_meta->idx;
-    pipeline_move_as_is(data->handle, data->stage, idx_list, 1);
+    pipeline2_move_as_is(data->handle, data->stage, idx_list, 1);
     GST_INFO_OBJECT(
         pad,
         "Pipeline stage %s. Batch %d at buffer %ld moved.",
@@ -236,7 +236,7 @@ GstPadProbeReturn move_and_unpack_batch_pad_probe(GstPad *pad,
 
     resulting_ids = (int64_t *)malloc(
         sizeof(int64_t) * batch_meta->num_frames_in_batch);
-    pipeline_move_and_unpack_batch(
+    pipeline2_move_and_unpack_batch(
         data->handle,
         data->stage,
         savant_batch_meta->idx,

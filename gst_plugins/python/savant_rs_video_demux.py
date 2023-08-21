@@ -7,7 +7,7 @@ from fractions import Fraction
 from threading import Lock, Thread
 from typing import Dict, NamedTuple, Optional
 
-from savant_rs.pipeline import VideoPipeline
+from savant_rs.pipeline2 import VideoPipeline
 from savant_rs.primitives import EndOfStream, VideoFrame
 from savant_rs.utils import PropagatedContext
 

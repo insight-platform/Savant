@@ -6,7 +6,7 @@ other tasks.
 import json
 from typing import Any, Optional
 
-from savant_rs.pipeline import VideoPipeline
+from savant_rs.pipeline2 import VideoPipeline
 
 from savant.base.pyfunc import BasePyFuncPlugin, PyFunc
 from savant.gstreamer import GLib, GObject, Gst, GstBase  # noqa: F401

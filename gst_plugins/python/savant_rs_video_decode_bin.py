@@ -5,7 +5,7 @@ from threading import Event, Lock
 from typing import Dict, Optional
 
 from pygstsavantframemeta import add_move_frame_as_is_pad_probe
-from savant_rs.pipeline import VideoPipeline
+from savant_rs.pipeline2 import VideoPipeline
 
 from gst_plugins.python.savant_rs_video_demux import SAVANT_RS_VIDEO_DEMUX_PROPERTIES
 from savant.gstreamer import GLib, GObject, Gst  # noqa:F401

@@ -7,7 +7,7 @@ from pygstsavantframemeta import (
     gst_buffer_add_savant_frame_meta,
     nvds_frame_meta_get_nvds_savant_frame_meta,
 )
-from savant_rs.pipeline import VideoPipeline
+from savant_rs.pipeline2 import VideoPipeline
 
 from gst_plugins.python.frame_tag_filter_common import build_stream_part_event
 from savant.deepstream.meta.frame import NvDsFrameMeta

@@ -5,7 +5,7 @@ from collections import defaultdict
 from pathlib import Path
 from queue import Queue
 from threading import Lock
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Tuple, Union
 
 import pyds
 from pygstsavantframemeta import (
@@ -17,8 +17,8 @@ from pygstsavantframemeta import (
     gst_buffer_get_savant_batch_meta,
     nvds_frame_meta_get_nvds_savant_frame_meta,
 )
-from savant_rs import init_jaeger_tracer
-from savant_rs.pipeline import VideoPipeline, VideoPipelineStagePayloadType
+from savant_rs import init_jaeger_tracer, init_noop_tracer
+from savant_rs.pipeline2 import VideoPipeline
 from savant_rs.primitives import EndOfStream, IdCollisionResolutionPolicy, VideoFrame
 from savant_rs.primitives.geometry import RBBox
 
@@ -42,7 +42,7 @@ from savant.deepstream.metadata import (
     nvds_attr_meta_output_converter,
     nvds_obj_meta_output_converter,
 )
-from savant.deepstream.source_output import SourceOutputWithFrame, create_source_output
+from savant.deepstream.source_output import create_source_output
 from savant.deepstream.utils import (
     GST_NVEVENT_STREAM_EOS,
     gst_nvevent_parse_stream_eos,
@@ -51,7 +51,11 @@ from savant.deepstream.utils import (
     nvds_obj_meta_iterator,
     nvds_remove_obj_attrs,
 )
-from savant.deepstream.utils.pipeline import add_queues_to_pipeline
+from savant.deepstream.utils.pipeline import (
+    add_queues_to_pipeline,
+    build_pipeline_stages,
+    get_pipeline_element_stages,
+)
 from savant.gstreamer import GLib, Gst  # noqa:F401
 from savant.gstreamer.pipeline import GstPipeline
 from savant.gstreamer.utils import on_pad_event, pad_to_source_id
@@ -100,24 +104,9 @@ class NvDsPipeline(GstPipeline):
         telemetry: TelemetryParameters = kwargs['telemetry']
         _init_telemetry(name, telemetry)
 
-        self._video_pipeline = VideoPipeline(name)
-        self._video_pipeline.sampling_period = telemetry.sampling_period
-        if telemetry.root_span_name is not None:
-            self._video_pipeline.root_span_name = telemetry.root_span_name
-        else:
-            self._video_pipeline.root_span_name = f'{name}-root'
-
         output_frame = kwargs.get('output_frame')
-        self._source_output = create_source_output(
-            frame_params=self._frame_params,
-            output_frame=output_frame,
-            video_pipeline=self._video_pipeline,
-        )
-
         draw_func: Optional[DrawFunc] = kwargs.get('draw_func')
-        if draw_func is not None and isinstance(
-            self._source_output, SourceOutputWithFrame
-        ):
+        if draw_func is not None and output_frame:
             pipeline_cfg.elements.append(draw_func)
 
         self._demuxer_src_pads: List[Gst.Pad] = []
@@ -136,6 +125,22 @@ class NvDsPipeline(GstPipeline):
         buffer_queues: Optional[BufferQueuesParameters] = kwargs.get('buffer_queues')
         if buffer_queues is not None:
             add_queues_to_pipeline(pipeline_cfg, buffer_queues)
+
+        self._element_stages = get_pipeline_element_stages(pipeline_cfg)
+        pipeline_stages = build_pipeline_stages(self._element_stages)
+
+        self._video_pipeline = VideoPipeline(name, pipeline_stages)
+        self._video_pipeline.sampling_period = telemetry.sampling_period
+        # if telemetry.root_span_name is not None:
+        #     self._video_pipeline.root_span_name = telemetry.root_span_name
+        # else:
+        #     self._video_pipeline.root_span_name = f'{name}-root'
+
+        self._source_output = create_source_output(
+            frame_params=self._frame_params,
+            output_frame=output_frame,
+            video_pipeline=self._video_pipeline,
+        )
 
         # nvjpegdec decoder is selected in decodebin according to the rank, but
         # there are problems with the plugin:
@@ -171,7 +176,7 @@ class NvDsPipeline(GstPipeline):
         element: PipelineElement,
         with_probes: bool = False,
         link: bool = True,
-        pipeline_stage: bool = False,
+        element_idx: Optional[Union[int, Tuple[int, int]]] = None,
     ) -> Gst.Element:
         if isinstance(element, ModelElement):
             if element.model.input.preprocess_object_image:
@@ -187,15 +192,16 @@ class NvDsPipeline(GstPipeline):
             element=element,
             with_probes=with_probes,
             link=link,
-            pipeline_stage=pipeline_stage,
+            element_idx=element_idx,
         )
-        if pipeline_stage:
+        if element_idx is not None:
             if isinstance(element, PyFuncElement):
-                stage = f'pyfunc/{element.module}.{element.class_name}'
                 gst_element.set_property('pipeline', self._video_pipeline)
+            # TODO: add stage names to element config?
+            if isinstance(element_idx, int):
+                stage = self._element_stages[element_idx]
             else:
-                stage = gst_element.get_name()
-            self._video_pipeline.add_stage(stage, VideoPipelineStagePayloadType.Batch)
+                stage = self._element_stages[element_idx[0]][element_idx[1]]
             add_move_batch_as_is_pad_probe(
                 gst_element.get_static_pad('sink'),
                 self._video_pipeline,
@@ -215,13 +221,7 @@ class NvDsPipeline(GstPipeline):
     def _add_source(self, source: PipelineElement):
         source.name = 'source'
         _source = self.add_element(source)
-        for stage in ['source', 'source-convert', 'source-capsfilter']:
-            self._video_pipeline.add_stage(stage, VideoPipelineStagePayloadType.Frame)
         if source.element == 'zeromq_source_bin':
-            self._video_pipeline.add_stage(
-                'decode',
-                VideoPipelineStagePayloadType.Frame,
-            )
             _source.set_property('pipeline', self._video_pipeline)
             add_frames_to_pipeline = False
         else:
@@ -813,11 +813,6 @@ class NvDsPipeline(GstPipeline):
             'Pipeline frame processing parameters: %s.', frame_processing_parameters
         )
         # input processor (post-muxer)
-        self._video_pipeline.add_stage('muxer', VideoPipelineStagePayloadType.Frame)
-        self._video_pipeline.add_stage(
-            'prepare-input',
-            VideoPipelineStagePayloadType.Batch,
-        )
         muxer_src_pad: Gst.Pad = self._muxer.get_static_pad('src')
         add_move_and_pack_frames_pad_probe(
             muxer_src_pad,
@@ -902,13 +897,6 @@ class NvDsPipeline(GstPipeline):
         )
         self._demuxer_src_pads = self._allocate_demuxer_pads(
             demuxer, self._max_parallel_streams
-        )
-        self._video_pipeline.add_stage(
-            'update-frame-meta', VideoPipelineStagePayloadType.Batch
-        )
-        self._video_pipeline.add_stage('demuxer', VideoPipelineStagePayloadType.Frame)
-        self._video_pipeline.add_stage(
-            'output-queue', VideoPipelineStagePayloadType.Frame
         )
         sink_peer_pad: Gst.Pad = demuxer.get_static_pad('sink').get_peer()
         add_move_batch_as_is_pad_probe(
@@ -1020,3 +1008,6 @@ def _init_telemetry(module_name: str, telemetry: TelemetryParameters):
 
     elif telemetry.provider is not None:
         raise ValueError(f'Unknown telemetry provider: {telemetry.provider}')
+
+    else:
+        init_noop_tracer()

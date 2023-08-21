@@ -7,7 +7,7 @@ from pygstsavantframemeta import (
     gst_buffer_get_savant_batch_meta,
     nvds_frame_meta_get_nvds_savant_frame_meta,
 )
-from savant_rs.pipeline import VideoPipeline
+from savant_rs.pipeline2 import VideoPipeline
 
 from savant.base.pyfunc import BasePyFuncPlugin
 from savant.deepstream.meta.frame import NvDsFrameMeta
