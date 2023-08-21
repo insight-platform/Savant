@@ -204,8 +204,12 @@ class FrameTagFilter(LoggerMixin, Gst.Element):
             video_frame, video_frame_span = self.video_pipeline.get_independent_frame(
                 frame_idx,
             )
-            with video_frame_span.nested_span('parse-buffer'):
-                frame_meta = NvDsFrameMeta(video_frame, nvds_frame_meta)
+            with video_frame_span.nested_span('parse-buffer') as telemetry_span:
+                frame_meta = NvDsFrameMeta(
+                    nvds_frame_meta,
+                    video_frame,
+                    telemetry_span,
+                )
                 if frame_meta.get_tag(self.tag) is not None:
                     self.logger.debug(
                         'Frame %s (PTS=%s) has tag "%s"',

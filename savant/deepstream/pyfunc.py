@@ -132,8 +132,12 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
                 batch_id,
                 frames_id,
             )
-            with video_frame_span.nested_span('process-frame'):
-                with NvDsFrameMeta(video_frame, nvds_frame_meta) as frame_meta:
+            with video_frame_span.nested_span('process-frame') as telemetry_span:
+                with NvDsFrameMeta(
+                    nvds_frame_meta,
+                    video_frame,
+                    telemetry_span,
+                ) as frame_meta:
                     self.process_frame(buffer, frame_meta)
 
         for stream in self.frame_streams.values():

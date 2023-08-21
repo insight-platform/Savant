@@ -5,6 +5,7 @@ from typing import Dict, Iterator, Optional, Union
 import pyds
 from savant_rs.primitives import Attribute, VideoFrame
 from savant_rs.primitives.geometry import BBox
+from savant_rs.utils import TelemetrySpan
 
 from savant.api.builder import build_attribute_value
 from savant.api.constants import DEFAULT_NAMESPACE
@@ -44,13 +45,15 @@ class NvDsFrameMeta(AbstractContextManager, LoggerMixin):
 
     def __init__(
         self,
-        video_frame: VideoFrame,
         frame_meta: pyds.NvDsFrameMeta,
+        video_frame: VideoFrame,
+        telemetry_span: TelemetrySpan,
     ):
         super().__init__()
         self.batch_meta: pyds.NvDsBatchMeta = frame_meta.base_meta.batch_meta
         self.frame_meta: pyds.NvDsFrameMeta = frame_meta
         self._video_frame: VideoFrame = video_frame
+        self._telemetry_span: TelemetrySpan = telemetry_span
         self._primary_obj: Optional[ObjectMeta] = None
         self._objects = {}
 
@@ -211,3 +214,21 @@ class NvDsFrameMeta(AbstractContextManager, LoggerMixin):
                 f"{self.__class__.__name__} doesn't "
                 f'support removing object meta `of {type(object_meta)}` type'
             )
+
+    @property
+    def video_frame(self) -> VideoFrame:
+        """Get the video frame associated with the frame meta."""
+        return self._video_frame
+
+    @property
+    def telemetry_span(self) -> TelemetrySpan:
+        """Get the telemetry span associated with the frame.
+
+        Example:
+
+        .. code-block:: python
+
+            with frame_meta.telemetry_span.nested_span("process-frame"):
+                # do something
+        """
+        return self._telemetry_span

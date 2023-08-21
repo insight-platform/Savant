@@ -128,13 +128,14 @@ class NvDsPipeline(GstPipeline):
 
         self._element_stages = get_pipeline_element_stages(pipeline_cfg)
         pipeline_stages = build_pipeline_stages(self._element_stages)
+        if telemetry.root_span_name is not None:
+            root_span_name = telemetry.root_span_name
+        else:
+            root_span_name = name
 
-        self._video_pipeline = VideoPipeline(name, pipeline_stages)
+        self._video_pipeline = VideoPipeline(root_span_name, pipeline_stages)
         self._video_pipeline.sampling_period = telemetry.sampling_period
-        # if telemetry.root_span_name is not None:
-        #     self._video_pipeline.root_span_name = telemetry.root_span_name
-        # else:
-        #     self._video_pipeline.root_span_name = f'{name}-root'
+
 
         self._source_output = create_source_output(
             frame_params=self._frame_params,
