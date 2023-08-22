@@ -115,9 +115,7 @@ def log_frame_metadata(pad: Gst.Pad, info: Gst.PadProbeInfo, config: Config):
         return Gst.PadProbeReturn.PASS
 
     frame_idx = savant_frame_meta.idx if savant_frame_meta else None
-    video_frame, video_frame_span = config.video_pipeline.get_independent_frame(
-        frame_idx,
-    )
+    video_frame, _ = config.video_pipeline.get_independent_frame(frame_idx)
     config.video_pipeline.delete(frame_idx)
     metadata_json = video_frame.json
     if config.metadata_output == 'logger':
@@ -181,11 +179,15 @@ def build_input_pipeline(
     factory: GstElementFactory,
 ):
     pipeline: Gst.Pipeline = Gst.Pipeline.new('input-pipeline')
-    pipeline_stage_name = 'source'
 
     savant_rs_video_demux_properties = {'source-id': config.source_id}
     if config.pipeline_stage_name is not None:
-        savant_rs_video_demux_properties['pipeline-stage-name'] = pipeline_stage_name
+        savant_rs_video_demux_properties.update(
+            {
+                'pipeline-stage-name': config.pipeline_stage_name,
+                'pipeline': config.video_pipeline,
+            }
+        )
 
     source_elements = [
         PipelineElement(
@@ -235,8 +237,6 @@ def build_input_pipeline(
     gst_source_elements = add_elements(pipeline, source_elements, factory)
     gst_sink_elements = add_elements(pipeline, sink_elements, factory)
     savant_rs_video_demux = gst_source_elements[-1]
-    if config.video_pipeline is not None:
-        savant_rs_video_demux.set_property('pipeline', config.video_pipeline)
     nvvideoconvert = gst_sink_elements[0]
 
     savant_rs_video_demux.connect(
