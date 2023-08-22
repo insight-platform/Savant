@@ -1,21 +1,19 @@
 """Wrapper of deepstream frame meta information."""
 from contextlib import AbstractContextManager
-from typing import Dict, Iterator, Optional
+from typing import Dict, Iterator, Optional, Union
 
 import pyds
-from pygstsavantframemeta import nvds_frame_meta_get_nvds_savant_frame_meta
+from savant_rs.primitives import Attribute, VideoFrame
 from savant_rs.primitives.geometry import BBox
+from savant_rs.utils import TelemetrySpan
 
+from savant.api.builder import build_attribute_value
+from savant.api.constants import DEFAULT_NAMESPACE
+from savant.api.parser import parse_attribute_value
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
-from savant.gstreamer.metadata import (
-    OnlyExtendedDict,
-    SourceFrameMeta,
-    get_source_frame_meta,
-)
 from savant.meta.errors import MetaValueError
 from savant.meta.object import ObjectMeta
 from savant.utils.logging import LoggerMixin
-from savant.utils.source_info import SourceInfoRegistry
 
 
 def nvds_obj_meta_generator(
@@ -42,16 +40,21 @@ class NvDsFrameMeta(AbstractContextManager, LoggerMixin):
     """Wrapper of deepstream frame meta information.
 
     :param frame_meta: Deepstream python bindings frame meta.
+    :param video_frame: Video frame meta.
+    :param telemetry_span: The telemetry span associated with the frame.
     """
 
     def __init__(
         self,
         frame_meta: pyds.NvDsFrameMeta,
+        video_frame: VideoFrame,
+        telemetry_span: TelemetrySpan,
     ):
         super().__init__()
         self.batch_meta: pyds.NvDsBatchMeta = frame_meta.base_meta.batch_meta
         self.frame_meta: pyds.NvDsFrameMeta = frame_meta
-        self._source_frame_meta: Optional[SourceFrameMeta] = None
+        self._video_frame: VideoFrame = video_frame
+        self._telemetry_span: TelemetrySpan = telemetry_span
         self._primary_obj: Optional[ObjectMeta] = None
         self._objects = {}
 
@@ -68,7 +71,7 @@ class NvDsFrameMeta(AbstractContextManager, LoggerMixin):
     @property
     def source_id(self) -> str:
         """Source id for the frame in the batch."""
-        return SourceInfoRegistry().get_id_by_pad_index(self.frame_meta.pad_index)
+        return self._video_frame.source_id
 
     @property
     def frame_num(self) -> int:
@@ -112,27 +115,31 @@ class NvDsFrameMeta(AbstractContextManager, LoggerMixin):
         """
         return self.frame_meta.num_obj_meta
 
-    @property
-    def tags(self) -> OnlyExtendedDict:
-        """Returns tags of frame. These tags are part of the meta information about
+    def get_tag(self, name: str) -> Optional[Union[bool, int, float, str]]:
+        """Get tag of frame. These tags are part of the meta information about
         the frame that comes with the frames in the module.
 
-        :return: Dictionary with tags
+        :return: Tag value
         """
-        if self._source_frame_meta is None:
-            self._set_source_frame_meta()
-        return self._source_frame_meta.tags
 
-    def _set_source_frame_meta(self):
-        """Set the source frame metadata.
+        attr = self._video_frame.get_attribute(DEFAULT_NAMESPACE, name)
+        if attr is not None:
+            return parse_attribute_value(attr.values[0])
 
-        :return: None
+    def set_tag(self, name: str, value: Union[bool, int, float, str]):
+        """Set tag to frame. These tags are part of the meta information about
+        the frame that comes with the frames in the module.
+
+        :param name: Tag name
+        :param value: Tag value
         """
-        savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(self.frame_meta)
-        self._source_frame_meta = get_source_frame_meta(
-            source_id=self.source_id,
-            frame_idx=savant_frame_meta.idx if savant_frame_meta else None,
-            frame_pts=self.frame_meta.buf_pts,
+
+        self._video_frame.set_attribute(
+            Attribute(
+                namespace=DEFAULT_NAMESPACE,
+                name=name,
+                values=[build_attribute_value(value)],
+            )
         )
 
     @property
@@ -141,9 +148,7 @@ class NvDsFrameMeta(AbstractContextManager, LoggerMixin):
 
         :return: The PTS of the current frame, if available; None otherwise.
         """
-        if self._source_frame_meta is None:
-            self._set_source_frame_meta()
-        return self._source_frame_meta.pts
+        return self._video_frame.pts
 
     @property
     def duration(self) -> Optional[int]:
@@ -151,9 +156,7 @@ class NvDsFrameMeta(AbstractContextManager, LoggerMixin):
 
         :returns: The duration of the current frame, if available; None otherwise.
         """
-        if self._source_frame_meta is None:
-            self._set_source_frame_meta()
-        return self._source_frame_meta.duration
+        return self._video_frame.duration
 
     @property
     def framerate(self) -> str:
@@ -161,9 +164,7 @@ class NvDsFrameMeta(AbstractContextManager, LoggerMixin):
 
         returns: The framerate of the current frame as a string.
         """
-        if self._source_frame_meta is None:
-            self._set_source_frame_meta()
-        return self._source_frame_meta.framerate
+        return self._video_frame.framerate
 
     def add_obj_meta(self, object_meta: ObjectMeta):
         """Add an object meta to frame meta.
@@ -214,3 +215,21 @@ class NvDsFrameMeta(AbstractContextManager, LoggerMixin):
                 f"{self.__class__.__name__} doesn't "
                 f'support removing object meta `of {type(object_meta)}` type'
             )
+
+    @property
+    def video_frame(self) -> VideoFrame:
+        """Get the video frame associated with the frame meta."""
+        return self._video_frame
+
+    @property
+    def telemetry_span(self) -> TelemetrySpan:
+        """Get the telemetry span associated with the frame.
+
+        Example:
+
+        .. code-block:: python
+
+            with frame_meta.telemetry_span.nested_span("process-frame"):
+                # do something
+        """
+        return self._telemetry_span

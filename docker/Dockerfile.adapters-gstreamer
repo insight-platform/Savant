@@ -93,6 +93,9 @@ RUN if [ "$(arch)" = "aarch64" ]; then \
 
 COPY --from=aravis-builder /build/aravis/dist /usr
 
+COPY requirements/savant-rs.txt $PROJECT_PATH/adapters/requirements-savant-rs.txt
+RUN pip install --no-cache-dir -r $PROJECT_PATH/adapters/requirements-savant-rs.txt
+
 # copy savant and plugins - they are used in imports
 COPY savant savant
 COPY gst_plugins gst_plugins

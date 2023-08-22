@@ -18,6 +18,8 @@ parameters:
     condition:
       tag: draw
 
+  buffer_queues: ${json:${oc.env:BUFFER_QUEUES, null}}
+
 # pipeline definition
 pipeline:
   # local video file source, not using source adapter

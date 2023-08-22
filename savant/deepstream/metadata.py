@@ -1,29 +1,33 @@
 """Convert deepstream object meta to output format."""
 import logging
-from typing import Any, Dict
+from typing import Optional, Tuple
 
 import pyds
-from savant_rs.primitives.geometry import RBBox
+from savant_rs.primitives import Attribute, VideoObject
+from savant_rs.primitives.geometry import BBox
 from savant_rs.utils.symbol_mapper import parse_compound_key
 
+from savant.api.builder import build_attribute_value
 from savant.config.schema import FrameParameters
 from savant.deepstream.utils import nvds_get_obj_bbox
-from savant.deepstream.utils.object import nvds_is_empty_object_meta
+from savant.deepstream.utils.object import nvds_get_obj_uid, nvds_is_empty_object_meta
 from savant.meta.attribute import AttributeMeta
-from savant.meta.constants import PRIMARY_OBJECT_KEY
+from savant.meta.constants import PRIMARY_OBJECT_KEY, UNTRACKED_OBJECT_ID
 
 logger = logging.getLogger(__name__)
 
 
 def nvds_obj_meta_output_converter(
+    nvds_frame_meta: pyds.NvDsFrameMeta,
     nvds_obj_meta: pyds.NvDsObjectMeta,
     frame_params: FrameParameters,
-) -> Dict[str, Any]:
-    """Convert object meta to output format.
+) -> Tuple[VideoObject, Optional[int]]:
+    """Convert object meta to savant-rs format.
 
+    :param nvds_frame_meta: NvDsFrameMeta
     :param nvds_obj_meta: NvDsObjectMeta
-    :param frame_params: Frame parameters (width/height, to scale to [0..1]
-    :return: resolution of output frame
+    :param frame_params: Frame parameters (width/height, to scale to [0..1])
+    :return: Object meta in savant-rs format and its parent id.
     """
     model_name, label = parse_compound_key(nvds_obj_meta.obj_label)
 
@@ -48,17 +52,26 @@ def nvds_obj_meta_output_converter(
             logger.debug(
                 'Applied frame padding %s, bbox: %s', frame_params.padding, bbox
             )
-    bbox = dict(
-        xc=bbox.xc,
-        yc=bbox.yc,
-        width=bbox.width,
-        height=bbox.height,
-        angle=bbox.angle if isinstance(bbox, RBBox) else 0.0,
-    )
+    if isinstance(bbox, BBox):
+        bbox = bbox.as_rbbox()
+        bbox.angle = 0
     if logger.isEnabledFor(logging.DEBUG):
         logger.debug('Object corrected bbox %s', bbox)
-    # parse parent object
-    parent_model_name, parent_label, parent_object_id = None, None, None
+
+    object_id = nvds_get_obj_uid(nvds_frame_meta, nvds_obj_meta)
+
+    video_object = VideoObject(
+        id=object_id,
+        namespace=model_name,
+        label=label,
+        detection_box=bbox,
+        attributes={},
+        confidence=confidence,
+    )
+    if nvds_obj_meta.object_id != UNTRACKED_OBJECT_ID:
+        video_object.set_track_info(nvds_obj_meta.object_id, bbox)
+
+    parent_id = None
     if (
         not nvds_is_empty_object_meta(nvds_obj_meta.parent)
         and nvds_obj_meta.parent.obj_label != PRIMARY_OBJECT_KEY
@@ -67,25 +80,20 @@ def nvds_obj_meta_output_converter(
             nvds_obj_meta.parent.obj_label
         )
         if parent_model_name:
-            parent_object_id = nvds_obj_meta.parent.object_id
+            parent_id = nvds_get_obj_uid(nvds_frame_meta, nvds_obj_meta.parent)
 
-    return dict(
-        model_name=model_name,
-        label=label,
-        object_id=nvds_obj_meta.object_id,
-        bbox=bbox,
-        confidence=confidence,
-        attributes=[],
-        parent_model_name=parent_model_name,
-        parent_label=parent_label,
-        parent_object_id=parent_object_id,
-    )
+    return video_object, parent_id
 
 
-def nvds_attr_meta_output_converter(attr_meta: AttributeMeta) -> Dict[str, Any]:
-    """Convert attribute meta to output format.
+def nvds_attr_meta_output_converter(attr_meta: AttributeMeta) -> Attribute:
+    """Convert attribute meta to savant-rs format.
 
-    :param attr_meta: dict
-    :return: dict
+    :param attr_meta: Attribute meta.
+    :return: Attribute meta in savant-rs format.
     """
-    return attr_meta.__dict__
+    value = build_attribute_value(attr_meta.value, attr_meta.confidence)
+    return Attribute(
+        namespace=attr_meta.element_name,
+        name=attr_meta.name,
+        values=[value],
+    )

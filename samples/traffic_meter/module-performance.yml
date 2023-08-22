@@ -24,6 +24,8 @@ parameters:
     id: 0
     label: person
 
+  buffer_queues: ${json:${oc.env:BUFFER_QUEUES, null}}
+
 pipeline:
 
   source:

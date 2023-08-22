@@ -34,6 +34,8 @@ parameters:
             border_color: '0000FFFF'  # Blue
             thickness: 2
 
+  buffer_queues: ${json:${oc.env:BUFFER_QUEUES, null}}
+
 pipeline:
   # local video file source, not using source adapter
   source:

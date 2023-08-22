@@ -6,6 +6,8 @@ other tasks.
 import json
 from typing import Any, Optional
 
+from savant_rs.pipeline2 import VideoPipeline
+
 from savant.base.pyfunc import BasePyFuncPlugin, PyFunc
 from savant.gstreamer import GLib, GObject, Gst, GstBase  # noqa: F401
 from savant.utils.logging import LoggerMixin
@@ -62,6 +64,12 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             None,
             GObject.ParamFlags.READWRITE,
         ),
+        'pipeline': (
+            object,
+            'VideoPipeline object from savant-rs.',
+            'VideoPipeline object from savant-rs.',
+            GObject.ParamFlags.READWRITE,
+        ),
     }
 
     def __init__(self):
@@ -70,6 +78,7 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
         self.module: Optional[str] = None
         self.class_name: Optional[str] = None
         self.kwargs: Optional[str] = None
+        self.video_pipeline: Optional[VideoPipeline] = None
         # pyfunc object
         self.pyfunc: Optional[BasePyFuncPlugin] = None
 
@@ -84,6 +93,8 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             return self.class_name
         if prop.name == 'kwargs':
             return self.kwargs
+        if prop.name == 'pipeline':
+            return self.video_pipeline
         raise AttributeError(f'Unknown property {prop.name}.')
 
     def do_set_property(self, prop: GObject.GParamSpec, value: Any):
@@ -98,6 +109,8 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             self.class_name = value
         elif prop.name == 'kwargs':
             self.kwargs = value
+        elif prop.name == 'pipeline':
+            self.video_pipeline = value
         else:
             raise AttributeError(f'Unknown property {prop.name}.')
 

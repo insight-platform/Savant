@@ -1,6 +1,13 @@
 """Base implementation of user-defined PyFunc class."""
+from typing import Optional
+
 import cv2
 import pyds
+from pygstsavantframemeta import (
+    gst_buffer_get_savant_batch_meta,
+    nvds_frame_meta_get_nvds_savant_frame_meta,
+)
+from savant_rs.pipeline2 import VideoPipeline
 
 from savant.base.pyfunc import BasePyFuncPlugin
 from savant.deepstream.meta.frame import NvDsFrameMeta
@@ -27,7 +34,13 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._sources = SourceInfoRegistry()
+        self._video_pipeline: Optional[VideoPipeline] = None
         self.frame_streams = {}
+
+    def on_start(self) -> bool:
+        """Do on plugin start."""
+        self._video_pipeline = self.gst_element.get_property('pipeline')
+        return True
 
     def on_event(self, event: Gst.Event):
         """Add stream event callbacks."""
@@ -85,6 +98,16 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
         :param buffer: Gstreamer buffer.
         """
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
+        savant_batch_meta = gst_buffer_get_savant_batch_meta(buffer)
+        if savant_batch_meta is None:
+            self.logger.warning(
+                'Failed to process batch at buffer %s. '
+                'Batch has no Savant Frame Meta.',
+                buffer.pts,
+            )
+            return
+
+        batch_id = savant_batch_meta.idx
 
         self.logger.debug(
             'Processing batch id=%d, with %d frames',
@@ -92,8 +115,30 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
             nvds_batch_meta.num_frames_in_batch,
         )
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
-            with NvDsFrameMeta(nvds_frame_meta) as frame_meta:
-                self.process_frame(buffer, frame_meta)
+            savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(
+                nvds_frame_meta
+            )
+            if savant_frame_meta is None:
+                self.logger.warning(
+                    'Failed to process frame %s at buffer %s. '
+                    'Frame has no Savant Frame Meta.',
+                    nvds_frame_meta.buf_pts,
+                    buffer.pts,
+                )
+                continue
+
+            frame_id = savant_frame_meta.idx
+            video_frame, video_frame_span = self._video_pipeline.get_batched_frame(
+                batch_id,
+                frame_id,
+            )
+            with video_frame_span.nested_span('process-frame') as telemetry_span:
+                with NvDsFrameMeta(
+                    nvds_frame_meta,
+                    video_frame,
+                    telemetry_span,
+                ) as frame_meta:
+                    self.process_frame(buffer, frame_meta)
 
         for stream in self.frame_streams.values():
             stream.waitForCompletion()
