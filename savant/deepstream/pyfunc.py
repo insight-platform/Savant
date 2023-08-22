@@ -107,7 +107,7 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
             )
             return
 
-        batch_id = savant_batch_meta.idx if savant_batch_meta else None
+        batch_id = savant_batch_meta.idx
 
         self.logger.debug(
             'Processing batch id=%d, with %d frames',
@@ -127,10 +127,10 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
                 )
                 continue
 
-            frames_id = savant_frame_meta.idx if savant_frame_meta else None
+            frame_id = savant_frame_meta.idx
             video_frame, video_frame_span = self._video_pipeline.get_batched_frame(
                 batch_id,
-                frames_id,
+                frame_id,
             )
             with video_frame_span.nested_span('process-frame') as telemetry_span:
                 with NvDsFrameMeta(

@@ -117,7 +117,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
             )
             return
 
-        batch_id = savant_batch_meta.idx if savant_batch_meta else None
+        batch_id = savant_batch_meta.idx
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
             savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(
@@ -133,7 +133,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                 )
                 continue
 
-            frame_idx = savant_frame_meta.idx if savant_frame_meta else None
+            frame_idx = savant_frame_meta.idx
             video_frame, video_frame_span = self._video_pipeline.get_batched_frame(
                 batch_id,
                 frame_idx,

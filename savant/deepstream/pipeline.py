@@ -267,6 +267,8 @@ class NvDsPipeline(GstPipeline):
 
         :param element: The source element that the pad was added to.
         :param new_pad: The pad that has been added.
+        :param add_frames_to_pipeline: Whether to add frames to pipeline i.e.
+            add an element savant_rs_add_frames after the source element.
         """
 
         if not self._is_running:
@@ -657,7 +659,7 @@ class NvDsPipeline(GstPipeline):
             )
             return Gst.PadProbeReturn.PASS
 
-        batch_id = savant_batch_meta.idx if savant_batch_meta else None
+        batch_id = savant_batch_meta.idx
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         # convert output meta
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
@@ -683,7 +685,7 @@ class NvDsPipeline(GstPipeline):
                 )
                 continue
 
-            frame_idx = savant_frame_meta.idx if savant_frame_meta else None
+            frame_idx = savant_frame_meta.idx
             video_frame: VideoFrame
             video_frame, video_frame_span = self._video_pipeline.get_batched_frame(
                 batch_id,

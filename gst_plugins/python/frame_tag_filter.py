@@ -199,7 +199,7 @@ class FrameTagFilter(LoggerMixin, Gst.Element):
                 )
                 return None
 
-            frame_idx = savant_frame_meta.idx if savant_frame_meta else None
+            frame_idx = savant_frame_meta.idx
             self.logger.debug('Frame IDX: %s, PTS: %s.', frame_idx, buffer.pts)
             video_frame, video_frame_span = self.video_pipeline.get_independent_frame(
                 frame_idx,
