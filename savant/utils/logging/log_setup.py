@@ -1,3 +1,4 @@
+"""Logging setup utils."""
 import os
 from typing import Optional
 import logging
@@ -29,7 +30,6 @@ def get_log_conf(log_level: str) -> dict:
             },
             'savantrs': {
                 'class': 'savant.utils.logging.savant_rs_handler.SavantRsLoggingHandler',
-                # 'formatter': 'pretty_traceback',
             },
         },
         'loggers': {
@@ -85,12 +85,15 @@ def update_logging(log_level: str):
 
 
 def set_savant_rs_loglevel(log_level: str):
+    """Set savant_rs base logging level.
+    No messages with priority lower than this setting are going to be logged
+    regardless of RUST_LOG env var config.
+
+    :param log_level: Python logging level as a string.
+    """
     default_log_level_int = getattr(logging, get_default_loglevel())
     py_log_level_int = getattr(logging, log_level, default_log_level_int)
 
     rs_log_level = log_level_py_to_rs(py_log_level_int)
 
-    # set savant_rs base logging level
-    # no messages with priority lower than this setting are going to be logged
-    # regardless of RUST_LOG env var config
     set_log_level(rs_log_level)

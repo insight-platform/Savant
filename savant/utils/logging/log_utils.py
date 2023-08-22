@@ -1,4 +1,4 @@
-"""Logger utils."""
+"""General logging utils."""
 import logging
 import logging.config
 from savant_rs.logging import LogLevel
@@ -7,7 +7,6 @@ from savant_rs.logging import LogLevel
 def add_logging_level(
     level_name, level_num, method_name=None, *, exc_info=False, stack_info=False
 ):
-
     """
     Comprehensively adds a new logging level to the `logging` module and the
     currently configured logging class.
@@ -127,6 +126,10 @@ def add_logging_level(
 
 
 def log_level_py_to_rs(py_log_level: int):
+    """Get a rust log level corresponding to the specified python log level.
+
+    :param py_log_level: python log level as an int.
+    """
     if py_log_level in (logging.ERROR, logging.CRITICAL):
         return LogLevel.Error
     if py_log_level == logging.WARNING:

@@ -31,6 +31,7 @@ class ModuleConfigException(Exception):
 def pyfunc_element_configurator(
     element_config: DictConfig, module_config: DictConfig
 ) -> DictConfig:
+    """Additional configuration steps for PyfuncElements."""
     # if dev mode is enabled in the module parameters
     # set dev mode for the pyfunc element
     if module_config.parameters.dev_mode:
@@ -304,7 +305,7 @@ def configure_pipeline_elements(module_cfg: DictConfig) -> None:
                 item.group.elements = []
             item_cfg = OmegaConf.merge(group_schema, item.group)
         else:
-            ModuleConfigException(
+            raise ModuleConfigException(
                 f'Config node under "pipeline.elements" should include either'
                 f' "element" or "group". Config node: {item}.'
             )

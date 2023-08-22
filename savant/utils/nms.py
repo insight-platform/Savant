@@ -1,3 +1,4 @@
+"""Numba optimized NMS module."""
 import numba as nb
 import numpy as np
 

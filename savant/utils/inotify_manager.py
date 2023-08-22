@@ -1,3 +1,4 @@
+"""Inotify manager module."""
 from collections import defaultdict
 import logging
 from inotify_simple import INotify, flags
@@ -5,10 +6,14 @@ from savant.utils.singleton import SingletonMeta
 
 
 class INotifyManager(metaclass=SingletonMeta):
+    """Singleton facilitates monitoring changes in files from pyfuncs
+    using inotify python bindinds package.
+    """
+
     def __init__(self) -> None:
         self.logger = logging.getLogger(__name__)
         self.inotify = INotify()
-        self.watch_flags = flags.MODIFY | flags.DELETE_SELF | flags.CLOSE_WRITE
+        self.watch_flags = flags.MODIFY
 
         self.file_to_watch = {}
         self.watch_to_file = {}
@@ -16,8 +21,12 @@ class INotifyManager(metaclass=SingletonMeta):
         self.watch_to_subscribers = defaultdict(list)
         self.replies = defaultdict(bool)
 
-    def add_watch(self, file_path, subscriber):
+    def add_watch(self, file_path: str, subscriber: int):
+        """Add a watch for the specified file and subscriber.
 
+        :param file_path: which file to watch for changes.
+        :param subscriber: pyfunc's id.
+        """
         if subscriber in self.subscriber_to_watch:
             watch_descriptor = self.subscriber_to_watch[subscriber]
             file_path = self.watch_to_file[watch_descriptor]
@@ -43,8 +52,13 @@ class INotifyManager(metaclass=SingletonMeta):
         self.subscriber_to_watch[subscriber] = watch_descriptor
         self.watch_to_subscribers[watch_descriptor].append(subscriber)
 
-    def is_changed(self, subscriber):
+    def is_changed(self, subscriber: int) -> bool:
+        """Check existing watches, return True if the file the subscriber watches
+        has changed since last call.
 
+        :param subscriber: pyfunc's id.
+        :return: True if the watched file has changed, False otherwise.
+        """
         watch_descriptor = self.subscriber_to_watch[subscriber]
         self.logger.debug(
             '%s: checking watch %s.',
@@ -60,7 +74,7 @@ class INotifyManager(metaclass=SingletonMeta):
             return True
 
         for event in self.inotify.read(timeout=0):
-            if event.mask & flags.MODIFY:
+            if event.mask & self.watch_flags:
                 self.logger.debug('MODIFY event found for watch %s.', event.wd)
                 for sub_iter in self.watch_to_subscribers[event.wd]:
                     self.logger.debug('%s: save True reply.', sub_iter)

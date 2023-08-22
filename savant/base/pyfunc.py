@@ -100,10 +100,15 @@ class PyFunc:
     """PyFunc structure that defines instantiation parameters for an object
     implementing :py:class:`.BasePyFuncImpl`.
 
-    Module and class will be resolved and imported
-    with :py:func:`~savant.base.pyfunc.resolve_pyfunc`.
-    Instantiation will be done in ``__post__init__()``
-    and the instance will be available through :py:attr:`instance` property.
+    To instantiate the specified module and class after configuration was finished,
+    call :py:func:`load_user_code`.
+
+    The instance will be available through :py:attr:`instance` property.
+
+    A pyfunc can be configured to be run in dev mode. Pyfuncs in dev mode are
+    reloaded at runtime before each call (each frame) if the source file has
+    changed since the last one. Additionally, pyfuncs in dev mode gracefully
+    recover from error in code, allowing the pipeline to stay up and continue processing.
 
     .. note::
 
@@ -136,6 +141,7 @@ class PyFunc:
     """Class initialization keyword arguments."""
 
     dev_mode: bool = False
+    """Flag signifies if the pyfunc is in dev mode."""
 
     def __post_init__(self):
         self._module_instance = None
@@ -144,6 +150,9 @@ class PyFunc:
         self._load_complete: bool = False
 
     def load_user_code(self):
+        """Load (or reload) the user module/class specified in the PyFunc fields.
+        It's necessary to call this at least once before starting the pipeline.
+        """
         if self._load_complete and not self.dev_mode:
             return
         logger.debug(
@@ -248,15 +257,18 @@ class PyFunc:
         return self._callable(*args, **kwargs)
 
     def check_reload(self):
+        """Checks if reload is needed and reloads in case it is."""
         py_target = self.module, self.class_name
         if INotifyManager().is_changed(id(self)):
             logger.info('Pyfunc %s Reload %s', id(self), py_target)
             self.load_user_code()
         else:
-            logger.debug('Pyfunc %s Unchanged %s', id(self), py_target)
+            logger.trace('Pyfunc %s, code in %s unchanged', id(self), py_target)
 
 
 class PyFuncPluginDevModeWrapper(BasePyFuncPlugin):
+    """A wrapper class for a class pyfunc impl obj to be used in pyfunc plugin element."""
+
     def __init__(self, pyfunc: PyFunc):
         super().__init__()
         self.pyfunc = pyfunc
@@ -277,12 +289,13 @@ class PyFuncPluginDevModeWrapper(BasePyFuncPlugin):
         self.pyfunc._instance.on_event(event)
 
     def process_buffer(self, buffer: Gst.Buffer):
+        """Process buffer."""
         self.pyfunc.check_reload()
         self.pyfunc._instance.process_buffer(buffer)
 
 
 def reload_module(module: ModuleType) -> ModuleType:
-    """
+    """Reload a previously loaded module.
 
     .. note::
 
@@ -302,6 +315,7 @@ def reload_module(module: ModuleType) -> ModuleType:
 
 
 def pyfunc_module_spec_factory(pyfunc: PyFunc) -> ModuleSpec:
+    """Get a module spec for the module specified in the pyfunc."""
     if not getattr(pyfunc, 'module', None):
         raise PyFuncException('Python module name or path is required.')
 
@@ -321,6 +335,7 @@ def pyfunc_module_spec_factory(pyfunc: PyFunc) -> ModuleSpec:
 
 
 def pyfunc_module_factory(spec: ModuleSpec) -> ModuleType:
+    """Instantiate a module from module spec."""
     module_instance = importlib_util.module_from_spec(spec)
     spec.loader.exec_module(module_instance)
     # reloading requires module being put into the modules dict
@@ -330,6 +345,7 @@ def pyfunc_module_factory(spec: ModuleSpec) -> ModuleType:
 
 
 def pyfunc_impl_factory(pyfunc: PyFunc, module_instance: ModuleType) -> BasePyFuncImpl:
+    """Instantiate the pyfunc class from module instance."""
     if not getattr(pyfunc, 'class_name', None):
         raise PyFuncException('Python class name is required.')
 
@@ -348,6 +364,7 @@ def pyfunc_impl_factory(pyfunc: PyFunc, module_instance: ModuleType) -> BasePyFu
 
 
 def callable_factory(pyfunc_impl: BasePyFuncImpl) -> Callable[..., Any]:
+    """Get a callable from a pyfunc implementation."""
     if isinstance(pyfunc_impl, BasePyFuncCallableImpl):
         return pyfunc_impl
     return lambda *args, **kwargs: None
