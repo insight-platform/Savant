@@ -5,7 +5,7 @@ other tasks.
 """
 from typing import Any, Optional
 import json
-from savant.base.pyfunc import PyFunc, BasePyFuncPlugin, pyfunc_factory
+from savant.base.pyfunc import PyFunc, BasePyFuncPlugin
 from savant.gstreamer import GLib, Gst, GstBase, GObject  # noqa: F401
 from savant.utils.logging import LoggerMixin
 
@@ -61,9 +61,9 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             None,
             GObject.ParamFlags.READWRITE,
         ),
-        'dynamic-reload': (
+        'dev-mode': (
             bool,
-            'Dynamic reload flag',
+            'Dev mode flag',
             (
                 'Whether to monitor source file changes at runtime'
                 ' and reload the pyfunc objects when necessary.'
@@ -75,12 +75,11 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
 
     def __init__(self):
         super().__init__()
-        self.dev_mode = True
         # properties
         self.module: Optional[str] = None
         self.class_name: Optional[str] = None
         self.kwargs: Optional[str] = None
-        self.dynamic_reload: bool = False
+        self.dev_mode: bool = False
         # pyfunc object
         self.pyfunc: Optional[PyFunc] = None
 
@@ -95,8 +94,8 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             return self.class_name
         if prop.name == 'kwargs':
             return self.kwargs
-        if prop.name == 'dynamic-reload':
-            return self.dynamic_reload
+        if prop.name == 'dev-mode':
+            return self.dev_mode
         raise AttributeError(f'Unknown property {prop.name}.')
 
     def do_set_property(self, prop: GObject.GParamSpec, value: Any):
@@ -111,48 +110,64 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             self.class_name = value
         elif prop.name == 'kwargs':
             self.kwargs = value
-        elif prop.name == 'dynamic-reload':
-            self.dynamic_reload = value
+        elif prop.name == 'dev-mode':
+            self.dev_mode = value
         else:
             raise AttributeError(f'Unknown property {prop.name}.')
 
     def do_start(self):
         """Do on plugin start."""
-        try:
-            self.pyfunc = pyfunc_factory(
-                module=self.module,
-                class_name=self.class_name,
-                dynamic_reload=self.dynamic_reload,
-                kwargs=json.loads(self.kwargs) if self.kwargs else None,
-            )
-        except Exception as e:
-            self.logger.exception('Got exception while instantiating pyfunc')
-            return True
+        self.pyfunc = PyFunc(
+            module=self.module,
+            class_name=self.class_name,
+            kwargs=json.loads(self.kwargs) if self.kwargs else None,
+            dev_mode=self.dev_mode,
+        )
+
+        self.pyfunc.load_user_code()
+        self.pyfunc_class_instance = self.pyfunc.instance
 
         assert isinstance(
-            self.pyfunc.instance, BasePyFuncPlugin
+            self.pyfunc_class_instance, BasePyFuncPlugin
         ), f'"{self.pyfunc}" should be an instance of "BasePyFuncPlugin" subclass.'
-        self.pyfunc.instance.gst_element = self
+        self.pyfunc_class_instance.gst_element = self
 
-        return self.pyfunc.instance.on_start()
+        try:
+            return self.pyfunc_class_instance.on_start()
+        except Exception as exc:
+            return self.handle_error(exc, 'Error in pyfunc do_start()', True, False)
 
     def do_stop(self):
         """Do on plugin stop."""
-        return self.pyfunc.instance.on_stop()
+        try:
+            return self.pyfunc_class_instance.on_stop()
+        except Exception as exc:
+            return self.handle_error(exc, 'Error in pyfunc do_stop()', True, False)
 
     def do_sink_event(self, event: Gst.Event) -> bool:
         """Do on sink event."""
-        self.pyfunc.instance.on_event(event)
+        try:
+            self.pyfunc_class_instance.on_event(event)
+        except Exception as exc:
+            self.handle_error(exc, 'Error in pyfunc do_sink_event()', True, False)
         return self.srcpad.push_event(event)
 
     def do_transform_ip(self, buffer: Gst.Buffer):
         """Transform buffer in-place function."""
         try:
-            self.pyfunc.instance.process_buffer(buffer)
-        except:
-            self.logger.exception('Failed to process buffer/frame.')
-            return Gst.FlowReturn.ERROR
+            self.pyfunc_class_instance.process_buffer(buffer)
+        except Exception as exc:
+            return self.handle_error(exc, 'Failed to process buffer/frame.')
+
         return Gst.FlowReturn.OK
+
+    def handle_error(
+        self, exc, msg, return_ok=Gst.FlowReturn.OK, return_err=Gst.FlowReturn.ERROR
+    ):
+        self.logger.exception(msg)
+        if self.dev_mode:
+            return return_ok
+        return return_err
 
 
 # register plugin

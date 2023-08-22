@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import List, Optional
 from omegaconf import MISSING
-from savant.base.pyfunc import PyFunc, pyfunc_factory
+from savant.base.pyfunc import PyFunc
 from savant.base.model import (
     Model,
     ModelInput,
@@ -171,10 +171,10 @@ class NvInferModel(Model):
     """Name of the custom TensorRT CudaEngine creation function."""
 
 
-NVINFER_DEFAULT_OBJECT_SELECTOR = pyfunc_factory(
+NVINFER_DEFAULT_OBJECT_SELECTOR = PyFunc(
     module='savant.selector',
     class_name='BBoxSelector',
-    dynamic_reload=False,
+    dev_mode=False,
     kwargs=dict(confidence_threshold=0.5, nms_iou_threshold=0.5),
 )
 

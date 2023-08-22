@@ -272,6 +272,7 @@ class PyFuncElement(PipelineElement, PyFunc):
                 'module': self.module,
                 'class': self.class_name,
                 'kwargs': json.dumps(kwargs),
+                'dev-mode': self.dev_mode,
             }
         )
 

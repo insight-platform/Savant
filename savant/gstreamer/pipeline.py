@@ -11,6 +11,7 @@ from savant.config.schema import (
     ModelElement,
     ElementGroup,
 )
+from savant.base.model import ObjectModel, ComplexModel
 from savant.utils.sink_factories import SinkMessage
 from savant.utils.fps_meter import FPSMeter
 from savant.gstreamer.element_factory import CreateElementException, GstElementFactory
@@ -95,6 +96,19 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
             raise CreateElementException(
                 f'Duplicate element name {element} in the pipeline.'
             )
+
+        if isinstance(element, ModelElement):
+            self._logger.debug('Loading user code for element %s', element.name)
+            if element.model.input.preprocess_object_meta:
+                element.model.input.preprocess_object_meta.load_user_code()
+            if element.model.input.preprocess_object_image:
+                element.model.input.preprocess_object_image.load_user_code()
+            if element.model.output.converter:
+                element.model.output.converter.load_user_code()
+            if isinstance(element.model, (ObjectModel, ComplexModel)):
+                for obj in element.model.output.objects:
+                    if obj.selector:
+                        obj.selector.load_user_code()
 
         gst_element = self._element_factory.create(element)
         self._pipeline.add(gst_element)

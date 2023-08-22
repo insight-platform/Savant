@@ -1,7 +1,7 @@
 import os
 from typing import Optional
 import logging
-from savant_rs.logging import LogLevel, set_log_level
+from savant_rs.logging import set_log_level
 from .log_utils import add_logging_level, log_level_py_to_rs
 
 
@@ -18,9 +18,7 @@ def get_log_conf(log_level: str) -> dict:
                 'format': '%(asctime)s [%(levelname)s] [%(name)s] [%(threadName)s] '
                 '%(message)s',
             },
-            'pretty_traceback': {
-                'class': 'pretty_traceback.LoggingFormatter'
-            }
+            'pretty_traceback': {'class': 'pretty_traceback.LoggingFormatter'},
         },
         'handlers': {
             'console': {
@@ -86,8 +84,7 @@ def update_logging(log_level: str):
     logging.config.dictConfig(get_log_conf(log_level))
 
 
-
-def set_savant_rs_loglevel(log_level:str):
+def set_savant_rs_loglevel(log_level: str):
     default_log_level_int = getattr(logging, get_default_loglevel())
     py_log_level_int = getattr(logging, log_level, default_log_level_int)
 

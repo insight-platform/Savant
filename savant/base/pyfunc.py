@@ -3,15 +3,25 @@ import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from importlib import util as importlib_util, import_module, reload
+from importlib.machinery import ModuleSpec
+from types import ModuleType
 from pathlib import Path
 from typing import Any, Dict, Optional, Callable
-from types import ModuleType
+
 import logging
 from savant.gstreamer import Gst  # noqa: F401
 from savant.utils.inotify_manager import INotifyManager
 
 
 logger = logging.getLogger(__name__)
+
+
+class PyFuncException(Exception):
+    """PyFunc exception class."""
+
+
+class PyFuncNoopCall(PyFuncException):
+    """PyFunc no-op call exception class."""
 
 
 class BasePyFuncImpl(ABC):
@@ -73,6 +83,18 @@ class BasePyFuncCallableImpl(BasePyFuncImpl):
         """Call self as a function."""
 
 
+class PyFuncNoopImpl(BasePyFuncPlugin, BasePyFuncCallableImpl):
+    def process_buffer(self, buffer: Gst.Buffer):
+        """ """
+        logger.debug('Noop pyfunc, process_buffer() called.')
+        raise PyFuncNoopCall('Called process_buffer() from noop pyfunc')
+
+    def __call__(self, *args, **kwargs) -> Any:
+        """Call self as a function."""
+        logger.debug('Noop pyfunc, __call__() called.')
+        raise PyFuncNoopCall('Called __call__() from noop pyfunc')
+
+
 @dataclass
 class PyFunc:
     """PyFunc structure that defines instantiation parameters for an object
@@ -113,57 +135,144 @@ class PyFunc:
     kwargs: Optional[Dict[str, Any]] = None
     """Class initialization keyword arguments."""
 
+    dev_mode: bool = False
+
     def __post_init__(self):
-        module_instance = pyfunc_module_factory(self)
-        self._instance: BasePyFuncImpl = pyfunc_impl_factory(self, module_instance)
-        self._callable = callable_factory(self._instance)
+        self._module_instance = None
+        self._instance = None
+        self._callable = None
+        self._load_complete: bool = False
 
-    @property
-    def instance(self) -> BasePyFuncImpl:
-        """Returns resolved PyFunc implementation."""
-        return self._instance
-
-    def __call__(self, *args, **kwargs) -> Any:
-        """Calls resolved PyFunc implementation if its a subclass of
-        :py:class:`BasePyFuncCallableImpl`, otherwise no-op.
-        """
-        return self._callable(*args, **kwargs)
-
-
-@dataclass
-class PyFuncDynamicReloadable(PyFunc):
-    def __post_init__(self):
-        self._module_instance = pyfunc_module_factory(self)
-        self._instance: BasePyFuncImpl = pyfunc_impl_factory(
-            self, self._module_instance
+    def load_user_code(self):
+        if self._load_complete and not self.dev_mode:
+            return
+        logger.debug(
+            'Loading user code, pyfunc module %s, class %s, id %s',
+            self.module,
+            self.class_name,
+            id(self),
         )
+        # try to load module spec
+        spec = None
+        try:
+            spec = pyfunc_module_spec_factory(self)
+        except Exception as exc:
+            if self.dev_mode:
+                logger.exception('Error while getting module spec.')
+            else:
+                raise exc
+
+        # try to set source file watch
+        if self.dev_mode:
+            if spec is None:
+                logger.debug('No module spec, setting watch is impossible.')
+            elif not spec.has_location:
+                logger.debug(
+                    'Module spec with undetermined location, setting watch is impossible.'
+                )
+            else:
+                logger.debug('Setting watch for pyfunc module source.')
+                INotifyManager().add_watch(spec.origin, id(self))
+
+        # try to instatiate module
+        module_instance = None
+        if self.dev_mode:
+            # if dev mode, it is possible to
+            # leave module instance as None
+            # need to reload instead of load
+            if spec is None:
+                logger.debug('No module spec, skip getting module instance.')
+            elif self._module_instance:
+                logger.debug('Module was previously loaded, doing reload.')
+                try:
+                    module_instance = reload_module(self._module_instance)
+                except Exception as exc:
+                    logger.exception('Error while reloading module instance.')
+                else:
+                    # if no error, also cache new instance
+                    self._module_instance = module_instance
+            else:
+                try:
+                    module_instance = pyfunc_module_factory(spec)
+                except Exception as exc:
+                    logger.exception('Error while getting module instance.')
+        else:
+            module_instance = pyfunc_module_factory(spec)
+
+        # try to instantiate class
+        pyfunc_impl_instance = None
+        if self.dev_mode and module_instance is None:
+            logger.debug('No module instance, skip getting class instance.')
+        else:
+            try:
+                pyfunc_impl_instance = pyfunc_impl_factory(self, module_instance)
+            except Exception as exc:
+                if self.dev_mode:
+                    logger.exception('Error getting class instance from module.')
+                else:
+                    raise exc
+
+        if self.dev_mode and pyfunc_impl_instance is None:
+            pyfunc_impl_instance = PyFuncNoopImpl()
+            logger.debug('No pyfunc impl, using noop placeholder.')
+
+        self._instance = pyfunc_impl_instance
         self._callable = callable_factory(self._instance)
-        INotifyManager().add_watch(self._module_instance.__file__, id(self))
+
+        if self.dev_mode and not self._load_complete:
+            # if the module was loaded once
+            # next attempts should be to reload a cached ModuleType instance
+            self._module_instance = module_instance
+
+        self._load_complete = True
 
     @property
     def instance(self) -> BasePyFuncImpl:
         """Returns resolved PyFunc implementation."""
-        self._check_reload()
+        if self.dev_mode:
+            return PyFuncPluginDevModeWrapper(self)
         return self._instance
 
     def __call__(self, *args, **kwargs) -> Any:
         """Calls resolved PyFunc implementation if its a subclass of
         :py:class:`BasePyFuncCallableImpl`, otherwise no-op.
         """
-        self._check_reload()
+        if self.dev_mode:
+            self.check_reload()
         return self._callable(*args, **kwargs)
 
-    def _check_reload(self):
+    def check_reload(self):
         py_target = self.module, self.class_name
         if INotifyManager().is_changed(id(self)):
             logger.info('Pyfunc %s Reload %s', id(self), py_target)
-            self._module_instance = reload_module(self._module_instance)
-            self._instance: BasePyFuncImpl = pyfunc_impl_factory(
-                self, self._module_instance
-            )
-            self._callable = callable_factory(self._instance)
+            self.load_user_code()
         else:
             logger.debug('Pyfunc %s Unchanged %s', id(self), py_target)
+
+
+class PyFuncPluginDevModeWrapper(BasePyFuncPlugin):
+    def __init__(self, pyfunc: PyFunc):
+        super().__init__()
+        self.pyfunc = pyfunc
+
+    def on_start(self) -> bool:
+        """Do on plugin start."""
+        self.pyfunc.check_reload()
+        return self.pyfunc._instance.on_start()
+
+    def on_stop(self) -> bool:
+        """Do on plugin stop."""
+        self.pyfunc.check_reload()
+        return self.pyfunc._instance.on_stop()
+
+    def on_event(self, event: Gst.Event):
+        """Do on event."""
+        self.pyfunc.check_reload()
+        self.pyfunc._instance.on_event(event)
+
+    def process_buffer(self, buffer: Gst.Buffer):
+        self.pyfunc.check_reload()
+        self.pyfunc._instance.process_buffer(buffer)
 
 
 def reload_module(module: ModuleType) -> ModuleType:
@@ -186,43 +295,48 @@ def reload_module(module: ModuleType) -> ModuleType:
     return reload(module)
 
 
-def pyfunc_factory(module, class_name, dynamic_reload, **kwargs) -> PyFunc:
-    """Whether to reload the module and re-instantiate the class
-    on changes detected in the source file.
-    """
-    if dynamic_reload:
-        return PyFuncDynamicReloadable(module, class_name, **kwargs)
-    return PyFunc(module, class_name, **kwargs)
-
-
-def pyfunc_module_factory(pyfunc: PyFunc) -> ModuleType:
-    assert pyfunc.module, 'Python module name or path is required.'
-    assert pyfunc.class_name, 'Python class name is required.'
+def pyfunc_module_spec_factory(pyfunc: PyFunc) -> ModuleSpec:
+    if not getattr(pyfunc, 'module', None):
+        raise PyFuncException('Python module name or path is required.')
 
     module_path = Path(pyfunc.module).resolve()
-
     if module_path.exists():
-        module_name = module_path.stem
-        spec = importlib_util.spec_from_file_location(module_name, module_path)
-        module_instance = importlib_util.module_from_spec(spec)
-        spec.loader.exec_module(module_instance)
-        sys.modules[module_name] = module_instance
+        spec = importlib_util.spec_from_file_location(module_path.stem, module_path)
     else:
-        module_instance = import_module(pyfunc.module)
+        spec = importlib_util.find_spec(pyfunc.module, package=None)
 
+    if not spec.has_location:
+        # can be a built-in or a namespace packge, for example
+        logger.warning(
+            'Attempting to load a PyFunc with undetermined location. Is it really a user module? %r',
+            pyfunc,
+        )
+    return spec
+
+
+def pyfunc_module_factory(spec: ModuleSpec) -> ModuleType:
+    module_instance = importlib_util.module_from_spec(spec)
+    spec.loader.exec_module(module_instance)
+    # reloading requires module being put into the modules dict
+    # only do so after the loader.exec_module call as it can fail
+    sys.modules[spec.name] = module_instance
     return module_instance
 
 
 def pyfunc_impl_factory(pyfunc: PyFunc, module_instance: ModuleType) -> BasePyFuncImpl:
+    if not getattr(pyfunc, 'class_name', None):
+        raise PyFuncException('Python class name is required.')
+
     pyfunc_class = getattr(module_instance, pyfunc.class_name)
     if pyfunc.kwargs:
         pyfunc_instance = pyfunc_class(**pyfunc.kwargs)
     else:
         pyfunc_instance = pyfunc_class()
 
-    assert isinstance(
-        pyfunc_instance, BasePyFuncImpl
-    ), f'"{pyfunc_instance}" should be an instance of "BasePyFuncImpl" subclass.'
+    if not isinstance(pyfunc_instance, BasePyFuncImpl):
+        raise PyFuncException(
+            f'"{pyfunc_instance}" should be an instance of "BasePyFuncImpl" subclass.'
+        )
 
     return pyfunc_instance
 

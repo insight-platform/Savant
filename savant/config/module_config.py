@@ -31,11 +31,13 @@ class ModuleConfigException(Exception):
 def pyfunc_element_configurator(
     element_config: DictConfig, module_config: DictConfig
 ) -> DictConfig:
-    if module_config.parameters.dynamic_reload:
+    # if dev mode is enabled in the module parameters
+    # set dev mode for the pyfunc element
+    if module_config.parameters.dev_mode:
         logger.debug(
-            'Set dynamic reload for PyFunc named "%s" to True.', element_config.name
+            'Set dev mode for PyFuncElement named "%s" to True.', element_config.name
         )
-        element_config.properties['dynamic_reload'] = True
+        element_config.dev_mode = True
     return element_config
 
 
@@ -82,7 +84,7 @@ def get_elem_type_ver(
     :param element_config: element config
     :return: element + element_type + element_version
     """
-    logger.debug(
+    logger.trace(
         'Getting element/elem_type/elem_ver from element config %s', element_config
     )
 
@@ -358,6 +360,7 @@ class ModuleConfig(metaclass=SingletonMeta):
         configure_pipeline_elements(module_cfg)
 
         self._config = OmegaConf.to_object(module_cfg)
+
         validate_frame_parameters(self._config)
 
         setup_batch_size(self._config)

@@ -11,11 +11,20 @@ class INotifyManager(metaclass=SingletonMeta):
         self.watch_flags = flags.MODIFY | flags.DELETE_SELF | flags.CLOSE_WRITE
 
         self.file_to_watch = {}
+        self.watch_to_file = {}
         self.subscriber_to_watch = {}
         self.watch_to_subscribers = defaultdict(list)
         self.replies = defaultdict(bool)
 
     def add_watch(self, file_path, subscriber):
+
+        if subscriber in self.subscriber_to_watch:
+            watch_descriptor = self.subscriber_to_watch[subscriber]
+            file_path = self.watch_to_file[watch_descriptor]
+            self.logger.debug(
+                '%s: subscriber already watches %s.', subscriber, file_path
+            )
+            return
 
         if file_path in self.file_to_watch:
             self.logger.debug('%s: %s is already watched.', subscriber, file_path)
@@ -26,6 +35,7 @@ class INotifyManager(metaclass=SingletonMeta):
             # https://man7.org/linux/man-pages/man7/inotify.7.html
             watch_descriptor = self.inotify.add_watch(file_path, self.watch_flags)
             self.file_to_watch[file_path] = watch_descriptor
+            self.watch_to_file[watch_descriptor] = file_path
             self.logger.debug(
                 '%s: added watch %s for %s.', subscriber, watch_descriptor, file_path
             )
@@ -36,7 +46,12 @@ class INotifyManager(metaclass=SingletonMeta):
     def is_changed(self, subscriber):
 
         watch_descriptor = self.subscriber_to_watch[subscriber]
-        self.logger.debug('%s: checking watch %s.', subscriber, watch_descriptor)
+        self.logger.debug(
+            '%s: checking watch %s. replies %s',
+            subscriber,
+            watch_descriptor,
+            self.replies,
+        )
 
         if self.replies[subscriber]:
             self.logger.debug(
@@ -48,9 +63,9 @@ class INotifyManager(metaclass=SingletonMeta):
         for event in self.inotify.read(timeout=0):
             if event.mask & flags.MODIFY:
                 self.logger.debug('MODIFY event found for watch %s.', event.wd)
-                for subscriber in self.watch_to_subscribers[event.wd]:
-                    self.logger.debug('%s: save True reply.', subscriber)
-                    self.replies[subscriber] = True
+                for sub_iter in self.watch_to_subscribers[event.wd]:
+                    self.logger.debug('%s: save True reply.', sub_iter)
+                    self.replies[sub_iter] = True
 
         reply = self.replies[subscriber]
         self.replies[subscriber] = False

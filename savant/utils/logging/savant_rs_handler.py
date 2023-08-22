@@ -3,6 +3,7 @@ import pretty_traceback
 from savant_rs.logging import log
 from .log_utils import log_level_py_to_rs
 
+
 class SavantRsLoggingHandler(logging.Handler):
     def __init__(self) -> None:
         logging.Handler.__init__(self)

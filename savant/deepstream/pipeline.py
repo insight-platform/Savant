@@ -104,6 +104,7 @@ class NvDsPipeline(GstPipeline):
         if draw_func is not None and isinstance(
             self._source_output, SourceOutputWithFrame
         ):
+            draw_func.init_user_code()
             pipeline_cfg.elements.append(draw_func)
 
         self._demuxer_src_pads: List[Gst.Pad] = []

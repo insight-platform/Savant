@@ -14,6 +14,7 @@ from savant.base.model import (
     ModelPrecision,
     ObjectModel,
     AttributeModel,
+    ComplexModel,
     ModelColorFormat,
 )
 from savant.config.schema import get_element_name
@@ -57,7 +58,7 @@ def nvinfer_element_configurator(
         logging.getLogger(__name__), dict(element_name=element_name)
     )
 
-    logger.debug('Configuring nvinfer element %s', element_config)
+    logger.trace('Configuring nvinfer element %s', element_config)
     # check model type
     try:
         model_type: Type[NvInferModel] = NVINFER_MODEL_TYPE_REGISTRY.get(
@@ -147,14 +148,14 @@ def nvinfer_element_configurator(
                 f'Configuration file "{config_file_path}" not found.'
             )
 
-    logger.debug(
+    logger.trace(
         'Merging model with model config\nmodel %s\nmodel config %s',
         model,
         model_config,
     )
     model_config_original = model_config
     model_config = OmegaConf.merge(model, model_config)
-    logger.debug('Merging complete, result\n%s', model_config)
+    logger.trace('Merging complete, result\n%s', model_config)
 
     # try to parse engine file and check for a match
     if model_config.engine_file:
@@ -459,6 +460,19 @@ def nvinfer_element_configurator(
 
     # TODO: Test carefully! (removed to avoid duplicate pyfunc init)
     # element_config.model = OmegaConf.to_object(model_config)
+
+    if module_config.parameters.dev_mode:
+        if model_config.input.preprocess_object_meta:
+            model_config.input.preprocess_object_meta.dev_mode = True
+        if model_config.input.preprocess_object_image:
+            model_config.input.preprocess_object_image.dev_mode = True
+        if model_config.output.converter:
+            model_config.output.converter.dev_mode = True
+        if issubclass(model_type, ObjectModel) or issubclass(model_type, ComplexModel):
+            for obj in model_config.output.objects:
+                if obj.selector:
+                    obj.selector.dev_mode = True
+
     element_config.model = model_config
 
     # save resulting nvinfer config file

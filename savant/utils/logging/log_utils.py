@@ -3,6 +3,7 @@ import logging
 import logging.config
 from savant_rs.logging import LogLevel
 
+
 def add_logging_level(
     level_name, level_num, method_name=None, *, exc_info=False, stack_info=False
 ):
@@ -123,6 +124,7 @@ def add_logging_level(
         setattr(logger_adapter, method_name, for_logger_adapter)
     finally:
         logging._releaseLock()
+
 
 def log_level_py_to_rs(py_log_level: int):
     if py_log_level in (logging.ERROR, logging.CRITICAL):
