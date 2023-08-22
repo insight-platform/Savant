@@ -26,7 +26,7 @@ def gst_buffer_add_savant_batch_meta(
 def gst_buffer_get_savant_batch_meta(
     buffer: Gst.Buffer,
 ) -> Optional[pygstsavantframemeta.GstSavantBatchMeta]:
-    """Get savant batch metadata to GStreamer buffer.
+    """Get savant batch metadata from GStreamer buffer.
 
     :param buffer: GStreamer buffer.
     :return: Metadata.
@@ -103,48 +103,72 @@ def add_convert_savant_frame_meta_pad_probe(pad: Gst.Pad, to_nvds: bool):
     pygstsavantframemeta.add_convert_savant_frame_meta_pad_probe(hash(pad), to_nvds)
 
 
-def add_move_frame_as_is_pad_probe(
+def add_pad_probe_to_move_frame(
     pad: Gst.Pad,
     video_pipeline: VideoPipeline,
     stage: str,
 ):
-    pygstsavantframemeta.add_move_frame_as_is_pad_probe(
+    """Add pad probe to move frame to the next stage of VideoPipeline.
+
+    :param pad: GStreamer pad.
+    :param video_pipeline: VideoPipeline object.
+    :param stage: The next stage name.
+    """
+    pygstsavantframemeta.add_pad_probe_to_move_frame(
         hash(pad),
         video_pipeline.memory_handle,
         stage,
     )
 
 
-def add_move_and_pack_frames_pad_probe(
+def add_pad_probe_to_pack_and_move_frames(
     pad: Gst.Pad,
     video_pipeline: VideoPipeline,
     stage: str,
 ):
-    pygstsavantframemeta.add_move_and_pack_frames_pad_probe(
+    """Add pad probe to pack frames to batch and move it to the next stage of VideoPipeline.
+
+    :param pad: GStreamer pad.
+    :param video_pipeline: VideoPipeline object.
+    :param stage: The next stage name.
+    """
+    pygstsavantframemeta.add_pad_probe_to_pack_and_move_frames(
         hash(pad),
         video_pipeline.memory_handle,
         stage,
     )
 
 
-def add_move_batch_as_is_pad_probe(
+def add_pad_probe_to_move_batch(
     pad: Gst.Pad,
     video_pipeline: VideoPipeline,
     stage: str,
 ):
-    pygstsavantframemeta.add_move_batch_as_is_pad_probe(
+    """Add pad probe to move batch to the next stage of VideoPipeline.
+
+    :param pad: GStreamer pad.
+    :param video_pipeline: VideoPipeline object.
+    :param stage: The next stage name.
+    """
+    pygstsavantframemeta.add_pad_probe_to_move_batch(
         hash(pad),
         video_pipeline.memory_handle,
         stage,
     )
 
 
-def add_move_and_unpack_batch_pad_probe(
+def add_pad_probe_to_unpack_and_move_batch(
     pad: Gst.Pad,
     video_pipeline: VideoPipeline,
     stage: str,
 ):
-    pygstsavantframemeta.add_move_and_unpack_batch_pad_probe(
+    """Add pad probe to unpack batch to frames and move them to the next stage of VideoPipeline.
+
+    :param pad: GStreamer pad.
+    :param video_pipeline: VideoPipeline object.
+    :param stage: The next stage name.
+    """
+    pygstsavantframemeta.add_pad_probe_to_unpack_and_move_batch(
         hash(pad),
         video_pipeline.memory_handle,
         stage,

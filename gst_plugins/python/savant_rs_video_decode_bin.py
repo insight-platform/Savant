@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from threading import Event, Lock
 from typing import Dict, Optional
 
-from pygstsavantframemeta import add_move_frame_as_is_pad_probe
+from pygstsavantframemeta import add_pad_probe_to_move_frame
 from savant_rs.pipeline2 import VideoPipeline
 
 from gst_plugins.python.savant_rs_video_demux import SAVANT_RS_VIDEO_DEMUX_PROPERTIES
@@ -217,7 +217,7 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
         self.logger.debug(
             'Added pad %s on element %s', new_pad.get_name(), element.get_name()
         )
-        add_move_frame_as_is_pad_probe(
+        add_pad_probe_to_move_frame(
             new_pad,
             self._video_pipeline,
             self._pipeline_decoder_stage_name,

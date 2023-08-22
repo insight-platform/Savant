@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 
 import pyds
-from pygstsavantframemeta import add_move_frame_as_is_pad_probe
+from pygstsavantframemeta import add_pad_probe_to_move_frame
 from savant_rs.pipeline2 import VideoPipeline
 
 from savant.config.schema import (
@@ -59,7 +59,7 @@ class SourceOutputOnlyMeta(SourceOutput):
         self._logger.debug(
             'Do not add additional output elements since we output only frame metadata'
         )
-        add_move_frame_as_is_pad_probe(input_pad, self._video_pipeline, 'sink')
+        add_pad_probe_to_move_frame(input_pad, self._video_pipeline, 'sink')
         return input_pad
 
 
@@ -126,7 +126,7 @@ class SourceOutputWithFrame(SourceOutput):
             ),
         )
         output_converter_sink_pad: Gst.Pad = output_converter.get_static_pad('sink')
-        add_move_frame_as_is_pad_probe(
+        add_pad_probe_to_move_frame(
             output_converter_sink_pad,
             self._video_pipeline,
             'sink-convert',
@@ -153,7 +153,7 @@ class SourceOutputWithFrame(SourceOutput):
             output_caps,
             source_info.source_id,
         )
-        add_move_frame_as_is_pad_probe(
+        add_pad_probe_to_move_frame(
             output_capsfilter.get_static_pad('sink'),
             self._video_pipeline,
             'sink-capsfilter',
@@ -168,7 +168,7 @@ class SourceOutputWithFrame(SourceOutput):
                 src_pad_not_tagged=src_pad_not_tagged,
             )
 
-        add_move_frame_as_is_pad_probe(src_pad, self._video_pipeline, 'sink')
+        add_pad_probe_to_move_frame(src_pad, self._video_pipeline, 'sink')
 
         return src_pad
 
@@ -191,7 +191,7 @@ class SourceOutputWithFrame(SourceOutput):
                 },
             )
         )
-        add_move_frame_as_is_pad_probe(
+        add_pad_probe_to_move_frame(
             frame_tag_filter.get_static_pad('sink'),
             self._video_pipeline,
             'frame-tag-filter',
@@ -209,7 +209,7 @@ class SourceOutputWithFrame(SourceOutput):
             source_info.source_id,
         )
         src_pad_tagged: Gst.Pad = frame_tag_filter.get_static_pad('src_tagged')
-        add_move_frame_as_is_pad_probe(
+        add_pad_probe_to_move_frame(
             src_pad_tagged,
             self._video_pipeline,
             'queue-tagged',
@@ -233,12 +233,12 @@ class SourceOutputWithFrame(SourceOutput):
         :returns: src pad of the frame_tag_funnel element.
         """
 
-        add_move_frame_as_is_pad_probe(
+        add_pad_probe_to_move_frame(
             src_pad_tagged,
             self._video_pipeline,
             'frame-tag-funnel',
         )
-        add_move_frame_as_is_pad_probe(
+        add_pad_probe_to_move_frame(
             src_pad_not_tagged,
             self._video_pipeline,
             'queue-not-tagged',
@@ -248,7 +248,7 @@ class SourceOutputWithFrame(SourceOutput):
             link=False,
         )
         queue_not_tagged_src_pad: Gst.Pad = queue_not_tagged.get_static_pad('src')
-        add_move_frame_as_is_pad_probe(
+        add_pad_probe_to_move_frame(
             queue_not_tagged_src_pad,
             self._video_pipeline,
             'frame-tag-funnel',
@@ -350,7 +350,7 @@ class SourceOutputEncoded(SourceOutputWithFrame):
         encoder = pipeline.add_element(
             PipelineElement(self._encoder, properties=self._params)
         )
-        add_move_frame_as_is_pad_probe(
+        add_pad_probe_to_move_frame(
             encoder.get_static_pad('sink'),
             self._video_pipeline,
             'encode',
@@ -389,7 +389,7 @@ class SourceOutputH26X(SourceOutputEncoded):
         parser = pipeline.add_element(
             PipelineElement(self._codec.parser, properties=parser_params)
         )
-        add_move_frame_as_is_pad_probe(
+        add_pad_probe_to_move_frame(
             parser.get_static_pad('sink'),
             self._video_pipeline,
             'parse',

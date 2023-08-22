@@ -84,9 +84,9 @@ PYBIND11_MODULE(pygstsavantframemeta, m) {
                           convert_savant_frame_meta_pad_probe, conv_func, NULL);
     });
 
-    m.def("add_move_frame_as_is_pad_probe", [](size_t gst_pad,
-                                               uintptr_t video_pipeline,
-                                               const char *stage) {
+    m.def("add_pad_probe_to_move_frame", [](size_t gst_pad,
+                                            uintptr_t video_pipeline,
+                                            const char *stage) {
         auto *pad = reinterpret_cast<GstPad *>(gst_pad);
         SavantRsPadProbeData *data = create_savant_rs_pad_probe_data(
             video_pipeline, stage);
@@ -98,9 +98,9 @@ PYBIND11_MODULE(pygstsavantframemeta, m) {
             (GDestroyNotify)release_savant_rs_pad_probe_data);
     });
 
-    m.def("add_move_and_pack_frames_pad_probe", [](size_t gst_pad,
-                                                   uintptr_t video_pipeline,
-                                                   const char *stage) {
+    m.def("add_pad_probe_to_pack_and_move_frames", [](size_t gst_pad,
+                                                      uintptr_t video_pipeline,
+                                                      const char *stage) {
         auto *pad = reinterpret_cast<GstPad *>(gst_pad);
         SavantRsPadProbeData *data = create_savant_rs_pad_probe_data(
             video_pipeline, stage);
@@ -112,9 +112,9 @@ PYBIND11_MODULE(pygstsavantframemeta, m) {
             (GDestroyNotify)release_savant_rs_pad_probe_data);
     });
 
-    m.def("add_move_batch_as_is_pad_probe", [](size_t gst_pad,
-                                               uintptr_t video_pipeline,
-                                               const char *stage) {
+    m.def("add_pad_probe_to_move_batch", [](size_t gst_pad,
+                                            uintptr_t video_pipeline,
+                                            const char *stage) {
         auto *pad = reinterpret_cast<GstPad *>(gst_pad);
         SavantRsPadProbeData *data = create_savant_rs_pad_probe_data(
             video_pipeline, stage);
@@ -126,9 +126,9 @@ PYBIND11_MODULE(pygstsavantframemeta, m) {
             (GDestroyNotify)release_savant_rs_pad_probe_data);
     });
 
-    m.def("add_move_and_unpack_batch_pad_probe", [](size_t gst_pad,
-                                                    uintptr_t video_pipeline,
-                                                    const char *stage) {
+    m.def("add_pad_probe_to_unpack_and_move_batch", [](size_t gst_pad,
+                                                       uintptr_t video_pipeline,
+                                                       const char *stage) {
         auto *pad = reinterpret_cast<GstPad *>(gst_pad);
         SavantRsPadProbeData *data = create_savant_rs_pad_probe_data(
             video_pipeline, stage);
