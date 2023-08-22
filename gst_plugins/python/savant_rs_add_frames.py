@@ -151,10 +151,9 @@ class SavantRsAddFrames(LoggerMixin, GstBase.BaseTransform):
     def do_transform_ip(self, buffer: Gst.Buffer):
         """Transform buffer in-place function."""
         self._logger.debug(
-            'Adding frame to %s in buffer with PTS %s. is_all_memory_writable=%s',
-            self._pipeline_stage_name,
+            'Adding frame in buffer with PTS %s to stage %s.',
             buffer.pts,
-            buffer.is_all_memory_writable(),
+            self._pipeline_stage_name,
         )
         keyframe = not buffer.has_flags(Gst.BufferFlags.DELTA_UNIT)
         video_frame = VideoFrame(
@@ -174,20 +173,12 @@ class SavantRsAddFrames(LoggerMixin, GstBase.BaseTransform):
         frame_id = self._video_pipeline.add_frame(
             self._pipeline_stage_name, video_frame
         )
-        self._logger.debug(
-            'Adding frame to %s in buffer with PTS %s. Frame ID: %s. is_all_memory_writable=%s',
-            self._pipeline_stage_name,
-            buffer.pts,
-            frame_id,
-            buffer.is_all_memory_writable(),
-        )
         gst_buffer_add_savant_frame_meta(buffer, frame_id)
         self._logger.debug(
-            'Adding frame to %s in buffer with PTS %s. Frame ID: %s. is_all_memory_writable=%s',
-            self._pipeline_stage_name,
+            'Added frame in buffer with PTS %s to stage %s. Frame ID: %s.',
             buffer.pts,
+            self._pipeline_stage_name,
             frame_id,
-            buffer.is_all_memory_writable(),
         )
         return Gst.FlowReturn.OK
 
