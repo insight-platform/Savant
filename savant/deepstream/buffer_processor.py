@@ -620,7 +620,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                                                 self.logger.exception(
                                                     'Error calling selector.'
                                                 )
-                                            cls_bbox_tensor = np.zeroes((0, 8))
+                                            cls_bbox_tensor = np.zeros((0, 8))
                                         else:
                                             raise exc
 
