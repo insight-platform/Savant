@@ -39,8 +39,9 @@ def nvds_obj_meta_generator(
 class NvDsFrameMeta(AbstractContextManager, LoggerMixin):
     """Wrapper of deepstream frame meta information.
 
-    :param video_frame: Video frame meta.
     :param frame_meta: Deepstream python bindings frame meta.
+    :param video_frame: Video frame meta.
+    :param telemetry_span: The telemetry span associated with the frame.
     """
 
     def __init__(

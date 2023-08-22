@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Union
 
+from savant_rs import init_jaeger_tracer, init_noop_tracer
 from savant_rs.pipeline2 import VideoPipelineStagePayloadType
 
 from savant.config.schema import (
@@ -8,7 +9,11 @@ from savant.config.schema import (
     Pipeline,
     PipelineElement,
     PyFuncElement,
+    TelemetryParameters,
 )
+from savant.utils.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 def add_queues_to_pipeline(
@@ -135,3 +140,30 @@ def build_pipeline_stages(element_stages: List[Union[str, List[str]]]):
     )
 
     return pipeline_stages
+
+
+def init_telemetry(module_name: str, telemetry: TelemetryParameters):
+    """Initialize telemetry provider."""
+
+    provider_params = telemetry.provider_params or {}
+    if telemetry.provider == 'jaeger':
+        service_name = provider_params.get('service_name', module_name)
+        try:
+            endpoint = provider_params['endpoint']
+        except KeyError:
+            raise ValueError(
+                'Jaeger endpoint is not specified. Please specify it in the config file.'
+            )
+        logger.info(
+            'Initializing Jaeger tracer with service name %r and endpoint %r.',
+            service_name,
+            endpoint,
+        )
+        init_jaeger_tracer(service_name, endpoint)
+
+    elif telemetry.provider is not None:
+        raise ValueError(f'Unknown telemetry provider: {telemetry.provider}')
+
+    else:
+        logger.info('No telemetry provider specified. Using noop tracer.')
+        init_noop_tracer()

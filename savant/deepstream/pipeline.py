@@ -10,14 +10,13 @@ from typing import Any, List, Optional, Tuple, Union
 import pyds
 from pygstsavantframemeta import (
     add_convert_savant_frame_meta_pad_probe,
-    add_pad_probe_to_pack_and_move_frames,
-    add_pad_probe_to_unpack_and_move_batch,
     add_pad_probe_to_move_batch,
     add_pad_probe_to_move_frame,
+    add_pad_probe_to_pack_and_move_frames,
+    add_pad_probe_to_unpack_and_move_batch,
     gst_buffer_get_savant_batch_meta,
     nvds_frame_meta_get_nvds_savant_frame_meta,
 )
-from savant_rs import init_jaeger_tracer, init_noop_tracer
 from savant_rs.pipeline2 import VideoPipeline
 from savant_rs.primitives import EndOfStream, IdCollisionResolutionPolicy, VideoFrame
 from savant_rs.primitives.geometry import RBBox
@@ -55,6 +54,7 @@ from savant.deepstream.utils.pipeline import (
     add_queues_to_pipeline,
     build_pipeline_stages,
     get_pipeline_element_stages,
+    init_telemetry,
 )
 from savant.gstreamer import GLib, Gst  # noqa:F401
 from savant.gstreamer.pipeline import GstPipeline
@@ -102,7 +102,7 @@ class NvDsPipeline(GstPipeline):
 
         self._internal_attrs = set()
         telemetry: TelemetryParameters = kwargs['telemetry']
-        _init_telemetry(name, telemetry)
+        init_telemetry(name, telemetry)
 
         output_frame = kwargs.get('output_frame')
         draw_func: Optional[DrawFunc] = kwargs.get('draw_func')
@@ -992,24 +992,3 @@ class NvDsPipeline(GstPipeline):
 
 class PipelineIsNotRunningError(Exception):
     """Pipeline is not running."""
-
-
-def _init_telemetry(module_name: str, telemetry: TelemetryParameters):
-    """Initialize telemetry provider."""
-
-    provider_params = telemetry.provider_params or {}
-    if telemetry.provider == 'jaeger':
-        service_name = provider_params.get('service_name', module_name)
-        try:
-            endpoint = provider_params['endpoint']
-        except KeyError:
-            raise ValueError(
-                'Jaeger endpoint is not specified. Please specify it in the config file.'
-            )
-        init_jaeger_tracer(service_name, endpoint)
-
-    elif telemetry.provider is not None:
-        raise ValueError(f'Unknown telemetry provider: {telemetry.provider}')
-
-    else:
-        init_noop_tracer()
