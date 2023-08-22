@@ -47,10 +47,9 @@ class INotifyManager(metaclass=SingletonMeta):
 
         watch_descriptor = self.subscriber_to_watch[subscriber]
         self.logger.debug(
-            '%s: checking watch %s. replies %s',
+            '%s: checking watch %s.',
             subscriber,
             watch_descriptor,
-            self.replies,
         )
 
         if self.replies[subscriber]:
