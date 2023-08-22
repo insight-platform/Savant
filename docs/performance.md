@@ -114,8 +114,9 @@
 
 ### yolov8_seg
 
-| Savant ver.                                                                       | A4000 | Jetson NX |
-|-----------------------------------------------------------------------------------|-------|-----------|
-| [#131](https://github.com/insight-platform/Savant/issues/131) (buffer length 10)  | 45.78 | 14.84     |
-| [#334](https://github.com/insight-platform/Savant/issues/334) (no queues)         | 37.15 | 15.29     |
-| [#334](https://github.com/insight-platform/Savant/issues/334) (buffer length 10)  | 44.33 | 14.82     |
+Note: `yolov8_seg` always has a buffer length of 10. `BUFFER_QUEUES` env doesn't affect it.
+
+| Savant ver.                                                   | A4000 | Jetson NX |
+|---------------------------------------------------------------|-------|-----------|
+| [#131](https://github.com/insight-platform/Savant/issues/131) | 45.78 | 14.84     |
+| [#334](https://github.com/insight-platform/Savant/issues/334) | 44.33 | 14.82     |
