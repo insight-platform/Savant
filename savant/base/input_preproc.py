@@ -1,14 +1,14 @@
 """Base model input preprocessors."""
 from abc import abstractmethod
 from typing import Optional, Callable
-
+import logging
 import cv2
 import pyds
 from savant_rs.primitives.geometry import BBox
 from savant.base.model import OutputImage
-from savant.deepstream.cudastream import CudaStreams
+from savant.base.pyfunc import BasePyFuncCallableImpl, PyFuncNoopCallException
 from savant.gstreamer import Gst
-from savant.base.pyfunc import BasePyFuncCallableImpl
+from savant.deepstream.cudastream import CudaStreams
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
 from savant.deepstream.opencv_utils import nvds_to_gpu_mat
 from savant.deepstream.utils import nvds_frame_meta_iterator, nvds_obj_meta_iterator
@@ -53,6 +53,7 @@ class ObjectsPreprocessing:
     def __init__(self):
         self._preprocessing_functions = {}
         self._frames_map = {}
+        self.logger = logging.getLogger(__name__)
 
     def add_preprocessing_function(
         self,
@@ -73,6 +74,7 @@ class ObjectsPreprocessing:
         model_uid: int,
         class_id: int,
         output_image: Optional[OutputImage] = None,
+        dev_mode: bool = False,
     ):
         """Preprocesses objects by using user function.
 
@@ -80,7 +82,8 @@ class ObjectsPreprocessing:
         :param buffer: gst buffer
         :param model_uid: base on model uid is selected preprocessing object
         :param class_id: base on class id is selected preprocessing object
-        :param output_image:  max object image size for inference
+        :param output_image: max object image size for inference
+        :param dev_mode: flag indicates how exceptions from user code are handled
         :return:
         """
         preprocessing_func = self._preprocessing_functions.get(element_name)
@@ -113,14 +116,24 @@ class ObjectsPreprocessing:
                             object_meta=nvds_obj_meta, frame_meta=nvds_frame_meta
                         )
 
-                        preprocess_image = preprocessing_func(
-                            object_meta=object_meta,
-                            frame_image=copy_frame_image,
-                            cuda_stream=cuda_stream,
-                        )
+                        try:
+                            preprocess_image = preprocessing_func(
+                                object_meta=object_meta,
+                                frame_image=copy_frame_image,
+                                cuda_stream=cuda_stream,
+                            )
+                        except Exception as exc:
+                            if dev_mode:
+                                if not isinstance(exc, PyFuncNoopCallException):
+                                    self.logger.exception(
+                                        'Error in input image preprocessing.'
+                                    )
+                                continue
+                            raise exc
+
                         if not isinstance(preprocess_image, GPUImage):
                             raise ValueError(
-                                'Preprocessing function must ' 'return Image object.'
+                                'Preprocessing function must return Image object.'
                             )
                         if output_image is not None:
                             preprocess_image = preprocess_image.resize(

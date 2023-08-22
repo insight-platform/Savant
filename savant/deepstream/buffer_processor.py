@@ -22,7 +22,7 @@ from savant_rs.utils.symbol_mapper import (
 
 from savant.base.input_preproc import ObjectsPreprocessing
 from savant.base.model import ObjectModel, ComplexModel
-from savant.base.pyfunc import PyFuncNoopCall
+from savant.base.pyfunc import PyFuncNoopCallException
 from savant.meta.constants import PRIMARY_OBJECT_KEY
 from savant.config.schema import PipelineElement, ModelElement, FrameParameters
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
@@ -417,11 +417,22 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                         ),
                     )
 
-                    res_bbox = model.input.preprocess_object_meta(
-                        object_meta=user_object_meta
-                    )
-                    if self.logger.isEnabledFor(logging.DEBUG):
-                        self.logger.debug(
+                    try:
+                        res_bbox = model.input.preprocess_object_meta(
+                            object_meta=user_object_meta
+                        )
+                    except Exception as exc:
+                        if model.input.preprocess_object_meta.dev_mode:
+                            if not isinstance(exc, PyFuncNoopCallException):
+                                self.logger.exception(
+                                    'Error calling preprocess input object meta.'
+                                )
+                            res_bbox = user_object_meta.bbox
+                        else:
+                            raise exc
+
+                    if self.logger.isEnabledFor(logging.TRACE):
+                        self.logger.trace(
                             'Preprocessing "%s" object bbox %s -> %s',
                             user_object_meta.label,
                             user_object_meta.bbox,
@@ -443,6 +454,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                 model_uid,
                 class_id,
                 model.input.preprocess_object_image.output_image,
+                model.input.preprocess_object_image.dev_mode,
             )
 
     def prepare_element_output(self, element: PipelineElement, buffer: Gst.Buffer):
@@ -511,13 +523,13 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                             )
                         except Exception as exc:
                             if model.output.converter.dev_mode:
-                                if not isinstance(exc, PyFuncNoopCall):
+                                if not isinstance(exc, PyFuncNoopCallException):
                                     self.logger.exception('Error calling converter')
+                                # provide some placeholders so that the pipeline processing can continue
                                 if is_complex_model:
                                     outputs = np.zeros((0, 6)), np.zeros((0, 1))
                                 elif is_object_model:
                                     outputs = np.zeros((0, 6))
-                                # attribute model
                                 else:
                                     outputs = np.zeros((0, 1))
                             else:
@@ -616,7 +628,9 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                                         cls_bbox_tensor = obj.selector(cls_bbox_tensor)
                                     except Exception as exc:
                                         if obj.selector.dev_mode:
-                                            if not isinstance(exc, PyFuncNoopCall):
+                                            if not isinstance(
+                                                exc, PyFuncNoopCallException
+                                            ):
                                                 self.logger.exception(
                                                     'Error calling selector.'
                                                 )

@@ -20,7 +20,7 @@ class PyFuncException(Exception):
     """PyFunc exception class."""
 
 
-class PyFuncNoopCall(PyFuncException):
+class PyFuncNoopCallException(PyFuncException):
     """PyFunc no-op call exception class."""
 
 
@@ -87,12 +87,12 @@ class PyFuncNoopImpl(BasePyFuncPlugin, BasePyFuncCallableImpl):
     def process_buffer(self, buffer: Gst.Buffer):
         """ """
         logger.debug('Noop pyfunc, process_buffer() called.')
-        raise PyFuncNoopCall('Called process_buffer() from noop pyfunc')
+        raise PyFuncNoopCallException('Called process_buffer() from noop pyfunc')
 
     def __call__(self, *args, **kwargs) -> Any:
         """Call self as a function."""
         logger.debug('Noop pyfunc, __call__() called.')
-        raise PyFuncNoopCall('Called __call__() from noop pyfunc')
+        raise PyFuncNoopCallException('Called __call__() from noop pyfunc')
 
 
 @dataclass
@@ -225,6 +225,12 @@ class PyFunc:
             self._module_instance = module_instance
 
         self._load_complete = True
+        logger.debug(
+            'Finish loading user code, pyfunc module %s, class %s, id %s',
+            self.module,
+            self.class_name,
+            id(self),
+        )
 
     @property
     def instance(self) -> BasePyFuncImpl:
