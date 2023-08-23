@@ -8,7 +8,7 @@ from threading import Lock, Thread
 from typing import Dict, NamedTuple, Optional
 
 from savant_rs.pipeline2 import VideoPipeline
-from savant_rs.primitives import EndOfStream, VideoFrame
+from savant_rs.primitives import EndOfStream, VideoFrame, VideoFrameTransformation
 from savant_rs.utils import PropagatedContext
 
 from savant.api.constants import DEFAULT_FRAMERATE
@@ -379,7 +379,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             frame_buf.duration = (
                 Gst.CLOCK_TIME_NONE if frame_duration is None else frame_duration
             )
-            self.add_frame_meta(frame_idx, frame_buf)
+            self.add_frame_meta(frame_idx, frame_buf, video_frame)
             self.logger.debug(
                 'Pushing frame with idx=%s and pts=%s', frame_idx, frame_pts
             )
@@ -534,11 +534,17 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
         self.logger.debug('Waiting %s seconds for the next eviction loop', wait)
         time.sleep(wait)
 
-    def add_frame_meta(self, idx: int, frame_buf: Gst.Buffer):
+    def add_frame_meta(self, idx: int, frame_buf: Gst.Buffer, video_frame: VideoFrame):
         """Store metadata of a frame."""
         if self.video_pipeline is not None:
             from pygstsavantframemeta import gst_buffer_add_savant_frame_meta
 
+            if not video_frame.transformations:
+                video_frame.add_transformation(
+                    VideoFrameTransformation.initial_size(
+                        video_frame.width, video_frame.height
+                    )
+                )
             gst_buffer_add_savant_frame_meta(frame_buf, idx)
 
     def _delete_frame_with_error(self, frame_idx: int):

@@ -4,7 +4,7 @@ from typing import Any, NamedTuple, Optional
 
 from pygstsavantframemeta import gst_buffer_add_savant_frame_meta
 from savant_rs.pipeline2 import VideoPipeline
-from savant_rs.primitives import VideoFrame, VideoFrameContent
+from savant_rs.primitives import VideoFrame, VideoFrameContent, VideoFrameTransformation
 
 from savant.api.constants import DEFAULT_FRAMERATE, DEFAULT_TIME_BASE
 from savant.gstreamer import GObject, Gst, GstBase  # noqa: F401
@@ -82,6 +82,7 @@ class SavantRsAddFrames(LoggerMixin, GstBase.BaseTransform):
         self._pipeline_stage_name: Optional[str] = None
         # will be set after caps negotiation
         self._frame_params: Optional[FrameParams] = None
+        self._initial_size_transformation: Optional[VideoFrameTransformation] = None
 
     def do_get_property(self, prop: GObject.GParamSpec) -> Any:
         """Gst plugin get property function.
@@ -146,6 +147,11 @@ class SavantRsAddFrames(LoggerMixin, GstBase.BaseTransform):
             height=frame_height,
             framerate=framerate,
         )
+        self._initial_size_transformation = VideoFrameTransformation.initial_size(
+            frame_width,
+            frame_height,
+        )
+
         return True
 
     def do_transform_ip(self, buffer: Gst.Buffer):
@@ -170,6 +176,7 @@ class SavantRsAddFrames(LoggerMixin, GstBase.BaseTransform):
             ),
             time_base=DEFAULT_TIME_BASE,
         )
+        video_frame.add_transformation(self._initial_size_transformation)
         frame_id = self._video_pipeline.add_frame(
             self._pipeline_stage_name, video_frame
         )

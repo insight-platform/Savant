@@ -13,7 +13,7 @@ from pygstsavantframemeta import (
     nvds_frame_meta_get_nvds_savant_frame_meta,
 )
 from savant_rs.pipeline2 import VideoPipeline
-from savant_rs.primitives import VideoFrame
+from savant_rs.primitives import VideoFrame, VideoFrameTransformation
 from savant_rs.primitives.geometry import BBox, RBBox
 from savant_rs.utils.symbol_mapper import (
     build_model_object_key,
@@ -100,6 +100,20 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
         self._queue = queue
         self._video_pipeline = video_pipeline
 
+        self._scale_transformation = VideoFrameTransformation.scale(
+            frame_params.width,
+            frame_params.height,
+        )
+        if frame_params.padding and frame_params.padding.keep:
+            self._padding_transformation = VideoFrameTransformation.padding(
+                frame_params.padding.left,
+                frame_params.padding.top,
+                frame_params.padding.right,
+                frame_params.padding.bottom,
+            )
+        else:
+            self._padding_transformation = None
+
     def prepare_input(self, buffer: Gst.Buffer):
         """Input meta processor.
 
@@ -163,6 +177,11 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
 
         # full frame primary object by default
         source_info = self._sources.get_source(video_frame.source_id)
+        self._add_transformations(
+            frame_idx=frame_idx,
+            source_info=source_info,
+            video_frame=video_frame,
+        )
         scale_factor_x = self._frame_params.width / source_info.src_resolution.width
         scale_factor_y = self._frame_params.height / source_info.src_resolution.height
         primary_bbox = BBox(
@@ -276,6 +295,37 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
         )
 
         nvds_frame_meta.bInferDone = True  # required for tracker (DS 6.0)
+
+    def _add_transformations(
+        self,
+        frame_idx: Optional[int],
+        source_info: SourceInfo,
+        video_frame: VideoFrame,
+    ):
+        self.logger.debug(
+            'Adding transformations for frame of source %s with IDX %s and PTS %s.',
+            video_frame.source_id,
+            frame_idx,
+            video_frame.pts,
+        )
+
+        if source_info.add_scale_transformation:
+            self.logger.debug(
+                'Adding scale transformation for frame of source %s with IDX %s and PTS %s.',
+                video_frame.source_id,
+                frame_idx,
+                video_frame.pts,
+            )
+            video_frame.add_transformation(self._scale_transformation)
+
+        if self._padding_transformation is not None:
+            self.logger.debug(
+                'Adding padding transformation for frame of source %s with IDX %s and PTS %s.',
+                video_frame.source_id,
+                frame_idx,
+                video_frame.pts,
+            )
+            video_frame.add_transformation(self._padding_transformation)
 
     def prepare_output(
         self,
