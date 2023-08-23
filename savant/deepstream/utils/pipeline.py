@@ -1,5 +1,5 @@
 from typing import Any, Dict, List, Union
-
+import logging
 from savant_rs import init_jaeger_tracer, init_noop_tracer
 from savant_rs.pipeline2 import VideoPipelineStagePayloadType
 
@@ -11,9 +11,8 @@ from savant.config.schema import (
     PyFuncElement,
     TelemetryParameters,
 )
-from savant.utils.logging import get_logger
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def add_queues_to_pipeline(
