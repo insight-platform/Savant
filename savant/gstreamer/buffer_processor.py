@@ -1,8 +1,9 @@
 """Buffer processor for GStreamer pipeline."""
+import logging
 from abc import ABC, abstractmethod
 from queue import Queue
 from typing import Iterator
-import logging
+
 from gi.repository import Gst
 
 from savant.config.schema import PipelineElement

@@ -2,9 +2,9 @@
 from datetime import timedelta
 from time import time
 from typing import Optional, Union
+import logging
 import os
 import threading
-import logging
 from gi.repository import GLib, Gst  # noqa:F401
 from .pipeline import GstPipeline
 

@@ -267,16 +267,29 @@ class PyFunc:
 
         if INotifyManager().is_changed(id(self)):
             logger.info(
-                'Dev mode is enabled and changes in "%s.%s" are detected; reloading.'
-                , self.module, self.class_name
+                'Dev mode is enabled and changes in "%s.%s" are detected; reloading.',
+                self.module,
+                self.class_name,
             )
             load_ok = self.load_user_code()
             if load_ok:
-                logger.info('The module "%s.%s" reloading complete: OK', self.module, self.class_name)
+                logger.info(
+                    'The module "%s.%s" reloading complete: OK',
+                    self.module,
+                    self.class_name,
+                )
             else:
-                logger.info('The module "%s.%s" reloading finsihed: Fail', self.module, self.class_name)
+                logger.info(
+                    'The module "%s.%s" reloading finsihed: Fail',
+                    self.module,
+                    self.class_name,
+                )
         else:
-            logger.trace('Dev mode is enabled and no changes in "%s.%s" are detected; continuing.', self.module, self.class_name)
+            logger.trace(
+                'Dev mode is enabled and no changes in "%s.%s" are detected; continuing.',
+                self.module,
+                self.class_name,
+            )
 
 
 def reload_module(module: ModuleType) -> ModuleType:

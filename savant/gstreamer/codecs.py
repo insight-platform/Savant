@@ -1,8 +1,9 @@
 """Gst codecs."""
+import logging
 from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Optional
-import logging
+
 from savant.gstreamer import Gst
 
 

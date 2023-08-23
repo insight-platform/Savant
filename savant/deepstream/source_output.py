@@ -1,7 +1,8 @@
 """Classes for adding output elements to a DeepStream pipeline."""
+import logging
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional
-import logging
+
 import pyds
 from pygstsavantframemeta import add_convert_savant_frame_meta_pad_probe
 
