@@ -469,7 +469,7 @@ def nvinfer_element_configurator(
             model_config.input.preprocess_object_image.dev_mode = True
         if model_config.output.converter:
             model_config.output.converter.dev_mode = True
-        if issubclass(model_type, ObjectModel) or issubclass(model_type, ComplexModel):
+        if issubclass(model_type, (ObjectModel, ComplexModel)):
             for obj in model_config.output.objects:
                 if obj.selector:
                     obj.selector.dev_mode = True

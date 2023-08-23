@@ -2,7 +2,7 @@
 import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from importlib import util as importlib_util, import_module, reload
+from importlib import util as importlib_util, reload
 from importlib.machinery import ModuleSpec
 from types import ModuleType
 from pathlib import Path
@@ -141,7 +141,7 @@ class PyFunc:
     """Class initialization keyword arguments."""
 
     dev_mode: bool = False
-    """Flag signifies if the pyfunc is in dev mode."""
+    """Whether the pyfunc is in dev mode."""
 
     def __post_init__(self):
         self._module_instance = None
@@ -273,11 +273,16 @@ class PyFunc:
             )
             load_ok = self.load_user_code()
             if load_ok:
-                logger.info(
-                    'The module "%s.%s" reloading complete: OK',
-                    self.module,
-                    self.class_name,
-                )
+                try:
+                    self._instance.on_start()
+                except Exception as exc:
+                    logger.exception('Error calling on_start()')
+                else:
+                    logger.info(
+                        'The module "%s.%s" reloading complete: OK',
+                        self.module,
+                        self.class_name,
+                    )
             else:
                 logger.info(
                     'The module "%s.%s" reloading finsihed: Fail',
