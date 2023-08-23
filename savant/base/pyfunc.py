@@ -85,7 +85,7 @@ class BasePyFuncCallableImpl(BasePyFuncImpl):
 
 class PyFuncNoopImpl(BasePyFuncPlugin, BasePyFuncCallableImpl):
     def process_buffer(self, buffer: Gst.Buffer):
-        """ """
+        """Process a Gst buffer."""
         logger.debug('Noop pyfunc, process_buffer() called.')
         raise PyFuncNoopCallException('Called process_buffer() from noop pyfunc')
 
@@ -155,8 +155,9 @@ class PyFunc:
         """
         if self._load_complete and not self.dev_mode:
             return
+        load_ok = True
         logger.debug(
-            'Loading user code, pyfunc module %s, class %s, id %s',
+            'Loading user code start, pyfunc module %s, class %s, id %s',
             self.module,
             self.class_name,
             id(self),
@@ -168,6 +169,7 @@ class PyFunc:
         except Exception as exc:
             if self.dev_mode:
                 logger.exception('Error while getting module spec.')
+                load_ok = False
             else:
                 raise exc
 
@@ -197,6 +199,7 @@ class PyFunc:
                     module_instance = reload_module(self._module_instance)
                 except Exception as exc:
                     logger.exception('Error while reloading module instance.')
+                    load_ok = False
                 else:
                     # if no error, also cache new instance
                     self._module_instance = module_instance
@@ -205,6 +208,7 @@ class PyFunc:
                     module_instance = pyfunc_module_factory(spec)
                 except Exception as exc:
                     logger.exception('Error while getting module instance.')
+                    load_ok = False
         else:
             module_instance = pyfunc_module_factory(spec)
 
@@ -218,6 +222,7 @@ class PyFunc:
             except Exception as exc:
                 if self.dev_mode:
                     logger.exception('Error getting class instance from module.')
+                    load_ok = False
                 else:
                     raise exc
 
@@ -235,17 +240,18 @@ class PyFunc:
 
         self._load_complete = True
         logger.debug(
-            'Finish loading user code, pyfunc module %s, class %s, id %s',
+            'Loading user code complete, pyfunc module %s, class %s, id %s',
             self.module,
             self.class_name,
             id(self),
         )
+        return load_ok
 
     @property
     def instance(self) -> BasePyFuncImpl:
         """Returns resolved PyFunc implementation."""
         if self.dev_mode:
-            return PyFuncPluginDevModeWrapper(self)
+            self.check_reload()
         return self._instance
 
     def __call__(self, *args, **kwargs) -> Any:
@@ -258,40 +264,19 @@ class PyFunc:
 
     def check_reload(self):
         """Checks if reload is needed and reloads in case it is."""
-        py_target = self.module, self.class_name
+
         if INotifyManager().is_changed(id(self)):
-            logger.info('Pyfunc %s Reload %s', id(self), py_target)
-            self.load_user_code()
+            logger.info(
+                'Dev mode is enabled and changes in "%s.%s" are detected; reloading.'
+                , self.module, self.class_name
+            )
+            load_ok = self.load_user_code()
+            if load_ok:
+                logger.info('The module "%s.%s" reloading complete: OK', self.module, self.class_name)
+            else:
+                logger.info('The module "%s.%s" reloading finsihed: Fail', self.module, self.class_name)
         else:
-            logger.trace('Pyfunc %s, code in %s unchanged', id(self), py_target)
-
-
-class PyFuncPluginDevModeWrapper(BasePyFuncPlugin):
-    """A wrapper class for a class pyfunc impl obj to be used in pyfunc plugin element."""
-
-    def __init__(self, pyfunc: PyFunc):
-        super().__init__()
-        self.pyfunc = pyfunc
-
-    def on_start(self) -> bool:
-        """Do on plugin start."""
-        self.pyfunc.check_reload()
-        return self.pyfunc._instance.on_start()
-
-    def on_stop(self) -> bool:
-        """Do on plugin stop."""
-        self.pyfunc.check_reload()
-        return self.pyfunc._instance.on_stop()
-
-    def on_event(self, event: Gst.Event):
-        """Do on event."""
-        self.pyfunc.check_reload()
-        self.pyfunc._instance.on_event(event)
-
-    def process_buffer(self, buffer: Gst.Buffer):
-        """Process buffer."""
-        self.pyfunc.check_reload()
-        self.pyfunc._instance.process_buffer(buffer)
+            logger.trace('Dev mode is enabled and no changes in "%s.%s" are detected; continuing.', self.module, self.class_name)
 
 
 def reload_module(module: ModuleType) -> ModuleType:

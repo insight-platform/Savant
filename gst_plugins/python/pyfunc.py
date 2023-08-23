@@ -5,7 +5,7 @@ other tasks.
 """
 from typing import Any, Optional
 import json
-from savant.base.pyfunc import PyFunc, BasePyFuncPlugin
+from savant.base.pyfunc import PyFunc, BasePyFuncPlugin, PyFuncNoopCallException
 from savant.gstreamer import GLib, Gst, GstBase, GObject  # noqa: F401
 from savant.utils.logging import LoggerMixin
 
@@ -125,29 +125,28 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
         )
 
         self.pyfunc.load_user_code()
-        self.pyfunc_class_instance = self.pyfunc.instance
 
         assert isinstance(
-            self.pyfunc_class_instance, BasePyFuncPlugin
+            self.pyfunc.instance, BasePyFuncPlugin
         ), f'"{self.pyfunc}" should be an instance of "BasePyFuncPlugin" subclass.'
-        self.pyfunc_class_instance.gst_element = self
+        self.pyfunc.instance.gst_element = self
 
         try:
-            return self.pyfunc_class_instance.on_start()
+            return self.pyfunc.instance.on_start()
         except Exception as exc:
             return self.handle_error(exc, 'Error in pyfunc do_start()', True, False)
 
     def do_stop(self):
         """Do on plugin stop."""
         try:
-            return self.pyfunc_class_instance.on_stop()
+            return self.pyfunc.instance.on_stop()
         except Exception as exc:
             return self.handle_error(exc, 'Error in pyfunc do_stop()', True, False)
 
     def do_sink_event(self, event: Gst.Event) -> bool:
         """Do on sink event."""
         try:
-            self.pyfunc_class_instance.on_event(event)
+            self.pyfunc.instance.on_event(event)
         except Exception as exc:
             self.handle_error(exc, 'Error in pyfunc do_sink_event()', True, False)
         return self.srcpad.push_event(event)
@@ -155,7 +154,7 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
     def do_transform_ip(self, buffer: Gst.Buffer):
         """Transform buffer in-place function."""
         try:
-            self.pyfunc_class_instance.process_buffer(buffer)
+            self.pyfunc.instance.process_buffer(buffer)
         except Exception as exc:
             return self.handle_error(exc, 'Failed to process buffer/frame.')
 
@@ -164,9 +163,11 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
     def handle_error(
         self, exc, msg, return_ok=Gst.FlowReturn.OK, return_err=Gst.FlowReturn.ERROR
     ):
-        self.logger.exception(msg)
         if self.dev_mode:
+            if not isinstance(exc, PyFuncNoopCallException):
+                self.logger.exception(msg)
             return return_ok
+        self.logger.exception(msg)
         return return_err
 
 
