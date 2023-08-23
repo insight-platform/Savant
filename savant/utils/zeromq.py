@@ -1,8 +1,10 @@
 """ZeroMQ utilities."""
 import logging
+import os
 import re
 from enum import Enum
 from typing import List, Optional, Tuple, Type, Union
+from urllib.parse import urlparse
 
 import zmq
 from cachetools import LRUCache
@@ -107,6 +109,7 @@ class ZeroMQSource:
         receive_hwm: int = Defaults.RECEIVE_HWM,
         topic_prefix: Optional[str] = None,
         routing_ids_cache_size: int = 1000,
+        set_ipc_socket_permissions: bool = True,
     ):
         logger.debug(
             'Initializing ZMQ source: socket %s, type %s, bind %s.',
@@ -117,6 +120,7 @@ class ZeroMQSource:
 
         self.topic_prefix = topic_prefix.encode() if topic_prefix else b''
         self.receive_hwm = receive_hwm
+        self.set_ipc_socket_permissions = set_ipc_socket_permissions
 
         # might raise exceptions
         # will be handled in ZeromqSrc element
@@ -159,6 +163,8 @@ class ZeroMQSource:
         if self.socket_type == ReceiverSocketTypes.SUB:
             self.receiver.setsockopt(zmq.SUBSCRIBE, self.topic_prefix)
         self.receiver.setsockopt(zmq.RCVTIMEO, self.receive_timeout)
+        if self.set_ipc_socket_permissions:
+            set_ipc_socket_permissions(self.socket)
         self.is_alive = True
 
     def next_message(self) -> Optional[List[bytes]]:
@@ -353,3 +359,15 @@ def receive_response(sender: zmq.Socket, retries: int):
             )
             if retries == 0:
                 raise
+
+
+def set_ipc_socket_permissions(socket: str, permission: int = 0o777):
+    """Set permissions for IPC socket.
+
+    Needed to make socket available for non-root users.
+    """
+
+    parsed = urlparse(socket)
+    if parsed.scheme == 'ipc':
+        logger.debug('Setting socket permissions to %o (%s).', permission, socket)
+        os.chmod(parsed.path, permission)
