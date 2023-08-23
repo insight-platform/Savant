@@ -1,4 +1,5 @@
 import cv2
+
 from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.utils.logging import LoggerMixin
 

@@ -1,34 +1,35 @@
 """`nvinfer` element configuration."""
-from pathlib import Path
-from typing import Type, Optional
 import logging
-from omegaconf import OmegaConf, DictConfig
+from pathlib import Path
+from typing import Optional, Type
+
+from omegaconf import DictConfig, OmegaConf
 from savant_rs.utils.symbol_mapper import (
-    register_model_objects,
     RegistrationPolicy,
-    parse_compound_key,
     get_object_id,
+    parse_compound_key,
+    register_model_objects,
 )
 
 from savant.base.model import (
-    ModelPrecision,
-    ObjectModel,
     AttributeModel,
     ComplexModel,
     ModelColorFormat,
+    ModelPrecision,
+    ObjectModel,
 )
 from savant.config.schema import get_element_name
-from savant.parameter_storage import param_storage
-from savant.remote_file import process_remote
 from savant.deepstream.nvinfer.file_config import NvInferConfig, NvInferConfigType
 from savant.deepstream.nvinfer.model import (
     NVINFER_MODEL_TYPE_REGISTRY,
+    NvInferInstanceSegmentation,
+    NvInferModel,
     NvInferModelFormat,
     NvInferModelType,
     NvInferObjectModelOutputObject,
-    NvInferModel,
-    NvInferInstanceSegmentation,
 )
+from savant.parameter_storage import param_storage
+from savant.remote_file import process_remote
 
 
 __all__ = ['nvinfer_element_configurator']
@@ -418,7 +419,7 @@ def nvinfer_element_configurator(
             obj.class_id: obj.label for obj in model_config.output.get('objects')
         }
     model_uid = register_model_objects(
-        element_config.name, object_labels, RegistrationPolicy.ErrorIfNonUnique
+        element_config.name, object_labels, RegistrationPolicy.Override
     )
     nvinfer_config['property']['gie-unique-id'] = model_uid
 

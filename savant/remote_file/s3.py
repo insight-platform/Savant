@@ -2,12 +2,13 @@
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
-from tqdm import tqdm
+
 import boto3
 from botocore import UNSIGNED
 from botocore.config import Config
-from savant.remote_file.base import RemoteFileHandler, RemoteFileError
+from tqdm import tqdm
 
+from savant.remote_file.base import RemoteFileError, RemoteFileHandler
 
 __all__ = ['S3FileHandler']
 

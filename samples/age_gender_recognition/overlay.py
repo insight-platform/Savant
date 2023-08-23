@@ -1,5 +1,5 @@
 """Overlay dashboard module."""
-from savant_rs.draw_spec import ObjectDraw, LabelDraw
+from savant_rs.draw_spec import LabelDraw, ObjectDraw
 
 from savant.deepstream.drawfunc import NvDsDrawFunc
 from savant.meta.object import ObjectMeta

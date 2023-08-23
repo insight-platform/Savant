@@ -1,12 +1,14 @@
-from collections import defaultdict
 import sys
+from collections import defaultdict
+
 import yaml
+from savant_rs.primitives.geometry import Point, PolygonalArea
 from statsd import StatsClient
-from savant_rs.primitives.geometry import PolygonalArea, Point
-from savant.gstreamer import Gst
+
+from samples.traffic_meter.utils import Direction, Point, TwoLinesCrossingTracker
 from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.deepstream.pyfunc import NvDsPyFuncPlugin
-from samples.traffic_meter.utils import Point, Direction, TwoLinesCrossingTracker
+from savant.gstreamer import Gst
 
 
 class ConditionalDetectorSkip(NvDsPyFuncPlugin):

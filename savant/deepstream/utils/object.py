@@ -1,17 +1,20 @@
 """DeepStream object utils."""
 from typing import Optional, Tuple, Union
+
 import pyds
+from pysavantboost import NvRBboxCoords, add_rbbox_to_object_meta, get_rbbox
 from savant_rs.primitives.geometry import BBox, RBBox
-from pysavantboost import add_rbbox_to_object_meta, NvRBboxCoords, get_rbbox
+
+from savant.deepstream.meta.constants import MAX_LABEL_SIZE
+from savant.meta.constants import DEFAULT_CONFIDENCE, UNTRACKED_OBJECT_ID
 from savant.meta.errors import (
     IncorrectSelectionType,
-    UIDError,
     MetaPoolError,
     MetaValueError,
+    UIDError,
 )
-from savant.meta.constants import UNTRACKED_OBJECT_ID, DEFAULT_CONFIDENCE
 from savant.meta.type import InformationType, ObjectSelectionType
-from savant.deepstream.meta.constants import MAX_LABEL_SIZE
+
 from .iterator import nvds_obj_user_meta_iterator
 from .meta_types import OBJ_DRAW_LABEL_META_TYPE
 
@@ -26,7 +29,7 @@ def nvds_add_obj_meta_to_frame(  # pylint: disable=too-many-arguments,too-many-l
     selection_type: int,
     class_id: int,
     gie_uid: int,
-    bbox: Tuple[float, float, float, float, float],
+    bbox: Union[BBox, RBBox, Tuple[float, float, float, float, float]],
     confidence: float = DEFAULT_CONFIDENCE,
     obj_label: str = '',
     object_id: int = UNTRACKED_OBJECT_ID,
@@ -58,11 +61,26 @@ def nvds_add_obj_meta_to_frame(  # pylint: disable=too-many-arguments,too-many-l
     obj_meta.confidence = confidence
 
     if selection_type == ObjectSelectionType.ROTATED_BBOX:
-        bbox = RBBox(*bbox)
+        if isinstance(bbox, RBBox):
+            pass
+        elif isinstance(bbox, BBox):
+            raise IncorrectBBoxType(
+                f"Selection type '{selection_type}' does not match bbox type '{type(bbox)}'"
+            )
+        else:
+            bbox = RBBox(*bbox)
     elif selection_type == ObjectSelectionType.REGULAR_BBOX:
-        bbox = BBox(*bbox[:-1])
+        if isinstance(bbox, BBox):
+            pass
+        elif isinstance(bbox, RBBox):
+            raise IncorrectBBoxType(
+                f"Selection type '{selection_type}' does not match bbox type '{type(bbox)}'"
+            )
+        else:
+            bbox = BBox(*bbox[:-1])
     else:
         raise IncorrectBBoxType(f"Incorrect selection type '{selection_type}'")
+
     nvds_set_obj_bbox(batch_meta, obj_meta, bbox)
     nvds_set_obj_uid(frame_meta, obj_meta)
     pyds.nvds_add_obj_meta_to_frame(frame_meta, obj_meta, parent)

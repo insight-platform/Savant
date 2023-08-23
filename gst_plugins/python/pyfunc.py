@@ -3,10 +3,13 @@
 Can be used for metadata conversion, inference post-processing, and
 other tasks.
 """
-from typing import Any, Optional
 import json
-from savant.base.pyfunc import PyFunc, BasePyFuncPlugin, PyFuncNoopCallException
-from savant.gstreamer import GLib, Gst, GstBase, GObject  # noqa: F401
+from typing import Any, Optional
+
+from savant_rs.pipeline2 import VideoPipeline
+
+from savant.base.pyfunc import BasePyFuncPlugin, PyFunc, PyFuncNoopCallException
+from savant.gstreamer import GLib, GObject, Gst, GstBase  # noqa: F401
 from savant.utils.logging import LoggerMixin
 
 # RGBA format is required to access the frame (pyds.get_nvds_buf_surface)
@@ -61,6 +64,12 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             None,
             GObject.ParamFlags.READWRITE,
         ),
+        'pipeline': (
+            object,
+            'VideoPipeline object from savant-rs.',
+            'VideoPipeline object from savant-rs.',
+            GObject.ParamFlags.READWRITE,
+        ),
         'dev-mode': (
             bool,
             'Dev mode flag',
@@ -79,6 +88,7 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
         self.module: Optional[str] = None
         self.class_name: Optional[str] = None
         self.kwargs: Optional[str] = None
+        self.video_pipeline: Optional[VideoPipeline] = None
         self.dev_mode: bool = False
         # pyfunc object
         self.pyfunc: Optional[PyFunc] = None
@@ -94,6 +104,8 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             return self.class_name
         if prop.name == 'kwargs':
             return self.kwargs
+        if prop.name == 'pipeline':
+            return self.video_pipeline
         if prop.name == 'dev-mode':
             return self.dev_mode
         raise AttributeError(f'Unknown property {prop.name}.')
@@ -110,6 +122,8 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             self.class_name = value
         elif prop.name == 'kwargs':
             self.kwargs = value
+        elif prop.name == 'pipeline':
+            self.video_pipeline = value
         elif prop.name == 'dev-mode':
             self.dev_mode = value
         else:

@@ -2,7 +2,7 @@
 import inspect
 from typing import Dict, NamedTuple, Optional
 
-from ffmpeg_input import FFMpegSource, FFmpegLogLevel, VideoFrameEnvelope
+from ffmpeg_input import FFmpegLogLevel, FFMpegSource, VideoFrameEnvelope
 
 from savant.gstreamer import GObject, Gst, GstBase
 from savant.gstreamer.codecs import Codec
@@ -159,7 +159,7 @@ class FFmpegSrc(LoggerMixin, GstBase.BaseSrc):
         """Gst plugin start function."""
 
         try:
-            required_property(self._uri, 'uri')
+            required_property('uri', self._uri)
             self.logger.info('Creating FFMpegSource.')
             self._ffmpeg_source = FFMpegSource(
                 self._uri,

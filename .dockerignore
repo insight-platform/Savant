@@ -1,5 +1,5 @@
 **/__pycache__
-.idea/
+**/.idea/
 .vscode/
 .gitignore
 .git
@@ -11,6 +11,7 @@ Makefile
 **/dist/
 **/*.egg-info/
 **/build/
+**/cmake-build-debug/
 downloads/
 models/
 var/

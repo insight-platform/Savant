@@ -1,13 +1,12 @@
 """Module custom model input preprocessing."""
 
+import cv2
+import numpy as np
+
 from savant.base.input_preproc import BasePreprocessObjectImage
 from savant.meta.object import ObjectMeta
-
-import cv2
-
 from savant.parameter_storage import param_storage
 from savant.utils.image import GPUImage
-import numpy as np
 
 REFERENCE_FACIAL_POINTS = np.array(
     [

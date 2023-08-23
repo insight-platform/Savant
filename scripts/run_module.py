@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Run module."""
-from typing import Optional
 import os
 import pathlib
+from typing import Optional
+
 import click
-from common import docker_image_option, get_tcp_parameters, get_ipc_mounts, run_command
+from common import docker_image_option, get_ipc_mounts, get_tcp_parameters, run_command
 
 
 def get_downloads_mount(

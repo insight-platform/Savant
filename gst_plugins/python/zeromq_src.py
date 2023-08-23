@@ -4,6 +4,7 @@ from typing import Optional
 
 import zmq
 
+from gst_plugins.python.zeromq_properties import ZEROMQ_PROPERTIES, socket_type_property
 from savant.gstreamer import GObject, Gst, GstBase
 from savant.gstreamer.utils import (
     gst_buffer_from_list,
@@ -17,10 +18,6 @@ from savant.utils.zeromq import (
     ZeroMQSource,
     ZMQException,
     build_topic_prefix,
-)
-from gst_plugins.python.zeromq_properties import (
-    socket_type_property,
-    ZEROMQ_PROPERTIES,
 )
 
 ZEROMQ_SRC_PROPERTIES = {

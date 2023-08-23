@@ -6,10 +6,12 @@ IMAGE_NAME := module
 
 SHELL := /bin/bash
 DOCKER_FILE := Dockerfile.x86
+DOCKER_RUNTIME := "--gpus=all"
 PROJECT_PATH := /opt/savant
 
 ifeq ("$(shell uname -m)", "aarch64")
     DOCKER_FILE := Dockerfile.l4t
+	DOCKER_RUNTIME := "--runtime=nvidia"
 endif
 
 # build module container
@@ -20,7 +22,7 @@ build:
 
 # run module
 run:
-	docker run -it --rm --gpus=all \
+	docker run -it --rm $(DOCKER_RUNTIME) \
 		-v $(shell pwd)/models_cache:/models \
 		-v $(shell pwd)/downloads_cache:/downloads \
 		$(IMAGE_NAME)
@@ -28,7 +30,7 @@ run:
 # run module in dev mode
 run-dev:
 	xhost +local:docker
-	docker run -it --rm --gpus=all \
+	docker run -it --rm $(DOCKER_RUNTIME) \
 		--net=host --privileged \
 		-e DISPLAY=$(DISPLAY) \
 		-e XAUTHORITY=/tmp/.docker.xauth \

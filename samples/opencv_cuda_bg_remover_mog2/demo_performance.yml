@@ -22,6 +22,8 @@ parameters:
     codec: hevc
   batch_size: 1
 
+  buffer_queues: ${json:${oc.env:BUFFER_QUEUES, null}}
+
 
 # pipeline definition
 pipeline:

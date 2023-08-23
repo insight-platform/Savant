@@ -1,8 +1,9 @@
 """JSON resolver for OmegaConf."""
-from typing import Optional, Union
 import json
 import logging
-from omegaconf import OmegaConf, DictConfig, ListConfig
+from typing import Optional, Union
+
+from omegaconf import DictConfig, ListConfig, OmegaConf
 
 
 logger = logging.getLogger(__name__)

@@ -1,8 +1,9 @@
 """YOLOv8-seg postprocessing (converter)."""
 from typing import Any, List, Tuple
+
+import cv2
 import numba as nb
 import numpy as np
-import cv2
 
 from savant.base.converter import BaseComplexModelOutputConverter
 from savant.deepstream.nvinfer.model import NvInferInstanceSegmentation
@@ -75,11 +76,9 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
 
         # scale masks (transpose to use cv2.resize)
         masks = masks.transpose((1, 2, 0))
-        masks = cv2.resize(
-            masks,
-            (int(ratio_x * model.input.width), int(ratio_y * model.input.height)),
-            cv2.INTER_LINEAR,
-        )
+        mask_width = int(ratio_x * model.input.width)
+        mask_height = int(ratio_y * model.input.height)
+        masks = cv2.resize(masks, (mask_width, mask_height), cv2.INTER_LINEAR)
         masks = (
             masks.transpose((2, 0, 1)) if len(masks.shape) == 3 else masks[None, ...]
         )
@@ -92,11 +91,11 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
                     model.output.attributes[0].name,
                     masks[
                         i,
-                        int(tensors[i, 3] - tensors[i, 5] / 2) : int(
-                            tensors[i, 3] + tensors[i, 5] / 2
+                        max(0, int(tensors[i, 3] - tensors[i, 5] / 2)) : min(
+                            mask_height, int(tensors[i, 3] + tensors[i, 5] / 2)
                         ),
-                        int(tensors[i, 2] - tensors[i, 4] / 2) : int(
-                            tensors[i, 2] + tensors[i, 4] / 2
+                        max(0, int(tensors[i, 2] - tensors[i, 4] / 2)) : min(
+                            mask_width, int(tensors[i, 2] + tensors[i, 4] / 2)
                         ),
                     ],
                     1.0,

@@ -2,18 +2,20 @@
 from dataclasses import dataclass
 from enum import Enum
 from typing import List, Optional
+
 from omegaconf import MISSING
-from savant.base.pyfunc import PyFunc
+
 from savant.base.model import (
+    AttributeModel,
+    ComplexModel,
+    ComplexModelOutput,
     Model,
     ModelInput,
     ObjectModel,
     ObjectModelOutput,
     ObjectModelOutputObject,
-    AttributeModel,
-    ComplexModelOutput,
-    ComplexModel,
 )
+from savant.base.pyfunc import PyFunc
 from savant.utils.registry import Registry
 
 NVINFER_MODEL_TYPE_REGISTRY = Registry('nvinfer_model_type')

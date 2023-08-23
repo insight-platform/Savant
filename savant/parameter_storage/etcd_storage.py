@@ -1,10 +1,12 @@
 """Etcd storage module."""
-from dataclasses import dataclass
-from typing import Any, Callable, List, Optional, Union
 import json
 import logging
-from omegaconf import MISSING
+from dataclasses import dataclass
+from typing import Any, Callable, List, Optional, Union
+
 import etcd3
+from omegaconf import MISSING
+
 from .parameter_storage import ParameterStorage
 
 

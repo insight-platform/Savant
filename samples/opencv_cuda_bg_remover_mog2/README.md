@@ -85,7 +85,7 @@ samples/opencv_cuda_bg_remover_mog2/demo_performance.yml
 or for Jetson
 
 ```bash
-docker run --rm -it --gpus=all \
+docker run --rm -it --runtime=nvidia \
 -v `pwd`/samples:/opt/savant/samples \
 -v `pwd`/data:/data:ro \
 ghcr.io/insight-platform/savant-deepstream-l4t:latest \

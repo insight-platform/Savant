@@ -1,9 +1,11 @@
 """Base model output converters."""
 from abc import abstractmethod
-from typing import Any, List, Tuple, Optional
+from typing import Any, List, Optional, Tuple
+
 import numpy as np
+
+from savant.base.model import AttributeModel, ComplexModel, ObjectModel
 from savant.base.pyfunc import BasePyFuncCallableImpl
-from savant.base.model import ObjectModel, AttributeModel, ComplexModel
 
 
 class BaseObjectModelOutputConverter(BasePyFuncCallableImpl):

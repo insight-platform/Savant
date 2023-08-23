@@ -3,7 +3,9 @@
 Based on code from https://github.com/Tianxiaomo/pytorch-YOLOv4
 """
 from typing import Tuple
+
 import numpy as np
+
 from savant.base.converter import BaseObjectModelOutputConverter
 from savant.base.model import ObjectModel
 

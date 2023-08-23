@@ -129,3 +129,9 @@ run-black:
 	black .
 
 reformat: run-unify run-black
+
+check-isort:
+	isort **/*.py -c
+
+run-isort:
+	isort **/*.py
