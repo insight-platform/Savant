@@ -3,7 +3,7 @@
 ## Hardware
 
 | Name      | CPU                                | GPU              | RAM, Gi |
-|-----------|------------------------------------|------------------|---------|
+| --------- | ---------------------------------- | ---------------- | ------- |
 | A4000     | AMD Ryzen 7 3700X 8-Core Processor | NVIDIA RTX A4000 | 62      |
 | Jetson NX | MODE 20W, 6 CORE, Clocks On        |                  | 8       |
 
@@ -12,7 +12,7 @@
 ### age_gender_recognition
 
 | Savant ver.                                                                      | A4000  | Jetson NX |
-|----------------------------------------------------------------------------------|--------|-----------|
+| -------------------------------------------------------------------------------- | ------ | --------- |
 | [#166](https://github.com/insight-platform/Savant/issues/166)                    | 261    | 37        |
 | [v0.2.4](https://github.com/insight-platform/Savant/tree/v0.2.4)                 | 255.73 | 41.08     |
 | [#61](https://github.com/insight-platform/Savant/issues/61)                      | 257.52 | 40.78     |
@@ -28,7 +28,7 @@
 ### conditional_video_processing
 
 | Savant ver.                                                                      | A4000  | Jetson NX |
-|----------------------------------------------------------------------------------|--------|-----------|
+| -------------------------------------------------------------------------------- | ------ | --------- |
 | [#244](https://github.com/insight-platform/Savant/issues/244)                    | 327    | 64        |
 | [v0.2.4](https://github.com/insight-platform/Savant/tree/v0.2.4)                 | 325.64 | 64.90     |
 | [#61](https://github.com/insight-platform/Savant/issues/61)                      | 314.84 | 64.13     |
@@ -43,7 +43,7 @@
 ### nvidia_car_classification
 
 | Savant ver.                                                                      | A4000  | Jetson NX |
-|----------------------------------------------------------------------------------|--------|-----------|
+| -------------------------------------------------------------------------------- | ------ | --------- |
 | [v0.2.3](https://github.com/insight-platform/Savant/tree/v0.2.3)                 | 155    | 42        |
 | [#207](https://github.com/insight-platform/Savant/issues/207)                    | 158    | 42        |
 | [#208](https://github.com/insight-platform/Savant/issues/208)                    | 156    | 43        |
@@ -61,7 +61,7 @@
 ### opencv_cuda_bg_remover_mog2
 
 | Savant ver.                                                                      | A4000  | Jetson NX |
-|----------------------------------------------------------------------------------|--------|-----------|
+| -------------------------------------------------------------------------------- | ------ | --------- |
 | [v0.2.3](https://github.com/insight-platform/Savant/tree/v0.2.3)                 | 675    | 65        |
 | [#207](https://github.com/insight-platform/Savant/issues/207)                    | 670    | 60        |
 | [#208](https://github.com/insight-platform/Savant/issues/208)                    | 662    | 60        |
@@ -79,7 +79,7 @@
 ### peoplenet_detector
 
 | Savant ver.                                                                      | A4000  | Jetson NX |
-|----------------------------------------------------------------------------------|--------|-----------|
+| -------------------------------------------------------------------------------- | ------ | --------- |
 | [v0.2.3](https://github.com/insight-platform/Savant/tree/v0.2.3)                 | 125    | 30        |
 | [#207](https://github.com/insight-platform/Savant/issues/207)                    | 113    | 30        |
 | [#208](https://github.com/insight-platform/Savant/issues/208)                    | 113    | 30        |
@@ -97,7 +97,7 @@
 ### traffic_meter (yolov8m)
 
 | Savant ver.                                                                      | A4000  | Jetson NX |
-|----------------------------------------------------------------------------------|--------|-----------|
+| -------------------------------------------------------------------------------- | ------ | --------- |
 | [v0.2.3](https://github.com/insight-platform/Savant/tree/v0.2.3)                 | 132    | 23        |
 | [#207](https://github.com/insight-platform/Savant/issues/207)                    | 138    | 24        |
 | [#208](https://github.com/insight-platform/Savant/issues/208)                    | 136    | 25        |
@@ -117,6 +117,12 @@
 Note: `yolov8_seg` always has a buffer length of 10. `BUFFER_QUEUES` env doesn't affect it.
 
 | Savant ver.                                                   | A4000 | Jetson NX |
-|---------------------------------------------------------------|-------|-----------|
+| ------------------------------------------------------------- | ----- | --------- |
 | [#131](https://github.com/insight-platform/Savant/issues/131) | 45.78 | 14.84     |
 | [#334](https://github.com/insight-platform/Savant/issues/334) | 44.33 | 14.82     |
+
+### face_reid
+
+| Savant ver.                                                   | A4000 | Jetson NX |
+| ------------------------------------------------------------- | ----- | --------- |
+| [#142](https://github.com/insight-platform/Savant/issues/142) | 124   | 26        |

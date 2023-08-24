@@ -20,7 +20,10 @@ class TensorToVectorConverter(BaseAttributeModelOutputConverter):
         roi: Tuple[float, float, float, float]
     ) -> List[Tuple[List[float], Optional[float]]]:
         """Converts output array to Python list."""
-        return [(output_layers[0].tolist(), None)]
+        output_layer = output_layers[0]
+        attr_config = model.output.attributes[0]
+
+        return [(attr_config.name, output_layer.tolist(), None)]
 
 
 class TensorToItemConverter(BaseAttributeModelOutputConverter):

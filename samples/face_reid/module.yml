@@ -1,0 +1,123 @@
+name: face_reid
+
+parameters:
+  frame:
+    width: 1280
+    height: 720
+    padding:
+      keep: true
+      left: 0
+      # for 2x112px mini-portraits + 3x24px paddings
+      # total width of 1576 is expected (1576 mod 4 == 0, which may be important on jetson)
+      right: ${calc:"2*arg_0 + 3*arg_1", ${parameters.face_width}, ${parameters.face_tile_padding}}
+      top: 0
+      bottom: 0
+
+  output_frame:
+    codec: h264
+
+  face_tile_padding: 24
+  face_width: 112
+  face_height: 112
+  detection_model_name: yolov5nface
+
+  reid_model_name: adaface_ir50_webface4m_90fb74c
+
+  draw_func:
+    module: samples.face_reid.overlay
+    class_name: Overlay
+    kwargs:
+      gallery_path: /opt/savant/samples/face_reid/index_files/processed_gallery
+      face_width: ${parameters.face_width}
+      face_height: ${parameters.face_height}
+      face_tile_padding: ${parameters.face_tile_padding}
+      frame_padding_width: ${parameters.frame.padding.right}
+      # this parameter forces a minimum number of frames
+      # that a matched gallery image will be displayed
+      # this is to prevent flickering when gallery images are equally close to a detected face
+      match_linger_frames: 20
+
+pipeline:
+
+  elements:
+    # detector
+    - element: nvinfer@complex_model
+      name: ${parameters.detection_model_name}
+      model:
+        remote:
+          url: s3://savant-data/models/yolov5face/${parameters.detection_model_name}.zip
+          checksum_url: s3://savant-data/models/yolov5face/${parameters.detection_model_name}.md5
+          parameters:
+            endpoint: https://eu-central-1.linodeobjects.com
+        format: onnx
+        config_file: yolov5n-face.txt
+        input:
+          shape: [3, 640, 640]
+        output:
+          layer_names: [ 'output' ]
+          converter:
+            module: savant.converter.yolo_v5face
+            class_name: YoloV5faceConverter
+            kwargs:
+              confidence_threshold: 0.6
+              nms_iou_threshold: 0.5
+          objects:
+            - class_id: 0
+              label: face
+              selector:
+                module: savant.selector.detector
+                class_name: MinMaxSizeBBoxSelector
+                kwargs:
+                  min_width: 40
+                  min_height: 40
+          attributes:
+            - name: landmarks
+
+    - element: nvtracker
+      properties:
+        tracker-width: 640
+        tracker-height: 640
+        ll-lib-file: /opt/nvidia/deepstream/deepstream/lib/libnvds_nvmultiobjecttracker.so
+        ll-config-file: ${oc.env:PROJECT_PATH}/samples/face_reid/config_tracker_NvDCF_perf.yml
+        enable_batch_process: 1
+
+    - element: nvinfer@attribute_model
+      name: ${parameters.reid_model_name}
+      model:
+        remote:
+          url: s3://savant-data/models/${parameters.reid_model_name}/${parameters.reid_model_name}.zip
+          checksum_url: s3://savant-data/models/${parameters.reid_model_name}/${parameters.reid_model_name}.md5
+          parameters:
+            endpoint: https://eu-central-1.linodeobjects.com
+        format: onnx
+        model_file: adaface_ir50_webface4m.onnx
+        batch_size: 4
+        input:
+          object: ${parameters.detection_model_name}.face
+          shape: [3, 112, 112]
+          offsets: [127.5, 127.5, 127.5]
+          scale_factor: 0.007843137254902
+          color_format: bgr
+          preprocess_object_image:
+            module: samples.face_reid.face_preproc
+            class_name: FacePreprocessingObjectImageGPU
+        output:
+          layer_names: [ 'feature' ]
+          converter:
+            module: savant.converter
+            class_name: TensorToVectorConverter
+          attributes:
+            - name: feature
+
+    - element: pyfunc
+      module: samples.face_reid.recognition
+      class_name: Recognition
+      kwargs:
+        index_dir: /opt/savant/samples/face_reid/index_files/
+        index_space: cosine
+        # index_dim is set according to the reid model output dimensions
+        index_dim: 512
+        # hnswlib index parameter
+        index_max_elements: 100
+        # maximum successful match distance
+        dist_threshold: 0.5
