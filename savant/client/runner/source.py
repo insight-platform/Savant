@@ -4,11 +4,13 @@ from dataclasses import dataclass
 from typing import Iterable, List, Optional
 
 import zmq
+from savant_rs.pipeline2 import VideoPipeline, VideoPipelineStagePayloadType
 from savant_rs.primitives import EndOfStream
+from savant_rs.utils import TelemetrySpan
 from savant_rs.utils.serialization import Message, save_message_to_bytes
 
 from savant.client.frame_source import FrameSource
-from savant.client.log_provider import LogProvider
+from savant.client.log_provider import LogProvider, Logs
 from savant.utils.zeromq import (
     Defaults,
     SenderSocketTypes,
@@ -23,6 +25,14 @@ logger = logging.getLogger(__name__)
 class SourceResult:
     source_id: str
     status: str
+    trace_id: Optional[str] = None
+    log_provider: Optional[LogProvider] = None
+
+    @property
+    def logs(self) -> Logs:
+        if self.log_provider is not None:
+            return self.log_provider.logs(self.trace_id)
+        return Logs([])
 
 
 class SourceRunner:
@@ -59,14 +69,27 @@ class SourceRunner:
         else:
             self._sender.connect(self._socket)
 
+        self._pipeline_stage_name = 'savant-client'
+        self._pipeline = VideoPipeline(
+            'savant-client',
+            [(self._pipeline_stage_name, VideoPipelineStagePayloadType.Frame)],
+        )
+        self._pipeline.sampling_period = 1
+
     def __call__(self, source: FrameSource) -> SourceResult:
         return self.send(source)
 
     def send(self, source: FrameSource, send_eos: bool = True) -> SourceResult:
         logger.debug('Sending video frame from source %s.', source)
         video_frame, content = source.build_frame()
+        self._wait_timeout()
+        frame_id = self._pipeline.add_frame(self._pipeline_stage_name, video_frame)
         zmq_topic = f'{video_frame.source_id}/'.encode()
         message = Message.video_frame(video_frame)
+        span: TelemetrySpan = self._pipeline.delete(frame_id)[frame_id]
+        message.span_context = span.propagate()
+        trace_id = span.trace_id()
+        del span
         serialized_message = save_message_to_bytes(message)
         logger.debug(
             'Sending video frame %s/%s.',
@@ -78,7 +101,12 @@ class SourceRunner:
         if send_eos:
             self.send_eos(video_frame.source_id)
 
-        return SourceResult(video_frame.source_id, 'ok')
+        return SourceResult(
+            source_id=video_frame.source_id,
+            status='ok',
+            trace_id=trace_id,
+            log_provider=self._log_provider,
+        )
 
     def send_iter(
         self,
@@ -99,17 +127,13 @@ class SourceRunner:
         zmq_topic = f'{source_id}/'.encode()
         message = Message.end_of_stream(EndOfStream(source_id))
         serialized_message = save_message_to_bytes(message)
+        self._wait_timeout()
         self._send_zmq_message([zmq_topic, serialized_message])
         logger.debug('Sent EOS for source %s.', source_id)
 
         return SourceResult(source_id, 'ok')
 
     def _send_zmq_message(self, message: List[bytes]):
-        if self._timeout:
-            timeout = self._last_send_time + self._timeout - time.time()
-            if timeout > 0:
-                time.sleep(timeout)
-        self._last_send_time = time.time()
         self._sender.send_multipart(message)
         if self._wait_response:
             receive_response(self._sender, self._req_receive_retries)
