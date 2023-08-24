@@ -39,7 +39,8 @@ def pyfunc_element_configurator(
     # set dev mode for the pyfunc element
     if module_config.parameters.dev_mode:
         logger.debug(
-            'Set dev mode for PyFuncElement named "%s" to True.', element_config.name
+            'Setting dev mode for PyFuncElement named "%s" to True.',
+            element_config.name,
         )
         element_config.dev_mode = True
     return element_config
@@ -222,6 +223,9 @@ def configure_module_parameters(module_cfg: DictConfig) -> None:
         OmegaConf.structured(FrameParameters),
     )
     apply_schema(module_cfg.parameters, 'draw_func', DrawFunc)
+    if module_cfg.parameters.dev_mode:
+        logger.debug('Setting draw_func dev mode to true.')
+        module_cfg.parameters.draw_func.dev_mode = True
     apply_schema(module_cfg.parameters, 'buffer_queues', BufferQueuesParameters)
     apply_schema(
         module_cfg.parameters,
