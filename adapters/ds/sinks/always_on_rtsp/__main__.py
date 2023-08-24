@@ -22,7 +22,7 @@ from savant.utils.platform import is_aarch64
 from savant.utils.zeromq import ReceiverSocketTypes
 from savant.utils.logging import init_logging
 
-LOGGER_NAME = 'ao_sink'
+LOGGER_NAME = 'savant.adapters.ao_sink'
 logger = logging.getLogger(LOGGER_NAME)
 
 

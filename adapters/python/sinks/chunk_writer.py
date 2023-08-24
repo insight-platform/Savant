@@ -8,7 +8,7 @@ class ChunkWriter:
     """Writes data in chunks."""
 
     def __init__(self, chunk_size: int):
-        self.logger = logging.getLogger(f'{__name__}.{self.__class__.__name__}')
+        self.logger = logging.getLogger(f'savant.adapters.{self.__class__.__name__}')
         self.chunk_size = chunk_size
         if chunk_size > 0:
             self.chunk_size_digits = int(math.log10(chunk_size)) + 1

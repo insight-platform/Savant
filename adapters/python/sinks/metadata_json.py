@@ -22,7 +22,7 @@ from savant.api.parser import parse_video_frame
 from savant.utils.logging import init_logging
 from savant.utils.zeromq import ZeroMQSource, build_topic_prefix
 
-LOGGER_NAME = 'metadata_json_sink'
+LOGGER_NAME = 'savant.adapters.metadata_json_sink'
 
 
 class Patterns:
@@ -92,7 +92,7 @@ class MetadataJsonSink:
         skip_frames_without_objects: bool = True,
         chunk_size: int = 0,
     ):
-        self.logger = logging.getLogger(f'{LOGGER_NAME}.{self.__class__.__name__}')
+        self.logger = logging.getLogger(f'savant.adapters.{self.__class__.__name__}')
         self.skip_frames_without_objects = skip_frames_without_objects
         self.chunk_size = chunk_size
         self.writers: Dict[str, MetadataJsonWriter] = {}
