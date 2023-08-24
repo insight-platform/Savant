@@ -7,8 +7,8 @@ import zmq
 from savant_rs.primitives import EndOfStream
 from savant_rs.utils.serialization import Message, save_message_to_bytes
 
-from savant.source_sink_framework.frame_source import FrameSource
-from savant.source_sink_framework.log_provider import LogProvider
+from savant.client.frame_source import FrameSource
+from savant.client.log_provider import LogProvider
 from savant.utils.zeromq import (
     Defaults,
     SenderSocketTypes,

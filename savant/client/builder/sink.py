@@ -1,8 +1,8 @@
 import logging
 from typing import Optional
 
-from savant.source_sink_framework.log_provider import LogProvider
-from savant.source_sink_framework.runner.sink import SinkRunner
+from savant.client.log_provider import LogProvider
+from savant.client.runner.sink import SinkRunner
 
 logger = logging.getLogger(__name__)
 

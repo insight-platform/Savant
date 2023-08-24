@@ -5,7 +5,7 @@ from typing import Optional
 from savant_rs.primitives import EndOfStream, VideoFrame, VideoFrameContent
 from savant_rs.utils.serialization import Message, load_message_from_bytes
 
-from savant.source_sink_framework.log_provider import LogProvider
+from savant.client.log_provider import LogProvider
 from savant.utils.zeromq import Defaults, ZeroMQSource
 
 logger = logging.getLogger(__name__)
