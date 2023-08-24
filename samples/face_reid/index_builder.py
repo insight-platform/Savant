@@ -43,7 +43,7 @@ class IndexBuilder(NvDsPyFuncPlugin):
         """
         # image files source adapter adds location tag
         # which contains image file name
-        location = frame_meta.tags['location']
+        location = frame_meta.get_tag('location')
 
         if frame_meta.objects_number != 2:
             # no faces detected and only primary object is present
