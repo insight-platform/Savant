@@ -230,6 +230,8 @@ class PyFunc:
             pyfunc_impl_instance = PyFuncNoopImpl()
             logger.debug('No pyfunc impl, using noop placeholder.')
 
+        if hasattr(self._instance, 'gst_element'):
+            pyfunc_impl_instance.gst_element = self._instance.gst_element
         self._instance = pyfunc_impl_instance
         self._callable = callable_factory(self._instance)
 
