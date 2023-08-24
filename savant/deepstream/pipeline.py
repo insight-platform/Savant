@@ -107,7 +107,6 @@ class NvDsPipeline(GstPipeline):
         output_frame = kwargs.get('output_frame')
         draw_func: Optional[DrawFunc] = kwargs.get('draw_func')
         if draw_func is not None and output_frame:
-            draw_func.init_user_code()
             pipeline_cfg.elements.append(draw_func)
 
         self._demuxer_src_pads: List[Gst.Pad] = []
