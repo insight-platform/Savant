@@ -96,6 +96,7 @@ pipeline:
             endpoint: https://eu-central-1.linodeobjects.com
         format: onnx
         model_file: adaface_ir50_webface4m.onnx
+        batch_size: 4
         input:
           object: ${parameters.detection_model_name}.face
           shape: [3, 112, 112]
