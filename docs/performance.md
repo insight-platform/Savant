@@ -125,4 +125,4 @@ Note: `yolov8_seg` always has a buffer length of 10. `BUFFER_QUEUES` env doesn't
 
 | Savant ver.                                                   | A4000 | Jetson NX |
 | ------------------------------------------------------------- | ----- | --------- |
-| [#142](https://github.com/insight-platform/Savant/issues/142) | 124   | 17        |
+| [#142](https://github.com/insight-platform/Savant/issues/142) | 124   | 26        |
