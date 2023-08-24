@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Tuple
 
 from savant_rs.primitives import VideoFrame, VideoFrameUpdate
 
@@ -9,5 +10,5 @@ class FrameSource(ABC):
         pass
 
     @abstractmethod
-    def build_frame(self) -> VideoFrame:
+    def build_frame(self) -> Tuple[VideoFrame, bytes]:
         pass

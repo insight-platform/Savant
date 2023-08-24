@@ -61,7 +61,6 @@ class SourceRunner:
 
     def send(self, source: FrameSource, send_eos: bool = True) -> SourceResult:
         video_frame, content = source.build_frame()
-        # TODO: set PTS
         zmq_topic = f'{video_frame.source_id}/'.encode()
         message = Message.video_frame(video_frame)
         serialized_message = save_message_to_bytes(message)
