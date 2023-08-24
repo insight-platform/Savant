@@ -5,6 +5,7 @@ from savant_rs.primitives import (
     AttributeValue,
     AttributeValueType,
     VideoFrame,
+    VideoFrameTransformation,
     VideoObject,
 )
 from savant_rs.primitives.geometry import BBox, RBBox
@@ -35,7 +36,7 @@ _attribute_value_to_python = {
 
 def parse_video_frame(frame: VideoFrame):
     # TODO: add content to metadata if its not embedded
-    return {
+    parsed = {
         'source_id': frame.source_id,
         'framerate': frame.framerate,
         'width': frame.width,
@@ -54,6 +55,12 @@ def parse_video_frame(frame: VideoFrame):
         'metadata': {'objects': parse_video_objects(frame)},
         'tags': parse_tags(frame),
     }
+    if frame.transformations:
+        parsed['transformations'] = [
+            parse_transformation(x) for x in frame.transformations
+        ]
+
+    return parsed
 
 
 def convert_ts(ts: int, time_base: Tuple[int, int]):
@@ -134,3 +141,25 @@ def parse_bbox(bbox: Union[BBox, RBBox]):
         'height': bbox.height,
         'angle': bbox.angle if isinstance(bbox, RBBox) else 0,
     }
+
+
+def parse_transformation(transformation: VideoFrameTransformation):
+    if transformation.is_initial_size:
+        width, height = transformation.as_initial_size
+        return {'type': 'initial_size', 'width': width, 'height': height}
+    if transformation.is_padding:
+        left, top, right, bottom = transformation.as_padding
+        return {
+            'type': 'padding',
+            'left': left,
+            'top': top,
+            'right': right,
+            'bottom': bottom,
+        }
+    if transformation.is_resulting_size:
+        width, height = transformation.as_resulting_size
+        return {'type': 'resulting_size', 'width': width, 'height': height}
+    if transformation.is_scale:
+        width, height = transformation.as_scale
+        return {'type': 'scale', 'width': width, 'height': height}
+    raise ValueError(f'Unknown transformation type: {transformation}')

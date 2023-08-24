@@ -1,12 +1,13 @@
 """Overlay dashboard module."""
 from pathlib import Path
+
 import cv2
 
-from savant.deepstream.drawfunc import NvDsDrawFunc
-from savant.deepstream.meta.frame import NvDsFrameMeta, BBox
-from savant.utils.artist import Position, Artist
 from samples.peoplenet_detector.animation import Animation
-from samples.peoplenet_detector.utils import load_sprite, get_font_scale
+from samples.peoplenet_detector.utils import get_font_scale, load_sprite
+from savant.deepstream.drawfunc import NvDsDrawFunc
+from savant.deepstream.meta.frame import BBox, NvDsFrameMeta
+from savant.utils.artist import Artist, Position
 
 
 class Overlay(NvDsDrawFunc):

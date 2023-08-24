@@ -1,6 +1,8 @@
 """Tensor to vector converters."""
-from typing import List, Tuple, Optional
+from typing import List, Optional, Tuple
+
 import numpy as np
+
 from savant.base.converter import BaseAttributeModelOutputConverter
 from savant.base.model import AttributeModel
 

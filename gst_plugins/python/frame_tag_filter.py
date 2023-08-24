@@ -7,11 +7,12 @@ from pygstsavantframemeta import (
     gst_buffer_add_savant_frame_meta,
     nvds_frame_meta_get_nvds_savant_frame_meta,
 )
+from savant_rs.pipeline2 import VideoPipeline
 
 from gst_plugins.python.frame_tag_filter_common import build_stream_part_event
+from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.deepstream.utils import nvds_frame_meta_iterator
 from savant.gstreamer import GObject, Gst
-from savant.gstreamer.metadata import get_source_frame_meta
 from savant.gstreamer.utils import (
     RequiredPropertyError,
     on_pad_event,
@@ -78,6 +79,12 @@ class FrameTagFilter(LoggerMixin, Gst.Element):
             None,
             GObject.ParamFlags.READWRITE | Gst.PARAM_MUTABLE_READY,
         ),
+        'pipeline': (
+            object,
+            'VideoPipeline object from savant-rs.',
+            'VideoPipeline object from savant-rs.',
+            GObject.ParamFlags.READWRITE,
+        ),
     }
 
     def __init__(self):
@@ -86,6 +93,7 @@ class FrameTagFilter(LoggerMixin, Gst.Element):
         self.part_id_gen = count()
         self.source_id: Optional[str] = None
         self.tag: Optional[str] = None
+        self.video_pipeline: Optional[VideoPipeline] = None
 
         self.sink_pad: Gst.Pad = Gst.Pad.new_from_template(SINK_PAD_TEMPLATE, 'sink')
         self.src_pad_tagged: Gst.Pad = Gst.Pad.new_from_template(
@@ -113,8 +121,8 @@ class FrameTagFilter(LoggerMixin, Gst.Element):
         init_state = [Gst.State.NULL, Gst.State.READY]
         if old in init_state and new not in init_state:
             try:
-                required_property(self.source_id, 'source-id')
-                required_property(self.tag, 'tag')
+                required_property('source-id', self.source_id)
+                required_property('tag', self.tag)
             except RequiredPropertyError as exc:
                 self.logger.exception('Failed to start element: %s', exc, exc_info=True)
                 frame = inspect.currentframe()
@@ -127,6 +135,8 @@ class FrameTagFilter(LoggerMixin, Gst.Element):
             return self.tag
         if prop.name == 'source-id':
             return self.source_id
+        if prop.name == 'pipeline':
+            return self.video_pipeline
         raise AttributeError(f'Unknown property {prop.name}')
 
     def do_set_property(self, prop, value):
@@ -137,6 +147,8 @@ class FrameTagFilter(LoggerMixin, Gst.Element):
             self.tag = value
         elif prop.name == 'source-id':
             self.source_id = value
+        elif prop.name == 'pipeline':
+            self.video_pipeline = value
         else:
             raise AttributeError(f'Unknown property {prop.name}')
 
@@ -180,25 +192,39 @@ class FrameTagFilter(LoggerMixin, Gst.Element):
             savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(
                 nvds_frame_meta
             )
-            frame_idx = savant_frame_meta.idx if savant_frame_meta else None
-            frame_pts = nvds_frame_meta.buf_pts
-            self.logger.debug(
-                'savant_frame_meta=%s, frame_idx=%s, frame_pts=%s',
-                savant_frame_meta,
-                frame_idx,
-                frame_pts,
-            )
-            frame_meta = get_source_frame_meta(self.source_id, frame_idx, frame_pts)
-            if self.tag in frame_meta.tags:
-                self.logger.debug('Frame PTS=%s has tag "%s"', frame_pts, self.tag)
+            if savant_frame_meta is None:
+                self.logger.warning(
+                    'Failed to parse buffer %s. Frame has no Savant Frame Meta.',
+                    buffer.pts,
+                )
                 return None
 
-            not_tagged_buffer: Gst.Buffer = Gst.Buffer.new()
-            not_tagged_buffer.pts = frame_pts
-            not_tagged_buffer.set_flags(Gst.BufferFlags.DELTA_UNIT)
-            if frame_idx is not None:
-                gst_buffer_add_savant_frame_meta(not_tagged_buffer, frame_idx)
-            not_tagged_buffers.append(not_tagged_buffer)
+            frame_idx = savant_frame_meta.idx
+            self.logger.debug('Frame IDX: %s, PTS: %s.', frame_idx, buffer.pts)
+            video_frame, video_frame_span = self.video_pipeline.get_independent_frame(
+                frame_idx,
+            )
+            with video_frame_span.nested_span('parse-buffer') as telemetry_span:
+                frame_meta = NvDsFrameMeta(
+                    nvds_frame_meta,
+                    video_frame,
+                    telemetry_span,
+                )
+                if frame_meta.get_tag(self.tag) is not None:
+                    self.logger.debug(
+                        'Frame %s (PTS=%s) has tag "%s"',
+                        frame_idx,
+                        frame_meta.pts,
+                        self.tag,
+                    )
+                    return None
+
+                not_tagged_buffer: Gst.Buffer = Gst.Buffer.new()
+                not_tagged_buffer.pts = frame_meta.pts
+                not_tagged_buffer.set_flags(Gst.BufferFlags.DELTA_UNIT)
+                if frame_idx is not None:
+                    gst_buffer_add_savant_frame_meta(not_tagged_buffer, frame_idx)
+                not_tagged_buffers.append(not_tagged_buffer)
 
         self.logger.debug(
             'Frames PTS=%s do not have tag "%s"',

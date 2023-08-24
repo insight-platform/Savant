@@ -1,18 +1,18 @@
 """Common utilities for run scripts."""
-import string
-from pathlib import Path
-from typing import List, Iterable, Optional, Tuple
-import sys
 import os
 import pathlib
+import string
 import subprocess
+import sys
+from pathlib import Path
+from typing import Iterable, List, Optional, Tuple
 
 import click
 
 sys.path.append(str(Path(__file__).parent.parent))
+from savant.utils.platform import is_aarch64
 from savant.utils.re_patterns import socket_uri_pattern
 from savant.utils.version import version
-from savant.utils.platform import is_aarch64
 
 SAVANT_VERSION = 'latest'  # use version.SAVANT or 'latest'
 DEEPSTREAM_VERSION = version.DEEPSTREAM

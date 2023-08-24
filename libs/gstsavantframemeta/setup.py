@@ -2,7 +2,7 @@ from skbuild import setup
 
 setup(
     name='pygstsavantframemeta',
-    version='0.0.1',
+    version='0.0.2',
     description='Python bindings for GstSavantFrameMeta library',
     author='Pavel Tomskikh',
     author_email='tomskih_pa@bw-sw.com',

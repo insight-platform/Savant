@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 """Run performance management.
+
+Set BUFFER_QUEUES environment variable to enable queues in pipeline. E.g.:
+BUFFER_QUEUES='{"length":10}' ./scripts/run_perf.py
+Some modules don't accept BUFFER_QUEUES env (e.g. yolov8_seg),
+see run_perf.sh scripts and modules' configuration files for details.
+
 TODO:
     1. Run with specified docker image, savant version
     2. Prepare 1st step: sync data
@@ -14,11 +20,11 @@ docker run --rm \
  --endpoint-url=https://eu-central-1.linodeobjects.com \
  s3 sync s3://savant-data/demo /data
 """
-from pathlib import Path
-from typing import Generator
 import argparse
 import re
 import subprocess
+from pathlib import Path
+from typing import Generator
 
 
 def launch_script(script: Path) -> Generator[str, None, None]:

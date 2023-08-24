@@ -1,9 +1,11 @@
 """YOLOX detector postprocessing (converter)."""
-from typing import Tuple
 from functools import lru_cache
+from typing import Tuple
+
 import numpy as np
-from savant.converter.yolo import TensorToBBoxConverter as YoloTensorToBBoxConverter
+
 from savant.base.model import ObjectModel
+from savant.converter.yolo import TensorToBBoxConverter as YoloTensorToBBoxConverter
 
 
 class TensorToBBoxConverter(YoloTensorToBBoxConverter):

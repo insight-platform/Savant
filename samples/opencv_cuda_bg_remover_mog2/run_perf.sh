@@ -9,6 +9,7 @@ if [ "$(uname -m)" = "aarch64" ]; then
 fi
 
 docker run --rm -it $DOCKER_RUNTIME \
+  -e BUFFER_QUEUES \
   -v `pwd`/samples:/opt/savant/samples \
   -v `pwd`/data:/data:ro \
   $DOCKER_IMAGE \

@@ -7,18 +7,15 @@ from fractions import Fraction
 from threading import Lock, Thread
 from typing import Dict, NamedTuple, Optional
 
-from savant_rs.primitives import EndOfStream, VideoFrame
+from savant_rs.pipeline2 import VideoPipeline
+from savant_rs.primitives import EndOfStream, VideoFrame, VideoFrameTransformation
+from savant_rs.utils import PropagatedContext
 
+from savant.api.constants import DEFAULT_FRAMERATE
 from savant.api.enums import ExternalFrameType
-from savant.api.parser import convert_ts, parse_tags, parse_video_objects
+from savant.api.parser import convert_ts
 from savant.gstreamer import GObject, Gst
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
-from savant.gstreamer.metadata import (
-    DEFAULT_FRAMERATE,
-    OnlyExtendedDict,
-    SourceFrameMeta,
-    metadata_add_frame_meta,
-)
 from savant.gstreamer.utils import load_message_from_gst_buffer, propagate_gst_error
 from savant.utils.logging import LoggerMixin
 
@@ -45,13 +42,6 @@ SAVANT_RS_VIDEO_DEMUX_PROPERTIES = {
         DEFAULT_SOURCE_EVICTION_INTERVAL,
         GObject.ParamFlags.READWRITE,
     ),
-    'store-metadata': (
-        bool,
-        'Store metadata',
-        'Store metadata',
-        False,
-        GObject.ParamFlags.READWRITE,
-    ),
     'eos-on-timestamps-reset': (
         bool,
         'Send EOS when timestamps reset',
@@ -75,6 +65,19 @@ SAVANT_RS_VIDEO_DEMUX_PROPERTIES = {
         str,
         'Source ID filter.',
         'Filter frames by source ID.',
+        None,
+        GObject.ParamFlags.READWRITE,
+    ),
+    'pipeline': (
+        object,
+        'VideoPipeline object from savant-rs.',
+        'VideoPipeline object from savant-rs.',
+        GObject.ParamFlags.READWRITE,
+    ),
+    'pipeline-stage-name': (
+        str,
+        'Name of the pipeline stage.',
+        'Name of the pipeline stage.',
         None,
         GObject.ParamFlags.READWRITE,
     ),
@@ -154,6 +157,8 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
         self.store_metadata = False
         self.max_parallel_streams: int = 0
         self.source_id: Optional[str] = None
+        self.video_pipeline: Optional[VideoPipeline] = None
+        self.pipeline_stage_name: Optional[str] = None
 
         self._frame_idx_gen = itertools.count()
 
@@ -185,14 +190,16 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             return self.source_timeout
         if prop.name == 'source-eviction-interval':
             return self.source_eviction_interval
-        if prop.name == 'store-metadata':
-            return self.store_metadata
         if prop.name == 'eos-on-timestamps-reset':
             return self.eos_on_timestamps_reset
         if prop.name == 'max-parallel-streams':
             return self.max_parallel_streams
         if prop.name == 'source-id':
             return self.source_id
+        if prop.name == 'pipeline':
+            return self.video_pipeline
+        if prop.name == 'pipeline-stage-name':
+            return self.pipeline_stage_name
         raise AttributeError(f'Unknown property {prop.name}')
 
     def do_set_property(self, prop, value):
@@ -201,14 +208,16 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             self.source_timeout = value
         elif prop.name == 'source-eviction-interval':
             self.source_eviction_interval = value
-        elif prop.name == 'store-metadata':
-            self.store_metadata = value
         elif prop.name == 'eos-on-timestamps-reset':
             self.eos_on_timestamps_reset = value
         elif prop.name == 'max-parallel-streams':
             self.max_parallel_streams = value
         elif prop.name == 'source-id':
             self.source_id = value
+        elif prop.name == 'pipeline':
+            self.video_pipeline = value
+        elif prop.name == 'pipeline-stage-name':
+            self.pipeline_stage_name = value
         else:
             raise AttributeError(f'Unknown property {prop.name}')
 
@@ -235,7 +244,11 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
         # TODO: Pipeline message types might be extended beyond only VideoFrame
         # Additional checks for audio/raw_tensors/etc. may be required
         if message.is_video_frame():
-            result = self.handle_video_frame(message.as_video_frame(), buffer)
+            result = self.handle_video_frame(
+                message.as_video_frame(),
+                message.span_context,
+                buffer,
+            )
         elif message.is_end_of_stream():
             result = self.handle_eos(message.as_end_of_stream())
         else:
@@ -247,9 +260,26 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
     def handle_video_frame(
         self,
         video_frame: VideoFrame,
+        span_context: PropagatedContext,
         buffer: Gst.Buffer,
     ) -> Gst.FlowReturn:
         """Handle VideoFrame message."""
+
+        if self.video_pipeline is not None:
+            if span_context.as_dict():
+                frame_idx = self.video_pipeline.add_frame_with_telemetry(
+                    self.pipeline_stage_name,
+                    video_frame,
+                    span_context.nested_span(self.video_pipeline.root_span_name),
+                )
+            else:
+                frame_idx = self.video_pipeline.add_frame(
+                    self.pipeline_stage_name,
+                    video_frame,
+                )
+        else:
+            frame_idx = next(self._frame_idx_gen)
+
         frame_params = FrameParams.from_video_frame(video_frame)
         frame_pts = convert_ts(video_frame.pts, video_frame.time_base)
         frame_dts = (
@@ -268,7 +298,6 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             video_frame.source_id,
             'is' if video_frame.keyframe else 'is not',
         )
-        frame_idx = next(self._frame_idx_gen)
 
         with self.source_lock:
             source_info: SourceInfo = self.sources.get(video_frame.source_id)
@@ -292,7 +321,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
                         code=Gst.StreamError.DEMUX,
                         text=error,
                     )
-                    return Gst.FlowReturn.ERROR
+                    return self._delete_frame_with_error(frame_idx)
                 if not video_frame.keyframe:
                     self.logger.warning(
                         'Frame %s from source %s is not a keyframe, skipping it. '
@@ -334,14 +363,14 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
                 if frame_type != ExternalFrameType.ZEROMQ:
                     self.logger.error('Unsupported frame type "%s".', frame_type.value)
                     self.is_running = False
-                    return Gst.FlowReturn.ERROR
+                    return self._delete_frame_with_error(frame_idx)
                 if buffer.n_memory() < 2:
                     self.logger.error(
                         'Buffer has %s regions of memory, expected at least 2.',
                         buffer.n_memory(),
                     )
                     self.is_running = False
-                    return Gst.FlowReturn.ERROR
+                    return self._delete_frame_with_error(frame_idx)
 
                 frame_buf: Gst.Buffer = Gst.Buffer.new()
                 frame_buf.append_memory(buffer.get_memory_range(1, -1))
@@ -507,24 +536,21 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
 
     def add_frame_meta(self, idx: int, frame_buf: Gst.Buffer, video_frame: VideoFrame):
         """Store metadata of a frame."""
-        if self.store_metadata:
+        if self.video_pipeline is not None:
             from pygstsavantframemeta import gst_buffer_add_savant_frame_meta
 
-            frame_meta = SourceFrameMeta(
-                source_id=video_frame.source_id,
-                pts=video_frame.pts,
-                duration=video_frame.duration,
-                framerate=video_frame.framerate,
-                metadata={'objects': parse_video_objects(video_frame)},
-                tags=OnlyExtendedDict(parse_tags(video_frame)),
-            )
-            metadata_add_frame_meta(
-                video_frame.source_id,
-                idx,
-                video_frame.pts,
-                frame_meta,
-            )
+            if not video_frame.transformations:
+                video_frame.add_transformation(
+                    VideoFrameTransformation.initial_size(
+                        video_frame.width, video_frame.height
+                    )
+                )
             gst_buffer_add_savant_frame_meta(frame_buf, idx)
+
+    def _delete_frame_with_error(self, frame_idx: int):
+        if self.video_pipeline is not None:
+            self.video_pipeline.delete(frame_idx)
+        return Gst.FlowReturn.ERROR
 
 
 def build_caps(params: FrameParams) -> Gst.Caps:

@@ -1,18 +1,24 @@
 import json
 from fractions import Fraction
 from pathlib import Path
-from typing import Any, NamedTuple, Optional, Tuple, Union
-from typing import Any, Dict, NamedTuple, Optional, Union
+from typing import Any, Dict, NamedTuple, Optional
+
+from savant_rs.primitives import (
+    Attribute,
+    AttributeValue,
+    EndOfStream,
+    VideoFrame,
+    VideoFrameContent,
+    VideoFrameTransformation,
+)
+from savant_rs.utils.serialization import Message, save_message_to_bytes
 from splitstream import splitfile
 
-from savant_rs.primitives import EndOfStream, VideoFrame
-from savant_rs.utils.serialization import Message, save_message_to_bytes
-
-from savant.api.builder import build_video_frame
+from savant.api.builder import add_objects_to_video_frame
+from savant.api.constants import DEFAULT_FRAMERATE, DEFAULT_NAMESPACE, DEFAULT_TIME_BASE
 from savant.api.enums import ExternalFrameType
 from savant.gstreamer import GObject, Gst, GstBase
 from savant.gstreamer.codecs import CODEC_BY_CAPS_NAME, Codec
-from savant.gstreamer.metadata import DEFAULT_FRAMERATE
 from savant.utils.logging import LoggerMixin
 
 EMBEDDED_FRAME_TYPE = 'embedded'
@@ -132,6 +138,7 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
         self.eos_on_frame_params_change: bool = True
         # will be set after caps negotiation
         self.frame_params: Optional[FrameParams] = None
+        self.initial_size_transformation: Optional[VideoFrameTransformation] = None
         self.last_frame_params: Optional[FrameParams] = None
         self.location: Optional[Path] = None
         self.last_location: Optional[Path] = None
@@ -169,6 +176,11 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
             height=frame_height,
             framerate=framerate,
         )
+        self.initial_size_transformation = VideoFrameTransformation.initial_size(
+            frame_width,
+            frame_height,
+        )
+
         return True
 
     def do_get_property(self, prop: GObject.GParamSpec):
@@ -260,9 +272,9 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
         if self.frame_type is None:
             result, frame_mapinfo = in_buf.map(Gst.MapFlags.READ)
             assert result, 'Cannot read buffer.'
-            content = frame_mapinfo.data
+            content = VideoFrameContent.internal(frame_mapinfo.data)
         elif self.frame_type == ExternalFrameType.ZEROMQ:
-            content = self.frame_type.value, None
+            content = VideoFrameContent.external(self.frame_type.value, None)
         else:
             self.logger.error('Unsupported frame type "%s".', self.frame_type.value)
             return Gst.FlowReturn.ERROR
@@ -340,7 +352,7 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
         pts: int,
         dts: Optional[int],
         duration: Optional[int],
-        content: Union[bytes, Tuple[str, Optional[str]]],
+        content: VideoFrameContent,
         keyframe: bool,
     ) -> VideoFrame:
         if pts == Gst.CLOCK_TIME_NONE:
@@ -352,11 +364,7 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
             self.frame_num += 1
             objects = frame_metadata['objects']
 
-        tags = {}
-        if self.location:
-            tags['location'] = str(self.location)
-
-        return build_video_frame(
+        video_frame = VideoFrame(
             source_id=self.source_id,
             framerate=self.frame_params.framerate,
             width=self.frame_params.width,
@@ -367,9 +375,21 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
             pts=pts,
             dts=dts,
             duration=duration,
-            objects=objects,
-            tags=tags,
+            time_base=DEFAULT_TIME_BASE,
         )
+        video_frame.add_transformation(self.initial_size_transformation)
+        if objects:
+            add_objects_to_video_frame(video_frame, objects)
+        if self.location:
+            video_frame.set_attribute(
+                Attribute(
+                    namespace=DEFAULT_NAMESPACE,
+                    name='location',
+                    values=[AttributeValue.string(str(self.location))],
+                )
+            )
+
+        return video_frame
 
 
 # register plugin

@@ -1,8 +1,10 @@
 """Module and pipeline elements configuration templates."""
+import json
 from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List, Optional, Union
-import json
+
 from omegaconf import MISSING, DictConfig, OmegaConf
+
 from savant.base.pyfunc import PyFunc
 
 
@@ -98,6 +100,35 @@ class BufferQueuesParameters:
 
     byte_size: int = 0
     """Size of the queue in bytes (0 - no limit)."""
+
+
+@dataclass
+class TelemetryParameters:
+    """Configure telemetry.
+
+    Example:
+    .. code-block:: yaml
+
+        sampling_period: 100
+        root_span_name: demo-pipeline-root
+        provider: jaeger
+        provider_params:
+          service_name: demo-pipeline
+          endpoint: jaeger:6831
+
+    """
+
+    sampling_period: int = 100
+    """Sampling period in frames."""
+
+    root_span_name: Optional[str] = None
+    """Name for root span."""
+
+    provider: Optional[str] = None
+    """Telemetry provider name."""
+
+    provider_params: Optional[Dict[str, Any]] = None
+    """Parameters for telemetry provider."""
 
 
 @dataclass

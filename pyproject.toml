@@ -33,10 +33,13 @@ savant = ['VERSION', '**/*.yml']
 
 [tool.setuptools.dynamic]
 version = {attr = 'savant.__version__'}
-dependencies = {file = ['requirements/base.txt']}
+dependencies = {file = ['requirements/base.txt', 'requirements/savant-rs.txt']}
 
 [tool.black]
 skip-string-normalization = true
 
 [tool.pylint.messages_control]
 max-line-length = 88
+
+[tool.isort]
+profile = "black"

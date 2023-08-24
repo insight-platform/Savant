@@ -1,27 +1,17 @@
 """Gst-nvinfer file configuration."""
+import copy
+import re
+from configparser import ConfigParser
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Mapping,
-    MutableSequence,
-    Optional,
-    Union,
-)
-from configparser import ConfigParser
-import copy
-import re
+from typing import Any, Callable, Dict, List, Mapping, MutableSequence, Optional, Union
+
 from omegaconf import DictConfig
-from savant.base.model import ModelPrecision, ModelColorFormat
-from .model import (
-    NVINFER_DEFAULT_OBJECT_SELECTOR,
-    NvInferModelFormat,
-    NvInferModel,
-)
+
+from savant.base.model import ModelColorFormat, ModelPrecision
+
+from .model import NVINFER_DEFAULT_OBJECT_SELECTOR, NvInferModel, NvInferModelFormat
 
 __all__ = ['NvInferConfig', 'NvInferConfigType']
 

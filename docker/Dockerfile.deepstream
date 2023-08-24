@@ -9,6 +9,9 @@ RUN mkdir -p /tmp/cmake \
     && wget --progress=bar:force:noscroll https://github.com/Kitware/CMake/releases/download/v$CMAKE_VER/cmake-$CMAKE_VER-linux-x86_64.sh \
     && sh cmake-$CMAKE_VER-linux-x86_64.sh --skip-license --prefix=/usr/local/
 
+# remove nvidia repos (sometimes break down)
+RUN rm -r /etc/apt/sources.list.d/* && apt-get clean
+
 # need python headers
 RUN apt-get update \
     && apt-get install --no-install-recommends -y \
@@ -38,6 +41,7 @@ RUN python3 -m pip install setuptools wheel build
 WORKDIR /tmp/build
 COPY pyproject.toml README.md LICENSE ./
 COPY requirements/base.txt requirements/base.txt
+COPY requirements/savant-rs.txt requirements/savant-rs.txt
 COPY savant savant
 RUN python3 -m build --wheel
 
@@ -47,6 +51,8 @@ FROM base_builder AS pygstsavantframemeta_build
 WORKDIR /libs/gstsavantframemeta
 COPY libs/gstsavantframemeta/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements/savant-rs.txt requirements-savant-rs.txt
+RUN pip install --no-cache-dir -r requirements-savant-rs.txt
 
 COPY libs/gstsavantframemeta .
 RUN python setup.py bdist_wheel && rm -rf _skbuild
@@ -67,6 +73,9 @@ ARG DEEPSTREAM_VERSION
 
 # python to python3 by default
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 10
+
+# remove nvidia repos (sometimes break down)
+RUN rm -r /etc/apt/sources.list.d/* && apt-get clean
 
 # install base packages
 RUN apt-get update \
@@ -107,15 +116,19 @@ RUN curl -fsS \
     && dpkg -i OpenCV* \
     && rm OpenCV*
 
-COPY --from=pygstsavantframemeta_build /libs/gstsavantframemeta/dist /libs/gstsavantframemeta/dist
-RUN python -m pip install --no-cache-dir /libs/gstsavantframemeta/dist/*.whl
+COPY requirements/base.txt requirements-base.txt
+RUN python -m pip install --no-cache-dir -r requirements-base.txt \
+    && rm requirements-base.txt
 
 COPY --from=savantboost_build /libs/savanboost/dist /libs/savanboost/dist
 RUN python -m pip install --no-cache-dir /libs/savanboost/dist/*.whl
 
-COPY requirements/base.txt requirements-base.txt
-RUN python -m pip install --no-cache-dir -r requirements-base.txt \
-    && rm requirements-base.txt
+COPY requirements/savant-rs.txt requirements-savant-rs.txt
+RUN python -m pip install --no-cache-dir -r requirements-savant-rs.txt \
+    && rm requirements-savant-rs.txt
+
+COPY --from=pygstsavantframemeta_build /libs/gstsavantframemeta/dist /libs/gstsavantframemeta/dist
+RUN python -m pip install --no-cache-dir /libs/gstsavantframemeta/dist/*.whl
 
 COPY --from=savant_build /tmp/build/dist /libs/savant/dist/
 RUN python -m pip install --no-cache-dir /libs/savant/dist/*.whl

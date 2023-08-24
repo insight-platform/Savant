@@ -34,6 +34,8 @@ parameters:
   face_height: 112
   detection_model_name: yolov5nface
 
+  buffer_queues: ${json:${oc.env:BUFFER_QUEUES, null}}
+
 pipeline:
 
   source:

@@ -1,9 +1,11 @@
 """HTTP file handler."""
-from typing import Optional
-from pathlib import Path
 import shutil
-from tqdm import tqdm
+from pathlib import Path
+from typing import Optional
+
 import requests
+from tqdm import tqdm
+
 from savant.remote_file.base import RemoteFileHandler
 
 __all__ = ['HTTPFileHandler']

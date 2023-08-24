@@ -50,7 +50,7 @@ The following parameters are defined for a Savant module by default:
 
 .. literalinclude:: ../../../savant/config/default.yml
   :language: YAML
-  :lines: 1-97
+  :lines: 1-116
 
 .. note::
 
@@ -121,6 +121,23 @@ Output Video Stream Codec
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If the ``output_frame`` section is set, Savant adds encoded video streams to sink. More information you will find in the next section :doc:`20_video_processing`.
+
+Telemetry
+^^^^^^^^^
+
+The ``telemetry`` section defines the telemetry configuration. The ``endpoint`` in ``telemetry.provider_params`` is required when ``telemetry.provider`` is set to ``'jaeger'``.
+
+Example:
+
+.. code-block:: yaml
+
+    telemetry:
+      sampling_period: 100
+      root_span_name: demo-pipeline-root
+      provider: jaeger
+      provider_params:
+        service_name: demo-pipeline
+        endpoint: jaeger:6831
 
 Pipeline
 --------

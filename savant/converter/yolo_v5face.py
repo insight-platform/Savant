@@ -2,12 +2,13 @@
 
 Based on code from https://github.com/deepcam-cn/yolov5-face>
 """
-from typing import Tuple, Any
+from typing import Any, Tuple
+
 import numpy as np
-from savant.base.converter import BaseComplexModelOutputConverter
-from savant.base.model import ComplexModel
 from numba.typed import List
 
+from savant.base.converter import BaseComplexModelOutputConverter
+from savant.base.model import ComplexModel
 from savant.selector.detector import nms_cpu
 
 

@@ -1,8 +1,9 @@
 """DeepStream tensor utils."""
-from typing import List, Optional
 import ctypes
-import pyds
+from typing import List, Optional
+
 import numpy as np
+import pyds
 
 
 def nvds_infer_tensor_meta_to_outputs(

@@ -1,8 +1,10 @@
 """Tensor to bounding box converter."""
 from typing import Tuple
+
 import numpy as np
+from numba import float32, njit, void
 from pysavantboost import nms
-from numba import njit, float32, void
+
 from savant.base.converter import BaseObjectModelOutputConverter
 from savant.base.model import ObjectModel
 
