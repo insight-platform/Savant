@@ -232,6 +232,9 @@ class PyFunc:
 
         if hasattr(self._instance, 'gst_element'):
             pyfunc_impl_instance.gst_element = self._instance.gst_element
+        if hasattr(self._instance, 'frame_streams'):
+            pyfunc_impl_instance.frame_streams = self._instance.frame_streams
+
         self._instance = pyfunc_impl_instance
         self._callable = callable_factory(self._instance)
 
