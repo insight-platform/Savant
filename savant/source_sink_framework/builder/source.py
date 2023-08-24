@@ -1,7 +1,10 @@
+import logging
 from typing import Optional
 
 from savant.source_sink_framework.log_provider import LogProvider
 from savant.source_sink_framework.runner.source import SourceRunner
+
+logger = logging.getLogger(__name__)
 
 
 class SourceBuilder:
@@ -38,6 +41,12 @@ class SourceBuilder:
 
     def build(self) -> SourceRunner:
         assert self._socket is not None, 'socket is required'
+        logger.debug(
+            'Building source with socket %s, timeout %s and log provider %s.',
+            self._socket,
+            self._timeout,
+            self._log_provider,
+        )
         return SourceRunner(
             timeout=self._timeout,
             socket=self._socket,

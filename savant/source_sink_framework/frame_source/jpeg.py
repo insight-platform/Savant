@@ -1,3 +1,4 @@
+import logging
 import os
 from os import PathLike
 from typing import List, Tuple, Union
@@ -16,6 +17,8 @@ from savant.api.enums import ExternalFrameType
 from savant.source_sink_framework.frame_source import FrameSource
 
 SECOND_IN_NS = 10**9
+
+logger = logging.getLogger(__name__)
 
 
 class JpegSource(FrameSource):
@@ -97,6 +100,12 @@ class JpegSource(FrameSource):
         )
         for update in self._updates:
             video_frame.update(update)
+        logger.debug(
+            'Built video frame %s/%s from file %s.',
+            video_frame.source_id,
+            video_frame.pts,
+            self._filepath,
+        )
 
         return video_frame, content
 
@@ -110,4 +119,12 @@ class JpegSource(FrameSource):
                 'updates': self._updates,
                 name: value,
             }
+        )
+
+    def __repr__(self):
+        return (
+            f'JpegSource('
+            f'source_id={self._source_id}, '
+            f'filepath={self._filepath}, '
+            f'pts={self._pts})'
         )

@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -6,6 +7,8 @@ from savant_rs.utils.serialization import Message, load_message_from_bytes
 
 from savant.source_sink_framework.log_provider import LogProvider
 from savant.utils.zeromq import Defaults, ZeroMQSource
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -50,6 +53,11 @@ class SinkRunner:
         message: Message = load_message_from_bytes(message_parts[0])
         if message.is_video_frame():
             video_frame: VideoFrame = message.as_video_frame()
+            logger.debug(
+                'Received video frame %s/%s.',
+                video_frame.source_id,
+                video_frame.pts,
+            )
             if len(message_parts) > 1:
                 content = message_parts[1]
             else:
@@ -60,6 +68,8 @@ class SinkRunner:
             return SinkResult(video_frame, content, None)
 
         if message.is_end_of_stream():
-            return SinkResult(None, None, message.as_end_of_stream())
+            eos: EndOfStream = message.as_end_of_stream()
+            logger.debug('Received EOS from source %s.', eos.source_id)
+            return SinkResult(None, None, eos)
 
         raise Exception('Unknown message type')

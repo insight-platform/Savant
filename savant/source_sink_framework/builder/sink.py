@@ -1,7 +1,10 @@
+import logging
 from typing import Optional
 
 from savant.source_sink_framework.log_provider import LogProvider
 from savant.source_sink_framework.runner.sink import SinkRunner
+
+logger = logging.getLogger(__name__)
 
 
 class SinkBuilder:
@@ -27,6 +30,11 @@ class SinkBuilder:
 
     def build(self) -> SinkRunner:
         assert self._socket is not None, 'socket is required'
+        logger.debug(
+            'Building source with socket %s and log provider %s.',
+            self._socket,
+            self._log_provider,
+        )
         return SinkRunner(
             socket=self._socket,
             log_provider=self._log_provider,

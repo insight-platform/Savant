@@ -1,3 +1,4 @@
+import logging
 import time
 from dataclasses import dataclass
 from typing import Iterable, List, Optional
@@ -14,6 +15,8 @@ from savant.utils.zeromq import (
     parse_zmq_socket_uri,
     receive_response,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -60,11 +63,18 @@ class SourceRunner:
         return self.send(source)
 
     def send(self, source: FrameSource, send_eos: bool = True) -> SourceResult:
+        logger.debug('Sending video frame from source %s.', source)
         video_frame, content = source.build_frame()
         zmq_topic = f'{video_frame.source_id}/'.encode()
         message = Message.video_frame(video_frame)
         serialized_message = save_message_to_bytes(message)
+        logger.debug(
+            'Sending video frame %s/%s.',
+            video_frame.source_id,
+            video_frame.pts,
+        )
         self._send_zmq_message([zmq_topic, serialized_message, content])
+        logger.debug('Sent video frame %s/%s.', video_frame.source_id, video_frame.pts)
         if send_eos:
             self.send_eos(video_frame.source_id)
 
@@ -85,10 +95,12 @@ class SourceRunner:
                 self.send_eos(source_id)
 
     def send_eos(self, source_id: str):
+        logger.debug('Sending EOS for source %s.', source_id)
         zmq_topic = f'{source_id}/'.encode()
         message = Message.end_of_stream(EndOfStream(source_id))
         serialized_message = save_message_to_bytes(message)
         self._send_zmq_message([zmq_topic, serialized_message])
+        logger.debug('Sent EOS for source %s.', source_id)
 
         return SourceResult(source_id, 'ok')
 
