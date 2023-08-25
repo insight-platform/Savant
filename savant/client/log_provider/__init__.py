@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
-from typing import List
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
@@ -10,22 +10,39 @@ class LogEntry:
     level: str
     target: str
     message: str
+    attributes: Dict[str, Any]
+    _pretty_format: Optional[str] = field(init=False, repr=False, default=None)
+
+    def pretty_format(self) -> str:
+        if self._pretty_format is None:
+            ts = self.timestamp.strftime('%Y-%m-%d %H:%M:%S.%f')
+            message = f'[{self.level}] [{self.target}] {self.message}'
+            lines = [f'{ts} | {message}']
+            for k, v in sorted(self.attributes.items()):
+                lines.append(f'{" " * len(ts)} | {k}={v}')
+            self._pretty_format = '\n'.join(lines)
+
+        return self._pretty_format
 
 
 class Logs:
     def __init__(self, entries: List[LogEntry]):
-        self._entries = entries
+        self._entries = sorted(entries, key=lambda e: e.timestamp)
+        self._pretty_format: Optional[str] = None
 
     @property
     def entries(self) -> List[LogEntry]:
         return self._entries
 
+    def pretty_format(self) -> str:
+        if self._pretty_format is None:
+            self._pretty_format = '\n'.join(
+                entry.pretty_format() for entry in self._entries
+            )
+        return self._pretty_format
+
     def pretty_print(self):
-        # TODO:
-        # ts | log message
-        #    | attributes
-        for entry in self._entries:
-            print(f"{entry.timestamp} [{entry.level}] [{entry.target}] {entry.message}")
+        print(self.pretty_format())
 
 
 class LogProvider(ABC):

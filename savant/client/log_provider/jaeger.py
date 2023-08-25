@@ -26,16 +26,32 @@ class JaegerLogProvider(LogProvider):
         for data in response.json()['data']:
             for span in data['spans']:
                 for log in span['logs']:
-                    timestamp = datetime.fromtimestamp(log['timestamp'] / 1000000)
-                    log_entry = LogEntry(timestamp, '', '', '')
-                    for field in log['fields']:
-                        if field['key'] == 'event':
-                            log_entry.message = field['value']
-                        elif field['key'] == 'log.level':
-                            log_entry.level = field['value']
-                        elif field['key'] == 'log.target':
-                            log_entry.target = field['value']
-                    logs.append(log_entry)
+                    timestamp = datetime.fromtimestamp(log['timestamp'] / 1_000_000)
+                    fields = {field['key']: field['value'] for field in log['fields']}
+                    if fields.get('event.name') != 'log-record':
+                        continue
+                    try:
+                        entry = LogEntry(
+                            timestamp=timestamp,
+                            level=fields['log.level'],
+                            target=fields['log.target'],
+                            message=fields['event'],
+                            attributes={
+                                k: v
+                                for k, v in fields.items()
+                                if k
+                                not in [
+                                    'event',
+                                    'event.domain',
+                                    'event.name',
+                                    'log.level',
+                                    'log.target',
+                                ]
+                            },
+                        )
+                    except KeyError:
+                        continue
+                    logs.append(entry)
 
         return logs
 

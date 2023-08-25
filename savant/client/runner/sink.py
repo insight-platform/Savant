@@ -6,13 +6,14 @@ from savant_rs.primitives import EndOfStream, VideoFrame, VideoFrameContent
 from savant_rs.utils.serialization import Message, load_message_from_bytes
 
 from savant.client.log_provider import LogProvider
+from savant.client.runner import LogResult
 from savant.utils.zeromq import Defaults, ZeroMQSource
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
-class SinkResult:
+class SinkResult(LogResult):
     frame_meta: Optional[VideoFrame]
     frame_content: Optional[bytes] = field(repr=False)
     eos: Optional[EndOfStream]
@@ -51,6 +52,9 @@ class SinkRunner:
             return None
 
         message: Message = load_message_from_bytes(message_parts[0])
+        trace_id: Optional[str] = message.span_context.as_dict().get('uber-trace-id')
+        if trace_id is not None:
+            trace_id = trace_id.split(':', 1)[0]
         if message.is_video_frame():
             video_frame: VideoFrame = message.as_video_frame()
             logger.debug(
@@ -65,11 +69,23 @@ class SinkRunner:
                 if video_frame.content.internal():
                     content = video_frame.content.get_data_as_bytes()
                     video_frame.content = VideoFrameContent.none()
-            return SinkResult(video_frame, content, None)
+            return SinkResult(
+                frame_meta=video_frame,
+                frame_content=content,
+                eos=None,
+                trace_id=trace_id,
+                log_provider=self._log_provider,
+            )
 
         if message.is_end_of_stream():
             eos: EndOfStream = message.as_end_of_stream()
             logger.debug('Received EOS from source %s.', eos.source_id)
-            return SinkResult(None, None, eos)
+            return SinkResult(
+                frame_meta=None,
+                frame_content=None,
+                eos=eos,
+                trace_id=trace_id,
+                log_provider=self._log_provider,
+            )
 
         raise Exception('Unknown message type')
