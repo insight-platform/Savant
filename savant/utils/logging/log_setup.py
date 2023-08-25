@@ -1,15 +1,16 @@
-"""Logger utils."""
-import logging
-import logging.config
+"""Logging setup utils."""
 import os
 from typing import Optional
+import logging
+from savant_rs.logging import set_log_level
+from .log_utils import add_logging_level, log_level_py_to_rs
 
 
-def _get_default_loglevel() -> str:
+def get_default_loglevel() -> str:
     return os.environ.get('LOGLEVEL', 'INFO')
 
 
-def _log_conf(log_level: str) -> dict:
+def get_log_conf(log_level: str) -> dict:
     return {
         'version': 1,
         'formatters': {
@@ -37,7 +38,7 @@ def _log_conf(log_level: str) -> dict:
                 'level': 'WARNING' if log_level == 'DEBUG' else log_level,
                 'handlers': ['console'],
                 'propagate': False,
-            }
+            },
         },
         'disable_existing_loggers': False,
     }
@@ -45,17 +46,19 @@ def _log_conf(log_level: str) -> dict:
 
 def init_logging(log_level: Optional[str] = None):
     """Initialize logging with specified log level or set default.
-
     :param log_level: One of supported by logging module: INFO, DEBUG, etc.
     """
     if init_logging.done:
         return
 
-    level = _get_default_loglevel() if log_level is None else log_level.upper()
-    log_config = {
-        'root': {'level': level, 'handlers': ['console']},
-    }
-    log_config.update(_log_conf(level))
+    # add custom TRACE logging level
+    add_logging_level('TRACE', logging.DEBUG - 5)
+
+    level = get_default_loglevel() if log_level is None else log_level.upper()
+
+    set_savant_rs_loglevel(level)
+
+    log_config = get_log_conf(level)
     logging.config.dictConfig(log_config)
     init_logging.done = True
 
@@ -65,44 +68,22 @@ init_logging.done = False
 
 def update_logging(log_level: str):
     """Update logging with specified log level.
-
     :param log_level: One of supported by logging module: INFO, DEBUG, etc.
     """
-    logging.config.dictConfig(_log_conf(log_level.upper()))
+    log_level = log_level.upper()
+    set_savant_rs_loglevel(log_level)
+    logging.config.dictConfig(get_log_conf(log_level))
 
 
-def get_logger(name: Optional[str] = None) -> logging.Logger:
-    init_logging()
-    return logging.getLogger(name)
-
-
-class LoggerMixin:
-    """Mixes logger in GStreamer element.
-
-    When the element name is available, logger name changes to
-    `module_name/element_name`. Otherwise, logger name is `module_name`.
-
-    Note: we cannot override `do_set_state` or any other method where element name
-    becomes available since base classes are bindings.
+def set_savant_rs_loglevel(log_level: str):
+    """Set savant_rs base logging level.
+    No messages with priority lower than this setting are going to be logged
+    regardless of RUST_LOG env var config.
+    :param log_level: Python logging level as a string.
     """
+    default_log_level_int = getattr(logging, get_default_loglevel())
+    py_log_level_int = getattr(logging, log_level, default_log_level_int)
 
-    _logger: logging.Logger = None
-    _logger_initialized: bool = False
+    rs_log_level = log_level_py_to_rs(py_log_level_int)
 
-    def __init__(self):
-        self._init_logger()
-
-    @property
-    def logger(self):
-        """Logger."""
-        if not self._logger_initialized:
-            self._init_logger()
-        return self._logger
-
-    def _init_logger(self):
-        logger_name = f'savant.{self.__module__}'
-        if hasattr(self, 'get_name') and self.get_name():
-            logger_name += f'.{self.get_name()}'
-        self._logger = get_logger(logger_name)
-
-        self._logger_initialized = True
+    set_log_level(rs_log_level)
