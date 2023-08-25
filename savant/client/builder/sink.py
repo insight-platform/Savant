@@ -8,6 +8,24 @@ logger = logging.getLogger(__name__)
 
 
 class SinkBuilder:
+    """Builder for Sink.
+
+    Usage example:
+
+    .. code-block:: python
+
+        sink = (
+            SinkBuilder()
+            .with_socket('rep+connect:ipc:///tmp/zmq-sockets/output-video.ipc')
+            .with_idle_timeout(60)
+            .with_log_provider(JaegerLogProvider('http://localhost:16686'))
+            .build()
+        )
+        for result in sink:
+            print(result.frame_meta)
+            result.logs().pretty_print()
+    """
+
     def __init__(
         self,
         socket: Optional[str] = None,
@@ -19,15 +37,24 @@ class SinkBuilder:
         self._idle_timeout = idle_timeout
 
     def with_socket(self, socket: str) -> 'SinkBuilder':
+        """Set ZeroMQ socket for Sink."""
         return self._with_field('socket', socket)
 
     def with_log_provider(self, log_provider: LogProvider) -> 'SinkBuilder':
+        """Set log provider for Sink."""
         return self._with_field('log_provider', log_provider)
 
     def with_idle_timeout(self, idle_timeout: Optional[int]) -> 'SinkBuilder':
+        """Set idle timeout for Sink.
+
+        Sink will stop trying to receive a message from ZeroMQ socket when it
+        did not receive a message for idle_timeout seconds.
+        """
         return self._with_field('idle_timeout', idle_timeout)
 
     def build(self) -> SinkRunner:
+        """Build Sink."""
+
         assert self._socket is not None, 'socket is required'
         logger.debug(
             'Building source with socket %s and log provider %s.',

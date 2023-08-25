@@ -8,6 +8,22 @@ logger = logging.getLogger(__name__)
 
 
 class SourceBuilder:
+    """Builder for Source.
+
+    Usage example:
+
+    .. code-block:: python
+
+        source = (
+            SourceBuilder()
+            .with_log_provider(JaegerLogProvider('http://localhost:16686'))
+            .with_socket('req+connect:ipc:///tmp/zmq-sockets/input-video.ipc')
+            .build()
+        )
+        result = source(JpegSource('cam-1', 'data/AVG-TownCentre.jpeg'))
+        result.logs().pretty_print()
+    """
+
     def __init__(
         self,
         socket: Optional[str] = None,
@@ -19,15 +35,23 @@ class SourceBuilder:
         self._retries = retries
 
     def with_socket(self, socket: str) -> 'SourceBuilder':
+        """Set ZeroMQ socket for Source."""
         return self._with_field('socket', socket)
 
     def with_log_provider(self, log_provider) -> 'SourceBuilder':
+        """Set log provider for Source."""
         return self._with_field('log_provider', log_provider)
 
     def with_retries(self, retries: int) -> 'SourceBuilder':
+        """Set number of retries for Source.
+
+        Source retries to send message to ZeroMQ socket if it fails.
+        """
         return self._with_field('retries', retries)
 
     def build(self) -> SourceRunner:
+        """Build Source."""
+
         assert self._socket is not None, 'socket is required'
         logger.debug(
             'Building source with socket %s and log provider %s.',

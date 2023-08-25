@@ -23,11 +23,17 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class SourceResult(LogResult):
+    """Result of sending a message to ZeroMQ socket."""
+
     source_id: str
+    """Source ID."""
     status: str
+    """Status of sending the message."""
 
 
 class SourceRunner:
+    """Sends messages to ZeroMQ socket."""
+
     def __init__(
         self,
         socket: str,
@@ -66,10 +72,24 @@ class SourceRunner:
         )
         self._pipeline.sampling_period = 1
 
-    def __call__(self, source: FrameSource) -> SourceResult:
-        return self.send(source)
+    def __call__(self, source: FrameSource, send_eos: bool = True) -> SourceResult:
+        """Send a single frame to ZeroMQ socket.
+
+        :param source: Source of the frame to send.
+        :param send_eos: Whether to send EOS after sending the frame.
+        :return: Result of sending the frame.
+        """
+
+        return self.send(source, send_eos)
 
     def send(self, source: FrameSource, send_eos: bool = True) -> SourceResult:
+        """Send a single frame to ZeroMQ socket.
+
+        :param source: Source of the frame to send.
+        :param send_eos: Whether to send EOS after sending the frame.
+        :return: Result of sending the frame.
+        """
+
         logger.debug('Sending video frame from source %s.', source)
         video_frame, content = source.build_frame()
         frame_id = self._pipeline.add_frame(self._pipeline_stage_name, video_frame)
@@ -102,6 +122,13 @@ class SourceRunner:
         sources: Iterable[FrameSource],
         send_eos: bool = True,
     ) -> Iterable[SourceResult]:
+        """Send multiple frames to ZeroMQ socket.
+
+        :param sources: Sources of the frames to send.
+        :param send_eos: Whether to send EOS after sending the frames.
+        :return: Results of sending the frames.
+        """
+
         source_ids = set()
         for source in sources:
             result = self.send(source, send_eos=False)
@@ -111,7 +138,13 @@ class SourceRunner:
             for source_id in source_ids:
                 self.send_eos(source_id)
 
-    def send_eos(self, source_id: str):
+    def send_eos(self, source_id: str) -> SourceResult:
+        """Send EOS for a source to ZeroMQ socket.
+
+        :param source_id: Source ID.
+        :return: Result of sending EOS.
+        """
+
         logger.debug('Sending EOS for source %s.', source_id)
         zmq_topic = f'{source_id}/'.encode()
         message = Message.end_of_stream(EndOfStream(source_id))

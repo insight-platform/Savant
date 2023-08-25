@@ -15,12 +15,19 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class SinkResult(LogResult):
+    """Result of receiving a message from ZeroMQ socket."""
+
     frame_meta: Optional[VideoFrame]
+    """Video frame metadata."""
     frame_content: Optional[bytes] = field(repr=False)
+    """Video frame content."""
     eos: Optional[EndOfStream]
+    """End of stream."""
 
 
 class SinkRunner:
+    """Receives messages from ZeroMQ socket."""
+
     def __init__(
         self,
         socket: str,
@@ -40,19 +47,27 @@ class SinkRunner:
         self._source.start()
 
     def __next__(self) -> SinkResult:
+        """Receive next message from ZeroMQ socket.
+
+        :return: Result of receiving a message from ZeroMQ socket.
+        :raise StopIteration: If no message was received for idle_timeout seconds.
+        """
+
         wait_until = time.time() + self._idle_timeout
         result = None
         while result is None:
-            result = self.receive_next_message()
+            result = self._receive_next_message()
             if result is None and time.time() > wait_until:
                 raise StopIteration()
 
         return result
 
     def __iter__(self):
+        """Receive messages from ZeroMQ socket infinitely or until no message
+        was received for idle_timeout seconds."""
         return self
 
-    def receive_next_message(self) -> Optional[SinkResult]:
+    def _receive_next_message(self) -> Optional[SinkResult]:
         message_parts = self._source.next_message()
         if message_parts is None:
             return None

@@ -7,6 +7,13 @@ from savant.client.log_provider import LogEntry, LogProvider
 
 
 class JaegerLogProvider(LogProvider):
+    """Log provider for Jaeger.
+
+    :param endpoint: Jaeger endpoint URL.
+    :param login: Jaeger login.
+    :param password: Jaeger password.
+    """
+
     def __init__(
         self,
         endpoint: str,

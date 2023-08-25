@@ -22,6 +22,12 @@ logger = logging.getLogger(__name__)
 
 
 class JpegSource(FrameSource):
+    """Frame source for JPEG files.
+
+    :param source_id: Source ID.
+    :param filepath: Path to a JPEG file.
+    """
+
     def __init__(
         self,
         source_id: str,
@@ -42,32 +48,40 @@ class JpegSource(FrameSource):
 
     @property
     def source_id(self) -> str:
+        """Source ID."""
         return self._source_id
 
     @property
     def filepath(self) -> Union[str, PathLike]:
+        """Path to a JPEG file."""
         return self._filepath
 
     @property
     def pts(self) -> int:
+        """Frame presentation timestamp."""
         return self._pts
 
     @property
     def framerate(self) -> Tuple[int, int]:
+        """Framerate."""
         return self._framerate
 
     @property
     def updates(self) -> List[VideoFrameUpdate]:
+        """List of frame updates."""
         return self._updates
 
     @property
     def duration(self) -> int:
+        """Frame duration."""
         return self._duration
 
     def with_pts(self, pts: int) -> 'FrameSource':
+        """Set frame presentation timestamp."""
         return self._update_param('pts', pts)
 
     def with_framerate(self, framerate: Tuple[int, int]) -> 'FrameSource':
+        """Set framerate."""
         return self._update_param('framerate', framerate)
 
     def with_update(self, update: VideoFrameUpdate) -> 'JpegSource':
