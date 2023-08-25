@@ -32,15 +32,15 @@ class SourceRunner:
         self,
         socket: str,
         log_provider: Optional[LogProvider] = None,
+        retries: int = Defaults.REQ_RECEIVE_RETRIES,
         send_hwm: int = Defaults.SEND_HWM,
         receive_timeout: int = Defaults.SENDER_RECEIVE_TIMEOUT,
-        req_receive_retries: int = Defaults.REQ_RECEIVE_RETRIES,
     ):
         self._socket = socket
         self._log_provider = log_provider
+        self._retries = retries
         self._send_hwm = send_hwm
         self._receive_timeout = receive_timeout
-        self._req_receive_retries = req_receive_retries
         self._socket_type, self._bind, self._socket = parse_zmq_socket_uri(
             uri=socket,
             socket_type_enum=SenderSocketTypes,
@@ -127,6 +127,18 @@ class SourceRunner:
         )
 
     def _send_zmq_message(self, message: List[bytes]):
-        self._sender.send_multipart(message)
+        for retries_left in reversed(range(self._retries)):
+            try:
+                self._sender.send_multipart(message)
+                break
+            except Exception:
+                if retries_left == 0:
+                    raise
+                logger.error(
+                    'Failed to send message to socket %s. %s retries left.',
+                    self._socket,
+                    retries_left,
+                    exc_info=True,
+                )
         if self._wait_response:
-            receive_response(self._sender, self._req_receive_retries)
+            receive_response(self._sender, self._retries)
