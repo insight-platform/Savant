@@ -53,6 +53,14 @@ Preview:
 
 ![](yolov8_seg/assets/shuffle_dance-400.webp)
 
+### Facial ReID
+
+Sample location: [face_reid](./face_reid)
+
+Preview:
+
+![](face_reid/assets/face-reid-loop-400.webp)
+
 ## Utility And Coding Examples
 
 ### OpenCV CUDA MOG2 Background Segmentation Demo
@@ -89,13 +97,6 @@ A simple pipeline demonstrates how GigE Vision Source Adapter works in Savant. I
 
 Sample Location: [multiple_gige](./multiple_gige)
 
-### Facial ReID
-
-Sample location: [face_reid](./face_reid)
-
-Preview:
-
-![](face_reid/assets/face-reid-loop-400.webp)
 ### Source Adapter With JSON Metadata
 
 A demo showing how to inject ground truth metadata into frames and use them to estimate the model performance.
