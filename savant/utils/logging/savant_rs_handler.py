@@ -34,6 +34,5 @@ class SavantRsLoggingHandler(logging.Handler):
             self.handleError(record)
             return
 
-        record_name_rs = record.name.replace('.', '::')
         log_level = log_level_py_to_rs(record.levelno)
-        log(log_level, record_name_rs, formatted)
+        log(log_level, record.name, formatted)
