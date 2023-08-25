@@ -1,4 +1,5 @@
 import logging
+import time
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -26,8 +27,10 @@ class SinkRunner:
         log_provider: Optional[LogProvider] = None,
         receive_timeout: int = Defaults.RECEIVE_TIMEOUT,
         receive_hwm: int = Defaults.RECEIVE_HWM,
+        idle_timeout: Optional[int] = None,
     ):
         self._log_provider = log_provider
+        self._idle_timeout = idle_timeout if idle_timeout is not None else 10**6
         self._source = ZeroMQSource(
             socket=socket,
             receive_timeout=receive_timeout,
@@ -37,9 +40,12 @@ class SinkRunner:
         self._source.start()
 
     def __next__(self) -> SinkResult:
+        wait_until = time.time() + self._idle_timeout
         result = None
         while result is None:
             result = self.receive_next_message()
+            if result is None and time.time() > wait_until:
+                raise StopIteration()
 
         return result
 
