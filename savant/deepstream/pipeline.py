@@ -442,11 +442,11 @@ class NvDsPipeline(GstPipeline):
             nv_video_converter.set_property(
                 'nvbuf-memory-type', int(pyds.NVBUF_MEM_CUDA_UNIFIED)
             )
-        elif new_pad_caps.get_structure(0).get_value("format") == "RGB":
+        elif new_pad_caps.get_structure(0).get_value('format') == 'RGB':
             #   https://forums.developer.nvidia.com/t/buffer-transform-failed-for-nvvideoconvert-for-num-input-channels-num-output-channels-on-jetson/237578
             #   https://forums.developer.nvidia.com/t/nvvideoconvert-buffer-transform-failed-on-jetson/261370
             self._logger.info(
-                "Input stream is RGB, using  compute-hw=1 as recommended by Nvidia"
+                'Input stream is RGB, using  compute-hw=1 as recommended by Nvidia'
             )
             nv_video_converter.set_property('compute-hw', 1)
         if self._frame_params.padding:

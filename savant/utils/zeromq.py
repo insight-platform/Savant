@@ -8,11 +8,10 @@ from urllib.parse import urlparse
 
 import zmq
 from cachetools import LRUCache
+from .re_patterns import socket_uri_pattern, socket_options_pattern
 
 logger = logging.getLogger(__name__)
 
-socket_uri_pattern = re.compile('([a-z]+\\+[a-z]+:)?([a-z]+://.*)')
-socket_options_pattern = re.compile('([a-z]+)\\+([a-z]+):')
 
 CONFIRMATION_MESSAGE = b'OK'
 END_OF_STREAM_MESSAGE = b'EOS'
