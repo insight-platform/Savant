@@ -14,7 +14,7 @@ from savant.gstreamer import Gst
 class ConditionalDetectorSkip(NvDsPyFuncPlugin):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        with open(self.config_path, "r", encoding='utf8') as stream:
+        with open(self.config_path, 'r', encoding='utf8') as stream:
             self.line_config = yaml.safe_load(stream)
 
     def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
@@ -40,7 +40,7 @@ class ConditionalDetectorSkip(NvDsPyFuncPlugin):
 class LineCrossing(NvDsPyFuncPlugin):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        with open(self.config_path, "r", encoding='utf8') as stream:
+        with open(self.config_path, 'r', encoding='utf8') as stream:
             self.line_config = yaml.safe_load(stream)
 
         self.areas = {}
@@ -52,11 +52,11 @@ class LineCrossing(NvDsPyFuncPlugin):
             pt_B = Point(*line_cfg['from'][2:])
             pt_C = Point(*line_cfg['to'][:2])
             pt_D = Point(*line_cfg['to'][2:])
-            area = PolygonalArea([pt_A, pt_B, pt_D, pt_C], ["from", None, "to", None])
+            area = PolygonalArea([pt_A, pt_B, pt_D, pt_C], ['from', None, 'to', None])
             if area.is_self_intersecting():
                 # try to correct the polygon by reversing one of the lines
                 area = PolygonalArea(
-                    [pt_A, pt_B, pt_C, pt_D], ["from", None, "to", None]
+                    [pt_A, pt_B, pt_C, pt_D], ['from', None, 'to', None]
                 )
                 if area.is_self_intersecting():
                     self.logger.error(

@@ -213,7 +213,7 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
             except zmq.Again:
                 error = (
                     f"The REP socket hasn't responded in a configured timeframe "
-                    f"{self.receive_timeout * self.req_receive_retries} ms."
+                    f'{self.receive_timeout * self.req_receive_retries} ms.'
                 )
                 self.logger.error(error)
                 frame = inspect.currentframe()

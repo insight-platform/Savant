@@ -1,6 +1,6 @@
 from typing import Tuple
-import numpy as np
 
+import numpy as np
 
 BIT_SHIFT = np.uint64(32)
 BIT_MASK = np.uint64(0xFFFFFFFF)

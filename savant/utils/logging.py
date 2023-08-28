@@ -37,7 +37,7 @@ def _log_conf(log_level: str) -> dict:
                 'level': 'WARNING' if log_level == 'DEBUG' else log_level,
                 'handlers': ['console'],
                 'propagate': False,
-            }
+            },
         },
         'disable_existing_loggers': False,
     }
