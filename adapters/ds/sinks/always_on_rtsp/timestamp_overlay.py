@@ -1,13 +1,12 @@
-import logging
 from datetime import datetime
 
 import cv2
 import numpy as np
-
+from savant.utils.logging import get_logger
 
 class TimestampOverlay:
     def __init__(self):
-        self.logger = logging.getLogger(f'{self.__module__}.{self.__class__.__name__}')
+        self.logger = get_logger(f'{self.__module__}.{self.__class__.__name__}')
 
         # TODO: make properties configurable
         self._width = 520

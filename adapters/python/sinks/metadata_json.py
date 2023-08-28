@@ -5,7 +5,6 @@ import os
 import traceback
 from distutils.util import strtobool
 from typing import Any, Dict, Optional
-import logging
 from savant_rs.primitives import (
     Attribute,
     AttributeValue,
@@ -19,10 +18,10 @@ from savant_rs.video_object_query import MatchQuery
 from adapters.python.sinks.chunk_writer import ChunkWriter
 from savant.api.constants import DEFAULT_NAMESPACE
 from savant.api.parser import parse_video_frame
-from savant.utils.logging import init_logging
+from savant.utils.logging import init_logging, get_logger
 from savant.utils.zeromq import ZeroMQSource, build_topic_prefix
 
-LOGGER_NAME = 'savant.adapters.metadata_json_sink'
+LOGGER_NAME = 'adapters.metadata_json_sink'
 
 
 class Patterns:
@@ -92,7 +91,7 @@ class MetadataJsonSink:
         skip_frames_without_objects: bool = True,
         chunk_size: int = 0,
     ):
-        self.logger = logging.getLogger(f'savant.adapters.{self.__class__.__name__}')
+        self.logger = get_logger(f'adapters.{self.__class__.__name__}')
         self.skip_frames_without_objects = skip_frames_without_objects
         self.chunk_size = chunk_size
         self.writers: Dict[str, MetadataJsonWriter] = {}
@@ -174,7 +173,7 @@ def get_tag_location(frame: VideoFrame):
 
 def main():
     init_logging()
-    logger = logging.getLogger(LOGGER_NAME)
+    logger = get_logger(LOGGER_NAME)
     location = os.environ['LOCATION']
     zmq_endpoint = os.environ['ZMQ_ENDPOINT']
     zmq_socket_type = os.environ.get('ZMQ_TYPE', 'SUB')

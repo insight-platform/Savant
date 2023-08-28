@@ -1,11 +1,10 @@
 """JSON resolver for OmegaConf."""
 import json
-import logging
 from typing import Optional, Union
 
 from omegaconf import DictConfig, ListConfig, OmegaConf
-
-logger = logging.getLogger(__name__)
+from savant.utils.logging import get_logger
+logger = get_logger(__name__)
 
 
 def json_resolver(  # pylint:disable=unused-argument

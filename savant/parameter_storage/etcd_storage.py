@@ -8,8 +8,8 @@ import etcd3
 from omegaconf import MISSING
 
 from .parameter_storage import ParameterStorage
-
-logger = logging.getLogger(__name__)
+from savant.utils.logging import get_logger
+logger = get_logger(__name__)
 
 
 @dataclass

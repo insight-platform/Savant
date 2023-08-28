@@ -13,8 +13,8 @@ from savant.deepstream.utils import nvds_get_obj_bbox
 from savant.deepstream.utils.object import nvds_get_obj_uid, nvds_is_empty_object_meta
 from savant.meta.attribute import AttributeMeta
 from savant.meta.constants import PRIMARY_OBJECT_KEY, UNTRACKED_OBJECT_ID
-
-logger = logging.getLogger(__name__)
+from savant.utils.logging import get_logger
+logger = get_logger(__name__)
 
 
 def nvds_obj_meta_output_converter(

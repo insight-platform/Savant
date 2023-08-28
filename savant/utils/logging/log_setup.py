@@ -5,6 +5,7 @@ import logging
 from savant_rs.logging import set_log_level
 from .log_utils import add_logging_level, log_level_py_to_rs
 
+LOGGING_PREFIX = 'insight.savant'
 
 def get_default_loglevel() -> str:
     return os.environ.get('LOGLEVEL', 'INFO')
@@ -28,14 +29,8 @@ def get_log_conf(log_level: str) -> dict:
             },
         },
         'loggers': {
-            'savant': {
+            LOGGING_PREFIX: {
                 'level': log_level,
-                'handlers': ['console'],
-                'propagate': False,
-            },
-            # replace debug with warning, numba debug logs cause vlf tests to fail
-            'numba': {
-                'level': 'WARNING' if log_level == 'DEBUG' else log_level,
                 'handlers': ['console'],
                 'propagate': False,
             },
@@ -64,6 +59,14 @@ def init_logging(log_level: Optional[str] = None):
 
 
 init_logging.done = False
+
+
+def get_logger(name: str) -> logging.Logger:
+    """Get logger with specified name.
+    :param name: Logger name.
+    :return: Logger instance.
+    """
+    return logging.getLogger('.'.join((LOGGING_PREFIX, name)))
 
 
 def update_logging(log_level: str):

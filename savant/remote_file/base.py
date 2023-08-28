@@ -1,5 +1,4 @@
 """Base classes for remote file managing."""
-import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import FrozenSet, Optional, Set, Type, Union
@@ -8,6 +7,7 @@ from urllib.parse import urlparse
 from omegaconf import DictConfig
 
 from savant.remote_file.schema import RemoteFile
+from savant.utils.logging import get_logger
 
 __all__ = ['RemoteFileManagerType', 'RemoteFileHandler', 'RemoteFileError']
 
@@ -23,7 +23,7 @@ class RemoteFileHandler(ABC):
     supported_schemes: FrozenSet[str]
 
     def __init__(self, **params):
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = get_logger(self.__class__.__name__)
         self.params = params
 
     @staticmethod

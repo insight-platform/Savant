@@ -1,6 +1,6 @@
 """LoggerMixin module."""
 import logging
-from .log_setup import init_logging
+from .log_setup import init_logging, get_logger
 
 
 class LoggerMixin:
@@ -25,11 +25,11 @@ class LoggerMixin:
         return self._logger
 
     def _init_logger(self):
-        logger_name = f'savant.{self.__module__}'
+        logger_name = f'{self.__module__}'
         if hasattr(self, 'get_name') and self.get_name():
             logger_name += f'.{self.get_name()}'
 
         init_logging()
-        self._logger = logging.getLogger(logger_name)
+        self._logger = get_logger(logger_name)
 
         self._logger_initialized = True

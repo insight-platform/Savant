@@ -1,5 +1,4 @@
 """Sink factories."""
-import logging
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, NamedTuple, Optional, Union
 
@@ -17,8 +16,8 @@ from savant.utils.zeromq import (
     parse_zmq_socket_uri,
     receive_response,
 )
-
-logger = logging.getLogger(__name__)
+from savant.utils.logging import get_logger
+logger = get_logger(__name__)
 
 
 class SinkMessage:

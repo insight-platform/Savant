@@ -6,7 +6,6 @@ from pathlib import Path
 from subprocess import Popen
 from threading import Thread
 from typing import Callable, List, Optional
-import logging
 import pyds
 from pygstsavantframemeta import gst_buffer_get_savant_frame_meta
 from savant_rs.pipeline2 import VideoPipeline, VideoPipelineStagePayloadType
@@ -20,10 +19,10 @@ from savant.gstreamer.element_factory import GstElementFactory
 from savant.gstreamer.runner import GstPipelineRunner
 from savant.utils.platform import is_aarch64
 from savant.utils.zeromq import ReceiverSocketTypes
-from savant.utils.logging import init_logging
+from savant.utils.logging import init_logging, get_logger
 
-LOGGER_NAME = 'savant.adapters.ao_sink'
-logger = logging.getLogger(LOGGER_NAME)
+LOGGER_NAME = 'adapters.ao_sink'
+logger = get_logger(LOGGER_NAME)
 
 
 def opt_config(name, default=None, convert=None):
@@ -359,7 +358,7 @@ class PipelineThread:
 
         self.is_running = False
         self.thread: Optional[Thread] = None
-        self.logger = logging.getLogger(f'{LOGGER_NAME}.{self.__class__.__name__}')
+        self.logger = get_logger(f'{LOGGER_NAME}.{self.__class__.__name__}')
 
     def start(self):
         self.is_running = True

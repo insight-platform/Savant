@@ -1,5 +1,4 @@
 """Module configuration."""
-import logging
 import re
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, Optional, Tuple, Type, Union
@@ -22,8 +21,8 @@ from savant.config.schema import (
 from savant.deepstream.nvinfer.element_config import nvinfer_configure_element
 from savant.parameter_storage import init_param_storage
 from savant.utils.singleton import SingletonMeta
-
-logger = logging.getLogger(__name__)
+from savant.utils.logging import get_logger
+logger = get_logger(__name__)
 
 
 class ModuleConfigException(Exception):

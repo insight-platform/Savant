@@ -1,5 +1,4 @@
 """Remote file management."""
-import logging
 from pathlib import Path
 from typing import Union
 
@@ -10,13 +9,13 @@ from savant.remote_file.http import HTTPFileHandler
 from savant.remote_file.s3 import S3FileHandler
 from savant.remote_file.schema import RemoteFile
 from savant.remote_file.utils import read_file_checksum, unpack_archive
-
+from savant.utils.logging import get_logger
 __all__ = ['process_remote', 'RemoteFile']
 
 
 RemoteFileManagerType.add_handler(S3FileHandler)
 RemoteFileManagerType.add_handler(HTTPFileHandler)
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def process_remote(
