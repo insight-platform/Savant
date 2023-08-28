@@ -1,13 +1,14 @@
 """Recognition module."""
 import os
+
 import hnswlib
 
-from savant.gstreamer import Gst
+from samples.face_reid.utils import unpack_person_id_img_n
 from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.deepstream.pyfunc import NvDsPyFuncPlugin
-from savant.parameter_storage import param_storage
+from savant.gstreamer import Gst
 from savant.meta.constants import UNTRACKED_OBJECT_ID
-from samples.face_reid.utils import unpack_person_id_img_n
+from savant.parameter_storage import param_storage
 
 MODEL_NAME = param_storage()['reid_model_name']
 

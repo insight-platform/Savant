@@ -1,10 +1,12 @@
 import pathlib
-import numpy as np
+
 import cv2
+import numpy as np
+
 from savant.deepstream.drawfunc import NvDsDrawFunc
-from savant.deepstream.meta.frame import NvDsFrameMeta, BBox
-from savant.utils.artist import Artist
+from savant.deepstream.meta.frame import BBox, NvDsFrameMeta
 from savant.meta.constants import UNTRACKED_OBJECT_ID
+from savant.utils.artist import Artist
 
 
 class Overlay(NvDsDrawFunc):

@@ -127,9 +127,9 @@ def display_sink(
             'bash',
             '-c',
             (
-                f"xauth nlist $DISPLAY | "
+                f'xauth nlist $DISPLAY | '
                 "sed -e 's/^..../ffff/' | "
-                f"xauth -f {xauth} nmerge -"
+                f'xauth -f {xauth} nmerge -'
             ),
         ]
     )
