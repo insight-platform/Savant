@@ -10,8 +10,6 @@ from cachetools import LRUCache
 
 logger = logging.getLogger(__name__)
 
-socket_uri_pattern = re.compile('([a-z]+\\+[a-z]+:)?([a-z]+://.*)')
-socket_options_pattern = re.compile('([a-z]+)\\+([a-z]+):')
 
 CONFIRMATION_MESSAGE = b'OK'
 END_OF_STREAM_MESSAGE = b'EOS'

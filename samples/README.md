@@ -53,7 +53,15 @@ Preview:
 
 ![](yolov8_seg/assets/shuffle_dance-400.webp)
 
-## Utility And Coding Examples 
+### Facial ReID
+
+Sample location: [face_reid](./face_reid)
+
+Preview:
+
+![](face_reid/assets/face-reid-loop-400.webp)
+
+## Utility And Coding Examples
 
 ### OpenCV CUDA MOG2 Background Segmentation Demo
 
@@ -73,7 +81,7 @@ Preview:
 
 ### Multiple RTSP Streams Demo
 
-A simple pipeline demonstrates how multiplexed processing works in Savant. In the demo, two RTSP streams are ingested in the module and processed with the PeopleNet model. 
+A simple pipeline demonstrates how multiplexed processing works in Savant. In the demo, two RTSP streams are ingested in the module and processed with the PeopleNet model.
 
 Sample Location: [multiple_rtsp](./multiple_rtsp)
 

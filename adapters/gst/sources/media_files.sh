@@ -26,6 +26,11 @@ elif [[ -n "${FPS_PERIOD_FRAMES}" ]]; then
 else
     FPS_PERIOD="period-frames=1000"
 fi
+if [[ -n "${RECEIVE_TIMEOUT_MSECS}" ]]; then
+    RECEIVE_TIMEOUT="receive-timeout=${RECEIVE_TIMEOUT_MSECS}"
+else
+    RECEIVE_TIMEOUT="receive-timeout=5000"
+fi
 if [[ "${FILE_TYPE}" == "picture" ]]; then
     MEASURE_PER_FILE=false
     EOS_ON_FILE_END="${EOS_ON_FILE_END:="false"}"
@@ -48,7 +53,7 @@ gst-launch-1.0 --eos-on-shutdown \
     adjust_timestamps ! \
     savant_rs_serializer source-id="${SOURCE_ID}" eos-on-file-end="${EOS_ON_FILE_END}" \
     eos-on-frame-params-change=true read-metadata="${READ_METADATA}" ! \
-    zeromq_sink socket="${ZMQ_ENDPOINT}" socket-type="${ZMQ_SOCKET_TYPE}" bind="${ZMQ_SOCKET_BIND}" sync="${SYNC_OUTPUT}" source-id="${SOURCE_ID}" \
+    zeromq_sink socket="${ZMQ_ENDPOINT}" socket-type="${ZMQ_SOCKET_TYPE}" bind="${ZMQ_SOCKET_BIND}" sync="${SYNC_OUTPUT}" source-id="${SOURCE_ID}" "${RECEIVE_TIMEOUT}" \
     &
 
 child_pid="$!"

@@ -9,10 +9,10 @@ from pycocotools.coco import COCO
 @click.option(
     '--annotation_folder',
     required=True,
-    help="Folder containing the coco annotation files",
+    help='Folder containing the coco annotation files',
 )
 @click.option(
-    '--output_folder', required=True, help="Folder to save the savant annotation files"
+    '--output_folder', required=True, help='Folder to save the savant annotation files'
 )
 def main(annotation_folder, output_folder: str):
     # Read the coco file
@@ -21,7 +21,7 @@ def main(annotation_folder, output_folder: str):
     files_list = list(annotation_folder.glob('*.txt'))
     files_list = sorted(files_list, key=lambda file_path: file_path.name)
 
-    coco = COCO(annotation_folder / "annotations" / f"instances_val2017.json")
+    coco = COCO(annotation_folder / 'annotations' / f'instances_val2017.json')
     cat_ids = coco.getCatIds()
     for file in files_list:
         img_info = coco.loadImgs(int(file.stem))[0]
@@ -30,16 +30,16 @@ def main(annotation_folder, output_folder: str):
         objects_savant = []
         object_id = 1
         for obj in anns:
-            bbox = obj["bbox"]
+            bbox = obj['bbox']
             x = bbox[0]
             y = bbox[1]
             width = bbox[2]
             height = bbox[3]
-            label = coco.cats[obj["category_id"]]["name"]
-            if label == "person":
+            label = coco.cats[obj['category_id']]['name']
+            if label == 'person':
                 object_id += 1
                 obj_savant = dict(
-                    model_name="coco",
+                    model_name='coco',
                     label=label,
                     object_id=object_id,
                     bbox=dict(
@@ -57,12 +57,12 @@ def main(annotation_folder, output_folder: str):
                 )
                 objects_savant.append(obj_savant)
         output_dict = dict(metadata=dict(objects=objects_savant))
-        json.dump(output_dict, open(output_folder / f"{file.stem}.json", 'w'))
+        json.dump(output_dict, open(output_folder / f'{file.stem}.json', 'w'))
 
 
 def coco_to_rel_savant(coco_line, image_width, image_height, coco_label):
     """Convert a coco format to a savant input format"""
-    split_line = coco_line.split(" ")
+    split_line = coco_line.split(' ')
     class_id = int(split_line[0])
     coords = list(map(float, split_line[1:]))
     left = min(coords[0::2])
@@ -70,7 +70,7 @@ def coco_to_rel_savant(coco_line, image_width, image_height, coco_label):
     right = max(coords[0::2])
     bottom = max(coords[1::2])
     return dict(
-        model_name="coco",
+        model_name='coco',
         label=coco_label[class_id],
         object_id=1,
         bbox=dict(

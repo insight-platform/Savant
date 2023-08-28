@@ -1,0 +1,94 @@
+version: "3.3"
+services:
+
+  pictures-source:
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:latest
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ./assets/gallery:/gallery
+    environment:
+      - LOCATION=/gallery
+      - FILE_TYPE=picture
+      - ZMQ_ENDPOINT=req+connect:ipc:///tmp/zmq-sockets/input-video.ipc
+      - SOURCE_ID=gallery
+      - READ_METADATA=False
+      - RECEIVE_TIMEOUT_MSECS=20000
+    entrypoint: /opt/savant/adapters/gst/sources/media_files.sh
+    profiles:
+      - index
+
+  index-builder:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.l4t
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ../../models/face_reid:/models
+      - ../../downloads/face_reid:/downloads
+      - ..:/opt/savant/samples
+    command: samples/face_reid/index_builder.yml
+    environment:
+      - ZMQ_SRC_ENDPOINT=rep+bind:ipc:///tmp/zmq-sockets/input-video.ipc
+    runtime: nvidia
+    profiles:
+      - index
+
+  video-loop-source:
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:latest
+    restart: unless-stopped
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - /tmp/video-loop-source-downloads:/tmp/video-loop-source-downloads
+    environment:
+      - LOCATION=https://eu-central-1.linodeobjects.com/savant-data/demo/jumanji_cast.mp4
+      - DOWNLOAD_PATH=/tmp/video-loop-source-downloads
+      - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
+      - SOURCE_ID=video
+      - SYNC_OUTPUT=True
+    entrypoint: /opt/savant/adapters/gst/sources/video_loop.sh
+    profiles:
+      - demo
+
+  module:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.l4t
+    restart: unless-stopped
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ../../models/face_reid:/models
+      - ../../downloads/face_reid:/downloads
+      - ..:/opt/savant/samples
+    command: samples/face_reid/module.yml
+    environment:
+      - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
+      - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
+      - FPS_PERIOD=1000
+    runtime: nvidia
+    profiles:
+      - demo
+
+  always-on-sink:
+    image: ghcr.io/insight-platform/savant-adapters-deepstream-l4t:latest
+    restart: unless-stopped
+    ports:
+      - "554:554"    # RTSP
+      - "1935:1935"  # RTMP
+      - "888:888"    # HLS
+      - "8889:8889"  # WebRTC
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ../assets/stub_imgs:/stub_imgs
+    environment:
+      - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
+      - SOURCE_ID=video
+      - FRAMERATE=25/1
+      - STUB_FILE_LOCATION=/stub_imgs/smpte100_1576x720.jpeg
+      - DEV_MODE=True
+    command: python -m adapters.ds.sinks.always_on_rtsp
+    runtime: nvidia
+    profiles:
+      - demo
+
+volumes:
+  zmq_sockets:
