@@ -19,10 +19,10 @@ PROJECT_PATH := /opt/savant
 build:
 	DOCKER_BUILDKIT=1 docker buildx build \
 		--platform $(PLATFORM) \
-		--target savantboost_build \
+		--target base \
 		--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
 		-f docker/$(DOCKER_FILE) \
-		-t savant-deepstream$(PLATFORM_SUFFIX)-test .
+		-t savant-deepstream$(PLATFORM_SUFFIX) .
 	#docker tag savant-deepstream$(PLATFORM_SUFFIX) ghcr.io/insight-platform/savant-deepstream$(PLATFORM_SUFFIX)
 
 build-adapters-deepstream:
