@@ -52,22 +52,22 @@ if (DEFINE $ENV{ENABLE_DEBUG})
         )
 endif(DEFINE $ENV{ENABLE_DEBUG})
 
-if(CUDAToolkit_VERSION_MAJOR STREQUAL "11")
-        message("Building for CUDA 11")
-        set(ARCH "
-        -gencode=arch=compute_53,code=sm_53
-        -gencode=arch=compute_72,code=sm_72
-        -gencode=arch=compute_75,code=sm_75
-        -gencode=arch=compute_80,code=sm_80
-        -gencode=arch=compute_80,code=compute_80
-        ")
-else()
+if(CUDAToolkit_VERSION_MAJOR STREQUAL "10")
         message("Building for CUDA 10")
         set(ARCH "
         -gencode=arch=compute_53,code=sm_53
         -gencode=arch=compute_72,code=sm_72
         -gencode=arch=compute_75,code=sm_75
         -gencode=arch=compute_75,code=compute_75
+        ")
+else()
+        message("Building for CUDA 11+")
+        set(ARCH "
+        -gencode=arch=compute_53,code=sm_53
+        -gencode=arch=compute_72,code=sm_72
+        -gencode=arch=compute_75,code=sm_75
+        -gencode=arch=compute_80,code=sm_80
+        -gencode=arch=compute_80,code=compute_80
         ")
 endif()
 
