@@ -12,6 +12,7 @@ parameters:
       # Padding size is 180px on the top of the frame
       top: 180
       bottom: 0
+    geometry_base: 4
   output_frame:
     codec: h264
   draw_func:

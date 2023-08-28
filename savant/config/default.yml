@@ -41,6 +41,9 @@ parameters:
     #   right: 0
     #   top: 0
     #   bottom: 0
+    # Base value for frame parameters. All frame parameters must be divisible by this value.
+    # Default is 8.
+    # geometry_base: 8
 
   # FPS measurement period
   fps_period: ${oc.decode:${oc.env:FPS_PERIOD, 10000}}
