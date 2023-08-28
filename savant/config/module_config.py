@@ -223,7 +223,7 @@ def configure_module_parameters(module_cfg: DictConfig) -> None:
         OmegaConf.structured(FrameParameters),
     )
     apply_schema(module_cfg.parameters, 'draw_func', DrawFunc)
-    if module_cfg.parameters.dev_mode:
+    if module_cfg.parameters.dev_mode and module_cfg.parameters.draw_func:
         logger.debug('Setting draw_func dev mode to true.')
         module_cfg.parameters.draw_func.dev_mode = True
     apply_schema(module_cfg.parameters, 'buffer_queues', BufferQueuesParameters)
