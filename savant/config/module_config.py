@@ -23,7 +23,6 @@ from savant.deepstream.nvinfer.element_config import nvinfer_element_configurato
 from savant.parameter_storage import init_param_storage
 from savant.utils.singleton import SingletonMeta
 
-
 logger = logging.getLogger(__name__)
 
 

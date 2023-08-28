@@ -18,7 +18,6 @@ from savant.utils.zeromq import (
     receive_response,
 )
 
-
 logger = logging.getLogger(__name__)
 
 

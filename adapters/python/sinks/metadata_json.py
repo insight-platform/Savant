@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
 import json
+import logging
 import os
 import traceback
 from distutils.util import strtobool
 from typing import Any, Dict, Optional
-import logging
+
 from savant_rs.primitives import (
     Attribute,
     AttributeValue,

@@ -25,9 +25,9 @@ from savant_rs.video_object_query import MatchQuery
 
 from savant.api.parser import parse_attribute_value
 from savant.base.input_preproc import ObjectsPreprocessing
-from savant.base.model import ObjectModel, ComplexModel
+from savant.base.model import ComplexModel, ObjectModel
 from savant.base.pyfunc import PyFuncNoopCallException
-from savant.config.schema import PipelineElement, ModelElement, FrameParameters
+from savant.config.schema import FrameParameters, ModelElement, PipelineElement
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
 from savant.deepstream.nvinfer.model import NvInferAttributeModel, NvInferDetector
 from savant.deepstream.source_output import (
@@ -35,10 +35,6 @@ from savant.deepstream.source_output import (
     SourceOutputEncoded,
     SourceOutputH26X,
     SourceOutputWithFrame,
-)
-from savant.deepstream.nvinfer.model import (
-    NvInferDetector,
-    NvInferAttributeModel,
 )
 from savant.deepstream.utils import (
     get_nvds_buf_surface,

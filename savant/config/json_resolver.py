@@ -5,7 +5,6 @@ from typing import Optional, Union
 
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
-
 logger = logging.getLogger(__name__)
 
 

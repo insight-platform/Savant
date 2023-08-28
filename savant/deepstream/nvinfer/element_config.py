@@ -31,7 +31,6 @@ from savant.deepstream.nvinfer.model import (
 from savant.parameter_storage import param_storage
 from savant.remote_file import process_remote
 
-
 __all__ = ['nvinfer_element_configurator']
 
 

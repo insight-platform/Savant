@@ -6,7 +6,6 @@ from typing import Dict, List, Optional
 
 from savant.gstreamer import Gst
 
-
 logger = logging.getLogger(__name__)
 
 

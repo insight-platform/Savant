@@ -2,7 +2,8 @@
 
 Based on code from https://github.com/deepcam-cn/yolov5-face>
 """
-from typing import Tuple, Any, List
+from typing import Any, List, Tuple
+
 import numpy as np
 from numba.typed import List
 

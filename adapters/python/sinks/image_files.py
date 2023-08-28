@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
+import logging
 import os
 import traceback
 from distutils.util import strtobool
 from typing import Dict, List
-import logging
+
 from savant_rs.primitives import EndOfStream, VideoFrame
 from savant_rs.utils.serialization import Message, load_message_from_bytes
 

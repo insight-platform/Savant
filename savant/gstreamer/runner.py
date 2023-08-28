@@ -10,7 +10,6 @@ from gi.repository import GLib, Gst  # noqa:F401
 
 from .pipeline import GstPipeline
 
-
 logger = logging.getLogger(__name__)
 
 

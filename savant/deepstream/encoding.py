@@ -1,6 +1,7 @@
+import logging
 import time
 from typing import Any, Dict
-import logging
+
 import pyds
 
 from savant.config.schema import PipelineElement

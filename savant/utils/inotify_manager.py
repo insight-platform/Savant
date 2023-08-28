@@ -1,7 +1,9 @@
 """Inotify manager module."""
-from collections import defaultdict
 import logging
+from collections import defaultdict
+
 from inotify_simple import INotify, flags
+
 from savant.utils.singleton import SingletonMeta
 
 

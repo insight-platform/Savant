@@ -1,7 +1,9 @@
 """SavantRsLoggingHandler module."""
 import logging
+
 import pretty_traceback
 from savant_rs.logging import log
+
 from .log_utils import log_level_py_to_rs
 
 

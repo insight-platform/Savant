@@ -1,14 +1,14 @@
 """Base model input preprocessors."""
+import logging
 from abc import abstractmethod
 from typing import Callable, Optional
-import logging
+
 import cv2
 import pyds
 from savant_rs.primitives.geometry import BBox
 
 from savant.base.model import OutputImage
 from savant.base.pyfunc import BasePyFuncCallableImpl, PyFuncNoopCallException
-from savant.gstreamer import Gst
 from savant.deepstream.cudastream import CudaStreams
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
 from savant.deepstream.opencv_utils import nvds_to_gpu_mat

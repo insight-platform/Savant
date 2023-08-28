@@ -1,17 +1,17 @@
 """PyFunc definitions."""
+import logging
 import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from importlib import util as importlib_util, reload
+from importlib import reload
+from importlib import util as importlib_util
 from importlib.machinery import ModuleSpec
-from types import ModuleType
 from pathlib import Path
-from typing import Any, Dict, Optional, Callable
+from types import ModuleType
+from typing import Any, Callable, Dict, Optional
 
-import logging
 from savant.gstreamer import Gst  # noqa: F401
 from savant.utils.inotify_manager import INotifyManager
-
 
 logger = logging.getLogger(__name__)
 

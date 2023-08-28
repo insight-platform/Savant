@@ -1,8 +1,10 @@
 """Logging setup utils."""
+import logging
 import os
 from typing import Optional
-import logging
+
 from savant_rs.logging import set_log_level
+
 from .log_utils import add_logging_level, log_level_py_to_rs
 
 

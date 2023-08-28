@@ -1,5 +1,6 @@
 """LoggerMixin module."""
 import logging
+
 from .log_setup import init_logging
 
 

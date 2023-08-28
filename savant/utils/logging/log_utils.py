@@ -1,6 +1,7 @@
 """General logging utils."""
 import logging
 import logging.config
+
 from savant_rs.logging import LogLevel
 
 

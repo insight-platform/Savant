@@ -9,7 +9,6 @@ from omegaconf import MISSING
 
 from .parameter_storage import ParameterStorage
 
-
 logger = logging.getLogger(__name__)
 
 

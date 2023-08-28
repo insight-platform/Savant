@@ -1,3 +1,4 @@
+import logging
 import os
 import time
 from datetime import datetime
@@ -6,7 +7,7 @@ from pathlib import Path
 from subprocess import Popen
 from threading import Thread
 from typing import Callable, List, Optional
-import logging
+
 import pyds
 from pygstsavantframemeta import gst_buffer_get_savant_frame_meta
 from savant_rs.pipeline2 import VideoPipeline, VideoPipelineStagePayloadType
@@ -18,9 +19,9 @@ from savant.gstreamer import Gst
 from savant.gstreamer.codecs import CODEC_BY_CAPS_NAME, Codec
 from savant.gstreamer.element_factory import GstElementFactory
 from savant.gstreamer.runner import GstPipelineRunner
+from savant.utils.logging import init_logging
 from savant.utils.platform import is_aarch64
 from savant.utils.zeromq import ReceiverSocketTypes
-from savant.utils.logging import init_logging
 
 LOGGER_NAME = 'savant.adapters.ao_sink'
 logger = logging.getLogger(LOGGER_NAME)

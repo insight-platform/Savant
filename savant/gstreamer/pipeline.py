@@ -6,17 +6,9 @@ from typing import Any, Generator, List, Optional, Tuple, Union
 
 from gi.repository import Gst  # noqa:F401
 
+from savant.base.model import ComplexModel, ObjectModel
 from savant.config.schema import ElementGroup, ModelElement, Pipeline, PipelineElement
 from savant.gstreamer.buffer_processor import GstBufferProcessor
-from savant.config.schema import (
-    PipelineElement,
-    Pipeline,
-    ModelElement,
-    ElementGroup,
-)
-from savant.base.model import ObjectModel, ComplexModel
-from savant.utils.sink_factories import SinkMessage
-from savant.utils.fps_meter import FPSMeter
 from savant.gstreamer.element_factory import CreateElementException, GstElementFactory
 from savant.utils.fps_meter import FPSMeter
 from savant.utils.sink_factories import SinkMessage

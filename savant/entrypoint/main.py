@@ -1,6 +1,7 @@
 """Module entrypoint function."""
-import os
 import logging
+import os
+
 from savant.config import ModuleConfig
 from savant.deepstream.encoding import check_encoder_is_available
 from savant.deepstream.pipeline import NvDsPipeline
