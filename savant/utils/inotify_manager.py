@@ -9,7 +9,7 @@ from savant.utils.singleton import SingletonMeta
 
 class INotifyManager(metaclass=SingletonMeta):
     """Singleton facilitates monitoring changes in files from pyfuncs
-    using inotify python bindinds package.
+    using inotify python bindings package.
     """
 
     def __init__(self) -> None:
