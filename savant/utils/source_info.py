@@ -80,3 +80,7 @@ class SourceInfoRegistry(metaclass=SingletonMeta):
         :return: Source id value.
         """
         return self._source_id_by_index[pad_idx]
+
+    def has_sources(self):
+        """Check if there are any sources registered."""
+        return bool(self._sources)

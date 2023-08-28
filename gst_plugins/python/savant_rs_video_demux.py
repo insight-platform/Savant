@@ -8,7 +8,12 @@ from threading import Lock, Thread
 from typing import Dict, NamedTuple, Optional
 
 from savant_rs.pipeline2 import VideoPipeline
-from savant_rs.primitives import EndOfStream, VideoFrame, VideoFrameTransformation
+from savant_rs.primitives import (
+    EndOfStream,
+    Shutdown,
+    VideoFrame,
+    VideoFrameTransformation,
+)
 from savant_rs.utils import PropagatedContext
 
 from savant.api.constants import DEFAULT_FRAMERATE
@@ -81,6 +86,13 @@ SAVANT_RS_VIDEO_DEMUX_PROPERTIES = {
         None,
         GObject.ParamFlags.READWRITE,
     ),
+    'shutdown-auth': (
+        str,
+        'Authentication key for Shutdown message.',
+        'Authentication key for Shutdown message.',
+        None,
+        GObject.ParamFlags.READWRITE,
+    ),
 }
 
 
@@ -144,6 +156,8 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
 
     __gproperties__ = SAVANT_RS_VIDEO_DEMUX_PROPERTIES
 
+    __gsignals__ = {'shutdown': (GObject.SignalFlags.RUN_LAST, None, ())}
+
     def __init__(self):
         super().__init__()
         self.sources: Dict[str, SourceInfo] = {}
@@ -159,6 +173,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
         self.source_id: Optional[str] = None
         self.video_pipeline: Optional[VideoPipeline] = None
         self.pipeline_stage_name: Optional[str] = None
+        self.shutdown_auth: Optional[str] = None
 
         self._frame_idx_gen = itertools.count()
 
@@ -200,6 +215,8 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             return self.video_pipeline
         if prop.name == 'pipeline-stage-name':
             return self.pipeline_stage_name
+        if prop.name == 'shutdown-auth':
+            return self.shutdown_auth
         raise AttributeError(f'Unknown property {prop.name}')
 
     def do_set_property(self, prop, value):
@@ -218,6 +235,8 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             self.video_pipeline = value
         elif prop.name == 'pipeline-stage-name':
             self.pipeline_stage_name = value
+        elif prop.name == 'shutdown-auth':
+            self.shutdown_auth = value
         else:
             raise AttributeError(f'Unknown property {prop.name}')
 
@@ -251,8 +270,10 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             )
         elif message.is_end_of_stream():
             result = self.handle_eos(message.as_end_of_stream())
+        elif message.is_shutdown():
+            result = self.handle_shutdown(message.as_shutdown())
         else:
-            self.logger.debug('Unsupported message type for message %r', message)
+            self.logger.warning('Unsupported message type for message %r', message)
             result = Gst.FlowReturn.OK
 
         return result
@@ -405,6 +426,25 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
         if source_info.src_pad is not None:
             self.send_eos(source_info)
         del self.sources[eos.source_id]
+
+        return Gst.FlowReturn.OK
+
+    def handle_shutdown(self, shutdown: Shutdown) -> Gst.FlowReturn:
+        """Handle Shutdown message."""
+        if self.shutdown_auth is None or shutdown.auth != self.shutdown_auth:
+            self.logger.debug('Ignoring shutdown message.')
+            return Gst.FlowReturn.OK
+
+        self.logger.info('Received shutdown message.')
+        with self.source_lock:
+            self.is_running = False
+            for source_id, source_info in list(self.sources.items()):
+                self.logger.debug('Sending EOS to source %s.', source_id)
+                if source_info.src_pad is not None:
+                    self.send_eos(source_info)
+                del self.sources[source_id]
+        self.logger.debug('Emitting shutdown signal.')
+        self.emit('shutdown')
 
         return Gst.FlowReturn.OK
 

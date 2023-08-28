@@ -114,6 +114,10 @@ parameters:
     # Parameters for telemetry provider
     provider_params: ${json:${oc.env:TELEMETRY_PROVIDER_PARAMS, null}}
 
+  # Shutdown authorization key. If set, module will shutdown when it receives
+  # a Shutdown message with this key.
+  # shutdown_auth: "shutdown-auth"
+
 
 # pipeline definition
 pipeline:

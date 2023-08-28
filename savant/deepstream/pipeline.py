@@ -4,7 +4,7 @@ import time
 from collections import defaultdict
 from pathlib import Path
 from queue import Queue
-from threading import Lock
+from threading import Lock, Thread
 from typing import Any, List, Optional, Tuple, Union
 
 import pyds
@@ -121,6 +121,9 @@ class NvDsPipeline(GstPipeline):
                     'pipeline-decoder-stage-name': 'decode',
                 }
             )
+            shutdown_auth = kwargs.get('shutdown_auth')
+            if shutdown_auth is not None:
+                pipeline_cfg.source.properties['shutdown-auth'] = shutdown_auth
 
         buffer_queues: Optional[BufferQueuesParameters] = kwargs.get('buffer_queues')
         if buffer_queues is not None:
@@ -212,9 +215,51 @@ class NvDsPipeline(GstPipeline):
 
     def before_shutdown(self):
         super().before_shutdown()
+        self._disable_eos_suppression()
+
+    def _on_shutdown_signal(self, element: Gst.Element):
+        """Handle shutdown signal."""
+
+        self._logger.info('Received shutdown signal from %s.', element.get_name())
+        self._disable_eos_suppression()
+        Thread(target=self._handle_shutdown_signal, daemon=True).start()
+
+    def _handle_shutdown_signal(self):
+        while True:
+            with self._source_adding_lock:
+                if not self._sources.has_sources():
+                    break
+            self._logger.debug('Waiting for sources to release')
+            time.sleep(0.1)
+        if not self._is_running:
+            self._logger.info('Pipeline was shut down already.')
+            return
+
+        with self._source_adding_lock:
+            self._logger.info('Shutting down the pipeline.')
+            # We need to add a fakesink element to the pipeline and receive EOS
+            # with it to shut down the pipeine.
+            self._logger.debug('Adding fakesink to the pipeline')
+            fakesink = self.add_element(
+                PipelineElement(
+                    'fakesink',
+                    properties={
+                        'sync': 0,
+                        'qos': 0,
+                        'enable-last-sample': 0,
+                    },
+                ),
+                link=False,
+            )
+            fakesink_pad: Gst.Pad = fakesink.get_static_pad('sink')
+            fakesink.sync_state_with_parent()
+            fakesink_pad.send_event(Gst.Event.new_eos())
+
+    def _disable_eos_suppression(self):
         self._logger.debug(
             'Turning off "drop-pipeline-eos" of %s', self._muxer.get_name()
         )
+        self._suppress_eos = False
         self._muxer.set_property('drop-pipeline-eos', False)
 
     # Source
@@ -231,6 +276,7 @@ class NvDsPipeline(GstPipeline):
             self.on_source_added,
             add_frames_to_pipeline,
         )
+        _source.connect('shutdown', self._on_shutdown_signal)
 
         # Need to suppress EOS on nvstreammux sink pad
         # to prevent pipeline from shutting down
