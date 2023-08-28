@@ -185,7 +185,7 @@ class PyFunc:
                 logger.debug('Setting watch for pyfunc module source.')
                 INotifyManager().add_watch(spec.origin, id(self))
 
-        # try to instatiate module
+        # try to instantiate module
         module_instance = None
         if self.dev_mode:
             # if dev mode, it is possible to
