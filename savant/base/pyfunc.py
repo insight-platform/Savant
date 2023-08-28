@@ -290,7 +290,7 @@ class PyFunc:
                     )
             else:
                 logger.info(
-                    'The module "%s.%s" reloading finsihed: Fail',
+                    'The module "%s.%s" reloading finished: Fail',
                     self.module,
                     self.class_name,
                 )
