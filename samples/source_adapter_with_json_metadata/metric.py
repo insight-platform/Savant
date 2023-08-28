@@ -22,8 +22,8 @@ class IOU(NvDsPyFuncPlugin):
                 ground_truth_objects.append(obj)
         if len(ground_truth_objects) == 1 and len(detected_objects) == 1:
             frame_meta.set_tag(
-                "iou_metric",
+                'iou_metric',
                 ground_truth_objects[0].bbox.iou(detected_objects[0].bbox),
             )
         else:
-            frame_meta.set_tag("iou_metric", 0)
+            frame_meta.set_tag('iou_metric', 0)
