@@ -126,12 +126,15 @@ def add_logging_level(
         logging._releaseLock()
 
 
+ERROR_LEVEL_INTS_SET = {logging.ERROR, logging.CRITICAL}
+
+
 def log_level_py_to_rs(py_log_level: int):
     """Get a rust log level corresponding to the specified python log level.
 
     :param py_log_level: python log level as an int.
     """
-    if py_log_level in (logging.ERROR, logging.CRITICAL):
+    if py_log_level in ERROR_LEVEL_INTS_SET:
         return LogLevel.Error
     if py_log_level == logging.WARNING:
         return LogLevel.Warning
