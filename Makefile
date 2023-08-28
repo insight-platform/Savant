@@ -131,7 +131,7 @@ run-black:
 reformat: run-unify run-black
 
 check-isort:
-	isort **/*.py -c
+	isort savant adapters gst_plugins samples -c
 
 run-isort:
-	isort **/*.py
+	isort savant adapters gst_plugins samples

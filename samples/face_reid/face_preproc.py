@@ -1,9 +1,9 @@
 """Module custom model input preprocessing."""
-import numpy as np
 import cv2
+import numpy as np
+
 from savant.base.input_preproc import BasePreprocessObjectImage
 from savant.meta.object import ObjectMeta
-
 from savant.parameter_storage import param_storage
 from savant.utils.image import GPUImage
 
