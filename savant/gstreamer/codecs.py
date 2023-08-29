@@ -32,7 +32,7 @@ class CodecInfo:
 
     sw_encoder: Optional[str] = None
     """Software gstreamer encoder element.
-    Savant will use the it when encoder type is not specified and codec 
+    Savant will use the it when encoder type is not specified and codec
     does not have NvEnc encoder.
     """
 

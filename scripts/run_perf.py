@@ -26,6 +26,10 @@ import subprocess
 from pathlib import Path
 from typing import Generator
 
+# ANSI codes are used, for example, to colorize terminal output. They come from savant_rs logging
+# ANSI codes interfere with parsing FPS from the output.
+ANSI_ESCAPE_PATTERN = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+
 
 def launch_script(script: Path) -> Generator[str, None, None]:
     """Runs the script.
@@ -75,6 +79,8 @@ def main():
                 if args.verbose:
                     print(line, '\r')
 
+                line = ANSI_ESCAPE_PATTERN.sub('', line)
+                # this check won't work if there are ANSI codes in the line
                 if ' Processed ' in line:
                     match = fps_pattern.match(line)
                     if match:
