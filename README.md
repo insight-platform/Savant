@@ -137,7 +137,7 @@ The framework universally uses a common protocol for both video and metadata for
 
 ### ⏱ OpenTelemetry Support
 
-In Savant, you can precisely trace your pipeline with OpenTelemetry, which helps to build a unified monitoring system for your infrastructure. You can use sampled or unsampled traces, which helps to balance the tracing's performance and precision. The traces can span from edge to core to business logic through network and storage.
+In Savant, you can precisely instrument pipelines with OpenTelemetry: a unified monitoring standard. You can use sampled or unsampled traces, balancing the performance and precision. The traces can span from edge to core to business logic through network and storage.
 
 ### 🧰 Client SDK
 
