@@ -103,55 +103,55 @@ Savant is a very high-level framework on DeepStream, hiding low-level internals 
 
 Savant is packed with several killer features which skyrocket the development of Deepstream applications.
 
-### All You Need for Building Real-Life Applications
+### 🔧 All You Need for Building Real-Life Applications
 
 Savant supports everything you need for developing of advanced pipelines: detection, classification, segmentation, instance segmentation, tracking, custom pre-, and post-processing for meta and images.
 
 We have implemented several samples demonstrating how to build real-life applications with Savant. Visit the [samples](samples) folder to learn more.
 
-### High Performance
+### 🚀 High Performance
 
 Savant is designed to be fast. It is built on top of DeepStream, which is the fastest framework for video analytics. Even the heavyweight segmentation models run in real-time on Savant. See the [Performance Regression Tracking Dashboard](docs/performance.md) for the latest performance results.
 
-### Works On Edge and Data Center Equipment
+### 🌐 Works On Edge and Data Center Equipment
 
 The framework is designed and developed in such a way to run the pipelines on both edge Nvidia devices (Jetson Family) and datacenter devices (like Tesla, Quadro, etc.) with minor or zero changes.
 
-### Easy to Deploy
+### ❤️ Cloud-Native
 
 The framework and the adapters are delivered as Docker images. To implement the pipeline, you take the base image, add AI models and a custom code with extra dependencies, then build the resulting image.
 
 As for now, we provide images for x86 architecture and for Jetson hardware.
 
-### Low Latency and Capacity Processing
+### ⚡ Low Latency and Capacity Processing
 
 Savant provides the configuration options to make the pipeline execute in real-time, skipping data when running out of capacity and in synchronous mode, which guarantees the processing of all the data, maximizing the utilization of the available resources.
 
-### Ready-To-Use API
+### 🤝 Ready-To-Use API
 
 A Savant's pipeline is a self-contained service communicating with the world through high-performance streaming API. Whether developers use provided adapters or communicate with the pipeline with Client SDK, both approaches use the API. 
 
-### Advanced Data Protocol
+### 📁 Advanced Data Protocol
 
 The framework universally uses a common protocol for both video and metadata for sources and sinks. The sources and sinks talk to Savant through ZeroMQ sockets. The protocol is highly flexible, allowing the transferring of not only video-related metadata but arbitrary structures useful for IoT and 3rd-party integrations.
 
-### OpenTelemetry Support
+### ⏱ OpenTelemetry Support
 
 In Savant, you can precisely trace your pipeline with OpenTelemetry, which helps to build a unified monitoring system for your infrastructure. You can use sampled or unsampled traces, which helps to balance the tracing's performance and precision. The traces can span from edge to core to business logic through network and storage.
 
-### Client SDK
+### 🧰 Client SDK
 
 We provide Python-based SDK to interact with Savant pipelines (ingest and receive data). It enables simple integration with 3rd-party services. Client SDK is integrated with OpenTelemetry enabling the access to the pipeline traces and logs.
 
-### Development Server
+### 🧘 Development Server
 
 Software development for vanilla DeepStream is a pain. Savant provides a Development Server tool, which enables dynamic reloading of changed code without pipeline restarts. It helps to develop and debug pipelines much faster. Altogether with Client SDK, it makes the development of DeepStream applications much more comfortable. You can even develop remotely on a Jetson device or server right from your IDE.
 
-### Dynamic Sources Management
+### 🔀 Dynamic Sources Management
 
 In Savant, you can dynamically attach and detach sources and sinks to the pipeline without reloads. The framework resiliently handles the cases when the source is not available or the sink is not available. It helps to build highly reliable applications.
 
-### Handy Source and Sink Adapters
+### 🏹 Handy Source and Sink Adapters
 
 The communication interface is not limited to only Client SDK: we provide several ready-to-use adapters, which you can use as is or as a foundation to develop your own.
 
@@ -177,7 +177,7 @@ There are basic sink adapters implemented:
 - [image directory (per source)](docs/adapters.md#the-image-file-sink-adapter);
 - [Always-On RTSP Stream Sink](docs/adapters.md#the-always-on-rtsp-sink-adapter).
 
-### Dynamic Parameters Ingestion
+### 🎯 Dynamic Parameters Ingestion
 
 Sophisticated ML pipelines can use external knowledge, which helps optimize the results based on additional knowledge from the environment.
 
@@ -187,11 +187,11 @@ The framework enables dynamic configuration of the pipeline operational paramete
 - Etcd's parameters watched and instantly applied;
 - 3rd-party parameters, which are received through user-defined functions.
 
-### OpenCV CUDA Support
+### 🖼 OpenCV CUDA Support
 
 Savant supports custom OpenCV CUDA bindings which allow accessing DeepStream's in-GPU frames with a broad range of OpenCV CUDA utilities: the feature helps implement highly efficient video transformations, including but not limited to blurring, cropping, clipping, applying banners and graphical elements over the frame, and others. The feature is available from Python.
 
-### Rotated Detection Models Support
+### ↻ Rotated Detection Models Support
 
 In our practice, when we develop commercial inference software, we often meet the cases where the bounding boxes rotated relative to a video frame (oriented bounding boxes). For example, it is often the case when the camera observes the viewport from the ceiling when the objects reside on the floor.
 
@@ -199,7 +199,7 @@ Such cases require placing the objects within boxes in a way to overlap minimall
 
 [![image](https://user-images.githubusercontent.com/15047882/167245173-aa0a18cd-06c9-4517-8817-253d120c0e07.png)](#)
 
-### Parallelization
+### ⇶ Parallelization
 
 Savant provides a way to parallelize the pipeline execution. It helps to utilize the available resources to the maximum. The parallelization is achieved by running the pipeline stages in separate threads. Despite the code contains Python-based "box moving" which is not parallel; the developer can utilize GIL-releasing mechanisms to achieve the desired parallelization with NumPy, Numba, or custom native code in C++ or Rust. 
 
