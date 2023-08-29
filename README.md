@@ -103,7 +103,7 @@ Savant is a very high-level framework on DeepStream, hiding low-level internals 
 
 Savant is packed with several killer features which skyrocket the development of Deepstream applications.
 
-### Capabilities
+### All You Need for Building Real-Life Applications
 
 Savant supports everything you need for developing of advanced pipelines: detection, classification, segmentation, instance segmentation, tracking, custom pre-, and post-processing for meta and images.
 
