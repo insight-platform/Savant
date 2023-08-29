@@ -109,7 +109,7 @@ Savant supports everything you need for developing of advanced pipelines: detect
 
 We have implemented several samples demonstrating how to build real-life applications with Savant. Visit the [samples](samples) folder to learn more.
 
-### Performance
+### High Performance
 
 Savant is designed to be fast. It is built on top of DeepStream, which is the fastest framework for video analytics. Even the heavyweight segmentation models run in real-time on Savant. See the [Performance Regression Tracking Dashboard](docs/performance.md) for the latest performance results.
 
