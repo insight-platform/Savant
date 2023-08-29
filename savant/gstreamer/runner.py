@@ -91,7 +91,7 @@ class GstPipelineRunner:
         end_time = time()
         exec_seconds = end_time - start_time
         logger.info(
-            'The pipeline initialized and ready to handle data. Initialization took %s seconds.', timedelta(seconds=exec_seconds)
+            'The pipeline is initialized and ready to process data. Initialization took %s.', timedelta(seconds=exec_seconds)
         )
 
         self._start_time = end_time
@@ -118,7 +118,7 @@ class GstPipelineRunner:
 
         exec_seconds = time() - self._start_time
         logger.info(
-            'The pipeline stops its execution. Operation took %s seconds.', timedelta(seconds=exec_seconds)
+            'The pipeline is about to stop. Operation took %s.', timedelta(seconds=exec_seconds)
         )
 
         if isinstance(self._pipeline, GstPipeline):
