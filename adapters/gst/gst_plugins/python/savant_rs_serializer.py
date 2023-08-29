@@ -7,6 +7,7 @@ from savant_rs.primitives import (
     Attribute,
     AttributeValue,
     EndOfStream,
+    Shutdown,
     VideoFrame,
     VideoFrameContent,
     VideoFrameTransformation,
@@ -144,6 +145,14 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
             1,
             GObject.ParamFlags.READWRITE,
         ),
+        'shutdown-auth': (
+            str,
+            'Authentication key for Shutdown message.',
+            'Authentication key for Shutdown message. When specified, a shutdown'
+            'message will be sent at the end of the stream.',
+            None,
+            GObject.ParamFlags.READWRITE,
+        ),
     }
 
     def __init__(self):
@@ -155,6 +164,7 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
         self.eos_on_frame_params_change: bool = True
         self.enable_multistream: bool = False
         self.number_of_sources: int = 1
+        self.shutdown_auth: Optional[str] = None
         # will be set after caps negotiation
         self.frame_params: Optional[FrameParams] = None
         self.initial_size_transformation: Optional[VideoFrameTransformation] = None
@@ -230,6 +240,8 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
             return self.enable_multistream
         if prop.name == 'number-of-sources':
             return self.number_of_sources
+        if prop.name == 'shutdown-auth':
+            return self.shutdown_auth
         raise AttributeError(f'Unknown property {prop.name}.')
 
     def do_set_property(self, prop: GObject.GParamSpec, value: Any):
@@ -268,6 +280,8 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
         elif prop.name == 'number-of-sources':
             self.number_of_sources = value
             self._set_source_id_and_zmq_sockets()
+        elif prop.name == 'shutdown-auth':
+            self.shutdown_auth = value
         else:
             raise AttributeError(f'Unknown property {prop.name}.')
 
@@ -388,6 +402,12 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
             out_buf = gst_buffer_from_list([zmq_topic, data])
             self.srcpad.push(out_buf)
         self.stream_in_progress = False
+        if self.shutdown_auth is not None:
+            self.logger.info('Sending serialized Shutdown message')
+            message = Message.shutdown(Shutdown(self.shutdown_auth))
+            data = save_message_to_bytes(message)
+            out_buf = gst_buffer_from_list([self.source_ids_and_topics[0][1], data])
+            self.srcpad.push(out_buf)
 
     def build_video_frame(
         self,
