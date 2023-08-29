@@ -142,6 +142,19 @@ class NvDsPipeline(GstPipeline):
             video_pipeline=self._video_pipeline,
         )
 
+        # nvjpegdec decoder is selected in decodebin according to the rank, but
+        # there are problems with the plugin:
+        # 1) nvjpegdec doesn't support some jpg
+        #  https://forums.developer.nvidia.com/t/nvvideoconvert-memory-compatibility-error/226138;
+        # 2) nvjpegdec produces incorrect alpha channel
+        #  https://forums.developer.nvidia.com/t/nvjpegdec-produces-transparent-frames/223005
+        # 3) nvjpegdec causes memory type mismatch in our pipeline
+        #  https://github.com/insight-platform/Savant/issues/119#issuecomment-1496221711
+        # Set the rank to NONE for the plugin to not use it.
+        if is_aarch64():
+            factory = Gst.ElementFactory.find('nvjpegdec')
+            factory.set_rank(Gst.Rank.NONE)
+
         super().__init__(name, pipeline_cfg, **kwargs)
 
     def _build_buffer_processor(
@@ -457,7 +470,7 @@ class NvDsPipeline(GstPipeline):
         video_converter_sink: Gst.Pad = nv_video_converter.get_static_pad('sink')
         if not video_converter_sink.query_accept_caps(new_pad_caps):
             self._logger.debug(
-                '"nvvideoconvert" cannot accept caps %s.'
+                '"nvvideoconvert" cannot accept caps %s. '
                 'Inserting "videoconvert" before it.',
                 new_pad_caps,
             )
