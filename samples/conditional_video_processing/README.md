@@ -13,10 +13,6 @@ git clone https://github.com/insight-platform/Savant.git
 cd Savant/samples/conditional_video_processing
 git lfs pull
 
-# if you want to share with us where are you from
-# run the following command, it is completely optional
-curl --silent -O -- https://hello.savant.video/peoplenet.html
-
 # if x86
 ../../utils/check-environment-compatible && docker compose -f docker-compose.x86.yml up
 
