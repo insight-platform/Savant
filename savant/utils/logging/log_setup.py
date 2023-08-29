@@ -3,9 +3,9 @@ import logging
 import os
 from typing import Optional
 
-from savant_rs.logging import set_log_level
+from savant_rs.logging import LogLevel, set_log_level
 
-from .log_utils import add_logging_level, log_level_py_to_rs
+from .log_utils import LOG_LEVEL_PY_TO_RS, add_logging_level
 
 
 def get_default_loglevel() -> str:
@@ -50,6 +50,7 @@ def init_logging(log_level: Optional[str] = None):
 
     # add custom TRACE logging level
     add_logging_level('TRACE', logging.DEBUG - 5)
+    LOG_LEVEL_PY_TO_RS[logging.TRACE] = LogLevel.Trace
 
     level = get_default_loglevel() if log_level is None else log_level.upper()
 
@@ -83,6 +84,6 @@ def set_savant_rs_loglevel(log_level: str):
     default_log_level_int = getattr(logging, get_default_loglevel())
     py_log_level_int = getattr(logging, log_level, default_log_level_int)
 
-    rs_log_level = log_level_py_to_rs(py_log_level_int)
+    rs_log_level = LOG_LEVEL_PY_TO_RS[py_log_level_int]
 
     set_log_level(rs_log_level)
