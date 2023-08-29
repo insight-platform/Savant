@@ -78,7 +78,9 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
         'download-path': (
             str,
             'Path to download files from remote storage',
-            'Path to download files from remote storage',
+            'Path to download files from remote storage. '
+            'When specified, the file would be downloaded before start of the adapter. '
+            'Required when "loop-file=true".',
             None,
             GObject.ParamFlags.READWRITE,
         ),
@@ -135,7 +137,7 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
             if isinstance(self.location, Path):
                 self.pending_locations = self.list_files()
                 self.source: Gst.Element = Gst.ElementFactory.make('filesrc')
-            elif self.loop_file:
+            elif self.download_path is not None:
                 download_filepath = self.get_download_filepath(self.location)
                 if not download_filepath.exists():
                     self.logger.info(
