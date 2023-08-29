@@ -268,6 +268,7 @@ class NvDsPipeline(GstPipeline):
         _source = self.add_element(source)
         if source.element == 'zeromq_source_bin':
             _source.set_property('pipeline', self._video_pipeline)
+            _source.connect('shutdown', self._on_shutdown_signal)
             add_frames_to_pipeline = False
         else:
             add_frames_to_pipeline = True
@@ -276,7 +277,6 @@ class NvDsPipeline(GstPipeline):
             self.on_source_added,
             add_frames_to_pipeline,
         )
-        _source.connect('shutdown', self._on_shutdown_signal)
 
         # Need to suppress EOS on nvstreammux sink pad
         # to prevent pipeline from shutting down
