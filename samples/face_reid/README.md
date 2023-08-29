@@ -31,10 +31,6 @@ git clone https://github.com/insight-platform/Savant.git
 cd Savant/samples/face_reid
 git lfs pull
 ../../utils/check-environment-compatible
-
-# if you want to share with us where are you from
-# run the following command, it is completely optional
-curl --silent -O -- https://hello.savant.video/face_reid.html
 ```
 
 ### Index Builder
