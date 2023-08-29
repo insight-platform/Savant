@@ -1,4 +1,4 @@
-# Savant: Supercharged Computer Vision and Video Analytics Framework on DeepStream
+# 🚀 Savant: Supercharged Computer Vision and Video Analytics Framework on DeepStream
 
 
 Savant is an open-source, high-level framework for building real-time, streaming, highly efficient multimedia AI applications on the Nvidia stack. It helps to develop dynamic, fault-tolerant inference pipelines that utilize the best Nvidia approaches for data center and edge accelerators.
