@@ -19,6 +19,7 @@ from savant.api.constants import DEFAULT_FRAMERATE, DEFAULT_NAMESPACE, DEFAULT_T
 from savant.api.enums import ExternalFrameType
 from savant.gstreamer import GObject, Gst, GstBase
 from savant.gstreamer.codecs import CODEC_BY_CAPS_NAME, Codec
+from savant.gstreamer.utils import gst_buffer_from_list
 from savant.utils.logging import LoggerMixin
 
 EMBEDDED_FRAME_TYPE = 'embedded'
@@ -133,6 +134,7 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
         super().__init__()
         # properties
         self.source_id: Optional[str] = None
+        self.zmq_topic: Optional[bytes] = None
         self.eos_on_file_end: bool = True
         self.eos_on_loop_end: bool = False
         self.eos_on_frame_params_change: bool = True
@@ -216,6 +218,7 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
         """
         if prop.name == 'source-id':
             self.source_id = value
+            self.zmq_topic = f'{value}/'.encode()
         elif prop.name == 'location':
             self.location = value
         elif prop.name == 'framerate':
@@ -289,7 +292,7 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
         message = Message.video_frame(frame)
         data = save_message_to_bytes(message)
 
-        out_buf: Gst.Buffer = Gst.Buffer.new_wrapped(data)
+        out_buf: Gst.Buffer = gst_buffer_from_list([self.zmq_topic, data])
         if frame_mapinfo is not None:
             in_buf.unmap(frame_mapinfo)
         else:
@@ -343,7 +346,7 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
         self.logger.info('Sending serialized EOS message')
         message = Message.end_of_stream(EndOfStream(self.source_id))
         data = save_message_to_bytes(message)
-        out_buf = Gst.Buffer.new_wrapped(data)
+        out_buf = gst_buffer_from_list([self.zmq_topic, data])
         self.srcpad.push(out_buf)
         self.stream_in_progress = False
 
