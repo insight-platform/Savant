@@ -87,7 +87,7 @@ class SinkRunner:
                 content = message_parts[1]
             else:
                 content = None
-                if video_frame.content.internal():
+                if video_frame.content.is_internal():
                     content = video_frame.content.get_data_as_bytes()
                     video_frame.content = VideoFrameContent.none()
             return SinkResult(
