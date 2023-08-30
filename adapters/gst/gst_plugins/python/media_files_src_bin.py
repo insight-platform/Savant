@@ -290,7 +290,7 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
 
     def attach_parser(self, pad: Gst.Pad, caps: Gst.Caps):
         try:
-            self.logger.debug(f"Try to find codec for `{caps[0].get_name()}`")
+            self.logger.debug(f'Try to find codec for `{caps[0].get_name()}`')
             codec = CODEC_BY_CAPS_NAME[caps[0].get_name()]
         except KeyError:
             self.logger.debug(

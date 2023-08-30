@@ -1,14 +1,14 @@
 """ZeroMQ utilities."""
 import logging
 import os
-import re
 from enum import Enum
 from typing import List, Optional, Tuple, Type, Union
 from urllib.parse import urlparse
 
 import zmq
 from cachetools import LRUCache
-from .re_patterns import socket_uri_pattern, socket_options_pattern
+
+from .re_patterns import socket_options_pattern, socket_uri_pattern
 
 logger = logging.getLogger(__name__)
 

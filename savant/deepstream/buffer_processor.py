@@ -26,6 +26,7 @@ from savant_rs.video_object_query import MatchQuery
 from savant.api.parser import parse_attribute_value
 from savant.base.input_preproc import ObjectsPreprocessing
 from savant.base.model import ComplexModel, ObjectModel
+from savant.base.pyfunc import PyFuncNoopCallException
 from savant.config.schema import FrameParameters, ModelElement, PipelineElement
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
 from savant.deepstream.nvinfer.model import NvInferAttributeModel, NvInferDetector
@@ -469,11 +470,22 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                         ),
                     )
 
-                    res_bbox = model.input.preprocess_object_meta(
-                        object_meta=user_object_meta
-                    )
-                    if self.logger.isEnabledFor(logging.DEBUG):
-                        self.logger.debug(
+                    try:
+                        res_bbox = model.input.preprocess_object_meta(
+                            object_meta=user_object_meta
+                        )
+                    except Exception as exc:
+                        if model.input.preprocess_object_meta.dev_mode:
+                            if not isinstance(exc, PyFuncNoopCallException):
+                                self.logger.exception(
+                                    'Error calling preprocess input object meta.'
+                                )
+                            res_bbox = user_object_meta.bbox
+                        else:
+                            raise exc
+
+                    if self.logger.isEnabledFor(logging.TRACE):
+                        self.logger.trace(
                             'Preprocessing "%s" object bbox %s -> %s',
                             user_object_meta.label,
                             user_object_meta.bbox,
@@ -495,6 +507,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                 model_uid,
                 class_id,
                 model.input.preprocess_object_image.output_image,
+                model.input.preprocess_object_image.dev_mode,
             )
 
     def prepare_element_output(self, element: PipelineElement, buffer: Gst.Buffer):
@@ -539,8 +552,8 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                     for tensor_meta in nvds_tensor_output_iterator(
                         parent_nvds_obj_meta, gie_uid=model_uid
                     ):
-                        if self.logger.isEnabledFor(logging.DEBUG):
-                            self.logger.debug(
+                        if self.logger.isEnabledFor(logging.TRACE):
+                            self.logger.trace(
                                 'Converting "%s" element tensor output for frame with PTS %s.',
                                 element.name,
                                 nvds_frame_meta.buf_pts,
@@ -550,16 +563,30 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                             tensor_meta=tensor_meta,
                             layer_names=model.output.layer_names,
                         )
-                        outputs = model.output.converter(
-                            *output_layers,
-                            model=model,
-                            roi=(
-                                parent_nvds_obj_meta.rect_params.left,
-                                parent_nvds_obj_meta.rect_params.top,
-                                parent_nvds_obj_meta.rect_params.width,
-                                parent_nvds_obj_meta.rect_params.height,
-                            ),
-                        )
+                        try:
+                            outputs = model.output.converter(
+                                *output_layers,
+                                model=model,
+                                roi=(
+                                    parent_nvds_obj_meta.rect_params.left,
+                                    parent_nvds_obj_meta.rect_params.top,
+                                    parent_nvds_obj_meta.rect_params.width,
+                                    parent_nvds_obj_meta.rect_params.height,
+                                ),
+                            )
+                        except Exception as exc:
+                            if model.output.converter.dev_mode:
+                                if not isinstance(exc, PyFuncNoopCallException):
+                                    self.logger.exception('Error calling converter')
+                                # provide some placeholders so that the pipeline processing can continue
+                                if is_complex_model:
+                                    outputs = np.zeros((0, 6)), np.zeros((0, 1))
+                                elif is_object_model:
+                                    outputs = np.zeros((0, 6))
+                                else:
+                                    outputs = np.zeros((0, 1))
+                            else:
+                                raise exc
                         # for object/complex models output - `bbox_tensor` and
                         # `selected_bboxes` - indices of selected bboxes and meta
                         # for attribute/complex models output - `values`
@@ -585,7 +612,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                             values = outputs
 
                         if bbox_tensor is not None and bbox_tensor.shape[0] > 0:
-
+                            # object or complex model with non empty output
                             if bbox_tensor.shape[1] == 6:  # no angle
                                 selection_type = ObjectSelectionType.REGULAR_BBOX
                                 # xc -> left, yc -> top
@@ -650,15 +677,27 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                                 if cls_bbox_tensor.shape[0] == 0:
                                     continue
                                 if obj.selector:
-                                    cls_bbox_tensor = obj.selector(cls_bbox_tensor)
+                                    try:
+                                        cls_bbox_tensor = obj.selector(cls_bbox_tensor)
+                                    except Exception as exc:
+                                        if obj.selector.dev_mode:
+                                            if not isinstance(
+                                                exc, PyFuncNoopCallException
+                                            ):
+                                                self.logger.exception(
+                                                    'Error calling selector.'
+                                                )
+                                            cls_bbox_tensor = np.zeros((0, 8))
+                                        else:
+                                            raise exc
 
                                 obj_label = build_model_object_key(
                                     element.name, obj.label
                                 )
                                 for bbox in cls_bbox_tensor:
                                     # add NvDsObjectMeta
-                                    if self.logger.isEnabledFor(logging.DEBUG):
-                                        self.logger.debug(
+                                    if self.logger.isEnabledFor(logging.TRACE):
+                                        self.logger.trace(
                                             'Adding obj %s into pyds meta for frame with PTS %s.',
                                             bbox[2:7],
                                             nvds_frame_meta.buf_pts,
@@ -679,6 +718,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                                     )
 
                         if values:
+                            # attribute or complex model
                             if is_complex_model:
                                 values = [
                                     v

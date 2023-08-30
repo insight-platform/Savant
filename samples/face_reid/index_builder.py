@@ -1,17 +1,17 @@
 """Index builder module."""
 import os
 import shutil
-import hnswlib
+
 import cv2
-from savant.gstreamer import Gst
+import hnswlib
+
+from samples.face_reid.utils import pack_person_id_img_n
 from savant.deepstream.meta.frame import NvDsFrameMeta
+from savant.deepstream.opencv_utils import nvds_to_gpu_mat
 from savant.deepstream.pyfunc import NvDsPyFuncPlugin
+from savant.gstreamer import Gst
 from savant.parameter_storage import param_storage
 from savant.utils.artist import Artist
-from savant.deepstream.opencv_utils import (
-    nvds_to_gpu_mat,
-)
-from samples.face_reid.utils import pack_person_id_img_n
 
 REID_MODEL_NAME = param_storage()['reid_model_name']
 

@@ -19,15 +19,15 @@ class Overlay(NvDsDrawFunc):
             # if there's no specific attribute for the object on this frame
             # reserve a line for it anyway
             # so that the object's labels don't jump up and down
-            attr_meta = object_meta.get_attr_meta("smoothed_value", 'age')
+            attr_meta = object_meta.get_attr_meta('smoothed_value', 'age')
             if attr_meta is not None:
-                new_label_format += [f"age: {round(attr_meta.value)}"]
+                new_label_format += [f'age: {round(attr_meta.value)}']
             else:
                 new_label_format += ['']
 
-            attr_meta = object_meta.get_attr_meta("smoothed_value", 'gender')
+            attr_meta = object_meta.get_attr_meta('smoothed_value', 'gender')
             if attr_meta is not None:
-                new_label_format += [f"gender: {str(attr_meta.value)}"]
+                new_label_format += [f'gender: {str(attr_meta.value)}']
             else:
                 new_label_format += ['']
 

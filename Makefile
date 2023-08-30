@@ -120,18 +120,18 @@ check-unify:
 	unify --check-only --recursive savant | grep -- '--- before' | sed 's#--- before/##'
 	unify --check-only --recursive savant > /dev/null
 
-check: check-black check-unify
+check: check-black check-unify check-isort
 
 run-unify:
-	unify --in-place --recursive savant
+	unify --in-place --recursive savant adapters gst_plugins samples scripts
 
 run-black:
 	black .
 
-reformat: run-unify run-black
+reformat: run-unify run-black run-isort
 
 check-isort:
-	isort **/*.py -c
+	isort savant adapters gst_plugins samples scripts -c
 
 run-isort:
-	isort **/*.py
+	isort savant adapters gst_plugins samples scripts
