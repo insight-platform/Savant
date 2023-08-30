@@ -34,6 +34,21 @@
       "type": "bind"
     },
     {
+      "source": "${localWorkspaceFolder}/adapters",
+      "target": "/opt/savant/adapters/",
+      "type": "bind"
+    },
+    {
+      "source": "${localWorkspaceFolder}/gst_plugins",
+      "target": "/opt/savant/gst_plugins/",
+      "type": "bind"
+    },
+    {
+      "source": "${localWorkspaceFolder}/scripts",
+      "target": "/opt/savant/scripts/",
+      "type": "bind"
+    },
+    {
       "source": "${localWorkspaceFolder}/data",
       "target": "/data",
       "type": "bind"
