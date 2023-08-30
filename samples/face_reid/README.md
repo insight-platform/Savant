@@ -51,7 +51,7 @@ docker compose -f docker-compose.l4t.yml up index-builder
 First startup can take several minutes as the module needs to convert ONNX models into TRT format. Successful module start is indicated by a log message like
 
 ```
-INFO ... > Pipeline starting ended after 0:00:04.306222
+INFO ... > The pipeline is initialized and ready to process data...
 ```
 
 Next, run the `pictures-source` container
