@@ -3,7 +3,7 @@ import logging
 import os
 from typing import Optional
 
-from savant_rs.logging import set_log_level
+from savant_rs.logging import set_log_level, LogLevel
 
 from .log_utils import LOG_LEVEL_PY_TO_RS, add_logging_level
 
