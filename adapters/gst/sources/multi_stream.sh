@@ -34,6 +34,11 @@ SAVANT_RS_SERIALIZER_OPTS=(
     enable-multistream=true
     number-of-sources="${NUMBER_OF_SOURCES}"
 )
+if [[ -n "${SOURCE_ID_PATTERN}" ]]; then
+    SAVANT_RS_SERIALIZER_OPTS+=(
+        source-id-pattern="${SOURCE_ID_PATTERN}"
+    )
+fi
 if [[ -n "${SHUTDOWN_AUTH}" ]]; then
     SAVANT_RS_SERIALIZER_OPTS+=(
         shutdown-auth="${SHUTDOWN_AUTH}"

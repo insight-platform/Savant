@@ -304,6 +304,7 @@ def video_loop_source(
     help='Mount path to download files from remote storage to the container.',
     show_default=True,
 )
+@click.option('--source-id-pattern', help='Pattern for source ID.')
 @click.option(
     '--number-of-sources',
     default=1,
@@ -338,6 +339,7 @@ def multi_stream_source(
     fps_output: str,
     download_path: str,
     mount_download_path: bool,
+    source_id_pattern: Optional[str],
     number_of_sources: int,
     number_of_frames: Optional[int],
     shutdown_auth: Optional[str],
@@ -363,6 +365,8 @@ def multi_stream_source(
         envs.append(f'NUMBER_OF_FRAMES={number_of_frames}')
     if shutdown_auth is not None:
         envs.append(f'SHUTDOWN_AUTH={shutdown_auth}')
+    if source_id_pattern is not None:
+        envs.append(f'SOURCE_ID_PATTERN={source_id_pattern}')
 
     files_source(
         source_id=None,

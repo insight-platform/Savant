@@ -75,7 +75,7 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
             'Source ID',
             'Source ID, e.g. "camera1".',
             None,
-            GObject.ParamFlags.READWRITE,
+            GObject.ParamFlags.READWRITE | Gst.PARAM_MUTABLE_READY,
         ),
         'location': (
             str,
@@ -134,7 +134,14 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
             'Enable multistream',
             'Enable multistream',
             False,
-            GObject.ParamFlags.READWRITE,
+            GObject.ParamFlags.READWRITE | Gst.PARAM_MUTABLE_READY,
+        ),
+        'source-id-pattern': (
+            str,
+            'Pattern for source ID',
+            'Pattern for source ID when multistream is enabled. E.g. "source-%d".',
+            None,
+            GObject.ParamFlags.READWRITE | Gst.PARAM_MUTABLE_READY,
         ),
         'number-of-sources': (
             int,
@@ -143,7 +150,7 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
             1,  # min
             1024,  # max
             1,
-            GObject.ParamFlags.READWRITE,
+            GObject.ParamFlags.READWRITE | Gst.PARAM_MUTABLE_READY,
         ),
         'shutdown-auth': (
             str,
@@ -163,6 +170,7 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
         self.eos_on_loop_end: bool = False
         self.eos_on_frame_params_change: bool = True
         self.enable_multistream: bool = False
+        self.source_id_pattern: str = 'source-%d'
         self.number_of_sources: int = 1
         self.shutdown_auth: Optional[str] = None
         # will be set after caps negotiation
@@ -238,6 +246,8 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
             return self.frame_type.value
         if prop.name == 'enable-multistream':
             return self.enable_multistream
+        if prop.name == 'source-id-pattern':
+            return self.source_id_pattern
         if prop.name == 'number-of-sources':
             return self.number_of_sources
         if prop.name == 'shutdown-auth':
@@ -252,7 +262,6 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
         """
         if prop.name == 'source-id':
             self.source_id = value
-            self._set_source_id_and_zmq_sockets()
         elif prop.name == 'location':
             self.location = value
         elif prop.name == 'framerate':
@@ -276,19 +285,22 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
                 self.frame_type = ExternalFrameType(value)
         elif prop.name == 'enable-multistream':
             self.enable_multistream = value
-            self._set_source_id_and_zmq_sockets()
+        elif prop.name == 'source-id-pattern':
+            self.source_id_pattern = value
         elif prop.name == 'number-of-sources':
             self.number_of_sources = value
-            self._set_source_id_and_zmq_sockets()
         elif prop.name == 'shutdown-auth':
             self.shutdown_auth = value
         else:
             raise AttributeError(f'Unknown property {prop.name}.')
 
     def do_start(self):
-        assert bool(
-            self.source_ids_and_topics
-        ), 'Source ID is required when enable-multistream=false.'
+        if not self.enable_multistream:
+            assert (
+                self.source_id is not None
+            ), 'Source ID is required when enable-multistream=false.'
+        self._set_source_ids_and_zmq_sockets()
+
         return True
 
     def do_prepare_output_buffer(self, in_buf: Gst.Buffer):
@@ -454,9 +466,15 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
 
         return video_frame
 
-    def _set_source_id_and_zmq_sockets(self):
+    def _set_source_ids_and_zmq_sockets(self):
         if self.enable_multistream:
-            source_ids = [f'source-{i}' for i in range(self.number_of_sources)]
+            source_ids = [
+                self.source_id_pattern % i for i in range(self.number_of_sources)
+            ]
+            if len(source_ids) != len(set(source_ids)):
+                raise ValueError(
+                    'Duplicate source IDs. Check source-id-pattern property.'
+                )
         elif self.source_id is not None:
             source_ids = [self.source_id]
         else:
