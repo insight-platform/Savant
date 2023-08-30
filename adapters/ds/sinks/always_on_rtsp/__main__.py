@@ -384,7 +384,6 @@ class PipelineThread:
 
 def main():
     init_logging()
-    init_logging()
     config = Config()
 
     if config.dev_mode:
