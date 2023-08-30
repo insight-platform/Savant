@@ -71,7 +71,9 @@ def get_logger(name: str) -> logging.Logger:
     :param name: Logger name.
     :return: Logger instance.
     """
-    return logging.getLogger('.'.join((LOGGING_PREFIX, name)))
+    # prevent modules from the main savant package having savant.savant prefix
+    logger_name = '.'.join((LOGGING_PREFIX, name)).replace('savant.savant', 'savant')
+    return logging.getLogger(logger_name)
 
 
 def update_logging(log_level: str):
