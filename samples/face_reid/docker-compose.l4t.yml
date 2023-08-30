@@ -16,6 +16,9 @@ services:
     entrypoint: /opt/savant/adapters/gst/sources/media_files.sh
     profiles:
       - index
+    depends_on:
+      index-builder:
+        condition: service_healthy
 
   index-builder:
     build:
@@ -48,6 +51,9 @@ services:
     entrypoint: /opt/savant/adapters/gst/sources/video_loop.sh
     profiles:
       - demo
+    depends_on:
+      module:
+        condition: service_healthy
 
   module:
     build:
