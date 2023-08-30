@@ -35,7 +35,7 @@ class FrameParams(NamedTuple):
 
 def is_videoframe_metadata(metadata: Dict[str, Any]) -> bool:
     """Check that metadata contained if metadata is a video frame metadata. ."""
-    if "schema" in metadata and metadata["schema"] != "VideoFrame":
+    if 'schema' in metadata and metadata['schema'] != 'VideoFrame':
         return False
     return True
 
@@ -260,7 +260,7 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
                 and self.new_loop
             ):
                 self.json_metadata = self.read_json_metadata_file(
-                    self.location.parent / f"{self.location.stem}.json"
+                    self.location.parent / f'{self.location.stem}.json'
                 )
                 self.frame_num = 0
                 self.send_end_message()
@@ -314,7 +314,7 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
                 self.location = Path(location)
                 self.new_loop = True
                 self.json_metadata = self.read_json_metadata_file(
-                    self.location.parent / f"{self.location.stem}.json"
+                    self.location.parent / f'{self.location.stem}.json'
                 )
                 self.frame_num = 0
 
@@ -328,10 +328,10 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
                 with open(location, 'r') as fp:
                     json_metadata = list(
                         map(
-                            lambda x: x["metadata"],
+                            lambda x: x['metadata'],
                             filter(
                                 is_videoframe_metadata,
-                                map(json.loads, splitfile(fp, format="json")),
+                                map(json.loads, splitfile(fp, format='json')),
                             ),
                         )
                     )

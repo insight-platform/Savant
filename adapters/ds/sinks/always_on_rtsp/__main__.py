@@ -1,3 +1,4 @@
+import logging
 import os
 import time
 from datetime import datetime
@@ -358,7 +359,7 @@ class PipelineThread:
 
         self.is_running = False
         self.thread: Optional[Thread] = None
-        self.logger = get_logger(f'{LOGGER_NAME}.{self.__class__.__name__}')
+        self.logger = logging.getLogger(f'{LOGGER_NAME}.{self.__class__.__name__}')
 
     def start(self):
         self.is_running = True
@@ -382,6 +383,7 @@ class PipelineThread:
 
 
 def main():
+    init_logging()
     init_logging()
     config = Config()
 

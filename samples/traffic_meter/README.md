@@ -1,5 +1,8 @@
 # Traffic meter demo
 
+
+**NB**: The demo optionally uses **YOLOV8** model which takes up to **10-15 minutes** to compile to TensorRT engine. The first launch may take a decent time.
+
 The pipeline detects when people cross a user-configured line and the direction of the crossing. The crossing events are attached to individual tracks, counted for each source separately and the counters are displayed on the frame. The crossing events are also stored with Graphite and displayed on a Grafana dashboard.
 
 Pedestrians preview:
@@ -33,10 +36,6 @@ Run the demo:
 git clone https://github.com/insight-platform/Savant.git
 cd Savant/samples/traffic_meter
 git lfs pull
-
-# if you want to share with us where are you from
-# run the following command, it is completely optional
-curl --silent -O -- https://hello.savant.video/traffic_meter.html
 
 # if x86
 ../../utils/check-environment-compatible && docker compose -f docker-compose.x86.yml up

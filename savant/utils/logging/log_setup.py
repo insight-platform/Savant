@@ -3,7 +3,7 @@ import os
 from typing import Optional
 import logging
 from savant_rs.logging import set_log_level
-from .log_utils import add_logging_level, log_level_py_to_rs
+from .log_utils import add_logging_level, LOG_LEVEL_PY_TO_RS
 
 LOGGING_PREFIX = 'insight.savant'
 
@@ -14,24 +14,16 @@ def get_default_loglevel() -> str:
 def get_log_conf(log_level: str) -> dict:
     return {
         'version': 1,
-        'formatters': {
-            'detailed': {
-                'format': '%(asctime)s [%(levelname)s] [%(name)s] [%(threadName)s] '
-                '%(message)s',
-            },
-        },
+        'formatters': {},
         'handlers': {
-            'console': {
-                'class': 'logging.StreamHandler',
-                'level': log_level,
-                'formatter': 'detailed',
-                'stream': 'ext://sys.stdout',
+            'savantrs': {
+                'class': 'savant.utils.logging.savant_rs_handler.SavantRsLoggingHandler',
             },
         },
         'loggers': {
             LOGGING_PREFIX: {
                 'level': log_level,
-                'handlers': ['console'],
+                'handlers': ['savantrs'],
                 'propagate': False,
             },
         },
@@ -46,8 +38,17 @@ def init_logging(log_level: Optional[str] = None):
     if init_logging.done:
         return
 
+    # install pretty traceback hook
+    try:
+        import pretty_traceback
+
+        pretty_traceback.install()
+    except ImportError:
+        pass
+
     # add custom TRACE logging level
     add_logging_level('TRACE', logging.DEBUG - 5)
+    LOG_LEVEL_PY_TO_RS[logging.TRACE] = LogLevel.Trace
 
     level = get_default_loglevel() if log_level is None else log_level.upper()
 
@@ -60,6 +61,12 @@ def init_logging(log_level: Optional[str] = None):
 
 init_logging.done = False
 
+def get_logger(name: str) -> logging.Logger:
+    """Get logger with specified name.
+    :param name: Logger name.
+    :return: Logger instance.
+    """
+    return logging.getLogger('.'.join((LOGGING_PREFIX, name)))
 
 def get_logger(name: str) -> logging.Logger:
     """Get logger with specified name.
@@ -87,6 +94,6 @@ def set_savant_rs_loglevel(log_level: str):
     default_log_level_int = getattr(logging, get_default_loglevel())
     py_log_level_int = getattr(logging, log_level, default_log_level_int)
 
-    rs_log_level = log_level_py_to_rs(py_log_level_int)
+    rs_log_level = LOG_LEVEL_PY_TO_RS[py_log_level_int]
 
     set_log_level(rs_log_level)

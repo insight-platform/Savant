@@ -1,9 +1,8 @@
 # Faces detection, tracking and age-gender recognition (YoloV5face, Nvidia Tracker, Age-Gender model)
 
-A pipeline that uses [Yolov5face](https://github.com/deepcam-cn/yolov5-face) model to detect faces and 5 face landmarks (eyes, nose, mouth). Landmarks are used 
-to calculate the faces orientation and preprocess face images for age/gender model.  
-Age/gender model estimates age and gender for each face and add this information to 
-the object metadata. The pipeline uses Nvidia Tracker to track faces.
+**NB**: The demo uses **YOLOV5-Face** model which takes up to **30-40 minutes** to compile to TensorRT engine. The first launch takes an enormous time.
+
+A pipeline that uses [Yolov5face](https://github.com/deepcam-cn/yolov5-face) model to detect faces and 5 face landmarks (eyes, nose, mouth). Landmarks are used to calculate the faces orientation and preprocess face images for age/gender model. Age/gender model estimates age and gender for each face and add this information to  the object metadata. The pipeline uses Nvidia Tracker to track faces.
 
 Preview:
 
@@ -35,10 +34,6 @@ Run the demo:
 git clone https://github.com/insight-platform/Savant.git
 cd Savant/samples/age_gender_recognition
 git lfs pull
-
-# if you want to share with us where are you from
-# run the following command, it is completely optional
-curl --silent -O -- https://hello.savant.video/age_gender_recognition.html
 
 # if x86
 ../../utils/check-environment-compatible && docker compose -f docker-compose.x86.yml up

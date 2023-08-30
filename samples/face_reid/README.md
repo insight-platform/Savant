@@ -1,5 +1,7 @@
 # Facial ReID
 
+**NB**: The demo uses **YOLOV5-Face** model which takes up to **30-40 minutes** to compile to TensorRT engine. The first launch takes an enormous time.
+
 The sample demonstrates how to use [Yolov5face](https://github.com/deepcam-cn/yolov5-face) face detector with landmarks and [Adaface](https://github.com/mk-minchul/AdaFace) face recognition model to build a facial ReID pipeline that can be utilized, for example, in doorbell security systems.
 
 Preview:
@@ -29,10 +31,6 @@ git clone https://github.com/insight-platform/Savant.git
 cd Savant/samples/face_reid
 git lfs pull
 ../../utils/check-environment-compatible
-
-# if you want to share with us where are you from
-# run the following command, it is completely optional
-curl --silent -O -- https://hello.savant.video/face_reid.html
 ```
 
 ### Index Builder

@@ -31,8 +31,8 @@ def nvds_obj_meta_output_converter(
     """
     model_name, label = parse_compound_key(nvds_obj_meta.obj_label)
 
-    if logger.isEnabledFor(logging.DEBUG):
-        logger.debug(
+    if logger.isEnabledFor(logging.TRACE):
+        logger.trace(
             'Converting object meta for model "%s", label "%s".',
             model_name,
             label,
@@ -43,20 +43,20 @@ def nvds_obj_meta_output_converter(
         confidence = nvds_obj_meta.tracker_confidence
 
     bbox = nvds_get_obj_bbox(nvds_obj_meta)
-    if logger.isEnabledFor(logging.DEBUG):
-        logger.debug('Object DS bbox %s', bbox)
+    if logger.isEnabledFor(logging.TRACE):
+        logger.trace('Object DS bbox %s', bbox)
     if frame_params.padding and not frame_params.padding.keep:
         bbox.xc -= frame_params.padding.left
         bbox.yc -= frame_params.padding.top
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug(
+        if logger.isEnabledFor(logging.TRACE):
+            logger.trace(
                 'Applied frame padding %s, bbox: %s', frame_params.padding, bbox
             )
     if isinstance(bbox, BBox):
         bbox = bbox.as_rbbox()
         bbox.angle = 0
-    if logger.isEnabledFor(logging.DEBUG):
-        logger.debug('Object corrected bbox %s', bbox)
+    if logger.isEnabledFor(logging.TRACE):
+        logger.trace('Object corrected bbox %s', bbox)
 
     object_id = nvds_get_obj_uid(nvds_frame_meta, nvds_obj_meta)
 

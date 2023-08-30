@@ -1,7 +1,16 @@
 """General logging utils."""
 import logging
 import logging.config
+
 from savant_rs.logging import LogLevel
+
+LOG_LEVEL_PY_TO_RS = {
+    logging.CRITICAL: LogLevel.Error,
+    logging.ERROR: LogLevel.Error,
+    logging.WARNING: LogLevel.Warning,
+    logging.INFO: LogLevel.Info,
+    logging.DEBUG: LogLevel.Debug,
+}
 
 
 def add_logging_level(
@@ -10,6 +19,7 @@ def add_logging_level(
     """
     Comprehensively adds a new logging level to the `logging` module and the
     currently configured logging class.
+
     Based on https://haggis.readthedocs.io/en/stable/api.html#haggis.logs.add_logging_level
     """
 
@@ -122,20 +132,3 @@ def add_logging_level(
         setattr(logger_adapter, method_name, for_logger_adapter)
     finally:
         logging._releaseLock()
-
-
-def log_level_py_to_rs(py_log_level: int):
-    """Get a rust log level corresponding to the specified python log level.
-    :param py_log_level: python log level as an int.
-    """
-    if py_log_level in (logging.ERROR, logging.CRITICAL):
-        return LogLevel.Error
-    if py_log_level == logging.WARNING:
-        return LogLevel.Warning
-    if py_log_level == logging.INFO:
-        return LogLevel.Info
-    if py_log_level == logging.DEBUG:
-        return LogLevel.Debug
-    if py_log_level == logging.TRACE:
-        return LogLevel.Trace
-    raise AttributeError(f'No rust pair for py log level {py_log_level}')

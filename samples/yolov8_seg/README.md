@@ -1,5 +1,7 @@
 # YOLOv8 Instance Segmentation
 
+**NB**: The demo optionally uses **YOLOV8** model which takes up to **10-15 minutes** to compile to TensorRT engine. The first launch may take a decent time.
+
 A simple pipeline using a [YOLOv8 instance segmentation model](https://docs.ultralytics.com/tasks/segment/) to identify the people in a frame and to segment them from the rest of the frame.
 
 We created an ONNX version of the YOLOv8m-seg model using a script from the original repository (see [Export section](https://docs.ultralytics.com/tasks/segment/#export)). To process the model output, we wrote [converter](module/converter.py). The segmentation model is a complex model in Savant terms. The model produces objects defined by bounding boxes and corresponding masks. To render the bounding boxes and masks we used cv2.cuda.GpuMat, the implementation code is in the [overlay](module/overlay.py).

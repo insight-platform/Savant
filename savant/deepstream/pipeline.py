@@ -779,7 +779,7 @@ class NvDsPipeline(GstPipeline):
         for obj_id, parent_id in parents.items():
             if self._logger.isEnabledFor(logging.DEBUG):
                 self._logger.debug('%s is a parent of %s', parent_id, obj_id)
-            video_frame.set_parent(obj_id, parent_id)
+            video_frame.set_parent_by_id(obj_id, parent_id)
 
     # Muxer
     def _create_muxer(self, live_source: bool) -> Gst.Element:

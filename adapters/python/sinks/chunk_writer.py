@@ -1,3 +1,4 @@
+import logging
 import math
 from typing import List
 from savant_rs.primitives import EndOfStream, VideoFrame

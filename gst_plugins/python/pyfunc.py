@@ -8,7 +8,7 @@ from typing import Any, Optional
 
 from savant_rs.pipeline2 import VideoPipeline
 
-from savant.base.pyfunc import BasePyFuncPlugin, PyFunc
+from savant.base.pyfunc import BasePyFuncPlugin, PyFunc, PyFuncNoopCallException
 from savant.gstreamer import GLib, GObject, Gst, GstBase  # noqa: F401
 from savant.utils.logging import LoggerMixin
 
@@ -70,6 +70,16 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             'VideoPipeline object from savant-rs.',
             GObject.ParamFlags.READWRITE,
         ),
+        'dev-mode': (
+            bool,
+            'Dev mode flag',
+            (
+                'Whether to monitor source file changes at runtime'
+                ' and reload the pyfunc objects when necessary.'
+            ),
+            False,
+            GObject.ParamFlags.READWRITE,
+        ),
     }
 
     def __init__(self):
@@ -79,8 +89,9 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
         self.class_name: Optional[str] = None
         self.kwargs: Optional[str] = None
         self.video_pipeline: Optional[VideoPipeline] = None
+        self.dev_mode: bool = False
         # pyfunc object
-        self.pyfunc: Optional[BasePyFuncPlugin] = None
+        self.pyfunc: Optional[PyFunc] = None
 
     def do_get_property(self, prop: GObject.GParamSpec) -> Any:
         """Gst plugin get property function.
@@ -95,6 +106,8 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             return self.kwargs
         if prop.name == 'pipeline':
             return self.video_pipeline
+        if prop.name == 'dev-mode':
+            return self.dev_mode
         raise AttributeError(f'Unknown property {prop.name}.')
 
     def do_set_property(self, prop: GObject.GParamSpec, value: Any):
@@ -111,6 +124,8 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             self.kwargs = value
         elif prop.name == 'pipeline':
             self.video_pipeline = value
+        elif prop.name == 'dev-mode':
+            self.dev_mode = value
         else:
             raise AttributeError(f'Unknown property {prop.name}.')
 
@@ -120,30 +135,54 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             module=self.module,
             class_name=self.class_name,
             kwargs=json.loads(self.kwargs) if self.kwargs else None,
-        ).instance
+            dev_mode=self.dev_mode,
+        )
+
+        self.pyfunc.load_user_code()
+
         assert isinstance(
-            self.pyfunc, BasePyFuncPlugin
+            self.pyfunc.instance, BasePyFuncPlugin
         ), f'"{self.pyfunc}" should be an instance of "BasePyFuncPlugin" subclass.'
-        self.pyfunc.gst_element = self
-        return self.pyfunc.on_start()
+        self.pyfunc.instance.gst_element = self
+
+        try:
+            return self.pyfunc.instance.on_start()
+        except Exception as exc:
+            return self.handle_error(exc, 'Error in pyfunc do_start()', True, False)
 
     def do_stop(self):
         """Do on plugin stop."""
-        return self.pyfunc.on_stop()
+        try:
+            return self.pyfunc.instance.on_stop()
+        except Exception as exc:
+            return self.handle_error(exc, 'Error in pyfunc do_stop()', True, False)
 
     def do_sink_event(self, event: Gst.Event) -> bool:
         """Do on sink event."""
-        self.pyfunc.on_event(event)
+        try:
+            self.pyfunc.instance.on_event(event)
+        except Exception as exc:
+            self.handle_error(exc, 'Error in pyfunc do_sink_event()', True, False)
         return self.srcpad.push_event(event)
 
     def do_transform_ip(self, buffer: Gst.Buffer):
         """Transform buffer in-place function."""
         try:
-            self.pyfunc.process_buffer(buffer)
-        except:
-            self.logger.exception('Failed to process buffer/frame.')
-            return Gst.FlowReturn.ERROR
+            self.pyfunc.instance.process_buffer(buffer)
+        except Exception as exc:
+            return self.handle_error(exc, 'Failed to process buffer/frame.')
+
         return Gst.FlowReturn.OK
+
+    def handle_error(
+        self, exc, msg, return_ok=Gst.FlowReturn.OK, return_err=Gst.FlowReturn.ERROR
+    ):
+        if self.dev_mode:
+            if not isinstance(exc, PyFuncNoopCallException):
+                self.logger.exception(msg)
+            return return_ok
+        self.logger.exception(msg)
+        return return_err
 
 
 # register plugin

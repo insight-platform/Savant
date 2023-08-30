@@ -18,7 +18,7 @@ from savant.config.schema import (
     TelemetryParameters,
     get_element_name,
 )
-from savant.deepstream.nvinfer.element_config import nvinfer_configure_element
+from savant.deepstream.nvinfer.element_config import nvinfer_element_configurator
 from savant.parameter_storage import init_param_storage
 from savant.utils.singleton import SingletonMeta
 from savant.utils.logging import get_logger
@@ -27,6 +27,21 @@ logger = get_logger(__name__)
 
 class ModuleConfigException(Exception):
     """Module config exception class."""
+
+
+def pyfunc_element_configurator(
+    element_config: DictConfig, module_config: DictConfig
+) -> DictConfig:
+    """Additional configuration steps for PyfuncElements."""
+    # if dev mode is enabled in the module parameters
+    # set dev mode for the pyfunc element
+    if module_config.parameters.dev_mode:
+        logger.debug(
+            'Setting dev mode for PyFuncElement named "%s" to True.',
+            element_config.name,
+        )
+        element_config.dev_mode = True
+    return element_config
 
 
 def parse_element_short_notation(
@@ -72,7 +87,7 @@ def get_elem_type_ver(
     :param element_config: element config
     :return: element + element_type + element_version
     """
-    logger.debug(
+    logger.trace(
         'Getting element/elem_type/elem_ver from element config %s', element_config
     )
 
@@ -114,10 +129,10 @@ def get_schema_configurator(
     """
 
     if element == 'pyfunc':
-        return PyFuncElement, None
+        return PyFuncElement, pyfunc_element_configurator
 
     if element == 'nvinfer':
-        return ModelElement, nvinfer_configure_element
+        return ModelElement, nvinfer_element_configurator
 
     return PipelineElement, None
 
@@ -206,6 +221,9 @@ def configure_module_parameters(module_cfg: DictConfig) -> None:
         OmegaConf.structured(FrameParameters),
     )
     apply_schema(module_cfg.parameters, 'draw_func', DrawFunc)
+    if module_cfg.parameters.dev_mode and module_cfg.parameters.draw_func:
+        logger.debug('Setting draw_func dev mode to true.')
+        module_cfg.parameters.draw_func.dev_mode = True
     apply_schema(module_cfg.parameters, 'buffer_queues', BufferQueuesParameters)
     apply_schema(
         module_cfg.parameters,
@@ -215,10 +233,13 @@ def configure_module_parameters(module_cfg: DictConfig) -> None:
     )
 
 
-def configure_element(element_config: DictConfig) -> DictConfig:
+def configure_element(
+    element_config: DictConfig, module_config: DictConfig
+) -> DictConfig:
     """Convert element to proper type.
 
     :param element_config: element config as read from yaml.
+    :param module_config: full module config in case context is required.
     :return: finished element config.
     """
     try:
@@ -239,7 +260,7 @@ def configure_element(element_config: DictConfig) -> DictConfig:
             raise ModuleConfigException('Only version "v1" is supported.')
 
         if configurator:
-            element_config = configurator(element_config)
+            element_config = configurator(element_config, module_config)
 
         return element_config
 
@@ -285,17 +306,17 @@ def configure_pipeline_elements(module_cfg: DictConfig) -> None:
 
     for pipeline_el_idx, item in enumerate(module_cfg.pipeline.elements):
         if 'element' in item:
-            item_cfg = configure_element(item)
+            item_cfg = configure_element(item, module_cfg)
         elif 'group' in item:
             if 'elements' in item.group or item.group.elements is not None:
                 for grp_element_idx, grp_element in enumerate(item.group.elements):
-                    element_cfg = configure_element(grp_element)
+                    element_cfg = configure_element(grp_element, module_cfg)
                     item.group.elements[grp_element_idx] = element_cfg
             else:
                 item.group.elements = []
             item_cfg = OmegaConf.merge(group_schema, item.group)
         else:
-            ModuleConfigException(
+            raise ModuleConfigException(
                 f'Config node under "pipeline.elements" should include either'
                 f' "element" or "group". Config node: {item}.'
             )
@@ -351,6 +372,7 @@ class ModuleConfig(metaclass=SingletonMeta):
         configure_pipeline_elements(module_cfg)
 
         self._config = OmegaConf.to_object(module_cfg)
+
         validate_frame_parameters(self._config)
 
         setup_batch_size(self._config)

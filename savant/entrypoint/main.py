@@ -1,4 +1,5 @@
 """Module entrypoint function."""
+import logging
 import os
 import logging
 from savant.config import ModuleConfig
