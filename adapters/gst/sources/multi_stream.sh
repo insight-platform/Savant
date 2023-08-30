@@ -9,10 +9,8 @@ required_env() {
     fi
 }
 
-required_env SOURCE_ID
 required_env LOCATION
 required_env ZMQ_ENDPOINT
-required_env DOWNLOAD_PATH
 
 ZMQ_SOCKET_TYPE="${ZMQ_TYPE:="DEALER"}"
 ZMQ_SOCKET_BIND="${ZMQ_BIND:="false"}"
@@ -26,13 +24,23 @@ else
     FPS_PERIOD="period-frames=1000"
 fi
 READ_METADATA="${READ_METADATA:="false"}"
-NUMBER_OF_SOURCES="${NUMBER_OF_SOURCES:=1}"
+NUMBER_OF_STREAMS="${NUMBER_OF_STREAMS:=1}"
+
+MEDIA_FILES_SRC_BIN_OPTS=(
+    location="${LOCATION}"
+    file-type=video
+)
+if [[ -n "${DOWNLOAD_PATH}" ]]; then
+    MEDIA_FILES_SRC_BIN_OPTS+=(
+        download-path="${DOWNLOAD_PATH}"
+    )
+fi
 
 SAVANT_RS_SERIALIZER_OPTS=(
     source-id="${SOURCE_ID}"
     read-metadata="${READ_METADATA}"
     enable-multistream=true
-    number-of-sources="${NUMBER_OF_SOURCES}"
+    number-of-streams="${NUMBER_OF_STREAMS}"
 )
 if [[ -n "${SOURCE_ID_PATTERN}" ]]; then
     SAVANT_RS_SERIALIZER_OPTS+=(
@@ -46,7 +54,7 @@ if [[ -n "${SHUTDOWN_AUTH}" ]]; then
 fi
 
 PIPELINE=(
-    media_files_src_bin location="${LOCATION}" file-type=video download-path="${DOWNLOAD_PATH}" !
+    media_files_src_bin "${MEDIA_FILES_SRC_BIN_OPTS[@]}" !
 )
 if [[ -n "${NUMBER_OF_FRAMES}" ]]; then
     # Identity drops the last frame when eos-after is set.

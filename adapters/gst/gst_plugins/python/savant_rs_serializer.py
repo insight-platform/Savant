@@ -143,10 +143,10 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
             None,
             GObject.ParamFlags.READWRITE | Gst.PARAM_MUTABLE_READY,
         ),
-        'number-of-sources': (
+        'number-of-streams': (
             int,
-            'Number of sources',
-            'Number of sources',
+            'Number of streams',
+            'Number of streams',
             1,  # min
             1024,  # max
             1,
@@ -171,7 +171,7 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
         self.eos_on_frame_params_change: bool = True
         self.enable_multistream: bool = False
         self.source_id_pattern: str = 'source-%d'
-        self.number_of_sources: int = 1
+        self.number_of_streams: int = 1
         self.shutdown_auth: Optional[str] = None
         # will be set after caps negotiation
         self.frame_params: Optional[FrameParams] = None
@@ -248,8 +248,8 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
             return self.enable_multistream
         if prop.name == 'source-id-pattern':
             return self.source_id_pattern
-        if prop.name == 'number-of-sources':
-            return self.number_of_sources
+        if prop.name == 'number-of-streams':
+            return self.number_of_streams
         if prop.name == 'shutdown-auth':
             return self.shutdown_auth
         raise AttributeError(f'Unknown property {prop.name}.')
@@ -287,8 +287,8 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
             self.enable_multistream = value
         elif prop.name == 'source-id-pattern':
             self.source_id_pattern = value
-        elif prop.name == 'number-of-sources':
-            self.number_of_sources = value
+        elif prop.name == 'number-of-streams':
+            self.number_of_streams = value
         elif prop.name == 'shutdown-auth':
             self.shutdown_auth = value
         else:
@@ -469,7 +469,7 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
     def _set_source_ids_and_zmq_sockets(self):
         if self.enable_multistream:
             source_ids = [
-                self.source_id_pattern % i for i in range(self.number_of_sources)
+                self.source_id_pattern % i for i in range(self.number_of_streams)
             ]
             if len(source_ids) != len(set(source_ids)):
                 raise ValueError(

@@ -306,9 +306,9 @@ def video_loop_source(
 )
 @click.option('--source-id-pattern', help='Pattern for source ID.')
 @click.option(
-    '--number-of-sources',
+    '--number-of-streams',
     default=1,
-    help='Number of sources.',
+    help='Number of streams.',
     show_default=True,
 )
 @click.option(
@@ -340,7 +340,7 @@ def multi_stream_source(
     download_path: str,
     mount_download_path: bool,
     source_id_pattern: Optional[str],
-    number_of_sources: int,
+    number_of_streams: int,
     number_of_frames: Optional[int],
     shutdown_auth: Optional[str],
     location: str,
@@ -357,7 +357,7 @@ def multi_stream_source(
         volumes = []
 
     envs = [
-        f'NUMBER_OF_SOURCES={number_of_sources}',
+        f'NUMBER_OF_STREAMS={number_of_streams}',
         f'READ_METADATA={read_metadata}',
         f'DOWNLOAD_PATH={download_path}',
     ]
