@@ -7,8 +7,9 @@ from gi.repository import Gst
 
 from savant.config.schema import PipelineElement
 from savant.utils.fps_meter import FPSMeter
-from savant.utils.sink_factories import SinkMessage
 from savant.utils.logging import get_logger
+from savant.utils.sink_factories import SinkMessage
+
 
 class GstBufferProcessor(ABC):
     def __init__(self, queue: Queue, fps_meter: FPSMeter):

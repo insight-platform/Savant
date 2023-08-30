@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-import logging
 import os
 import traceback
 from distutils.util import strtobool
 from typing import Dict, List
+
 from savant_rs.primitives import EndOfStream, VideoFrame
 from savant_rs.utils.serialization import Message, load_message_from_bytes
 
@@ -14,7 +14,7 @@ from adapters.python.sinks.metadata_json import (
     frame_has_objects,
 )
 from savant.api.enums import ExternalFrameType
-from savant.utils.logging import init_logging, get_logger
+from savant.utils.logging import get_logger, init_logging
 from savant.utils.zeromq import ZeroMQSource, build_topic_prefix
 
 LOGGER_NAME = 'adapters.image_files_sink'
@@ -78,7 +78,7 @@ class ImageFilesSink:
         chunk_size: int,
         skip_frames_without_objects: bool = False,
     ):
-        self.logger = logging.getLogger(f'savant.adapters.{self.__class__.__name__}')
+        self.logger = get_logger(f'adapters.{self.__class__.__name__}')
         self.location = location
         self.chunk_size = chunk_size
         self.skip_frames_without_objects = skip_frames_without_objects

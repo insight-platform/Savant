@@ -7,8 +7,10 @@ from typing import Any, Callable, List, Optional, Union
 import etcd3
 from omegaconf import MISSING
 
-from .parameter_storage import ParameterStorage
 from savant.utils.logging import get_logger
+
+from .parameter_storage import ParameterStorage
+
 logger = get_logger(__name__)
 
 

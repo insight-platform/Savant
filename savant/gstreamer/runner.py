@@ -7,8 +7,10 @@ from typing import Optional, Union
 
 from gi.repository import GLib, Gst  # noqa:F401
 
-from .pipeline import GstPipeline
 from savant.utils.logging import get_logger
+
+from .pipeline import GstPipeline
+
 logger = get_logger(__name__)
 
 

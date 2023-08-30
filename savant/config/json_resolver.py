@@ -3,7 +3,9 @@ import json
 from typing import Optional, Union
 
 from omegaconf import DictConfig, ListConfig, OmegaConf
+
 from savant.utils.logging import get_logger
+
 logger = get_logger(__name__)
 
 

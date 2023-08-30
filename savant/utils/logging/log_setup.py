@@ -1,11 +1,14 @@
 """Logging setup utils."""
+import logging
 import os
 from typing import Optional
-import logging
+
 from savant_rs.logging import set_log_level
-from .log_utils import add_logging_level, LOG_LEVEL_PY_TO_RS
+
+from .log_utils import LOG_LEVEL_PY_TO_RS, add_logging_level
 
 LOGGING_PREFIX = 'insight.savant'
+
 
 def get_default_loglevel() -> str:
     return os.environ.get('LOGLEVEL', 'INFO')
@@ -61,15 +64,10 @@ def init_logging(log_level: Optional[str] = None):
 
 init_logging.done = False
 
-def get_logger(name: str) -> logging.Logger:
-    """Get logger with specified name.
-    :param name: Logger name.
-    :return: Logger instance.
-    """
-    return logging.getLogger('.'.join((LOGGING_PREFIX, name)))
 
 def get_logger(name: str) -> logging.Logger:
-    """Get logger with specified name.
+    """Get logger with specified name appended to the general Savant logging prefix.
+
     :param name: Logger name.
     :return: Logger instance.
     """

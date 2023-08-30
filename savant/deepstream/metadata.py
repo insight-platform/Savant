@@ -14,6 +14,7 @@ from savant.deepstream.utils.object import nvds_get_obj_uid, nvds_is_empty_objec
 from savant.meta.attribute import AttributeMeta
 from savant.meta.constants import PRIMARY_OBJECT_KEY, UNTRACKED_OBJECT_ID
 from savant.utils.logging import get_logger
+
 logger = get_logger(__name__)
 
 

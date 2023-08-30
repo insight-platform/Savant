@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
 import json
-import logging
 import os
 import traceback
 from distutils.util import strtobool
 from typing import Any, Dict, Optional
+
 from savant_rs.primitives import (
     Attribute,
     AttributeValue,
@@ -19,7 +19,7 @@ from savant_rs.video_object_query import MatchQuery
 from adapters.python.sinks.chunk_writer import ChunkWriter
 from savant.api.constants import DEFAULT_NAMESPACE
 from savant.api.parser import parse_video_frame
-from savant.utils.logging import init_logging, get_logger
+from savant.utils.logging import get_logger, init_logging
 from savant.utils.zeromq import ZeroMQSource, build_topic_prefix
 
 LOGGER_NAME = 'adapters.metadata_json_sink'

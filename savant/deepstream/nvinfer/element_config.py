@@ -55,9 +55,7 @@ def nvinfer_element_configurator(
         def process(self, msg, kwargs):
             return f'Element {element_name}: {msg}', kwargs
 
-    logger = _LoggerAdapter(
-        get_logger(__name__), dict(element_name=element_name)
-    )
+    logger = _LoggerAdapter(get_logger(__name__), dict(element_name=element_name))
 
     logger.trace('Configuring nvinfer element %s', element_config)
     # check model type

@@ -1,5 +1,5 @@
-import logging
 from typing import Any, Dict, List, Union
+
 from savant_rs import init_jaeger_tracer, init_noop_tracer
 from savant_rs.pipeline2 import VideoPipelineStagePayloadType
 
@@ -11,8 +11,8 @@ from savant.config.schema import (
     PyFuncElement,
     TelemetryParameters,
 )
-
 from savant.utils.logging import get_logger
+
 logger = get_logger(__name__)
 
 

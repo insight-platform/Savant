@@ -9,6 +9,7 @@ from savant_rs.utils.serialization import Message, save_message_to_bytes
 
 from savant.api.enums import ExternalFrameType
 from savant.config.schema import PipelineElement
+from savant.utils.logging import get_logger
 from savant.utils.registry import Registry
 from savant.utils.zeromq import (
     Defaults,
@@ -16,7 +17,7 @@ from savant.utils.zeromq import (
     parse_zmq_socket_uri,
     receive_response,
 )
-from savant.utils.logging import get_logger
+
 logger = get_logger(__name__)
 
 

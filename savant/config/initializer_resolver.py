@@ -5,6 +5,7 @@ from typing import Any
 
 from savant.parameter_storage import STORAGE_TYPES, param_storage
 from savant.utils.logging import get_logger
+
 logger = get_logger(__name__)
 
 

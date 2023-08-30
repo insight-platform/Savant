@@ -1,4 +1,5 @@
 """PyFunc definitions."""
+import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from importlib import reload
@@ -9,10 +10,10 @@ from types import ModuleType
 from typing import Any, Callable, Dict, Optional
 
 from savant.gstreamer import Gst  # noqa: F401
-from savant.utils.logging import get_logger
 from savant.utils.inotify_manager import INotifyManager
+from savant.utils.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class PyFuncException(Exception):

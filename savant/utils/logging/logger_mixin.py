@@ -1,12 +1,15 @@
 """LoggerMixin module."""
 import logging
-from .log_setup import init_logging, get_logger
+
+from .log_setup import get_logger, init_logging
 
 
 class LoggerMixin:
     """Mixes logger in GStreamer element.
+
     When the element name is available, logger name changes to
     `module_name/element_name`. Otherwise, logger name is `module_name`.
+
     Note: we cannot override `do_set_state` or any other method where element name
     becomes available since base classes are bindings.
     """

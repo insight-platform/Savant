@@ -4,8 +4,11 @@ from typing import List, Optional, Tuple, Type, Union
 
 import zmq
 from cachetools import LRUCache
-from .re_patterns import socket_uri_pattern, socket_options_pattern
+
 from savant.utils.logging import get_logger
+
+from .re_patterns import socket_options_pattern, socket_uri_pattern
+
 logger = get_logger(__name__)
 
 

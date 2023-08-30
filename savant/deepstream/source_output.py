@@ -15,9 +15,10 @@ from savant.gstreamer import Gst  # noqa:F401
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec, CodecInfo
 from savant.gstreamer.pipeline import GstPipeline
 from savant.gstreamer.utils import link_pads
+from savant.utils.logging import get_logger
 from savant.utils.platform import is_aarch64
 from savant.utils.source_info import SourceInfo
-from savant.utils.logging import get_logger
+
 
 class SourceOutput(ABC):
     """Adds an output elements to a DeepStream pipeline."""
