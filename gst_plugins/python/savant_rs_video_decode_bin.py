@@ -19,7 +19,13 @@ DEFAULT_PASS_EOS = True
 NESTED_DEMUX_PROPERTIES = {
     k: v
     for k, v in SAVANT_RS_VIDEO_DEMUX_PROPERTIES.items()
-    if k in ['source-timeout', 'source-eviction-interval', 'max-parallel-streams']
+    if k
+    in [
+        'source-timeout',
+        'source-eviction-interval',
+        'max-parallel-streams',
+        'shutdown-auth',
+    ]
 }
 SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES = {
     'low-latency-decoding': (
@@ -110,6 +116,8 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
 
     __gproperties__ = SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES
 
+    __gsignals__ = {'shutdown': (GObject.SignalFlags.RUN_LAST, None, ())}
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._elem_to_branch: Dict[Gst.Element, BranchInfo] = {}
@@ -126,6 +134,7 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
         self._demuxer.set_property('eos-on-timestamps-reset', True)
         self.add(self._demuxer)
         self._demuxer.connect('pad-added', self.on_pad_added)
+        self._demuxer.connect('shutdown', self.on_shutdown)
         self._max_parallel_streams: int = self._demuxer.get_property(
             'max-parallel-streams'
         )
@@ -411,6 +420,15 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
         sink_pad.set_active(True)
 
         return decoder
+
+    def on_shutdown(self, element: Gst.Element):
+        """Handle shutdown signal."""
+
+        self.logger.debug(
+            'Received shutdown signal from %s. Passing it downstream.',
+            element.get_name(),
+        )
+        self.emit('shutdown')
 
 
 # register plugin
