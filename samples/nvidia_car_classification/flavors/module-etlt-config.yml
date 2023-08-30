@@ -45,7 +45,6 @@ pipeline:
         tracker-height: 384
         ll-lib-file: /opt/nvidia/deepstream/deepstream/lib/libnvds_nvmultiobjecttracker.so
         ll-config-file: ${oc.env:PROJECT_PATH}/samples/nvidia_car_classification/config_tracker_NvDCF_perf.yml
-        #enable_past_frame: 1
         #display-tracking-id: 0
 
     # Car Make classifier
