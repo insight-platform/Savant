@@ -117,6 +117,11 @@ parameters:
     # Parameters for telemetry provider
     provider_params: ${json:${oc.env:TELEMETRY_PROVIDER_PARAMS, null}}
 
+  # Flag controls whether user python modules (pyfuncs and drawfuncs)
+  # are monitored for changes during runtime
+  # and reloaded in case changes are detected
+  dev_mode: ${oc.decode:${oc.env:DEV_MODE, False}}
+
 
 # pipeline definition
 pipeline:

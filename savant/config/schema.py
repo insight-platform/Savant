@@ -295,6 +295,7 @@ class PyFuncElement(PipelineElement, PyFunc):
     """``"pyfunc"`` is the fixed gstreamer element class for PyFuncElement."""
 
     def __post_init__(self):
+        super().__post_init__()
         kwargs = {}
         if 'kwargs' in self.properties and self.properties['kwargs']:
             kwargs = json.loads(self.properties['kwargs'])
@@ -306,6 +307,7 @@ class PyFuncElement(PipelineElement, PyFunc):
                 'module': self.module,
                 'class': self.class_name,
                 'kwargs': json.dumps(kwargs),
+                'dev-mode': self.dev_mode,
             }
         )
 

@@ -2,14 +2,14 @@
 
 Based on code from https://github.com/deepcam-cn/yolov5-face>
 """
-from typing import Any, Tuple
+from typing import Any, List, Tuple
 
 import numpy as np
 from numba.typed import List
 
 from savant.base.converter import BaseComplexModelOutputConverter
 from savant.base.model import ComplexModel
-from savant.selector.detector import nms_cpu
+from savant.utils.nms import nms_cpu
 
 
 class YoloV5faceConverter(BaseComplexModelOutputConverter):
