@@ -431,8 +431,13 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
 
     def handle_shutdown(self, shutdown: Shutdown) -> Gst.FlowReturn:
         """Handle Shutdown message."""
-        if self.shutdown_auth is None or shutdown.auth != self.shutdown_auth:
-            self.logger.debug('Ignoring shutdown message.')
+        if self.shutdown_auth is None:
+            self.logger.debug('Ignoring shutdown message: shutting down in disabled.')
+            return Gst.FlowReturn.OK
+        if shutdown.auth != self.shutdown_auth:
+            self.logger.debug(
+                'Ignoring shutdown message: incorrect authentication key.'
+            )
             return Gst.FlowReturn.OK
 
         self.logger.info('Received shutdown message.')
