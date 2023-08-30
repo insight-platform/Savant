@@ -4,7 +4,7 @@ from typing import Iterable, List, Optional
 
 import zmq
 from savant_rs.pipeline2 import VideoPipeline, VideoPipelineStagePayloadType
-from savant_rs.primitives import EndOfStream
+from savant_rs.primitives import EndOfStream, Shutdown
 from savant_rs.utils import TelemetrySpan
 from savant_rs.utils.serialization import Message, save_message_to_bytes
 
@@ -151,6 +151,28 @@ class SourceRunner:
         serialized_message = save_message_to_bytes(message)
         self._send_zmq_message([zmq_topic, serialized_message])
         logger.debug('Sent EOS for source %s.', source_id)
+
+        return SourceResult(
+            source_id=source_id,
+            status='ok',
+            trace_id=None,
+            log_provider=self._log_provider,
+        )
+
+    def send_shutdown(self, source_id: str, auth: str) -> SourceResult:
+        """Send Shutdown message for a source to ZeroMQ socket.
+
+        :param source_id: Source ID.
+        :param auth: Authentication key.
+        :return: Result of sending Shutdown.
+        """
+
+        logger.debug('Sending Shutdown message for source %s.', source_id)
+        zmq_topic = f'{source_id}/'.encode()
+        message = Message.shutdown(Shutdown(auth))
+        serialized_message = save_message_to_bytes(message)
+        self._send_zmq_message([zmq_topic, serialized_message])
+        logger.debug('Sent Shutdown message for source %s.', source_id)
 
         return SourceResult(
             source_id=source_id,
