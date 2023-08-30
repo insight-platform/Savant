@@ -91,7 +91,7 @@ class GstPipelineRunner:
         end_time = time()
         exec_seconds = end_time - start_time
         logger.info(
-            'Pipeline starting ended after %s.', timedelta(seconds=exec_seconds)
+            'The pipeline is initialized and ready to process data. Initialization took %s.', timedelta(seconds=exec_seconds)
         )
 
         self._start_time = end_time
@@ -100,7 +100,7 @@ class GstPipelineRunner:
         """Stops pipeline."""
         logger.debug('shutdown() called.')
         if not self._is_running:
-            logger.debug('Pipeline is shut down already.')
+            logger.debug('The pipeline is shutting down already.')
             return
 
         self._is_running = False
@@ -118,7 +118,7 @@ class GstPipelineRunner:
 
         exec_seconds = time() - self._start_time
         logger.info(
-            'Pipeline execution ended after %s.', timedelta(seconds=exec_seconds)
+            'The pipeline is about to stop. Operation took %s.', timedelta(seconds=exec_seconds)
         )
 
         if isinstance(self._pipeline, GstPipeline):
