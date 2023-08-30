@@ -37,24 +37,41 @@ git lfs pull
 
 Note, there is a bug in the nvv4l2decoder on the Jetson platform so the example currently does not work correctly on that platform. See https://github.com/insight-platform/Savant/issues/314
 
+To build the face reid index, start the `index-builder` container and wait for it to complete initialization.
+
 ```bash
 # if x86
-docker compose -f docker-compose.x86.yml --profile index up
+docker compose -f docker-compose.x86.yml up index-builder
 
 # if Jetson
 # currently not supported
-docker compose -f docker-compose.l4t.yml --profile index up
-
-# Ctrl+C to stop running the compose bundle
+docker compose -f docker-compose.l4t.yml up index-builder
 ```
 
-Index Builder module does not stop automatically and requires manual exit. It is safe to do so once the `face_reid-index-builder` container logs the message following messages (assuming the default gallery image set)
+First startup can take several minutes as the module needs to convert ONNX models into TRT format. Successful module start is indicated by a log message like
 
 ```
-... Successfully handled EOS for source_id=9
+INFO ... > Pipeline starting ended after 0:00:04.306222
+```
+
+Next, run the `pictures-source` container
+
+```bash
+# if x86
+docker compose -f docker-compose.x86.yml up pictures-source
+
+# if Jetson
+# currently not supported
+docker compose -f docker-compose.l4t.yml up pictures-source
+```
+
+Index Builder module does not stop automatically and requires manual exit. It is safe to do so once the `face_reid-pictures-source` container exits and `face_reid-index-builder` container logs the message following messages (assuming the default gallery image set)
+
+```
+nvstreammux: Successfully handled EOS for source_id=9
 ...
-... Face processed, index file refreshed
-... Resources for source gallery has been released.
+INFO ... > Face processed, index file refreshed
+INFO ... > Resources for source gallery has been released.
 ```
 
 Check that the `index_files` directory is created and `index.bin` file and `processed_gallery` image directory is written into it.
@@ -78,6 +95,8 @@ cd ../..
 ```
 
 ## Performance measurement
+
+Run the Index Builder according to instuctions [above](#index-builder).
 
 Download the video file to your local folder. For example, create a data folder
 and download the video into it (all commands must be executed from the root directory of the project Savant)
