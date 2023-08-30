@@ -33,15 +33,3 @@ Deepstream PyFuncs implementations
     pyfunc.NvDsPyFuncPlugin
     base_drawfunc.BaseNvDsDrawFunc
     drawfunc.NvDsDrawFunc
-
-PyFunc utilities
-----------------
-
-.. currentmodule:: savant.base.pyfunc
-
-.. autosummary::
-    :toctree: generated
-    :nosignatures:
-    :template: autosummary/function.rst
-
-    resolve_pyfunc
