@@ -87,9 +87,8 @@ class Config:
         self.framerate = opt_config('FRAMERATE', '30/1')
         self.sync = opt_config('SYNC_OUTPUT', False, strtobool)
 
-    @property
-    def fps_meter_properties(self):
-        props = {'output': self.fps_output}
+    def fps_meter_properties(self, measurer_name: str):
+        props = {'output': self.fps_output, 'measurer-name': measurer_name}
         if self.fps_period_seconds:
             props['period-seconds'] = self.fps_period_seconds
         else:
@@ -212,7 +211,7 @@ def build_input_pipeline(
         ),
         PipelineElement(
             'fps_meter',
-            properties=config.fps_meter_properties,
+            properties=config.fps_meter_properties('Input'),
         ),
     ]
     if config.sync:
@@ -308,7 +307,7 @@ def build_output_pipeline(
         ),
         PipelineElement(
             'fps_meter',
-            properties=config.fps_meter_properties,
+            properties=config.fps_meter_properties('Output'),
         ),
         PipelineElement(
             'rtspclientsink',
