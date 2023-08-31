@@ -1,10 +1,10 @@
-import logging
 from typing import Optional
 
 from savant.client.log_provider import LogProvider
 from savant.client.runner.source import SourceRunner
+from savant.utils.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class SourceBuilder:
