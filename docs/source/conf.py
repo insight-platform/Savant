@@ -15,13 +15,6 @@ import sys
 
 sys.path.append(os.path.abspath('./_ext'))
 
-import gi
-
-gi.require_version('Gst', '1.0')
-from gi.repository import Gst
-
-Gst.init(None)
-
 # -- Project information -----------------------------------------------------
 project = 'Savant'
 copyright = '2020-2023 BWSoft Management, LLC'
@@ -79,13 +72,11 @@ templates_path = ['_templates']
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = [
-    'reference/api/gst_plugins.rst',
-]
+exclude_patterns = []
 
 # List of modules that will be excluded from import to prevent import errors to stop
 # the build process when some external dependencies cannot be imported during the build.
-autodoc_mock_imports = ['cv2']
+autodoc_mock_imports = ['cv2', 'pyds', 'pysavantboost']
 
 # -- Options for HTML output -------------------------------------------------
 

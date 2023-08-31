@@ -41,7 +41,7 @@ RUN python setup.py bdist_wheel && rm -rf _skbuild
 
 # Savant boost(cuda) library builder
 # TODO: Update library code, CMakeLists (see build process warnings)
-# TODO: Check Jetson requirements (used Xavier NX t194, Orin is t234)
+# TODO: Check Jetson requirements (Xavier t194, Orin t234)
 FROM base_builder AS savantboost_build
 
 # newer cmake ver. needed for "FindCUDAToolkit"
@@ -152,6 +152,10 @@ COPY --from=savant_build /tmp/build/dist /libs/savant/dist
 RUN python -m pip install --no-cache-dir /libs/savant/dist/*.whl
 
 RUN rm -r /libs
+
+# remove samples to reduce image size (~1Gb)
+#RUN rm -r /opt/nvidia/deepstream/deepstream/sources \
+#    /opt/nvidia/deepstream/deepstream/samples
 
 # add framework content
 COPY LICENSE .
