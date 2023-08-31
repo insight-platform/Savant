@@ -179,19 +179,18 @@ def build_input_pipeline(
 ):
     pipeline: Gst.Pipeline = Gst.Pipeline.new('input-pipeline')
 
-    savant_rs_video_demux_properties = {'source-id': config.source_id}
+    savant_rs_video_demux_properties = {}
     if config.pipeline_stage_name is not None:
-        savant_rs_video_demux_properties.update(
-            {
-                'pipeline-stage-name': config.pipeline_stage_name,
-                'pipeline': config.video_pipeline,
-            }
-        )
+        savant_rs_video_demux_properties = {
+            'pipeline-stage-name': config.pipeline_stage_name,
+            'pipeline': config.video_pipeline,
+        }
 
     source_elements = [
         PipelineElement(
             'zeromq_src',
             properties={
+                'source-id': config.source_id,
                 'socket': config.zmq_endpoint,
                 'socket-type': config.zmq_socket_type.name,
                 'bind': config.zmq_socket_bind,
