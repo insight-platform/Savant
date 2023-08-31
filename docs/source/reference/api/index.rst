@@ -17,3 +17,4 @@ API Reference
    param_storage
    utils
    libs
+   client
