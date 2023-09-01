@@ -1,4 +1,3 @@
-import logging
 import os
 from os import PathLike
 from typing import List, Tuple, Union
@@ -15,10 +14,11 @@ from savant_rs.primitives import (
 from savant.api.constants import DEFAULT_NAMESPACE
 from savant.api.enums import ExternalFrameType
 from savant.client.frame_source import FrameSource
+from savant.utils.logging import get_logger
 
 SECOND_IN_NS = 10**9
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class JpegSource(FrameSource):

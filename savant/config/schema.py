@@ -44,6 +44,9 @@ class FrameParameters:
     padding: Optional[FramePadding] = None
     """Add paddings to the frame before processing"""
 
+    geometry_base: int = 8
+    """Base value for frame parameters. All frame parameters must be divisible by this value."""
+
     @property
     def total_width(self) -> int:
         """Total frame width including paddings."""

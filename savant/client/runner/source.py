@@ -1,4 +1,3 @@
-import logging
 from dataclasses import dataclass
 from typing import Iterable, List, Optional
 
@@ -17,8 +16,9 @@ from savant.utils.zeromq import (
     parse_zmq_socket_uri,
     receive_response,
 )
+from savant.utils.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass

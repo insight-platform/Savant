@@ -1,5 +1,4 @@
 """ZeroMQ utilities."""
-import logging
 import os
 from enum import Enum
 from typing import List, Optional, Tuple, Type, Union
@@ -8,9 +7,11 @@ from urllib.parse import urlparse
 import zmq
 from cachetools import LRUCache
 
+from savant.utils.logging import get_logger
+
 from .re_patterns import socket_options_pattern, socket_uri_pattern
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 CONFIRMATION_MESSAGE = b'OK'
