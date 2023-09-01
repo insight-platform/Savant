@@ -544,30 +544,32 @@ Running with the helper script:
     ./scripts/run_source.py ffmpeg --source-id=test --ffmpeg-params=input_format=mjpeg,video_size=1280x720 --device=/dev/video0 /dev/video0
 
 Multi-stream Source Adapter
-^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The Multi-stream Source Adapter sends a video file to multiple streams.
+The Multi-stream Source Adapter sends the same video file to multiple streams.
 
-The file location can be:
+.. note::
+
+    The purpose of the adapter is to benchmark modules under the load to find out their FPS capacity.
+
+The file location is:
 
 - a local file;
 - an HTTP URL;
 
-.. note::
-    The adapter helps developers create parallel video streams for benchmarking and testing purposes.
-
 **Parameters**:
 
 - ``LOCATION``: a video file local path or URL;
-- ``SOURCE_ID_PATTERN``: a pattern for string identifiers for streams. Use ``%d``, ``%03d`` placeholders for stream idx. Default is ``source-%d``;
-- ``NUMBER_OF_STREAMS``: a number of streams to create; default is ``1``;
-- ``NUMBER_OF_FRAMES``: a number of frames to send to each stream. If not specified all frames from the video file will be sent;
-- ``SHUTDOWN_AUTH``: an authentication key to shutdown the module after all frames were sent. Should match ``parameters.shutdown_auth`` in the module configuration;
+- ``SOURCE_ID_PATTERN``: a pattern for stream source identifiers; use ``%d``, ``%03d`` placeholders for stream idx. Default is ``source-%d``, usually no need to change it;
+- ``NUMBER_OF_STREAMS``: a number of parallel streams; default is ``1``;
+- ``NUMBER_OF_FRAMES``: a number of frames to be sent to each stream; if not specified, all frames from the video file will be sent;
+- ``SHUTDOWN_AUTH``: an authentication key to shutdown the module after all frames were sent. Must match ``parameters.shutdown_auth`` in the module configuration to have an effect;
 - ``READ_METADATA``: a flag indicating the need to augment the stream with metadata from a JSON file corresponding to the source file; default is ``False``;
-- ``SYNC_OUTPUT``: a flag indicating the need to send frames from source synchronously (i.e. at the source file rate); default is ``False``;
+- ``SYNC_OUTPUT``: a flag indicating the need to send frames from source synchronously (i.e. at the source file rate); default is ``False``; the parameter can be used to simulate real-time sources like RTSP-cams;
 - ``DOWNLOAD_PATH``: a directory to download the file from remote storage before playing it.
 
 .. note::
+
     The adapter doesn't have ``SOURCE_ID`` parameter.
 
 Running the adapter with Docker:
