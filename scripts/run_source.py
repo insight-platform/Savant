@@ -28,8 +28,8 @@ sync_option = click.option(
 )
 
 
-def common_options(func):
-    """Common Click source adapter options."""
+def output_endpoint_options(func):
+    """Click options for output endpoint."""
     func = click.option(
         '--out-endpoint',
         default='ipc:///tmp/zmq-sockets/input-video.ipc',
@@ -51,13 +51,19 @@ def common_options(func):
         ),
         show_default=True,
     )(func)
+    return func
+
+
+def common_options(func):
+    """Common Click source adapter options."""
+    func = output_endpoint_options(func)
     func = fps_meter_options(func)
     func = source_id_option(required=True)(func)
     return func
 
 
 def files_source(
-    source_id: str,
+    source_id: Optional[str],
     out_endpoint: str,
     out_type: str,
     out_bind: bool,
@@ -75,7 +81,7 @@ def files_source(
     """Read picture or video files from LOCATION.
     LOCATION can be single file, directory or HTTP URL.
     """
-    print(source_id)
+    print(f'{source_id=}')
     if location.startswith('http://') or location.startswith('https://'):
         volumes = []
     else:
@@ -86,8 +92,11 @@ def files_source(
     if extra_volumes:
         volumes.extend(extra_volumes)
 
+    container_name = f'source-{file_type}-files'
+    if source_id is not None:
+        container_name = f'{container_name}-{source_id}'
     cmd = build_docker_run_command(
-        f'source-{file_type}-files-{source_id}',
+        container_name,
         zmq_endpoint=out_endpoint,
         zmq_type=out_type,
         zmq_bind=out_bind,
@@ -269,6 +278,110 @@ def video_loop_source(
         file_type='video',
         envs=envs,
         entrypoint='/opt/savant/adapters/gst/sources/video_loop.sh',
+        extra_volumes=volumes,
+    )
+
+
+@cli.command('multi-stream')
+@click.option(
+    '--read-metadata',
+    default=False,
+    is_flag=True,
+    help='Attempt to read the metadata of objects from the JSON file that has the identical name '
+    'as the source file with `json` extension, and then send it to the module.',
+    show_default=True,
+)
+@click.option(
+    '--download-path',
+    default='/tmp/video-loop-source-downloads',
+    help='Path to download files from remote storage.',
+    show_default=True,
+)
+@click.option(
+    '--mount-download-path',
+    default=False,
+    is_flag=True,
+    help='Mount path to download files from remote storage to the container.',
+    show_default=True,
+)
+@click.option('--source-id-pattern', help='Pattern for source ID.')
+@click.option(
+    '--number-of-streams',
+    default=1,
+    help='Number of streams.',
+    show_default=True,
+)
+@click.option(
+    '--number-of-frames',
+    type=click.INT,
+    help='Number of frames per each source.',
+)
+@click.option(
+    '--shutdown-auth',
+    help=(
+        'Authentication key for Shutdown message. When specified, a shutdown'
+        'message will be sent at the end of the stream.'
+    ),
+)
+@output_endpoint_options
+@fps_meter_options
+@sync_option
+@adapter_docker_image_option('gstreamer')
+@click.argument('location', required=True)
+def multi_stream_source(
+    out_endpoint: str,
+    out_type: str,
+    out_bind: bool,
+    sync: bool,
+    docker_image: str,
+    fps_period_frames: Optional[int],
+    fps_period_seconds: Optional[float],
+    fps_output: str,
+    download_path: str,
+    mount_download_path: bool,
+    source_id_pattern: Optional[str],
+    number_of_streams: int,
+    number_of_frames: Optional[int],
+    shutdown_auth: Optional[str],
+    location: str,
+    read_metadata: bool,
+):
+    """Read a video file from LOCATION and sends it to with multiple source IDs.
+    LOCATION can be single file or HTTP URL.
+    """
+
+    download_path = os.path.abspath(download_path)
+    if mount_download_path:
+        volumes = [f'{download_path}:{download_path}']
+    else:
+        volumes = []
+
+    envs = [
+        f'NUMBER_OF_STREAMS={number_of_streams}',
+        f'READ_METADATA={read_metadata}',
+        f'DOWNLOAD_PATH={download_path}',
+    ]
+    if number_of_frames is not None:
+        envs.append(f'NUMBER_OF_FRAMES={number_of_frames}')
+    if shutdown_auth is not None:
+        envs.append(f'SHUTDOWN_AUTH={shutdown_auth}')
+    if source_id_pattern is not None:
+        envs.append(f'SOURCE_ID_PATTERN={source_id_pattern}')
+
+    files_source(
+        source_id=None,
+        out_endpoint=out_endpoint,
+        out_type=out_type,
+        out_bind=out_bind,
+        sync=sync,
+        docker_image=docker_image,
+        fps_period_frames=fps_period_frames,
+        fps_period_seconds=fps_period_seconds,
+        fps_output=fps_output,
+        location=location,
+        file_type='video',
+        envs=envs,
+        entrypoint='/opt/savant/adapters/gst/sources/multi_stream.sh',
         extra_volumes=volumes,
     )
 

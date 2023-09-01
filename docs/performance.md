@@ -76,6 +76,13 @@
 | [#334](https://github.com/insight-platform/Savant/issues/334) (no queues)        | 669.15 | 93.14     |
 | [#334](https://github.com/insight-platform/Savant/issues/334) (buffer length 10) | 671.76 | 92.41     |
 
+### opencv_cuda_bg_remover_mog2 (multi-stream)
+
+| Savant ver.                                                                      | A4000  | Jetson NX |
+|----------------------------------------------------------------------------------|--------|-----------|
+| [#372](https://github.com/insight-platform/Savant/issues/372) (no queues)        | 510.82 | 91.62     |
+| [#372](https://github.com/insight-platform/Savant/issues/372) (buffer length 10) | 510.97 | 93.20     |
+
 ### peoplenet_detector
 
 | Savant ver.                                                                      | A4000  | Jetson NX |

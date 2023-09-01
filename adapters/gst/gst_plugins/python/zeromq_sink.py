@@ -76,13 +76,6 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
             Defaults.EOS_CONFIRMATION_RETRIES,
             GObject.ParamFlags.READWRITE,
         ),
-        'source-id': (
-            str,
-            'Source ID',
-            'Source ID, e.g. "camera1".',
-            None,
-            GObject.ParamFlags.READWRITE,
-        ),
     }
 
     def __init__(self):
@@ -97,8 +90,6 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
         self.receive_timeout = Defaults.SENDER_RECEIVE_TIMEOUT
         self.req_receive_retries = Defaults.REQ_RECEIVE_RETRIES
         self.eos_confirmation_retries = Defaults.EOS_CONFIRMATION_RETRIES
-        self.source_id: str = None
-        self.zmq_topic: bytes = None
         self.set_sync(False)
 
     def do_get_property(self, prop):
@@ -119,8 +110,6 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
             return self.bind
         if prop.name == 'send-hwm':
             return self.send_hwm
-        if prop.name == 'source-id':
-            return self.source_id
         if prop.name == 'receive-timeout':
             return self.receive_timeout
         if prop.name == 'req-receive-retries':
@@ -145,9 +134,6 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
             self.bind = value
         elif prop.name == 'send-hwm':
             self.send_hwm = value
-        elif prop.name == 'source-id':
-            self.source_id = value
-            self.zmq_topic = f'{value}/'.encode()
         elif prop.name == 'receive-timeout':
             self.receive_timeout = value
         elif prop.name == 'req-receive-retries':
@@ -159,7 +145,6 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
 
     def do_start(self):
         """Start source."""
-        assert self.source_id, 'Source ID is required.'
         try:
             self.socket_type, self.bind, self.socket = parse_zmq_socket_uri(
                 uri=self.socket,
@@ -190,16 +175,18 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
         self.logger.debug(
             'Processing frame %s of size %s', buffer.pts, buffer.get_size()
         )
-        message: List[bytes] = [self.zmq_topic]
+        message: List[bytes] = []
         mapinfo_list: List[Gst.MapInfo] = []
         mapinfo: Gst.MapInfo
-        result, mapinfo = buffer.map_range(0, 1, Gst.MapFlags.READ)
-        assert result, 'Cannot read buffer.'
-        mapinfo_list.append(mapinfo)
-        message.append(mapinfo.data)
-        if buffer.n_memory() > 1:
+        for i in range(2):
+            result, mapinfo = buffer.map_range(i, 1, Gst.MapFlags.READ)
+            assert result, 'Cannot read buffer.'
+            mapinfo_list.append(mapinfo)
+            message.append(mapinfo.data)
+
+        if buffer.n_memory() > 2:
             # TODO: Use Gst.Meta to check where to split buffer to ZeroMQ message parts
-            result, mapinfo = buffer.map_range(1, -1, Gst.MapFlags.READ)
+            result, mapinfo = buffer.map_range(2, -1, Gst.MapFlags.READ)
             assert result, 'Cannot read buffer.'
             mapinfo_list.append(mapinfo)
             message.append(mapinfo.data)

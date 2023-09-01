@@ -254,7 +254,8 @@ Currently, the following source adapters are available:
 - RTSP stream;
 - USB/CSI camera;
 - GigE (Genicam) industrial cam;
-- FFmpeg.
+- FFmpeg;
+- Multi-stream.
 
 All source adapters accept the following common parameters:
 
@@ -541,6 +542,57 @@ Running with the helper script:
 .. code-block:: bash
 
     ./scripts/run_source.py ffmpeg --source-id=test --ffmpeg-params=input_format=mjpeg,video_size=1280x720 --device=/dev/video0 /dev/video0
+
+Multi-stream Source Adapter
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The Multi-stream Source Adapter sends a video file to multiple streams.
+
+The file location can be:
+
+- a local file;
+- an HTTP URL;
+
+.. note::
+    The adapter helps developers create parallel video streams for benchmarking and testing purposes.
+
+**Parameters**:
+
+- ``LOCATION``: a video file local path or URL;
+- ``SOURCE_ID_PATTERN``: a pattern for string identifiers for streams. Use ``%d``, ``%03d`` placeholders for stream idx. Default is ``source-%d``;
+- ``NUMBER_OF_STREAMS``: a number of streams to create; default is ``1``;
+- ``NUMBER_OF_FRAMES``: a number of frames to send to each stream. If not specified all frames from the video file will be sent;
+- ``SHUTDOWN_AUTH``: an authentication key to shutdown the module after all frames were sent. Should match ``parameters.shutdown_auth`` in the module configuration;
+- ``READ_METADATA``: a flag indicating the need to augment the stream with metadata from a JSON file corresponding to the source file; default is ``False``;
+- ``SYNC_OUTPUT``: a flag indicating the need to send frames from source synchronously (i.e. at the source file rate); default is ``False``;
+- ``DOWNLOAD_PATH``: a directory to download the file from remote storage before playing it.
+
+.. note::
+    The adapter doesn't have ``SOURCE_ID`` parameter.
+
+Running the adapter with Docker:
+
+.. code-block:: bash
+
+    docker run --rm -it --name source-multi-stream-test \
+        --entrypoint /opt/savant/adapters/gst/sources/multi_stream.sh \
+        -e SYNC_OUTPUT=True \
+        -e ZMQ_ENDPOINT=dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc \
+        -e SOURCE_ID_PATTERN='camera-%d' \
+        -e NUMBER_OF_STREAMS=4 \
+        -e SHUTDOWN_AUTH=shutdown-key \
+        -e LOCATION=/path/to/data/test.mp4 \
+        -e DOWNLOAD_PATH=/tmp/video-loop-source-downloads \
+        -v /path/to/data/test.mp4:/path/to/data/test.mp4:ro \
+        -v /tmp/zmq-sockets:/tmp/zmq-sockets \
+        -v /tmp/video-loop-source-downloads:/tmp/video-loop-source-downloads \
+        ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+
+Running with the helper script:
+
+.. code-block:: bash
+
+    ./scripts/run_source.py multi-stream --source-id-pattern='camera-%d' --number-of-sources=4 --shutdown-auth=shutdown-key /path/to/data/test.mp4
 
 
 Sink Adapters
