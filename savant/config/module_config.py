@@ -1,7 +1,7 @@
 """Module configuration."""
 import re
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, Optional, Tuple, Type, Union
+from typing import Any, Callable, Iterable, Optional, Tuple, Type, Union
 
 from omegaconf import DictConfig, OmegaConf
 
@@ -328,17 +328,39 @@ def validate_frame_parameters(config: Module):
     """Validate frame parameters."""
 
     frame_parameters: FrameParameters = config.parameters['frame']
-    output_frame: Optional[Dict] = config.parameters['output_frame']
-    if output_frame is not None and output_frame.get('codec') == 'png':
-        if (
-            frame_parameters.output_width % 8 != 0
-            or frame_parameters.output_height % 8 != 0
-        ):
-            raise ModuleConfigException(
-                'Output frame resolution must be divisible by 8 for PNG output. '
-                'Got output frame resolution: '
-                f'{frame_parameters.output_width}x{frame_parameters.output_height}.'
-            )
+    if frame_parameters.width % frame_parameters.geometry_base != 0:
+        raise ModuleConfigException(
+            f'Frame width ({frame_parameters.width}) '
+            f'must be divisible by geometry base ({frame_parameters.geometry_base}).'
+        )
+    if frame_parameters.height % frame_parameters.geometry_base != 0:
+        raise ModuleConfigException(
+            f'Frame height ({frame_parameters.height}) '
+            f'must be divisible by geometry base ({frame_parameters.geometry_base}).'
+        )
+    if frame_parameters.padding is None:
+        return
+
+    if frame_parameters.padding.left % frame_parameters.geometry_base != 0:
+        raise ModuleConfigException(
+            f'Left padding ({frame_parameters.padding.left}) '
+            f'must be divisible by geometry base ({frame_parameters.geometry_base}).'
+        )
+    if frame_parameters.padding.right % frame_parameters.geometry_base != 0:
+        raise ModuleConfigException(
+            f'Right padding ({frame_parameters.padding.right}) '
+            f'must be divisible by geometry base ({frame_parameters.geometry_base}).'
+        )
+    if frame_parameters.padding.top % frame_parameters.geometry_base != 0:
+        raise ModuleConfigException(
+            f'Top padding ({frame_parameters.padding.top}) '
+            f'must be divisible by geometry base ({frame_parameters.geometry_base}).'
+        )
+    if frame_parameters.padding.bottom % frame_parameters.geometry_base != 0:
+        raise ModuleConfigException(
+            f'Bottom padding ({frame_parameters.padding.bottom}) '
+            f'must be divisible by geometry base ({frame_parameters.geometry_base}).'
+        )
 
 
 class ModuleConfig(metaclass=SingletonMeta):
