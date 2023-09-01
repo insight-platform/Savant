@@ -200,4 +200,4 @@ All skipped classes will be permanently excluded from the next steps of the pipe
 
 If unit name is ``Primary_Detector``, then to address selected objects in the following units use ``Primary_Detector.person`` and ``Primary_Detector.face`` labels.
 
-The default selector implementation runs NMS and allows selecting objects by specifying ``min_width``, ``min_height``, and ``confidence_threshold``. To create a custom ``selector`` you have to implement :py:class:`~savant.base.selector.BaseSelector`. You may take a look at :py:class:`~savant.selector.BBoxSelector` to get an idea of how to write it.
+The default selector implementation runs NMS and allows selecting objects by specifying ``min_width``, ``min_height``, and ``confidence_threshold``. To create a custom ``selector`` you have to implement :py:class:`~savant.base.selector.BaseSelector`. You may take a look at :py:class:`~savant.selector.detector.BBoxSelector` to get an idea of how to write it.

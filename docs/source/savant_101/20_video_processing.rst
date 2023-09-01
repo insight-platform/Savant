@@ -100,6 +100,23 @@ The paddings can either be preserved or removed at the output.
 
     If you specify ``parameters.frame.padding.keep == false``, the paddings are removed before frames are encoded. The geometry for all objects are recalculated to conform new geometry.
 
+Geometry base
+-------------
+
+The geometry base is a base value for each frame parameter (width, height, paddings). All frame parameters must be divisible by this value. The default value is 8.
+
+.. code-block:: yaml
+
+    # base module parameters
+    parameters:
+      # pipeline processing frame parameters
+      frame:
+        width: 1280
+        height: 720
+        # Base value for frame parameters. All frame parameters must be divisible by this value.
+        # Default is 8.
+        geometry_base: 8
+
 Multiplexing
 ------------
 

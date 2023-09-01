@@ -16,6 +16,7 @@ parameters:
       # Padding size is 180px on the top of the frame
       top: 180
       bottom: 0
+    geometry_base: 4
   output_frame:
     # Frame is output without any encoding
     # this is to circumvent 3 hardware decoding processes limit on NVIDIA consumer hardware

@@ -1,12 +1,12 @@
 """Gst codecs."""
-import logging
 from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Optional
 
 from savant.gstreamer import Gst
+from savant.utils.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass
