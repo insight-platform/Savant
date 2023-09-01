@@ -60,9 +60,17 @@ class PipelineThread:
 
     def workload(self):
         pipeline = self.build_pipeline(self.config, self.last_frame, self.factory)
-        self.logger.info('Starting pipeline %s', pipeline.get_name())
+        self.logger.info(
+            'Source %s. Starting pipeline %s',
+            self.config.source_id,
+            pipeline.get_name(),
+        )
         with GstPipelineRunner(pipeline) as runner:
             while self.is_running and runner._is_running:
                 time.sleep(1)
-        self.logger.info('Pipeline %s is stopped', pipeline.get_name())
+        self.logger.info(
+            'Source %s. Pipeline %s is stopped',
+            self.config.source_id,
+            pipeline.get_name(),
+        )
         self.is_running = False

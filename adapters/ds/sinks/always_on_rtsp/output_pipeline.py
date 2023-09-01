@@ -66,7 +66,7 @@ def build_output_pipeline(
         ),
         PipelineElement(
             'fps_meter',
-            properties=config.fps_meter_properties('Output'),
+            properties=config.fps_meter_properties(f'Output {config.source_id}'),
         ),
         PipelineElement(
             'rtspclientsink',

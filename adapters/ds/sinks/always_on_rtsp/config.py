@@ -19,8 +19,6 @@ def opt_config(name, default=None, convert=None):
 
 class Config:
     def __init__(self):
-        self.dev_mode = opt_config('DEV_MODE', False, strtobool)
-
         self.stub_file_location = Path(os.environ['STUB_FILE_LOCATION'])
         if not self.stub_file_location.exists():
             raise RuntimeError(f'File {self.stub_file_location} does not exist.')
@@ -39,12 +37,7 @@ class Config:
         )
         self.zmq_socket_bind = opt_config('ZMQ_BIND', False, strtobool)
 
-        self.rtsp_uri = opt_config('RTSP_URI')
-        if self.dev_mode:
-            assert (
-                self.rtsp_uri is None
-            ), '"RTSP_URI" cannot be set when "DEV_MODE=True"'
-            self.rtsp_uri = 'rtsp://localhost:554/stream'
+        self.rtsp_uri = os.environ['RTSP_URI']
         self.rtsp_protocols = opt_config('RTSP_PROTOCOLS', 'tcp')
         self.rtsp_latency_ms = opt_config('RTSP_LATENCY_MS', 100, int)
         self.rtsp_keep_alive = opt_config('RTSP_KEEP_ALIVE', True, strtobool)

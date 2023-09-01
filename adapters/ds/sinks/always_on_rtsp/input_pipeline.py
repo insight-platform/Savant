@@ -18,7 +18,8 @@ def log_frame_metadata(pad: Gst.Pad, info: Gst.PadProbeInfo, config: Config):
     savant_frame_meta = gst_buffer_get_savant_frame_meta(buffer)
     if savant_frame_meta is None:
         logger.warning(
-            'No Savant Frame Metadata found on buffer with PTS %s.',
+            'Source %s. No Savant Frame Metadata found on buffer with PTS %s.',
+            config.source_id,
             buffer.pts,
         )
         return Gst.PadProbeReturn.PASS
@@ -51,7 +52,8 @@ def on_demuxer_pad_added(
 ):
     caps: Gst.Caps = src_pad.get_pad_template_caps()
     logger.debug(
-        'Added pad %s on element %s. Caps: %s.',
+        'Source %s. Added pad %s on element %s. Caps: %s.',
+        config.source_id,
         src_pad.get_name(),
         element.get_name(),
         caps,
@@ -78,7 +80,11 @@ def on_demuxer_pad_added(
         decodebin.connect('pad-added', link_added_pad, sink_pad)
         assert src_pad.link(decodebin_sink_pad) == Gst.PadLinkReturn.OK
         decodebin.sync_state_with_parent()
-        logger.debug('Added decoder %s.', decodebin.get_name())
+        logger.debug(
+            'Source %s. Added decoder %s.',
+            config.source_id,
+            decodebin.get_name(),
+        )
 
 
 def build_input_pipeline(
@@ -121,7 +127,7 @@ def build_input_pipeline(
         ),
         PipelineElement(
             'fps_meter',
-            properties=config.fps_meter_properties('Input'),
+            properties=config.fps_meter_properties(f'Input {config.source_id}'),
         ),
     ]
     if config.sync:
