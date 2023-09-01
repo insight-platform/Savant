@@ -11,6 +11,7 @@ from savant.config.schema import ElementGroup, ModelElement, Pipeline, PipelineE
 from savant.gstreamer.buffer_processor import GstBufferProcessor
 from savant.gstreamer.element_factory import CreateElementException, GstElementFactory
 from savant.utils.fps_meter import FPSMeter
+from savant.utils.logging import get_logger
 from savant.utils.sink_factories import SinkMessage
 
 
@@ -33,7 +34,7 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
         pipeline_cfg: Pipeline,
         **kwargs,
     ):
-        self._logger = logging.getLogger(f'savant.pipeline.{name}')
+        self._logger = get_logger(name)
 
         # output messages queue
         self._queue = Queue(maxsize=kwargs['queue_maxsize'])

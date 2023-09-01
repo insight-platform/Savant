@@ -31,7 +31,7 @@ This element combines both the detection and attribute model units. Below is an 
             - class_id: 0
               label: face
               selector:
-                module: savant.selector
+                module: savant.selector.detector
                 class_name: BBoxSelector
                 kwargs:
                   confidence_threshold: 0.991

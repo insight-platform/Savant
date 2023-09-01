@@ -1,5 +1,4 @@
 """Base model input preprocessors."""
-import logging
 from abc import abstractmethod
 from typing import Callable, Optional
 
@@ -16,6 +15,7 @@ from savant.deepstream.utils import nvds_frame_meta_iterator, nvds_obj_meta_iter
 from savant.gstreamer import Gst
 from savant.meta.object import ObjectMeta
 from savant.utils.image import GPUImage
+from savant.utils.logging import get_logger
 
 
 class BasePreprocessObjectMeta(BasePyFuncCallableImpl):
@@ -55,7 +55,7 @@ class ObjectsPreprocessing:
     def __init__(self):
         self._preprocessing_functions = {}
         self._frames_map = {}
-        self.logger = logging.getLogger(__name__)
+        self.logger = get_logger(__name__)
 
     def add_preprocessing_function(
         self,

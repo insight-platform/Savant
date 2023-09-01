@@ -13,8 +13,6 @@ services:
       - SOURCE_ID=gallery
       - READ_METADATA=False
     entrypoint: /opt/savant/adapters/gst/sources/media_files.sh
-    profiles:
-      - index
     depends_on:
       index-builder:
         condition: service_healthy
@@ -38,8 +36,6 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
-    profiles:
-      - index
 
   video-loop-source:
     image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest

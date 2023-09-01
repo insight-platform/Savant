@@ -1,12 +1,13 @@
 import json
 from fractions import Fraction
 from pathlib import Path
-from typing import Any, Dict, NamedTuple, Optional
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
 from savant_rs.primitives import (
     Attribute,
     AttributeValue,
     EndOfStream,
+    Shutdown,
     VideoFrame,
     VideoFrameContent,
     VideoFrameTransformation,
@@ -19,9 +20,11 @@ from savant.api.constants import DEFAULT_FRAMERATE, DEFAULT_NAMESPACE, DEFAULT_T
 from savant.api.enums import ExternalFrameType
 from savant.gstreamer import GObject, Gst, GstBase
 from savant.gstreamer.codecs import CODEC_BY_CAPS_NAME, Codec
+from savant.gstreamer.utils import gst_buffer_from_list
 from savant.utils.logging import LoggerMixin
 
 EMBEDDED_FRAME_TYPE = 'embedded'
+DEFAULT_SOURCE_ID_PATTERN = 'source-%d'
 
 
 class FrameParams(NamedTuple):
@@ -73,7 +76,7 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
             'Source ID',
             'Source ID, e.g. "camera1".',
             None,
-            GObject.ParamFlags.READWRITE,
+            GObject.ParamFlags.READWRITE | Gst.PARAM_MUTABLE_READY,
         ),
         'location': (
             str,
@@ -127,6 +130,37 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
             None,
             GObject.ParamFlags.READWRITE,
         ),
+        'enable-multistream': (
+            bool,
+            'Enable multistream',
+            'Enable multistream',
+            False,
+            GObject.ParamFlags.READWRITE | Gst.PARAM_MUTABLE_READY,
+        ),
+        'source-id-pattern': (
+            str,
+            'Pattern for source ID',
+            'Pattern for source ID when multistream is enabled. E.g. "source-%d".',
+            DEFAULT_SOURCE_ID_PATTERN,
+            GObject.ParamFlags.READWRITE | Gst.PARAM_MUTABLE_READY,
+        ),
+        'number-of-streams': (
+            int,
+            'Number of streams',
+            'Number of streams',
+            1,  # min
+            1024,  # max
+            1,
+            GObject.ParamFlags.READWRITE | Gst.PARAM_MUTABLE_READY,
+        ),
+        'shutdown-auth': (
+            str,
+            'Authentication key for Shutdown message.',
+            'Authentication key for Shutdown message. When specified, a shutdown'
+            'message will be sent at the end of the stream.',
+            None,
+            GObject.ParamFlags.READWRITE,
+        ),
     }
 
     def __init__(self):
@@ -136,6 +170,10 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
         self.eos_on_file_end: bool = True
         self.eos_on_loop_end: bool = False
         self.eos_on_frame_params_change: bool = True
+        self.enable_multistream: bool = False
+        self.source_id_pattern: str = DEFAULT_SOURCE_ID_PATTERN
+        self.number_of_streams: int = 1
+        self.shutdown_auth: Optional[str] = None
         # will be set after caps negotiation
         self.frame_params: Optional[FrameParams] = None
         self.initial_size_transformation: Optional[VideoFrameTransformation] = None
@@ -146,6 +184,7 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
         self.default_framerate: str = DEFAULT_FRAMERATE
         self.frame_type: Optional[ExternalFrameType] = ExternalFrameType.ZEROMQ
 
+        self.source_ids_and_topics: List[Tuple[str, bytes]] = []
         self.stream_in_progress = False
         self.read_metadata: bool = False
         self.json_metadata = None
@@ -206,6 +245,14 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
             if self.frame_type is None:
                 return EMBEDDED_FRAME_TYPE
             return self.frame_type.value
+        if prop.name == 'enable-multistream':
+            return self.enable_multistream
+        if prop.name == 'source-id-pattern':
+            return self.source_id_pattern
+        if prop.name == 'number-of-streams':
+            return self.number_of_streams
+        if prop.name == 'shutdown-auth':
+            return self.shutdown_auth
         raise AttributeError(f'Unknown property {prop.name}.')
 
     def do_set_property(self, prop: GObject.GParamSpec, value: Any):
@@ -237,11 +284,49 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
                 self.frame_type = None
             else:
                 self.frame_type = ExternalFrameType(value)
+        elif prop.name == 'enable-multistream':
+            self.enable_multistream = value
+        elif prop.name == 'source-id-pattern':
+            self.source_id_pattern = value
+        elif prop.name == 'number-of-streams':
+            self.number_of_streams = value
+        elif prop.name == 'shutdown-auth':
+            self.shutdown_auth = value
         else:
             raise AttributeError(f'Unknown property {prop.name}.')
 
     def do_start(self):
-        assert self.source_id, 'Source ID is required.'
+        if self.enable_multistream:
+            if self.source_id_pattern is None:
+                self.logger.error(
+                    'Source ID pattern is required when enable-multistream=true.'
+                )
+                return False
+            try:
+                source_ids = [
+                    self.source_id_pattern % i for i in range(self.number_of_streams)
+                ]
+            except TypeError as e:
+                self.logger.error('Invalid source ID pattern: %s', e)
+                return False
+            if len(source_ids) != len(set(source_ids)):
+                self.logger.error(
+                    'Duplicate source IDs. Check source-id-pattern property.'
+                )
+                return False
+
+        else:
+            if self.source_id is None:
+                self.logger.error(
+                    'Source ID is required when enable-multistream=false.'
+                )
+                return False
+            source_ids = [self.source_id]
+
+        self.source_ids_and_topics = [
+            (source_id, f'{source_id}/'.encode()) for source_id in source_ids
+        ]
+
         return True
 
     def do_prepare_output_buffer(self, in_buf: Gst.Buffer):
@@ -280,23 +365,31 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
             return Gst.FlowReturn.ERROR
 
         frame = self.build_video_frame(
-            in_buf.pts,
-            in_buf.dts if in_buf.dts != Gst.CLOCK_TIME_NONE else None,
-            in_buf.duration if in_buf.duration != Gst.CLOCK_TIME_NONE else None,
+            source_id=self.source_ids_and_topics[0][0],
+            pts=in_buf.pts,
+            dts=in_buf.dts if in_buf.dts != Gst.CLOCK_TIME_NONE else None,
+            duration=in_buf.duration
+            if in_buf.duration != Gst.CLOCK_TIME_NONE
+            else None,
             content=content,
             keyframe=not in_buf.has_flags(Gst.BufferFlags.DELTA_UNIT),
         )
-        message = Message.video_frame(frame)
-        data = save_message_to_bytes(message)
 
-        out_buf: Gst.Buffer = Gst.Buffer.new_wrapped(data)
+        for i, (source_id, zmq_topic) in enumerate(self.source_ids_and_topics):
+            frame.source_id = source_id
+            message = Message.video_frame(frame)
+            data = save_message_to_bytes(message)
+            out_buf: Gst.Buffer = gst_buffer_from_list([zmq_topic, data])
+            if self.frame_type is not None:
+                out_buf.append_memory(in_buf.get_memory_range(0, -1))
+            out_buf.pts = in_buf.pts
+            out_buf.dts = in_buf.dts
+            out_buf.duration = in_buf.duration
+            if i < len(self.source_ids_and_topics) - 1:
+                self.srcpad.push(out_buf)
+
         if frame_mapinfo is not None:
             in_buf.unmap(frame_mapinfo)
-        else:
-            out_buf.append_memory(in_buf.get_memory_range(0, -1))
-        out_buf.pts = in_buf.pts
-        out_buf.dts = in_buf.dts
-        out_buf.duration = in_buf.duration
         self.stream_in_progress = True
 
         return Gst.FlowReturn.OK, out_buf
@@ -341,14 +434,22 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
 
     def send_end_message(self):
         self.logger.info('Sending serialized EOS message')
-        message = Message.end_of_stream(EndOfStream(self.source_id))
-        data = save_message_to_bytes(message)
-        out_buf = Gst.Buffer.new_wrapped(data)
-        self.srcpad.push(out_buf)
+        for source_id, zmq_topic in self.source_ids_and_topics:
+            message = Message.end_of_stream(EndOfStream(source_id))
+            data = save_message_to_bytes(message)
+            out_buf = gst_buffer_from_list([zmq_topic, data])
+            self.srcpad.push(out_buf)
         self.stream_in_progress = False
+        if self.shutdown_auth is not None:
+            self.logger.info('Sending serialized Shutdown message')
+            message = Message.shutdown(Shutdown(self.shutdown_auth))
+            data = save_message_to_bytes(message)
+            out_buf = gst_buffer_from_list([self.source_ids_and_topics[0][1], data])
+            self.srcpad.push(out_buf)
 
     def build_video_frame(
         self,
+        source_id: str,
         pts: int,
         dts: Optional[int],
         duration: Optional[int],
@@ -365,7 +466,7 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
             objects = frame_metadata['objects']
 
         video_frame = VideoFrame(
-            source_id=self.source_id,
+            source_id=source_id,
             framerate=self.frame_params.framerate,
             width=self.frame_params.width,
             height=self.frame_params.height,

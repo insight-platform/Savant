@@ -1,7 +1,7 @@
 Selectors
 =========
 
-.. inheritance-diagram:: savant.selector.BBoxSelector
+.. inheritance-diagram:: savant.selector.detector.BBoxSelector
     :parts: 1
     :caption: Selectors hierarchy
     :top-classes: savant.base.pyfunc.BasePyFuncCallableImpl
@@ -21,8 +21,8 @@ Base selectors
 Savant selectors
 ----------------
 
-.. automodule:: savant.selector
-.. currentmodule:: savant.selector
+.. automodule:: savant.selector.detector
+.. currentmodule:: savant.selector.detector
 
 .. autosummary::
     :toctree: generated

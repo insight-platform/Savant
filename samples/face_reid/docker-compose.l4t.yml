@@ -14,8 +14,6 @@ services:
       - READ_METADATA=False
       - RECEIVE_TIMEOUT_MSECS=20000
     entrypoint: /opt/savant/adapters/gst/sources/media_files.sh
-    profiles:
-      - index
     depends_on:
       index-builder:
         condition: service_healthy
@@ -33,8 +31,6 @@ services:
     environment:
       - ZMQ_SRC_ENDPOINT=rep+bind:ipc:///tmp/zmq-sockets/input-video.ipc
     runtime: nvidia
-    profiles:
-      - index
 
   video-loop-source:
     image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:latest

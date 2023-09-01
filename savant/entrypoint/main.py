@@ -1,5 +1,4 @@
 """Module entrypoint function."""
-import logging
 import os
 from pathlib import Path
 
@@ -8,7 +7,7 @@ from savant.deepstream.encoding import check_encoder_is_available
 from savant.deepstream.pipeline import NvDsPipeline
 from savant.deepstream.runner import NvDsPipelineRunner
 from savant.gstreamer import Gst
-from savant.utils.logging import init_logging, update_logging
+from savant.utils.logging import get_logger, init_logging, update_logging
 from savant.utils.sink_factories import sink_factory
 
 
@@ -24,7 +23,6 @@ def main(config_file_path: str):
         if status_filepath.exists():
             status_filepath.unlink()
         status_filepath.parent.mkdir(parents=True, exist_ok=True)
-    print(f'{status_filepath=!r}')
 
     # load default.yml and set up logging
     config = ModuleConfig().config
@@ -36,7 +34,7 @@ def main(config_file_path: str):
 
     # reconfigure savant logger with updated loglevel
     update_logging(config.parameters['log_level'])
-    logger = logging.getLogger('savant.main')
+    logger = get_logger('main')
 
     # possible exceptions will cause app to crash and log error by default
     # no need to handle exceptions here

@@ -1,5 +1,4 @@
 """GStreamer pipeline runner class."""
-import logging
 import os
 import threading
 from datetime import timedelta
@@ -10,9 +9,11 @@ from typing import Optional, Union
 
 from gi.repository import GLib, Gst  # noqa:F401
 
+from savant.utils.logging import get_logger
+
 from .pipeline import GstPipeline
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class PipelineStatus(Enum):
