@@ -1,5 +1,4 @@
 """PyFunc definitions."""
-import logging
 import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -12,8 +11,9 @@ from typing import Any, Callable, Dict, Optional
 
 from savant.gstreamer import Gst  # noqa: F401
 from savant.utils.inotify_manager import INotifyManager
+from savant.utils.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class PyFuncException(Exception):
@@ -36,7 +36,7 @@ class BasePyFuncImpl(ABC):
     def __init__(self, **kwargs):
         for name, value in kwargs.items():
             setattr(self, name, value)
-        self.logger = logging.getLogger(self.__module__)
+        self.logger = get_logger(self.__module__)
 
 
 class BasePyFuncPlugin(BasePyFuncImpl):

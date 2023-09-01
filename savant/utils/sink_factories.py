@@ -1,5 +1,4 @@
 """Sink factories."""
-import logging
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, NamedTuple, Optional, Union
 
@@ -10,6 +9,7 @@ from savant_rs.utils.serialization import Message, save_message_to_bytes
 
 from savant.api.enums import ExternalFrameType
 from savant.config.schema import PipelineElement
+from savant.utils.logging import get_logger
 from savant.utils.registry import Registry
 from savant.utils.zeromq import (
     Defaults,
@@ -19,7 +19,7 @@ from savant.utils.zeromq import (
     set_ipc_socket_permissions,
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class SinkMessage:

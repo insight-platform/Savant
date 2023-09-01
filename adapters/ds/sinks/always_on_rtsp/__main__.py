@@ -1,4 +1,3 @@
-import logging
 import os
 import time
 from datetime import datetime
@@ -19,12 +18,12 @@ from savant.gstreamer import Gst
 from savant.gstreamer.codecs import CODEC_BY_CAPS_NAME, Codec
 from savant.gstreamer.element_factory import GstElementFactory
 from savant.gstreamer.runner import GstPipelineRunner
-from savant.utils.logging import init_logging
+from savant.utils.logging import get_logger, init_logging
 from savant.utils.platform import is_aarch64
 from savant.utils.zeromq import ReceiverSocketTypes
 
-LOGGER_NAME = 'savant.adapters.ao_sink'
-logger = logging.getLogger(LOGGER_NAME)
+LOGGER_NAME = 'adapters.ao_sink'
+logger = get_logger(LOGGER_NAME)
 
 
 def opt_config(name, default=None, convert=None):
@@ -360,7 +359,7 @@ class PipelineThread:
 
         self.is_running = False
         self.thread: Optional[Thread] = None
-        self.logger = logging.getLogger(f'{LOGGER_NAME}.{self.__class__.__name__}')
+        self.logger = get_logger(f'{LOGGER_NAME}.{self.__class__.__name__}')
 
     def start(self):
         self.is_running = True

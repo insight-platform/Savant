@@ -1,4 +1,3 @@
-import logging
 import time
 from dataclasses import dataclass, field
 from typing import Optional
@@ -9,8 +8,9 @@ from savant_rs.utils.serialization import Message, load_message_from_bytes
 from savant.client.log_provider import LogProvider
 from savant.client.runner import LogResult
 from savant.utils.zeromq import Defaults, ZeroMQSource
+from savant.utils.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass

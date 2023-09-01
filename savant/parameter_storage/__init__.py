@@ -1,5 +1,4 @@
 """Parameter storage package."""
-import logging
 from typing import Optional
 
 from omegaconf import DictConfig, OmegaConf
@@ -8,7 +7,6 @@ from .etcd_storage import EtcdStorage, EtcdStorageConfig
 from .parameter_storage import ParameterStorage
 
 __all__ = ['param_storage', 'init_param_storage', 'STORAGE_TYPES']
-
 
 __PARAM_STORAGE: Optional[ParameterStorage] = None
 STORAGE_TYPES = frozenset(['etcd'])

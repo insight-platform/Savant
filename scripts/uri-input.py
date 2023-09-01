@@ -12,8 +12,9 @@ from urllib.parse import urlparse
 import click
 
 from savant.utils.file_types import FileType, parse_mime_types
+from savant.utils.logging import get_logger
 
-logger = logging.getLogger('uri-input')
+logger = get_logger('uri-input')
 
 ADAPTERS_DIR = Path(__file__).parent.parent / 'adapters' / 'gst' / 'sources'
 
