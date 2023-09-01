@@ -48,7 +48,7 @@ Install Nvidia Drivers
 
 .. code-block:: bash
 
-   sudo apt install --no-install-recommends nvidia-driver-525
+   sudo apt install --no-install-recommends nvidia-driver-530
    sudo reboot
 
 Install Nvidia Container Toolkit
