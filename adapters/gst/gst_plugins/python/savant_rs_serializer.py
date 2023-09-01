@@ -24,6 +24,7 @@ from savant.gstreamer.utils import gst_buffer_from_list
 from savant.utils.logging import LoggerMixin
 
 EMBEDDED_FRAME_TYPE = 'embedded'
+DEFAULT_SOURCE_ID_PATTERN = 'source-%d'
 
 
 class FrameParams(NamedTuple):
@@ -140,7 +141,7 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
             str,
             'Pattern for source ID',
             'Pattern for source ID when multistream is enabled. E.g. "source-%d".',
-            None,
+            DEFAULT_SOURCE_ID_PATTERN,
             GObject.ParamFlags.READWRITE | Gst.PARAM_MUTABLE_READY,
         ),
         'number-of-streams': (
@@ -170,7 +171,7 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
         self.eos_on_loop_end: bool = False
         self.eos_on_frame_params_change: bool = True
         self.enable_multistream: bool = False
-        self.source_id_pattern: str = 'source-%d'
+        self.source_id_pattern: str = DEFAULT_SOURCE_ID_PATTERN
         self.number_of_streams: int = 1
         self.shutdown_auth: Optional[str] = None
         # will be set after caps negotiation
@@ -295,11 +296,36 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
             raise AttributeError(f'Unknown property {prop.name}.')
 
     def do_start(self):
-        if not self.enable_multistream:
-            assert (
-                self.source_id is not None
-            ), 'Source ID is required when enable-multistream=false.'
-        self._set_source_ids_and_zmq_sockets()
+        if self.enable_multistream:
+            if self.source_id_pattern is None:
+                self.logger.error(
+                    'Source ID pattern is required when enable-multistream=true.'
+                )
+                return False
+            try:
+                source_ids = [
+                    self.source_id_pattern % i for i in range(self.number_of_streams)
+                ]
+            except TypeError as e:
+                self.logger.error('Invalid source ID pattern: %s', e)
+                return False
+            if len(source_ids) != len(set(source_ids)):
+                self.logger.error(
+                    'Duplicate source IDs. Check source-id-pattern property.'
+                )
+                return False
+
+        else:
+            if self.source_id is None:
+                self.logger.error(
+                    'Source ID is required when enable-multistream=false.'
+                )
+                return False
+            source_ids = [self.source_id]
+
+        self.source_ids_and_topics = [
+            (source_id, f'{source_id}/'.encode()) for source_id in source_ids
+        ]
 
         return True
 
@@ -465,23 +491,6 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
             )
 
         return video_frame
-
-    def _set_source_ids_and_zmq_sockets(self):
-        if self.enable_multistream:
-            source_ids = [
-                self.source_id_pattern % i for i in range(self.number_of_streams)
-            ]
-            if len(source_ids) != len(set(source_ids)):
-                raise ValueError(
-                    'Duplicate source IDs. Check source-id-pattern property.'
-                )
-        elif self.source_id is not None:
-            source_ids = [self.source_id]
-        else:
-            source_ids = []
-        self.source_ids_and_topics = [
-            (source_id, f'{source_id}/'.encode()) for source_id in source_ids
-        ]
 
 
 # register plugin
