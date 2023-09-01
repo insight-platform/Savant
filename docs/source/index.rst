@@ -130,6 +130,7 @@ As for now, we provide images for x86 architecture and for Jetson hardware.
    getting_started/2_running
    getting_started/3_examples
    getting_started/3_hardware_compatibility
+   getting_started/3_remote_development_guide
 
 .. toctree::
    :maxdepth: 1
@@ -173,6 +174,8 @@ As for now, we provide images for x86 architecture and for Jetson hardware.
    advanced_topics/4_etcd
    advanced_topics/6_chaining
    advanced_topics/8_ext_systems
+   advanced_topics/9_dev_server
+   advanced_topics/9_open_telemetry
    advanced_topics/9_input_json_metadata
 
 .. toctree::

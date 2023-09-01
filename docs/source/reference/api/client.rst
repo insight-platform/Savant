@@ -1,9 +1,61 @@
-Client
-======
+Client SDK
+==========
 
-Source/Sink framework for development and QA purposes. You can send frames to the module and receive results with this framework.
+Client SDK is a Python library enabling developing sources and sinks in a simplified way with pure Python. The SDK allows ingesting frames and their metadata to a running module and receiving the results from a running module.
 
-Source usage example:
+The SDK is developed to solve the following needs:
+
+- develop integration tests for Pipelines (QA);
+- implement custom source adapters without deep understanding of streaming technology;
+- implement custom sink adapters without deep understanding of streaming technology;
+- remote development.
+
+OpenTelemetry in Client SDK
+---------------------------
+
+Savant supports OpenTelemetry for collecting traces and logs. Frames, delivered to a module, can optionally include OpenTelemetry propagated information, which allows instrumenting pipelines precisely.
+
+.. note::
+
+    In practice, we recommend using sampled OpenTelemetry traces; however, Client SDK creates a trace for every single frame sent to the module.
+
+Client SDK integrates with OpenTelemetry, which means that every time a frame is sent to a module, it contains a new trace, thus the trace causes the module to instrument its internal parts, creating necessary OpenTelemetry spans in the pipeline, including pyfuncs. The developer can create auxiliary spans within her code to find out what happens. Please, refer to :doc:`/advanced_topics/9_open_telemetry` for details.
+
+During the frame processing ongoing logs are attached to the currently active span and thus collected and associated with a specific trace. The developer also can attach additional information to the trace by calling corresponding span `methods <https://insight-platform.github.io/savant-rs/modules/savant_rs/utils.html#savant_rs.utils.TelemetrySpan>`_.
+
+When the frame is sent, the :py:class:`runner.source.SourceResult` is returned. The developer can retrieve the `trace_id` from it for matching sent and delivered frames.
+
+.. note::
+
+    The `trace_id` can also be used to observe the trace in the Opentelemetry management system like Jaeger.
+
+When the frame processing result is retrieved from the module, the developer can request the frame, metadata and logs collected by OpenTelemetry.
+
+Currently we support only Jaeger OpenTelemetry collector. Logs are fetched from Jaeger REST API.
+
+Remote Development
+------------------
+
+Client SDK enables remote development, allowing running programmatic sources and sinks locally, while processing the data remotely. It can be convenient in the  following cases:
+
+- develop on a host machine without GPU;
+- develop on remote hardware with no KVM access (e.g. Jetson or dGPU in a datacenter).
+
+To utilize the full power of Client SDK it must be paired with:
+
+- :doc:`/advanced_topics/9_open_telemetry`
+- :doc:`/advanced_topics/9_dev_server`
+
+To find out more, explore :doc:`/getting_started/3_remote_development_guide`.
+
+Source Example
+--------------
+
+Sources ingest frames and their metadata to a running module.
+
+.. note::
+
+    Currently, Client SDK supports only JPEG source, but you can implement your own source based on :py:class:`JpegSource`.
 
 .. code-block:: python
 
@@ -29,7 +81,11 @@ Source usage example:
     time.sleep(1)  # Wait for the module to process the frame
     result.logs().pretty_print()
 
-Sink usage example:
+
+Sink Example
+------------
+
+Sinks retrieve results from a module.
 
 .. code-block:: python
 
