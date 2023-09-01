@@ -1,5 +1,4 @@
 """GStreamer pipeline runner class."""
-import logging
 import os
 import threading
 from datetime import timedelta
@@ -8,9 +7,11 @@ from typing import Optional, Union
 
 from gi.repository import GLib, Gst  # noqa:F401
 
+from savant.utils.logging import get_logger
+
 from .pipeline import GstPipeline
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class StateChangeError(Exception):
@@ -91,7 +92,8 @@ class GstPipelineRunner:
         end_time = time()
         exec_seconds = end_time - start_time
         logger.info(
-            'Pipeline starting ended after %s.', timedelta(seconds=exec_seconds)
+            'The pipeline is initialized and ready to process data. Initialization took %s.',
+            timedelta(seconds=exec_seconds),
         )
 
         self._start_time = end_time
@@ -100,7 +102,7 @@ class GstPipelineRunner:
         """Stops pipeline."""
         logger.debug('shutdown() called.')
         if not self._is_running:
-            logger.debug('Pipeline is shut down already.')
+            logger.debug('The pipeline is shutting down already.')
             return
 
         self._is_running = False
@@ -118,7 +120,8 @@ class GstPipelineRunner:
 
         exec_seconds = time() - self._start_time
         logger.info(
-            'Pipeline execution ended after %s.', timedelta(seconds=exec_seconds)
+            'The pipeline is about to stop. Operation took %s.',
+            timedelta(seconds=exec_seconds),
         )
 
         if isinstance(self._pipeline, GstPipeline):

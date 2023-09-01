@@ -1,9 +1,9 @@
 """Inotify manager module."""
-import logging
 from collections import defaultdict
 
 from inotify_simple import INotify, flags
 
+from savant.utils.logging import get_logger
 from savant.utils.singleton import SingletonMeta
 
 
@@ -13,7 +13,7 @@ class INotifyManager(metaclass=SingletonMeta):
     """
 
     def __init__(self) -> None:
-        self.logger = logging.getLogger(__name__)
+        self.logger = get_logger(__name__)
         self.inotify = INotify()
         self.watch_flags = flags.MODIFY
 

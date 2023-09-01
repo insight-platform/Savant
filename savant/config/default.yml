@@ -122,6 +122,10 @@ parameters:
   # and reloaded in case changes are detected
   dev_mode: ${oc.decode:${oc.env:DEV_MODE, False}}
 
+  # Shutdown authorization key. If set, module will shutdown when it receives
+  # a Shutdown message with this key.
+  # shutdown_auth: "shutdown-auth"
+
 
 # pipeline definition
 pipeline:

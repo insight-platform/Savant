@@ -30,6 +30,8 @@ class ZeroMQSourceBin(LoggerMixin, Gst.Bin):
         **SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES,
     }
 
+    __gsignals__ = {'shutdown': (GObject.SignalFlags.RUN_LAST, None, ())}
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -47,6 +49,7 @@ class ZeroMQSourceBin(LoggerMixin, Gst.Bin):
         assert self._queue.link(self._decodebin)
         self._decodebin.connect('pad-added', self.on_pad_added)
         self._decodebin.connect('pad-removed', self.on_pad_removed)
+        self._decodebin.connect('shutdown', self.on_shutdown)
 
     def do_get_property(self, prop):
         """Gst plugin get property function.
@@ -88,6 +91,15 @@ class ZeroMQSourceBin(LoggerMixin, Gst.Bin):
             if ghost_pad.get_name() == pad.get_name():
                 self.remove_pad(ghost_pad)
                 return
+
+    def on_shutdown(self, element: Gst.Element):
+        """Handle shutdown signal."""
+
+        self.logger.info(
+            'Received shutdown signal from %s. Passing it downstream.',
+            element.get_name(),
+        )
+        self.emit('shutdown')
 
 
 # register plugin
