@@ -1,2 +1,5 @@
 # pyds
 pyds @ https://github.com/NVIDIA-AI-IOT/deepstream_python_apps/releases/download/v1.1.8/pyds-1.1.8-py3-none-linux_aarch64.whl
+
+# ffmpeg-input
+ffmpeg-input @ https://github.com/insight-platform/FFmpeg-Input/releases/download/0.1.19/ffmpeg_input-0.1.19-cp38-cp38-linux_aarch64.whl

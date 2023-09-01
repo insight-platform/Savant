@@ -77,8 +77,6 @@ FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_BASE_IMAGE AS base_amd64
 
 # Savant arm64 base container
 FROM nvcr.io/nvidia/deepstream-l4t:$DEEPSTREAM_BASE_IMAGE AS base_arm64
-# workaround to avoid problem with libgomp.so (cannot allocate memory in static TLS block)
-ENV LD_PRELOAD=/usr/local/lib/python3.8/dist-packages/ffmpeg_input.libs/libgomp-50ff2515.so.1:$LD_PRELOAD
 
 
 # Savant base container
@@ -101,6 +99,14 @@ RUN apt-get update \
         gstreamer1.0-python3-plugin-loader \
     && apt-get install --reinstall -y \
         gstreamer1.0-plugins-ugly \
+        libavutil56 \
+        libavformat58 \
+        libavfilter7 \
+        libavdevice58 \
+        libavcodec58 \
+        libvpx6 \
+        libx265-179 \
+        libmpg123-0 \
         libx264-155 \
     && apt-get autoremove -y \
     && apt-get clean \
