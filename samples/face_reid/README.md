@@ -37,15 +37,15 @@ git lfs pull
 
 Note, there is a bug in the nvv4l2decoder on the Jetson platform so the example currently does not work correctly on that platform. See https://github.com/insight-platform/Savant/issues/314
 
-To build the face reid index, start the `index-builder` container and wait for it to complete initialization.
+To build the face reid index, start the `index-builder` and create the `pictures-source` containers and wait for them to complete building the index.
 
 ```bash
 # if x86
-docker compose -f docker-compose.x86.yml up index-builder
+docker compose -f docker-compose.x86.yml up
 
 # if Jetson
 # currently not supported
-docker compose -f docker-compose.l4t.yml up index-builder
+docker compose -f docker-compose.l4t.yml up
 ```
 
 First startup can take several minutes as the module needs to convert ONNX models into TRT format. Successful module start is indicated by a log message like
@@ -54,16 +54,8 @@ First startup can take several minutes as the module needs to convert ONNX model
 INFO ... > The pipeline is initialized and ready to process data...
 ```
 
-Next, run the `pictures-source` container
+After than the `pictures-source` container will be started automatically.
 
-```bash
-# if x86
-docker compose -f docker-compose.x86.yml up pictures-source
-
-# if Jetson
-# currently not supported
-docker compose -f docker-compose.l4t.yml up pictures-source
-```
 
 Index Builder module does not stop automatically and requires manual exit. It is safe to do so once the `face_reid-pictures-source` container exits and `face_reid-index-builder` container logs the message following messages (assuming the default gallery image set)
 

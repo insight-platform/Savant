@@ -1,5 +1,6 @@
 """Module entrypoint function."""
 import os
+from pathlib import Path
 
 from savant.config import ModuleConfig
 from savant.deepstream.encoding import check_encoder_is_available
@@ -15,6 +16,14 @@ def main(config_file_path: str):
 
     :param config_file_path: Module configuration file path.
     """
+
+    status_filepath = os.environ.get('SAVANT_STATUS_FILEPATH')
+    if status_filepath is not None:
+        status_filepath = Path(status_filepath)
+        if status_filepath.exists():
+            status_filepath.unlink()
+        status_filepath.parent.mkdir(parents=True, exist_ok=True)
+
     # load default.yml and set up logging
     config = ModuleConfig().config
 
@@ -43,7 +52,7 @@ def main(config_file_path: str):
     )
 
     try:
-        with NvDsPipelineRunner(pipeline):
+        with NvDsPipelineRunner(pipeline, status_filepath):
             try:
                 for msg in pipeline.stream():
                     sink(msg, **dict(module_name=config.name))
