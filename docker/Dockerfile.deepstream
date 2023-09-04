@@ -146,6 +146,12 @@ COPY scripts/uri-input.py scripts/
 ENV PATH=$PROJECT_PATH/scripts:$PATH
 ENV GST_PLUGIN_PATH=$PROJECT_PATH/gst_plugins:$PROJECT_PATH/adapters/gst/gst_plugins
 
+# Needed a script for healthcheck, because HEALTHCHECK command does not accept ENV
+COPY healthcheck.sh ./
+ENV SAVANT_STATUS_FILEPATH=$PROJECT_PATH/status.txt
+HEALTHCHECK --interval=5s --timeout=5s --start-period=30m --retries=3 \
+    CMD [ "sh", "healthcheck.sh" ]
+
 ENTRYPOINT ["python", "-m", "savant.entrypoint"]
 
 
@@ -161,6 +167,8 @@ RUN wget --progress=bar:force:noscroll \
 
 FROM base AS adapters
 
+HEALTHCHECK NONE
+
 COPY --from=mediamtx /mediamtx/mediamtx mediamtx/mediamtx
 COPY adapters/ds adapters/ds
 ENV GST_PLUGIN_PATH=$GST_PLUGIN_PATH:$PROJECT_PATH/adapters/ds/gst_plugins
@@ -169,6 +177,8 @@ ENTRYPOINT []
 
 
 FROM base AS docs
+
+HEALTHCHECK NONE
 
 RUN apt update && apt install --no-install-recommends -y \
     graphviz && \
