@@ -44,40 +44,20 @@ services:
               count: 1
               capabilities: [gpu]
 
-  always-on-sink-city-traffic:
+  always-on-sink:
     image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
     restart: unless-stopped
     ports:
-      - "8881:888"    # HLS
+      - "554:554"    # RTSP
+      - "1935:1935"  # RTMP
+      - "888:888"    # HLS
+      - "8889:8889"  # WebRTC
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../assets/stub_imgs:/stub_imgs
     environment:
       - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
-      - SOURCE_ID=city-traffic
-      - FRAMERATE=25/1
-      - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x720.jpeg
-      - DEV_MODE=True
-    command: python -m adapters.ds.sinks.always_on_rtsp
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-
-  always-on-sink-town-centre:
-    image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
-    restart: unless-stopped
-    ports:
-      - "8882:888"    # HLS
-    volumes:
-      - zmq_sockets:/tmp/zmq-sockets
-      - ../assets/stub_imgs:/stub_imgs
-    environment:
-      - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
-      - SOURCE_ID=town-centre
+      - SOURCE_IDS=city-traffic,town-centre
       - FRAMERATE=25/1
       - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x720.jpeg
       - DEV_MODE=True
