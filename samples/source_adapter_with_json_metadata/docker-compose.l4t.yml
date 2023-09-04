@@ -3,8 +3,6 @@ services:
 
   image-json-source:
     image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:latest
-    depends_on:
-      - module
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../data/source_adapter_with_json_metadata:/data/
@@ -15,6 +13,9 @@ services:
       - LOCATION=/data
       - FILE_TYPE=picture
     entrypoint: /opt/savant/adapters/gst/sources/media_files.sh
+    depends_on:
+      module:
+        condition: service_healthy
 
   module:
     build:

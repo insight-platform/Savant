@@ -17,3 +17,11 @@ The file introduces several services:
 - ``always-on-sink``: the adapter that receives the results of video analytics and represents them as RTSP or HLS stream.
 
 In the following sections, we dive into the details of modules and explain what the adapters are and how do they communicate with modules.
+
+The Savant module image provides a healthcheck to indicate when the module is ready to receive video frames. You can use it to start a source adapter only when the module is ready to receive frames by adding ``depends_on`` section to the source adapter service in the docker compose file:
+
+.. code-block:: yaml
+
+    depends_on:
+      module:
+        condition: service_healthy
