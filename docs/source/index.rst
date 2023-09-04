@@ -12,11 +12,11 @@ Welcome To Savant Documentation
 Why Savant Was Developed?
 -------------------------
 
-Why do we develop Savant if DeepStream solves the problem? Because DeepStream is a very tough and challenging to use technology.
+We developed it to give deep learning and computer vision engineers a pipeline development framework that is both easy-to-use and implements the best Nvidia technologies.
 
-The root cause is that DeepStream is a bunch of plug-ins for Gstreamer - the open-source multimedia framework for building highly-efficient streaming applications. It makes developing more or less sophisticated DeepStream applications very difficult because the developer must understand how the Gstreamer processes the data, making the learning curve steep and almost unreachable for ML engineers focused on model training.
+Savant is a high-level framework on Nvidia `DeepStream SDK <https://developer.nvidia.com/deepstream-sdk>`_, which hides complexity and provides practical functions for implementing blazingly fast streaming AI applications.
 
-Savant is a very high-level framework over the DeepStream, which hides all the Gstreamer internals from the developer and provides practical tools for implementing real-life streaming AI applications. So, you implement your inference pipeline as a set of declarative (YAML) blocks with several user-defined functions in Python (and C/C++ if you would like to utilize most of the CUDA runtime).
+In Savant, the pipeline is a sequence of declarative (YAML) blocks with user-defined functions in Python.
 
 Key Features
 ------------
@@ -126,9 +126,8 @@ Savant supports processing parallelization; it helps to utilize the available re
    :caption: Getting Started
 
    getting_started/0_configure_prod_env
-   getting_started/0_configure_dev_env
-   getting_started/0_configure_doc_env
-   getting_started/3_remote_development_guide
+   getting_started/1_configure_dev_env
+   getting_started/2_module_devguide
 
 
 .. toctree::
@@ -190,6 +189,13 @@ Savant supports processing parallelization; it helps to utilize the available re
    :caption: Reference
 
    reference/api/index
+
+.. toctree::
+   :maxdepth: 0
+   :hidden:
+   :caption: Savant Development
+
+   savantdev/0_configure_doc_env
 
 
 .. Indices and tables

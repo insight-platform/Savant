@@ -25,7 +25,7 @@ Or in the project template:
   :linenos:
   :caption:
   :emphasize-lines: 2,6,21,25
-  :lines: 24-42, 103-112
+  :lines: 23-40, 102-110
 
 The last listing shows default ZeroMQ-based source and sink elements commented. If the source and sink definitions are omitted, such commented elements are actually used.
 

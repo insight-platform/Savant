@@ -46,7 +46,7 @@ To utilize the full power of Client SDK it must be paired with:
 - :doc:`/advanced_topics/9_open_telemetry`
 - :doc:`/advanced_topics/9_dev_server`
 
-To find out more, explore :doc:`/getting_started/3_remote_development_guide`.
+To find out more, explore :doc:`/getting_started/2_module_devguide`.
 
 Source Example
 --------------

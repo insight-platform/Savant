@@ -25,6 +25,7 @@ run:
 	docker run -it --rm $(DOCKER_RUNTIME) \
 		-v $(shell pwd)/models_cache:/models \
 		-v $(shell pwd)/downloads_cache:/downloads \
+		-v $(shell pwd)/module:$(PROJECT_PATH)/module \
 		$(IMAGE_NAME)
 
 # run module in dev mode

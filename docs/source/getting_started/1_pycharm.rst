@@ -2,14 +2,14 @@
 PyCharm Professional
 ====================
 
-You can rely on the official documentation on configuring a `docker <https://www.jetbrains.com/help/pycharm/using-docker-as-a-remote-interpreter.html>`_  interpreter, but there are caveats. Below, is a modified configuration guide with screenshots and comments helping you to get started quickly.
+The official documentation on configuring a `docker <https://www.jetbrains.com/help/pycharm/using-docker-as-a-remote-interpreter.html>`_  interpreter is pretty complete, but there are caveats. Below, you will find an improved configuration guide helping you to set up the runtime quickly.
 
-The instruction is created and tested in PyCharm 2023.1 **Professional**.
+The guide tested with PyCharm 2023.1 Professional.
 
 Project Preparation
 -------------------
 
-#. Clone the Savant repo:
+#. Clone the repo:
 
     .. code-block:: bash
 
@@ -21,7 +21,7 @@ Project Preparation
 
         cp -r Savant/samples/template my-module
 
-#. Run the IDE and open a new project in the ``my-module`` directory.
+#. Start the IDE and create a new project in the ``my-module`` directory.
 
 #. When opening the project, skip the step related to the environment creation: click **Cancel** on **Creating Virtual Environment**:
 
@@ -81,11 +81,11 @@ The ``run.py`` file is the entrypoint of the module, let's configure the launch 
 
     .. image:: ../_static/img/dev-env/10-run-output-1.png
 
-#. You may see various GStreamer error messages: it's ok. At the end you will see pipeline's output with metadata:
+#. You may see various GStreamer error messages: it's ok. At the end you will see the output with metadata:
 
     .. image:: ../_static/img/dev-env/11-run-output-2.png
 
-That's it, the environment is set up. Now you are ready to develop your own pipeline: modify the module config (``module/module.yaml``), add your own components, etc.
+That's it, the environment is set up. Now you are ready to develop your own pipeline. See the next section to find out how.
 
 Notes
 -----

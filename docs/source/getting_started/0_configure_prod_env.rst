@@ -1,17 +1,17 @@
 Configure The Production Environment
 ====================================
 
-Savant modules and adapters are executed in the docker environment. This document describes how to configure the dockerized runtime.
+The section discusses how to configure the host system for Savant modules execution. Savant modules and adapters are run in the docker environment. This document describes how to configure the dockerized runtime.
 
-General Compatibility Notes
----------------------------
+General Information
+-------------------
 
-**Savant does not support 1st-gen Jetson Nano due to the outdated software stack supported by the device.**
+**Jetson Nano 1st Gen:** Savant does not support 1st-gen Jetson Nano due to the outdated software stack supported by the device.
 
-:repo-link:`Savant` runs on top of DeepStream ecosystem, therefore, it requires DeepStream's dependencies to be satisfied:
+:repo-link:`Savant` runs on top of DeepStream ecosystem, therefore, it requires DeepStream dependencies to be satisfied:
 
-* Docker with Compose, R525+ display driver for dGPU platform;
-* Docker with Compose, Jetpack 5.1 GA on Jetson AGX Xavier/ NX, Orin Family.
+* Docker with Compose, Nvidia GPU drivers R525 (data center hardware), 530+ professional and desktop hardware;
+* Docker with Compose, Jetpack 5.1.2 GA on Jetson AGX Xavier/ NX, Orin Family.
 
 You can look for detailed environment setup instructions in the Nvidia `Quickstart Guide <https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_Quickstart.html#quickstart-guide>`_.
 
@@ -20,12 +20,12 @@ The recommended spare space in a filesystem where docker images are stored is **
 Nvidia Jetson
 -------------
 
-An Nvidia Jetson device is ready to run Savant after installing the system.
+An Nvidia Jetson device is ready to run Savant after setup.
 
 Ubuntu 22.04
 ------------
 
-At the current moment, we provide the instruction on how to configure Ubuntu 22.04 runtime. If you have other operation system than Ubuntu, please adapt the instructions to your OS.
+At the current moment, we provide the instruction on how to configure Ubuntu 22.04 runtime. If you use another operation system, adapt the instructions to your OS.
 
 Update Packages and Install Basic Tools
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

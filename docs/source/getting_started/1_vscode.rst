@@ -53,3 +53,5 @@ Reopen in container
 #. Launch the module by opening the ``run.py`` script and choosing **Terminal > Run Active File** or by clicking the ``Run and Debug`` icon in the Activity Bar.  At the end you will see pipeline's output with metadata:
 
     .. image:: ../_static/img/dev-env/16-run-python-file.png
+
+That's it, the environment is set up. Now you are ready to develop your own pipeline. See the next section to find out how.
