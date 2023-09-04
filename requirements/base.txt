@@ -27,7 +27,3 @@ protobuf<3.21
 requests~=2.27
 boto3~=1.23
 tqdm~=4.64
-
-# TODO: Add platform_machine specific packages?
-#  eg. pyds @ ..; platform_machine == 'x86_64'
-#  !!! pyds requires cairo, this will cause a problem with `pip install savant` locally

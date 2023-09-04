@@ -80,7 +80,6 @@ FROM nvcr.io/nvidia/deepstream-l4t:$DEEPSTREAM_BASE_IMAGE AS base_arm64
 
 
 # Savant base container
-ARG TARGETARCH
 FROM base_${TARGETARCH} AS base
 ARG TARGETARCH
 ARG DEEPSTREAM_VERSION
@@ -134,34 +133,25 @@ RUN wget -qO- \
     && dpkg -i OpenCV* \
     && rm OpenCV*
 
-COPY requirements requirements
-
-RUN if [ "$TARGETARCH" = "amd64" ]; then \
-      python -m pip install --no-cache-dir -r requirements/deepstream.txt; \
-    elif [ "$TARGETARCH" = "arm64" ]; then \
-      python -m pip install --no-cache-dir -r requirements/deepstream-l4t.txt; \
-    fi
-
+COPY requirements/base.txt requirements/base.txt
 RUN python -m pip install --no-cache-dir -r requirements/base.txt
 
-RUN python -m pip install --no-cache-dir -r requirements/savant-rs.txt
-
-RUN rm -r requirements
+COPY requirements/ext.txt requirements/ext.txt
+RUN python -m pip install --no-cache-dir -r requirements/ext.txt
 
 COPY --from=savantboost_build /libs/savanboost/dist /libs/savanboost/dist
 RUN python -m pip install --no-cache-dir /libs/savanboost/dist/*.whl
+
+COPY requirements/savant-rs.txt requirements/savant-rs.txt
+RUN python -m pip install --no-cache-dir -r requirements/savant-rs.txt
+
+RUN rm -r requirements
 
 COPY --from=pygstsavantframemeta_build /libs/gstsavantframemeta/dist /libs/gstsavantframemeta/dist
 RUN python -m pip install --no-cache-dir /libs/gstsavantframemeta/dist/*.whl
 
 COPY --from=savant_build /tmp/build/dist /libs/savant/dist
 RUN python -m pip install --no-cache-dir /libs/savant/dist/*.whl
-
-RUN rm -r /libs
-
-# remove samples to reduce image size (~1Gb)
-#RUN rm -r /opt/nvidia/deepstream/deepstream/sources \
-#    /opt/nvidia/deepstream/deepstream/samples
 
 # add framework content
 COPY LICENSE .

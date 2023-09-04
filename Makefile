@@ -17,7 +17,7 @@ endif
 PROJECT_PATH := /opt/savant
 
 build:
-	DOCKER_BUILDKIT=1 docker buildx build \
+	docker buildx build \
 		--platform $(PLATFORM) \
 		--target base \
 		--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
@@ -26,7 +26,7 @@ build:
 	#docker tag savant-deepstream$(PLATFORM_SUFFIX) ghcr.io/insight-platform/savant-deepstream$(PLATFORM_SUFFIX)
 
 build-adapters-deepstream:
-	DOCKER_BUILDKIT=1 docker buildx build \
+	docker buildx build \
 		--platform $(PLATFORM) \
 		--target adapters \
 		--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
@@ -35,14 +35,14 @@ build-adapters-deepstream:
 	#docker tag savant-adapters-deepstream$(PLATFORM_SUFFIX) ghcr.io/insight-platform/savant-adapters-deepstream$(PLATFORM_SUFFIX)
 
 build-adapters-gstreamer:
-	DOCKER_BUILDKIT=1 docker buildx build \
+	docker buildx build \
 		--platform $(PLATFORM) \
 		-f docker/Dockerfile.adapters-gstreamer \
 		-t savant-adapters-gstreamer$(PLATFORM_SUFFIX) .
 	#docker tag savant-adapters-gstreamer$(PLATFORM_SUFFIX) ghcr.io/insight-platform/savant-adapters-gstreamer$(PLATFORM_SUFFIX)
 
 build-adapters-py:
-	DOCKER_BUILDKIT=1 docker buildx build \
+	docker buildx build \
 		--platform $(PLATFORM) \
 		-f docker/Dockerfile.adapters-py \
 		-t savant-adapters-py$(PLATFORM_SUFFIX) .
@@ -51,7 +51,7 @@ build-adapters-py:
 build-adapters-all: build-adapters-py build-adapters-gstreamer build-adapters-deepstream
 
 build-docs:
-	DOCKER_BUILDKIT=1 docker build \
+	docker buildx build \
 		--target docs \
 		--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
 		--build-arg USER_UID=`id -u` \
