@@ -72,7 +72,7 @@ def get_logger(name: str) -> logging.Logger:
     :return: Logger instance.
     """
     # prevent modules from the main savant package having savant.savant prefix
-    logger_name = '.'.join((LOGGING_PREFIX, name)).replace('savant.savant', 'savant')
+    logger_name = '.'.join((LOGGING_PREFIX, name)).replace('savant.savant.', 'savant.')
     return logging.getLogger(logger_name)
 
 

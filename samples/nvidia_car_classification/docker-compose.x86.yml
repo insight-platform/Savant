@@ -14,6 +14,9 @@ services:
       - SOURCE_ID=nvidia-sample-processed
       - SYNC_OUTPUT=True
     entrypoint: /opt/savant/adapters/gst/sources/video_loop.sh
+    depends_on:
+      module:
+        condition: service_healthy
 
   module:
     image: ghcr.io/insight-platform/savant-deepstream:latest

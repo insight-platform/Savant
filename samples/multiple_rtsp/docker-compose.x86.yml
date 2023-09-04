@@ -11,6 +11,9 @@ services:
       - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
       - SOURCE_ID=city-traffic
     entrypoint: /opt/savant/adapters/gst/sources/rtsp.sh
+    depends_on:
+      module:
+        condition: service_healthy
 
   rtsp-town-centre:
     image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
@@ -22,6 +25,9 @@ services:
       - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
       - SOURCE_ID=town-centre
     entrypoint: /opt/savant/adapters/gst/sources/rtsp.sh
+    depends_on:
+      module:
+        condition: service_healthy
 
   module:
     image: ghcr.io/insight-platform/savant-deepstream:latest
