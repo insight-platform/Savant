@@ -431,7 +431,7 @@ def nvinfer_element_configurator(
             except ValueError as exc:
                 _, obj_id = get_object_id(element_config.name, obj.label)
                 logger.debug(
-                    'Object label "%s" already registerd for id %s. Merging id %s into id %s.',
+                    'Object label "%s" already registered for id %s. Merging id %s into id %s.',
                     obj.label,
                     obj_id,
                     obj.class_id,
