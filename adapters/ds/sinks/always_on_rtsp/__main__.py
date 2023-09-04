@@ -1,14 +1,19 @@
+"""Entrypoint for Always-On-RTSP sink."""
+
 import os
 from distutils.util import strtobool
 from pathlib import Path
 from subprocess import Popen, TimeoutExpired
+from threading import Thread
 from typing import Dict, List, Optional
 
 from adapters.ds.sinks.always_on_rtsp.config import opt_config
+from adapters.ds.sinks.always_on_rtsp.zeromq_proxy import ZeroMqProxy
 from savant.deepstream.encoding import check_encoder_is_available
 from savant.gstreamer import Gst
 from savant.gstreamer.codecs import Codec
 from savant.utils.logging import get_logger, init_logging
+from savant.utils.zeromq import ReceiverSocketTypes
 
 LOGGER_NAME = 'adapters.ao_sink.entrypoint'
 logger = get_logger(LOGGER_NAME)
@@ -22,6 +27,14 @@ class Config:
         assert (
             self.source_id or self.source_ids
         ), 'Either "SOURCE_ID" or "SOURCE_IDS" must be set.'
+
+        self.zmq_endpoint = os.environ['ZMQ_ENDPOINT']
+        self.zmq_socket_type = opt_config(
+            'ZMQ_TYPE',
+            ReceiverSocketTypes.SUB,
+            ReceiverSocketTypes.__getitem__,
+        )
+        self.zmq_socket_bind = opt_config('ZMQ_BIND', False, strtobool)
 
         self.rtsp_uri = opt_config('RTSP_URI')
         if self.dev_mode:
@@ -45,6 +58,21 @@ def main():
     ):
         return
 
+    if not config.source_id:
+        internal_socket = 'ipc:///tmp/ao-sink-internal-socket.ipc'
+        internal_zmq_endpoint = f'sub+connect:{internal_socket}'
+        zmq_proxy = ZeroMqProxy(
+            input_socket=config.zmq_endpoint,
+            input_socket_type=config.zmq_socket_type,
+            input_bind=config.zmq_socket_bind,
+            output_socket=internal_socket,
+        )
+        zmq_proxy.start()
+        zmq_proxy_thread = Thread(target=zmq_proxy.run, daemon=True)
+        zmq_proxy_thread.start()
+    else:
+        internal_zmq_endpoint = config.zmq_endpoint
+
     if config.dev_mode:
         mediamtx_process = Popen(
             [
@@ -61,13 +89,18 @@ def main():
 
     if config.source_id:
         ao_sink_processes = {
-            config.source_id: run_ao_sink_process(config.source_id, config.rtsp_uri)
+            config.source_id: run_ao_sink_process(
+                config.source_id,
+                config.rtsp_uri,
+                internal_zmq_endpoint,
+            )
         }
     else:
         ao_sink_processes = {
             source_id: run_ao_sink_process(
                 source_id,
                 f'{config.rtsp_uri.rstrip("/")}/{source_id}',
+                internal_zmq_endpoint,
             )
             for source_id in config.source_ids
         }
@@ -94,10 +127,15 @@ def main():
         logger.info('MediaMTX terminated. Exit code: %s.', mediamtx_process.returncode)
 
 
-def run_ao_sink_process(source_id: str, rtsp_uri: str):
+def run_ao_sink_process(source_id: str, rtsp_uri: str, zmq_endpoint: str):
     ao_sink_process = Popen(
         ['python', '-m', 'adapters.ds.sinks.always_on_rtsp.ao_sink'],
-        env={**os.environ, 'SOURCE_ID': source_id, 'RTSP_URI': rtsp_uri},
+        env={
+            **os.environ,
+            'SOURCE_ID': source_id,
+            'RTSP_URI': rtsp_uri,
+            'ZMQ_ENDPOINT': zmq_endpoint,
+        },
     )
     logger.info('Started Always-On-RTSP, PID: %s', ao_sink_process.pid)
     if ao_sink_process.returncode is not None:

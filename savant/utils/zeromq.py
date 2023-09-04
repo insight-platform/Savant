@@ -13,7 +13,6 @@ from .re_patterns import socket_options_pattern, socket_uri_pattern
 
 logger = get_logger(__name__)
 
-
 CONFIRMATION_MESSAGE = b'OK'
 END_OF_STREAM_MESSAGE = b'EOS'
 
@@ -167,8 +166,8 @@ class ZeroMQSource:
             set_ipc_socket_permissions(self.socket)
         self.is_alive = True
 
-    def next_message(self) -> Optional[List[bytes]]:
-        """Try to receive next message."""
+    def next_message_without_routing_id(self) -> Optional[List[bytes]]:
+        """Try to receive next message without routing ID but with topic."""
         if not self.is_alive:
             raise RuntimeError('ZeroMQ source is not started.')
 
@@ -193,8 +192,8 @@ class ZeroMQSource:
         if self._always_respond:
             self.receiver.send(CONFIRMATION_MESSAGE)
 
-        topic, *data = message
-        if not data:
+        topic = message[0]
+        if len(message) < 2:
             raise RuntimeError(f'ZeroMQ message from topic {topic} does not have data.')
 
         if self.topic_prefix and not topic.startswith(self.topic_prefix):
@@ -206,7 +205,13 @@ class ZeroMQSource:
             return
 
         if self.routing_id_filter.filter(routing_id, topic):
-            return data
+            return message
+
+    def next_message(self) -> Optional[List[bytes]]:
+        """Try to receive next message."""
+        message = self.next_message_without_routing_id()
+        if message is not None:
+            return message[1:]
 
     def __iter__(self):
         return self
