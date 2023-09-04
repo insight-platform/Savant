@@ -30,6 +30,7 @@ from savant.base.pyfunc import PyFuncNoopCallException
 from savant.config.schema import FrameParameters, ModelElement, PipelineElement
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
 from savant.deepstream.nvinfer.model import NvInferAttributeModel, NvInferDetector
+from savant.deepstream.nvinfer.element_config import MERGED_CLASSES
 from savant.deepstream.source_output import (
     SourceOutput,
     SourceOutputEncoded,
@@ -694,6 +695,19 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                                 obj_label = build_model_object_key(
                                     element.name, obj.label
                                 )
+                                obj_cls_id = MERGED_CLASSES[element.name].get(
+                                    obj.class_id
+                                )
+                                if obj_cls_id is None:
+                                    obj_cls_id = obj.class_id
+                                elif self.logger.isEnabledFor(logging.TRACE):
+                                    self.logger.trace(
+                                        'Updating %s custom objs id %s -> %s, label "%s".',
+                                        len(cls_bbox_tensor),
+                                        obj.class_id,
+                                        obj_cls_id,
+                                        obj_label,
+                                    )
                                 for bbox in cls_bbox_tensor:
                                     # add NvDsObjectMeta
                                     if self.logger.isEnabledFor(logging.TRACE):
@@ -706,7 +720,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                                         nvds_batch_meta,
                                         nvds_frame_meta,
                                         selection_type,
-                                        obj.class_id,
+                                        obj_cls_id,
                                         model_uid,
                                         bbox[2:7],
                                         bbox[1],
@@ -747,6 +761,18 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                     if nvds_obj_meta.unique_component_id == model_uid:
                         for obj in model.output.objects:
                             if nvds_obj_meta.class_id == obj.class_id:
+                                obj_cls_id = MERGED_CLASSES[element.name].get(
+                                    obj.class_id
+                                )
+                                if obj_cls_id is not None:
+                                    if self.logger.isEnabledFor(logging.TRACE):
+                                        self.logger.trace(
+                                            'Updating regular obj id %s -> %s, label "%s".',
+                                            obj.class_id,
+                                            obj_cls_id,
+                                            obj.label,
+                                        )
+                                    nvds_obj_meta.class_id = obj_cls_id
                                 nvds_set_obj_selection_type(
                                     obj_meta=nvds_obj_meta,
                                     selection_type=ObjectSelectionType.REGULAR_BBOX,
