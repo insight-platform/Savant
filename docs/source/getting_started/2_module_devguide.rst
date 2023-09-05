@@ -29,8 +29,8 @@ The above-mentioned auxiliary technology is `OpenTelemetry <https://opentelemetr
 
 Let us observe basic operations you may encounter during the pipeline development and our approach to carry on them efficiently.
 
-Typical Code Layout
--------------------
+Recommended Module Layout
+-------------------------
 
 Small and medium-size pipelines can have a flat layout with all the components placed in a single directory. You can find a number of such pipelines in `samples <https://github.com/insight-platform/Savant/tree/develop/samples>`_ directory.
 
@@ -106,7 +106,7 @@ Also you can do it from the CLI like:
 
 Use IDEs controls to stop the module as usual.
 
-You need to use hard restarts when introducing changes in the module's YAML manifest. The YAML manifest corresponds to the pipeline; Savant does not implement rebuilding the pipeline on change.
+You must use hard restarts when introducing changes in the module’s YAML manifest. The YAML manifest corresponds to the pipeline; Savant does not implement rebuilding the pipeline on change.
 
 These starts/stops are time-consuming; we recommend building the development process to decrease the number of such restarts. From our perspective, it can be achieved by development iteratively (from the pipeline beginning to the pipeline end) following the waterfall principle.
 
@@ -114,39 +114,12 @@ These starts/stops are time-consuming; we recommend building the development pro
 
     We recommend avoiding the approach of defining the whole pipeline from scratch and debugging it end-to-end as a whole: it may be a very time-consuming and error-prone process. Define and troubleshoot pipeline stages one-by-one following the waterfall principle.
 
-DevServer Mode
---------------
+.. include:: /advanced_topics/9_dev_server.rst
 
-- how to enable dev server, what it does
-- how to disable dev server, after the development is complete
-- limitations (only python code, not yaml or other resources)
+.. include:: /advanced_topics/9_open_telemetry.rst
 
-Configure OpenTelemetry
------------------------
+.. include:: /advanced_topics/10_client_sdk.rst
 
-- why we need OTLP
-- main features (traces, spans, code instrumenting with spans, logs, events)
-- how to configure OTLP and why you may need it
-- sampled OTLP for production
-- run Jaeger
-
-Using Client SDK
-----------------
-
-Demonstrate Client SDK, show how to work with the module from the client SDK and OpenCV.
-
-Show how to view logs with:
-
-- module console
-- client SDK logs
-- Jaeger Web UI
-
-Show how dev server works when:
-
-- pyfunc is incorrect
-- how the code reloads
-
-Show how to access resulting metadata
 
 Using uri-input.py Script
 -------------------------
@@ -154,3 +127,6 @@ Using uri-input.py Script
 Read from web cam, display with AO-RTSP, meta with Client SDK.
 
 Summary
+-------
+
+TODO

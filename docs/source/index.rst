@@ -175,6 +175,7 @@ Savant supports processing parallelization; it helps to utilize the available re
    advanced_topics/9_dev_server
    advanced_topics/9_open_telemetry
    advanced_topics/9_input_json_metadata
+   advanced_topics/10_client_sdk
 
 .. toctree::
    :maxdepth: 0
