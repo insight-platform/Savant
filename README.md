@@ -17,9 +17,9 @@ Savant is a member of Nvidia Inception Program:
 
 ## Chat With Us
 
-The best way to approach us is Discord. We are always happy to help you with any questions you may have.
+The best way to approach us is [![Discord](https://img.shields.io/badge/Discord-8A2BE2)](https://discord.gg/KVAfGBsZGd). We are always happy to help you with any questions you may have.
 
-[![discord](https://user-images.githubusercontent.com/15047882/229273271-d033e597-06d3-4aeb-b93d-1217e95ca07e.png)](https://discord.gg/KVAfGBsZGd)
+
 
 
 ## Quick Links
