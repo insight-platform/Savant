@@ -163,7 +163,7 @@ class ZeroMQSource:
         if self.socket_type == ReceiverSocketTypes.SUB:
             self.receiver.setsockopt(zmq.SUBSCRIBE, self.topic_prefix)
         self.receiver.setsockopt(zmq.RCVTIMEO, self.receive_timeout)
-        if self.set_ipc_socket_permissions:
+        if self.set_ipc_socket_permissions and self.bind:
             set_ipc_socket_permissions(self.socket)
         self.is_alive = True
 
