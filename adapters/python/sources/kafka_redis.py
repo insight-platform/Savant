@@ -1,6 +1,9 @@
 import os
+import signal
 from distutils.util import strtobool
-from typing import Dict, Optional, Tuple, Union
+from queue import Queue
+from threading import Thread
+from typing import Dict, Iterator, Optional, Tuple, Union
 
 from confluent_kafka import Consumer
 from redis import Redis
@@ -9,7 +12,7 @@ from savant_rs.utils.serialization import Message, load_message_from_bytes
 
 from savant.api.enums import ExternalFrameType
 from savant.client import SourceBuilder
-from savant.utils.logging import get_logger
+from savant.utils.logging import get_logger, init_logging
 
 LOGGER_NAME = 'adapters.kafka_redis_source'
 logger = get_logger(LOGGER_NAME)
@@ -25,6 +28,7 @@ def opt_config(name, default=None, convert=None):
 class Config:
     def __init__(self):
         self.zmq_endpoint = os.environ['ZMQ_ENDPOINT']
+        self.queue_size = opt_config('QUEUE_SIZE', 100, int)
         self.kafka = KafkaConfig()
 
 
@@ -50,27 +54,53 @@ class KafkaRedisSource:
         self._source = SourceBuilder().with_socket(config.zmq_endpoint).build()
         self._consumer = build_consumer(config.kafka)
         self._frame_clients: Dict[str, Redis] = {}
+        self._consumer_queue = Queue(config.queue_size)
+        self._is_running = False
 
     def run(self):
+        logger.info('Starting the source')
+        self._is_running = True
         self._consumer.subscribe([self._config.kafka.topic])
-        self._source.send_iter(self.video_frame_iterator())
+        logger.info('Subscribed to topic %r', self._config.kafka.topic)
+        poller_thread = Thread(target=self.poller, name='poller')
+        poller_thread.start()
+        sender_thread = Thread(target=self.sender, name='sender')
+        sender_thread.start()
+        try:
+            sender_thread.join()
+        except KeyboardInterrupt:
+            pass
+        logger.info('Stopping the source')
+        self._is_running = False
+        poller_thread.join()
+        sender_thread.join()
 
-    def poll_next_message(self) -> Optional[bytes]:
-        message = self._consumer.poll(self._config.kafka.poll_timeout)
-        if message is None:
-            return None
+    def poller(self):
+        logger.info('Starting poller')
+        while self._is_running:
+            message = self._consumer.poll(self._config.kafka.poll_timeout)
+            if message is None:
+                continue
 
-        data = message.value()
-        logger.debug(
-            'Polled kafka message %s/%s/%s with key %s. Message size is %s bytes.',
-            message.topic(),
-            message.partition(),
-            message.offset(),
-            message.key(),
-            len(data),
-        )
+            data = message.value()
+            logger.debug(
+                'Polled kafka message %s/%s/%s with key %s. Message size is %s bytes.',
+                message.topic(),
+                message.partition(),
+                message.offset(),
+                message.key(),
+                len(data),
+            )
+            self._consumer_queue.put(data)
 
-        return data
+    def sender(self):
+        logger.info('Starting sender')
+        for result in self._source.send_iter(self.video_frame_iterator()):
+            logger.debug(
+                'Status of sending frame for source %s: %s.',
+                result.source_id,
+                result.status,
+            )
 
     def deserialize_message(
         self,
@@ -86,12 +116,12 @@ class KafkaRedisSource:
         logger.warning('Unsupported message type for message %r', message)
         return None
 
-    def video_frame_iterator(self):
-        while True:
-            message = self.poll_next_message()
-            if message is None:
-                continue
-            deserialized = self.deserialize_message(message)
+    def video_frame_iterator(
+        self,
+    ) -> Iterator[Union[Tuple[VideoFrame, bytes], EndOfStream]]:
+        while self._is_running or not self._consumer_queue.empty():
+            data = self._consumer_queue.get()
+            deserialized = self.deserialize_message(data)
             if deserialized is not None:
                 yield deserialized
 
@@ -154,6 +184,9 @@ def build_consumer(config: KafkaConfig) -> Consumer:
 
 
 def main():
+    init_logging()
+    # To gracefully shutdown the adapter on SIGTERM (raise KeyboardInterrupt)
+    signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
     source = KafkaRedisSource(Config())
     source.run()
 
