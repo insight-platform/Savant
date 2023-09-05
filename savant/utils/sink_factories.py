@@ -139,7 +139,7 @@ class ZeroMQSinkFactory(SinkFactory):
             output_zmq_socket.bind(self.socket)
         else:
             output_zmq_socket.connect(self.socket)
-        if self.set_ipc_socket_permissions:
+        if self.set_ipc_socket_permissions and self.bind:
             set_ipc_socket_permissions(self.socket)
 
         def send_message(
