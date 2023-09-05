@@ -29,13 +29,7 @@ The best way to approach us is [Discord](https://discord.gg/KVAfGBsZGd). We are 
 
 ## 1-Minute Quick Start
 
-**Note**: Ubuntu 22.04 runtime configuration [guide](https://docs.savant-ai.io/getting_started/0_configure_prod_env.html) helps to configure the runtime to run Savant pipelines.
-
-Requirements:
-- **X86 & Volta/Turing/Ampere/Ada Lovelace**: Linux, Nvidia Drivers 525+ (Tesla)/530+ (Quadro, GeForce), Docker with Compose, Nvidia Container Runtime,
-- **Nvidia Jetson NX/AGX+**: JetPack 5.1+, Docker with Compose, Nvidia Container Runtime.
-
-**Note**: Savant does not support Jetson Nano (original device released at 2020) because Nvidia doesn't support newer JetPack versions for it.
+Runtime configuration [guide](https://docs.savant-ai.io/getting_started/0_configure_prod_env.html) helps to configure the runtime to run Savant pipelines.
 
 The demo shows how to make a pipeline featuring person detection, facial detection, tracking, facial blurring (OpenCV CUDA), and a real-time analytics dashboard:
 
