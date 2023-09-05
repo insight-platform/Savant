@@ -33,16 +33,22 @@ class SinkRunner:
     def __init__(
         self,
         socket: str,
-        log_provider: Optional[LogProvider] = None,
+        log_provider: Optional[LogProvider],
+        idle_timeout: Optional[int],
+        module_health_check_url: Optional[str],
+        module_health_check_timeout: float,
+        module_health_check_interval: float,
         receive_timeout: int = Defaults.RECEIVE_TIMEOUT,
         receive_hwm: int = Defaults.RECEIVE_HWM,
-        idle_timeout: Optional[int] = None,
-        module_health_check_url: Optional[str] = None,
     ):
         self._log_provider = log_provider
         self._idle_timeout = idle_timeout if idle_timeout is not None else 10**6
         self._health_check = (
-            HealthCheck(module_health_check_url)
+            HealthCheck(
+                url=module_health_check_url,
+                interval=module_health_check_interval,
+                timeout=module_health_check_timeout,
+            )
             if module_health_check_url is not None
             else None
         )

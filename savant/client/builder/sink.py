@@ -20,7 +20,7 @@ class SinkBuilder:
             .with_idle_timeout(60)
             .with_log_provider(JaegerLogProvider('http://localhost:16686'))
             # Note: healthcheck port should be configured in the module.
-            .with_module_health_check('http://172.17.0.1:8888/healthcheck')
+            .with_module_health_check_url('http://172.17.0.1:8888/healthcheck')
             .build()
         )
         for result in sink:
@@ -34,11 +34,15 @@ class SinkBuilder:
         log_provider: Optional[LogProvider] = None,
         idle_timeout: Optional[int] = None,
         module_health_check_url: Optional[str] = None,
+        module_health_check_timeout: float = 60,
+        module_health_check_interval: float = 5,
     ):
         self._socket = socket
         self._log_provider = log_provider
         self._idle_timeout = idle_timeout
         self._module_health_check_url = module_health_check_url
+        self._module_health_check_timeout = module_health_check_timeout
+        self._module_health_check_interval = module_health_check_interval
 
     def with_socket(self, socket: str) -> 'SinkBuilder':
         """Set ZeroMQ socket for Sink."""
@@ -56,12 +60,26 @@ class SinkBuilder:
         """
         return self._with_field('idle_timeout', idle_timeout)
 
-    def with_module_health_check(self, url: str) -> 'SinkBuilder':
+    def with_module_health_check_url(self, url: str) -> 'SinkBuilder':
         """Set module health check url for Sink.
 
         Sink will check the module health before receiving any messages.
         """
         return self._with_field('module_health_check_url', url)
+
+    def with_module_health_check_timeout(self, timeout: float) -> 'SinkBuilder':
+        """Set module health check timeout for Sink.
+
+        Sink will wait for the module to be ready for the specified timeout.
+        """
+        return self._with_field('module_health_check_timeout', timeout)
+
+    def with_module_health_check_interval(self, interval: float) -> 'SinkBuilder':
+        """Set module health check interval for Sink.
+
+        Sink will check the module health every specified interval.
+        """
+        return self._with_field('module_health_check_interval', interval)
 
     def build(self) -> SinkRunner:
         """Build Sink."""
@@ -77,6 +95,8 @@ class SinkBuilder:
             log_provider=self._log_provider,
             idle_timeout=self._idle_timeout,
             module_health_check_url=self._module_health_check_url,
+            module_health_check_timeout=self._module_health_check_timeout,
+            module_health_check_interval=self._module_health_check_interval,
         )
 
     def __repr__(self):
@@ -85,7 +105,9 @@ class SinkBuilder:
             f'socket={self._socket}, '
             f'log_provider={self._log_provider}, '
             f'idle_timeout={self._idle_timeout}, '
-            f'module_health_check_url={self._module_health_check_url})'
+            f'module_health_check_url={self._module_health_check_url}, '
+            f'module_health_check_timeout={self._module_health_check_timeout}, '
+            f'module_health_check_interval={self._module_health_check_interval})'
         )
 
     def _with_field(self, field: str, value) -> 'SinkBuilder':
@@ -94,7 +116,8 @@ class SinkBuilder:
                 'socket': self._socket,
                 'log_provider': self._log_provider,
                 'idle_timeout': self._idle_timeout,
-                'module_health_check_url': self._module_health_check_url,
+                'module_health_check_timeout': self._module_health_check_timeout,
+                'module_health_check_interval': self._module_health_check_interval,
                 field: value,
             }
         )

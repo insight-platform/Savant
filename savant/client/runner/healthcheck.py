@@ -15,12 +15,14 @@ class HealthCheck:
     """Service to check the health of the module.
 
     :param url: URL of the health check endpoint.
-    :param check_interval: Interval between health checks in seconds.
+    :param interval: Interval between health checks in seconds.
+    :param timeout: Timeout for waiting the module to be ready in seconds.
     """
 
-    def __init__(self, url: str, check_interval: float = 5):
+    def __init__(self, url: str, interval: float, timeout: float):
         self._url = url
-        self._check_interval = check_interval
+        self._check_interval = interval
+        self._wait_timeout = timeout
         self._last_check_ts = 0
         self._last_status = None
 
@@ -41,6 +43,10 @@ class HealthCheck:
             )
 
         status = response.text.strip()
+        if not status:
+            logger.debug('Module has not status yet.')
+            return None
+
         logger.debug('Module status: %s.', status)
         try:
             return PipelineStatus(status)
@@ -58,7 +64,12 @@ class HealthCheck:
             self._last_status = self.check()
             self._last_check_ts = time.time()
 
+        time_limit = time.time() + self._wait_timeout
         while self._last_status not in statuses:
+            if time.time() > time_limit:
+                raise TimeoutError(
+                    f'Module is not ready after {self._wait_timeout} seconds.'
+                )
             time.sleep(self._check_interval)
             self._last_status = self.check()
             self._last_check_ts = time.time()

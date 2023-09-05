@@ -39,11 +39,13 @@ class SourceRunner:
     def __init__(
         self,
         socket: str,
-        log_provider: Optional[LogProvider] = None,
-        retries: int = Defaults.REQ_RECEIVE_RETRIES,
+        log_provider: Optional[LogProvider],
+        retries: int,
+        module_health_check_url: Optional[str],
+        module_health_check_timeout: float,
+        module_health_check_interval: float,
         send_hwm: int = Defaults.SEND_HWM,
         receive_timeout: int = Defaults.SENDER_RECEIVE_TIMEOUT,
-        module_health_check_url: Optional[str] = None,
     ):
         self._socket = socket
         self._log_provider = log_provider
@@ -51,7 +53,11 @@ class SourceRunner:
         self._send_hwm = send_hwm
         self._receive_timeout = receive_timeout
         self._health_check = (
-            HealthCheck(module_health_check_url)
+            HealthCheck(
+                url=module_health_check_url,
+                interval=module_health_check_interval,
+                timeout=module_health_check_timeout,
+            )
             if module_health_check_url is not None
             else None
         )
