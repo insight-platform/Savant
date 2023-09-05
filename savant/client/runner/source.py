@@ -1,22 +1,22 @@
 from dataclasses import dataclass
-from typing import Iterable, List, Optional
+from typing import Iterable, List, Optional, Tuple, Union
 
 import zmq
 from savant_rs.pipeline2 import VideoPipeline, VideoPipelineStagePayloadType
-from savant_rs.primitives import EndOfStream, Shutdown
+from savant_rs.primitives import EndOfStream, Shutdown, VideoFrame
 from savant_rs.utils import TelemetrySpan
 from savant_rs.utils.serialization import Message, save_message_to_bytes
 
 from savant.client.frame_source import FrameSource
 from savant.client.log_provider import LogProvider
 from savant.client.runner import LogResult
+from savant.utils.logging import get_logger
 from savant.utils.zeromq import (
     Defaults,
     SenderSocketTypes,
     parse_zmq_socket_uri,
     receive_response,
 )
-from savant.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
@@ -72,26 +72,40 @@ class SourceRunner:
         )
         self._pipeline.sampling_period = 1
 
-    def __call__(self, source: FrameSource, send_eos: bool = True) -> SourceResult:
+    def __call__(
+        self,
+        source: Union[FrameSource, Tuple[VideoFrame, bytes]],
+        send_eos: bool = True,
+    ) -> SourceResult:
         """Send a single frame to ZeroMQ socket.
 
-        :param source: Source of the frame to send.
+        :param source: Source of the frame to send. Can be an instance
+            of FrameSource or a tuple of VideoFrame and content.
         :param send_eos: Whether to send EOS after sending the frame.
         :return: Result of sending the frame.
         """
 
         return self.send(source, send_eos)
 
-    def send(self, source: FrameSource, send_eos: bool = True) -> SourceResult:
+    def send(
+        self,
+        source: Union[FrameSource, Tuple[VideoFrame, bytes]],
+        send_eos: bool = True,
+    ) -> SourceResult:
         """Send a single frame to ZeroMQ socket.
 
-        :param source: Source of the frame to send.
+        :param source: Source of the frame to send. Can be an instance
+            of FrameSource or a tuple of VideoFrame and content.
         :param send_eos: Whether to send EOS after sending the frame.
         :return: Result of sending the frame.
         """
 
-        logger.debug('Sending video frame from source %s.', source)
-        video_frame, content = source.build_frame()
+        if isinstance(source, FrameSource):
+            logger.debug('Sending video frame from source %s.', source)
+            video_frame, content = source.build_frame()
+        else:
+            video_frame, content = source
+            logger.debug('Sending video frame from source %s.', video_frame.source_id)
         frame_id = self._pipeline.add_frame(self._pipeline_stage_name, video_frame)
         zmq_topic = f'{video_frame.source_id}/'.encode()
         message = Message.video_frame(video_frame)
@@ -119,7 +133,9 @@ class SourceRunner:
 
     def send_iter(
         self,
-        sources: Iterable[FrameSource],
+        sources: Iterable[
+            Union[FrameSource, Tuple[VideoFrame, bytes], Tuple[EndOfStream]]
+        ],
         send_eos: bool = True,
     ) -> Iterable[SourceResult]:
         """Send multiple frames to ZeroMQ socket.
@@ -131,6 +147,11 @@ class SourceRunner:
 
         source_ids = set()
         for source in sources:
+            if isinstance(source, EndOfStream):
+                self.send_eos(source.source_id)
+                source_ids.remove(source.source_id)
+                continue
+
             result = self.send(source, send_eos=False)
             source_ids.add(result.source_id)
             yield result
