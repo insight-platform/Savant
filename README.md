@@ -27,7 +27,7 @@ The best way to approach us is [Discord](https://discord.gg/KVAfGBsZGd). We are 
 - [Documentation](https://docs.savant-ai.io/)
 - [Performance Regression Tracking Dashboard](docs/performance.md)
 
-## 1-Minute Quick Start
+## Quick Start
 
 Runtime configuration [guide](https://docs.savant-ai.io/getting_started/0_configure_prod_env.html) helps to configure the runtime to run Savant pipelines.
 
