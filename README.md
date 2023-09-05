@@ -9,7 +9,7 @@ Savant is built on DeepStream and provides a high-level abstraction layer for bu
 
 ![GitHub release (with filter)](https://img.shields.io/github/v/release/insight-platform/Savant)
 [![Build status](https://github.com/insight-platform/Savant/actions/workflows/build-docker-latest.yml/badge.svg?branch=develop)](https://github.com/insight-platform/Savant/actions/workflows/build-docker-latest.yml)
-[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/SavantFramework.svg?style=social&label=Follow%20%40SavantFramework)](https://twitter.com/SavantFramework) [![Blog](https://img.shields.io/badge/Inside%20InSight%20Blog-444444?logo=medium)](https://blog.savant-ai.io/)
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/SavantFramework.svg?style=social&label=Follow%20%40SavantFramework)](https://twitter.com/SavantFramework) [![Blog](https://img.shields.io/badge/Inside%20InSight%20Blog-444444?logo=medium)](https://blog.savant-ai.io/)[![Discord](https://img.shields.io/badge/Discord-8A2BE2)](https://discord.gg/KVAfGBsZGd)
 
 Savant is a member of Nvidia Inception Program:
 
@@ -17,10 +17,7 @@ Savant is a member of Nvidia Inception Program:
 
 ## Chat With Us
 
-The best way to approach us is [![Discord](https://img.shields.io/badge/Discord-8A2BE2)](https://discord.gg/KVAfGBsZGd). We are always happy to help you with any questions you may have.
-
-
-
+The best way to approach us is [Discord](https://discord.gg/KVAfGBsZGd). We are always happy to help you with any questions you may have.
 
 ## Quick Links
 
