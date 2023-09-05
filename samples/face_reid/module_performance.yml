@@ -84,7 +84,6 @@ pipeline:
         tracker-height: 640
         ll-lib-file: /opt/nvidia/deepstream/deepstream/lib/libnvds_nvmultiobjecttracker.so
         ll-config-file: ${oc.env:PROJECT_PATH}/samples/face_reid/config_tracker_NvDCF_perf.yml
-        enable_batch_process: 1
 
     - element: nvinfer@attribute_model
       name: ${parameters.reid_model_name}
