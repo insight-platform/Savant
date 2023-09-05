@@ -34,7 +34,9 @@ When writing a module, a user normally defines only pipeline :py:attr:`~savant.c
 
 The units are discussed in detail in the following sections.
 
-Along with the listed units, pipeline definition may include :py:class:`~savant.config.schema.ElementGroup` nodes, which are used to introduce a condition on including the elements into the pipeline. Read more about this in the :doc:`54_conditional_unit_init` section.
+.. note::
+
+    Along with the listed units, pipeline definition may include :py:class:`~savant.config.schema.ElementGroup` nodes, which are used to introduce a condition on including the elements into the pipeline. Read more about this in the :doc:`/advanced_topics/2_element_group` section.
 
 Frame Processing Workflow
 -------------------------

@@ -148,7 +148,6 @@ Savant supports processing parallelization; it helps to utilize the available re
    savant_101/40_cm
    savant_101/43_am
    savant_101/53_complexm
-   savant_101/54_conditional_unit_init
    savant_101/55_preprocessing.rst
    savant_101/60_nv_trackers
    savant_101/70_python
@@ -166,6 +165,7 @@ Savant supports processing parallelization; it helps to utilize the available re
    advanced_topics/0_pipeline_capacity
    advanced_topics/0_dead_stream_eviction
    advanced_topics/1_custom_tracking
+   advanced_topics/2_element_group
    advanced_topics/3_custom_roi
    advanced_topics/3_skipping_frames
    advanced_topics/3_hybrid_pipelines
