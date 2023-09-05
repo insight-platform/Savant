@@ -2,6 +2,7 @@
 import logging
 from pathlib import Path
 from typing import Optional, Type
+from collections import defaultdict
 
 from omegaconf import DictConfig, OmegaConf
 from savant_rs.utils.symbol_mapper import (
@@ -32,7 +33,9 @@ from savant.parameter_storage import param_storage
 from savant.remote_file import process_remote
 from savant.utils.logging import get_logger
 
-__all__ = ['nvinfer_element_configurator']
+__all__ = ['nvinfer_element_configurator', 'MERGED_CLASSES']
+
+MERGED_CLASSES = defaultdict(dict)
 
 
 class NvInferConfigException(Exception):
@@ -411,14 +414,36 @@ def nvinfer_element_configurator(
     nvinfer_config['property']['operate-on-class-ids'] = parent_class_id
 
     # register the model
-    object_labels = {}
-    if issubclass(model_type, ObjectModel):
-        object_labels = {
-            obj.class_id: obj.label for obj in model_config.output.get('objects')
-        }
-    model_uid = register_model_objects(
-        element_config.name, object_labels, RegistrationPolicy.Override
-    )
+    if issubclass(model_type, (ObjectModel, ComplexModel)):
+        output_objects = model_config.output.get('objects', [])
+        if output_objects:
+            logger.debug('Registering output objects for the model ...')
+        for obj in output_objects:
+            try:
+                model_uid = register_model_objects(
+                    element_config.name,
+                    {obj.class_id: obj.label},
+                    RegistrationPolicy.ErrorIfNonUnique,
+                )
+                logger.debug(
+                    'Object id %s "%s" was registered.', obj.class_id, obj.label
+                )
+            except ValueError as exc:
+                _, obj_id = get_object_id(element_config.name, obj.label)
+                logger.debug(
+                    'Object label "%s" already registered for id %s. Merging id %s into id %s.',
+                    obj.label,
+                    obj_id,
+                    obj.class_id,
+                    obj_id,
+                )
+                MERGED_CLASSES[element_config.name][obj.class_id] = obj_id
+    else:
+        model_uid = register_model_objects(
+            element_config.name,
+            {},
+            RegistrationPolicy.ErrorIfNonUnique,
+        )
     nvinfer_config['property']['gie-unique-id'] = model_uid
 
     # set network type to custom if converter is specified for model output
