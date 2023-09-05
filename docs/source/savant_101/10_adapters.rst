@@ -544,7 +544,7 @@ Running with the helper script:
     ./scripts/run_source.py ffmpeg --source-id=test --ffmpeg-params=input_format=mjpeg,video_size=1280x720 --device=/dev/video0 /dev/video0
 
 Multi-stream Source Adapter
-^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The Multi-stream Source Adapter sends a video file to multiple streams.
 

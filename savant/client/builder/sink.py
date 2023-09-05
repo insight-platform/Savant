@@ -19,6 +19,8 @@ class SinkBuilder:
             .with_socket('rep+connect:ipc:///tmp/zmq-sockets/output-video.ipc')
             .with_idle_timeout(60)
             .with_log_provider(JaegerLogProvider('http://localhost:16686'))
+            # Note: healthcheck port should be configured in the module.
+            .with_module_health_check('http://172.17.0.1:8888/healthcheck')
             .build()
         )
         for result in sink:
@@ -31,10 +33,12 @@ class SinkBuilder:
         socket: Optional[str] = None,
         log_provider: Optional[LogProvider] = None,
         idle_timeout: Optional[int] = None,
+        module_health_check_url: Optional[str] = None,
     ):
         self._socket = socket
         self._log_provider = log_provider
         self._idle_timeout = idle_timeout
+        self._module_health_check_url = module_health_check_url
 
     def with_socket(self, socket: str) -> 'SinkBuilder':
         """Set ZeroMQ socket for Sink."""
@@ -52,6 +56,13 @@ class SinkBuilder:
         """
         return self._with_field('idle_timeout', idle_timeout)
 
+    def with_module_health_check(self, url: str) -> 'SinkBuilder':
+        """Set module health check url for Sink.
+
+        Sink will check the module health before receiving any messages.
+        """
+        return self._with_field('module_health_check_url', url)
+
     def build(self) -> SinkRunner:
         """Build Sink."""
 
@@ -65,6 +76,7 @@ class SinkBuilder:
             socket=self._socket,
             log_provider=self._log_provider,
             idle_timeout=self._idle_timeout,
+            module_health_check_url=self._module_health_check_url,
         )
 
     def __repr__(self):
@@ -72,7 +84,8 @@ class SinkBuilder:
             f'SinkBuilder('
             f'socket={self._socket}, '
             f'log_provider={self._log_provider}, '
-            f'idle_timeout={self._idle_timeout})'
+            f'idle_timeout={self._idle_timeout}, '
+            f'module_health_check_url={self._module_health_check_url})'
         )
 
     def _with_field(self, field: str, value) -> 'SinkBuilder':
@@ -81,6 +94,7 @@ class SinkBuilder:
                 'socket': self._socket,
                 'log_provider': self._log_provider,
                 'idle_timeout': self._idle_timeout,
+                'module_health_check_url': self._module_health_check_url,
                 field: value,
             }
         )

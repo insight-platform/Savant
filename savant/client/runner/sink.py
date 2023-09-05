@@ -7,8 +7,10 @@ from savant_rs.utils.serialization import Message, load_message_from_bytes
 
 from savant.client.log_provider import LogProvider
 from savant.client.runner import LogResult
-from savant.utils.zeromq import Defaults, ZeroMQSource
+from savant.client.runner.healthcheck import HealthCheck
+from savant.healthcheck.status import PipelineStatus
 from savant.utils.logging import get_logger
+from savant.utils.zeromq import Defaults, ZeroMQSource
 
 logger = get_logger(__name__)
 
@@ -35,9 +37,15 @@ class SinkRunner:
         receive_timeout: int = Defaults.RECEIVE_TIMEOUT,
         receive_hwm: int = Defaults.RECEIVE_HWM,
         idle_timeout: Optional[int] = None,
+        module_health_check_url: Optional[str] = None,
     ):
         self._log_provider = log_provider
         self._idle_timeout = idle_timeout if idle_timeout is not None else 10**6
+        self._health_check = (
+            HealthCheck(module_health_check_url)
+            if module_health_check_url is not None
+            else None
+        )
         self._source = ZeroMQSource(
             socket=socket,
             receive_timeout=receive_timeout,
@@ -53,6 +61,10 @@ class SinkRunner:
         :raise StopIteration: If no message was received for idle_timeout seconds.
         """
 
+        if self._health_check is not None:
+            self._health_check.wait_module_is_ready(
+                [PipelineStatus.RUNNING, PipelineStatus.STOPPING]
+            )
         wait_until = time.time() + self._idle_timeout
         result = None
         while result is None:

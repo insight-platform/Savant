@@ -18,6 +18,8 @@ class SourceBuilder:
             SourceBuilder()
             .with_log_provider(JaegerLogProvider('http://localhost:16686'))
             .with_socket('req+connect:ipc:///tmp/zmq-sockets/input-video.ipc')
+            # Note: healthcheck port should be configured in the module.
+            .with_module_health_check('http://172.17.0.1:8888/healthcheck')
             .build()
         )
         result = source(JpegSource('cam-1', 'data/AVG-TownCentre.jpeg'))
@@ -29,10 +31,12 @@ class SourceBuilder:
         socket: Optional[str] = None,
         log_provider: Optional[LogProvider] = None,
         retries: int = 3,
+        module_health_check_url: Optional[str] = None,
     ):
         self._socket = socket
         self._log_provider = log_provider
         self._retries = retries
+        self._module_health_check_url = module_health_check_url
 
     def with_socket(self, socket: str) -> 'SourceBuilder':
         """Set ZeroMQ socket for Source."""
@@ -49,6 +53,13 @@ class SourceBuilder:
         """
         return self._with_field('retries', retries)
 
+    def with_module_health_check(self, url: str) -> 'SourceBuilder':
+        """Set module health check url for Source.
+
+        Source will check the module health before receiving any messages.
+        """
+        return self._with_field('module_health_check_url', url)
+
     def build(self) -> SourceRunner:
         """Build Source."""
 
@@ -62,6 +73,7 @@ class SourceBuilder:
             socket=self._socket,
             log_provider=self._log_provider,
             retries=self._retries,
+            module_health_check_url=self._module_health_check_url,
         )
 
     def __repr__(self):
@@ -69,7 +81,8 @@ class SourceBuilder:
             f'SourceBuilder('
             f'socket={self._socket}, '
             f'log_provider={self._log_provider},'
-            f'retries={self._retries})'
+            f'retries={self._retries},'
+            f'module_health_check_url={self._module_health_check_url})'
         )
 
     def _with_field(self, field: str, value) -> 'SourceBuilder':
@@ -78,6 +91,7 @@ class SourceBuilder:
                 'socket': self._socket,
                 'log_provider': self._log_provider,
                 'retries': self._retries,
+                'module_health_check_url': self._module_health_check_url,
                 field: value,
             }
         )
