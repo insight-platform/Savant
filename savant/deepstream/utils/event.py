@@ -15,7 +15,10 @@ from savant.gstreamer import GObject, Gst  # noqa:F401
 def _make_nvevent_type(event_type: int):
     """Helper function to define custom event type (like GST_EVENT_MAKE_TYPE)."""
     return (event_type << Gst.EVENT_NUM_SHIFT) | (
-        Gst.EventTypeFlags.DOWNSTREAM | Gst.EventTypeFlags.SERIALIZED
+        Gst.EventTypeFlags.DOWNSTREAM
+        | Gst.EventTypeFlags.SERIALIZED
+        | Gst.EventTypeFlags.STICKY
+        | Gst.EventTypeFlags.STICKY_MULTI
     )
 
 
