@@ -7,29 +7,25 @@ parameters:
   output_frame:
     codec: h264
 
-  # We do not configure telemetry for a module in the module configuration.
-  # Thus, we use the default telemetry parameters from `savant/config/default.yml`,
-  # which can be overridden using environment variables in the compose configuration.
-#  telemetry:
-#    # Sampling period in frames
-#    sampling_period: ${oc.decode:${oc.env:TELEMETRY_SAMPLING_PERIOD, 100}}
-#    # Name for root span
-#    root_span_name: ${oc.decode:${oc.env:TELEMETRY_ROOT_SPAN_NAME, null}}
-#    # Telemetry provider name
-#    provider: ${oc.decode:${oc.env:TELEMETRY_PROVIDER, null}}
-#    # Parameters for telemetry provider
-#    provider_params: ${json:${oc.env:TELEMETRY_PROVIDER_PARAMS, null}}
+  # We use the default telemetry parameters from `savant/config/default.yml`,
+  # which can be configured with environment variables in Docker compose manifests.
+  #
+  # Optionally, you can override them here.
+  #  telemetry:
+  #    # Sampling period in frames
+  #    sampling_period: ${oc.decode:${oc.env:TELEMETRY_SAMPLING_PERIOD, 100}}
+  #    # Name for root span
+  #    root_span_name: ${oc.decode:${oc.env:TELEMETRY_ROOT_SPAN_NAME, null}}
+  #    # Telemetry provider name
+  #    provider: ${oc.decode:${oc.env:TELEMETRY_PROVIDER, null}}
+  #    # Parameters for telemetry provider
+  #    provider_params: ${json:${oc.env:TELEMETRY_PROVIDER_PARAMS, null}}
 
 # pipeline definition
 pipeline:
-  # source definition is skipped, zeromq source is used by default to connect with source adapters
-
-  # define pipeline's elements
   elements:
-
-    # simple pyfunc to blur frame
+    # simple pyfunc blurring frames
     - element: pyfunc
       module: samples.telemetry.blur
       class_name: Blur
 
-  # sink definition is skipped, zeromq sink is used by default to connect with sink adapters
