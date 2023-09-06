@@ -1,18 +1,22 @@
 Video Processing Workflow
 =========================
 
-In Savant every frame passes certain processing stages which you have to understand. These stages are inspired by DeepStream's internals and there is no simple way to hack them in a different way. Those stages are:
+In Savant every frame passes certain processing stages which you have to understand. These stages are inspired by DeepStream's internals and there is no simple way to hack them in a different way.
 
-- decoding;
-- scaling to a common resolution (mandatory);
-- adding commonly-specified paddings (optional);
-- multiplexing;
-- processing;
-- drawing (optional);
-- de-multiplexing;
-- encoding.
+Those stages are (see the image below):
 
-Let us consider them in details.
+- decoding (3);
+- scaling to a common resolution (**mandatory**) (4);
+- adding commonly-specified paddings (`optional`) (4);
+- multiplexing (4-5);
+- processing (6);
+- drawing (`optional`) (6);
+- de-multiplexing (7, 8);
+- encoding (9).
+
+.. image:: ../_static/img/0_streaming_model_detailed.png
+
+Discuss them in details.
 
 Decoding
 --------
