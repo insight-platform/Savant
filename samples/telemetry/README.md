@@ -4,31 +4,31 @@ A simple pipeline demonstrating the use of OpenTelemetry in Savant. The pipeline
 
 Below are a few screenshots from the Jaeger UI.
 
-#### Jaeger main screen
+## Jaeger Main Screen
 
 Select `telemetry-demo` **Service** and click **Find Traces** to see captured traces.
 
 ![Jaeger main screen](assets/00-main.png)
 
-#### Trace View
+## Trace View
 
 Click on a trace to see the trace spans, associated logging messages, events and attributes.
 
 ![Trace view](assets/01-trace.png)
 
-#### Process-Frame Span
+## Process-Frame Span
 
 The `process-frame` span is the parent span for blurring code located in the [Blur PyFunc](blur.py).
 
 ![process-frame span](assets/02-process-frame.png)
 
-#### Blur-Filter Span
+## Blur-Filter Span
 
 The `blur-filter` span is a telemetry span for the blur function call.
  
 ![blur-filter span](assets/03-blur-filter.png)
 
-#### Error-Code Span
+## Error-Code Span
 
 The `error-code` span demonstrates the span capability of attaching uncaught exceptions to the span.
 
