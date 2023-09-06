@@ -1,6 +1,6 @@
 # Telemetry Example
 
-A simple pipeline demonstrating the possibilities of using OpenTelemetry with Savant. The pipeline contains only one element, [Blur PyFunc](blur.py). This element simply blurs the frame and contains sample code for working with telemetry. The pipeline [config](module.yml) does not contain any additional parameters. Savant has telemetry built in, and the user can enable it by simply specifying `jaeger` as the telemetry provider, and `entrypoint` using the `TELEMETRY_PROVIDER` and `TELEMETRY_PROVIDER_PARAMS` environment variables respectively. The entry point is a jaeger-agent from the [Jaeger All-in-One container](https://www.jaegertracing.io/docs/1.48/getting-started/#all-in-one). The container also includes the Jaeger UI.
+A simple pipeline demonstrating the capabilities of using OpenTelemetry with Savant. The pipeline contains only one element, [Blur PyFunc](blur.py). This element simply blurs the frame and contains sample code for working with telemetry. The pipeline [config](module.yml) does not contain any additional parameters. Savant has telemetry built in, and the user can enable it by simply specifying `jaeger` as the telemetry provider, and `entrypoint` using the `TELEMETRY_PROVIDER` and `TELEMETRY_PROVIDER_PARAMS` environment variables respectively. The entry point is a jaeger-agent from the [Jaeger All-in-One container](https://www.jaegertracing.io/docs/1.48/getting-started/#all-in-one). The container also includes the Jaeger UI.
 
 Below are a few screenshots from the Jaeger UI.
 
