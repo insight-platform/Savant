@@ -1,31 +1,36 @@
 # Telemetry Example
 
-A simple pipeline demonstrating the capabilities of using OpenTelemetry with Savant. The pipeline contains only one element, [Blur PyFunc](blur.py). This element simply blurs the frame and contains sample code for working with telemetry. The pipeline [config](module.yml) does not contain any additional parameters. Savant has telemetry built in, and the user can enable it by simply specifying `jaeger` as the telemetry provider, and `entrypoint` using the `TELEMETRY_PROVIDER` and `TELEMETRY_PROVIDER_PARAMS` environment variables respectively. The entry point is a jaeger-agent from the [Jaeger All-in-One container](https://www.jaegertracing.io/docs/1.48/getting-started/#all-in-one). The container also includes the Jaeger UI.
+A simple pipeline demonstrating the use of OpenTelemetry in Savant. The pipeline contains one element, [Blur PyFunc](blur.py). It applies gaussian blur to the frame and contains OpenTelemetry instrumenting code. OpenTelemetry instrumenting is initialized with environment variables: see compose files for details. The telemetry is collected by the all-in-one Jaeger [container](https://www.jaegertracing.io/docs/1.48/getting-started/#all-in-one). The container also includes the Jaeger UI.
 
 Below are a few screenshots from the Jaeger UI.
 
 #### Jaeger main screen
+
 Select `telemetry-demo` **Service** and click **Find Traces** to see captured traces.
 
 ![Jaeger main screen](assets/00-main.png)
 
-#### Trace view
-Click any track to see the track timeline (the default track view).
+#### Trace View
+
+Click on a trace to see the trace spans, associated logging messages, events and attributes.
 
 ![Trace view](assets/01-trace.png)
 
-#### process-frame span
-`process-frame` is the parent span for blur code in the [Blur PyFunc](blur.py).
+#### Process-Frame Span
+
+The `process-frame` span is the parent span for blurring code located in the [Blur PyFunc](blur.py).
 
 ![process-frame span](assets/02-process-frame.png)
 
-#### blur-filter span
-`blur-filter` is a telemetry span for the blur function call.
+#### Blur-Filter Span
 
+The `blur-filter` span is a telemetry span for the blur function call.
+ 
 ![blur-filter span](assets/03-blur-filter.png)
 
-#### error-code span
-The `error-code` span demonstrates the ability to catch exceptions using telemetry.
+#### Error-Code Span
+
+The `error-code` span demonstrates the span capability of attaching uncaught exceptions to the span.
 
 ![error-code span](assets/04-error-code.png)
 
