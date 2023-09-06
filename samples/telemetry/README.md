@@ -1,4 +1,4 @@
-# Telemetry Example
+# OpenTelemetry Example
 
 A simple pipeline demonstrating the use of OpenTelemetry in Savant. The pipeline contains one element, [Blur PyFunc](blur.py). It applies gaussian blur to the frame and contains OpenTelemetry instrumenting code. OpenTelemetry instrumenting is initialized with environment variables: see compose files for details. The telemetry is collected by the all-in-one Jaeger [container](https://www.jaegertracing.io/docs/1.48/getting-started/#all-in-one). The container also includes the Jaeger UI.
 
