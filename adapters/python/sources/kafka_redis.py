@@ -57,7 +57,7 @@ class KafkaRedisSource:
         self._consumer = build_consumer(config.kafka)
         self._frame_clients: Dict[str, Redis] = {}
         self._is_running = False
-        self._consumer_queue: Optional[Queue] = None
+        self._consumer_queue: Optional[Queue[Union[bytes, STOP]]] = None
         self._stop_source_event: Optional[Event] = None
 
     async def run(self):
@@ -134,10 +134,12 @@ class KafkaRedisSource:
             data = await self._consumer_queue.get()
             if data is STOP:
                 logger.debug('Received stop signal')
+                self._consumer_queue.task_done()
                 break
             deserialized = await self.deserialize_message(data)
             if deserialized is not None:
                 yield deserialized
+            self._consumer_queue.task_done()
 
     async def fetch_video_frame_content(
         self,
@@ -207,7 +209,7 @@ def main():
     loop = asyncio.get_event_loop()
     try:
         loop.run_until_complete(source.run())
-    except KeyboardInterrupt as e:
+    except KeyboardInterrupt:
         loop.run_until_complete(source.stop())
     finally:
         loop.close()
