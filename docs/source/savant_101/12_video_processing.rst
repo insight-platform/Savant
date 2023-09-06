@@ -361,6 +361,7 @@ Software H264 Encoder
 
    Options:
 
+   - ``0x00000000`` or ``none``
    - ``0x00000001`` or ``stillimage``: Still image
    - ``0x00000002`` or ``fastdecode``: Fast decode
    - ``0x00000004`` or ``zerolatency``: Zero latency
