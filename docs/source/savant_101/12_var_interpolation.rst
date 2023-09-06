@@ -1,5 +1,5 @@
-Module Variables Interpolation
-==============================
+Module Variables
+================
 
 When initializing a module with the configuration file, Savant uses the `OmegaConf <https://github.com/omry/omegaconf>`__ package enabling not only immediate parameter values but also references to the values of other parameters, as well as options for interpolating configuration parameters from external sources.
 
