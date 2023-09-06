@@ -96,7 +96,7 @@ class KafkaRedisSink:
                 break
             if result.frame_meta is not None:
                 message = result.frame_meta
-                logger.debug('Received frame %s/%s', message.source_id, message.pts)
+                logger.debug('Received frame %s/%s (keyframe=%s)', message.source_id, message.pts, message.keyframe)
                 if result.frame_content is not None:
                     message = await self.put_frame_to_redis(
                         message, result.frame_content

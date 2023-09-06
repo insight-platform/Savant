@@ -147,12 +147,8 @@ class KafkaRedisSource:
     ) -> Optional[Tuple[VideoFrame, bytes]]:
         if video_frame.content.is_internal():
             content = video_frame.content.get_data_as_bytes()
-            video_frame.content = VideoFrameContent.external(
-                ExternalFrameType.ZEROMQ.value, None
-            )
-            return video_frame, content
 
-        if video_frame.content.is_external():
+        elif video_frame.content.is_external():
             if video_frame.content.get_method() != ExternalFrameType.REDIS.value:
                 logger.warning(
                     'Unsupported external frame type %r',
@@ -169,10 +165,14 @@ class KafkaRedisSource:
                 )
                 return None
 
-            return video_frame, content
+        else:
+            logger.warning('Unsupported frame content %r', video_frame.content)
+            return None
 
-        logger.warning('Unsupported frame content %r', video_frame.content)
-        return None
+        video_frame.content = VideoFrameContent.external(
+            ExternalFrameType.ZEROMQ.value, None
+        )
+        return video_frame, content
 
     async def fetch_content_from_redis(self, location: str) -> Optional[bytes]:
         logger.debug('Fetching frame from %r', location)
