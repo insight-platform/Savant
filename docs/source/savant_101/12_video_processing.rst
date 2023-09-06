@@ -365,8 +365,8 @@ Software H264 Encoder
    - ``0x00000002`` or ``fastdecode``: Fast decode
    - ``0x00000004`` or ``zerolatency``: Zero latency
 
-Hardware H264 Codec
-^^^^^^^^^^^^^^^^^^^
+Hardware HEVC Codec (NVENC)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 1. ``bitrate``
 
