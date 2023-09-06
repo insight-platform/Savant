@@ -15,3 +15,4 @@ Makefile
 downloads/
 models/
 var/
+data/

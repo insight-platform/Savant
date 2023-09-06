@@ -45,7 +45,7 @@ jobs:
           - docker_file: docker/Dockerfile.deepstream
             docker_suffix: deepstream
             arch: linux/amd64
-          - docker_file: docker/Dockerfile.deepstream-l4t
+          - docker_file: docker/Dockerfile.deepstream
             docker_suffix: deepstream-l4t
             arch: linux/arm64
 

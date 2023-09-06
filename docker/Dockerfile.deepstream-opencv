@@ -1,20 +1,19 @@
 ARG DEEPSTREAM_VERSION
-FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-devel
+FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-triton-multiarch
+ARG TARGETARCH
 ARG DEEPSTREAM_VERSION
+ARG OPENCV_VERSION=4.8.0
 
-# CMake upgrade needed to install CPack
-ARG CMAKE_VER=3.26.3
-RUN mkdir -p /tmp/cmake \
-    && cd /tmp/cmake \
-    && wget --progress=bar:force:noscroll https://github.com/Kitware/CMake/releases/download/v$CMAKE_VER/cmake-$CMAKE_VER-linux-x86_64.sh \
-    && sh cmake-$CMAKE_VER-linux-x86_64.sh --skip-license --prefix=/usr/local/
-# need python headers
-RUN apt-get update \
-    && apt-get install --no-install-recommends -y \
-    python3-dev
+# required to install CPack
+ARG CMAKE_VER=3.27.4
+RUN if [ "$TARGETARCH" = "arm64" ]; then \
+      wget -nv -O /tmp/cmake.sh https://github.com/Kitware/CMake/releases/download/v$CMAKE_VER/cmake-$CMAKE_VER-linux-aarch64.sh; \
+      sh /tmp/cmake.sh --skip-license --prefix=/usr/local; \
+      rm -f /tmp/cmake.sh; \
+      apt-get install -y file; \
+    fi
 
 WORKDIR /opencv
-ARG OPENCV_VERSION=4.6.0
 RUN git clone --branch "${OPENCV_VERSION}" --depth 1 https://github.com/opencv/opencv
 RUN git clone --branch "${OPENCV_VERSION}" --depth 1 https://github.com/opencv/opencv_contrib
 WORKDIR /opencv/build
@@ -51,7 +50,8 @@ RUN --mount=type=cache,target=/tmp/opencv-cache \
 
 RUN make -j$(nproc)
 RUN make -j$(nproc) install
-RUN make -j$(nproc) package \
-    && for file in *.deb; do mv "$file" "${file%.deb}_${DEEPSTREAM_VERSION}.deb"; done
+RUN make -j$(nproc) package
 
-ENTRYPOINT cp OpenCV*.deb /out
+RUN tar -czf opencv-${OPENCV_VERSION}-${TARGETARCH}-ds${DEEPSTREAM_VERSION}.tar.gz OpenCV*.deb
+
+ENTRYPOINT cp opencv-*.tar.gz /out
