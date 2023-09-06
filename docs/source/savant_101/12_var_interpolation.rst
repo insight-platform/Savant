@@ -11,7 +11,7 @@ Interpolation is useful in the following cases:
 
 .. note:: Interpolation happens only **once**, when the module is being initialized. Even when the dynamic parameters are used, their values interpolated only **once**.
 
-OmegaConf's capabilities to interpolate configuration values are described in OmegaConf `interpolation <https://omegaconf.readthedocs.io/en/2.3_branch/usage.html#variable-interpolation>`__ manual. Savant allows using all the features of OmegaConf, for example:
+OmegaConf value interpolation capabilities are described in OmegaConf `interpolation <https://omegaconf.readthedocs.io/en/2.3_branch/usage.html#variable-interpolation>`__ manual. Savant supports all features of OmegaConf, for example:
 
 .. code-block:: yaml
 

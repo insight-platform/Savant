@@ -3,7 +3,7 @@ Source JSON Injection
 
 .. warning::
 
-    Subject to change. We recommend using :doc:`/advanced_topics/10_client_sdk` instead.
+    Subject to change. We recommend using :doc:`Client SDK </advanced_topics/10_client_sdk>` instead.
 
 :ref:`savant_101/10_adapters:Image File Source Adapter` and :ref:`savant_101/10_adapters:Video File Source Adapter` support sending metadata along with frames. The ``READ_METADATA`` option must be specified when starting the adapters.
 
