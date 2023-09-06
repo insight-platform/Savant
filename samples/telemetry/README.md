@@ -1,12 +1,33 @@
 # Telemetry Example
 
-TODO: Describe what the sample does and how the telemetry is configured. 
+A simple pipeline demonstrating the possibilities of using OpenTelemetry with Savant. The pipeline contains only one element, [Blur PyFunc](blur.py). This element simply blurs the frame and contains sample code for working with telemetry. The pipeline [config](module.yml) does not contain any additional parameters. Savant has telemetry built in, and the user can enable it by simply specifying `jaeger` as the telemetry provider, and `entrypoint` using the `TELEMETRY_PROVIDER` and `TELEMETRY_PROVIDER_PARAMS` environment variables respectively. The entry point is a jaeger-agent from the [Jaeger All-in-One container](https://www.jaegertracing.io/docs/1.48/getting-started/#all-in-one). The container also includes the Jaeger UI.
 
-A simple pipeline demonstrating the possibilities of using OpenTelemetry with Savant.
+Below are a few screenshots from the Jaeger UI.
 
-Preview:
+#### Jaeger main screen
+Select `telemetry-demo` **Service** and click **Find Traces** to see captured traces.
 
-TODO: Add a screenshot of a trace from Jaeger.
+![Jaeger main screen](assets/00-main.png)
+
+#### Trace view
+Click any track to see the track timeline (the default track view).
+
+![Trace view](assets/01-trace.png)
+
+#### process-frame span
+`process-frame` is the parent span for blur code in the [Blur PyFunc](blur.py).
+
+![process-frame span](assets/02-process-frame.png)
+
+#### blur-filter span
+`blur-filter` is a telemetry span for the blur function call.
+
+![blur-filter span](assets/03-blur-filter.png)
+
+#### error-code span
+The `error-code` span demonstrates the ability to catch exceptions using telemetry.
+
+![error-code span](assets/04-error-code.png)
 
 Run the demo:
 
