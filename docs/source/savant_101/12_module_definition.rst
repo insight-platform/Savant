@@ -125,7 +125,7 @@ To configure the custom value, use:
 
 .. warning::
 
-    Please, keep in mind, that larger values may cause extra memory usage.
+    Large values cause extra GPU/CPU memory usage.
 
 Buffering Queues
 ^^^^^^^^^^^^^^^^
@@ -170,10 +170,12 @@ DevServer is a special module execution mode enabling change detection in custom
 
 Read more on DevServer configuration in :doc:`/advanced_topics/9_dev_server`.
 
-Shutdown Authentication
-^^^^^^^^^^^^^^^^^^^^^^^
+Pipeline Shutdown Authentication
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The ``shutdown_auth`` parameter defines a secret token which can be sent in the service shutdown message to terminate the pipeline. By default ``shutdown_auth`` is unset, and the pipeline ignores shutdown messages.
+
+Currently, shutdown messages can be sent with :doc:`Client SDK </advanced_topics/10_client_sdk>`.
 
 Pipeline
 --------
