@@ -256,6 +256,8 @@ class SourceRunner:
 
 
 class AsyncSourceRunner(SourceRunner):
+    """Sends messages to ZeroMQ socket asynchronously."""
+
     async def __call__(self, source: Frame, send_eos: bool = True) -> SourceResult:
         return await self.send(source, send_eos)
 

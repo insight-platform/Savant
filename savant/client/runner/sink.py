@@ -1,6 +1,7 @@
 import time
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import List, Optional
 
 from savant_rs.primitives import EndOfStream, VideoFrame, VideoFrameContent
 from savant_rs.utils.serialization import Message, load_message_from_bytes
@@ -8,7 +9,7 @@ from savant_rs.utils.serialization import Message, load_message_from_bytes
 from savant.client.log_provider import LogProvider
 from savant.client.runner import LogResult
 from savant.utils.logging import get_logger
-from savant.utils.zeromq import Defaults, ZeroMQSource
+from savant.utils.zeromq import AsyncZeroMQSource, Defaults, ZeroMQSource
 
 logger = get_logger(__name__)
 
@@ -25,8 +26,8 @@ class SinkResult(LogResult):
     """End of stream."""
 
 
-class SinkRunner:
-    """Receives messages from ZeroMQ socket."""
+class BaseSinkRunner(ABC):
+    _source: ZeroMQSource
 
     def __init__(
         self,
@@ -38,40 +39,18 @@ class SinkRunner:
     ):
         self._log_provider = log_provider
         self._idle_timeout = idle_timeout if idle_timeout is not None else 10**6
-        self._source = ZeroMQSource(
-            socket=socket,
-            receive_timeout=receive_timeout,
-            receive_hwm=receive_hwm,
-            set_ipc_socket_permissions=False,
-        )
+        self._source = self._build_zeromq_source(socket, receive_timeout, receive_hwm)
         self._source.start()
 
-    def __next__(self) -> SinkResult:
-        """Receive next message from ZeroMQ socket.
+    @abstractmethod
+    def _build_zeromq_source(self, socket: str, receive_timeout: int, receive_hwm: int):
+        pass
 
-        :return: Result of receiving a message from ZeroMQ socket.
-        :raise StopIteration: If no message was received for idle_timeout seconds.
-        """
-
-        wait_until = time.time() + self._idle_timeout
-        result = None
-        while result is None:
-            result = self._receive_next_message()
-            if result is None and time.time() > wait_until:
-                raise StopIteration()
-
-        return result
-
-    def __iter__(self):
-        """Receive messages from ZeroMQ socket infinitely or until no message
-        was received for idle_timeout seconds."""
-        return self
-
+    @abstractmethod
     def _receive_next_message(self) -> Optional[SinkResult]:
-        message_parts = self._source.next_message()
-        if message_parts is None:
-            return None
+        pass
 
+    def _handle_message(self, message_parts: List[bytes]):
         message: Message = load_message_from_bytes(message_parts[0])
         trace_id: Optional[str] = message.span_context.as_dict().get('uber-trace-id')
         if trace_id is not None:
@@ -110,3 +89,81 @@ class SinkRunner:
             )
 
         raise Exception('Unknown message type')
+
+
+class SinkRunner(BaseSinkRunner):
+    """Receives messages from ZeroMQ socket."""
+
+    def _build_zeromq_source(self, socket: str, receive_timeout: int, receive_hwm: int):
+        return ZeroMQSource(
+            socket=socket,
+            receive_timeout=receive_timeout,
+            receive_hwm=receive_hwm,
+            set_ipc_socket_permissions=False,
+        )
+
+    def __next__(self) -> SinkResult:
+        """Receive next message from ZeroMQ socket.
+
+        :return: Result of receiving a message from ZeroMQ socket.
+        :raise StopIteration: If no message was received for idle_timeout seconds.
+        """
+
+        wait_until = time.time() + self._idle_timeout
+        result = None
+        while result is None:
+            result = self._receive_next_message()
+            if result is None and time.time() > wait_until:
+                raise StopIteration()
+
+        return result
+
+    def __iter__(self):
+        """Receive messages from ZeroMQ socket infinitely or until no message
+        was received for idle_timeout seconds."""
+        return self
+
+    def _receive_next_message(self) -> Optional[SinkResult]:
+        message_parts = self._source.next_message()
+        if message_parts is not None:
+            return self._handle_message(message_parts)
+
+
+class AsyncSinkRunner(BaseSinkRunner):
+    """Receives messages from ZeroMQ socket asynchronously."""
+
+    _source: AsyncZeroMQSource
+
+    def _build_zeromq_source(self, socket: str, receive_timeout: int, receive_hwm: int):
+        return AsyncZeroMQSource(
+            socket=socket,
+            receive_timeout=receive_timeout,
+            receive_hwm=receive_hwm,
+            set_ipc_socket_permissions=False,
+        )
+
+    async def __anext__(self) -> SinkResult:
+        """Receive next message from ZeroMQ socket.
+
+        :return: Result of receiving a message from ZeroMQ socket.
+        :raise StopIteration: If no message was received for idle_timeout seconds.
+        """
+
+        wait_until = time.time() + self._idle_timeout
+        result = None
+        while result is None:
+            result = await self._receive_next_message()
+            if result is None and time.time() > wait_until:
+                raise StopAsyncIteration()
+
+        return result
+
+    def __aiter__(self):
+        """Receive messages from ZeroMQ socket infinitely or until no message
+        was received for idle_timeout seconds."""
+        return self
+
+    async def _receive_next_message(self) -> Optional[SinkResult]:
+        message_parts = await self._source.next_message()
+        if message_parts is not None:
+            return self._handle_message(message_parts)

@@ -1,5 +1,6 @@
 """ZeroMQ utilities."""
 import os
+from abc import ABC, abstractmethod
 from enum import Enum
 from typing import List, Optional, Tuple, Type, Union
 from urllib.parse import urlparse
@@ -89,8 +90,8 @@ def get_socket_type(
         ) from exc
 
 
-class ZeroMQSource:
-    """ZeroMQ Source class.
+class BaseZeroMQSource(ABC):
+    """Base ZeroMQ Source class.
 
     :param socket: zmq socket endpoint
     :param socket_type: zmq socket type
@@ -99,6 +100,9 @@ class ZeroMQSource:
     :param receive_hwm: high watermark for inbound messages
     :param topic_prefix: filter inbound messages by topic prefix
     """
+
+    zmq_context: zmq.Context
+    receiver: zmq.Socket
 
     def __init__(
         self,
@@ -133,8 +137,6 @@ class ZeroMQSource:
         )
 
         self.receive_timeout = receive_timeout
-        self.zmq_context: Optional[zmq.Context] = None
-        self.receiver: Optional[zmq.Socket] = None
         self.routing_id_filter = RoutingIdFilter(routing_ids_cache_size)
         self.is_alive = False
         self._always_respond = self.socket_type == ReceiverSocketTypes.REP
@@ -153,7 +155,7 @@ class ZeroMQSource:
             self.bind,
         )
 
-        self.zmq_context = zmq.Context()
+        self.zmq_context = self._create_zmq_ctx()
         self.receiver = self.zmq_context.socket(self.socket_type.value)
         self.receiver.setsockopt(zmq.RCVHWM, self.receive_hwm)
         if self.bind:
@@ -167,8 +169,34 @@ class ZeroMQSource:
             set_ipc_socket_permissions(self.socket)
         self.is_alive = True
 
+    @abstractmethod
     def next_message(self) -> Optional[List[bytes]]:
         """Try to receive next message."""
+        pass
+
+    def terminate(self):
+        """Finish and free zmq socket."""
+        if not self.is_alive:
+            logger.warning('ZeroMQ source is not started.')
+            return
+        self.is_alive = False
+        logger.info('Closing ZeroMQ socket')
+        self.receiver.close()
+        self.receiver = None
+        logger.info('Terminating ZeroMQ context.')
+        self.zmq_context.term()
+        self.zmq_context = None
+        logger.info('ZeroMQ context terminated')
+
+    @abstractmethod
+    def _create_zmq_ctx(self):
+        pass
+
+
+class ZeroMQSource(BaseZeroMQSource):
+    """ZeroMQ Source class."""
+
+    def next_message(self) -> Optional[List[bytes]]:
         if not self.is_alive:
             raise RuntimeError('ZeroMQ source is not started.')
 
@@ -219,19 +247,69 @@ class ZeroMQSource:
             raise StopIteration
         return message
 
-    def terminate(self):
-        """Finish and free zmq socket."""
+    def _create_zmq_ctx(self):
+        return zmq.Context()
+
+
+class AsyncZeroMQSource(ZeroMQSource):
+    """Async ZeroMQ Source class."""
+
+    zmq_context: zmq.asyncio.Context
+    receiver: zmq.asyncio.Socket
+
+    def _create_zmq_ctx(self):
+        return zmq.asyncio.Context()
+
+    async def next_message(self) -> Optional[List[bytes]]:
         if not self.is_alive:
-            logger.warning('ZeroMQ source is not started.')
+            raise RuntimeError('ZeroMQ source is not started.')
+
+        try:
+            message = await self.receiver.recv_multipart()
+        except zmq.Again:
+            logger.debug('Timeout exceeded when receiving the next frame')
             return
-        self.is_alive = False
-        logger.info('Closing ZeroMQ socket')
-        self.receiver.close()
-        self.receiver = None
-        logger.info('Terminating ZeroMQ context.')
-        self.zmq_context.term()
-        self.zmq_context = None
-        logger.info('ZeroMQ context terminated')
+
+        if self.socket_type == ReceiverSocketTypes.ROUTER:
+            routing_id, *message = message
+        else:
+            routing_id = None
+
+        if message[0] == END_OF_STREAM_MESSAGE:
+            if routing_id:
+                await self.receiver.send_multipart([routing_id, CONFIRMATION_MESSAGE])
+            else:
+                await self.receiver.send(CONFIRMATION_MESSAGE)
+            return
+
+        if self._always_respond:
+            await self.receiver.send(CONFIRMATION_MESSAGE)
+
+        topic, *data = message
+        if not data:
+            raise RuntimeError(f'ZeroMQ message from topic {topic} does not have data.')
+
+        if self.topic_prefix and not topic.startswith(self.topic_prefix):
+            logger.debug(
+                'Skipping message from topic %s, expected prefix %s',
+                topic,
+                self.topic_prefix,
+            )
+            return
+
+        if self.routing_id_filter.filter(routing_id, topic):
+            return data
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        message = None
+        while self.is_alive and message is None:
+            message = await self.next_message()
+        if message is None:
+            raise StopIteration
+        return message
 
 
 class RoutingIdFilter:
