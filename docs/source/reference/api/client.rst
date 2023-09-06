@@ -29,6 +29,36 @@ Source usage example:
     time.sleep(1)  # Wait for the module to process the frame
     result.logs().pretty_print()
 
+Source usage example (async):
+
+.. code-block:: python
+
+    import asyncio
+    import time
+    from savant_rs import init_jaeger_tracer
+    from savant.client import JaegerLogProvider, JpegSource, SourceBuilder
+
+    async def main():
+        # Initialize Jaeger tracer to send metrics and logs to Jaeger.
+        # Note: the Jaeger tracer also should be configured in the module.
+        init_jaeger_tracer('savant-client', 'localhost:6831')
+
+        # Build the source
+        source = (
+            SourceBuilder()
+            .with_log_provider(JaegerLogProvider('http://localhost:16686'))
+            .with_socket('pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc')
+            .build_async()
+        )
+
+        # Send a JPEG image from a file to the module
+        result = await source(JpegSource('cam-1', 'data/AVG-TownCentre.jpeg'))
+        print(result.status)
+        time.sleep(1)  # Wait for the module to process the frame
+        result.logs().pretty_print()
+
+    asyncio.run(main())
+
 Sink usage example:
 
 .. code-block:: python
@@ -104,4 +134,5 @@ Runners
     :template: autosummary/class.rst
 
     runner.source.SourceRunner
+    runner.source.AsyncSourceRunner
     runner.sink.SinkRunner

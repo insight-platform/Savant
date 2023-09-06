@@ -7,8 +7,8 @@ from savant_rs.utils.serialization import Message, load_message_from_bytes
 
 from savant.client.log_provider import LogProvider
 from savant.client.runner import LogResult
-from savant.utils.zeromq import Defaults, ZeroMQSource
 from savant.utils.logging import get_logger
+from savant.utils.zeromq import Defaults, ZeroMQSource
 
 logger = get_logger(__name__)
 

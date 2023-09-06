@@ -1,7 +1,7 @@
 from typing import Optional
 
 from savant.client.log_provider import LogProvider
-from savant.client.runner.source import SourceRunner
+from savant.client.runner.source import AsyncSourceRunner, SourceRunner
 from savant.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -21,6 +21,19 @@ class SourceBuilder:
             .build()
         )
         result = source(JpegSource('cam-1', 'data/AVG-TownCentre.jpeg'))
+        result.logs().pretty_print()
+
+    Usage example (async):
+
+    .. code-block:: python
+
+        source = (
+            SourceBuilder()
+            .with_log_provider(JaegerLogProvider('http://localhost:16686'))
+            .with_socket('req+connect:ipc:///tmp/zmq-sockets/input-video.ipc')
+            .build_async()
+        )
+        result = await source(JpegSource('cam-1', 'data/AVG-TownCentre.jpeg'))
         result.logs().pretty_print()
     """
 
@@ -59,6 +72,21 @@ class SourceBuilder:
             self._log_provider,
         )
         return SourceRunner(
+            socket=self._socket,
+            log_provider=self._log_provider,
+            retries=self._retries,
+        )
+
+    def build_async(self) -> AsyncSourceRunner:
+        """Build async Source."""
+
+        assert self._socket is not None, 'socket is required'
+        logger.debug(
+            'Building async source with socket %s and log provider %s.',
+            self._socket,
+            self._log_provider,
+        )
+        return AsyncSourceRunner(
             socket=self._socket,
             log_provider=self._log_provider,
             retries=self._retries,

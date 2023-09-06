@@ -5,6 +5,7 @@ from typing import List, Optional, Tuple, Type, Union
 from urllib.parse import urlparse
 
 import zmq
+import zmq.asyncio
 from cachetools import LRUCache
 
 from savant.utils.logging import get_logger
@@ -12,7 +13,6 @@ from savant.utils.logging import get_logger
 from .re_patterns import socket_options_pattern, socket_uri_pattern
 
 logger = get_logger(__name__)
-
 
 CONFIRMATION_MESSAGE = b'OK'
 END_OF_STREAM_MESSAGE = b'EOS'
@@ -351,6 +351,25 @@ def receive_response(sender: zmq.Socket, retries: int):
     while retries > 0:
         try:
             return sender.recv()
+        except zmq.Again:
+            retries -= 1
+            logger.debug(
+                'Timeout exceeded when receiving response (%s retries left)',
+                retries,
+            )
+            if retries == 0:
+                raise
+
+
+async def async_receive_response(sender: zmq.asyncio.Socket, retries: int):
+    """Receive response from async sender socket.
+
+    Retry until response is received.
+    """
+
+    while retries > 0:
+        try:
+            return await sender.recv()
         except zmq.Again:
             retries -= 1
             logger.debug(
