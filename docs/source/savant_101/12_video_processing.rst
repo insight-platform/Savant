@@ -72,8 +72,8 @@ You have 10 cams of FullHD and 15 cams of HD resolution. You need the outgoing v
 
 **Solution**: configure two pipelines - the first to use Full-HD resolution, the second to use HD resolution. Point Full-HD cams to the Full-HD pipeline, HD cams to the HD pipeline.
 
-Adding Paddings
----------------
+Paddings
+--------
 
 Adding paddings is useful if you need spare space for utility purposes. E.g. you may use paddings to preprocess the image before passing it to the model. Another way to use paddings is to display utility content.
 
@@ -98,12 +98,16 @@ The paddings can either be preserved or removed at the output.
 
 .. note::
 
-    If you specify ``parameters.frame.padding.keep == false``, the paddings are removed before frames are encoded. The geometry for all objects are recalculated to conform new geometry.
+    If you specify ``parameters.frame.padding.keep == false``, the paddings are removed before frame encoding. The geometry for all objects are recalculated to conform new geometry.
 
-Geometry base
+Geometry Base
 -------------
 
-The geometry base is a base value for each frame parameter (width, height, paddings). All frame parameters must be divisible by this value. The default value is 8.
+The ``geometry_base`` parameter specifies the value by which any geometry dimension of the frame (width, height, margin size) must be evenly divided. The default value is ``8``.
+
+When the developer specifies the frame dimensions do not fit the ``geometry_base``, the pipeline will stop with an error. Thus, when defining ``frame.width``, ``frame.height``, and ``frame.padding.*`` every of them must be divisible by ``geometry_base``. The parameter is introduced to overcome unexpected behavior due to platform-specific hardware limitations when a non-standard resolution is used during image processing and encoding.
+
+.. tip:: We do not recommend setting ``geometry_base`` parameter to the values other than ``8`` or ``4``.
 
 .. code-block:: yaml
 
@@ -120,7 +124,7 @@ The geometry base is a base value for each frame parameter (width, height, paddi
 Multiplexing
 ------------
 
-All streams processed by a single module instance are grouped into batches before processing. Batch is a concept used to optimize the computations on Nvidia hardware. Savant is implemented in such a way as to hide batching from the developer: you always operate with a single frame, not a batch of frames.
+All streams processed by a single module instance are grouped into batches before processing. Batch is a concept used to optimize the computations on Nvidia hardware. Savant is implemented to hide batching: developers typically work with a single frame, not a batch of frames.
 
 .. code-block:: yaml
 
@@ -129,7 +133,7 @@ All streams processed by a single module instance are grouped into batches befor
       ...
       batch_size: 1
 
-Set the batch size equal to the maximum expected number of simultaneously processed streams.
+Typically you may set ``batch_size`` equal to the maximum expected number of simultaneously processed streams. Find out more on :doc:`/advanced_topics/0_batching` in the advanced topics.
 
 Processing
 ----------
@@ -209,9 +213,10 @@ The framework supports several encoding schemes:
 - HEVC/H265 (hardware ``nvv4l2h265enc``).
 
 .. note::
-    Hardware encoder for JPEG is available only on Nvidia Jetson.
 
-We highly advise using hardware NVENC-assisted codecs. The only caveat is to steer clear from GeForce GPUs in production as they have a limitation constraining simultaneous encoding to 3 streams. In case you are using GeForce, choose RAW RGBA.
+    Hardware encoder for JPEG is available only on Nvidia Jetson. On dGPU JPEG encoder is CUDA-assisted when supported by the hardware.
+
+We highly advise using hardware assisted codecs. The only caveat is to steer clear from GeForce GPUs in production as they have a limitation constraining simultaneous encoding to 3 streams. In case you are using GeForce, choose RAW RGBA.
 
 .. code-block:: yaml
 
@@ -241,10 +246,6 @@ Every codec has its own configuration parameters related to a corresponding GStr
           bitrate: 4000000
           iframeinterval: 10
           profile: High
-
-.. note::
-
-    On Nvidia Jetson (DS 6.2) I-frame periodicity on hardware h264/h265 encoder is regulated with ``idrinterval`` instead of ``iframeinterval``.
 
 Available properties are:
 

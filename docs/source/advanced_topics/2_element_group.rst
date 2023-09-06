@@ -25,4 +25,4 @@ The groups are initialized based on whether their :py:attr:`~savant.config.schem
 
 In this example the detector units are conditionally initialized based on the value of an environment variable, but any expression on the config variables can be used as the condition. Expression evaluation is done in the same way as for any other config variable, standard OmegaConf interpolation and resolvers can be used, along with :py:mod:`custom resolvers <savant.config>` from Savant.
 
-In this manner any of the supported :doc:`/savant_101/29_pipeline` units can be conditionally initialized. In addition, the conditions can be applied to multiple units at the same time, by specifying them in the :py:attr:`~savant.config.schema.ElementGroup.elements` list of a single group.
+In this manner any of the supported :doc:`/savant_101/12_pipeline` units can be conditionally initialized. In addition, the conditions can be applied to multiple units at the same time, by specifying them in the :py:attr:`~savant.config.schema.ElementGroup.elements` list of a single group.

@@ -3,6 +3,10 @@ Module Overview
 
 A module is an executable unit that is deployed and executed on Nvidia edge devices or in the cloud on x86 servers with discrete GPUs. The module is defined in a YAML configuration file.
 
+The module is responsible for managing every activity displayed in the following picture:
+
+.. image:: ../_static/img/1_pipeline_diagram.jpg
+
 Module Runtime
 --------------
 
@@ -120,7 +124,7 @@ The ``log_level`` parameter defines the verbosity of logging for the framework. 
 Output Video Stream Codec
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If the ``output_frame`` section is set, Savant adds encoded video streams to sink. More information you will find in the next section :doc:`20_video_processing`.
+If the ``output_frame`` section is set, Savant adds encoded video streams to sink. More information you will find in the next section :doc:`12_video_processing`.
 
 Telemetry
 ^^^^^^^^^
