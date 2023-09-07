@@ -1,5 +1,5 @@
-Frame Mapping
-=============
+Frame Memory Mapping
+====================
 
 Frame Mapping is a method to access the frame data using NumPy. This approach can be less efficient than :doc:`technique <80_opencv_cuda>` based on OpenCV CUDA. However, it is beneficial if you need to process the whole frame on the CPU with NumPy-compatible tools. Remember that the whole RGBA frame will be copied to the CPU and back to the GPU, which is inefficient.
 
