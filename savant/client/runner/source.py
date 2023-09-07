@@ -10,13 +10,13 @@ from savant_rs.utils.serialization import Message, save_message_to_bytes
 from savant.client.frame_source import FrameSource
 from savant.client.log_provider import LogProvider
 from savant.client.runner import LogResult
+from savant.utils.logging import get_logger
 from savant.utils.zeromq import (
     Defaults,
     SenderSocketTypes,
     parse_zmq_socket_uri,
     receive_response,
 )
-from savant.utils.logging import get_logger
 
 logger = get_logger(__name__)
 

@@ -29,8 +29,8 @@ from savant.base.model import ComplexModel, ObjectModel
 from savant.base.pyfunc import PyFuncNoopCallException
 from savant.config.schema import FrameParameters, ModelElement, PipelineElement
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
-from savant.deepstream.nvinfer.model import NvInferAttributeModel, NvInferDetector
 from savant.deepstream.nvinfer.element_config import MERGED_CLASSES
+from savant.deepstream.nvinfer.model import NvInferAttributeModel, NvInferDetector
 from savant.deepstream.source_output import (
     SourceOutput,
     SourceOutputEncoded,
