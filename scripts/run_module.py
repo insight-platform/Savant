@@ -5,7 +5,13 @@ import pathlib
 from typing import Optional
 
 import click
-from common import docker_image_option, get_ipc_mounts, get_tcp_parameters, run_command
+from common import (
+    docker_image_option,
+    get_docker_runtime,
+    get_ipc_mounts,
+    get_tcp_parameters,
+    run_command,
+)
 
 
 def get_downloads_mount(
@@ -114,12 +120,11 @@ def run_module(
     for volume in volumes:
         command += ['-v', volume]
 
-    command.append('--gpus=all')
+    command.append(get_docker_runtime())
     command.append(docker_image)
     # entrypoint arg
     command.append(str(module_config_path))
 
-    print(f'Running docker command\n{command}')
     run_command(command)
 
 

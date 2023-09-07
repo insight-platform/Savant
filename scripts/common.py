@@ -45,6 +45,10 @@ def docker_image_option(default_docker_image_name: str, tag: Optional[str] = Non
     )
 
 
+def get_docker_runtime() -> str:
+    return '--runtime=nvidia' if is_aarch64() else '--gpus=all'
+
+
 def adapter_docker_image_option(default_suffix: str):
     return docker_image_option(f'savant-adapters-{default_suffix}')
 
@@ -203,7 +207,7 @@ def build_docker_run_command(
             command += ['--device', device]
 
     if with_gpu:
-        command.append('--gpus=all')
+        command.append(get_docker_runtime())
 
     if host_network:
         command.append('--network=host')
@@ -221,6 +225,7 @@ def build_docker_run_command(
 
 def run_command(command: List[str]):
     """Start a subprocess, call command."""
+    print(f'Running docker command\n{command}')
     try:
         subprocess.check_call(command)
     except subprocess.CalledProcessError as err:
