@@ -16,7 +16,7 @@ from savant_rs.primitives import (
 from savant_rs.utils.serialization import Message, load_message_from_bytes
 from savant_rs.video_object_query import MatchQuery
 
-from adapters.python.shared import opt_config
+from adapters.python.shared.config import opt_config
 from adapters.python.sinks.chunk_writer import ChunkWriter
 from savant.api.constants import DEFAULT_NAMESPACE
 from savant.api.parser import parse_video_frame

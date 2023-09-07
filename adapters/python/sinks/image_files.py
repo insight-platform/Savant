@@ -7,7 +7,7 @@ from typing import Dict, List
 from savant_rs.primitives import EndOfStream, VideoFrame
 from savant_rs.utils.serialization import Message, load_message_from_bytes
 
-from adapters.python.shared import opt_config
+from adapters.python.shared.config import opt_config
 from adapters.python.sinks.chunk_writer import ChunkWriter, CompositeChunkWriter
 from adapters.python.sinks.metadata_json import (
     MetadataJsonWriter,

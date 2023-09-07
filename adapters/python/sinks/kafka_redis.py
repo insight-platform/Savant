@@ -1,47 +1,33 @@
 import asyncio
-import json
 import os
-import signal
 import uuid
-from asyncio import Event, Queue
-from distutils.util import strtobool
-from typing import Any, Dict, Optional, Tuple, Union
+from asyncio import Queue
+from typing import Tuple
 
 from confluent_kafka import Producer
 from redis.asyncio import Redis
 from savant_rs.primitives import VideoFrame, VideoFrameContent
 from savant_rs.utils.serialization import Message, save_message_to_bytes
 
-from adapters.python.shared import kafka_topic_exists, opt_config
+from adapters.python.shared.config import opt_config
+from adapters.python.shared.kafka_redis import (
+    STOP,
+    BaseConfig,
+    BaseKafkaConfig,
+    BaseKafkaRedisAdapter,
+    run_kafka_redis_adapter,
+)
 from savant.api.enums import ExternalFrameType
 from savant.client import SinkBuilder
 from savant.client.runner.sink import SinkResult
-from savant.utils.logging import get_logger, init_logging
+from savant.utils.logging import get_logger
 
 LOGGER_NAME = 'adapters.kafka_redis_sink'
 logger = get_logger(LOGGER_NAME)
 
-STOP = object()
 
-
-class Config:
-    def __init__(self):
-        self.zmq_endpoint = os.environ['ZMQ_ENDPOINT']
-        self.queue_size = opt_config('QUEUE_SIZE', 100, int)
-        self.kafka = KafkaConfig()
-        self.redis = RedisConfig()
-
-
-class KafkaConfig:
-    def __init__(self):
-        self.brokers = os.environ['KAFKA_BROKERS']
-        self.topic = os.environ['KAFKA_TOPIC']
-        self.create_topic = opt_config('KAFKA_CREATE_TOPIC', False, strtobool)
-        self.create_topic_config: Dict[str, Any] = opt_config(
-            'KAFKA_CREATE_TOPIC_CONFIG',
-            {},
-            json.loads,
-        )
+class KafkaConfig(BaseKafkaConfig):
+    pass
 
 
 class RedisConfig:
@@ -56,42 +42,29 @@ class RedisConfig:
         return self.host is not None and self.port is not None
 
 
-class KafkaRedisSink:
+class Config(BaseConfig):
+    kafka: KafkaConfig
+
+    def __init__(self):
+        super().__init__()
+        self.zmq_endpoint = os.environ['ZMQ_ENDPOINT']
+        self.kafka = KafkaConfig()
+        self.redis = RedisConfig()
+
+
+class KafkaRedisSink(BaseKafkaRedisAdapter):
+    _config: Config
+    _poller_queue: Queue[SinkResult]
+    _sender_queue: Queue[Tuple[bytes, bytes]]
+
     def __init__(self, config: Config):
-        self._config = config
+        super().__init__(config)
         self._producer = build_producer(config.kafka)
         self._redis_client = Redis(host=config.redis.host, port=config.redis.port)
         self._sink = SinkBuilder().with_socket(config.zmq_endpoint).build_async()
-        self._is_running = False
-        self._error: Optional[str] = None
-        self._poller_queue: Optional[Queue[Union[SinkResult, STOP]]] = None
-        self._sender_queue: Optional[Queue[Union[Tuple[bytes, bytes], STOP]]] = None
-        self._stop_source_event: Optional[Event] = None
 
-    async def run(self):
-        logger.info('Starting the sink')
-        if not kafka_topic_exists(
-            self._config.kafka.brokers,
-            self._config.kafka.topic,
-            self._config.kafka.create_topic,
-            self._config.kafka.create_topic_config,
-        ):
-            raise RuntimeError(
-                f'Topic {self._config.kafka.topic} does not exist and '
-                f'KAFKA_CREATE_TOPIC={self._config.kafka.create_topic}'
-            )
-        self._poller_queue = Queue(self._config.queue_size)
-        self._sender_queue = Queue(self._config.queue_size)
-        self._stop_source_event = Event()
-        self._is_running = True
-        await asyncio.gather(self.poller(), self.serializer(), self.sender())
-        self._stop_source_event.set()
-
-    async def stop(self):
-        logger.info('Stopping the sink')
-        self._is_running = False
-        await self._stop_source_event.wait()
-        logger.info('Sink was stopped')
+    async def prepare_to_run(self):
+        pass
 
     async def poller(self):
         logger.info('Starting poller')
@@ -108,7 +81,7 @@ class KafkaRedisSink:
         await self._poller_queue.put(STOP)
         logger.info('Poller was stopped')
 
-    async def serializer(self):
+    async def transformer(self):
         logger.info('Starting serializer')
         while self._error is None:
             result = await self._poller_queue.get()
@@ -123,7 +96,7 @@ class KafkaRedisSink:
                 self.set_error(f'Failed to serialize message: {e}')
                 self._poller_queue.task_done()
                 # In case self._poller_queue is full, so poller won't stuck
-                clear_queue(self._poller_queue)
+                self.clear_queue(self._poller_queue)
                 break
             await self._sender_queue.put(
                 (source_id.encode(), save_message_to_bytes(message))
@@ -149,7 +122,7 @@ class KafkaRedisSink:
                 self.set_error(f'Failed to send message: {e}')
                 self._sender_queue.task_done()
                 # In case self._sender_queue is full, so serializer won't stuck
-                clear_queue(self._sender_queue)
+                self.clear_queue(self._sender_queue)
                 break
             self._sender_queue.task_done()
         logger.info('Sender was stopped')
@@ -199,38 +172,10 @@ class KafkaRedisSink:
         )
         self._producer.produce(self._config.kafka.topic, key=key, value=value)
 
-    @property
-    def error(self) -> Optional[str]:
-        return self._error
-
-    def set_error(self, error: str):
-        logger.error(error)
-        if self._error is None:
-            self._error = error
-
 
 def build_producer(config: KafkaConfig) -> Producer:
     return Producer({'bootstrap.servers': config.brokers})
 
 
-def clear_queue(queue: Queue):
-    while not queue.empty():
-        queue.get_nowait()
-
-
-def main():
-    init_logging()
-    # To gracefully shutdown the adapter on SIGTERM (raise KeyboardInterrupt)
-    signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
-    source = KafkaRedisSink(Config())
-    loop = asyncio.get_event_loop()
-    try:
-        loop.run_until_complete(source.run())
-    except KeyboardInterrupt:
-        loop.run_until_complete(source.stop())
-    finally:
-        loop.close()
-
-
 if __name__ == '__main__':
-    main()
+    run_kafka_redis_adapter(KafkaRedisSink, Config)

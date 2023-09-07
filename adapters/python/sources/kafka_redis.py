@@ -1,38 +1,33 @@
 import asyncio
-import json
 import os
-import signal
-from asyncio import Event, Queue
+from asyncio import Queue
 from distutils.util import strtobool
-from typing import Any, Dict, Iterator, Optional, Tuple, Union
+from typing import Dict, Iterator, Optional, Tuple, Union
 
 from confluent_kafka import Consumer
 from redis.asyncio import Redis
 from savant_rs.primitives import EndOfStream, VideoFrame, VideoFrameContent
 from savant_rs.utils.serialization import Message, load_message_from_bytes
 
-from adapters.python.shared import kafka_topic_exists, opt_config
+from adapters.python.shared.config import opt_config
+from adapters.python.shared.kafka_redis import (
+    STOP,
+    BaseConfig,
+    BaseKafkaConfig,
+    BaseKafkaRedisAdapter,
+    run_kafka_redis_adapter,
+)
 from savant.api.enums import ExternalFrameType
 from savant.client import SourceBuilder
-from savant.utils.logging import get_logger, init_logging
+from savant.utils.logging import get_logger
 
 LOGGER_NAME = 'adapters.kafka_redis_source'
 logger = get_logger(LOGGER_NAME)
 
-STOP = object()
 
-
-class Config:
+class KafkaConfig(BaseKafkaConfig):
     def __init__(self):
-        self.zmq_endpoint = os.environ['ZMQ_ENDPOINT']
-        self.queue_size = opt_config('QUEUE_SIZE', 100, int)
-        self.kafka = KafkaConfig()
-
-
-class KafkaConfig:
-    def __init__(self):
-        self.brokers = os.environ['KAFKA_BROKERS']
-        self.topic = os.environ['KAFKA_TOPIC']
+        super().__init__()
         self.group_id = os.environ['KAFKA_GROUP_ID']
         self.poll_timeout = opt_config('KAFKA_POLL_TIMEOUT', 1, float)
         self.auto_commit = opt_config('KAFKA_AUTO_COMMIT', True, strtobool)
@@ -43,54 +38,31 @@ class KafkaConfig:
         self.max_poll_interval_ms = opt_config(
             'KAFKA_MAX_POLL_INTERVAL_MS', 600000, int
         )
-        self.create_topic = opt_config('KAFKA_CREATE_TOPIC', False, strtobool)
-        self.create_topic_config: Dict[str, Any] = opt_config(
-            'KAFKA_CREATE_TOPIC_CONFIG',
-            {},
-            json.loads,
-        )
 
 
-class KafkaRedisSource:
+class Config(BaseConfig):
+    kafka: KafkaConfig
+
+    def __init__(self):
+        super().__init__()
+        self.zmq_endpoint = os.environ['ZMQ_ENDPOINT']
+        self.kafka = KafkaConfig()
+
+
+class KafkaRedisSource(BaseKafkaRedisAdapter):
+    _config: Config
+    _poller_queue: Queue[bytes]
+    _sender_queue: Queue[Union[Tuple[VideoFrame, bytes], EndOfStream]]
+
     def __init__(self, config: Config):
-        self._config = config
+        super().__init__(config)
         self._source = SourceBuilder().with_socket(config.zmq_endpoint).build_async()
         self._consumer = build_consumer(config.kafka)
         self._frame_clients: Dict[str, Redis] = {}
-        self._is_running = False
-        self._error: Optional[str] = None
-        self._poller_queue: Optional[Queue[Union[bytes, STOP]]] = None
-        self._sender_queue: Optional[
-            Queue[Union[Tuple[VideoFrame, bytes], EndOfStream, STOP]]
-        ] = None
-        self._stop_source_event: Optional[Event] = None
 
-    async def run(self):
-        logger.info('Starting the source')
-        if not kafka_topic_exists(
-            self._config.kafka.brokers,
-            self._config.kafka.topic,
-            self._config.kafka.create_topic,
-            self._config.kafka.create_topic_config,
-        ):
-            raise RuntimeError(
-                f'Topic {self._config.kafka.topic} does not exist and '
-                f'KAFKA_CREATE_TOPIC={self._config.kafka.create_topic}'
-            )
-        self._poller_queue = Queue(self._config.queue_size)
-        self._sender_queue = Queue(self._config.queue_size)
-        self._stop_source_event = Event()
+    async def prepare_to_run(self):
         self._consumer.subscribe([self._config.kafka.topic])
-        self._is_running = True
         logger.info('Subscribed to topic %r', self._config.kafka.topic)
-        await asyncio.gather(self.poller(), self.deserializer(), self.sender())
-        self._stop_source_event.set()
-
-    async def stop(self):
-        logger.info('Stopping the source')
-        self._is_running = False
-        await self._stop_source_event.wait()
-        logger.info('Source was stopped')
 
     async def poller(self):
         logger.info('Starting poller')
@@ -128,7 +100,7 @@ class KafkaRedisSource:
         await self._poller_queue.put(STOP)
         logger.info('Poller was stopped')
 
-    async def deserializer(self):
+    async def transformer(self):
         logger.info('Starting deserializer')
         while self._error is None:
             logger.debug('Waiting for the next message')
@@ -145,7 +117,7 @@ class KafkaRedisSource:
                 self.set_error(f'Failed to deserialize message: {e}')
                 self._poller_queue.task_done()
                 # In case self._poller_queue is full, so poller won't stuck
-                clear_queue(self._poller_queue)
+                self.clear_queue(self._poller_queue)
                 break
 
             if deserialized is not None:
@@ -168,7 +140,7 @@ class KafkaRedisSource:
             self._is_running = False
             self.set_error(f'Failed to send frame: {e}')
             # In case self._sender_queue is full, so deserializer won't stuck
-            clear_queue(self._sender_queue)
+            self.clear_queue(self._sender_queue)
         logger.info('Sender was stopped')
 
     async def deserialize_message(
@@ -244,15 +216,6 @@ class KafkaRedisSource:
 
         return await frame_client.get(key)
 
-    @property
-    def error(self) -> Optional[str]:
-        return self._error
-
-    def set_error(self, error: str):
-        logger.error(error)
-        if self._error is None:
-            self._error = error
-
 
 def build_consumer(config: KafkaConfig) -> Consumer:
     return Consumer(
@@ -267,27 +230,5 @@ def build_consumer(config: KafkaConfig) -> Consumer:
     )
 
 
-def clear_queue(queue: Queue):
-    while not queue.empty():
-        queue.get_nowait()
-
-
-def main():
-    init_logging()
-    # To gracefully shutdown the adapter on SIGTERM (raise KeyboardInterrupt)
-    signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
-    source = KafkaRedisSource(Config())
-    loop = asyncio.get_event_loop()
-    try:
-        loop.run_until_complete(source.run())
-    except KeyboardInterrupt:
-        loop.run_until_complete(source.stop())
-    finally:
-        loop.close()
-    if source.error is not None:
-        logger.error(source.error)
-        exit(1)
-
-
 if __name__ == '__main__':
-    main()
+    run_kafka_redis_adapter(KafkaRedisSource, Config)
