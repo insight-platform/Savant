@@ -1,4 +1,5 @@
 import os
+import time
 from typing import Any, Dict
 
 from confluent_kafka.admin import AdminClient, ClusterMetadata, NewTopic
@@ -20,6 +21,7 @@ def kafka_topic_exists(
     topic: str,
     create_if_not_exists: bool,
     create_topic_config: Dict[str, Any],
+    timeout: int = 10,
 ):
     admin_client = AdminClient({'bootstrap.servers': brokers})
     cluster_meta: ClusterMetadata = admin_client.list_topics()
@@ -31,4 +33,12 @@ def kafka_topic_exists(
 
     logger.info('Creating kafka topic %s with config %s', topic, create_topic_config)
     admin_client.create_topics([NewTopic(topic, **create_topic_config)])
-    return True
+    for _ in range(timeout):
+        cluster_meta = admin_client.list_topics()
+        if topic in cluster_meta.topics:
+            return True
+        time.sleep(1)
+
+    logger.error('Failed to create kafka topic %s', topic)
+
+    return False
