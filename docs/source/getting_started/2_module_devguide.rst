@@ -81,9 +81,17 @@ Rebuilding ``Dockerfile`` is done with:
 After the rebuilding ``Dockerfile`` you must apply changes in your IDE.
 
 Using The New Image In IDE
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+--------------------------
 
-TODO: How to do.
+PyCharm Professional
+^^^^^^^^^^^^^^^^^^^^
+
+.. include:: ../includes/getting_started/1_pycharm_update_docker.rst
+
+VS Code
+^^^^^^^
+
+.. include:: ../includes/getting_started/1_vscode_update_docker.rst
 
 Running The Module
 ------------------
@@ -125,6 +133,30 @@ Using uri-input.py Script
 -------------------------
 
 Read from web cam, display with AO-RTSP, meta with Client SDK.
+
+Video Manual
+------------
+
+1. start module
+2. stop module
+3. Client SDK: req/rep
+4. Change the code (DevServer) + Req/Rep (3)
+5. View Traces in Jaeger
+
+Notes:
+
+Show how to view logs with:
+
+- module console
+- client SDK logs
+- Jaeger Web UI
+
+Show how dev server works when:
+
+- pyfunc is incorrect
+- how the code reloads
+
+Show how to access resulting metadata programmatically.
 
 Summary
 -------

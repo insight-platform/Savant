@@ -30,7 +30,7 @@ Project Preparation
 
 #. Run the IDE and open the ``my-module`` folder.
 
-Reopen in container
+Reopen in Container
 -------------------
 
 #. The following steps apply to both local and remote development (screenshots are made for remote development).
@@ -55,3 +55,8 @@ Reopen in container
     .. image:: ../_static/img/dev-env/16-run-python-file.png
 
 That's it, the environment is set up. Now you are ready to develop your own pipeline. See the next section to find out how.
+
+Update Runtime On Container Change
+----------------------------------
+
+.. include:: ../includes/getting_started/1_vscode_update_docker.rst

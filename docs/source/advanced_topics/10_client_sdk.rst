@@ -1,5 +1,5 @@
 Development With Client SDK
-===========================
+---------------------------
 
 Client SDK is the most efficient approach to develop pipelines, run quality assurance tests to validate the pipeline behavior when models are under development, and to develop custom sources and sinks.
 
@@ -12,7 +12,7 @@ Client SDK together with :doc:`DevServer </advanced_topics/9_dev_server>` and :d
 - You can analyze code instrumenting in Jaeger Web GUI for every single query, which is beneficial for code optimization and debugging.
 
 OpenTelemetry in Client SDK
----------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Savant supports OpenTelemetry for collecting traces and logs. Frames, delivered to a module, can optionally include OpenTelemetry propagated information, which allows instrumenting pipelines precisely.
 
@@ -35,7 +35,7 @@ When the frame processing result is retrieved from the module, the developer can
 Currently we support only Jaeger OpenTelemetry collector. Logs are fetched from Jaeger REST API.
 
 Remote Development
-------------------
+^^^^^^^^^^^^^^^^^^
 
 Client SDK enables remote development, allowing running programmatic sources and sinks locally, while processing the data remotely. It can be convenient in the  following cases:
 
@@ -50,7 +50,7 @@ To utilize the full power of Client SDK it must be paired with:
 To find out more, explore :doc:`/getting_started/2_module_devguide`.
 
 Source Example
---------------
+^^^^^^^^^^^^^^
 
 Sources ingest frames and their metadata to a running module.
 
@@ -86,7 +86,7 @@ Sources ingest frames and their metadata to a running module.
 
 
 Sink Example
-------------
+^^^^^^^^^^^^
 
 Sinks retrieve results from a module.
 
@@ -114,20 +114,3 @@ Sinks retrieve results from a module.
 
 **TODO**: place here https://github.com/insight-platform/Savant/issues/398
 
-Video Manual
-^^^^^^^^^^^^
-
-Demonstrate Client SDK, show how to work with the module from the client SDK and OpenCV.
-
-Show how to view logs with:
-
-- module console
-- client SDK logs
-- Jaeger Web UI
-
-Show how dev server works when:
-
-- pyfunc is incorrect
-- how the code reloads
-
-Show how to access resulting metadata programmatically.

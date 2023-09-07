@@ -95,3 +95,8 @@ PyCharm does not automatically detect newly installed packages in a Docker conta
 .. image:: ../_static/img/dev-env/12-rescan.png
 
 After adding a new package to the ``requirements.txt``, simply press the specified hotkey to rebuild the image and update the packages.
+
+Update Runtime On Container Change
+----------------------------------
+
+.. include:: ../includes/getting_started/1_pycharm_update_docker.rst

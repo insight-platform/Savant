@@ -14,8 +14,8 @@ Normally, we use VENV to install packages, and IDE knows how to gather symbols f
 
 Fortunately, popular Python IDEs like PyCharm Professional and VSCode support setting up a development environment in a docker container: it gives the IDE information from where to collect available packages and their symbols.
 
-Expected Result
----------------
+Configuration Manuals
+---------------------
 
 We will guide how to configure PyCharm Professional and VSCode to use runtime environment in Docker. The GitHub repository contains a module template; we will use it to demonstrate configuring the development environment in PyCharm Professional and VSCode.
 
@@ -30,7 +30,6 @@ We will guide how to configure PyCharm Professional and VSCode to use runtime en
 
 .. toctree::
    :maxdepth: 1
-   :caption: Configure IDE
 
    1_pycharm
    1_vscode
