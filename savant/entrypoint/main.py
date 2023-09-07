@@ -1,12 +1,14 @@
 """Module entrypoint function."""
 import os
 from pathlib import Path
+from threading import Thread
 
 from savant.config import ModuleConfig
 from savant.deepstream.encoding import check_encoder_is_available
 from savant.deepstream.pipeline import NvDsPipeline
 from savant.deepstream.runner import NvDsPipelineRunner
 from savant.gstreamer import Gst
+from savant.healthcheck.server import HealthCheckHttpServer
 from savant.utils.logging import get_logger, init_logging, update_logging
 from savant.utils.sink_factories import sink_factory
 
@@ -35,6 +37,21 @@ def main(config_file_path: str):
     # reconfigure savant logger with updated loglevel
     update_logging(config.parameters['log_level'])
     logger = get_logger('main')
+
+    if status_filepath is not None:
+        healthcheck_port = config.parameters.get('healthcheck_port')
+        if healthcheck_port:
+            healthcheck_server = HealthCheckHttpServer(
+                host='',
+                port=healthcheck_port,
+                http_path='/healthcheck',
+                status_filepath=status_filepath,
+            )
+            healthcheck_thread = Thread(
+                target=healthcheck_server.serve_forever,
+                daemon=True,
+            )
+            healthcheck_thread.start()
 
     # possible exceptions will cause app to crash and log error by default
     # no need to handle exceptions here

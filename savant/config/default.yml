@@ -126,6 +126,9 @@ parameters:
   # a Shutdown message with this key.
   # shutdown_auth: "shutdown-auth"
 
+  # Healthcheck port. If set, module will listen on this port and return its status.
+  healthcheck_port: ${oc.decode:${oc.env:HEALTHCHECK_PORT, null}}
+
 
 # pipeline definition
 pipeline:
