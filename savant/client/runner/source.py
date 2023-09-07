@@ -10,6 +10,8 @@ from savant_rs.utils.serialization import Message, save_message_to_bytes
 from savant.client.frame_source import FrameSource
 from savant.client.log_provider import LogProvider
 from savant.client.runner import LogResult
+from savant.client.runner.healthcheck import HealthCheck
+from savant.healthcheck.status import PipelineStatus
 from savant.utils.logging import get_logger
 from savant.utils.zeromq import (
     Defaults,
@@ -37,8 +39,11 @@ class SourceRunner:
     def __init__(
         self,
         socket: str,
-        log_provider: Optional[LogProvider] = None,
-        retries: int = Defaults.REQ_RECEIVE_RETRIES,
+        log_provider: Optional[LogProvider],
+        retries: int,
+        module_health_check_url: Optional[str],
+        module_health_check_timeout: float,
+        module_health_check_interval: float,
         send_hwm: int = Defaults.SEND_HWM,
         receive_timeout: int = Defaults.SENDER_RECEIVE_TIMEOUT,
     ):
@@ -47,6 +52,15 @@ class SourceRunner:
         self._retries = retries
         self._send_hwm = send_hwm
         self._receive_timeout = receive_timeout
+        self._health_check = (
+            HealthCheck(
+                url=module_health_check_url,
+                interval=module_health_check_interval,
+                timeout=module_health_check_timeout,
+            )
+            if module_health_check_url is not None
+            else None
+        )
         self._socket_type, self._bind, self._socket = parse_zmq_socket_uri(
             uri=socket,
             socket_type_enum=SenderSocketTypes,
@@ -90,6 +104,8 @@ class SourceRunner:
         :return: Result of sending the frame.
         """
 
+        if self._health_check is not None:
+            self._health_check.wait_module_is_ready([PipelineStatus.RUNNING])
         logger.debug('Sending video frame from source %s.', source)
         video_frame, content = source.build_frame()
         frame_id = self._pipeline.add_frame(self._pipeline_stage_name, video_frame)
@@ -145,6 +161,8 @@ class SourceRunner:
         :return: Result of sending EOS.
         """
 
+        if self._health_check is not None:
+            self._health_check.wait_module_is_ready([PipelineStatus.RUNNING])
         logger.debug('Sending EOS for source %s.', source_id)
         zmq_topic = f'{source_id}/'.encode()
         message = Message.end_of_stream(EndOfStream(source_id))
@@ -167,6 +185,8 @@ class SourceRunner:
         :return: Result of sending Shutdown.
         """
 
+        if self._health_check is not None:
+            self._health_check.wait_module_is_ready([PipelineStatus.RUNNING])
         logger.debug('Sending Shutdown message for source %s.', source_id)
         zmq_topic = f'{source_id}/'.encode()
         message = Message.shutdown(Shutdown(auth))
