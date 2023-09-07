@@ -46,9 +46,7 @@ services:
     depends_on:
       module:
         condition: service_healthy
-      kafka:
-        condition: service_healthy
-      keydb:
+      kafka-redis-sink:
         condition: service_started
 
   kafka-redis-sink:

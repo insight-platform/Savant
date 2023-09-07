@@ -57,17 +57,21 @@ class KafkaRedisSource:
         self._consumer = build_consumer(config.kafka)
         self._frame_clients: Dict[str, Redis] = {}
         self._is_running = False
-        self._consumer_queue: Optional[Queue[Union[bytes, STOP]]] = None
+        self._poller_queue: Optional[Queue[Union[bytes, STOP]]] = None
+        self._sender_queue: Optional[
+            Queue[Union[Tuple[VideoFrame, bytes], EndOfStream, STOP]]
+        ] = None
         self._stop_source_event: Optional[Event] = None
 
     async def run(self):
         logger.info('Starting the source')
-        self._consumer_queue = Queue(self._config.queue_size)
+        self._poller_queue = Queue(self._config.queue_size)
+        self._sender_queue = Queue(self._config.queue_size)
         self._stop_source_event = Event()
         self._consumer.subscribe([self._config.kafka.topic])
         self._is_running = True
         logger.info('Subscribed to topic %r', self._config.kafka.topic)
-        await asyncio.gather(self.poller(), self.sender())
+        await asyncio.gather(self.poller(), self.deserializer(), self.sender())
         self._stop_source_event.set()
 
     async def stop(self):
@@ -98,8 +102,8 @@ class KafkaRedisSource:
                 message.key(),
                 len(data),
             )
-            await self._consumer_queue.put(data)
-        await self._consumer_queue.put(STOP)
+            await self._poller_queue.put(data)
+        await self._poller_queue.put(STOP)
         logger.info('Poller was stopped')
 
     async def sender(self):
@@ -111,6 +115,22 @@ class KafkaRedisSource:
                 result.status,
             )
         logger.info('Sender was stopped')
+
+    async def deserializer(self):
+        logger.info('Starting deserializer')
+        while True:
+            logger.debug('Waiting for the next message')
+            data = await self._poller_queue.get()
+            if data is STOP:
+                logger.debug('Received stop signal')
+                self._poller_queue.task_done()
+                break
+            deserialized = await self.deserialize_message(data)
+            if deserialized is not None:
+                await self._sender_queue.put(deserialized)
+            self._poller_queue.task_done()
+        await self._sender_queue.put(STOP)
+        logger.info('Deserializer was stopped')
 
     async def deserialize_message(
         self,
@@ -131,15 +151,13 @@ class KafkaRedisSource:
     ) -> Iterator[Union[Tuple[VideoFrame, bytes], EndOfStream]]:
         while True:
             logger.debug('Waiting for the next message')
-            data = await self._consumer_queue.get()
+            data = await self._sender_queue.get()
             if data is STOP:
                 logger.debug('Received stop signal')
-                self._consumer_queue.task_done()
+                self._sender_queue.task_done()
                 break
-            deserialized = await self.deserialize_message(data)
-            if deserialized is not None:
-                yield deserialized
-            self._consumer_queue.task_done()
+            yield data
+            self._sender_queue.task_done()
 
     async def fetch_video_frame_content(
         self,

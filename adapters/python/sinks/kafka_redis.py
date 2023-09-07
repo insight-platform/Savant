@@ -3,11 +3,11 @@ import os
 import signal
 import uuid
 from asyncio import Event, Queue
-from typing import Optional, Union
+from typing import Optional, Tuple, Union
 
 from confluent_kafka import Producer
 from redis.asyncio import Redis
-from savant_rs.primitives import EndOfStream, VideoFrame, VideoFrameContent
+from savant_rs.primitives import VideoFrame, VideoFrameContent
 from savant_rs.utils.serialization import Message, save_message_to_bytes
 
 from savant.api.enums import ExternalFrameType
@@ -60,23 +60,25 @@ class KafkaRedisSink:
         self._redis_client = Redis(host=config.redis.host, port=config.redis.port)
         self._sink = SinkBuilder().with_socket(config.zmq_endpoint).build_async()
         self._is_running = False
-        self._sink_queue: Optional[Queue[Union[SinkResult, STOP]]] = None
+        self._poller_queue: Optional[Queue[Union[SinkResult, STOP]]] = None
+        self._sender_queue: Optional[Queue[Union[Tuple[bytes, bytes], STOP]]] = None
         self._stop_source_event: Optional[Event] = None
 
     async def run(self):
         logger.info('Starting the sink')
-        self._sink_queue = Queue(self._config.queue_size)
+        self._poller_queue = Queue(self._config.queue_size)
+        self._sender_queue = Queue(self._config.queue_size)
         self._stop_source_event = Event()
         self._is_running = True
-        await asyncio.gather(self.poller(), self.sender())
+        await asyncio.gather(self.poller(), self.serializer(), self.sender())
         self._stop_source_event.set()
 
     async def poller(self):
         logger.info('Starting poller')
         while self._is_running:
             async for result in self._sink:
-                await self._sink_queue.put(result)
-        await self._sink_queue.put(STOP)
+                await self._poller_queue.put(result)
+        await self._poller_queue.put(STOP)
         logger.info('Poller was stopped')
 
     async def stop(self):
@@ -85,44 +87,52 @@ class KafkaRedisSink:
         await self._stop_source_event.wait()
         logger.info('Sink was stopped')
 
+    async def serializer(self):
+        logger.info('Starting serializer')
+        while True:
+            result = await self._poller_queue.get()
+            if result is STOP:
+                logger.debug('Received stop signal')
+                self._poller_queue.task_done()
+                break
+            if result.frame_meta is not None:
+                frame_meta = result.frame_meta
+                source_id = frame_meta.source_id
+                logger.debug(
+                    'Received frame %s/%s (keyframe=%s)',
+                    source_id,
+                    frame_meta.pts,
+                    frame_meta.keyframe,
+                )
+                if result.frame_content is not None:
+                    frame_meta = await self.put_frame_to_redis(
+                        frame_meta, result.frame_content
+                    )
+                message = Message.video_frame(frame_meta)
+            else:
+                source_id = result.eos.source_id
+                logger.debug('Received EOS for source %s', source_id)
+                message = Message.end_of_stream(result.eos)
+            await self._sender_queue.put(
+                (source_id.encode(), save_message_to_bytes(message))
+            )
+            self._poller_queue.task_done()
+        await self._sender_queue.put(STOP)
+        logger.info('Serializer was stopped')
+
     async def sender(self):
         logger.info('Starting sender')
         loop = asyncio.get_running_loop()
         while True:
-            result = await self._sink_queue.get()
-            if result is STOP:
+            message = await self._sender_queue.get()
+            if message is STOP:
                 logger.debug('Received stop signal')
-                self._sink_queue.task_done()
+                self._sender_queue.task_done()
                 break
-            if result.frame_meta is not None:
-                message = result.frame_meta
-                logger.debug('Received frame %s/%s (keyframe=%s)', message.source_id, message.pts, message.keyframe)
-                if result.frame_content is not None:
-                    message = await self.put_frame_to_redis(
-                        message, result.frame_content
-                    )
-            else:
-                message = result.eos
-                logger.debug('Received EOS for source %s', message.source_id)
-            await self.send_message(loop, message)
-            self._sink_queue.task_done()
+            source_id, data = message
+            await loop.run_in_executor(None, self.send_to_producer, source_id, data)
+            self._sender_queue.task_done()
         logger.info('Sender was stopped')
-
-    async def send_message(
-        self,
-        loop: asyncio.AbstractEventLoop,
-        data: Union[VideoFrame, EndOfStream],
-    ):
-        if isinstance(data, VideoFrame):
-            message = Message.video_frame(data)
-        else:
-            message = Message.end_of_stream(data)
-        await loop.run_in_executor(
-            None,
-            self.send_to_producer,
-            data.source_id.encode(),
-            save_message_to_bytes(message),
-        )
 
     def send_to_producer(self, key: str, value: bytes):
         logger.debug(
