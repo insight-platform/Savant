@@ -116,6 +116,7 @@ class SinkBuilder:
                 'socket': self._socket,
                 'log_provider': self._log_provider,
                 'idle_timeout': self._idle_timeout,
+                'module_health_check_url': self._module_health_check_url,
                 'module_health_check_timeout': self._module_health_check_timeout,
                 'module_health_check_interval': self._module_health_check_interval,
                 field: value,
