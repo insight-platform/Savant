@@ -10,6 +10,7 @@ from redis.asyncio import Redis
 from savant_rs.primitives import EndOfStream, VideoFrame, VideoFrameContent
 from savant_rs.utils.serialization import Message, load_message_from_bytes
 
+from adapters.python.shared import opt_config
 from savant.api.enums import ExternalFrameType
 from savant.client import SourceBuilder
 from savant.utils.logging import get_logger, init_logging
@@ -18,13 +19,6 @@ LOGGER_NAME = 'adapters.kafka_redis_source'
 logger = get_logger(LOGGER_NAME)
 
 STOP = object()
-
-
-def opt_config(name, default=None, convert=None):
-    conf_str = os.environ.get(name)
-    if conf_str:
-        return convert(conf_str) if convert else conf_str
-    return default
 
 
 class Config:

@@ -16,6 +16,7 @@ from savant_rs.primitives import (
 from savant_rs.utils.serialization import Message, load_message_from_bytes
 from savant_rs.video_object_query import MatchQuery
 
+from adapters.python.shared import opt_config
 from adapters.python.sinks.chunk_writer import ChunkWriter
 from savant.api.constants import DEFAULT_NAMESPACE
 from savant.api.parser import parse_video_frame
@@ -177,15 +178,15 @@ def main():
     logger = get_logger(LOGGER_NAME)
     location = os.environ['LOCATION']
     zmq_endpoint = os.environ['ZMQ_ENDPOINT']
-    zmq_socket_type = os.environ.get('ZMQ_TYPE', 'SUB')
-    zmq_bind = bool(strtobool(os.environ.get('ZMQ_BIND', 'false')))
-    skip_frames_without_objects = bool(
-        strtobool(os.environ.get('SKIP_FRAMES_WITHOUT_OBJECTS', 'false'))
+    zmq_socket_type = opt_config('ZMQ_TYPE', 'SUB')
+    zmq_bind = opt_config('ZMQ_BIND', False, strtobool)
+    skip_frames_without_objects = opt_config(
+        'SKIP_FRAMES_WITHOUT_OBJECTS', False, strtobool
     )
-    chunk_size = int(os.environ.get('CHUNK_SIZE', 0))
+    chunk_size = opt_config('CHUNK_SIZE', 0, int)
     topic_prefix = build_topic_prefix(
-        source_id=os.environ.get('SOURCE_ID'),
-        source_id_prefix=os.environ.get('SOURCE_ID_PREFIX'),
+        source_id=opt_config('SOURCE_ID'),
+        source_id_prefix=opt_config('SOURCE_ID_PREFIX'),
     )
 
     # possible exceptions will cause app to crash and log error by default

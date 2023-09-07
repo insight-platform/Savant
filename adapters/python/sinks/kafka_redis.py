@@ -10,6 +10,7 @@ from redis.asyncio import Redis
 from savant_rs.primitives import VideoFrame, VideoFrameContent
 from savant_rs.utils.serialization import Message, save_message_to_bytes
 
+from adapters.python.shared import opt_config
 from savant.api.enums import ExternalFrameType
 from savant.client import SinkBuilder
 from savant.client.runner.sink import SinkResult
@@ -19,13 +20,6 @@ LOGGER_NAME = 'adapters.kafka_redis_sink'
 logger = get_logger(LOGGER_NAME)
 
 STOP = object()
-
-
-def opt_config(name, default=None, convert=None):
-    conf_str = os.environ.get(name)
-    if conf_str:
-        return convert(conf_str) if convert else conf_str
-    return default
 
 
 class Config:
@@ -47,6 +41,7 @@ class RedisConfig:
         self.host = os.environ['REDIS_HOST']
         self.port = opt_config('REDIS_PORT', 6379, int)
         self.key_prefix = opt_config('REDIS_KEY_PREFIX', 'savant:frames')
+        self.ttl_seconds = opt_config('REDIS_TTL_SECONDS', 60, int)
 
     @property
     def enabled(self):
@@ -145,7 +140,11 @@ class KafkaRedisSink:
 
     async def put_frame_to_redis(self, frame: VideoFrame, content: bytes):
         content_key = f'{self._config.redis.key_prefix}:{uuid.uuid4()}'
-        await self._redis_client.set(content_key, content)
+        await self._redis_client.set(
+            content_key,
+            content,
+            ex=self._config.redis.ttl_seconds,
+        )
         frame.content = VideoFrameContent.external(
             ExternalFrameType.REDIS.value,
             f'{self._config.redis.host}:{self._config.redis.port}/{content_key}',
