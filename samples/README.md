@@ -102,3 +102,9 @@ Sample Location: [multiple_gige](./multiple_gige)
 A demo showing how to inject ground truth metadata into frames and use them to estimate the model performance.
 
 Sample location: [source_adapter_with_json_metadata](./source_adapter_with_json_metadata)
+
+### OpenTelemetry Sample
+
+A sample demonstrating the use of OpenTelemetry in Savant.
+
+Sample location: [telemetry](./telemetry)

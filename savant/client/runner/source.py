@@ -10,6 +10,8 @@ from savant_rs.utils.serialization import Message, save_message_to_bytes
 from savant.client.frame_source import FrameSource
 from savant.client.log_provider import LogProvider
 from savant.client.runner import LogResult
+from savant.client.runner.healthcheck import HealthCheck
+from savant.healthcheck.status import PipelineStatus
 from savant.utils.logging import get_logger
 from savant.utils.zeromq import (
     Defaults,
@@ -43,9 +45,12 @@ class SourceRunner:
     def __init__(
         self,
         socket: str,
-        log_provider: Optional[LogProvider] = None,
-        retries: int = Defaults.REQ_RECEIVE_RETRIES,
-        telemetry_enabled: bool = True,
+        log_provider: Optional[LogProvider],
+        retries: int,
+        module_health_check_url: Optional[str],
+        module_health_check_timeout: float,
+        module_health_check_interval: float,
+        telemetry_enabled: bool,
         send_hwm: int = Defaults.SEND_HWM,
         receive_timeout: int = Defaults.SENDER_RECEIVE_TIMEOUT,
     ):
@@ -55,6 +60,16 @@ class SourceRunner:
         self._telemetry_enabled = telemetry_enabled
         self._send_hwm = send_hwm
         self._receive_timeout = receive_timeout
+        self._health_check = (
+            HealthCheck(
+                url=module_health_check_url,
+                interval=module_health_check_interval,
+                timeout=module_health_check_timeout,
+                ready_statuses=[PipelineStatus.RUNNING],
+            )
+            if module_health_check_url is not None
+            else None
+        )
         self._socket_type, self._bind, self._socket = parse_zmq_socket_uri(
             uri=socket,
             socket_type_enum=SenderSocketTypes,
@@ -100,6 +115,9 @@ class SourceRunner:
         :param send_eos: Whether to send EOS after sending the frame.
         :return: Result of sending the frame.
         """
+
+        if self._health_check is not None:
+            self._health_check.wait_module_is_ready()
 
         zmq_topic, serialized_message, content, result = self._prepare_video_frame(
             source
@@ -150,6 +168,9 @@ class SourceRunner:
         :return: Result of sending EOS.
         """
 
+        if self._health_check is not None:
+            self._health_check.wait_module_is_ready()
+
         zmq_topic, serialized_message, result = self._prepare_eos(source_id)
         self._send_zmq_message([zmq_topic, serialized_message])
         logger.debug('Sent EOS for source %s.', source_id)
@@ -164,6 +185,9 @@ class SourceRunner:
         :param auth: Authentication key.
         :return: Result of sending Shutdown.
         """
+
+        if self._health_check is not None:
+            self._health_check.wait_module_is_ready()
 
         zmq_topic, serialized_message, result = self._prepare_shutdown(source_id, auth)
         self._send_zmq_message([zmq_topic, serialized_message])
@@ -268,6 +292,9 @@ class AsyncSourceRunner(SourceRunner):
         return await self.send(source, send_eos)
 
     async def send(self, source: Frame, send_eos: bool = True) -> SourceResult:
+        if self._health_check is not None:
+            self._health_check.wait_module_is_ready()
+
         zmq_topic, serialized_message, content, result = self._prepare_video_frame(
             source
         )
@@ -302,6 +329,9 @@ class AsyncSourceRunner(SourceRunner):
                 await self.send_eos(source_id)
 
     async def send_eos(self, source_id: str) -> SourceResult:
+        if self._health_check is not None:
+            self._health_check.wait_module_is_ready()
+
         zmq_topic, serialized_message, result = self._prepare_eos(source_id)
         await self._send_zmq_message([zmq_topic, serialized_message])
         logger.debug('Sent EOS for source %s.', source_id)
@@ -310,6 +340,8 @@ class AsyncSourceRunner(SourceRunner):
         return result
 
     async def send_shutdown(self, source_id: str, auth: str) -> SourceResult:
+        if self._health_check is not None:
+            self._health_check.wait_module_is_ready()
 
         zmq_topic, serialized_message, result = self._prepare_shutdown(source_id, auth)
         await self._send_zmq_message([zmq_topic, serialized_message])

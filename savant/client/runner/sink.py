@@ -8,6 +8,8 @@ from savant_rs.utils.serialization import Message, load_message_from_bytes
 
 from savant.client.log_provider import LogProvider
 from savant.client.runner import LogResult
+from savant.client.runner.healthcheck import HealthCheck
+from savant.healthcheck.status import PipelineStatus
 from savant.utils.logging import get_logger
 from savant.utils.zeromq import AsyncZeroMQSource, Defaults, ZeroMQSource
 
@@ -32,13 +34,26 @@ class BaseSinkRunner(ABC):
     def __init__(
         self,
         socket: str,
-        log_provider: Optional[LogProvider] = None,
+        log_provider: Optional[LogProvider],
+        idle_timeout: Optional[int],
+        module_health_check_url: Optional[str],
+        module_health_check_timeout: float,
+        module_health_check_interval: float,
         receive_timeout: int = Defaults.RECEIVE_TIMEOUT,
         receive_hwm: int = Defaults.RECEIVE_HWM,
-        idle_timeout: Optional[int] = None,
     ):
         self._log_provider = log_provider
         self._idle_timeout = idle_timeout if idle_timeout is not None else 10**6
+        self._health_check = (
+            HealthCheck(
+                url=module_health_check_url,
+                interval=module_health_check_interval,
+                timeout=module_health_check_timeout,
+                ready_statuses=[PipelineStatus.RUNNING, PipelineStatus.STOPPING],
+            )
+            if module_health_check_url is not None
+            else None
+        )
         self._source = self._build_zeromq_source(socket, receive_timeout, receive_hwm)
         self._source.start()
 
@@ -109,6 +124,9 @@ class SinkRunner(BaseSinkRunner):
         :raise StopIteration: If no message was received for idle_timeout seconds.
         """
 
+        if self._health_check is not None:
+            self._health_check.wait_module_is_ready()
+
         wait_until = time.time() + self._idle_timeout
         result = None
         while result is None:
@@ -148,6 +166,9 @@ class AsyncSinkRunner(BaseSinkRunner):
         :return: Result of receiving a message from ZeroMQ socket.
         :raise StopIteration: If no message was received for idle_timeout seconds.
         """
+
+        if self._health_check is not None:
+            self._health_check.wait_module_is_ready()
 
         wait_until = time.time() + self._idle_timeout
         result = None

@@ -2,27 +2,18 @@
 import os
 import threading
 from datetime import timedelta
-from enum import Enum
 from pathlib import Path
 from time import time
 from typing import Optional, Union
 
 from gi.repository import GLib, Gst  # noqa:F401
 
+from savant.healthcheck.status import PipelineStatus
 from savant.utils.logging import get_logger
 
 from .pipeline import GstPipeline
 
 logger = get_logger(__name__)
-
-
-class PipelineStatus(Enum):
-    """Pipeline status."""
-
-    STARTING = 'starting'
-    RUNNING = 'running'
-    STOPPING = 'stopping'
-    STOPPED = 'stopped'
 
 
 class StateChangeError(Exception):
