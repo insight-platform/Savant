@@ -56,7 +56,9 @@ services:
     environment:
       - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/loop-source.ipc
       - KAFKA_BROKERS=kafka:9092
-      - KAFKA_TOPIC=demo
+      - KAFKA_TOPIC=kafka-reds-adapter-demo
+      - KAFKA_CREATE_TOPIC=True
+      - 'KAFKA_CREATE_TOPIC_CONFIG={"num_partitions": 4, "replication_factor": 1}'
       - REDIS_HOST=keydb
       - REDIS_PORT=6379
     command: python -m adapters.python.sinks.kafka_redis
@@ -73,8 +75,10 @@ services:
     environment:
       - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
       - KAFKA_BROKERS=kafka:9092
-      - KAFKA_TOPIC=demo
-      - KAFKA_GROUP_ID=demo
+      - KAFKA_TOPIC=kafka-reds-adapter-demo
+      - KAFKA_GROUP_ID=kafka-reds-adapter-demo
+      - KAFKA_CREATE_TOPIC=True
+      - 'KAFKA_CREATE_TOPIC_CONFIG={"num_partitions": 4, "replication_factor": 1}'
     command: python -m adapters.python.sources.kafka_redis
     depends_on:
       kafka:

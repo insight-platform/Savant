@@ -1,16 +1,17 @@
 import asyncio
+import json
 import os
 import signal
 from asyncio import Event, Queue
 from distutils.util import strtobool
-from typing import Dict, Iterator, Optional, Tuple, Union
+from typing import Any, Dict, Iterator, Optional, Tuple, Union
 
 from confluent_kafka import Consumer
 from redis.asyncio import Redis
 from savant_rs.primitives import EndOfStream, VideoFrame, VideoFrameContent
 from savant_rs.utils.serialization import Message, load_message_from_bytes
 
-from adapters.python.shared import opt_config
+from adapters.python.shared import kafka_topic_exists, opt_config
 from savant.api.enums import ExternalFrameType
 from savant.client import SourceBuilder
 from savant.utils.logging import get_logger, init_logging
@@ -42,6 +43,12 @@ class KafkaConfig:
         self.max_poll_interval_ms = opt_config(
             'KAFKA_MAX_POLL_INTERVAL_MS', 600000, int
         )
+        self.create_topic = opt_config('KAFKA_CREATE_TOPIC', False, strtobool)
+        self.create_topic_config: Dict[str, Any] = opt_config(
+            'KAFKA_CREATE_TOPIC_CONFIG',
+            {},
+            json.loads,
+        )
 
 
 class KafkaRedisSource:
@@ -59,6 +66,16 @@ class KafkaRedisSource:
 
     async def run(self):
         logger.info('Starting the source')
+        if not kafka_topic_exists(
+            self._config.kafka.brokers,
+            self._config.kafka.topic,
+            self._config.kafka.create_topic,
+            self._config.kafka.create_topic_config,
+        ):
+            raise RuntimeError(
+                f'Topic {self._config.kafka.topic} does not exist and '
+                f'KAFKA_CREATE_TOPIC={self._config.kafka.create_topic}'
+            )
         self._poller_queue = Queue(self._config.queue_size)
         self._sender_queue = Queue(self._config.queue_size)
         self._stop_source_event = Event()
