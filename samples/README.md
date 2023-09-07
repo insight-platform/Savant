@@ -107,4 +107,4 @@ Sample location: [source_adapter_with_json_metadata](./source_adapter_with_json_
 
 A sample demonstrating the use of OpenTelemetry in Savant.
 
-Sample location: [telemetry](./source_adapter_with_json_metadata)
+Sample location: [telemetry](./telemetry)
