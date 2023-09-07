@@ -44,7 +44,6 @@ Configuration properties copied from [dstest2_tracker_config.txt](https://github
         tracker-height: 384
         ll-lib-file: /opt/nvidia/deepstream/deepstream/lib/libnvds_nvmultiobjecttracker.so
         ll-config-file: ${oc.env:PROJECT_PATH}/samples/nvidia_car_classification/config_tracker_NvDCF_perf.yml
-        enable_batch_process: 1
 ```
 
 #### Classifiers

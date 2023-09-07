@@ -12,7 +12,7 @@
 ### age_gender_recognition
 
 | Savant ver.                                                                      | A4000  | Jetson NX |
-| -------------------------------------------------------------------------------- | ------ | --------- |
+|----------------------------------------------------------------------------------|--------|-----------|
 | [#166](https://github.com/insight-platform/Savant/issues/166)                    | 261    | 37        |
 | [v0.2.4](https://github.com/insight-platform/Savant/tree/v0.2.4)                 | 255.73 | 41.08     |
 | [#61](https://github.com/insight-platform/Savant/issues/61)                      | 257.52 | 40.78     |
@@ -24,11 +24,13 @@
 | [#322](https://github.com/insight-platform/Savant/issues/322) (buffer length 10) | 250.58 | 38.75     |
 | [#334](https://github.com/insight-platform/Savant/issues/334) (no queues)        | 244.93 | 39.19     |
 | [#334](https://github.com/insight-platform/Savant/issues/334) (buffer length 10) | 241.40 | 38.59     |
+| [#341](https://github.com/insight-platform/Savant/issues/341) (no queues)        | 245.73 | 38.16     |
+| [#347](https://github.com/insight-platform/Savant/issues/347) (no queues)        | 233.78 | 37.70     |
 
 ### conditional_video_processing
 
 | Savant ver.                                                                      | A4000  | Jetson NX |
-| -------------------------------------------------------------------------------- | ------ | --------- |
+|----------------------------------------------------------------------------------|--------|-----------|
 | [#244](https://github.com/insight-platform/Savant/issues/244)                    | 327    | 64        |
 | [v0.2.4](https://github.com/insight-platform/Savant/tree/v0.2.4)                 | 325.64 | 64.90     |
 | [#61](https://github.com/insight-platform/Savant/issues/61)                      | 314.84 | 64.13     |
@@ -39,11 +41,21 @@
 | [#322](https://github.com/insight-platform/Savant/issues/322) (buffer length 10) | 281.90 | 60.11     |
 | [#334](https://github.com/insight-platform/Savant/issues/334) (no queues)        | 315.22 | 63.87     |
 | [#334](https://github.com/insight-platform/Savant/issues/334) (buffer length 10) | 288.91 | 61.60     |
+| [#341](https://github.com/insight-platform/Savant/issues/341) (no queues)        | 311.62 | 61.46     |
+| [#347](https://github.com/insight-platform/Savant/issues/347) (no queues)        | 263.44 | 59.86     |
+
+### face_reid
+
+| Savant ver.                                                               | A4000  | Jetson NX |
+|---------------------------------------------------------------------------|--------|-----------|
+| [#142](https://github.com/insight-platform/Savant/issues/142)             | 124    | 26        |
+| [#341](https://github.com/insight-platform/Savant/issues/341) (no queues) | 121.11 | 25.4      |
+| [#347](https://github.com/insight-platform/Savant/issues/347) (no queues) | 118.79 | 25.99     |
 
 ### nvidia_car_classification
 
 | Savant ver.                                                                      | A4000  | Jetson NX |
-| -------------------------------------------------------------------------------- | ------ | --------- |
+|----------------------------------------------------------------------------------|--------|-----------|
 | [v0.2.3](https://github.com/insight-platform/Savant/tree/v0.2.3)                 | 155    | 42        |
 | [#207](https://github.com/insight-platform/Savant/issues/207)                    | 158    | 42        |
 | [#208](https://github.com/insight-platform/Savant/issues/208)                    | 156    | 43        |
@@ -57,11 +69,13 @@
 | [#322](https://github.com/insight-platform/Savant/issues/322) (buffer length 10) | 153.99 | 43.17     |
 | [#334](https://github.com/insight-platform/Savant/issues/334) (no queues)        | 157.49 | 44.16     |
 | [#334](https://github.com/insight-platform/Savant/issues/334) (buffer length 10) | 156.72 | 43.24     |
+| [#341](https://github.com/insight-platform/Savant/issues/341) (no queues)        | 156.73 | 42.44     |
+| [#347](https://github.com/insight-platform/Savant/issues/347) (no queues)        | 151.44 | 42.97     |
 
 ### opencv_cuda_bg_remover_mog2
 
 | Savant ver.                                                                      | A4000  | Jetson NX |
-| -------------------------------------------------------------------------------- | ------ | --------- |
+|----------------------------------------------------------------------------------|--------|-----------|
 | [v0.2.3](https://github.com/insight-platform/Savant/tree/v0.2.3)                 | 675    | 65        |
 | [#207](https://github.com/insight-platform/Savant/issues/207)                    | 670    | 60        |
 | [#208](https://github.com/insight-platform/Savant/issues/208)                    | 662    | 60        |
@@ -75,6 +89,8 @@
 | [#322](https://github.com/insight-platform/Savant/issues/322) (buffer length 10) | 575.76 | 87.05     |
 | [#334](https://github.com/insight-platform/Savant/issues/334) (no queues)        | 669.15 | 93.14     |
 | [#334](https://github.com/insight-platform/Savant/issues/334) (buffer length 10) | 671.76 | 92.41     |
+| [#341](https://github.com/insight-platform/Savant/issues/341) (no queues)        | 671.34 | 92.24     |
+| [#347](https://github.com/insight-platform/Savant/issues/347) (no queues)        | 608.54 | 91.69     |
 
 ### opencv_cuda_bg_remover_mog2 (multi-stream)
 
@@ -86,7 +102,7 @@
 ### peoplenet_detector
 
 | Savant ver.                                                                      | A4000  | Jetson NX |
-| -------------------------------------------------------------------------------- | ------ | --------- |
+|----------------------------------------------------------------------------------|--------|-----------|
 | [v0.2.3](https://github.com/insight-platform/Savant/tree/v0.2.3)                 | 125    | 30        |
 | [#207](https://github.com/insight-platform/Savant/issues/207)                    | 113    | 30        |
 | [#208](https://github.com/insight-platform/Savant/issues/208)                    | 113    | 30        |
@@ -100,11 +116,13 @@
 | [#322](https://github.com/insight-platform/Savant/issues/322) (buffer length 10) | 109.95 | 26.58     |
 | [#334](https://github.com/insight-platform/Savant/issues/334) (no queues)        | 116.35 | 29.31     |
 | [#334](https://github.com/insight-platform/Savant/issues/334) (buffer length 10) | 114.51 | 29.46     |
+| [#341](https://github.com/insight-platform/Savant/issues/341) (no queues)        | 117.22 | 29.27     |
+| [#347](https://github.com/insight-platform/Savant/issues/347) (no queues)        | 116.43 | 28.05     |
 
 ### traffic_meter (yolov8m)
 
 | Savant ver.                                                                      | A4000  | Jetson NX |
-| -------------------------------------------------------------------------------- | ------ | --------- |
+|----------------------------------------------------------------------------------|--------|-----------|
 | [v0.2.3](https://github.com/insight-platform/Savant/tree/v0.2.3)                 | 132    | 23        |
 | [#207](https://github.com/insight-platform/Savant/issues/207)                    | 138    | 24        |
 | [#208](https://github.com/insight-platform/Savant/issues/208)                    | 136    | 25        |
@@ -118,18 +136,16 @@
 | [#322](https://github.com/insight-platform/Savant/issues/322) (buffer length 10) | 114.61 | 25.19     |
 | [#334](https://github.com/insight-platform/Savant/issues/334) (no queues)        | 137.62 | 26.59     |
 | [#334](https://github.com/insight-platform/Savant/issues/334) (buffer length 10) | 123.98 | 25.61     |
+| [#341](https://github.com/insight-platform/Savant/issues/341) (no queues)        | 135.19 | 24.67     |
+| [#347](https://github.com/insight-platform/Savant/issues/347) (no queues)        | 136.49 | 24.40     |
 
 ### yolov8_seg
 
 Note: `yolov8_seg` always has a buffer length of 10. `BUFFER_QUEUES` env doesn't affect it.
 
 | Savant ver.                                                   | A4000 | Jetson NX |
-| ------------------------------------------------------------- | ----- | --------- |
+|---------------------------------------------------------------|-------|-----------|
 | [#131](https://github.com/insight-platform/Savant/issues/131) | 45.78 | 14.84     |
 | [#334](https://github.com/insight-platform/Savant/issues/334) | 44.33 | 14.82     |
-
-### face_reid
-
-| Savant ver.                                                   | A4000 | Jetson NX |
-| ------------------------------------------------------------- | ----- | --------- |
-| [#142](https://github.com/insight-platform/Savant/issues/142) | 124   | 26        |
+| [#341](https://github.com/insight-platform/Savant/issues/341) | 45.21 | 14.02     |
+| [#347](https://github.com/insight-platform/Savant/issues/347) | 44.34 | 13.07     |
