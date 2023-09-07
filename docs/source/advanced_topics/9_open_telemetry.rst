@@ -18,7 +18,7 @@ Savant automatically creates spans for every pipeline stage and gives developer 
 
 OpenTelemetry send tracing information to a trace collector. Currently, Savant integrates with `Jaeger <https://www.jaegertracing.io/>`_: a widely-used open-source tracing solution. Jaeger not only gathers traces but has RESTful API and WebUI to access and analyze tracing information.
 
-**TODO**: picture
+.. image:: ../../../samples/telemetry/assets/01-trace.png
 
 OpenTelemetry Sampling
 ^^^^^^^^^^^^^^^^^^^^^^
