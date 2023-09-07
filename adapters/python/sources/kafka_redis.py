@@ -58,6 +58,7 @@ class KafkaRedisSource:
         self._consumer = build_consumer(config.kafka)
         self._frame_clients: Dict[str, Redis] = {}
         self._is_running = False
+        self._error: Optional[str] = None
         self._poller_queue: Optional[Queue[Union[bytes, STOP]]] = None
         self._sender_queue: Optional[
             Queue[Union[Tuple[VideoFrame, bytes], EndOfStream, STOP]]
@@ -96,13 +97,22 @@ class KafkaRedisSource:
         loop = asyncio.get_running_loop()
         while self._is_running:
             logger.debug('Polling next message')
-            message = await loop.run_in_executor(
-                None,
-                self._consumer.poll,
-                self._config.kafka.poll_timeout,
-            )
+            try:
+                message = await loop.run_in_executor(
+                    None,
+                    self._consumer.poll,
+                    self._config.kafka.poll_timeout,
+                )
+            except Exception as e:
+                self.set_error(f'Failed to poll message: {e}')
+                break
+
             if message is None:
                 continue
+
+            if message.error() is not None:
+                self.set_error(f'Failed to poll message: {message.error()}')
+                break
 
             data = message.value()
             logger.debug(
@@ -114,34 +124,52 @@ class KafkaRedisSource:
                 len(data),
             )
             await self._poller_queue.put(data)
+
         await self._poller_queue.put(STOP)
         logger.info('Poller was stopped')
 
-    async def sender(self):
-        logger.info('Starting sender')
-        async for result in self._source.send_iter(self.video_frame_iterator()):
-            logger.debug(
-                'Status of sending frame for source %s: %s.',
-                result.source_id,
-                result.status,
-            )
-        logger.info('Sender was stopped')
-
     async def deserializer(self):
         logger.info('Starting deserializer')
-        while True:
+        while self._error is None:
             logger.debug('Waiting for the next message')
             data = await self._poller_queue.get()
             if data is STOP:
                 logger.debug('Received stop signal')
                 self._poller_queue.task_done()
                 break
-            deserialized = await self.deserialize_message(data)
+
+            try:
+                deserialized = await self.deserialize_message(data)
+            except Exception as e:
+                self._is_running = False
+                self.set_error(f'Failed to deserialize message: {e}')
+                self._poller_queue.task_done()
+                # In case self._poller_queue is full, so poller won't stuck
+                clear_queue(self._poller_queue)
+                break
+
             if deserialized is not None:
                 await self._sender_queue.put(deserialized)
             self._poller_queue.task_done()
+
         await self._sender_queue.put(STOP)
         logger.info('Deserializer was stopped')
+
+    async def sender(self):
+        logger.info('Starting sender')
+        try:
+            async for result in self._source.send_iter(self.video_frame_iterator()):
+                logger.debug(
+                    'Status of sending frame for source %s: %s.',
+                    result.source_id,
+                    result.status,
+                )
+        except Exception as e:
+            self._is_running = False
+            self.set_error(f'Failed to send frame: {e}')
+            # In case self._sender_queue is full, so deserializer won't stuck
+            clear_queue(self._sender_queue)
+        logger.info('Sender was stopped')
 
     async def deserialize_message(
         self,
@@ -154,21 +182,8 @@ class KafkaRedisSource:
         if message.is_end_of_stream():
             return message.as_end_of_stream()
 
-        logger.warning('Unsupported message type for message %r', message)
-        return None
-
-    async def video_frame_iterator(
-        self,
-    ) -> Iterator[Union[Tuple[VideoFrame, bytes], EndOfStream]]:
-        while True:
-            logger.debug('Waiting for the next message')
-            data = await self._sender_queue.get()
-            if data is STOP:
-                logger.debug('Received stop signal')
-                self._sender_queue.task_done()
-                break
-            yield data
-            self._sender_queue.task_done()
+        if message.is_unknown():
+            raise RuntimeError(f'Unknown message: {message}')
 
     async def fetch_video_frame_content(
         self,
@@ -203,6 +218,19 @@ class KafkaRedisSource:
         )
         return video_frame, content
 
+    async def video_frame_iterator(
+        self,
+    ) -> Iterator[Union[Tuple[VideoFrame, bytes], EndOfStream]]:
+        while self._error is None:
+            logger.debug('Waiting for the next message')
+            data = await self._sender_queue.get()
+            if data is STOP:
+                logger.debug('Received stop signal')
+                self._sender_queue.task_done()
+                break
+            yield data
+            self._sender_queue.task_done()
+
     async def fetch_content_from_redis(self, location: str) -> Optional[bytes]:
         logger.debug('Fetching frame from %r', location)
         host_port, key = location.split('/', 1)
@@ -215,6 +243,15 @@ class KafkaRedisSource:
             self._frame_clients[host_port] = frame_client
 
         return await frame_client.get(key)
+
+    @property
+    def error(self) -> Optional[str]:
+        return self._error
+
+    def set_error(self, error: str):
+        logger.error(error)
+        if self._error is None:
+            self._error = error
 
 
 def build_consumer(config: KafkaConfig) -> Consumer:
@@ -230,6 +267,11 @@ def build_consumer(config: KafkaConfig) -> Consumer:
     )
 
 
+def clear_queue(queue: Queue):
+    while not queue.empty():
+        queue.get_nowait()
+
+
 def main():
     init_logging()
     # To gracefully shutdown the adapter on SIGTERM (raise KeyboardInterrupt)
@@ -242,6 +284,9 @@ def main():
         loop.run_until_complete(source.stop())
     finally:
         loop.close()
+    if source.error is not None:
+        logger.error(source.error)
+        exit(1)
 
 
 if __name__ == '__main__':

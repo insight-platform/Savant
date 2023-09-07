@@ -63,6 +63,7 @@ class KafkaRedisSink:
         self._redis_client = Redis(host=config.redis.host, port=config.redis.port)
         self._sink = SinkBuilder().with_socket(config.zmq_endpoint).build_async()
         self._is_running = False
+        self._error: Optional[str] = None
         self._poller_queue: Optional[Queue[Union[SinkResult, STOP]]] = None
         self._sender_queue: Optional[Queue[Union[Tuple[bytes, bytes], STOP]]] = None
         self._stop_source_event: Optional[Event] = None
@@ -86,46 +87,44 @@ class KafkaRedisSink:
         await asyncio.gather(self.poller(), self.serializer(), self.sender())
         self._stop_source_event.set()
 
-    async def poller(self):
-        logger.info('Starting poller')
-        while self._is_running:
-            async for result in self._sink:
-                await self._poller_queue.put(result)
-        await self._poller_queue.put(STOP)
-        logger.info('Poller was stopped')
-
     async def stop(self):
         logger.info('Stopping the sink')
         self._is_running = False
         await self._stop_source_event.wait()
         logger.info('Sink was stopped')
 
+    async def poller(self):
+        logger.info('Starting poller')
+        while self._is_running:
+            try:
+                async for result in self._sink:
+                    if not self._is_running:
+                        break
+                    await self._poller_queue.put(result)
+            except Exception as e:
+                self._is_running = False
+                self.set_error(f'Failed to poll message: {e}')
+                break
+        await self._poller_queue.put(STOP)
+        logger.info('Poller was stopped')
+
     async def serializer(self):
         logger.info('Starting serializer')
-        while True:
+        while self._error is None:
             result = await self._poller_queue.get()
             if result is STOP:
                 logger.debug('Received stop signal')
                 self._poller_queue.task_done()
                 break
-            if result.frame_meta is not None:
-                frame_meta = result.frame_meta
-                source_id = frame_meta.source_id
-                logger.debug(
-                    'Received frame %s/%s (keyframe=%s)',
-                    source_id,
-                    frame_meta.pts,
-                    frame_meta.keyframe,
-                )
-                if result.frame_content is not None:
-                    frame_meta = await self.put_frame_to_redis(
-                        frame_meta, result.frame_content
-                    )
-                message = Message.video_frame(frame_meta)
-            else:
-                source_id = result.eos.source_id
-                logger.debug('Received EOS for source %s', source_id)
-                message = Message.end_of_stream(result.eos)
+            try:
+                message, source_id = await self.prepare_message(result)
+            except Exception as e:
+                self._is_running = False
+                self.set_error(f'Failed to serialize message: {e}')
+                self._poller_queue.task_done()
+                # In case self._poller_queue is full, so poller won't stuck
+                clear_queue(self._poller_queue)
+                break
             await self._sender_queue.put(
                 (source_id.encode(), save_message_to_bytes(message))
             )
@@ -136,25 +135,46 @@ class KafkaRedisSink:
     async def sender(self):
         logger.info('Starting sender')
         loop = asyncio.get_running_loop()
-        while True:
+        while self._error is None:
             message = await self._sender_queue.get()
             if message is STOP:
                 logger.debug('Received stop signal')
                 self._sender_queue.task_done()
                 break
             source_id, data = message
-            await loop.run_in_executor(None, self.send_to_producer, source_id, data)
+            try:
+                await loop.run_in_executor(None, self.send_to_producer, source_id, data)
+            except Exception as e:
+                self._is_running = False
+                self.set_error(f'Failed to send message: {e}')
+                self._sender_queue.task_done()
+                # In case self._sender_queue is full, so serializer won't stuck
+                clear_queue(self._sender_queue)
+                break
             self._sender_queue.task_done()
         logger.info('Sender was stopped')
 
-    def send_to_producer(self, key: str, value: bytes):
-        logger.debug(
-            'Sending message to kafka topic %s with key %s. Message size is %s bytes.',
-            self._config.kafka.topic,
-            key,
-            len(value),
-        )
-        self._producer.produce(self._config.kafka.topic, key=key, value=value)
+    async def prepare_message(self, result: SinkResult):
+        if result.frame_meta is not None:
+            frame_meta = result.frame_meta
+            source_id = frame_meta.source_id
+            logger.debug(
+                'Received frame %s/%s (keyframe=%s)',
+                source_id,
+                frame_meta.pts,
+                frame_meta.keyframe,
+            )
+            if result.frame_content is not None:
+                frame_meta = await self.put_frame_to_redis(
+                    frame_meta, result.frame_content
+                )
+            message = Message.video_frame(frame_meta)
+        else:
+            source_id = result.eos.source_id
+            logger.debug('Received EOS for source %s', source_id)
+            message = Message.end_of_stream(result.eos)
+
+        return message, source_id
 
     async def put_frame_to_redis(self, frame: VideoFrame, content: bytes):
         content_key = f'{self._config.redis.key_prefix}:{uuid.uuid4()}'
@@ -169,9 +189,33 @@ class KafkaRedisSink:
         )
         return frame
 
+    def send_to_producer(self, key: str, value: bytes):
+        logger.debug(
+            'Sending message to kafka topic %s with key %s. Message size is %s bytes. Value: %s.',
+            self._config.kafka.topic,
+            key,
+            len(value),
+            value,
+        )
+        self._producer.produce(self._config.kafka.topic, key=key, value=value)
+
+    @property
+    def error(self) -> Optional[str]:
+        return self._error
+
+    def set_error(self, error: str):
+        logger.error(error)
+        if self._error is None:
+            self._error = error
+
 
 def build_producer(config: KafkaConfig) -> Producer:
     return Producer({'bootstrap.servers': config.brokers})
+
+
+def clear_queue(queue: Queue):
+    while not queue.empty():
+        queue.get_nowait()
 
 
 def main():
