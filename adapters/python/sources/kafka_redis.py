@@ -56,7 +56,12 @@ class KafkaRedisSource(BaseKafkaRedisAdapter):
 
     def __init__(self, config: Config):
         super().__init__(config)
-        self._source = SourceBuilder().with_socket(config.zmq_endpoint).build_async()
+        self._source = (
+            SourceBuilder()
+            .with_socket(config.zmq_endpoint)
+            .with_telemetry_disabled()
+            .build_async()
+        )
         self._consumer = build_consumer(config.kafka)
         self._frame_clients: Dict[str, Redis] = {}
 

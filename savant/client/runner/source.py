@@ -45,12 +45,14 @@ class SourceRunner:
         socket: str,
         log_provider: Optional[LogProvider] = None,
         retries: int = Defaults.REQ_RECEIVE_RETRIES,
+        telemetry_enabled: bool = True,
         send_hwm: int = Defaults.SEND_HWM,
         receive_timeout: int = Defaults.SENDER_RECEIVE_TIMEOUT,
     ):
         self._socket = socket
         self._log_provider = log_provider
         self._retries = retries
+        self._telemetry_enabled = telemetry_enabled
         self._send_hwm = send_hwm
         self._receive_timeout = receive_timeout
         self._socket_type, self._bind, self._socket = parse_zmq_socket_uri(
@@ -76,7 +78,8 @@ class SourceRunner:
             'savant-client',
             [(self._pipeline_stage_name, VideoPipelineStagePayloadType.Frame)],
         )
-        self._pipeline.sampling_period = 1
+        if self._telemetry_enabled:
+            self._pipeline.sampling_period = 1
 
     def __call__(self, source: Frame, send_eos: bool = True) -> SourceResult:
         """Send a single frame to ZeroMQ socket.
@@ -199,10 +202,13 @@ class SourceRunner:
         frame_id = self._pipeline.add_frame(self._pipeline_stage_name, video_frame)
         zmq_topic = f'{video_frame.source_id}/'.encode()
         message = Message.video_frame(video_frame)
-        span: TelemetrySpan = self._pipeline.delete(frame_id)[frame_id]
-        message.span_context = span.propagate()
-        trace_id = span.trace_id()
-        del span
+        if self._telemetry_enabled:
+            span: TelemetrySpan = self._pipeline.delete(frame_id)[frame_id]
+            message.span_context = span.propagate()
+            trace_id = span.trace_id()
+            del span
+        else:
+            trace_id = None
         serialized_message = save_message_to_bytes(message)
 
         return (

@@ -42,10 +42,12 @@ class SourceBuilder:
         socket: Optional[str] = None,
         log_provider: Optional[LogProvider] = None,
         retries: int = 3,
+        telemetry_enabled: bool = False,
     ):
         self._socket = socket
         self._log_provider = log_provider
         self._retries = retries
+        self._telemetry_enabled = telemetry_enabled
 
     def with_socket(self, socket: str) -> 'SourceBuilder':
         """Set ZeroMQ socket for Source."""
@@ -62,6 +64,14 @@ class SourceBuilder:
         """
         return self._with_field('retries', retries)
 
+    def with_telemetry_enabled(self) -> 'SourceBuilder':
+        """Enable telemetry for Source."""
+        return self._with_field('telemetry_enabled', True)
+
+    def with_telemetry_disabled(self) -> 'SourceBuilder':
+        """Disable telemetry for Source."""
+        return self._with_field('telemetry_enabled', False)
+
     def build(self) -> SourceRunner:
         """Build Source."""
 
@@ -75,6 +85,7 @@ class SourceBuilder:
             socket=self._socket,
             log_provider=self._log_provider,
             retries=self._retries,
+            telemetry_enabled=self._telemetry_enabled,
         )
 
     def build_async(self) -> AsyncSourceRunner:
@@ -97,7 +108,8 @@ class SourceBuilder:
             f'SourceBuilder('
             f'socket={self._socket}, '
             f'log_provider={self._log_provider},'
-            f'retries={self._retries})'
+            f'retries={self._retries}, '
+            f'telemetry_enabled={self._telemetry_enabled})'
         )
 
     def _with_field(self, field: str, value) -> 'SourceBuilder':
@@ -106,6 +118,7 @@ class SourceBuilder:
                 'socket': self._socket,
                 'log_provider': self._log_provider,
                 'retries': self._retries,
+                'telemetry_enabled': self._telemetry_enabled,
                 field: value,
             }
         )
