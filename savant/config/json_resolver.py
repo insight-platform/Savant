@@ -16,7 +16,10 @@ def json_resolver(  # pylint:disable=unused-argument
     string."""
     logger.debug('Parsing param JSON "%s"', json_string)
     try:
-        parsed_conf_node = json.loads(json_string)
+        if json_string:
+            parsed_conf_node = json.loads(json_string)
+        else:
+            return None
     except TypeError:
         logger.warning('JSON loads fail, returning None for "%s".', json_string)
         return None
