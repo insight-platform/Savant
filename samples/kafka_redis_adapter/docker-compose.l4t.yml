@@ -59,7 +59,7 @@ services:
     environment:
       - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/loop-source.ipc
       - KAFKA_BROKERS=kafka:9092
-      - KAFKA_TOPIC=kafka-reds-adapter-demo
+      - KAFKA_TOPIC=kafka-redis-adapter-demo
       - KAFKA_CREATE_TOPIC=True
       - KAFKA_CREATE_TOPIC_NUM_PARTITIONS=4
       - KAFKA_CREATE_TOPIC_REPLICATION_FACTOR=1
@@ -83,8 +83,8 @@ services:
     environment:
       - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
       - KAFKA_BROKERS=kafka:9092
-      - KAFKA_TOPIC=kafka-reds-adapter-demo
-      - KAFKA_GROUP_ID=kafka-reds-adapter-demo
+      - KAFKA_TOPIC=kafka-redis-adapter-demo
+      - KAFKA_GROUP_ID=kafka-redis-adapter-demo
       - KAFKA_CREATE_TOPIC=True
       - KAFKA_CREATE_TOPIC_NUM_PARTITIONS=4
       - KAFKA_CREATE_TOPIC_REPLICATION_FACTOR=1

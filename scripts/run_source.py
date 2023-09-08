@@ -822,9 +822,9 @@ def ffmpeg_source(
 
 @cli.command('kafka-redis')
 @click.option(
-    '--in-endpoint',
-    default='sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc',
-    help='Adapter input (module output) ZeroMQ socket endpoint.',
+    '--out-endpoint',
+    default='pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc',
+    help='Adapter output (module input) ZeroMQ socket endpoint.',
     show_default=True,
 )
 @fps_meter_options
@@ -914,7 +914,7 @@ def ffmpeg_source(
 )
 @adapter_docker_image_option('py')
 def kafka_redis_source(
-    in_endpoint: str,
+    out_endpoint: str,
     docker_image: str,
     fps_period_frames: Optional[int],
     fps_period_seconds: Optional[float],
@@ -960,7 +960,7 @@ def kafka_redis_source(
     ]
     cmd = build_docker_run_command(
         f'source-kafka-redis-{uuid.uuid4().hex}',
-        zmq_endpoint=in_endpoint,
+        zmq_endpoint=out_endpoint,
         zmq_type=None,
         zmq_bind=None,
         entrypoint='python',

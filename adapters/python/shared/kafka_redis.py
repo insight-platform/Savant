@@ -104,11 +104,23 @@ class BaseKafkaRedisAdapter(ABC):
         self._poller_queue = Queue(self._config.queue_size)
         self._sender_queue = Queue(self._config.queue_size)
         self._stop_event = Event()
+        await self.on_start()
         self._is_running = True
         self._fps_meter.start()
         await asyncio.gather(self.poller(), self.messages_processor(), self.sender())
         self.log_fps()
+        await self.on_stop()
         self._stop_event.set()
+
+    @abstractmethod
+    async def on_start(self):
+        """On start."""
+        pass
+
+    @abstractmethod
+    async def on_stop(self):
+        """On stop."""
+        pass
 
     async def stop(self):
         """Gracefully stop the adapter."""

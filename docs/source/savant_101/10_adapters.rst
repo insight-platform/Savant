@@ -628,8 +628,8 @@ Running the adapter with Docker:
         --entrypoint python \
         -e ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc \
         -e KAFKA_BROKERS=kafka:9092 \
-        -e KAFKA_TOPIC=kafka-reds-adapter-demo \
-        -e KAFKA_GROUP_ID=kafka-reds-adapter-demo \
+        -e KAFKA_TOPIC=kafka-redis-adapter-demo \
+        -e KAFKA_GROUP_ID=kafka-redis-adapter-demo \
         -e KAFKA_CREATE_TOPIC=True \
         -e KAFKA_CREATE_TOPIC_NUM_PARTITIONS=4 \
         -e KAFKA_CREATE_TOPIC_REPLICATION_FACTOR=1 \
@@ -644,7 +644,7 @@ Running with the helper script:
 
 .. code-block:: bash
 
-    ./scripts/run_source.py kafka-redis --brokers=kafka:9092 --topic=kafka-reds-adapter-demo --group-id=kafka-reds-adapter-demo
+    ./scripts/run_source.py kafka-redis --brokers=kafka:9092 --topic=kafka-redis-adapter-demo --group-id=kafka-redis-adapter-demo
 
 Sink Adapters
 -------------
@@ -903,7 +903,7 @@ Running the adapter with Docker:
         --entrypoint python \
         -e ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc \
         -e KAFKA_BROKERS=kafka:9092 \
-        -e KAFKA_TOPIC=kafka-reds-adapter-demo \
+        -e KAFKA_TOPIC=kafka-redis-adapter-demo \
         -e KAFKA_CREATE_TOPIC=True \
         -e KAFKA_CREATE_TOPIC_NUM_PARTITIONS=4 \
         -e KAFKA_CREATE_TOPIC_REPLICATION_FACTOR=1 \
@@ -921,4 +921,4 @@ Running the adapter with the helper script:
 
 .. code-block:: bash
 
-    ./scripts/run_sink.py kafka-redis --brokers=kafka:9092 --topic=kafka-reds-adapter-demo --redis-host=redis
+    ./scripts/run_sink.py kafka-redis --brokers=kafka:9092 --topic=kafka-redis-adapter-demo --redis-host=redis

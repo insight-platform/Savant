@@ -69,8 +69,15 @@ class KafkaRedisSource(BaseKafkaRedisAdapter):
         )
         self._consumer = build_consumer(config.kafka)
         self._frame_clients: Dict[str, Redis] = {}
+
+    async def on_start(self):
         self._consumer.subscribe([self._config.kafka.topic])
         self._logger.info('Subscribed to topic %r', self._config.kafka.topic)
+
+    async def on_stop(self):
+        self._logger.info('Closing consumer')
+        # TODO: fix hanging on close when the connection to Kafka is lost
+        self._consumer.close()
 
     async def poller(self):
         """Poll messages from Kafka topic and put them to the poller queue."""
