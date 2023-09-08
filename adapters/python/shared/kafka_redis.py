@@ -53,7 +53,7 @@ class BaseConfig:
     kafka: BaseKafkaConfig
 
     def __init__(self):
-        self.queue_size = opt_config('QUEUE_SIZE', 100, int)
+        self.queue_size = opt_config('QUEUE_SIZE', 50, int)
         self.fps = FpsMeterConfig()
 
 
@@ -132,7 +132,7 @@ class BaseKafkaRedisAdapter(ABC):
         Only sets the first error.
         """
 
-        logger.error(error)
+        logger.error(error, exc_info=True)
         if self._error is None:
             self._error = error
 

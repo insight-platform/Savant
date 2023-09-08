@@ -64,6 +64,8 @@ services:
       - 'KAFKA_CREATE_TOPIC_CONFIG={"num_partitions": 4, "replication_factor": 1}'
       - REDIS_HOST=keydb
       - REDIS_PORT=6379
+      - REDIS_DB=0
+      - REDIS_TTL_SECONDS=60
     command: python -m adapters.python.sinks.kafka_redis
     depends_on:
       kafka:

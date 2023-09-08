@@ -232,14 +232,14 @@ class KafkaRedisSource(BaseKafkaRedisAdapter):
         """Fetch frame content from Redis."""
 
         logger.debug('Fetching frame from %r', location)
-        host_port, key = location.split('/', 1)
-        frame_client = self._frame_clients.get(host_port)
+        host_port_db, key = location.split('/', 1)
+        frame_client = self._frame_clients.get(host_port_db)
 
         if frame_client is None:
-            logger.info('Connecting to %r', host_port)
-            host, port = host_port.split(':')
-            frame_client = Redis(host=host, port=int(port))
-            self._frame_clients[host_port] = frame_client
+            logger.info('Connecting to %r', host_port_db)
+            host, port, db = host_port_db.split(':')
+            frame_client = Redis(host=host, port=int(port), db=int(db))
+            self._frame_clients[host_port_db] = frame_client
 
         content = await frame_client.get(key)
         if content is None:

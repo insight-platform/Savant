@@ -36,6 +36,7 @@ class RedisConfig:
     def __init__(self):
         self.host = os.environ['REDIS_HOST']
         self.port = opt_config('REDIS_PORT', 6379, int)
+        self.db = opt_config('REDIS_DB', 0, int)
         self.key_prefix = opt_config('REDIS_KEY_PREFIX', 'savant:frames')
         self.ttl_seconds = opt_config('REDIS_TTL_SECONDS', 60, int)
 
@@ -62,7 +63,11 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
     def __init__(self, config: Config):
         super().__init__(config)
         self._producer = build_producer(config.kafka)
-        self._redis_client = Redis(host=config.redis.host, port=config.redis.port)
+        self._redis_client = Redis(
+            host=config.redis.host,
+            port=config.redis.port,
+            db=config.redis.db,
+        )
         self._sink = (
             SinkBuilder()
             .with_socket(config.zmq_endpoint)
@@ -183,7 +188,7 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
         )
         frame.content = VideoFrameContent.external(
             ExternalFrameType.REDIS.value,
-            f'{self._config.redis.host}:{self._config.redis.port}/{content_key}',
+            f'{self._config.redis.host}:{self._config.redis.port}:{self._config.redis.db}/{content_key}',
         )
         return frame
 
