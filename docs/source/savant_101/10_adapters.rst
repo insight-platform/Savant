@@ -607,7 +607,9 @@ The Kafka-Redis Source Adapter takes video stream metadata from Kafka and fetche
 - ``KAFKA_TOPIC`` (**required**): a Kafka topic to read messages from;
 - ``KAFKA_GROUP_ID`` (**required**): a Kafka consumer group ID;
 - ``KAFKA_CREATE_TOPIC``: a flag indicating whether to create a Kafka topic if it does not exist; default is ``False``;
-- ``KAFKA_CREATE_TOPIC_CONFIG``: a json dict with Kafka topic configuration for topic creation, passed as kwargs to `confluent_kafka.admin.NewTopic <https://docs.confluent.io/platform/current/clients/confluent-kafka-python/html/index.html#newtopic>`__ (e.g. ``{"num_partitions": 4, "replication_factor": 1, "config": {"retention.ms": 300000}}``); default is ``{}``;
+- ``KAFKA_CREATE_TOPIC_NUM_PARTITIONS``: a number of partitions for a Kafka topic to create; default is ``1``;
+- ``KAFKA_CREATE_TOPIC_REPLICATION_FACTOR``: a replication factor for a Kafka topic to create; default is ``1``;
+- ``KAFKA_CREATE_TOPIC_CONFIG``: a json dict of a Kafka topic configuration, see `topic configs <https://kafka.apache.org/documentation.html#topicconfigs>`__ (e.g. ``{"retention.ms": 300000}``); default is ``{}``;
 - ``KAFKA_POLL_TIMEOUT``: a timeout for Kafka consumer poll, in seconds; default is ``1``;
 - ``KAFKA_AUTO_COMMIT``: a flag indicating whether to commit Kafka offsets automatically; default is ``True``;
 - ``KAFKA_AUTO_OFFSET_RESET``: a position to start reading messages from Kafka topic when the group is created; default is ``latest``;
@@ -629,7 +631,9 @@ Running the adapter with Docker:
         -e KAFKA_TOPIC=kafka-reds-adapter-demo \
         -e KAFKA_GROUP_ID=kafka-reds-adapter-demo \
         -e KAFKA_CREATE_TOPIC=True \
-        -e 'KAFKA_CREATE_TOPIC_CONFIG={"num_partitions": 4, "replication_factor": 1}' \
+        -e KAFKA_CREATE_TOPIC_NUM_PARTITIONS=4 \
+        -e KAFKA_CREATE_TOPIC_REPLICATION_FACTOR=1 \
+        -e 'KAFKA_CREATE_TOPIC_CONFIG={"retention.ms": 300000}' \
         -v /tmp/zmq-sockets:/tmp/zmq-sockets \
         ghcr.io/insight-platform/savant-adapters-py:latest \
         -m adapters.python.sources.kafka_redis
@@ -874,7 +878,9 @@ The Kafka-Redis Sink Adapter sends video stream metadata to Kafka and frame cont
 - ``KAFKA_BROKERS`` (**required**): a comma-separated list of Kafka brokers;
 - ``KAFKA_TOPIC`` (**required**): a Kafka topic to put messages to;
 - ``KAFKA_CREATE_TOPIC``: a flag indicating whether to create a Kafka topic if it does not exist; default is ``False``;
-- ``KAFKA_CREATE_TOPIC_CONFIG``: a json dict with Kafka topic configuration for topic creation, passed as kwargs to `confluent_kafka.admin.NewTopic <https://docs.confluent.io/platform/current/clients/confluent-kafka-python/html/index.html#newtopic>`__ (e.g. ``{"num_partitions": 4, "replication_factor": 1, "config": {"retention.ms": 300000}}``); default is ``{}``;
+- ``KAFKA_CREATE_TOPIC_NUM_PARTITIONS``: a number of partitions for a Kafka topic to create; default is ``1``;
+- ``KAFKA_CREATE_TOPIC_REPLICATION_FACTOR``: a replication factor for a Kafka topic to create; default is ``1``;
+- ``KAFKA_CREATE_TOPIC_CONFIG``: a json dict of a Kafka topic configuration, see `topic configs <https://kafka.apache.org/documentation.html#topicconfigs>`__ (e.g. ``{"retention.ms": 300000}``); default is ``{}``;
 - ``REDIS_HOST`` (**required**): a Redis host;
 - ``REDIS_PORT``: a Redis port; default is ``6379``;
 - ``REDIS_DB``: a Redis database; default is ``0``;
@@ -892,7 +898,9 @@ Running the adapter with Docker:
         -e KAFKA_BROKERS=kafka:9092 \
         -e KAFKA_TOPIC=kafka-reds-adapter-demo \
         -e KAFKA_CREATE_TOPIC=True \
-        -e 'KAFKA_CREATE_TOPIC_CONFIG={"num_partitions": 4, "replication_factor": 1}' \
+        -e KAFKA_CREATE_TOPIC_NUM_PARTITIONS=4 \
+        -e KAFKA_CREATE_TOPIC_REPLICATION_FACTOR=1 \
+        -e 'KAFKA_CREATE_TOPIC_CONFIG={"retention.ms": 300000}' \
         -e REDIS_HOST=keydb \
         -e REDIS_PORT=6379 \
         -v /tmp/zmq-sockets:/tmp/zmq-sockets \

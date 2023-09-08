@@ -40,6 +40,16 @@ class BaseKafkaConfig:
         self.brokers = os.environ['KAFKA_BROKERS']
         self.topic = os.environ['KAFKA_TOPIC']
         self.create_topic = opt_config('KAFKA_CREATE_TOPIC', False, strtobool)
+        self.create_topic_num_partitions = opt_config(
+            'KAFKA_CREATE_TOPIC_NUM_PARTITIONS',
+            1,
+            int,
+        )
+        self.create_topic_replication_factor = opt_config(
+            'KAFKA_CREATE_TOPIC_REPLICATION_FACTOR',
+            1,
+            int,
+        )
         self.create_topic_config: Dict[str, Any] = opt_config(
             'KAFKA_CREATE_TOPIC_CONFIG',
             {},
@@ -151,15 +161,19 @@ class BaseKafkaRedisAdapter(ABC):
             raise False
 
         logger.info(
-            'Creating kafka topic %s with config %s',
+            'Creating kafka topic %s with %s partitions, %s replication factor and config %s',
             self._config.kafka.topic,
+            self._config.kafka.create_topic_num_partitions,
+            self._config.kafka.create_topic_replication_factor,
             self._config.kafka.create_topic_config,
         )
         admin_client.create_topics(
             [
                 NewTopic(
                     self._config.kafka.topic,
-                    **self._config.kafka.create_topic_config,
+                    num_partitions=self._config.kafka.create_topic_num_partitions,
+                    replication_factor=self._config.kafka.create_topic_replication_factor,
+                    config=self._config.kafka.create_topic_config,
                 )
             ]
         )
