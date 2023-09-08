@@ -21,9 +21,8 @@ parameters:
     width: 1280
     height: 720
     # Add paddings to the frame before processing
-  # output codec - hevc
   output_frame:
-    codec: hevc
+    codec: raw-rgba
   # custom drawing on frames function
   draw_func:
     module: module.overlay
@@ -110,8 +109,10 @@ pipeline:
               label: face
               selector:
                 kwargs:
-                  # minimal detector confidence of the objects of this class to be included in output
-                  confidence_threshold: 0.1
+                  # minimal width of the objects of this class to be included in output
+                  min_width: 16
+                  # minimal height of the objects of this class to be included in output
+                  min_height: 16
 
     # custom pyfunc element
     - element: pyfunc
@@ -120,12 +121,13 @@ pipeline:
       #kwargs:
 
   # sinks definition
+  # sink:
+  #   - element: console_sink
+  #     properties:
+  #       json_mode: true
   sink:
-    - element: console_sink
+    - element: zeromq_sink
       properties:
-        json_mode: true
-#    - element: zeromq_sink
-#      properties:
-#        socket: ${oc.env:ZMQ_SINK_ENDPOINT}
-#        socket_type: ${oc.env:ZMQ_SINK_TYPE, PUB}
-#        bind: ${oc.decode:${oc.env:ZMQ_SINK_BIND, True}}
+        socket: ${oc.env:ZMQ_SINK_ENDPOINT}
+        socket_type: ${oc.env:ZMQ_SINK_TYPE, PUB}
+        bind: ${oc.decode:${oc.env:ZMQ_SINK_BIND, True}}

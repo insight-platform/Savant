@@ -21,6 +21,7 @@ services:
     environment:
       - HEALTHCHECK_PORT=8888
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
+      - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
     deploy:
       resources:
         reservations:
