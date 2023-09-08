@@ -1,10 +1,9 @@
 import asyncio
 import os
 from asyncio import Queue
-from distutils.util import strtobool
 from typing import AsyncIterator, Dict, Optional, Tuple, Union
 
-from confluent_kafka import Consumer
+from confluent_kafka import Consumer, TopicPartition
 from redis.asyncio import Redis
 from savant_rs.primitives import EndOfStream, VideoFrame, VideoFrameContent
 from savant_rs.utils.serialization import Message, load_message_from_bytes
@@ -32,7 +31,9 @@ class KafkaConfig(BaseKafkaConfig):
         super().__init__()
         self.group_id = os.environ['KAFKA_GROUP_ID']
         self.poll_timeout = opt_config('KAFKA_POLL_TIMEOUT', 1, float)
-        self.auto_commit = opt_config('KAFKA_AUTO_COMMIT', True, strtobool)
+        self.auto_commit_interval_ms = opt_config(
+            'KAFKA_AUTO_COMMIT_INTERVAL_MS', 1000, int
+        )
         self.auto_offset_reset = opt_config('KAFKA_AUTO_OFFSET_RESET', 'latest')
         self.partition_assignment_strategy = opt_config(
             'KAFKA_PARTITION_ASSIGNMENT_STRATEGY', 'roundrobin'
@@ -57,8 +58,10 @@ class KafkaRedisSource(BaseKafkaRedisAdapter):
     """Kafka-redis source adapter."""
 
     _config: Config
-    _poller_queue: Queue[bytes]
-    _sender_queue: Queue[Union[Tuple[VideoFrame, bytes], EndOfStream]]
+    _poller_queue: Queue[Tuple[TopicPartition, bytes]]
+    _sender_queue: Queue[
+        Tuple[TopicPartition, Union[Tuple[VideoFrame, bytes], EndOfStream]]
+    ]
 
     def __init__(self, config: Config):
         super().__init__(config)
@@ -98,6 +101,9 @@ class KafkaRedisSource(BaseKafkaRedisAdapter):
                 break
 
             data = message.value()
+            topic_partition = TopicPartition(
+                message.topic(), message.partition(), message.offset()
+            )
             logger.debug(
                 'Polled kafka message %s/%s/%s with key %s. Message size is %s bytes.',
                 message.topic(),
@@ -106,7 +112,7 @@ class KafkaRedisSource(BaseKafkaRedisAdapter):
                 message.key(),
                 len(data),
             )
-            await self._poller_queue.put(data)
+            await self._poller_queue.put((topic_partition, data))
 
         await self._poller_queue.put(STOP)
         logger.info('Poller was stopped')
@@ -120,11 +126,13 @@ class KafkaRedisSource(BaseKafkaRedisAdapter):
         logger.info('Starting deserializer')
         while self._error is None:
             logger.debug('Waiting for the next message')
-            data = await self._poller_queue.get()
-            if data is STOP:
+            message = await self._poller_queue.get()
+            if message is STOP:
                 logger.debug('Received stop signal')
                 self._poller_queue.task_done()
                 break
+
+            topic_partition, data = message
 
             try:
                 deserialized = await self.process_message(data)
@@ -137,7 +145,7 @@ class KafkaRedisSource(BaseKafkaRedisAdapter):
                 break
 
             if deserialized is not None:
-                await self._sender_queue.put(deserialized)
+                await self._sender_queue.put((topic_partition, deserialized))
             self._poller_queue.task_done()
 
         await self._sender_queue.put(STOP)
@@ -220,12 +228,15 @@ class KafkaRedisSource(BaseKafkaRedisAdapter):
 
         while self._error is None:
             logger.debug('Waiting for the next message')
-            data = await self._sender_queue.get()
-            if data is STOP:
+            message = await self._sender_queue.get()
+            if message is STOP:
                 logger.debug('Received stop signal')
                 self._sender_queue.task_done()
                 break
+            topic_partition, data = message
             yield data
+            logger.debug('Storing offset %s', topic_partition)
+            self._consumer.store_offsets(offsets=[topic_partition])
             self._sender_queue.task_done()
 
     async def fetch_content_from_redis(self, location: str) -> Optional[bytes]:
@@ -256,7 +267,9 @@ def build_consumer(config: KafkaConfig) -> Consumer:
             'bootstrap.servers': config.brokers,
             'group.id': config.group_id,
             'auto.offset.reset': config.auto_offset_reset,
-            'enable.auto.commit': config.auto_commit,
+            'auto.commit.interval.ms': config.auto_commit_interval_ms,
+            'enable.auto.commit': True,
+            'enable.auto.offset.store': False,
             'partition.assignment.strategy': config.partition_assignment_strategy,
             'max.poll.interval.ms': config.max_poll_interval_ms,
         }

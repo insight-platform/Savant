@@ -611,7 +611,7 @@ The Kafka-Redis Source Adapter takes video stream metadata from Kafka and fetche
 - ``KAFKA_CREATE_TOPIC_REPLICATION_FACTOR``: a replication factor for a Kafka topic to create; default is ``1``;
 - ``KAFKA_CREATE_TOPIC_CONFIG``: a json dict of a Kafka topic configuration, see `topic configs <https://kafka.apache.org/documentation.html#topicconfigs>`__ (e.g. ``{"retention.ms": 300000}``); default is ``{}``;
 - ``KAFKA_POLL_TIMEOUT``: a timeout for Kafka consumer poll, in seconds; default is ``1``;
-- ``KAFKA_AUTO_COMMIT``: a flag indicating whether to commit Kafka offsets automatically; default is ``True``;
+- ``KAFKA_AUTO_COMMIT_INTERVAL_MS``: a frequency in milliseconds that the consumer offsets are auto-committed to Kafka; default is ``1000``;
 - ``KAFKA_AUTO_OFFSET_RESET``: a position to start reading messages from Kafka topic when the group is created; default is ``latest``;
 - ``KAFKA_PARTITION_ASSIGNMENT_STRATEGY``: a strategy to assign partitions to consumers; default is ``roundrobin``;
 - ``KAFKA_MAX_POLL_INTERVAL_MS``: a maximum delay in milliseconds between invocations of poll() when using consumer group management; default is ``300000``;

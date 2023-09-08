@@ -851,10 +851,10 @@ def ffmpeg_source(
     show_default=True,
 )
 @click.option(
-    '--auto-commit',
-    type=click.BOOL,
-    default=True,
-    help='Whether to commit Kafka offsets automatically.',
+    '--auto-commit-interval-ms',
+    type=click.INT,
+    default=1000,
+    help='Frequency in milliseconds that the consumer offsets are auto-committed to Kafka.',
     show_default=True,
 )
 @click.option(
@@ -923,7 +923,7 @@ def kafka_redis_source(
     topic: str,
     group_id: str,
     poll_timeout: int,
-    auto_commit: bool,
+    auto_commit_interval_ms: int,
     auto_offset_reset: str,
     partition_assignment_strategy: str,
     max_poll_interval_ms: int,
@@ -948,7 +948,7 @@ def kafka_redis_source(
         f'KAFKA_TOPIC={topic}',
         f'KAFKA_GROUP_ID={group_id}',
         f'KAFKA_POLL_TIMEOUT={poll_timeout}',
-        f'KAFKA_AUTO_COMMIT={auto_commit}',
+        f'KAFKA_AUTO_COMMIT_INTERVAL_MS={auto_commit_interval_ms}',
         f'KAFKA_AUTO_OFFSET_RESET={auto_offset_reset}',
         f'KAFKA_PARTITION_ASSIGNMENT_STRATEGY={partition_assignment_strategy}',
         f'KAFKA_MAX_POLL_INTERVAL_MS={max_poll_interval_ms}',
