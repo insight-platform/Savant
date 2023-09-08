@@ -20,12 +20,10 @@ services:
     healthcheck:
       test:
         - CMD-SHELL
-        - >
-          /opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --topic hc --create --if-not-exists
-          && /opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --topic hc --describe
-      start_period: 10s
-      interval: 10s
-      timeout: 5s
+        - /opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list
+      start_period: 120s
+      interval: 15s
+      timeout: 10s
       retries: 5
 
   keydb:
