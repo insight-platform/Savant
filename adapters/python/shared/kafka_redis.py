@@ -10,11 +10,27 @@ from typing import Any, Dict, Optional, Type
 
 from confluent_kafka.admin import AdminClient, ClusterMetadata, NewTopic
 
+from savant.utils.fps_meter import FPSMeter
 from savant.utils.logging import get_logger, init_logging
 
 from .config import opt_config
 
 logger = get_logger(__name__)
+
+
+class FpsMeterConfig:
+    """FPS measurement configuration."""
+
+    def __init__(self):
+        self.output = opt_config('FPS_OUTPUT', 'stdout', str)
+        assert self.output in [
+            'stdout',
+            'logger',
+        ], 'FPS_OUTPUT should be either "stdout" or "logger"'
+        self.period_frames = opt_config('FPS_PERIOD_FRAMES', None, int)
+        self.period_seconds = opt_config('FPS_PERIOD_SECONDS', None, float)
+        if self.period_frames is None and self.period_seconds is None:
+            self.period_frames = 1000
 
 
 class BaseKafkaConfig:
@@ -38,6 +54,7 @@ class BaseConfig:
 
     def __init__(self):
         self.queue_size = opt_config('QUEUE_SIZE', 100, int)
+        self.fps = FpsMeterConfig()
 
 
 STOP = object()
@@ -56,6 +73,10 @@ class BaseKafkaRedisAdapter(ABC):
 
     def __init__(self, config: BaseConfig):
         self._config = config
+        self._fps_meter = FPSMeter(
+            period_frames=config.fps.period_frames,
+            period_seconds=config.fps.period_seconds,
+        )
         self._is_running = False
         self._error: Optional[str] = None
 
@@ -72,7 +93,9 @@ class BaseKafkaRedisAdapter(ABC):
         self._sender_queue = Queue(self._config.queue_size)
         self._stop_event = Event()
         self._is_running = True
+        self._fps_meter.start()
         await asyncio.gather(self.poller(), self.messages_processor(), self.sender())
+        self.log_fps()
         self._stop_event.set()
 
     async def stop(self):
@@ -155,6 +178,20 @@ class BaseKafkaRedisAdapter(ABC):
 
         while not queue.empty():
             queue.get_nowait()
+
+    def count_frame(self):
+        """Count frame for FPS measurement."""
+
+        if self._fps_meter():
+            self.log_fps()
+
+    def log_fps(self):
+        """Log FPS."""
+
+        if self._config.fps.output == 'stdout':
+            print(self._fps_meter.message)
+        elif self._config.fps.output == 'logger':
+            logger.info(self._fps_meter.message)
 
 
 def run_kafka_redis_adapter(

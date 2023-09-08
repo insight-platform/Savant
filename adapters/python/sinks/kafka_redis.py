@@ -155,6 +155,8 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
                     frame_meta, result.frame_content
                 )
             message = Message.video_frame(frame_meta)
+            self.count_frame()
+
         else:
             source_id = result.eos.source_id
             logger.debug('Received EOS for source %s', source_id)

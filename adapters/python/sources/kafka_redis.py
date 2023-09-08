@@ -200,11 +200,9 @@ class KafkaRedisSource(BaseKafkaRedisAdapter):
                 video_frame.content.get_location()
             )
             if content is None:
-                logger.warning(
-                    'Failed to fetch frame from %r',
-                    video_frame.content.get_location(),
-                )
                 return None
+
+            self.count_frame()
 
         else:
             logger.warning('Unsupported frame content %r', video_frame.content)
@@ -243,7 +241,11 @@ class KafkaRedisSource(BaseKafkaRedisAdapter):
             frame_client = Redis(host=host, port=int(port))
             self._frame_clients[host_port] = frame_client
 
-        return await frame_client.get(key)
+        content = await frame_client.get(key)
+        if content is None:
+            logger.warning('Failed to fetch frame from %r', location)
+
+        return content
 
 
 def build_consumer(config: KafkaConfig) -> Consumer:
