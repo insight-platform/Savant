@@ -18,10 +18,6 @@ from adapters.python.shared.kafka_redis import (
 )
 from savant.api.enums import ExternalFrameType
 from savant.client import SourceBuilder
-from savant.utils.logging import get_logger
-
-LOGGER_NAME = 'adapters.kafka_redis_source'
-logger = get_logger(LOGGER_NAME)
 
 
 class KafkaConfig(BaseKafkaConfig):
@@ -74,15 +70,15 @@ class KafkaRedisSource(BaseKafkaRedisAdapter):
         self._consumer = build_consumer(config.kafka)
         self._frame_clients: Dict[str, Redis] = {}
         self._consumer.subscribe([self._config.kafka.topic])
-        logger.info('Subscribed to topic %r', self._config.kafka.topic)
+        self._logger.info('Subscribed to topic %r', self._config.kafka.topic)
 
     async def poller(self):
         """Poll messages from Kafka topic and put them to the poller queue."""
 
-        logger.info('Starting poller')
+        self._logger.info('Starting poller')
         loop = asyncio.get_running_loop()
         while self._is_running:
-            logger.debug('Polling next message')
+            self._logger.debug('Polling next message')
             try:
                 message = await loop.run_in_executor(
                     None,
@@ -104,7 +100,7 @@ class KafkaRedisSource(BaseKafkaRedisAdapter):
             topic_partition = TopicPartition(
                 message.topic(), message.partition(), message.offset()
             )
-            logger.debug(
+            self._logger.debug(
                 'Polled kafka message %s/%s/%s with key %s. Message size is %s bytes.',
                 message.topic(),
                 message.partition(),
@@ -115,7 +111,7 @@ class KafkaRedisSource(BaseKafkaRedisAdapter):
             await self._poller_queue.put((topic_partition, data))
 
         await self._poller_queue.put(STOP)
-        logger.info('Poller was stopped')
+        self._logger.info('Poller was stopped')
 
     async def messages_processor(self):
         """Process messages from the poller queue and put them to the sender queue.
@@ -123,12 +119,12 @@ class KafkaRedisSource(BaseKafkaRedisAdapter):
         Frame content is fetched from Redis and frame metadata is updated.
         """
 
-        logger.info('Starting deserializer')
+        self._logger.info('Starting deserializer')
         while self._error is None:
-            logger.debug('Waiting for the next message')
+            self._logger.debug('Waiting for the next message')
             message = await self._poller_queue.get()
             if message is STOP:
-                logger.debug('Received stop signal')
+                self._logger.debug('Received stop signal')
                 self._poller_queue.task_done()
                 break
 
@@ -149,15 +145,15 @@ class KafkaRedisSource(BaseKafkaRedisAdapter):
             self._poller_queue.task_done()
 
         await self._sender_queue.put(STOP)
-        logger.info('Deserializer was stopped')
+        self._logger.info('Deserializer was stopped')
 
     async def sender(self):
         """Send messages from the sender queue to ZeroMQ socket."""
 
-        logger.info('Starting sender')
+        self._logger.info('Starting sender')
         try:
             async for result in self._source.send_iter(self.video_frame_iterator()):
-                logger.debug(
+                self._logger.debug(
                     'Status of sending frame for source %s: %s.',
                     result.source_id,
                     result.status,
@@ -167,7 +163,7 @@ class KafkaRedisSource(BaseKafkaRedisAdapter):
             self.set_error(f'Failed to send frame: {e}')
             # In case self._sender_queue is full, so deserializer won't stuck
             self.clear_queue(self._sender_queue)
-        logger.info('Sender was stopped')
+        self._logger.info('Sender was stopped')
 
     async def process_message(
         self,
@@ -199,7 +195,7 @@ class KafkaRedisSource(BaseKafkaRedisAdapter):
 
         elif video_frame.content.is_external():
             if video_frame.content.get_method() != ExternalFrameType.REDIS.value:
-                logger.warning(
+                self._logger.warning(
                     'Unsupported external frame type %r',
                     video_frame.content.get_method(),
                 )
@@ -213,7 +209,7 @@ class KafkaRedisSource(BaseKafkaRedisAdapter):
             self.count_frame()
 
         else:
-            logger.warning('Unsupported frame content %r', video_frame.content)
+            self._logger.warning('Unsupported frame content %r', video_frame.content)
             return None
 
         video_frame.content = VideoFrameContent.external(
@@ -227,34 +223,34 @@ class KafkaRedisSource(BaseKafkaRedisAdapter):
         """Iterate over messages from the sender queue."""
 
         while self._error is None:
-            logger.debug('Waiting for the next message')
+            self._logger.debug('Waiting for the next message')
             message = await self._sender_queue.get()
             if message is STOP:
-                logger.debug('Received stop signal')
+                self._logger.debug('Received stop signal')
                 self._sender_queue.task_done()
                 break
             topic_partition, data = message
             yield data
-            logger.debug('Storing offset %s', topic_partition)
+            self._logger.debug('Storing offset %s', topic_partition)
             self._consumer.store_offsets(offsets=[topic_partition])
             self._sender_queue.task_done()
 
     async def fetch_content_from_redis(self, location: str) -> Optional[bytes]:
         """Fetch frame content from Redis."""
 
-        logger.debug('Fetching frame from %r', location)
+        self._logger.debug('Fetching frame from %r', location)
         host_port_db, key = location.split('/', 1)
         frame_client = self._frame_clients.get(host_port_db)
 
         if frame_client is None:
-            logger.info('Connecting to %r', host_port_db)
+            self._logger.info('Connecting to %r', host_port_db)
             host, port, db = host_port_db.split(':')
             frame_client = Redis(host=host, port=int(port), db=int(db))
             self._frame_clients[host_port_db] = frame_client
 
         content = await frame_client.get(key)
         if content is None:
-            logger.warning('Failed to fetch frame from %r', location)
+            self._logger.warning('Failed to fetch frame from %r', location)
 
         return content
 

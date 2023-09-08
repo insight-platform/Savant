@@ -15,7 +15,8 @@ from savant.utils.logging import get_logger, init_logging
 
 from .config import opt_config
 
-logger = get_logger(__name__)
+LOGGER_NAME = 'adapters.kafka_redis'
+logger = get_logger(LOGGER_NAME)
 
 
 class FpsMeterConfig:
@@ -89,11 +90,12 @@ class BaseKafkaRedisAdapter(ABC):
         )
         self._is_running = False
         self._error: Optional[str] = None
+        self._logger = get_logger(f'{LOGGER_NAME}.{self.__class__.__name__}')
 
     async def run(self):
         """Run the adapter."""
 
-        logger.info('Starting adapter')
+        self._logger.info('Starting adapter')
         if not self.kafka_topic_exists():
             raise RuntimeError(
                 f'Topic {self._config.kafka.topic} does not exist and '
@@ -111,10 +113,10 @@ class BaseKafkaRedisAdapter(ABC):
     async def stop(self):
         """Gracefully stop the adapter."""
 
-        logger.info('Stopping adapter')
+        self._logger.info('Stopping adapter')
         self._is_running = False
         await self._stop_event.wait()
-        logger.info('Adapter was stopped')
+        self._logger.info('Adapter was stopped')
 
     @abstractmethod
     async def poller(self):
@@ -142,7 +144,7 @@ class BaseKafkaRedisAdapter(ABC):
         Only sets the first error.
         """
 
-        logger.error(error, exc_info=True)
+        self._logger.error(error, exc_info=True)
         if self._error is None:
             self._error = error
 
@@ -160,7 +162,7 @@ class BaseKafkaRedisAdapter(ABC):
         if not self._config.kafka.create_topic:
             raise False
 
-        logger.info(
+        self._logger.info(
             'Creating kafka topic %s with %s partitions, %s replication factor and config %s',
             self._config.kafka.topic,
             self._config.kafka.create_topic_num_partitions,
@@ -183,7 +185,7 @@ class BaseKafkaRedisAdapter(ABC):
                 return True
             time.sleep(1)
 
-        logger.error('Failed to create kafka topic %s', self._config.kafka.topic)
+        self._logger.error('Failed to create kafka topic %s', self._config.kafka.topic)
 
         return False
 
@@ -205,7 +207,7 @@ class BaseKafkaRedisAdapter(ABC):
         if self._config.fps.output == 'stdout':
             print(self._fps_meter.message)
         elif self._config.fps.output == 'logger':
-            logger.info(self._fps_meter.message)
+            self._logger.info(self._fps_meter.message)
 
 
 def run_kafka_redis_adapter(

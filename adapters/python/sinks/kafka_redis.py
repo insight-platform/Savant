@@ -20,10 +20,6 @@ from adapters.python.shared.kafka_redis import (
 from savant.api.enums import ExternalFrameType
 from savant.client import SinkBuilder
 from savant.client.runner.sink import SinkResult
-from savant.utils.logging import get_logger
-
-LOGGER_NAME = 'adapters.kafka_redis_sink'
-logger = get_logger(LOGGER_NAME)
 
 
 class KafkaConfig(BaseKafkaConfig):
@@ -78,7 +74,7 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
     async def poller(self):
         """Poll messages from ZeroMQ socket and put them to the poller queue."""
 
-        logger.info('Starting poller')
+        self._logger.info('Starting poller')
         while self._is_running:
             try:
                 async for result in self._sink:
@@ -90,7 +86,7 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
                 self.set_error(f'Failed to poll message: {e}')
                 break
         await self._poller_queue.put(STOP)
-        logger.info('Poller was stopped')
+        self._logger.info('Poller was stopped')
 
     async def messages_processor(self):
         """Process messages from the poller queue and put them to the sender queue.
@@ -98,11 +94,11 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
         Frame content is saved to Redis and frame metadata is updated with the content location.
         """
 
-        logger.info('Starting serializer')
+        self._logger.info('Starting serializer')
         while self._error is None:
             result = await self._poller_queue.get()
             if result is STOP:
-                logger.debug('Received stop signal')
+                self._logger.debug('Received stop signal')
                 self._poller_queue.task_done()
                 break
             try:
@@ -119,17 +115,17 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
             )
             self._poller_queue.task_done()
         await self._sender_queue.put(STOP)
-        logger.info('Serializer was stopped')
+        self._logger.info('Serializer was stopped')
 
     async def sender(self):
         """Send messages from the sender queue to Kafka topic."""
 
-        logger.info('Starting sender')
+        self._logger.info('Starting sender')
         loop = asyncio.get_running_loop()
         while self._error is None:
             message = await self._sender_queue.get()
             if message is STOP:
-                logger.debug('Received stop signal')
+                self._logger.debug('Received stop signal')
                 self._sender_queue.task_done()
                 break
             source_id, data = message
@@ -144,9 +140,9 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
                 break
             self._sender_queue.task_done()
 
-        logger.info('Flushing pending producer messages')
+        self._logger.info('Flushing pending producer messages')
         await loop.run_in_executor(None, self._producer.flush)
-        logger.info('Sender was stopped')
+        self._logger.info('Sender was stopped')
 
     async def process_message(self, result: SinkResult):
         """Process one message from the poller queue.
@@ -157,7 +153,7 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
         if result.frame_meta is not None:
             frame_meta = result.frame_meta
             source_id = frame_meta.source_id
-            logger.debug(
+            self._logger.debug(
                 'Received frame %s/%s (keyframe=%s)',
                 source_id,
                 frame_meta.pts,
@@ -172,7 +168,7 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
 
         else:
             source_id = result.eos.source_id
-            logger.debug('Received EOS for source %s', source_id)
+            self._logger.debug('Received EOS for source %s', source_id)
             message = Message.end_of_stream(result.eos)
 
         return message, source_id
@@ -195,7 +191,7 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
     def send_to_producer(self, key: str, value: bytes):
         """Send message to Kafka topic."""
 
-        logger.debug(
+        self._logger.debug(
             'Sending message to kafka topic %s with key %s. Message size is %s bytes. Value: %s.',
             self._config.kafka.topic,
             key,
