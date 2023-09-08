@@ -63,7 +63,12 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
         super().__init__(config)
         self._producer = build_producer(config.kafka)
         self._redis_client = Redis(host=config.redis.host, port=config.redis.port)
-        self._sink = SinkBuilder().with_socket(config.zmq_endpoint).build_async()
+        self._sink = (
+            SinkBuilder()
+            .with_socket(config.zmq_endpoint)
+            .with_idle_timeout(3)  # For graceful shutdown
+            .build_async()
+        )
 
     async def poller(self):
         """Poll messages from ZeroMQ socket and put them to the poller queue."""
@@ -133,6 +138,9 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
                 self.clear_queue(self._sender_queue)
                 break
             self._sender_queue.task_done()
+
+        logger.info('Flushing pending producer messages')
+        await loop.run_in_executor(None, self._producer.flush)
         logger.info('Sender was stopped')
 
     async def process_message(self, result: SinkResult):
