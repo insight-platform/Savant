@@ -457,9 +457,6 @@ class Pipeline:
     or :py:class:`ElementGroup` nodes.
     """
 
-    draw_func: Optional[DrawFunc] = None
-    """Draw function specification."""
-
     sink: List[PipelineElement] = field(default_factory=list)
     """Sink elements of a pipeline."""
 
