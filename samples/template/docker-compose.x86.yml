@@ -1,0 +1,49 @@
+version: "3.3"
+services:
+
+  client-sdk:
+    image: ghcr.io/insight-platform/savant-deepstream:latest
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ./client:/opt/savant/client
+      - ./data:/data
+    entrypoint: python /opt/savant/client/run.py
+
+  module:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.x86
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ./models_cache:/models
+      - ./downloads_cache:/downloads
+      - ./module:/opt/savant/module
+    environment:
+      - HEALTHCHECK_PORT=8888
+      - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.48
+    environment:
+      - COLLECTOR_ZIPKIN_HOST_PORT=:9411
+    ports:
+      - "6831:6831/udp"
+      - "6832:6832/udp"
+      - "5778:5778"
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
+      - "14250:14250"
+      - "14268:14268"
+      - "14269:14269"
+      - "9411:9411"
+
+volumes:
+  zmq_sockets:
