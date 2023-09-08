@@ -1,11 +1,12 @@
-import time
 import json
-import numpy as np
-import cv2
+import time
 
+import cv2
+import numpy as np
 from savant_rs import init_jaeger_tracer
+
 from savant.api.builder import build_bbox
-from savant.client import JaegerLogProvider, JpegSource, SourceBuilder, SinkBuilder
+from savant.client import JaegerLogProvider, JpegSource, SinkBuilder, SourceBuilder
 
 # Initialize Jaeger tracer to send metrics and logs to Jaeger.
 # Note: the Jaeger tracer also should be configured in the module.
@@ -69,7 +70,9 @@ for result in sink:
     # for simplicity, we only check the IOU coefs of bounding boxes
     for obj in result.frame_meta.get_all_objects():
         if obj.label == 'person':
-            assert  obj.detection_box.iou(person_bbox) > 0.9, 'Person bbox is not correct'
+            assert (
+                obj.detection_box.iou(person_bbox) > 0.9
+            ), 'Person bbox is not correct'
         elif obj.label == 'face':
             assert obj.detection_box.iou(face_bbox) > 0.9, 'Face bbox is not correct'
 

@@ -25,10 +25,13 @@ parameters:
     codec: raw-rgba
   # custom drawing on frames function
   draw_func:
-    module: module.overlay
+    module: module.overlay_custom
     class_name: Overlay
     #kwargs:
-
+    rendered_objects:
+      peoplenet:
+        person:
+        face:
 
 
 # pipeline definition

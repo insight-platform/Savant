@@ -1,5 +1,6 @@
 """Custom DrawFunc implementation."""
-from savant_rs.draw_spec import ObjectDraw, BoundingBoxDraw, ColorDraw, PaddingDraw
+from savant_rs.draw_spec import BoundingBoxDraw, ColorDraw, ObjectDraw, PaddingDraw
+
 from savant.deepstream.drawfunc import NvDsDrawFunc
 from savant.meta.object import ObjectMeta
 
@@ -10,8 +11,7 @@ class Overlay(NvDsDrawFunc):
     def override_draw_spec(
         self, object_meta: ObjectMeta, draw_spec: ObjectDraw
     ) -> ObjectDraw:
-        """Override draw spec for objects.
-        """
+        """Override draw spec for objects."""
         # When the dev_mode is enabled in the module config
         # The draw func code changes are applied without restarting the module
 
