@@ -116,13 +116,15 @@ def fps_meter_options(func):
 
 
 def build_common_envs(
-    source_id: str,
+    source_id: Optional[str],
     fps_period_frames: Optional[int],
     fps_period_seconds: Optional[float],
     fps_output: str,
 ):
     """Generate env var run options."""
-    envs = [f'SOURCE_ID={source_id}']
+    envs = []
+    if source_id:
+        envs.append(f'SOURCE_ID={source_id}')
     if fps_period_frames:
         envs.append(f'FPS_PERIOD_FRAMES={fps_period_frames}')
     if fps_period_seconds:
@@ -135,8 +137,8 @@ def build_common_envs(
 def build_docker_run_command(
     container_name: str,
     zmq_endpoint: str,
-    zmq_type: str,
-    zmq_bind: bool,
+    zmq_type: Optional[str],
+    zmq_bind: Optional[bool],
     entrypoint: str,
     docker_image: str,
     sync: bool = False,
@@ -179,10 +181,12 @@ def build_docker_run_command(
         '-e', 'LOGLEVEL',
         '-e', f'SYNC_OUTPUT={sync}',
         '-e', f'ZMQ_ENDPOINT={zmq_endpoint}',
-        '-e', f'ZMQ_TYPE={zmq_type}',
-        '-e', f'ZMQ_BIND={zmq_bind}',
     ]
     # fmt: on
+    if zmq_type is not None:
+        command += ['-e', f'ZMQ_TYPE={zmq_type}']
+    if zmq_bind is not None:
+        command += ['-e', f'ZMQ_BIND={zmq_bind}']
 
     command += get_tcp_parameters((zmq_endpoint,))
 

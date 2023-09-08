@@ -639,6 +639,13 @@ Running the adapter with Docker:
         -m adapters.python.sources.kafka_redis
 
 
+
+Running with the helper script:
+
+.. code-block:: bash
+
+    ./scripts/run_source.py kafka-redis --brokers=kafka:9092 --topic=kafka-reds-adapter-demo --group-id=kafka-reds-adapter-demo
+
 Sink Adapters
 -------------
 
@@ -901,7 +908,7 @@ Running the adapter with Docker:
         -e KAFKA_CREATE_TOPIC_NUM_PARTITIONS=4 \
         -e KAFKA_CREATE_TOPIC_REPLICATION_FACTOR=1 \
         -e 'KAFKA_CREATE_TOPIC_CONFIG={"retention.ms": 300000}' \
-        -e REDIS_HOST=keydb \
+        -e REDIS_HOST=redis \
         -e REDIS_PORT=6379 \
         -v /tmp/zmq-sockets:/tmp/zmq-sockets \
         ghcr.io/insight-platform/savant-adapters-py:latest \
@@ -909,3 +916,9 @@ Running the adapter with Docker:
 
 .. note::
     The adapter doesn't have ``ZMQ_TYPE``, ``ZMQ_BIND`` parameters.
+
+Running the adapter with the helper script:
+
+.. code-block:: bash
+
+    ./scripts/run_sink.py kafka-redis --brokers=kafka:9092 --topic=kafka-reds-adapter-demo --redis-host=redis

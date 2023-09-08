@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Run source adapter."""
 import os
+import uuid
 from typing import List, Optional
 
 import click
@@ -814,6 +815,157 @@ def ffmpeg_source(
         entrypoint='/opt/savant/adapters/gst/sources/ffmpeg.sh',
         envs=envs,
         devices=devices,
+        docker_image=docker_image,
+    )
+    run_command(cmd)
+
+
+@cli.command('kafka-redis')
+@click.option(
+    '--in-endpoint',
+    default='sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc',
+    help='Adapter input (module output) ZeroMQ socket endpoint.',
+    show_default=True,
+)
+@fps_meter_options
+@click.option(
+    '--brokers',
+    required=True,
+    help='Comma-separated list of Kafka brokers.',
+)
+@click.option(
+    '--topic',
+    required=True,
+    help='Kafka topic to read messages from.',
+)
+@click.option(
+    '--group-id',
+    required=True,
+    help='Kafka consumer group ID.',
+)
+@click.option(
+    '--poll-timeout',
+    type=click.INT,
+    default=1,
+    help='Timeout for Kafka consumer poll, in seconds.',
+    show_default=True,
+)
+@click.option(
+    '--auto-commit',
+    type=click.BOOL,
+    default=True,
+    help='Whether to commit Kafka offsets automatically.',
+    show_default=True,
+)
+@click.option(
+    '--auto-offset-reset',
+    default='latest',
+    help='Position to start reading messages from Kafka topic when the group is created.',
+    show_default=True,
+)
+@click.option(
+    '--partition-assignment-strategy',
+    default='roundrobin',
+    help='Strategy to assign partitions to consumers.',
+    show_default=True,
+)
+@click.option(
+    '--max-poll-interval-ms',
+    type=click.INT,
+    default=300000,
+    help=(
+        'Maximum delay in milliseconds between invocations of poll() '
+        'when using consumer group management.'
+    ),
+    show_default=True,
+)
+@click.option(
+    '--create-topic',
+    is_flag=True,
+    default=False,
+    help='Create Kafka topic if it does not exist.',
+)
+@click.option(
+    '--create-topic-num-partitions',
+    type=click.INT,
+    default=1,
+    help='Number of partitions for a Kafka topic to create.',
+    show_default=True,
+)
+@click.option(
+    '--create-topic-replication-factor',
+    type=click.INT,
+    default=1,
+    help='Replication factor for a Kafka topic to create.',
+    show_default=True,
+)
+@click.option(
+    '--create-topic-config',
+    default='{}',
+    help='JSON dict of a Kafka topic configuration.',
+    show_default=True,
+)
+@click.option(
+    '--queue-size',
+    type=click.INT,
+    default=50,
+    help='Maximum amount of messages in the queue.',
+    show_default=True,
+)
+@adapter_docker_image_option('py')
+def kafka_redis_source(
+    in_endpoint: str,
+    docker_image: str,
+    fps_period_frames: Optional[int],
+    fps_period_seconds: Optional[float],
+    fps_output: Optional[str],
+    brokers: str,
+    topic: str,
+    group_id: str,
+    poll_timeout: int,
+    auto_commit: bool,
+    auto_offset_reset: str,
+    partition_assignment_strategy: str,
+    max_poll_interval_ms: int,
+    create_topic: bool,
+    create_topic_num_partitions: int,
+    create_topic_replication_factor: int,
+    create_topic_config: str,
+    queue_size: int,
+):
+    """Takes video stream metadata from Kafka and fetches frame content from Redis.
+
+    Frame content location is encoded as <redis-host>:<redis-port>:<redis-db>/<redis-key>.
+    """
+
+    envs = build_common_envs(
+        source_id=None,
+        fps_period_frames=fps_period_frames,
+        fps_period_seconds=fps_period_seconds,
+        fps_output=fps_output,
+    ) + [
+        f'KAFKA_BROKERS={brokers}',
+        f'KAFKA_TOPIC={topic}',
+        f'KAFKA_GROUP_ID={group_id}',
+        f'KAFKA_POLL_TIMEOUT={poll_timeout}',
+        f'KAFKA_AUTO_COMMIT={auto_commit}',
+        f'KAFKA_AUTO_OFFSET_RESET={auto_offset_reset}',
+        f'KAFKA_PARTITION_ASSIGNMENT_STRATEGY={partition_assignment_strategy}',
+        f'KAFKA_MAX_POLL_INTERVAL_MS={max_poll_interval_ms}',
+        f'KAFKA_CREATE_TOPIC={create_topic}',
+        f'KAFKA_CREATE_TOPIC_NUM_PARTITIONS={create_topic_num_partitions}',
+        f'KAFKA_CREATE_TOPIC_REPLICATION_FACTOR={create_topic_replication_factor}',
+        f'KAFKA_CREATE_TOPIC_CONFIG={create_topic_config}',
+        f'QUEUE_SIZE={queue_size}',
+    ]
+    cmd = build_docker_run_command(
+        f'source-kafka-redis-{uuid.uuid4().hex}',
+        zmq_endpoint=in_endpoint,
+        zmq_type=None,
+        zmq_bind=None,
+        entrypoint='python',
+        args=['-m', 'adapters.python.sources.kafka_redis'],
+        envs=envs,
         docker_image=docker_image,
     )
     run_command(cmd)
