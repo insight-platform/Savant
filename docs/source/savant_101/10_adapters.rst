@@ -607,7 +607,7 @@ The Kafka-Redis Source Adapter takes video stream metadata from Kafka and fetche
 - ``KAFKA_TOPIC`` (**required**): a Kafka topic to read messages from;
 - ``KAFKA_GROUP_ID`` (**required**): a Kafka consumer group ID;
 - ``KAFKA_CREATE_TOPIC``: a flag indicating whether to create a Kafka topic if it does not exist; default is ``False``;
-- ``KAFKA_CREATE_TOPIC_CONFIG``: a json dict with Kafka topic configuration for topic creation, passed as kwargs to ``confluent_kafka.admin.NewTopic`` (e.g. ``{"num_partitions": 4, "replication_factor": 1}``); default is ``{}``;
+- ``KAFKA_CREATE_TOPIC_CONFIG``: a json dict with Kafka topic configuration for topic creation, passed as kwargs to `confluent_kafka.admin.NewTopic <https://docs.confluent.io/platform/current/clients/confluent-kafka-python/html/index.html#newtopic>`__ (e.g. ``{"num_partitions": 4, "replication_factor": 1, "config": {"retention.ms": 300000}}``); default is ``{}``;
 - ``KAFKA_POLL_TIMEOUT``: a timeout for Kafka consumer poll, in seconds; default is ``1``;
 - ``KAFKA_AUTO_COMMIT``: a flag indicating whether to commit Kafka offsets automatically; default is ``True``;
 - ``KAFKA_AUTO_OFFSET_RESET``: a position to start reading messages from Kafka topic when the group is created; default is ``latest``;
@@ -874,7 +874,7 @@ The Kafka-Redis Sink Adapter sends video stream metadata to Kafka and frame cont
 - ``KAFKA_BROKERS`` (**required**): a comma-separated list of Kafka brokers;
 - ``KAFKA_TOPIC`` (**required**): a Kafka topic to put messages to;
 - ``KAFKA_CREATE_TOPIC``: a flag indicating whether to create a Kafka topic if it does not exist; default is ``False``;
-- ``KAFKA_CREATE_TOPIC_CONFIG``: a json dict with Kafka topic configuration for topic creation, passed as kwargs to ``confluent_kafka.admin.NewTopic`` (e.g. ``{"num_partitions": 4, "replication_factor": 1}``); default is ``{}``;
+- ``KAFKA_CREATE_TOPIC_CONFIG``: a json dict with Kafka topic configuration for topic creation, passed as kwargs to `confluent_kafka.admin.NewTopic <https://docs.confluent.io/platform/current/clients/confluent-kafka-python/html/index.html#newtopic>`__ (e.g. ``{"num_partitions": 4, "replication_factor": 1, "config": {"retention.ms": 300000}}``); default is ``{}``;
 - ``REDIS_HOST`` (**required**): a Redis host;
 - ``REDIS_PORT``: a Redis port; default is ``6379``;
 - ``REDIS_DB``: a Redis database; default is ``0``;

@@ -61,7 +61,7 @@ services:
       - KAFKA_BROKERS=kafka:9092
       - KAFKA_TOPIC=kafka-reds-adapter-demo
       - KAFKA_CREATE_TOPIC=True
-      - 'KAFKA_CREATE_TOPIC_CONFIG={"num_partitions": 4, "replication_factor": 1}'
+      - 'KAFKA_CREATE_TOPIC_CONFIG={"num_partitions": 4, "replication_factor": 1, "config": {"retention.ms": 300000}}'
       - REDIS_HOST=keydb
       - REDIS_PORT=6379
       - REDIS_DB=0
@@ -84,7 +84,7 @@ services:
       - KAFKA_TOPIC=kafka-reds-adapter-demo
       - KAFKA_GROUP_ID=kafka-reds-adapter-demo
       - KAFKA_CREATE_TOPIC=True
-      - 'KAFKA_CREATE_TOPIC_CONFIG={"num_partitions": 4, "replication_factor": 1}'
+      - 'KAFKA_CREATE_TOPIC_CONFIG={"num_partitions": 4, "replication_factor": 1, "config": {"retention.ms": 300000}}'
     command: python -m adapters.python.sources.kafka_redis
     depends_on:
       kafka:
