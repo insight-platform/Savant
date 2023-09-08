@@ -2,7 +2,7 @@ import asyncio
 import os
 from asyncio import Queue
 from distutils.util import strtobool
-from typing import Dict, Iterator, Optional, Tuple, Union
+from typing import AsyncIterator, Dict, Optional, Tuple, Union
 
 from confluent_kafka import Consumer
 from redis.asyncio import Redis
@@ -26,6 +26,8 @@ logger = get_logger(LOGGER_NAME)
 
 
 class KafkaConfig(BaseKafkaConfig):
+    """Kafka configuration for kafka-redis source adapter."""
+
     def __init__(self):
         super().__init__()
         self.group_id = os.environ['KAFKA_GROUP_ID']
@@ -41,6 +43,8 @@ class KafkaConfig(BaseKafkaConfig):
 
 
 class Config(BaseConfig):
+    """Configuration for kafka-redis source adapter."""
+
     kafka: KafkaConfig
 
     def __init__(self):
@@ -50,6 +54,8 @@ class Config(BaseConfig):
 
 
 class KafkaRedisSource(BaseKafkaRedisAdapter):
+    """Kafka-redis source adapter."""
+
     _config: Config
     _poller_queue: Queue[bytes]
     _sender_queue: Queue[Union[Tuple[VideoFrame, bytes], EndOfStream]]
@@ -64,12 +70,12 @@ class KafkaRedisSource(BaseKafkaRedisAdapter):
         )
         self._consumer = build_consumer(config.kafka)
         self._frame_clients: Dict[str, Redis] = {}
-
-    async def prepare_to_run(self):
         self._consumer.subscribe([self._config.kafka.topic])
         logger.info('Subscribed to topic %r', self._config.kafka.topic)
 
     async def poller(self):
+        """Poll messages from Kafka topic and put them to the poller queue."""
+
         logger.info('Starting poller')
         loop = asyncio.get_running_loop()
         while self._is_running:
@@ -105,7 +111,12 @@ class KafkaRedisSource(BaseKafkaRedisAdapter):
         await self._poller_queue.put(STOP)
         logger.info('Poller was stopped')
 
-    async def transformer(self):
+    async def messages_processor(self):
+        """Process messages from the poller queue and put them to the sender queue.
+
+        Frame content is fetched from Redis and frame metadata is updated.
+        """
+
         logger.info('Starting deserializer')
         while self._error is None:
             logger.debug('Waiting for the next message')
@@ -116,7 +127,7 @@ class KafkaRedisSource(BaseKafkaRedisAdapter):
                 break
 
             try:
-                deserialized = await self.deserialize_message(data)
+                deserialized = await self.process_message(data)
             except Exception as e:
                 self._is_running = False
                 self.set_error(f'Failed to deserialize message: {e}')
@@ -133,6 +144,8 @@ class KafkaRedisSource(BaseKafkaRedisAdapter):
         logger.info('Deserializer was stopped')
 
     async def sender(self):
+        """Send messages from the sender queue to ZeroMQ socket."""
+
         logger.info('Starting sender')
         try:
             async for result in self._source.send_iter(self.video_frame_iterator()):
@@ -148,10 +161,15 @@ class KafkaRedisSource(BaseKafkaRedisAdapter):
             self.clear_queue(self._sender_queue)
         logger.info('Sender was stopped')
 
-    async def deserialize_message(
+    async def process_message(
         self,
         data: bytes,
     ) -> Optional[Union[Tuple[VideoFrame, bytes], EndOfStream]]:
+        """Process one message from the poller queue.
+
+        Frame content is fetched from Redis and frame metadata is updated.
+        """
+
         message: Message = load_message_from_bytes(data)
         if message.is_video_frame():
             video_frame = message.as_video_frame()
@@ -166,6 +184,8 @@ class KafkaRedisSource(BaseKafkaRedisAdapter):
         self,
         video_frame: VideoFrame,
     ) -> Optional[Tuple[VideoFrame, bytes]]:
+        """Fetch frame content from Redis and update frame metadata."""
+
         if video_frame.content.is_internal():
             content = video_frame.content.get_data_as_bytes()
 
@@ -197,7 +217,9 @@ class KafkaRedisSource(BaseKafkaRedisAdapter):
 
     async def video_frame_iterator(
         self,
-    ) -> Iterator[Union[Tuple[VideoFrame, bytes], EndOfStream]]:
+    ) -> AsyncIterator[Union[Tuple[VideoFrame, bytes], EndOfStream]]:
+        """Iterate over messages from the sender queue."""
+
         while self._error is None:
             logger.debug('Waiting for the next message')
             data = await self._sender_queue.get()
@@ -209,6 +231,8 @@ class KafkaRedisSource(BaseKafkaRedisAdapter):
             self._sender_queue.task_done()
 
     async def fetch_content_from_redis(self, location: str) -> Optional[bytes]:
+        """Fetch frame content from Redis."""
+
         logger.debug('Fetching frame from %r', location)
         host_port, key = location.split('/', 1)
         frame_client = self._frame_clients.get(host_port)
@@ -223,6 +247,8 @@ class KafkaRedisSource(BaseKafkaRedisAdapter):
 
 
 def build_consumer(config: KafkaConfig) -> Consumer:
+    """Build Kafka consumer."""
+
     return Consumer(
         {
             'bootstrap.servers': config.brokers,

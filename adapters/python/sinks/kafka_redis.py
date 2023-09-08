@@ -27,22 +27,22 @@ logger = get_logger(LOGGER_NAME)
 
 
 class KafkaConfig(BaseKafkaConfig):
-    pass
+    """Kafka configuration for kafka-redis sink adapter."""
 
 
 class RedisConfig:
+    """Redis configuration for kafka-redis sink adapter."""
+
     def __init__(self):
         self.host = os.environ['REDIS_HOST']
         self.port = opt_config('REDIS_PORT', 6379, int)
         self.key_prefix = opt_config('REDIS_KEY_PREFIX', 'savant:frames')
         self.ttl_seconds = opt_config('REDIS_TTL_SECONDS', 60, int)
 
-    @property
-    def enabled(self):
-        return self.host is not None and self.port is not None
-
 
 class Config(BaseConfig):
+    """Configuration for kafka-redis sink adapter."""
+
     kafka: KafkaConfig
 
     def __init__(self):
@@ -53,6 +53,8 @@ class Config(BaseConfig):
 
 
 class KafkaRedisSink(BaseKafkaRedisAdapter):
+    """Kafka-redis sink adapter."""
+
     _config: Config
     _poller_queue: Queue[SinkResult]
     _sender_queue: Queue[Tuple[bytes, bytes]]
@@ -63,10 +65,9 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
         self._redis_client = Redis(host=config.redis.host, port=config.redis.port)
         self._sink = SinkBuilder().with_socket(config.zmq_endpoint).build_async()
 
-    async def prepare_to_run(self):
-        pass
-
     async def poller(self):
+        """Poll messages from ZeroMQ socket and put them to the poller queue."""
+
         logger.info('Starting poller')
         while self._is_running:
             try:
@@ -81,7 +82,12 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
         await self._poller_queue.put(STOP)
         logger.info('Poller was stopped')
 
-    async def transformer(self):
+    async def messages_processor(self):
+        """Process messages from the poller queue and put them to the sender queue.
+
+        Frame content is saved to Redis and frame metadata is updated with the content location.
+        """
+
         logger.info('Starting serializer')
         while self._error is None:
             result = await self._poller_queue.get()
@@ -90,7 +96,7 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
                 self._poller_queue.task_done()
                 break
             try:
-                message, source_id = await self.prepare_message(result)
+                message, source_id = await self.process_message(result)
             except Exception as e:
                 self._is_running = False
                 self.set_error(f'Failed to serialize message: {e}')
@@ -106,6 +112,8 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
         logger.info('Serializer was stopped')
 
     async def sender(self):
+        """Send messages from the sender queue to Kafka topic."""
+
         logger.info('Starting sender')
         loop = asyncio.get_running_loop()
         while self._error is None:
@@ -127,7 +135,12 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
             self._sender_queue.task_done()
         logger.info('Sender was stopped')
 
-    async def prepare_message(self, result: SinkResult):
+    async def process_message(self, result: SinkResult):
+        """Process one message from the poller queue.
+
+        Frame content is saved to Redis and frame metadata is updated with the content location.
+        """
+
         if result.frame_meta is not None:
             frame_meta = result.frame_meta
             source_id = frame_meta.source_id
@@ -150,6 +163,8 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
         return message, source_id
 
     async def put_frame_to_redis(self, frame: VideoFrame, content: bytes):
+        """Save frame content to Redis and update frame metadata with the content location."""
+
         content_key = f'{self._config.redis.key_prefix}:{uuid.uuid4()}'
         await self._redis_client.set(
             content_key,
@@ -163,6 +178,8 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
         return frame
 
     def send_to_producer(self, key: str, value: bytes):
+        """Send message to Kafka topic."""
+
         logger.debug(
             'Sending message to kafka topic %s with key %s. Message size is %s bytes. Value: %s.',
             self._config.kafka.topic,
@@ -174,6 +191,7 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
 
 
 def build_producer(config: KafkaConfig) -> Producer:
+    """Build Kafka producer."""
     return Producer({'bootstrap.servers': config.brokers})
 
 

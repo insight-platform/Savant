@@ -18,6 +18,8 @@ logger = get_logger(__name__)
 
 
 class BaseKafkaConfig:
+    """Base class for kafka configuration."""
+
     def __init__(self):
         self.brokers = os.environ['KAFKA_BROKERS']
         self.topic = os.environ['KAFKA_TOPIC']
@@ -30,6 +32,8 @@ class BaseKafkaConfig:
 
 
 class BaseConfig:
+    """Base class for configuration."""
+
     kafka: BaseKafkaConfig
 
     def __init__(self):
@@ -37,10 +41,15 @@ class BaseConfig:
 
 
 STOP = object()
+"""Stop signal for the queues. Needed to gracefully stop the adapter."""
 
 
 class BaseKafkaRedisAdapter(ABC):
-    _config: BaseConfig
+    """Base class for kafka-redis adapters.
+
+    The adapter works with asyncio.
+    """
+
     _poller_queue: Queue
     _sender_queue: Queue
     _stop_event: Event
@@ -51,6 +60,8 @@ class BaseKafkaRedisAdapter(ABC):
         self._error: Optional[str] = None
 
     async def run(self):
+        """Run the adapter."""
+
         logger.info('Starting adapter')
         if not self.kafka_topic_exists():
             raise RuntimeError(
@@ -60,16 +71,13 @@ class BaseKafkaRedisAdapter(ABC):
         self._poller_queue = Queue(self._config.queue_size)
         self._sender_queue = Queue(self._config.queue_size)
         self._stop_event = Event()
-        await self.prepare_to_run()
         self._is_running = True
-        await asyncio.gather(self.poller(), self.transformer(), self.sender())
+        await asyncio.gather(self.poller(), self.messages_processor(), self.sender())
         self._stop_event.set()
 
-    @abstractmethod
-    async def prepare_to_run(self):
-        pass
-
     async def stop(self):
+        """Gracefully stop the adapter."""
+
         logger.info('Stopping adapter')
         self._is_running = False
         await self._stop_event.wait()
@@ -77,26 +85,40 @@ class BaseKafkaRedisAdapter(ABC):
 
     @abstractmethod
     async def poller(self):
+        """Poll messages from the source and put them into the poller queue."""
         pass
 
     @abstractmethod
-    async def transformer(self):
+    async def messages_processor(self):
+        """Process messages from the poller queue and put them into the sender queue."""
         pass
 
     @abstractmethod
     async def sender(self):
+        """Send messages from the sender queue to the sink."""
         pass
 
     @property
     def error(self) -> Optional[str]:
+        """Get the error message if the adapter failed to run."""
         return self._error
 
     def set_error(self, error: str):
+        """Log and set the error message if the adapter failed to run.
+
+        Only sets the first error.
+        """
+
         logger.error(error)
         if self._error is None:
             self._error = error
 
-    def kafka_topic_exists(self, timeout: int = 10):
+    def kafka_topic_exists(self, timeout: int = 10) -> bool:
+        """Check if the kafka topic exists and create it if necessary.
+
+        :param timeout: The timeout in seconds to wait for the topic to be created.
+        """
+
         admin_client = AdminClient({'bootstrap.servers': self._config.kafka.brokers})
         cluster_meta: ClusterMetadata = admin_client.list_topics()
         if self._config.kafka.topic in cluster_meta.topics:
@@ -129,6 +151,8 @@ class BaseKafkaRedisAdapter(ABC):
         return False
 
     def clear_queue(self, queue: Queue):
+        """Clear the queue. Needed to prevent the adapter from hanging in the case of failure."""
+
         while not queue.empty():
             queue.get_nowait()
 
@@ -137,6 +161,12 @@ def run_kafka_redis_adapter(
     adapter_class: Type[BaseKafkaRedisAdapter],
     config_class: Type[BaseConfig],
 ):
+    """Run kafka-redis adapter.
+
+    :param adapter_class: The adapter implementation.
+    :param config_class: The configuration implementation.
+    """
+
     init_logging()
     # To gracefully shutdown the adapter on SIGTERM (raise KeyboardInterrupt)
     signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
