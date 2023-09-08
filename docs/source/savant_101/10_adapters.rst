@@ -255,9 +255,10 @@ Currently, the following source adapters are available:
 - USB/CSI camera;
 - GigE (Genicam) industrial cam;
 - FFmpeg;
-- Multi-stream.
+- Multi-stream;
+- Kafka-Redis Source.
 
-All source adapters accept the following common parameters:
+Most source adapters accept the following common parameters:
 
 - ``SOURCE_ID``: a string identifier for a stream processed; this option is **required**; every stream must have a unique identifier, if identifiers collide, processing may cause unpredictable results; the identifier may encode user-defined semantics in a prefix, like ``rtsp.stream.1``; many sink adapters can filter out streams by prefix or full ``SOURCE_ID``;
 - ``ZMQ_ENDPOINT``: adapter's socket where it sends media stream; it must form a valid ZeroMQ pair with module's input socket; the endpoint coding scheme is ``[<socket_type>+(bind|connect):]<endpoint>``;
@@ -558,7 +559,7 @@ The file location can be:
 
 **Parameters**:
 
-- ``LOCATION``: a video file local path or URL;
+- ``LOCATION`` (**required**): a video file local path or URL;
 - ``SOURCE_ID_PATTERN``: a pattern for string identifiers for streams. Use ``%d``, ``%03d`` placeholders for stream idx. Default is ``source-%d``;
 - ``NUMBER_OF_STREAMS``: a number of streams to create; default is ``1``;
 - ``NUMBER_OF_FRAMES``: a number of frames to send to each stream. If not specified all frames from the video file will be sent;
@@ -594,6 +595,44 @@ Running with the helper script:
 
     ./scripts/run_source.py multi-stream --source-id-pattern='camera-%d' --number-of-sources=4 --shutdown-auth=shutdown-key /path/to/data/test.mp4
 
+Kafka-Redis Source Adapter
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The Kafka-Redis Source Adapter takes video stream metadata from Kafka and fetches frame content from Redis.
+
+
+**Parameters**:
+
+- ``KAFKA_BROKERS`` (**required**): a comma-separated list of Kafka brokers;
+- ``KAFKA_TOPIC`` (**required**): a Kafka topic to read messages from;
+- ``KAFKA_GROUP_ID`` (**required**): a Kafka consumer group ID;
+- ``KAFKA_CREATE_TOPIC``: a flag indicating whether to create a Kafka topic if it does not exist; default is ``False``;
+- ``KAFKA_CREATE_TOPIC_CONFIG``: a json dict with Kafka topic configuration for topic creation (e.g. ``{"num_partitions": 4, "replication_factor": 1}``); default is ``{}``;
+- ``KAFKA_POLL_TIMEOUT``: a timeout for Kafka consumer poll, in seconds; default is ``1``;
+- ``KAFKA_AUTO_COMMIT``: a flag indicating whether to commit Kafka offsets automatically; default is ``True``;
+- ``KAFKA_AUTO_OFFSET_RESET``: a position to start reading messages from Kafka topic when the group is created; default is ``latest``;
+- ``KAFKA_PARTITION_ASSIGNMENT_STRATEGY``: a strategy to assign partitions to consumers; default is ``roundrobin``;
+- ``KAFKA_MAX_POLL_INTERVAL_MS``: a maximum delay in milliseconds between invocations of poll() when using consumer group management; default is ``300000``.
+
+.. note::
+    The adapter doesn't have ``SOURCE_ID``, ``ZMQ_TYPE``, ``ZMQ_BIND`` parameters.
+
+Running the adapter with Docker:
+
+.. code-block:: bash
+
+    docker run --rm -it --name source-kafka-redis-test \
+        --entrypoint python \
+        -e ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc \
+        -e KAFKA_BROKERS=kafka:9092 \
+        -e KAFKA_TOPIC=kafka-reds-adapter-demo \
+        -e KAFKA_GROUP_ID=kafka-reds-adapter-demo \
+        -e KAFKA_CREATE_TOPIC=True \
+        -e 'KAFKA_CREATE_TOPIC_CONFIG={"num_partitions": 4, "replication_factor": 1}' \
+        -v /tmp/zmq-sockets:/tmp/zmq-sockets \
+        ghcr.io/insight-platform/savant-adapters-py:latest \
+        -m adapters.python.sources.kafka_redis
+
 
 Sink Adapters
 -------------
@@ -604,9 +643,10 @@ There is a number of sink adapters implemented:
 - Image File;
 - Video File;
 - Display;
-- Always-On RTSP.
+- Always-On RTSP;
+- Kafka-Redis Sink.
 
-All sync adapters accept the following parameters:
+Most sync adapters accept the following parameters:
 
 - ``ZMQ_ENDPOINT``: a ZeroMQ socket for data input matching the one specified in module's output;  the endpoint coding scheme is ``[<socket_type>+(bind|connect):]<endpoint>``;
 - ``ZMQ_TYPE``: a ZeroMQ socket type for the adapter's input; the default value is ``SUB``, can also be set to ROUTER or ``REP``; **warning**: this parameter is deprecated, consider encoding the type in ``ZMQ_ENDPOINT``;
@@ -822,3 +862,39 @@ Running the adapter with the helper script:
 .. code-block:: bash
 
     ./scripts/run_sink.py always-on-rtsp --source-id=test --stub-file-location=/path/to/stub_file/test.jpg rtsp://192.168.1.1
+
+Kafka-Redis Sink Adapter
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+The Kafka-Redis Sink Adapter sends video stream metadata to Kafka and frame content to Redis.
+
+**Parameters**:
+
+- ``KAFKA_BROKERS`` (**required**): a comma-separated list of Kafka brokers;
+- ``KAFKA_TOPIC`` (**required**): a Kafka topic to put messages to;
+- ``KAFKA_CREATE_TOPIC``: a flag indicating whether to create a Kafka topic if it does not exist; default is ``False``;
+- ``KAFKA_CREATE_TOPIC_CONFIG``: a json dict with Kafka topic configuration for topic creation (e.g. ``{"num_partitions": 4, "replication_factor": 1}``); default is ``{}``;
+- ``REDIS_HOST`` (**required**): a Redis host;
+- ``REDIS_PORT``: a Redis port; default is ``6379``;
+- ``REDIS_KEY_PREFIX``: a prefix for Redis keys; frame content is put to Redis with a key ``REDIS_KEY_PREFIX:UUID``; default is ``savant:frames``;
+- ``REDIS_TTL_SECONDS``: a TTL for Redis keys; default is ``60``.
+
+Running the adapter with Docker:
+
+.. code-block:: bash
+
+    docker run --rm -it --name sink-kafka-redis-test \
+        --entrypoint python \
+        -e ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc \
+        -e KAFKA_BROKERS=kafka:9092 \
+        -e KAFKA_TOPIC=kafka-reds-adapter-demo \
+        -e KAFKA_CREATE_TOPIC=True \
+        -e 'KAFKA_CREATE_TOPIC_CONFIG={"num_partitions": 4, "replication_factor": 1}' \
+        -e REDIS_HOST=keydb \
+        -e REDIS_PORT=6379 \
+        -v /tmp/zmq-sockets:/tmp/zmq-sockets \
+        ghcr.io/insight-platform/savant-adapters-py:latest \
+        -m adapters.python.sinks.kafka_redis
+
+.. note::
+    The adapter doesn't have ``ZMQ_TYPE``, ``ZMQ_BIND`` parameters.
