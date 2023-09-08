@@ -12,7 +12,34 @@
       ]
     }
   },
-  "workspaceMount": "source=${localWorkspaceFolder}/module,target=/opt/savant/module,type=bind",
-  "workspaceFolder": "/opt/savant/module",
-  "runArgs": [ "--gpus=all" ]
+  "workspaceMount": "source=${localWorkspaceFolder}/src,target=/opt/savant/,type=bind",
+  "workspaceFolder": "/opt/savant/",
+  "runArgs": [ "--gpus=all", "--network=template_network" ],
+  "containerEnv": {
+    "LOGLEVEL": "DEBUG",
+    "ZMQ_SRC_ENDPOINT": "sub+bind:ipc:///tmp/input-video.ipc",
+    "ZMQ_SINK_ENDPOINT": "pub+bind:ipc:///tmp/output-video.ipc"
+  },
+  "mounts": [
+    {
+      "source": "${localWorkspaceFolder}/downloads_cache",
+      "target": "/downloads",
+      "type": "bind"
+    },
+    {
+      "source": "${localWorkspaceFolder}/models_cache",
+      "target": "/models",
+      "type": "bind"
+    },
+    {
+      "source": "${localWorkspaceFolder}/test_data",
+      "target": "/test_data",
+      "type": "bind"
+    },
+    {
+      "source": "${localWorkspaceFolder}/output",
+      "target": "/output",
+      "type": "bind"
+    }
+  ]
 }
