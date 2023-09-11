@@ -101,6 +101,15 @@ def source_id_option(required: bool):
     )
 
 
+detach_option = click.option(
+    '--detach',
+    is_flag=True,
+    default=False,
+    help='Run docker container in background and print container ID.',
+    show_default=True,
+)
+
+
 def fps_meter_options(func):
     func = click.option(
         '--fps-output',
@@ -143,6 +152,7 @@ def build_docker_run_command(
     zmq_bind: bool,
     entrypoint: str,
     docker_image: str,
+    detach: bool,
     sync: bool = False,
     envs: List[str] = None,
     volumes: List[str] = None,
@@ -163,6 +173,7 @@ def build_docker_run_command(
     :param zmq_bind: add ``ZMQ_BIND`` env var to container
     :param entrypoint: add ``--entrypoint`` parameter
     :param docker_image: docker image to run
+    :param detach: run docker container in background
     :param sync: add ``SYNC_OUTPUT`` env var to container
     :param envs: add ``-e`` parameters
     :param volumes: add ``-v`` parametrs
@@ -177,7 +188,6 @@ def build_docker_run_command(
     command = [
         'docker', 'run',
         '--rm',
-        '-it',
         '--name', container_name,
         '-e', f'GST_DEBUG={gst_debug}',
         '-e', 'LOGLEVEL',
@@ -187,6 +197,9 @@ def build_docker_run_command(
         '-e', f'ZMQ_BIND={zmq_bind}',
     ]
     # fmt: on
+
+    if detach:
+        command += ['--detach']
 
     command += get_tcp_parameters((zmq_endpoint,))
 
@@ -225,7 +238,6 @@ def build_docker_run_command(
 
 def run_command(command: List[str]):
     """Start a subprocess, call command."""
-    print(f'Running docker command\n{command}')
     try:
         subprocess.check_call(command)
     except subprocess.CalledProcessError as err:

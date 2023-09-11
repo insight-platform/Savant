@@ -8,6 +8,7 @@ from common import (
     adapter_docker_image_option,
     build_common_envs,
     build_docker_run_command,
+    detach_option,
     fps_meter_options,
     run_command,
     source_id_option,
@@ -69,6 +70,7 @@ def files_source(
     out_bind: bool,
     sync: bool,
     docker_image: str,
+    detach: bool,
     fps_period_frames: Optional[int],
     fps_period_seconds: Optional[float],
     fps_output: str,
@@ -81,7 +83,6 @@ def files_source(
     """Read picture or video files from LOCATION.
     LOCATION can be single file, directory or HTTP URL.
     """
-    print(f'{source_id=}')
     if location.startswith('http://') or location.startswith('https://'):
         volumes = []
     else:
@@ -114,6 +115,7 @@ def files_source(
         ),
         volumes=volumes,
         docker_image=docker_image,
+        detach=detach,
     )
     run_command(cmd)
 
@@ -327,6 +329,7 @@ def video_loop_source(
 @fps_meter_options
 @sync_option
 @adapter_docker_image_option('gstreamer')
+@detach_option
 @click.argument('location', required=True)
 def multi_stream_source(
     out_endpoint: str,
@@ -334,6 +337,7 @@ def multi_stream_source(
     out_bind: bool,
     sync: bool,
     docker_image: str,
+    detach: bool,
     fps_period_frames: Optional[int],
     fps_period_seconds: Optional[float],
     fps_output: str,
@@ -375,6 +379,7 @@ def multi_stream_source(
         out_bind=out_bind,
         sync=sync,
         docker_image=docker_image,
+        detach=detach,
         fps_period_frames=fps_period_frames,
         fps_period_seconds=fps_period_seconds,
         fps_output=fps_output,
