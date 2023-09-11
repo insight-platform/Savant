@@ -16,14 +16,7 @@ parameters:
       # Padding size is 180px on the top of the frame
       top: 0
       bottom: 0
-  output_frame:
-    # Frame is output without any encoding
-    # this is to circumvent 3 hardware decoding processes limit on NVIDIA consumer hardware
-    codec: hevc
   batch_size: 1
-
-  buffer_queues: ${json:${oc.env:BUFFER_QUEUES, null}}
-
 
 # pipeline definition
 pipeline:
