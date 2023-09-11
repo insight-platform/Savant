@@ -13,10 +13,11 @@ from savant.utils.logging import get_logger, init_logging, update_logging
 from savant.utils.sink_factories import sink_factory
 
 
-def main(config_file_path: str):
+def main(config_file_path: str, *args):
     """Entrypoint for NvDsPipeline based module.
 
     :param config_file_path: Module configuration file path.
+    :param args: Config overrides in dot-list format
     """
 
     status_filepath = os.environ.get('SAVANT_STATUS_FILEPATH')
@@ -32,7 +33,7 @@ def main(config_file_path: str):
     init_logging(config.parameters['log_level'])
 
     # load module config
-    config = ModuleConfig().load(config_file_path)
+    config = ModuleConfig().load(config_file_path, *args)
 
     # reconfigure savant logger with updated loglevel
     update_logging(config.parameters['log_level'])

@@ -285,7 +285,10 @@ def merge_configs(
     # if source for module is specified,
     # it should be used instead of default source (not merged)
     if 'pipeline' in user_cfg and 'source' in user_cfg.pipeline:
-        del default_cfg.pipeline.source
+        if user_cfg.pipeline.source:
+            del default_cfg.pipeline.source
+        else:
+            del user_cfg.pipeline.source
 
     return OmegaConf.unsafe_merge(default_cfg, user_cfg)
 
@@ -373,15 +376,20 @@ class ModuleConfig(metaclass=SingletonMeta):
         logger.debug('loaded default config\n%s', OmegaConf.to_yaml(self._default_cfg))
         self._config = None
 
-    def load(self, config_file_path: Union[str, Path]) -> Module:
+    def load(self, config_file_path: Union[str, Path], *args) -> Module:
         """Loads and prepares module configuration.
 
         :param config_file_path: Module config file path
+        :param args: Config overrides in dot-list format
         :return: Module configuration, structured
         """
-        module_cfg = OmegaConf.load(config_file_path)
+        cfgs = [OmegaConf.load(config_file_path)]
         logger.info('Configure module...')
-        module_cfg = merge_configs([module_cfg], self._default_cfg)
+
+        if args:
+            cfgs.append(OmegaConf.from_dotlist(args))
+
+        module_cfg = merge_configs(cfgs, self._default_cfg)
 
         module_cfg = OmegaConf.unsafe_merge(OmegaConf.structured(Module), module_cfg)
 
