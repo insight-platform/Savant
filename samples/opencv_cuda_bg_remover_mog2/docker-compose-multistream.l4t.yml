@@ -1,43 +1,28 @@
 version: "3.3"
 services:
 
-  rtsp-city-traffic:
+  video-loop-source:
     image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:latest
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
+      - /tmp/video-loop-source-downloads:/tmp/video-loop-source-downloads
     environment:
-      - RTSP_URI=rtsp://hello.savant.video:8554/city-traffic
+      - LOCATION=https://eu-central-1.linodeobjects.com/savant-data/opencv_cuda_bg_remover_mog2/road_traffic.mp4
+      - DOWNLOAD_PATH=/tmp/video-loop-source-downloads
       - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
-      - SOURCE_ID=city-traffic
-    entrypoint: /opt/savant/adapters/gst/sources/rtsp.sh
-    depends_on:
-      module:
-        condition: service_healthy
-
-  rtsp-town-centre:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:latest
-    restart: unless-stopped
-    volumes:
-      - zmq_sockets:/tmp/zmq-sockets
-    environment:
-      - RTSP_URI=rtsp://hello.savant.video:8554/town-centre
-      - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
-      - SOURCE_ID=town-centre
-    entrypoint: /opt/savant/adapters/gst/sources/rtsp.sh
-    depends_on:
-      module:
-        condition: service_healthy
+      - SOURCE_ID_PATTERN=road-traffic-processed-%d
+      - NUMBER_OF_STREAMS=2
+      - SYNC_OUTPUT=True
+    entrypoint: /opt/savant/adapters/gst/sources/multi_stream.sh
 
   module:
     image: ghcr.io/insight-platform/savant-deepstream-l4t:latest
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
-      - ../../models/peoplenet_detector:/models
-      - ../../downloads/peoplenet_detector:/downloads
       - ..:/opt/savant/samples
-    command: samples/multiple_rtsp/demo.yml
+    command: samples/opencv_cuda_bg_remover_mog2/demo.yml
     environment:
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
@@ -54,12 +39,11 @@ services:
       - "8889:8889"  # WebRTC
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
-      - ../assets/stub_imgs:/stub_imgs
+      - ./assets/stub_img:/stub_img
     environment:
       - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
-      - SOURCE_IDS=city-traffic,town-centre
-      - FRAMERATE=25/1
-      - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x720.jpeg
+      - SOURCE_IDS=road-traffic-processed-0,road-traffic-processed-1
+      - STUB_FILE_LOCATION=/stub_img/smpte100_2560x720.jpeg
       - DEV_MODE=True
     command: python -m adapters.ds.sinks.always_on_rtsp
     runtime: nvidia

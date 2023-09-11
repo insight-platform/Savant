@@ -87,6 +87,14 @@ def validate_source_id(ctx, param, value):
     return value
 
 
+def validate_source_id_list(ctx, param, value):
+    if value is None:
+        return value
+    for source_id in value.split(','):
+        validate_source_id(ctx, param, source_id)
+    return value
+
+
 def source_id_option(required: bool):
     return click.option(
         '--source-id',
@@ -116,13 +124,15 @@ def fps_meter_options(func):
 
 
 def build_common_envs(
-    source_id: str,
+    source_id: Optional[str],
     fps_period_frames: Optional[int],
     fps_period_seconds: Optional[float],
     fps_output: str,
 ):
     """Generate env var run options."""
-    envs = [f'SOURCE_ID={source_id}']
+    envs = []
+    if source_id:
+        envs.append(f'SOURCE_ID={source_id}')
     if fps_period_frames:
         envs.append(f'FPS_PERIOD_FRAMES={fps_period_frames}')
     if fps_period_seconds:

@@ -756,7 +756,7 @@ Running with the helper script:
 Always-On RTSP Sink Adapter
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The Always-On RTSP Sink Adapter broadcasts the video stream as RTSP/LL-HLS/WebRTC. The adapter accepts only one input stream, so if you need to serve multiple streams from the module, use a ``PUB`` socket on the module's side and a ``SUB`` socket on the adapter's side and run a separate adapter instance for each ``SOURCE_ID``. However, if the module serves a single stream, you can use either ``REQ/REP`` or ``DEALER/ROUTER`` pairs.
+The Always-On RTSP Sink Adapter broadcasts the video stream as RTSP/LL-HLS/WebRTC. The adapter works in two modes: single-stream and multi-stream. In the single-stream mode, the adapter accepts only one input stream with source ID specified in ``SOURCE_ID``. In the multi-stream mode, the adapter accepts multiple input streams with source IDs specified in ``SOURCE_IDS``.
 
 This adapter uses DeepStream SDK and **always** performs hardware transcoding of the incoming stream to ensure continuous streaming even when its source stops operating. In this case, the adapter continues to stream a static image waiting for the source to resume sending data.
 
@@ -770,7 +770,8 @@ The simplified design of the adapter is depicted in the following diagram:
 
 **Parameters**:
 
-- ``RTSP_URI``: an URI of the RTSP server where to cast the stream, this parameter is required only when ``DEV_MODE=False``;
+- ``RTSP_URI``: an URI of the RTSP server where to cast the stream, this parameter is required only when ``DEV_MODE=False``. The sink sends video stream to ``RTSP_URI``
+    in single-stream mode and to ``RTSP_URI/{source-id}`` in multi-stream mode;
 - ``DEV_MODE``: enables the use of embedded MediaMTX to serve a stream; default value is ``False``;
 - ``STUB_FILE_LOCATION``: the location of a stub image file; the image file must be in ``JPEG`` format, this parameter is required; the stub image file is shown when there is no input data; the stub file dimensions define the resolution of the output stream;
 - ``MAX_DELAY_MS``: a maximum delay in milliseconds to wait after the last frame received before the stub image is displayed; default is ``1000``;
@@ -783,14 +784,15 @@ The simplified design of the adapter is depicted in the following diagram:
 - ``FRAMERATE``: a frame rate for the output stream; the default value is ``30/1``;
 - ``METADATA_OUTPUT``: where to dump metadata (``stdout`` or ``logger``);
 - ``SYNC_OUTPUT``: a flag indicates whether to show frames on sink synchronously (i.e. at the source rate); the streaming may be not stable with this flag, try to avoid it; the default value is ``False``;
-- ``SOURCE_ID``: a filter to receive frames with a specific ``source_id`` only.
+- ``SOURCE_ID``: a filter to receive frames with a specific ``source_id`` only. The sink works in single-stream mode when this option is specified;
+- ``SOURCE_IDS``: a filter to receive frames with specific ``source_id``s only. The sink works in multi-stream mode when this option is specified.
 
 When ``DEV_MODE=True`` the stream is available at:
 
-- RTSP: rtsp://<container-host>:554/stream
-- RTMP: rtmp://<container-host>:1935/stream
-- LL-HLS: http://<container-host>:888/stream
-- WebRTC: http://<container-host>:8889/stream
+- RTSP: ``rtsp://<container-host>:554/stream`` (single-stream), ``rtsp://<container-host>:554/stream/{source-id}`` (multi-stream)
+- RTMP: ``rtmp://<container-host>:1935/stream`` (single-stream), ``rtmp://<container-host>:1935/stream/{source-id}`` (multi-stream)
+- LL-HLS: ``http://<container-host>:888/stream`` (single-stream), ``http://<container-host>:888/stream/{source-id}`` (multi-stream)
+- WebRTC: ``http://<container-host>:8889/stream`` (single-stream), ``http://<container-host>:8889/stream/{source-id}`` (multi-stream)
 
 Running the adapter with Docker:
 

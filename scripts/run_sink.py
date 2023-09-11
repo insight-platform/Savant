@@ -13,6 +13,7 @@ from common import (
     run_command,
     source_id_option,
     validate_source_id,
+    validate_source_id_list,
 )
 
 
@@ -301,7 +302,16 @@ def video_files_sink(
 
 
 @cli.command('always-on-rtsp')
-@source_id_option(required=True)
+@click.option(
+    '--source-id',
+    callback=validate_source_id,
+    help='Source ID, e.g. "camera1". The sink works in single-stream mode when this option is specified.',
+)
+@click.option(
+    '--source-ids',
+    callback=validate_source_id_list,
+    help='Comma-separated source ID list, e.g. "camera1,camera2". The sink works in multi-stream mode when this option is specified.',
+)
 @click.option(
     '--stub-file-location',
     required=True,
@@ -400,7 +410,8 @@ def always_on_rtsp_sink(
     in_type: str,
     in_bind: bool,
     docker_image: str,
-    source_id: str,
+    source_id: Optional[str],
+    source_ids: Optional[str],
     stub_file_location: str,
     max_delay_ms: int,
     transfer_mode: str,
@@ -421,24 +432,32 @@ def always_on_rtsp_sink(
 ):
     """Send video stream from specific source to RTSP server.
 
-    RTSP_URI - URI of the RTSP server.
+    RTSP_URI - URI of the RTSP server. The sink sends video stream to RTSP_URI
+    in single-stream mode and to RTSP_URI/{source-id} in multi-stream mode.
     Exactly one of --dev-mode flag and RTSP_URI argument must be used.
 
     When --dev-mode flag is used the stream is available at:
 
-        - RTSP: rtsp://<container-host>:554/stream
+        - RTSP: rtsp://<container-host>:554/stream (single-stream),
+        rtsp://<container-host>:554/stream/{source-id} (multi-stream)
 
-        - RTMP: rtmp://<container-host>:1935/stream
+        - RTMP: rtmp://<container-host>:1935/stream (single-stream),
+        rtmp://<container-host>:1935/stream/{source-id} (multi-stream)
 
-        - HLS: http://<container-host>:888/stream
+        - HLS: http://<container-host>:888/stream (single-stream),
+        http://<container-host>:888/stream/{source-id} (multi-stream)
 
-        - WebRTC: http://<container-host>:8889/stream
+        - WebRTC: http://<container-host>:8889/stream (single-stream),
+        http://<container-host>:8889/stream/{source-id} (multi-stream)
 
 
     Note: it is advisable to use --sync flag on source adapter or use a live
     source adapter (e.g. rtsp or usb-cam).
     """
 
+    assert (
+        source_id is None != source_ids is None
+    ), 'Must be specified one of "--source-id" flag or "--source-ids" argument.'
     assert os.path.exists(stub_file_location)
     assert dev_mode == (
         rtsp_uri is None
@@ -461,6 +480,8 @@ def always_on_rtsp_sink(
         f'ENCODER_BITRATE={bitrate}',
         f'FRAMERATE={framerate}',
     ]
+    if source_ids:
+        envs.append(f'SOURCE_IDS={source_ids}')
     if metadata_output:
         envs.append(f'METADATA_OUTPUT={metadata_output}')
     if dev_mode:

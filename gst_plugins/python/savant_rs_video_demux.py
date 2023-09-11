@@ -64,15 +64,6 @@ SAVANT_RS_VIDEO_DEMUX_PROPERTIES = {
         0,
         GObject.ParamFlags.READWRITE,
     ),
-    # TODO: filter frames by source id in zeromq_src
-    #       https://github.com/insight-platform/Savant/issues/59
-    'source-id': (
-        str,
-        'Source ID filter.',
-        'Filter frames by source ID.',
-        None,
-        GObject.ParamFlags.READWRITE,
-    ),
     'pipeline': (
         object,
         'VideoPipeline object from savant-rs.',
@@ -170,7 +161,6 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
         self.expiration_thread = Thread(target=self.eviction_job, daemon=True)
         self.store_metadata = False
         self.max_parallel_streams: int = 0
-        self.source_id: Optional[str] = None
         self.video_pipeline: Optional[VideoPipeline] = None
         self.pipeline_stage_name: Optional[str] = None
         self.shutdown_auth: Optional[str] = None
@@ -209,8 +199,6 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             return self.eos_on_timestamps_reset
         if prop.name == 'max-parallel-streams':
             return self.max_parallel_streams
-        if prop.name == 'source-id':
-            return self.source_id
         if prop.name == 'pipeline':
             return self.video_pipeline
         if prop.name == 'pipeline-stage-name':
@@ -229,8 +217,6 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             self.eos_on_timestamps_reset = value
         elif prop.name == 'max-parallel-streams':
             self.max_parallel_streams = value
-        elif prop.name == 'source-id':
-            self.source_id = value
         elif prop.name == 'pipeline':
             self.video_pipeline = value
         elif prop.name == 'pipeline-stage-name':
@@ -412,10 +398,6 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
 
     def handle_eos(self, eos: EndOfStream) -> Gst.FlowReturn:
         """Handle EndOfStream message."""
-        if self.source_id is not None and eos.source_id != self.source_id:
-            self.logger.debug('Skipping message from source %s', eos.source_id)
-            return Gst.FlowReturn.OK
-
         self.logger.info('Received EOS from source %s.', eos.source_id)
         with self.source_lock:
             source_info: SourceInfo = self.sources.get(eos.source_id)
