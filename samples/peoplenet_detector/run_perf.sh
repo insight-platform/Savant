@@ -1,18 +1,26 @@
 #!/bin/bash
 # you are expected to be in Savant/ directory
 
-DOCKER_IMAGE=ghcr.io/insight-platform/savant-deepstream:latest
-DOCKER_RUNTIME="--gpus=all"
-if [ "$(uname -m)" = "aarch64" ]; then
-  DOCKER_IMAGE=ghcr.io/insight-platform/savant-deepstream-l4t:latest
-  DOCKER_RUNTIME="--runtime=nvidia"
+MULTISTREAM=${1:0}
+MODULE_ARGS=("$@")
+unset "MODULE_ARGS[0]"
+
+MODULE_CONFIG=samples/peoplenet_detector/demo_performance.yml
+DATA_LOCATION=data/Free_City_Street_Footage.mp4
+
+if [ "$MULTISTREAM" -gt 0 ]; then
+  MODULE_ARGS+=(
+    "pipeline.source=null"
+    "parameters.shutdown_auth=shutdown"
+    "parameters.fps_period=1000000"
+    "parameters.batched_push_timeout=200000"
+  )
+  SOURCE_ADAPTER=$(./scripts/run_source.py multi-stream --detach \
+    --number-of-streams="$MULTISTREAM" \
+    --shutdown-auth=shutdown \
+    $DATA_LOCATION)
+  trap "docker kill $SOURCE_ADAPTER >/dev/null 2>/dev/null" EXIT
+  sleep 5
 fi
 
-docker run --rm -it $DOCKER_RUNTIME \
-  -e BUFFER_QUEUES \
-  -v `pwd`/samples:/opt/savant/samples \
-  -v `pwd`/data:/data:ro \
-  -v `pwd`/models/peoplenet_detector:/models \
-  -v `pwd`/downloads/peoplenet_detector:/downloads \
-  $DOCKER_IMAGE \
-  samples/peoplenet_detector/demo_performance.yml
+./scripts/run_module.py $MODULE_CONFIG "${MODULE_ARGS[@]}"

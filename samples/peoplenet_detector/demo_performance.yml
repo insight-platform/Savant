@@ -17,11 +17,6 @@ parameters:
       top: 180
       bottom: 0
     geometry_base: 4
-  output_frame:
-    # Frame is output with h264 encoding
-    # this gives more performance than raw-rgba
-    # as frames don't need to be copied to CPU
-    codec: h264
   # PyFunc for drawing on frames
   draw_func:
     # specify the drawfunc's python module
@@ -71,7 +66,7 @@ parameters:
         face:
           blur: true
 
-  buffer_queues: ${json:${oc.env:BUFFER_QUEUES, null}}
+  batch_size: 1
 
 # pipeline definition
 pipeline:
@@ -105,6 +100,7 @@ pipeline:
 
         # model file name, without location
         model_file: resnet34_peoplenet_pruned.etlt  # v2.0 Accuracy: 84.3 Size 20.9 MB
+        batch_size: ${parameters.batch_size}
 
         # configuration of input data and custom preprocessing methods
         input:
