@@ -4,7 +4,11 @@ PyCharm Professional
 
 The official documentation on configuring a `docker <https://www.jetbrains.com/help/pycharm/using-docker-as-a-remote-interpreter.html>`_  interpreter is pretty complete, but there are caveats. Below, you will find an improved configuration guide helping you to set up the runtime quickly.
 
-The guide tested with PyCharm 2023.1 Professional.
+The guide tested with PyCharm 2023.1.4 Professional.
+
+.. note::
+
+    If you have a different version of PyCharm, we cannot guarantee that the settings will work and match the screenshots.
 
 Project Preparation
 -------------------
@@ -40,7 +44,10 @@ Setting Up The Interpreter
 
 #. In the modal window:
 
-  * **[Step 1 of 3]**: Choose Dockerfile: ``docker/Dockerfile.x86`` or ``docker/Dockerfile.l4t``, if you are on Jetson, and set up Context folder (should be set to the root of the project). In the **Optional** section you can specify an **Image tag**:
+  * **[Step 1 of 3]**: Choose Dockerfile: ``docker/Dockerfile.x86`` or ``docker/Dockerfile.l4t``, if you are on Jetson, and set up Context folder (should be set to the root of the project). In the **Optional** section you have to specify an **Image tag**:
+
+    .. warning::
+        If you do not specify **Image tag**, docker images and container will not update correctly.
 
     .. image:: ../_static/img/dev-env/03-setup-docker-build.png
 
