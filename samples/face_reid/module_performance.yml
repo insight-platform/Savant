@@ -13,9 +13,6 @@ parameters:
       top: 0
       bottom: 0
 
-  output_frame:
-    codec: h264
-
   face_tile_padding: 24
   face_width: 112
   face_height: 112
@@ -37,6 +34,8 @@ parameters:
       # this is to prevent flickering when gallery images are equally close to a detected face
       match_linger_frames: 20
 
+  batch_size: 1
+
 pipeline:
 
   source:
@@ -56,6 +55,7 @@ pipeline:
             endpoint: https://eu-central-1.linodeobjects.com
         format: onnx
         config_file: yolov5n-face.txt
+        batch_size: ${parameters.batch_size}
         input:
           shape: [3, 640, 640]
         output:
