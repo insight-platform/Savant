@@ -110,7 +110,7 @@ def get_elem_type_ver(
                 'Mixing short notation and full definition is not supported.'
             )
         logger.debug(
-            'Parsed full definiton, result element="%s" elem_type="%s" elem_ver="%s"',
+            'Parsed full definition, result element="%s" elem_type="%s" elem_ver="%s"',
             element,
             elem_type,
             elem_ver,
@@ -198,7 +198,7 @@ def setup_batch_size(config: Module) -> None:
 def configure_module_parameters(module_cfg: DictConfig) -> None:
     """Resolve parameters on module config ("frame", "draw_func", etc.).
 
-    :param config: Module config.
+    :param module_cfg: Module config.
     """
     if 'parameters' not in module_cfg or module_cfg.parameters is None:
         module_cfg.parameters = {}
@@ -373,7 +373,7 @@ class ModuleConfig(metaclass=SingletonMeta):
         self._default_cfg = OmegaConf.load(
             Path(__file__).parent.resolve() / 'default.yml'
         )
-        logger.debug('loaded default config\n%s', OmegaConf.to_yaml(self._default_cfg))
+        logger.debug('Loaded default config\n%s', OmegaConf.to_yaml(self._default_cfg))
         self._config = None
 
     def load(self, config_file_path: Union[str, Path], *args) -> Module:
@@ -399,7 +399,7 @@ class ModuleConfig(metaclass=SingletonMeta):
         logger.debug('Configure module parameters...')
         configure_module_parameters(module_cfg)
 
-        logger.info('Configure pipeline elements...')
+        logger.debug('Configure pipeline elements...')
         configure_pipeline_elements(module_cfg)
 
         self._config = OmegaConf.to_object(module_cfg)

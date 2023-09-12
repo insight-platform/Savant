@@ -94,6 +94,7 @@ def run_module(
         '-e', 'GST_DEBUG',
         '-e', 'LOGLEVEL',
         '-e', 'FPS_PERIOD',
+        '-e', 'GST_DEBUG_COLOR_MODE=off',
         '-e', f'ZMQ_SRC_ENDPOINT={in_endpoint}',
         '-e', f'ZMQ_SRC_TYPE={in_type}',
         '-e', f'ZMQ_SRC_BIND={in_bind}',
