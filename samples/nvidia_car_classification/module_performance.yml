@@ -1,8 +1,6 @@
 name: ${oc.env:MODULE_NAME, 'nvidia_car_classification_perf'}
 
 parameters:
-  output_frame:
-    codec: h264
   draw_func:
     module: samples.nvidia_car_classification.overlay
     # specify the drawfunc's python class from the module
@@ -34,7 +32,7 @@ parameters:
             border_color: '0000FFFF'  # Blue
             thickness: 2
 
-  buffer_queues: ${json:${oc.env:BUFFER_QUEUES, null}}
+  batch_size: 1
 
 pipeline:
   # local video file source, not using source adapter
@@ -55,7 +53,7 @@ pipeline:
           parameters:
             endpoint: https://eu-central-1.linodeobjects.com
         model_file: resnet10.caffemodel
-        batch_size: 1
+        batch_size: ${parameters.batch_size}
         precision: int8
         int8_calib_file: cal_trt.bin
         label_file: labels.txt
