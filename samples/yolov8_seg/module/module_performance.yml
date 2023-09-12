@@ -4,13 +4,12 @@ parameters:
   frame:
     width: 1280
     height: 720
-  output_frame:
-    codec: hevc
   draw_func:
     module: samples.yolov8_seg.module.overlay
     class_name: Overlay
   buffer_queues:
     length: 10
+  batch_size: 1
 
 pipeline:
   source:
@@ -29,6 +28,7 @@ pipeline:
             endpoint: https://eu-central-1.linodeobjects.com
         format: onnx
         model_file: yolov8m-seg.onnx
+        batch_size: ${parameters.batch_size}
         input:
           shape: [3, 640, 640]
           maintain_aspect_ratio: true
