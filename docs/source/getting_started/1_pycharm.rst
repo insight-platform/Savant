@@ -4,7 +4,11 @@ PyCharm Professional
 
 The official documentation on configuring a `docker <https://www.jetbrains.com/help/pycharm/using-docker-as-a-remote-interpreter.html>`_  interpreter is pretty complete, but there are caveats. Below, you will find an improved configuration guide helping you to set up the runtime quickly.
 
-The guide tested with PyCharm 2023.1 Professional.
+The guide tested with PyCharm 2023.1.4 Professional.
+
+.. note::
+
+    If you have a different version of PyCharm, we cannot guarantee that the settings will work and match the screenshots.
 
 Project Preparation
 -------------------
@@ -40,7 +44,10 @@ Setting Up The Interpreter
 
 #. In the modal window:
 
-  * **[Step 1 of 3]**: Choose Dockerfile: ``docker/Dockerfile.x86`` or ``docker/Dockerfile.l4t``, if you are on Jetson, and set up Context folder (should be set to the root of the project). In the **Optional** section you can specify an **Image tag**:
+  * **[Step 1 of 3]**: Choose Dockerfile: ``docker/Dockerfile.x86`` or ``docker/Dockerfile.l4t``, if you are on Jetson, and set up Context folder (should be set to the root of the project). In the **Optional** section you have to specify an **Image tag**:
+
+    .. warning::
+        If you do not specify **Image tag**, docker images and container will not update correctly.
 
     .. image:: ../_static/img/dev-env/03-setup-docker-build.png
 
@@ -86,15 +93,6 @@ The ``run.py`` file is the entrypoint of the module, let's configure the launch 
     .. image:: ../_static/img/dev-env/11-run-output-2.png
 
 That's it, the environment is set up. Now you are ready to develop your own pipeline. See the next section to find out how.
-
-Notes
------
-
-PyCharm does not automatically detect newly installed packages in a Docker container. However, there is an option to manually scan for new packages: go to the **Settings** and look for **Rescan**, then navigate to **Plugins > Python > Rescan Available Python Modules and Packages** and set the hotkey (e.g., **Alt+R**):
-
-.. image:: ../_static/img/dev-env/12-rescan.png
-
-After adding a new package to the ``requirements.txt``, simply press the specified hotkey to rebuild the image and update the packages.
 
 Update Runtime On Container Change
 ----------------------------------
