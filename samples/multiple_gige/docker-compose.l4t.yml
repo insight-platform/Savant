@@ -22,7 +22,7 @@ services:
       - CAMERA_NAME=Aravis-Fake-Camera-Raw
       - FRAMERATE=20/1
       - ENCODE=False
-      - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/raw-video.ipc
+      - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/video.ipc
       - SOURCE_ID=gige-raw
     entrypoint: /opt/savant/adapters/gst/sources/gige_cam.sh
 
@@ -35,38 +35,24 @@ services:
       - CAMERA_NAME=Aravis-Fake-Camera-Encoded
       - FRAMERATE=20/1
       - ENCODE=True
-      - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/encoded-video.ipc
+      - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/video.ipc
       - SOURCE_ID=gige-encoded
     entrypoint: /opt/savant/adapters/gst/sources/gige_cam.sh
 
-  always-on-sink-raw:
+  always-on-sink:
     image: ghcr.io/insight-platform/savant-adapters-deepstream-l4t:latest
     restart: unless-stopped
     ports:
-      - "8881:888"    # HLS
+      - "554:554"    # RTSP
+      - "1935:1935"  # RTMP
+      - "888:888"    # HLS
+      - "8889:8889"  # WebRTC
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../assets/stub_imgs:/stub_imgs
     environment:
-      - ZMQ_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/raw-video.ipc
-      - SOURCE_ID=gige-raw
-      - FRAMERATE=20/1
-      - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x720.jpeg
-      - DEV_MODE=True
-    command: python -m adapters.ds.sinks.always_on_rtsp
-    runtime: nvidia
-
-  always-on-sink-encoded:
-    image: ghcr.io/insight-platform/savant-adapters-deepstream-l4t:latest
-    restart: unless-stopped
-    ports:
-      - "8882:888"    # HLS
-    volumes:
-      - zmq_sockets:/tmp/zmq-sockets
-      - ../assets/stub_imgs:/stub_imgs
-    environment:
-      - ZMQ_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/encoded-video.ipc
-      - SOURCE_ID=gige-encoded
+      - ZMQ_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/video.ipc
+      - SOURCE_IDS=gige-raw,gige-encoded
       - FRAMERATE=20/1
       - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x720.jpeg
       - DEV_MODE=True

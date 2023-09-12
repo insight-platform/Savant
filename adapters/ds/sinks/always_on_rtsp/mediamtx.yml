@@ -20,7 +20,7 @@ webrtcDisable: no
 webrtcAddress: :8889
 
 paths:
-  stream:
+  ~^stream:
     source: publisher
     sourceProtocol: automatic
     publishIPs: [ "127.0.0.1", "::1" ]
