@@ -1,20 +1,33 @@
 #!/bin/bash
 # you are expected to be in Savant/ directory
 
+MULTISTREAM=${1:0}
+MODULE_ARGS=("$@")
+unset "MODULE_ARGS[0]"
+
+MODULE_CONFIG=samples/traffic_meter/module_performance.yml
+DATA_LOCATION=data/AVG-TownCentre.mp4
+MODULE_ARGS+=("parameters.detector=yolov8m")
+
 if [ "$(uname -m)" = "aarch64" ]; then
-  DOCKER_RUNTIME="--runtime=nvidia"
   docker compose -f samples/traffic_meter/docker-compose.l4t.yml build module
 else
-  DOCKER_RUNTIME="--gpus=all"
   docker compose -f samples/traffic_meter/docker-compose.x86.yml build module
 fi
 
-docker run --rm -it $DOCKER_RUNTIME \
-  -e BUFFER_QUEUES \
-  -e DETECTOR=yolov8m \
-  -v `pwd`/samples:/opt/savant/samples \
-  -v `pwd`/data:/data:ro \
-  -v `pwd`/models/traffic_meter:/models \
-  -v `pwd`/downloads/traffic_meter:/downloads \
-  traffic_meter-module \
-  samples/traffic_meter/module-performance.yml
+if [ "$MULTISTREAM" -gt 0 ]; then
+  MODULE_ARGS+=(
+    "pipeline.source=null"
+    "parameters.shutdown_auth=shutdown"
+    "parameters.fps_period=1000000"
+    "parameters.batched_push_timeout=200000"
+  )
+  SOURCE_ADAPTER=$(./scripts/run_source.py multi-stream --detach \
+    --number-of-streams="$MULTISTREAM" \
+    --shutdown-auth=shutdown \
+    $DATA_LOCATION)
+  trap "docker kill $SOURCE_ADAPTER >/dev/null 2>/dev/null" EXIT
+  sleep 5
+fi
+
+./scripts/run_module.py -i traffic_meter-module $MODULE_CONFIG "${MODULE_ARGS[@]}"

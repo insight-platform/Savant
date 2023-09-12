@@ -13,8 +13,6 @@ parameters:
       top: 180
       bottom: 0
     geometry_base: 4
-  output_frame:
-    codec: h264
   draw_func:
     module: samples.traffic_meter.overlay
     # specify the drawfunc's python class from the module
@@ -25,7 +23,8 @@ parameters:
     id: 0
     label: person
 
-  buffer_queues: ${json:${oc.env:BUFFER_QUEUES, null}}
+  batch_size: 1
+  detector: ${oc.env:DETECTOR}
 
 pipeline:
 
@@ -44,9 +43,8 @@ pipeline:
 
     # variant group: peoplenet detector
     - group:
-        # enabled if env var DETECTOR==peoplenet
         init_condition:
-          expr: ${oc.env:DETECTOR}
+          expr: ${parameters.detector}
           value: peoplenet
         elements:
           - element: nvinfer@detector
@@ -59,6 +57,7 @@ pipeline:
                 parameters:
                   endpoint: https://eu-central-1.linodeobjects.com
               model_file: resnet34_peoplenet_pruned.etlt
+              batch_size: ${parameters.batch_size}
               input:
                 layer_name: input_1
                 shape: [3, 544, 960]
@@ -72,9 +71,8 @@ pipeline:
 
     # variant group: yolov8m detector
     - group:
-        # enabled if env var DETECTOR==yolov8m
         init_condition:
-          expr: ${oc.env:DETECTOR}
+          expr: ${parameters.detector}
           value: yolov8m
         elements:
           # below follows detector unit definition as usual
@@ -89,6 +87,7 @@ pipeline:
               format: onnx
               model_file: yolov8m.onnx
               config_file: config_infer_primary_yoloV8.txt
+              batch_size: ${parameters.batch_size}
               # max GPU RAM used to build the engine, 6GB by default
               # set lower than total GPU RAM available on your hardware
               workspace_size: 6144
@@ -99,9 +98,8 @@ pipeline:
 
     # variant group: yolov8s detector
     - group:
-        # enabled if env var DETECTOR==yolov8s
         init_condition:
-          expr: ${oc.env:DETECTOR}
+          expr: ${parameters.detector}
           value: yolov8s
         elements:
           # below follows detector unit definition as usual
@@ -116,6 +114,7 @@ pipeline:
               format: onnx
               model_file: yolov8s.onnx
               config_file: config_infer_primary_yoloV8.txt
+              batch_size: ${parameters.batch_size}
               # max GPU RAM used to build the engine, 6GB by default
               # set lower than total GPU RAM available on your hardware
               workspace_size: 6144

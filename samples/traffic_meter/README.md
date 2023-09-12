@@ -102,7 +102,7 @@ docker run --rm -it --runtime=nvidia \
 -v `pwd`/models/traffic_meter:/models \
 -v `pwd`/downloads/traffic_meter:/downloads \
 traffic_meter-module \
-samples/traffic_meter/module-performance.yml
+samples/traffic_meter/module_performance.yml
 ```
 
 Yolov8m:
@@ -115,7 +115,7 @@ docker run --rm -it --runtime=nvidia \
 -v `pwd`/models/traffic_meter:/models \
 -v `pwd`/downloads/traffic_meter:/downloads \
 traffic_meter-module \
-samples/traffic_meter/module-performance.yml
+samples/traffic_meter/module_performance.yml
 ```
 
 Yolov8s:
@@ -128,5 +128,5 @@ docker run --rm -it --runtime=nvidia \
 -v `pwd`/models/traffic_meter:/models \
 -v `pwd`/downloads/traffic_meter:/downloads \
 traffic_meter-module \
-samples/traffic_meter/module-performance.yml
+samples/traffic_meter/module_performance.yml
 ```
