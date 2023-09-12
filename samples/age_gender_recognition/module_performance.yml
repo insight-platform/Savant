@@ -4,9 +4,6 @@ parameters:
   frame:
     width: 1280
     height: 720
-
-  output_frame:
-    codec: h264
   draw_func:
     module: samples.age_gender_recognition.overlay
     # specify the drawfunc's python class from the module
@@ -33,8 +30,7 @@ parameters:
   face_width: 112
   face_height: 112
   detection_model_name: yolov5nface
-
-  buffer_queues: ${json:${oc.env:BUFFER_QUEUES, null}}
+  batch_size: 1
 
 pipeline:
 
@@ -56,6 +52,7 @@ pipeline:
             endpoint: https://eu-central-1.linodeobjects.com
         format: onnx
         config_file: yolov5n-face.txt
+        batch_size: ${parameters.batch_size}
         input:
           shape: [3, 640, 640]
         output:
@@ -77,6 +74,7 @@ pipeline:
                   min_height: 40
           attributes:
             - name: landmarks
+
     # tracker
     - element: nvtracker
       properties:
@@ -84,6 +82,8 @@ pipeline:
         tracker-height: 640
         ll-lib-file: /opt/nvidia/deepstream/deepstream/lib/libnvds_nvmultiobjecttracker.so
         ll-config-file: ${oc.env:PROJECT_PATH}/samples/age_gender_recognition/config_tracker_NvDCF_perf.yml
+
+    # age-gender
     - element: nvinfer@attribute_model
       name: age_gender
       model:
@@ -94,6 +94,7 @@ pipeline:
             endpoint: https://eu-central-1.linodeobjects.com
         format: onnx
         config_file: age_gender_mobilenet_v2_dynBatch_config.txt
+        batch_size: 8
         input:
           object: ${parameters.detection_model_name}.face
           preprocess_object_image:
