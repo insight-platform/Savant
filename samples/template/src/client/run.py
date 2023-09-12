@@ -1,4 +1,5 @@
 import json
+import os
 import time
 
 import cv2
@@ -8,14 +9,17 @@ from savant_rs import init_jaeger_tracer
 from savant.api.builder import build_bbox
 from savant.client import JaegerLogProvider, JpegSource, SinkBuilder, SourceBuilder
 
+print('Starting Savant client...')
 # Initialize Jaeger tracer to send metrics and logs to Jaeger.
 # Note: the Jaeger tracer also should be configured in the module.
 init_jaeger_tracer('savant-client', 'jaeger:6831')
 
+module_hostname = os.environ.get('MODULE_HOSTNAME', 'localhost')
 jaeger_endpoint = 'http://jaeger:16686'
-healthcheck_url = 'http://module:8888/healthcheck'
+healthcheck_url = f'http://{module_hostname}:8888/healthcheck'
 source_id = 'test-source'
 shutdown_auth = 'shutdown'
+result_img_path = '/output/result_img.jpg'
 
 # Build the source
 source = (
@@ -52,11 +56,13 @@ for obj in src_meta['objects']:
 
 # Send a JPEG image from a file to the module
 # And then send an EOS message
+print('Sending JPEG image to the module...')
 result = source(src_jpeg, send_eos=True)
 
 time.sleep(1)  # Wait for the module to process the frame
 
 # Receive results from the module and print them
+print('Receiving results from the module...')
 for result in sink:
     if result.eos:
         # second message is the EOS
@@ -75,7 +81,7 @@ for result in sink:
             ), 'Person bbox is not correct'
         elif obj.label == 'face':
             assert obj.detection_box.iou(face_bbox) > 0.9, 'Face bbox is not correct'
-
+    print('Result is correct.')
     # get the result image
     # the image will be in RGBA format, as specified in the module config
     img = np.frombuffer(result.frame_content, dtype=np.uint8)
@@ -83,7 +89,11 @@ for result in sink:
 
     # save the result image
     # the image will anything that the module has drawn on top of the input image
-    cv2.imwrite('/output/result_img.jpg', cv2.cvtColor(img, cv2.COLOR_RGBA2BGRA))
+    print(f'Saving result image to {result_img_path}')
+    cv2.imwrite(result_img_path, cv2.cvtColor(img, cv2.COLOR_RGBA2BGRA))
 
     # print the processing logs from the module
+    print('Logs from the module:')
     result.logs().pretty_print()
+
+print('Done.')

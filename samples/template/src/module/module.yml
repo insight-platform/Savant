@@ -25,7 +25,7 @@ parameters:
     codec: raw-rgba
   # custom drawing on frames function
   draw_func:
-    module: module.overlay_custom
+    module: src.module.overlay_custom
     class_name: Overlay
     #kwargs:
     rendered_objects:
@@ -119,7 +119,7 @@ pipeline:
 
     # custom pyfunc element
     - element: pyfunc
-      module: module.custom_pyfunc
+      module: src.module.custom_pyfunc
       class_name: CustomPyFunc
       #kwargs:
 

@@ -5,10 +5,12 @@ services:
     image: ghcr.io/insight-platform/savant-deepstream:latest
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
-      - ./client:/opt/savant/client
+      - ./src/client:/opt/savant/src/client
       - ./test_data:/test_data
       - ./output:/output
-    entrypoint: python /opt/savant/client/run.py
+    entrypoint: python /opt/savant/src/client/run.py
+    environment:
+      - MODULE_HOSTNAME=module
     links:
       - jaeger
     networks:
@@ -22,7 +24,7 @@ services:
       - zmq_sockets:/tmp/zmq-sockets
       - ./models_cache:/models
       - ./downloads_cache:/downloads
-      - ./module:/opt/savant/module
+      - ./src/module:/opt/savant/src/module
     environment:
       - HEALTHCHECK_PORT=8888
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
