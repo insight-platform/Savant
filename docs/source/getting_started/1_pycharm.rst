@@ -94,15 +94,6 @@ The ``run.py`` file is the entrypoint of the module, let's configure the launch 
 
 That's it, the environment is set up. Now you are ready to develop your own pipeline. See the next section to find out how.
 
-Notes
------
-
-PyCharm does not automatically detect newly installed packages in a Docker container. However, there is an option to manually scan for new packages: go to the **Settings** and look for **Rescan**, then navigate to **Plugins > Python > Rescan Available Python Modules and Packages** and set the hotkey (e.g., **Alt+R**):
-
-.. image:: ../_static/img/dev-env/12-rescan.png
-
-After adding a new package to the ``requirements.txt``, simply press the specified hotkey to rebuild the image and update the packages.
-
 Update Runtime On Container Change
 ----------------------------------
 
