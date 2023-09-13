@@ -1,1 +1,1 @@
-# specify here the packages required for the module
+# specify the packages required for the module here

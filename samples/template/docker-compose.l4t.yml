@@ -2,7 +2,7 @@ version: "3.3"
 services:
 
   client-sdk:
-    image: ghcr.io/insight-platform/savant-deepstream:latest
+    image: ghcr.io/insight-platform/savant-deepstream-l4t:latest
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ./src/client:/opt/savant/src/client
@@ -19,7 +19,7 @@ services:
   module:
     build:
       context: .
-      dockerfile: docker/Dockerfile.x86
+      dockerfile: docker/Dockerfile.l4t
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ./models_cache:/models
@@ -29,13 +29,7 @@ services:
       - HEALTHCHECK_PORT=8888
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+    runtime: nvidia
     networks:
       - network
 
