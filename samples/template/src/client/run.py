@@ -19,7 +19,7 @@ jaeger_endpoint = 'http://jaeger:16686'
 healthcheck_url = f'http://{module_hostname}:8888/healthcheck'
 source_id = 'test-source'
 shutdown_auth = 'shutdown'
-result_img_path = '/output/result_img.jpg'
+result_img_path = '/output/result_img.jpeg'
 
 # Build the source
 source = (
@@ -42,7 +42,7 @@ sink = (
 )
 
 # Specify a JPEG image to send to the module
-src_jpeg = JpegSource(source_id, '/test_data/test_img.jpg')
+src_jpeg = JpegSource(source_id, '/test_data/test_img.jpeg')
 with open('/test_data/test_img.json', 'r', encoding='utf8') as f:
     src_meta = json.loads(f.read())
 
