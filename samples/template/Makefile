@@ -25,7 +25,7 @@ run:
 	docker run -it --rm $(DOCKER_RUNTIME) \
 		-v $(shell pwd)/models_cache:/models \
 		-v $(shell pwd)/downloads_cache:/downloads \
-		-v $(shell pwd)/module:$(PROJECT_PATH)/module \
+		-v $(shell pwd)/src/module:$(PROJECT_PATH)/module \
 		$(IMAGE_NAME)
 
 # run module in dev mode
@@ -39,6 +39,6 @@ run-dev:
 		-v /tmp/.docker.xauth:/tmp/.docker.xauth \
 		-v $(shell pwd)/models_cache:/models \
 		-v $(shell pwd)/downloads_cache:/downloads \
-		-v $(shell pwd)/module:$(PROJECT_PATH)/module \
+		-v $(shell pwd)/src/module:$(PROJECT_PATH)/module \
 		--entrypoint /bin/bash \
 		$(IMAGE_NAME)
