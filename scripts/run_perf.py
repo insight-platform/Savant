@@ -1,24 +1,6 @@
 #!/usr/bin/env python3
 """Run performance management.
 
-TODO:
-Run context
-* platform
-  * os
-  * cpu
-  * gpu
-  * ram?
-  * mode (Jetson: cores, clocks)
-* version
-  * VERSION
-  * revision (`git rev-parse HEAD`)
-  * issue? (#NNN)
-  * [label]
-* date+time (+0, `datetime.now(timezone.utc)`)
-* parameters (buffer_queues, batch_size, multistream/uridecodebin, num_streams)
-* sample name - dir name in samples/
-* module config
-
 TODO: Sync data step
 mkdir -p data
 aws s3 sync --no-sign-request --endpoint-url=https://eu-central-1.linodeobjects.com s3://savant-data/demo data
@@ -33,11 +15,17 @@ docker run --rm \
 """
 import argparse
 import itertools
+import json
 import re
 import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Generator, Optional, Union
+
+sys.path.append(str(Path(__file__).parent.parent))
+from savant.utils.platform import get_platform_info
+from savant.utils.version import version
 
 # ANSI codes are used, for example, to colorize terminal output. They come from savant_rs logging
 # ANSI codes interfere with parsing FPS from the output.
@@ -73,15 +61,23 @@ def launch_script(
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        'label', nargs="+", type=str, help='run label, eg. issue number "#123".'
+    )
     parser.add_argument('-n', '--num-runs', type=int, default=3, help='number of runs')
+    parser.add_argument(
+        '-p', '--path', type=Path, default=Path('samples'), help='path to sample(s)'
+    )
     parser.add_argument(
         '-v', '--verbose', action='store_true', help='print script output'
     )
     args = parser.parse_args()
 
-    sample_root = Path('samples')
-    perf_scripts = sorted(sample_root.glob('**/run_perf.sh'))
+    perf_scripts = sorted(args.path.glob('**/run_perf.sh'))
+    if not perf_scripts:
+        sys.exit('No run_perf.sh scripts found.')
 
+    # set of arguments to test
     run_options = [
         perf_scripts,
         # uridecodebin, multistream=1, multistream=2, etc.
@@ -110,23 +106,51 @@ def main():
         or int(opts[2].replace('parameters.batch_size=', '')) == 1
     ]
 
+    # required arguments
+    run_args = [
+        # increase time to collect batch
+        'parameters.batched_push_timeout=1000',
+        # short measurement period to drop the 1st and the last measurements (outliers)
+        # TODO: Implement delayed start and early stop of fps measurements in GstPipeline
+        'parameters.fps_period=100',
+    ]
+
     fps_pattern = re.compile(r'^.*Processed \d+ frames, (?P<fps>\d+\.\d+) FPS\.$')
 
-    logs_root = Path('logs')
-    log_file_path = logs_root / (
-        datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S') + '.log'
+    try:
+        platform_info = get_platform_info()
+    except Exception as exc:
+        sys.exit(str(exc))
+
+    dtm = datetime.now(timezone.utc)
+
+    data = dict(
+        time=dtm.isoformat(),
+        savant=version.SAVANT,
+        deepstream=version.DEEPSTREAM,
+        labels=args.label,
+        # TODO: git_revision=(`git rev-parse --short HEAD`)
+        platform=platform_info,
+        measurements=[],
     )
+
+    logs_root = Path('logs')
+    logs_root.mkdir(parents=True, exist_ok=True)
+    log_file_name = f'{platform_info["nodename"]}-{dtm.strftime("%Y%m%d-%H%M%S")}'
+    log_file_path = logs_root / f'{log_file_name}.log'
+    json_file_path = logs_root / f'{log_file_name}.json'
     with open(log_file_path, 'w') as log_file:
 
         for run_cmd in run_options:
-            print('>>> Run', run_cmd)
-            log_file.write(f'CMD: {run_cmd}\n')
+            print(f'cmd: {run_cmd}')
+            log_file.write(f'cmd: {run_cmd}\n\n')
 
             fps_list = []
             for num in range(args.num_runs):
-                log_file.write(f'\nRUN #{num}\n')
+                log_file.write(f'run #{num}\n')
 
-                for line in launch_script(run_cmd):
+                _fps_list = []
+                for line in launch_script(run_cmd + run_args):
                     if not line:
                         continue
 
@@ -139,14 +163,31 @@ def main():
                     if ' Processed ' in line:
                         match = fps_pattern.match(line)
                         if match:
-                            fps_list.append(float(match['fps']))
+                            _fps_list.append(float(match['fps']))
 
+                if len(_fps_list) > 2:
+                    _fps_list = _fps_list[1:-1]
+                    _fps_list = [sum(_fps_list) / len(_fps_list)]
+                fps_list.extend(_fps_list)
+
+                log_file.write('\n')
                 log_file.flush()
 
-            if fps_list:
-                print(f'FPS={fps_list}, Avg={(sum(fps_list) / len(fps_list)):.2f}')
-            else:
+            if not fps_list:
                 print('Fail')
+                continue
+
+            avg_fps = sum(fps_list) / len(fps_list)
+            print(f'fps: {fps_list}\navg_fps: {avg_fps:.2f}')
+
+            data['measurements'].append(dict(
+                cmd=run_cmd,
+                # TODO: + module config
+                fps=[round(fps, 3) for fps in fps_list],
+                avg_fps=round(avg_fps, 2),
+            ))
+            with open(json_file_path, 'w') as json_file:
+                json.dump(data, json_file, indent=2)
 
 
 if __name__ == '__main__':
