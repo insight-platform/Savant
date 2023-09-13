@@ -41,11 +41,11 @@ To build the face reid index, start the `index-builder` and create the `pictures
 
 ```bash
 # if x86
-docker compose -f docker-compose.x86.yml up
+docker compose -f docker-compose.x86.yml --profile index up
 
 # if Jetson
 # currently not supported
-docker compose -f docker-compose.l4t.yml up
+docker compose -f docker-compose.l4t.yml --profile index up
 ```
 
 First startup can take several minutes as the module needs to convert ONNX models into TRT format. Successful module start is indicated by a log message like
@@ -54,8 +54,7 @@ First startup can take several minutes as the module needs to convert ONNX model
 INFO ... > The pipeline is initialized and ready to process data...
 ```
 
-After than the `pictures-source` container will be started automatically.
-
+After that the `pictures-source` container will be started automatically.
 
 Index Builder module does not stop automatically and requires manual exit. It is safe to do so once the `face_reid-pictures-source` container exits and `face_reid-index-builder` container logs the message following messages (assuming the default gallery image set)
 
@@ -90,8 +89,7 @@ cd ../..
 
 Run the Index Builder according to instuctions [above](#index-builder).
 
-Download the video file to your local folder. For example, create a data folder
-and download the video into it (all commands must be executed from the root directory of the project Savant)
+Download the video file to your local folder. For example, create a data folder and download the video into it (all commands must be executed from the root directory of the project Savant)
 
 ```bash
 # you are expected to be in Savant/ directory
