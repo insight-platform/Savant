@@ -1,7 +1,7 @@
 version: "3.3"
 services:
 
-  client-sdk:
+  client:
     image: ghcr.io/insight-platform/savant-deepstream-l4t:latest
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
