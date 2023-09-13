@@ -25,7 +25,7 @@ parameters:
     codec: raw-rgba
   # custom drawing on frames function
   draw_func:
-    module: src.module.overlay_custom
+    module: src.module.overlay_draw_spec
     class_name: Overlay
     #kwargs:
     rendered_objects:
