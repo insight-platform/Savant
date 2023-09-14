@@ -35,9 +35,9 @@ Reopen in Container
 
 #. The following steps apply to both local and remote development (screenshots are made for remote development).
 
-#. Open the command palette with **F1** or **Ctrl+Shift+P**.
+#. Open the Command Palette with **F1** or **Ctrl+Shift+P**.
 
-#. Type ``reopen`` and choose **Dev Containers: Reopen in Container**:
+#. Type ``reopen`` and select **Dev Containers: Reopen in Container**:
 
     .. image:: ../_static/img/dev-env/13-reopen-in-container.png
 
