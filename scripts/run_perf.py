@@ -62,7 +62,7 @@ def launch_script(
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        'label', nargs="+", type=str, help='run label, eg. issue number "#123".'
+        'label', nargs='+', type=str, help='run label, eg. issue number "#123".'
     )
     parser.add_argument('-n', '--num-runs', type=int, default=3, help='number of runs')
     parser.add_argument(
@@ -107,12 +107,13 @@ def main():
     ]
 
     # required arguments
+    fps_period = 100
     run_args = [
         # increase time to collect batch
         'parameters.batched_push_timeout=1000',
         # short measurement period to drop the 1st and the last measurements (outliers)
         # TODO: Implement delayed start and early stop of fps measurements in GstPipeline
-        'parameters.fps_period=100',
+        f'parameters.fps_period={fps_period}',
     ]
 
     fps_pattern = re.compile(r'^.*Processed \d+ frames, (?P<fps>\d+\.\d+) FPS\.$')
@@ -167,25 +168,29 @@ def main():
 
                 if len(_fps_list) > 2:
                     _fps_list = _fps_list[1:-1]
-                    _fps_list = [sum(_fps_list) / len(_fps_list)]
+                    num_frames = len(_fps_list) * fps_period
+                    duration = sum([fps_period / fps for fps in _fps_list])
+                    _fps_list = [num_frames / duration]
                 fps_list.extend(_fps_list)
 
                 log_file.write('\n')
                 log_file.flush()
 
             if not fps_list:
-                print('Fail')
+                print('fail\n')
                 continue
 
             avg_fps = sum(fps_list) / len(fps_list)
-            print(f'fps: {fps_list}\navg_fps: {avg_fps:.2f}')
+            print(f'fps: {fps_list}\navg_fps: {avg_fps:.2f}\n')
 
-            data['measurements'].append(dict(
-                cmd=run_cmd,
-                # TODO: + module config
-                fps=[round(fps, 3) for fps in fps_list],
-                avg_fps=round(avg_fps, 2),
-            ))
+            data['measurements'].append(
+                dict(
+                    cmd=run_cmd,
+                    # TODO: + module config
+                    fps=[round(fps, 3) for fps in fps_list],
+                    avg_fps=round(avg_fps, 2),
+                )
+            )
             with open(json_file_path, 'w') as json_file:
                 json.dump(data, json_file, indent=2)
 
