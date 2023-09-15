@@ -1,3 +1,7 @@
-downloads_cache
-models_cache
-output
+downloads_cache/*
+!downloads_cache/README.md
+models_cache/*
+!models_cache/README.md
+output/*
+src/output/*
+!src/output/README.md
