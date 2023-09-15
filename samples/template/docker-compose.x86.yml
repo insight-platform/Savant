@@ -6,7 +6,7 @@ services:
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ./src/client:/opt/savant/src/client
-      - ./test_data:/test_data
+      - ./assets/test_data:/test_data
       - ./src/output:/opt/savant/src/output
     entrypoint: python /opt/savant/src/client/run.py
     environment:
@@ -56,6 +56,31 @@ services:
       - "9411:9411"
     networks:
       - network
+
+  always-on-sink:
+    image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
+    restart: unless-stopped
+    ports:
+      - "554:554"    # RTSP
+      - "1935:1935"  # RTMP
+      - "888:888"    # HLS
+      - "8889:8889"  # WebRTC
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ./assets/stub_imgs:/stub_imgs
+    environment:
+      - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
+      - SOURCE_ID=test
+      - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x720.jpeg
+      - DEV_MODE=True
+    command: python -m adapters.ds.sinks.always_on_rtsp
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
 
 volumes:
   zmq_sockets:

@@ -23,6 +23,11 @@
   },
   "mounts": [
     {
+      "source": "template_zmq_sockets",
+      "target": "/tmp/zmq-sockets",
+      "type": "volume"
+    },
+    {
       "source": "${localWorkspaceFolder}/downloads_cache",
       "target": "/downloads",
       "type": "bind"
