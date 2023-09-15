@@ -72,7 +72,7 @@ templates_path = ['_templates']
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = []
+exclude_patterns = ['includes/**/*.rst']
 
 # List of modules that will be excluded from import to prevent import errors to stop
 # the build process when some external dependencies cannot be imported during the build.
