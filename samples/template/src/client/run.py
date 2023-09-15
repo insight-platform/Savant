@@ -58,12 +58,13 @@ for obj in src_meta['objects']:
 # And then send an EOS message
 print('Sending JPEG image to the module...')
 result = source(src_jpeg, send_eos=True)
-
+print(f'Source result trace_id {result.trace_id}')
 time.sleep(1)  # Wait for the module to process the frame
 
 # Receive results from the module and print them
 print('Receiving results from the module...')
 for result in sink:
+    print(f'Sink result trace_id {result.trace_id}')
     if result.eos:
         # second message is the EOS
         print('EOS')
