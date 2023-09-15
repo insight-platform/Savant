@@ -16,6 +16,14 @@ Subsections below describe alternative ways to realize the general development w
 4. Changes in module configuration require module container restart
 5. Changes in module image, e.g. changes in `requirements.txt`, require module image rebuild
 
+### Download sample video
+
+URI-Input script demonstration requires a sample video.
+
+```
+curl -o assets/test_data/elon_musk_perf.mp4 https://eu-central-1.linodeobjects.com/savant-data/demo/elon_musk_perf.mp4
+```
+
 ### Docker Compose
 
 1. Start Jaeger container
