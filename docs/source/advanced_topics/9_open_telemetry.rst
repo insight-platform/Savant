@@ -10,9 +10,9 @@ In streaming systems, data flows through container stages in parallel what leads
 
 For a developer, navigating through those logs without advanced filtering tools is very difficult. OpenTelemetry solves the problem by introducing the concept of Trace: a unique ID corresponding to a business transaction. In Savant, every frame coming in a pipeline may have a trace id, thus making it possible to separate logs related to a specific frame.
 
-More to say, the Trace is not a flat structure: a developer can wrap certain pieces of code with so called Spans, limiting the scope, so logs are attached to the hierarchy of spans rather than Trace directly. Every span is automatically a profiling object because OpenTelemetry collects its start time, end time and duration.
+What is more, the Trace is not a flat structure: a developer can wrap certain pieces of code with so called Spans, limiting the scope, so logs are attached to the hierarchy of spans rather than Trace directly. Every span is automatically a profiling object because OpenTelemetry collects its start time, end time and duration.
 
-Developers can attach to span auxiliary information: attributes, events, span statuses.
+Developers can attach auxiliary information to a span: attributes, events, span statuses.
 
 Savant automatically creates spans for every pipeline stage and gives developer API to create nested spans in their Python code.
 
@@ -74,5 +74,3 @@ Use ``params.telemetry`` to configure OpenTelemetry for the module.
           -p 14269:14269 \
           -p 9411:9411 \
           jaegertracing/all-in-one:1.48
-
-**TODO**: do we need to link the dev container with Jaeger container somehow, or it is available?

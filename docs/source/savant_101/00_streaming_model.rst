@@ -25,7 +25,7 @@ The module de-multiplexes those streams internally to the form where each stream
 
 Developers does not care about how to handle multiple streams. However, they must be aware that there are numerous streams, not one. Especially, It is important when the code maintains a per-stream state, e.g., when counting people on video. To ensure the state is handled properly, developers must consider using stream ``source_id``. The API allows developers to retrieve per-stream information to control the situation.
 
-Such a multiplexed/de-multiplexed operation model is very beneficial because any well-made Savant module immediately becomes production-ready. The module does not know whether it processes a file-based stream, a live stream, or just a bunch of images; it does not distinguish between them. The framework ensures the processing for all those streams in the same way. More to say, a mix of various streams can be processed simultaneously by the same module.
+Such a multiplexed/de-multiplexed operation model is very beneficial because any well-made Savant module immediately becomes production-ready. The module does not know whether it processes a file-based stream, a live stream, or just a bunch of images; it does not distinguish between them. The framework ensures the processing for all those streams in the same way. What is more, a mix of various streams can be processed simultaneously by the same module.
 
 Streams may appear and disappear dynamically: the framework handles such situations transparently to the developer, providing handy callbacks if they want to know when the stream no longer exists.
 

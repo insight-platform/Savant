@@ -44,7 +44,7 @@ The `my-module` created from `template <https://github.com/insight-platform/Sava
 - **Makefile** contains commands for building and launching the Docker image in a standalone mode, without IDE.
 - **README.md** is just a README stub.
 - **requirements.txt** contains additional Python requirements to add to the custom Docker image.
-- **module** directory with actual pipeline code.
+- **src/module** directory with actual pipeline code.
 
 The `module` Directory
 ^^^^^^^^^^^^^^^^^^^^^^

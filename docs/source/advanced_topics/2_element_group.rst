@@ -3,7 +3,7 @@ Element Groups
 
 A single module config can contain multiple variations of the pipeline through the use of conditionally initialized :py:class:`~savant.config.schema.ElementGroup`.
 
-For example, the user may introduce alternative detector units without the need to duplicate all the other module parameters in a separate config file, as is done in the `traffic meter <https://github.com/insight-platform/Savant/tree/develop/samples/traffic_meter>`__ sample.
+For example, the user can introduce alternative detector units without the need to duplicate all the other module parameters in a separate config file, as is done in the `traffic meter <https://github.com/insight-platform/Savant/tree/develop/samples/traffic_meter>`__ sample.
 
 Here's a section of the module config from the beginning of the pipeline definition that adds a pyfunc unit as usual, and then defines a conditionally enabled group for the PeopleNet detector:
 
