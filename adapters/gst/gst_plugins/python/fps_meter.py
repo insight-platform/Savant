@@ -83,6 +83,13 @@ class FPSMeterPlugin(LoggerMixin, GstBase.BaseTransform):
             False,
             GObject.ParamFlags.READWRITE,
         ),
+        'measurer-name': (
+            str,
+            'Name of the measurer',
+            'Name of the measurer to indicate who is reporting measured FPS.',
+            None,
+            GObject.ParamFlags.READWRITE,
+        ),
     }
 
     def __init__(self):
@@ -91,6 +98,7 @@ class FPSMeterPlugin(LoggerMixin, GstBase.BaseTransform):
         self.output: Output = DEFAULT_OUTPUT
         self.measure_per_file = True
         self.measure_per_loop = False
+        self.measurer_name: Optional[str] = None
 
         self.location: Optional[str] = None
         self.fps_meter = FPSMeter(period_frames=DEFAULT_PERIOD_FRAMES)
@@ -113,6 +121,8 @@ class FPSMeterPlugin(LoggerMixin, GstBase.BaseTransform):
             return self.measure_per_file
         if prop.name == 'measure-per-loop':
             return self.measure_per_loop
+        if prop.name == 'measurer-name':
+            return self.measurer_name
         raise AttributeError(f'Unknown property {prop.name}.')
 
     def do_set_property(self, prop: GObject.GParamSpec, value: Any):
@@ -131,6 +141,8 @@ class FPSMeterPlugin(LoggerMixin, GstBase.BaseTransform):
             self.measure_per_file = value
         elif prop.name == 'measure-per-loop':
             self.measure_per_loop = value
+        elif prop.name == 'measurer-name':
+            self.measurer_name = value
         else:
             raise AttributeError(f'Unknown property {prop.name}.')
 
@@ -168,6 +180,8 @@ class FPSMeterPlugin(LoggerMixin, GstBase.BaseTransform):
 
     def dump_stats(self):
         message = self.fps_meter.message
+        if self.measurer_name is not None:
+            message = f'{self.measurer_name}: {message}'
         if self.location:
             message += f' Source location: {self.location}.'
         if self.output == Output.STDOUT:

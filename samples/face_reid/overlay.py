@@ -122,8 +122,16 @@ class Overlay(NvDsDrawFunc):
                                 person_id = prev_person_id
                                 self.prev_used_counter[track_id] += 1
 
-                    face_img = self.processed_gallery[(person_id, image_n)]
-                    person_name = self.person_id_to_name[person_id]
+                    try:
+                        face_img = self.processed_gallery[(person_id, image_n)]
+                    except KeyError:
+                        # gallery image not found
+                        face_img = self.unknown_face
+                    try:
+                        person_name = self.person_id_to_name[person_id]
+                    except KeyError:
+                        # person name not found
+                        person_name = 'no gallery'
                     text = f'{person_name} {distance:.2f}'
                     color = (0, 255, 0, 255)
                 else:
