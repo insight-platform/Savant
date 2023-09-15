@@ -38,7 +38,7 @@
       "type": "bind"
     },
     {
-      "source": "${localWorkspaceFolder}/test_data",
+      "source": "${localWorkspaceFolder}/assets/test_data",
       "target": "/test_data",
       "type": "bind"
     },
