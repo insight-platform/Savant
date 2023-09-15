@@ -80,6 +80,11 @@ Rebuilding ``Dockerfile`` is done with:
 
 After the rebuilding ``Dockerfile`` you must apply changes in your IDE.
 
+Video Instruction (VS Code)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+
 Using The New Image In IDE
 --------------------------
 

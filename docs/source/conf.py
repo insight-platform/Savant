@@ -39,6 +39,7 @@ extensions = [
     'sphinx.ext.inheritance_diagram',
     'sphinx_rtd_theme',
     'sphinx.ext.autosectionlabel',
+    'sphinxcontrib.youtube',
     'repo_link',
 ]
 

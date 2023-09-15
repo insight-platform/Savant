@@ -27,7 +27,7 @@ The ``batched_push_timeout`` defines the maximum time the pipeline waits for the
 
 .. tip::
 
-    Typically, when handling the real-time streams at 30 FPS, you need to set ``batched_push_timeout`` to ``35000-40000`` (``35-40`` ms). However, when injecting video from file sources, keep it as low as ``1000000`` (``1`` ms).
+    Typically, when handling the real-time streams at 30 FPS, you need to set ``batched_push_timeout`` to ``35000-40000`` (``35-40`` ms). However, when injecting video from file sources, keep it as low as ``1000`` (``1`` ms).
 
 
 .. code-block:: yaml
