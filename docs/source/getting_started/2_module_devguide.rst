@@ -80,11 +80,6 @@ Rebuilding ``Dockerfile`` is done with:
 
 After the rebuilding ``Dockerfile`` you must apply changes in your IDE.
 
-Video Instruction (VS Code)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-
-
 Using The New Image In IDE
 --------------------------
 
@@ -110,6 +105,8 @@ In PyCharm:
 In VSCode:
 
 .. image:: ../_static/img/dev-env/16-run-python-file.png
+
+.. youtube:: qhjEF8qBvmE
 
 Also you can do it from the CLI like:
 
@@ -137,31 +134,9 @@ These starts/stops are time-consuming; we recommend building the development pro
 Using uri-input.py Script
 -------------------------
 
-Read from web cam, display with AO-RTSP, meta with Client SDK.
+The video demonstrates how to use ``uri-input.py`` to submit a video file to the module, and display its contents with the Always-On RTSP Sink Adapter.
 
-Video Manual
-------------
-
-1. start module
-2. stop module
-3. Client SDK: req/rep
-4. Change the code (DevServer) + Req/Rep (3)
-5. View Traces in Jaeger
-
-Notes:
-
-Show how to view logs with:
-
-- module console
-- client SDK logs
-- Jaeger Web UI
-
-Show how dev server works when:
-
-- pyfunc is incorrect
-- how the code reloads
-
-Show how to access resulting metadata programmatically.
+.. youtube:: Gag1Nn_gg7g
 
 Summary
 -------

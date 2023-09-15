@@ -20,3 +20,8 @@ The DevServer functionality can be enabled in the manifest by setting the parame
       dev_mode: True
 
 In the `template <https://github.com/insight-platform/Savant/tree/develop/samples/template>`_ module manifest the functionality is enabled by default.
+
+Video Guide (VS Code)
+^^^^^^^^^^^^^^^^^^^^^
+
+.. youtube:: 4Bc2rRb2hoA

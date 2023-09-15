@@ -74,3 +74,5 @@ Use ``params.telemetry`` to configure OpenTelemetry for the module.
           -p 14269:14269 \
           -p 9411:9411 \
           jaegertracing/all-in-one:1.48
+
+.. youtube:: -DXDM_wJZho

@@ -112,5 +112,4 @@ Sinks retrieve results from a module.
 
 
 
-**TODO**: place here https://github.com/insight-platform/Savant/issues/398
-
+.. youtube:: PWI3cKyxbgQ
