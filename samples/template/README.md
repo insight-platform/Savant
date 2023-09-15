@@ -8,6 +8,24 @@ See [documentation](https://insight-platform.github.io/Savant/) for more informa
 
 Instructions below assume current current platform is x86 and current directory is `template`.
 
+In case the `template` sample was copied into custom directory, `devcontainer.json` config will need to be updated. E.g. directory name is `my-module`, then
+
+1. Update `--network` value in `runArgs`
+
+```
+"runArgs": [ "--gpus=all", "--network=my-module_network" ],
+```
+
+2. Update zmq sockets volume source in `mounts`
+
+```
+{
+    "source": "my-module_zmq_sockets",
+    "target": "/tmp/zmq-sockets",
+    "type": "volume"
+},
+```
+
 Subsections below describe alternative ways to realize the general development workflow:
 
 1. Start jaeger and module processes
