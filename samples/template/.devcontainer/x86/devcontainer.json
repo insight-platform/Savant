@@ -39,7 +39,7 @@
     },
     {
       "source": "${localWorkspaceFolder}/src/output",
-      "target": "/output",
+      "target": "/opt/savant/src/output",
       "type": "bind"
     }
   ]
