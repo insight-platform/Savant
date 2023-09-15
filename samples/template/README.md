@@ -38,7 +38,7 @@ docker compose -f docker-compose.x86.yml up jaeger -d
 docker compose -f docker-compose.x86.yml up module -d
 ```
 
-3. Run and re-run the client script (result image written into `output` directory)
+3. Run and re-run the client script (result image written into `src/output` directory)
 
 ```bash
 docker compose -f docker-compose.x86.yml up client
@@ -75,7 +75,7 @@ Command Palette (F1) -> "Dev Containers: Reopen in container" -> Select `devcont
 python module/run.py
 ```
 
-3. Run and re-run the client script (result image written into `output` directory)
+3. Run and re-run the client script (result image written into `/opt/savant/src/output` directory)
 
 ```bash
 python client/run.py

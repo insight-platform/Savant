@@ -16,7 +16,7 @@
   "workspaceFolder": "/opt/savant/src",
   "runArgs": [ "--gpus=all", "--network=template_network" ],
   "containerEnv": {
-    "LOGLEVEL": "DEBUG",
+    "LOGLEVEL": "INFO",
     "ZMQ_SRC_ENDPOINT": "sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc",
     "ZMQ_SINK_ENDPOINT": "pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc",
     "HEALTHCHECK_PORT": "8888"
