@@ -5,12 +5,12 @@ import subprocess
 from functools import lru_cache
 
 
-def is_aarch64():
+def is_aarch64() -> bool:
     """Checks if the current platform is Jetson."""
     return platform.machine() == 'aarch64'
 
 
-def get_l4t_version():
+def get_l4t_version() -> list:
     """Returns L4T version (Jetson).
     Eg. Xavier NX L4T 35.1.0 => 35.1.0-20220810203728 => [35, 1, 0]
     or Jetson Nano L4T 32.6.1 => [32, 6, 1]
@@ -61,17 +61,20 @@ def get_platform_info() -> dict:
         platform_info['dgpu'] = dict(device=device, driver=driver)
 
     elif platform_info['machine'] == 'aarch64':
-        platform_info['jetson'] = dict()
-        # TODO:
-        # Jetson> sudo python3
-        # >>> import jtop
-        # >>> with jtop.jtop() as jetson:
-        # ...     jetson.board
-        # {
-        # 'hardware': {'Model': 'NVIDIA Jetson Xavier NX Developer Kit', '699-level Part Number': '699-13668-0000-300 B.0', 'P-Number': 'p3668-0000', 'Module': 'NVIDIA Jetson Xavier NX (Developer kit)', 'SoC': 'tegra194', 'CUDA Arch BIN': '7.2', 'Codename': 'Jakku', 'Serial Number': '1421321065967', 'L4T': '35.4.1', 'Jetpack': ''},
-        # 'platform': {'Machine': 'aarch64', 'System': 'Linux', 'Distribution': 'Ubuntu 20.04 focal', 'Release': '5.10.120-tegra', 'Python': '3.8.10'},
-        # 'libraries': {'CUDA': '11.4.315', 'OpenCV': '4.5.4', 'OpenCV-Cuda': False, 'cuDNN': '8.6.0.166', 'TensorRT': '8.5.2.2', 'VPI': '2.3.9', 'Vulkan': '1.3.204'}
-        # }
+        try:
+            import jtop
+
+            with jtop.jtop() as jetson:
+                board_info = jetson.board
+            platform_info['jetson'] = dict(
+                model=board_info['hardware']['Model'],
+                l4t=board_info['hardware']['L4T'],
+                jetpack=board_info['hardware']['Jetpack'],
+                cuda=board_info['libraries']['CUDA'],
+                tensorrt=board_info['libraries']['TensorRT'],
+            )
+        except:
+            platform_info['jetson'] = dict(l4t='.'.join(get_l4t_version()))
 
     else:
         raise UnsupportedPlatform(f'Unsupported platform {platform_info["machine"]}.')

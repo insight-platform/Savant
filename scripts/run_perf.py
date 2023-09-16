@@ -130,8 +130,15 @@ def main():
         savant=version.SAVANT,
         deepstream=version.DEEPSTREAM,
         labels=args.label,
-        # TODO: git_revision=(`git rev-parse --short HEAD`)
+        git_revision=subprocess.check_output('git rev-parse --short HEAD', shell=True)
+        .decode()
+        .strip(),
         platform=platform_info,
+        docker=subprocess.check_output(
+            'docker version --format "{{.Client.Version}}"', shell=True
+        )
+        .decode()
+        .strip(),
         measurements=[],
     )
 
