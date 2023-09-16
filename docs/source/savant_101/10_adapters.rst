@@ -468,6 +468,9 @@ Running with the helper script:
 GigE Vision Source Adapter
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+.. tip::
+    Additional information on `GigE Vision cameras support <https://blog.savant-ai.io/savant-explained-gige-vision-camera-support-a4e472275280?source=friends_link&sk=eb341e416b32696bc781f4cfb62ef2e1>`_ in the blog.
+
 The adapter is designed to take video streams from Ethernet GigE Vision industrial cams. It passes the frames captured from the camera to the module without encoding (`#18 <https://github.com/insight-platform/Savant/issues/18>`__) which may introduce significant network load. We recommend using it locally with the module deployed at the same host.
 
 **Parameters**:

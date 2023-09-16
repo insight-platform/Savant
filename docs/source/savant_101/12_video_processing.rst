@@ -251,6 +251,10 @@ Every codec has its own configuration parameters related to a corresponding GStr
           iframeinterval: 10
           profile: High
 
+
+.. tip::
+    Find out more on the `software H264 encoder <https://blog.savant-ai.io/savant-explained-software-video-encoder-543ed147f9f?source=friends_link&sk=155e038056bbbca6d43793297e4afdda>`_ on Medium.
+
 Encoder Properties
 ------------------
 

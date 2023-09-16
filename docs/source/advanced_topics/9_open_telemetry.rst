@@ -3,6 +3,10 @@ OpenTelemetry Support
 
 **What is OpenTelemetry (from the official website).** OpenTelemetry is a collection of APIs, SDKs, and tools. Use it to instrument, generate, collect, and export telemetry data (metrics, logs, and traces) to help you analyze your software’s performance and behavior.
 
+.. tip::
+
+    Read an introductory `article <https://blog.savant-ai.io/opentelemetry-in-savant-instrumenting-deep-learning-computer-vision-pipelines-dd42c7a65d00?source=friends_link&sk=b5a0c1d8a3554a38862f0c35007c3452>`_ on OpenTelemetry in Savant on Medium.
+
 Why To Use OpenTelemetry
 ^^^^^^^^^^^^^^^^^^^^^^^^
 

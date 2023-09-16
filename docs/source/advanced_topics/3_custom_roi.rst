@@ -3,6 +3,8 @@ ROI Customization
 
 By default, Savant creates the automatic default ROI, which covers all the frame space. Sometimes developers need to reconfigure the ROI globally or per frame. It can be done with custom ``pyfunc`` units.
 
+.. _create_custom_roi:
+
 Create Custom ROI
 -----------------
 
@@ -151,6 +153,8 @@ The configuration file (module.yml) from Car Detection and Classification `demo 
                   label: Person
     ...
 
+
+.. _delete_default_roi:
 
 Delete Default ROI
 ------------------

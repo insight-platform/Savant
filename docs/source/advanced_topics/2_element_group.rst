@@ -5,6 +5,9 @@ A single module config can contain multiple variations of the pipeline through t
 
 For example, the user can introduce alternative detector units without the need to duplicate all the other module parameters in a separate config file, as is done in the `traffic meter <https://github.com/insight-platform/Savant/tree/develop/samples/traffic_meter>`__ sample.
 
+.. tip::
+    Extra information on `element groups <https://blog.savant-ai.io/savant-explained-pipeline-element-groups-1a2ae88bc93b?source=friends_link&sk=3205726f19098852028c3f8823ed140e>`_ in our blog on Medium.
+
 Here's a section of the module config from the beginning of the pipeline definition that adds a pyfunc unit as usual, and then defines a conditionally enabled group for the PeopleNet detector:
 
 .. literalinclude:: ../../../samples/traffic_meter/module.yml
