@@ -127,6 +127,8 @@ To configure the custom value, use:
 
     Large values cause extra GPU/CPU memory usage.
 
+.. _buffering_queues:
+
 Buffering Queues
 ^^^^^^^^^^^^^^^^
 

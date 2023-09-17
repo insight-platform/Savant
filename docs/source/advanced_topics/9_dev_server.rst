@@ -1,5 +1,5 @@
-DevServer Mode
---------------
+DevServer
+---------
 
 DevServer is a special module execution mode enabling change detection in custom Python code and reloading those pieces automatically without the need for container restarts. It saves time significantly because code reloading happens instantly when the module processes the next frame after detecting the code change. Contrarily, manual restarts, described in the previous section, take many seconds because neural models must be loaded and initialized.
 
