@@ -7,3 +7,6 @@
 docker/
 .dockerignore
 Makefile
+assets/
+downloads_cache/
+models_cache/
