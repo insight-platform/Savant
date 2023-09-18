@@ -14,7 +14,7 @@
   },
   "workspaceMount": "source=${localWorkspaceFolder}/src,target=/opt/savant/src,type=bind",
   "workspaceFolder": "/opt/savant/src",
-  "runArgs": [ "--gpus=all", "--network=template_network" ],
+  "runArgs": [ "--runtime=nvidia", "--network=template_network" ],
   "containerEnv": {
     "LOGLEVEL": "INFO",
     "ZMQ_SRC_ENDPOINT": "sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc",

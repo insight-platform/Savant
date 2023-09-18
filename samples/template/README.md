@@ -6,7 +6,7 @@ See [documentation](https://insight-platform.github.io/Savant/) for more informa
 
 ## Development Quick Start
 
-Instructions below assume current current platform is x86 and current directory is `template`.
+Instructions below assume current platform is x86 and current directory is `template`.
 
 In case the `template` sample was copied into custom directory, `devcontainer.json` config will need to be updated. E.g. directory name is `my-module`, then
 
@@ -32,7 +32,7 @@ Subsections below describe alternative ways to realize the general development w
 2. The client sends input image to the module and receives module results (image, metadata, logs)
 3. Changes in pyfuncs, drawfunc, pre- and postprocessing code are loaded at runtime when module receives input from the client
 4. Changes in module configuration require module container restart
-5. Changes in module image, e.g. changes in `requirements.txt`, require module image rebuild
+5. Changes in module docker image, e.g. changes in `requirements.txt`, require module image rebuild
 
 ### Download sample video
 
