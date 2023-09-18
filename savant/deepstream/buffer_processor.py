@@ -422,34 +422,31 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                     object_meta = _NvDsObjectMetaImpl.from_nv_ds_object_meta(
                         nvds_obj_meta, nvds_frame_meta
                     )
-                    parent_object_meta = object_meta.parent
-
-                    if isinstance(object_meta.bbox, BBox):
-                        bbox = object_meta.bbox.copy()
-                        if isinstance(parent_object_meta.bbox, BBox):
-                            parent_bbox = parent_object_meta.bbox.copy()
-                        else:
-                            raise NotImplementedError(
-                                'You try apply preprocessing to object that have '
-                                'rotated bbox in parent object. '
-                                'Only BBox is supported now'
-                            )
-                    else:
+                    if not isinstance(object_meta.bbox, BBox):
                         raise NotImplementedError(
-                            'You try apply preprocessing to rotated bbox. '
-                            'Only BBox is supported now'
-                        )
-                    if parent_object_meta.parent is not None:
-                        self.logger.warning(
-                            'Preprocessing is supported only 1 level of hierarchy.'
+                            'Preprocessing only supports objects represented '
+                            'by regular (axis-aligned) boxes.'
                         )
 
-                    user_parent_object = None
-                    if object_meta.parent is not None:
-                        user_parent_object = ObjectMeta(
+                    user_parent_object_meta = None
+                    if object_meta.parent:
+                        parent_object_meta = object_meta.parent
+
+                        if not isinstance(parent_object_meta.bbox, BBox):
+                            raise NotImplementedError(
+                                'Preprocessing only supports objects whose parents are '
+                                'represented by regular (axis-aligned) boxes.'
+                            )
+
+                        if parent_object_meta.parent:
+                            self.logger.warning(
+                                'Preprocessing only supports 1 level of hierarchy.'
+                            )
+
+                        user_parent_object_meta = ObjectMeta(
                             parent_object_meta.element_name,
                             parent_object_meta.label,
-                            parent_bbox,
+                            parent_object_meta.bbox.copy(),
                             parent_object_meta.confidence,
                             parent_object_meta.track_id,
                             attributes=nvds_get_all_obj_attrs(
@@ -458,16 +455,24 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                             ),
                         )
 
+                    else:
+                        self.logger.warning(
+                            'The object (%s.%s, bbox %s) is an orphan (no parent object is assigned). It is a non-typical case: the object should either have the frame or an ROI object as a parent.',
+                            object_meta.element_name,
+                            object_meta.label,
+                            object_meta.bbox.as_ltrb_int(),
+                        )
+
                     user_object_meta = ObjectMeta(
                         object_meta.element_name,
                         object_meta.label,
-                        bbox,
+                        object_meta.bbox.copy(),
                         object_meta.confidence,
                         object_meta.track_id,
-                        user_parent_object,
+                        user_parent_object_meta,
                         attributes=nvds_get_all_obj_attrs(
                             frame_meta=nvds_frame_meta,
-                            obj_meta=parent_object_meta.ds_object_meta,
+                            obj_meta=object_meta.ds_object_meta,
                         ),
                     )
 
