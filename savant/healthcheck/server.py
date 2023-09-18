@@ -3,12 +3,12 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from typing import Optional
 
-from savant.healthcheck.status import PipelineStatus
+from savant.healthcheck.status import ModuleStatus
 from savant.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
-PIPELINE_RUNNING_STATUS_CONTENT = PipelineStatus.RUNNING.value.encode()
+MODULE_RUNNING_STATUS_CONTENT = ModuleStatus.RUNNING.value.encode()
 
 
 class HealthCheckHttpServer(HTTPServer):
@@ -49,7 +49,7 @@ class HealthCheckRequestHandler(BaseHTTPRequestHandler):
         self._response(
             (
                 HTTPStatus.OK
-                if content == PIPELINE_RUNNING_STATUS_CONTENT
+                if content == MODULE_RUNNING_STATUS_CONTENT
                 else HTTPStatus.SERVICE_UNAVAILABLE
             ),
             content,
