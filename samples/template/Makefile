@@ -27,18 +27,3 @@ run:
 		-v $(shell pwd)/downloads_cache:/downloads \
 		-v $(shell pwd)/src/module:$(PROJECT_PATH)/module \
 		$(IMAGE_NAME)
-
-# run module in dev mode
-run-dev:
-	xhost +local:docker
-	docker run -it --rm $(DOCKER_RUNTIME) \
-		--net=host --privileged \
-		-e DISPLAY=$(DISPLAY) \
-		-e XAUTHORITY=/tmp/.docker.xauth \
-		-v /tmp/.X11-unix:/tmp/.X11-unix \
-		-v /tmp/.docker.xauth:/tmp/.docker.xauth \
-		-v $(shell pwd)/models_cache:/models \
-		-v $(shell pwd)/downloads_cache:/downloads \
-		-v $(shell pwd)/src/module:$(PROJECT_PATH)/module \
-		--entrypoint /bin/bash \
-		$(IMAGE_NAME)
