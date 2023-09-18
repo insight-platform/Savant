@@ -3,7 +3,8 @@
 
 TODO: Sync data step
 mkdir -p data
-aws s3 sync --no-sign-request --endpoint-url=https://eu-central-1.linodeobjects.com s3://savant-data/demo data
+aws s3 sync --no-sign-request --endpoint-url=https://eu-central-1.linodeobjects.com \
+ s3://savant-data/demo data
 OR
 docker run --rm \
  -v `pwd`/data:/data \
@@ -27,7 +28,8 @@ sys.path.append(str(Path(__file__).parent.parent))
 from savant.utils.platform import get_platform_info
 from savant.utils.version import version
 
-# ANSI codes are used, for example, to colorize terminal output. They come from savant_rs logging
+# ANSI codes are used, for example, to colorize terminal output.
+# They come from savant_rs logging.
 # ANSI codes interfere with parsing FPS from the output.
 ANSI_ESCAPE_PATTERN = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
 
@@ -60,6 +62,7 @@ def launch_script(
 
 
 def main():
+    """Main."""
     parser = argparse.ArgumentParser()
     parser.add_argument(
         'label', nargs='+', type=str, help='run label, eg. issue number "#123".'
@@ -112,7 +115,7 @@ def main():
         # increase time to collect batch
         'parameters.batched_push_timeout=1000',
         # short measurement period to drop the 1st and the last measurements (outliers)
-        # TODO: Implement delayed start and early stop of fps measurements in GstPipeline
+        # TODO: Implement delayed start and early stop of fps measurements in pipeline
         f'parameters.fps_period={fps_period}',
     ]
 
@@ -147,7 +150,7 @@ def main():
     log_file_name = f'{platform_info["nodename"]}-{dtm.strftime("%Y%m%d-%H%M%S")}'
     log_file_path = logs_root / f'{log_file_name}.log'
     json_file_path = logs_root / f'{log_file_name}.json'
-    with open(log_file_path, 'w') as log_file:
+    with open(log_file_path, mode='w', encoding='utf-8') as log_file:
 
         for run_cmd in run_options:
             print(f'cmd: {run_cmd}')
@@ -176,7 +179,7 @@ def main():
                 if len(_fps_list) > 2:
                     _fps_list = _fps_list[1:-1]
                     num_frames = len(_fps_list) * fps_period
-                    duration = sum([fps_period / fps for fps in _fps_list])
+                    duration = sum({fps_period / fps for fps in _fps_list})
                     _fps_list = [num_frames / duration]
                 fps_list.extend(_fps_list)
 
@@ -198,7 +201,7 @@ def main():
                     avg_fps=round(avg_fps, 2),
                 )
             )
-            with open(json_file_path, 'w') as json_file:
+            with open(json_file_path, mode='w', encoding='utf-8') as json_file:
                 json.dump(data, json_file, indent=2)
 
 
