@@ -1,5 +1,6 @@
 """Module entrypoint function."""
 import os
+import signal
 from pathlib import Path
 from threading import Thread
 
@@ -18,6 +19,9 @@ def main(config_file_path: str):
 
     :param config_file_path: Module configuration file path.
     """
+
+    # To gracefully shutdown the adapter on SIGTERM (raise KeyboardInterrupt)
+    signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
 
     status_filepath = os.environ.get('SAVANT_STATUS_FILEPATH')
     if status_filepath is not None:
@@ -73,6 +77,8 @@ def main(config_file_path: str):
             try:
                 for msg in pipeline.stream():
                     sink(msg, **dict(module_name=config.name))
+            except KeyboardInterrupt:
+                logger.info('Shutting down.')
             except Exception as exc:  # pylint: disable=broad-except
                 logger.error(exc, exc_info=True)
                 # TODO: Sometimes pipeline hangs when exit(1) or not exit at all is called.
