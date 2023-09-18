@@ -111,10 +111,11 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-ENV PYTHONUNBUFFERED=1
 ARG PROJECT_PATH=/opt/savant
-ENV PROJECT_PATH=$PROJECT_PATH
-ENV PYTHONPATH=$PROJECT_PATH
+ENV PYTHONUNBUFFERED=1 \
+    PROJECT_PATH=$PROJECT_PATH \
+    PYTHONPATH=$PROJECT_PATH \
+    RUST_LOG=info
 WORKDIR $PROJECT_PATH
 
 # add deepstream libs to path, so that ctypes can load them

@@ -87,6 +87,14 @@ def validate_source_id(ctx, param, value):
     return value
 
 
+def validate_source_id_list(ctx, param, value):
+    if value is None:
+        return value
+    for source_id in value.split(','):
+        validate_source_id(ctx, param, source_id)
+    return value
+
+
 def source_id_option(required: bool):
     return click.option(
         '--source-id',

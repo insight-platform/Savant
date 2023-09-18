@@ -170,6 +170,10 @@ class BaseZeroMQSource(ABC):
         self.is_alive = True
 
     @abstractmethod
+    def next_message_without_routing_id(self) -> Optional[List[bytes]]:
+        """Try to receive next message without routing ID but with topic."""
+
+    @abstractmethod
     def next_message(self) -> Optional[List[bytes]]:
         """Try to receive next message."""
         pass
@@ -196,7 +200,9 @@ class BaseZeroMQSource(ABC):
 class ZeroMQSource(BaseZeroMQSource):
     """ZeroMQ Source class."""
 
-    def next_message(self) -> Optional[List[bytes]]:
+    def next_message_without_routing_id(self) -> Optional[List[bytes]]:
+        """Try to receive next message without routing ID but with topic."""
+
         if not self.is_alive:
             raise RuntimeError('ZeroMQ source is not started.')
 
@@ -221,8 +227,8 @@ class ZeroMQSource(BaseZeroMQSource):
         if self._always_respond:
             self.receiver.send(CONFIRMATION_MESSAGE)
 
-        topic, *data = message
-        if not data:
+        topic = message[0]
+        if len(message) < 2:
             raise RuntimeError(f'ZeroMQ message from topic {topic} does not have data.')
 
         if self.topic_prefix and not topic.startswith(self.topic_prefix):
@@ -234,7 +240,14 @@ class ZeroMQSource(BaseZeroMQSource):
             return
 
         if self.routing_id_filter.filter(routing_id, topic):
-            return data
+            return message
+
+    def next_message(self) -> Optional[List[bytes]]:
+        """Try to receive next message."""
+
+        message = self.next_message_without_routing_id()
+        if message is not None:
+            return message[1:]
 
     def __iter__(self):
         return self
@@ -260,7 +273,9 @@ class AsyncZeroMQSource(ZeroMQSource):
     def _create_zmq_ctx(self):
         return zmq.asyncio.Context()
 
-    async def next_message(self) -> Optional[List[bytes]]:
+    async def next_message_without_routing_id(self) -> Optional[List[bytes]]:
+        """Try to receive next message without routing ID but with topic."""
+
         if not self.is_alive:
             raise RuntimeError('ZeroMQ source is not started.')
 
@@ -285,8 +300,8 @@ class AsyncZeroMQSource(ZeroMQSource):
         if self._always_respond:
             await self.receiver.send(CONFIRMATION_MESSAGE)
 
-        topic, *data = message
-        if not data:
+        topic = message[0]
+        if len(message) < 2:
             raise RuntimeError(f'ZeroMQ message from topic {topic} does not have data.')
 
         if self.topic_prefix and not topic.startswith(self.topic_prefix):
@@ -298,7 +313,14 @@ class AsyncZeroMQSource(ZeroMQSource):
             return
 
         if self.routing_id_filter.filter(routing_id, topic):
-            return data
+            return message
+
+    async def next_message(self) -> Optional[List[bytes]]:
+        """Try to receive next message."""
+
+        message = await self.next_message_without_routing_id()
+        if message is not None:
+            return message[1:]
 
     def __aiter__(self):
         return self
