@@ -63,6 +63,8 @@ curl -o assets/test_data/elon_musk_perf.mp4 https://eu-central-1.linodeobjects.c
 docker compose -f docker-compose.x86.yml up jaeger -d
 ```
 
+This is required by the sample module since it is configured to use Jaeger telemetry.
+
 Visit `http://127.0.0.1:16686` to access the Jaeger UI.
 
 2. Start module container
@@ -121,6 +123,8 @@ File -> Open Folder -> enter path
 ```bash
 docker compose -f docker-compose.x86.yml up jaeger -d
 ```
+
+This is required by the sample module since it is configured to use Jaeger telemetry.
 
 Visit `http://127.0.0.1:16686` to access the Jaeger UI.
 
