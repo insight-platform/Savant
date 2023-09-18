@@ -32,7 +32,7 @@ parameters:
   age_max: 101
   face_width: 112
   face_height: 112
-  detection_model_name: yolov5nface
+  detection_model_name: yolov8nface
 
   buffer_queues: ${json:${oc.env:BUFFER_QUEUES, null}}
 
@@ -50,19 +50,19 @@ pipeline:
       name: ${parameters.detection_model_name}
       model:
         remote:
-          url: s3://savant-data/models/yolov5face/${parameters.detection_model_name}.zip
-          checksum_url: s3://savant-data/models/yolov5face/${parameters.detection_model_name}.md5
+          url: s3://savant-data/models/yolov8face/${parameters.detection_model_name}.zip
+          checksum_url: s3://savant-data/models/yolov8face/${parameters.detection_model_name}.md5
           parameters:
             endpoint: https://eu-central-1.linodeobjects.com
         format: onnx
-        config_file: yolov5n-face.txt
+        config_file: yolov8n-face.txt
         input:
           shape: [3, 640, 640]
         output:
-          layer_names: [ 'output' ]
+          layer_names: [ 'output0' ]
           converter:
-            module: savant.converter.yolo_v5face
-            class_name: YoloV5faceConverter
+            module: savant.converter.yolo_v8face
+            class_name: YoloV8faceConverter
             kwargs:
               confidence_threshold: 0.6
               nms_iou_threshold: 0.5
