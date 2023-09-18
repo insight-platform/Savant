@@ -1,6 +1,12 @@
 # Savant module template
 
-Start your own project with this template.
+This sample is intended to help users to start developing a custom Savant module. It provides:
+
+* A module with a simple pipeline that includes basic Savant elements and dev features.
+* Scripts with pyfunc and drawfunc templates.
+* A script demonstrating basic Client SDK usage.
+* Easy dev environment setup with either Docker Compose or devcontainer configuration files.
+* All of the above is setup to be ready to run, with no additional configuration needed.
 
 See [documentation](https://insight-platform.github.io/Savant/) for more information.
 
