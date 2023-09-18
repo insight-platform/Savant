@@ -5,14 +5,30 @@ services:
     image: ghcr.io/insight-platform/savant-deepstream:latest
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
-      - ./src/client:/opt/savant/src/client
       - ./assets/test_data:/test_data
+      - ./src/client:/opt/savant/src/client
       - ./src/output:/opt/savant/src/output
     entrypoint: python /opt/savant/src/client/run.py
     environment:
       - MODULE_HOSTNAME=module
     links:
       - jaeger
+    networks:
+      - network
+
+  uri-input:
+    image: ghcr.io/insight-platform/savant-deepstream:latest
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ./assets/test_data:/test_data
+    working_dir: /opt/savant
+    entrypoint: python
+    command:
+      - scripts/uri-input.py
+      - /test_data/elon_musk_perf.mp4
+      - --socket
+      - pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
+      - --sync
     networks:
       - network
 
@@ -29,6 +45,8 @@ services:
       - HEALTHCHECK_PORT=8888
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
+    ports:
+      - "8888:8888"
     deploy:
       resources:
         reservations:

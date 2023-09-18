@@ -29,10 +29,11 @@ In case the `template` sample was copied into custom directory, `devcontainer.js
 Subsections below describe alternative ways to realize the general development workflow:
 
 1. Start jaeger and module processes
-2. The client sends input image to the module and receives module results (image, metadata, logs)
-3. Changes in pyfuncs, drawfunc, pre- and postprocessing code are loaded at runtime when module receives input from the client
-4. Changes in module configuration require module container restart
-5. Changes in module docker image, e.g. changes in `requirements.txt`, require module image rebuild
+1. The client sends input image to the module and receives module results (image, metadata, logs)
+1. Uri Input script + Always On sink allow to send a video file to be processed by the module and receive a stream output
+1. Changes in pyfuncs, drawfunc, pre- and postprocessing code are loaded at runtime when module receives input from the client
+1. Changes in module configuration require module container restart
+1. Changes in module docker image, e.g. changes in `requirements.txt`, require module image rebuild
 
 ### Download sample video
 
@@ -62,6 +63,22 @@ docker compose -f docker-compose.x86.yml up module -d
 docker compose -f docker-compose.x86.yml up client
 ```
 
+4. Send a video to the module and receive stream output
+
+Start Always On Sink container
+
+```bash
+docker compose -f docker-compose.x86.yml up always-on-sink -d
+```
+
+Start Uri Input container
+
+```bash
+docker compose -f docker-compose.x86.yml up uri-input
+```
+
+Open 'rtsp://127.0.0.1:554/stream' in your player, or visit 'http://127.0.0.1:888/stream/' in a browser.
+
 4. Restart module container
 
 ```bash
@@ -77,28 +94,49 @@ docker compose -f docker-compose.x86.yml build module
 
 ### VS Code dev container
 
-1. Start Jaeger container
+1. Open the module directory on host in IDE
+
+File -> Open Folder -> enter path
+
+2. Start Jaeger container
 
 ```bash
 docker compose -f docker-compose.x86.yml up jaeger -d
 ```
 
-2. Reopen the directory in dev container
+3. Reopen the directory in dev container
 
 Command Palette (F1) -> "Dev Containers: Reopen in container" -> Select `devcontainer.json` appropriate for the platform
 
-3. Start and restart module
+4. Start and restart module
 
 ```bash
 python module/run.py
 ```
 
-3. Run and re-run the client script (result image written into `/opt/savant/src/output` directory)
+5. Run and re-run the client script (result image written into `/opt/savant/src/output` directory)
 
 ```bash
 python client/run.py
 ```
 
-5. Rebuild module image
+6. Send a video to the module and receive stream output
+
+Open the module directory on host, start Always On Sink container
+
+```bash
+docker compose -f docker-compose.x86.yml up always-on-sink -d
+```
+
+Run URI Input script inside the dev container
+
+```bash
+cd /opt/savant
+python scripts/uri-input.py /test_data/elon_musk_perf.mp4 --socket pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc --sync
+```
+
+Open 'rtsp://127.0.0.1:554/stream' in your player, or visit 'http://127.0.0.1:888/stream/' in a browser.
+
+7. Rebuild module image
 
 Command Palette (F1) -> "Dev Containers: Rebuild container"
