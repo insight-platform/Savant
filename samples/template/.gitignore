@@ -5,3 +5,6 @@ models_cache/*
 output/*
 src/output/*
 !src/output/README.md
+assets/test_data/*
+!assets/test_data/test_img.jpeg
+!assets/test_data/test_img.json
