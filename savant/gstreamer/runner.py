@@ -8,7 +8,7 @@ from typing import Optional, Union
 
 from gi.repository import GLib, Gst  # noqa:F401
 
-from savant.healthcheck.status import PipelineStatus
+from savant.healthcheck.status import ModuleStatus, set_module_status
 from savant.utils.logging import get_logger
 
 from .pipeline import GstPipeline
@@ -75,7 +75,7 @@ class GstPipelineRunner:
         """Starts pipeline."""
         logger.info('Starting pipeline `%s`...', self._pipeline)
         start_time = time()
-        self._set_pipeline_status(PipelineStatus.STARTING)
+        set_module_status(self._status_filepath, ModuleStatus.STARTING)
 
         bus = self._pipeline.get_bus()
         logger.debug('Adding signal watch and connecting callbacks...')
@@ -107,7 +107,7 @@ class GstPipelineRunner:
         )
 
         self._start_time = end_time
-        self._set_pipeline_status(PipelineStatus.RUNNING)
+        set_module_status(self._status_filepath, ModuleStatus.RUNNING)
 
     def shutdown(self):
         """Stops pipeline."""
@@ -116,7 +116,7 @@ class GstPipelineRunner:
             logger.debug('The pipeline is shutting down already.')
             return
 
-        self._set_pipeline_status(PipelineStatus.STOPPING)
+        set_module_status(self._status_filepath, ModuleStatus.STOPPING)
         self._is_running = False
 
         if isinstance(self._pipeline, GstPipeline):
@@ -140,7 +140,7 @@ class GstPipelineRunner:
             logger.debug('Calling pipeline.on_shutdown()...')
             self._pipeline.on_shutdown()
 
-        self._set_pipeline_status(PipelineStatus.STOPPED)
+        set_module_status(self._status_filepath, ModuleStatus.STOPPED)
 
     def on_error(  # pylint: disable=unused-argument
         self, bus: Gst.Bus, message: Gst.Message
@@ -192,8 +192,3 @@ class GstPipelineRunner:
             Gst.debug_bin_to_dot_file_with_ts(
                 self._gst_pipeline, Gst.DebugGraphDetails.ALL, file_name
             )
-
-    def _set_pipeline_status(self, status: PipelineStatus):
-        if self._status_filepath is not None:
-            logger.info('Setting pipeline status to %s.', status)
-            self._status_filepath.write_text(f'{status.value}\n')

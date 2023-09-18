@@ -10,6 +10,7 @@ from savant.deepstream.pipeline import NvDsPipeline
 from savant.deepstream.runner import NvDsPipelineRunner
 from savant.gstreamer import Gst
 from savant.healthcheck.server import HealthCheckHttpServer
+from savant.healthcheck.status import ModuleStatus, set_module_status
 from savant.utils.logging import get_logger, init_logging, update_logging
 from savant.utils.sink_factories import sink_factory
 
@@ -29,6 +30,7 @@ def main(config_file_path: str):
         if status_filepath.exists():
             status_filepath.unlink()
         status_filepath.parent.mkdir(parents=True, exist_ok=True)
+        set_module_status(status_filepath, ModuleStatus.INITIALIZING)
 
     # load default.yml and set up logging
     config = ModuleConfig().config
