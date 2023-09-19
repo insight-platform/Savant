@@ -21,39 +21,21 @@ parameters:
     width: 1280
     height: 720
     # Add paddings to the frame before processing
-  # output codec - hevc
   output_frame:
-    codec: hevc
+    codec: raw-rgba
   # custom drawing on frames function
   draw_func:
-    module: module.overlay
+    module: src.module.overlay_draw_spec
     class_name: Overlay
     #kwargs:
-
+    rendered_objects:
+      peoplenet:
+        person:
+        face:
 
 
 # pipeline definition
 pipeline:
-  # source definition
-  source:
-    element: videotestsrc
-    properties:
-      num-buffers: 1
-#  source:
-#    element: zeromq_source_bin
-#    properties:
-#      socket: ${oc.env:ZMQ_SRC_ENDPOINT}
-#      socket_type: ${oc.env:ZMQ_SRC_TYPE, ROUTER}
-#      bind: ${oc.decode:${oc.env:ZMQ_SRC_BIND, True}}
-#      # Filter inbound frames by source ID.
-#      source_id: ${oc.decode:${oc.env:SOURCE_ID, null}}
-#      # Filter inbound frames by source ID prefix.
-#      source_id_prefix: ${oc.decode:${oc.env:SOURCE_ID_PREFIX, null}}
-#      # Timeout before deleting stale source (in seconds).
-#      source_timeout: ${oc.decode:${oc.env:SOURCE_TIMEOUT, 10}}
-#      # Interval between source eviction checks (in seconds).
-#      source_eviction_interval: ${oc.decode:${oc.env:SOURCE_EVICTION_INTERVAL, 1}}
-
   # define pipeline's main elements
   elements:
     # primary detector element, inference is provided by the nvinfer Deepstream element
@@ -106,20 +88,17 @@ pipeline:
                   min_width: 32
                   # minimal height of the objects of this class to be included in output
                   min_height: 32
+            - class_id: 2
+              label: face
+              selector:
+                kwargs:
+                  # minimal width of the objects of this class to be included in output
+                  min_width: 16
+                  # minimal height of the objects of this class to be included in output
+                  min_height: 16
 
     # custom pyfunc element
     - element: pyfunc
-      module: module.custom_pyfunc
+      module: src.module.custom_pyfunc
       class_name: CustomPyFunc
       #kwargs:
-
-  # sinks definition
-  sink:
-    - element: console_sink
-      properties:
-        json_mode: true
-#    - element: zeromq_sink
-#      properties:
-#        socket: ${oc.env:ZMQ_SINK_ENDPOINT}
-#        socket_type: ${oc.env:ZMQ_SINK_TYPE, PUB}
-#        bind: ${oc.decode:${oc.env:ZMQ_SINK_BIND, True}}

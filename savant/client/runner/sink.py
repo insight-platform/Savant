@@ -8,7 +8,7 @@ from savant_rs.utils.serialization import Message, load_message_from_bytes
 from savant.client.log_provider import LogProvider
 from savant.client.runner import LogResult
 from savant.client.runner.healthcheck import HealthCheck
-from savant.healthcheck.status import PipelineStatus
+from savant.healthcheck.status import ModuleStatus
 from savant.utils.logging import get_logger
 from savant.utils.zeromq import Defaults, ZeroMQSource
 
@@ -69,7 +69,7 @@ class SinkRunner:
 
         if self._health_check is not None:
             self._health_check.wait_module_is_ready(
-                [PipelineStatus.RUNNING, PipelineStatus.STOPPING]
+                [ModuleStatus.RUNNING, ModuleStatus.STOPPING]
             )
         wait_until = time.time() + self._idle_timeout
         result = None

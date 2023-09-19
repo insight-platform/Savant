@@ -11,7 +11,7 @@ from savant.client.frame_source import FrameSource
 from savant.client.log_provider import LogProvider
 from savant.client.runner import LogResult
 from savant.client.runner.healthcheck import HealthCheck
-from savant.healthcheck.status import PipelineStatus
+from savant.healthcheck.status import ModuleStatus
 from savant.utils.logging import get_logger
 from savant.utils.zeromq import (
     Defaults,
@@ -105,7 +105,7 @@ class SourceRunner:
         """
 
         if self._health_check is not None:
-            self._health_check.wait_module_is_ready([PipelineStatus.RUNNING])
+            self._health_check.wait_module_is_ready([ModuleStatus.RUNNING])
         logger.debug('Sending video frame from source %s.', source)
         video_frame, content = source.build_frame()
         frame_id = self._pipeline.add_frame(self._pipeline_stage_name, video_frame)
@@ -162,7 +162,7 @@ class SourceRunner:
         """
 
         if self._health_check is not None:
-            self._health_check.wait_module_is_ready([PipelineStatus.RUNNING])
+            self._health_check.wait_module_is_ready([ModuleStatus.RUNNING])
         logger.debug('Sending EOS for source %s.', source_id)
         zmq_topic = f'{source_id}/'.encode()
         message = Message.end_of_stream(EndOfStream(source_id))
@@ -186,7 +186,7 @@ class SourceRunner:
         """
 
         if self._health_check is not None:
-            self._health_check.wait_module_is_ready([PipelineStatus.RUNNING])
+            self._health_check.wait_module_is_ready([ModuleStatus.RUNNING])
         logger.debug('Sending Shutdown message for source %s.', source_id)
         zmq_topic = f'{source_id}/'.encode()
         message = Message.shutdown(Shutdown(auth))

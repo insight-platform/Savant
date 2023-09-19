@@ -5,6 +5,6 @@ RUN python -m pip install -r requirements.txt
 
 # normally you can map a host dir, but if building a self-contained image, use copy
 # COPY module module
-WORKDIR /opt/savant/module
+WORKDIR /opt/savant/src/module
 
 ENTRYPOINT ["./run.py"]

@@ -1,0 +1,102 @@
+{
+  "attributes": [
+    {
+      "hint": null,
+      "is_persistent": true,
+      "name": "location",
+      "namespace": "default",
+      "values": [
+        {
+          "confidence": null,
+          "value": {
+            "String": "/data/test_img.jpeg"
+          }
+        }
+      ]
+    }
+  ],
+  "codec": "raw-rgba",
+  "content": {
+    "external": {
+      "location": null,
+      "method": "zeromq"
+    }
+  },
+  "dts": null,
+  "duration": 33333333,
+  "framerate": "30/1",
+  "height": 720,
+  "keyframe": true,
+  "objects": [
+    {
+      "attributes": [],
+      "bbox": {
+        "angle": 0.0,
+        "height": 157.8800048828125,
+        "width": 130.1107177734375,
+        "xc": 631.3873291015625,
+        "yc": 221.61492919921875
+      },
+      "confidence": 0.99951171875,
+      "draw_label": null,
+      "frame": null,
+      "id": 1599986182,
+      "label": "face",
+      "namespace": "peoplenet",
+      "parent": null,
+      "pyobjects": "not_implemented",
+      "track_box": {
+        "angle": 0.0,
+        "height": 157.8800048828125,
+        "width": 130.1107177734375,
+        "xc": 631.3873291015625,
+        "yc": 221.61492919921875
+      },
+      "track_id": 0
+    },
+    {
+      "attributes": [],
+      "bbox": {
+        "angle": 0.0,
+        "height": 613.15087890625,
+        "width": 390.4687194824219,
+        "xc": 633.3697509765625,
+        "yc": 412.1010437011719
+      },
+      "confidence": 0.912109375,
+      "draw_label": null,
+      "frame": null,
+      "id": -729655297,
+      "label": "person",
+      "namespace": "peoplenet",
+      "parent": null,
+      "pyobjects": "not_implemented",
+      "track_box": {
+        "angle": 0.0,
+        "height": 613.15087890625,
+        "width": 390.4687194824219,
+        "xc": 633.3697509765625,
+        "yc": 412.1010437011719
+      },
+      "track_id": 0
+    }
+  ],
+  "pts": 0,
+  "source_id": "test-source",
+  "time_base": [
+    1,
+    1000000000
+  ],
+  "transcoding_method": "Copy",
+  "transformations": [
+    {
+      "initial_size": [
+        1280,
+        720
+      ]
+    }
+  ],
+  "type": "VideoFrame",
+  "version": "0.1.62",
+  "width": 1280
+}
