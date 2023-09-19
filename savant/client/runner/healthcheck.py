@@ -5,7 +5,7 @@ from typing import List, Optional
 import requests
 from requests import RequestException
 
-from savant.healthcheck.status import PipelineStatus
+from savant.healthcheck.status import ModuleStatus
 from savant.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -25,7 +25,7 @@ class HealthCheck:
         url: str,
         interval: float,
         timeout: float,
-        ready_statuses: List[PipelineStatus],
+        ready_statuses: List[ModuleStatus],
     ):
         self._url = url
         self._check_interval = interval
@@ -34,7 +34,7 @@ class HealthCheck:
         self._last_check_ts = 0
         self._last_status = None
 
-    def check(self) -> Optional[PipelineStatus]:
+    def check(self) -> Optional[ModuleStatus]:
         """Check the health of the module."""
 
         logger.debug('Checking module status.')
@@ -52,12 +52,12 @@ class HealthCheck:
 
         status = response.text.strip()
         if not status:
-            logger.debug('Module has not status yet.')
+            logger.debug('Module has no status yet.')
             return None
 
         logger.debug('Module status: %s.', status)
         try:
-            return PipelineStatus(status)
+            return ModuleStatus(status)
         except ValueError:
             logger.warning('Unknown status: %s.', status)
             return None

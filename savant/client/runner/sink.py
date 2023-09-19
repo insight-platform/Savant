@@ -9,7 +9,7 @@ from savant_rs.utils.serialization import Message, load_message_from_bytes
 from savant.client.log_provider import LogProvider
 from savant.client.runner import LogResult
 from savant.client.runner.healthcheck import HealthCheck
-from savant.healthcheck.status import PipelineStatus
+from savant.healthcheck.status import ModuleStatus
 from savant.utils.logging import get_logger
 from savant.utils.zeromq import AsyncZeroMQSource, Defaults, ZeroMQSource
 
@@ -49,7 +49,7 @@ class BaseSinkRunner(ABC):
                 url=module_health_check_url,
                 interval=module_health_check_interval,
                 timeout=module_health_check_timeout,
-                ready_statuses=[PipelineStatus.RUNNING, PipelineStatus.STOPPING],
+                ready_statuses=[ModuleStatus.RUNNING, ModuleStatus.STOPPING],
             )
             if module_health_check_url is not None
             else None

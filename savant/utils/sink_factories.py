@@ -14,6 +14,7 @@ from savant.utils.registry import Registry
 from savant.utils.zeromq import (
     Defaults,
     SenderSocketTypes,
+    create_ipc_socket_dirs,
     parse_zmq_socket_uri,
     receive_response,
     set_ipc_socket_permissions,
@@ -135,6 +136,9 @@ class ZeroMQSinkFactory(SinkFactory):
         output_zmq_socket = context.socket(self.socket_type.value)
         output_zmq_socket.setsockopt(zmq.SNDHWM, self.send_hwm)
         output_zmq_socket.setsockopt(zmq.RCVTIMEO, self.receive_timeout)
+
+        create_ipc_socket_dirs(self.socket)
+
         if self.bind:
             output_zmq_socket.bind(self.socket)
         else:

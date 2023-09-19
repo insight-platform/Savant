@@ -11,7 +11,7 @@ from savant.client.frame_source import FrameSource
 from savant.client.log_provider import LogProvider
 from savant.client.runner import LogResult
 from savant.client.runner.healthcheck import HealthCheck
-from savant.healthcheck.status import PipelineStatus
+from savant.healthcheck.status import ModuleStatus
 from savant.utils.logging import get_logger
 from savant.utils.zeromq import (
     Defaults,
@@ -65,7 +65,7 @@ class SourceRunner:
                 url=module_health_check_url,
                 interval=module_health_check_interval,
                 timeout=module_health_check_timeout,
-                ready_statuses=[PipelineStatus.RUNNING],
+                ready_statuses=[ModuleStatus.RUNNING],
             )
             if module_health_check_url is not None
             else None

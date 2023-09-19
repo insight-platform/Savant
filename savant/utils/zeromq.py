@@ -158,6 +158,9 @@ class BaseZeroMQSource(ABC):
         self.zmq_context = self._create_zmq_ctx()
         self.receiver = self.zmq_context.socket(self.socket_type.value)
         self.receiver.setsockopt(zmq.RCVHWM, self.receive_hwm)
+
+        create_ipc_socket_dirs(self.socket)
+
         if self.bind:
             self.receiver.bind(self.socket)
         else:
@@ -490,3 +493,16 @@ def set_ipc_socket_permissions(socket: str, permission: int = 0o777):
     if parsed.scheme == 'ipc':
         logger.debug('Setting socket permissions to %o (%s).', permission, socket)
         os.chmod(parsed.path, permission)
+
+
+def create_ipc_socket_dirs(socket: str):
+    """Create parent directories for an IPC socket."""
+
+    parsed = urlparse(socket)
+    if parsed.scheme == 'ipc':
+        dir_name = os.path.dirname(parsed.path)
+        if not os.path.exists(dir_name):
+            logger.debug(
+                'Making directories for ipc socket %s, path %s.', socket, dir_name
+            )
+            os.makedirs(dir_name)

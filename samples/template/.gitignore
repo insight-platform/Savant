@@ -1,0 +1,10 @@
+downloads_cache/*
+!downloads_cache/README.md
+models_cache/*
+!models_cache/README.md
+output/*
+src/output/*
+!src/output/README.md
+assets/test_data/*
+!assets/test_data/test_img.jpeg
+!assets/test_data/test_img.json
