@@ -456,11 +456,21 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                         )
 
                     else:
+                        source_id, frame_idx = self._get_frame_source_id_and_idx(
+                            buffer,
+                            nvds_frame_meta,
+                        )
                         self.logger.warning(
-                            'The object (%s.%s, bbox %s) is an orphan (no parent object is assigned). It is a non-typical case: the object should either have the frame or an ROI object as a parent.',
+                            'The object (%s.%s, bbox %s) of a frame %s/%s with IDX %s '
+                            'is an orphan (no parent object is assigned). '
+                            'It is a non-typical case: the object should either '
+                            'have the frame or an ROI object as a parent.',
                             object_meta.element_name,
                             object_meta.label,
                             object_meta.bbox.as_ltrb_int(),
+                            source_id,
+                            nvds_frame_meta.buf_pts,
+                            frame_idx,
                         )
 
                     user_object_meta = ObjectMeta(
@@ -847,6 +857,28 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
         source_info: SourceInfo,
     ) -> Iterator[_OutputFrame]:
         """Iterate output frames."""
+
+    def _get_frame_source_id_and_idx(
+        self,
+        buffer: Gst.Buffer,
+        nvds_frame_meta: pyds.NvDsFrameMeta,
+    ) -> Tuple[Optional[str], Optional[int]]:
+        savant_batch_meta = gst_buffer_get_savant_batch_meta(buffer)
+        if savant_batch_meta is None:
+            return None, None
+
+        savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(nvds_frame_meta)
+        if savant_frame_meta is None:
+            return None, None
+
+        frame_idx = savant_frame_meta.idx
+        video_frame, _ = self._video_pipeline.get_batched_frame(
+            savant_batch_meta.idx,
+            frame_idx,
+        )
+        source_id = video_frame.source_id
+
+        return source_id, frame_idx
 
 
 class NvDsEncodedBufferProcessor(NvDsBufferProcessor):
