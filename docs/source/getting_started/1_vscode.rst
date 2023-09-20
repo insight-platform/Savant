@@ -60,3 +60,8 @@ Update Runtime On Container Change
 ----------------------------------
 
 .. include:: ../includes/getting_started/1_vscode_update_docker.rst
+
+Video Tutorial
+--------------
+
+.. youtube:: 0u69E8sD3rE
