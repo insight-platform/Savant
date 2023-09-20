@@ -1,16 +1,98 @@
 """General logging utils."""
 import logging
 import logging.config
+import os
+import string
 
-from savant_rs.logging import LogLevel
+from savant_rs.logging import LogLevel, set_log_level
 
-LOG_LEVEL_PY_TO_RS = {
-    logging.CRITICAL: LogLevel.Error,
-    logging.ERROR: LogLevel.Error,
-    logging.WARNING: LogLevel.Warning,
-    logging.INFO: LogLevel.Info,
-    logging.DEBUG: LogLevel.Debug,
+from .const import DEFAULT_LOGLEVEL, LOGGING_PREFIX
+
+LOG_LEVEL_STR_TO_RS = {
+    'error': LogLevel.Error,
+    'warning': LogLevel.Warning,
+    'info': LogLevel.Info,
+    'debug': LogLevel.Debug,
+    'trace': LogLevel.Trace,
 }
+
+
+def parse_log_spec(log_spec_str: str) -> dict:
+    log_spec_str = log_spec_str.lower()
+    log_spec_str = log_spec_str.strip(string.whitespace + ',')
+    log_spec_str = log_spec_str.replace('::', '.')
+    log_spec_dict = {}
+    for log_directive in log_spec_str.split(','):
+        # consecutive commas will result in empty strings
+        # skip them
+        if log_directive:
+
+            eq_num = log_directive.count('=')
+            # more than one = sign, incorrect directive
+            # skip this target_level
+
+            if eq_num == 1:
+                target, level = log_directive.split('=')
+            elif eq_num == 0:
+                # no = sign, i.e. only target or only level
+                if log_directive in LOG_LEVEL_STR_TO_RS:
+                    # only level
+                    level = log_directive
+                    target = LOGGING_PREFIX
+                else:
+                    # only target
+                    target = log_directive
+                    level = DEFAULT_LOGLEVEL
+            else:
+                # more than one = sign, incorrect string
+                # skip this target_level
+                continue
+            log_spec_dict[target] = level
+
+    return log_spec_dict
+
+
+def get_default_log_spec() -> dict:
+    log_spec_str = os.environ.get('LOGLEVEL', DEFAULT_LOGLEVEL)
+    return parse_log_spec(log_spec_str)
+
+
+def get_global_log_level(log_spec_dict: dict) -> str:
+    return log_spec_dict.get(LOGGING_PREFIX, DEFAULT_LOGLEVEL)
+
+
+def set_savant_rs_loglevel(log_level: str):
+    """Set savant_rs base logging level.
+    No messages with priority lower than this setting are going to be logged.
+    :param log_level: Logging level as a string.
+    """
+    rs_log_level = LOG_LEVEL_STR_TO_RS[log_level.lower()]
+    set_log_level(rs_log_level)
+
+
+def get_log_conf(log_spec_dict: dict) -> dict:
+    loggers = {}
+    for target, level in log_spec_dict.items():
+        if target is None:
+            target = LOGGING_PREFIX
+        if level is None:
+            level = DEFAULT_LOGLEVEL
+        loggers[target] = {
+            'level': level,
+            'handlers': ['savantrs'],
+            'propagate': False,
+        }
+    return {
+        'version': 1,
+        'formatters': {},
+        'handlers': {
+            'savantrs': {
+                'class': 'savant.utils.logging.savant_rs_handler.SavantRsLoggingHandler',
+            },
+        },
+        'loggers': loggers,
+        'disable_existing_loggers': False,
+    }
 
 
 def add_logging_level(
