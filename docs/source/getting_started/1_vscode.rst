@@ -56,12 +56,11 @@ Reopen in Container
 
 That's it, the environment is set up. Now you are ready to develop your own pipeline. See the next section to find out how.
 
+.. youtube:: 0u69E8sD3rE
+
 Update Runtime On Container Change
 ----------------------------------
 
 .. include:: ../includes/getting_started/1_vscode_update_docker.rst
 
-Video Tutorial
---------------
-
-.. youtube:: 0u69E8sD3rE
+In the following sections, you will find additional details on module development.
