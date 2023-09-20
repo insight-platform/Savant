@@ -3,7 +3,7 @@ import logging
 import os
 from typing import Optional
 
-from savant_rs.logging import set_log_level, LogLevel
+from savant_rs.logging import LogLevel, set_log_level
 
 from .log_utils import LOG_LEVEL_PY_TO_RS, add_logging_level
 
@@ -11,7 +11,7 @@ LOGGING_PREFIX = 'insight.savant'
 
 
 def get_default_loglevel() -> str:
-    return os.environ.get('LOGLEVEL', 'INFO')
+    return os.environ.get('LOGLEVEL', 'INFO').upper()
 
 
 def get_log_conf(log_level: str) -> dict:
@@ -87,8 +87,7 @@ def update_logging(log_level: str):
 
 def set_savant_rs_loglevel(log_level: str):
     """Set savant_rs base logging level.
-    No messages with priority lower than this setting are going to be logged
-    regardless of RUST_LOG env var config.
+    No messages with priority lower than this setting are going to be logged.
     :param log_level: Python logging level as a string.
     """
     default_log_level_int = getattr(logging, get_default_loglevel())
