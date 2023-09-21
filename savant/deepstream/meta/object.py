@@ -259,7 +259,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
                 f'{self.__class__.__name__} as a parent object.'
             )
 
-        if self._parent_object.uid == self.uid:
+        if self._parent_object and self._parent_object.uid == self.uid:
             raise MetaValueError('An object cannot have itself as a parent.')
 
     @property
