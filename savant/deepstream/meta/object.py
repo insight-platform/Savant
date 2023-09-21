@@ -292,22 +292,22 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         cls,
         object_meta: pyds.NvDsObjectMeta,
         frame_meta: pyds.NvDsFrameMeta,
-        level: int = 2,
+        depth: int = 2,
     ):
         """Factory method, creates instance of this class from pyds meta.
 
         :param object_meta: Deepstream object meta.
         :param frame_meta: Deepstream frame meta.
-        :param level: Level of nesting to prevent recursion
+        :param depth: Object parent recursion depth.
         :return:
         """
         self = cls.__new__(cls)
         self.ds_object_meta = object_meta
         self._frame_meta = frame_meta
         self._bbox = None
-        if not nvds_is_empty_object_meta(object_meta.parent) and level > 0:
+        if not nvds_is_empty_object_meta(object_meta.parent) and depth > 0:
             self._parent_object = _NvDsObjectMetaImpl.from_nv_ds_object_meta(
-                object_meta.parent, frame_meta, level - 1
+                object_meta.parent, frame_meta, depth - 1
             )
         else:
             self._parent_object = None
