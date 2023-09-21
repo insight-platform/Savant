@@ -11,6 +11,7 @@ from savant.meta.constants import (
     PRIMARY_OBJECT_LABEL,
     UNTRACKED_OBJECT_ID,
 )
+from savant.meta.errors import MetaValueError
 
 
 class BaseObjectMetaImpl(ABC):
@@ -185,7 +186,7 @@ class ObjectMeta:
         return self.label
 
     @draw_label.setter
-    def draw_label(self, value: str) -> str:
+    def draw_label(self, value: str):
         if self.object_meta_impl:
             self.object_meta_impl.draw_label = value
         else:
@@ -209,6 +210,8 @@ class ObjectMeta:
 
         :param value: Parent object.
         """
+        if value.uid == self.uid:
+            raise MetaValueError('An object cannot have itself as a parent.')
         if self.object_meta_impl:
             self.object_meta_impl.parent = value
         self._parent = value
