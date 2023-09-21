@@ -885,6 +885,12 @@ class NvDsPipeline(GstPipeline):
 
         muxer_sink_pad = self._request_muxer_sink_pad(source_info)
         self._check_pipeline_is_running()
+        pad.add_probe(
+            Gst.PadProbeType.EVENT_DOWNSTREAM,
+            on_pad_event,
+            {Gst.EventType.EOS: self._on_muxer_sink_pad_peer_eos},
+            source_info.source_id,
+        )
         assert pad.link(muxer_sink_pad) == Gst.PadLinkReturn.OK
 
     def _request_muxer_sink_pad(self, source_info: SourceInfo) -> Gst.Pad:
@@ -905,17 +911,13 @@ class NvDsPipeline(GstPipeline):
             )
             self._check_pipeline_is_running()
             sink_pad: Gst.Pad = self._muxer.get_request_pad(sink_pad_name)
-            sink_pad.add_probe(
-                Gst.PadProbeType.EVENT_DOWNSTREAM,
-                on_pad_event,
-                {Gst.EventType.EOS: self._on_muxer_sink_pad_eos},
-                source_info.source_id,
-            )
 
         return sink_pad
 
-    def _on_muxer_sink_pad_eos(self, pad: Gst.Pad, event: Gst.Event, source_id: str):
-        """Processes EOS event on muxer sink pad."""
+    def _on_muxer_sink_pad_peer_eos(
+        self, pad: Gst.Pad, event: Gst.Event, source_id: str
+    ):
+        """Processes EOS event on a peer of muxer sink pad."""
 
         self._logger.debug(
             'Got EOS on pad %s.%s', pad.get_parent().get_name(), pad.get_name()
