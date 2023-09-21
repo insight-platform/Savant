@@ -14,6 +14,8 @@ parameters:
   #  telemetry:
   #    # Sampling period in frames
   #    sampling_period: ${oc.decode:${oc.env:TELEMETRY_SAMPLING_PERIOD, 100}}
+  #    # Append frame metadata to telemetry span
+  #    append_frame_meta_to_span: ${oc.decode:${oc.env:TELEMETRY_APPEND_FRAME_META_TO_SPAN, False}}
   #    # Name for root span
   #    root_span_name: ${oc.decode:${oc.env:TELEMETRY_ROOT_SPAN_NAME, null}}
   #    # Telemetry provider name
@@ -28,4 +30,3 @@ pipeline:
     - element: pyfunc
       module: samples.telemetry.blur
       class_name: Blur
-
