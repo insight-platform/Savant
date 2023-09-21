@@ -117,6 +117,29 @@ Log Level
 
 The ``log_level`` parameter defines the verbosity of logging for the framework. By default, it is configured as ``log_level: ${oc.env:LOGLEVEL, 'INFO'}`` which allows overriding it with the ``LOGLEVEL`` environment variable.
 
+.. note::
+
+  Savant uses Rust's `env_logger<https://docs.rs/env_logger/latest/env_logger/>`_-based logging configured through ``LOGLEVEL`` environment variable. Savant's python logging is setup to accept the same logging configuration format and to pass the messages down to the underlying Rust logger. As such, for logging to be enabled, the ``LOGLEVEL`` environment variable must be set to a non-empty value. Therefore, it is recommended not to change the default ``log_level`` module configuration parameter value and to use the ``LOGLEVEL`` environment variable for logging configuration instead.
+
+The ``log_level`` parameter value is expected to be in the Rust's `env_logger<https://docs.rs/env_logger/latest/env_logger/>`_ format, i.e. a comma-separated list of logging directives of the form ``target=level``.
+
+Possible logging levels are:
+
+* ``trace``
+* ``debug``
+* ``info``
+* ``warn``
+* ``error``
+
+The ``target`` is the name of the logging target, which is typically a ``::``-separated path to the module. All Savant's messages are logged under the ``insight::savant`` prefix, so setting ``LOGLEVEL`` to, for example, ``insight::savant=info`` is enough to enable logging for all Savant's modules.
+
+Some examples of logging configuration:
+
+* ``info`` - turns on all info logging
+* ``insight::savant=info`` - turns on all info logging for Savant's modules
+* ``warn,insight::savant::custom_pyfunc=debug`` - turns on global warn logging and debug logging for the ``custom_pyfunc`` module
+* ``insight::savant::custom_pyfunc=debug`` - turns on debug logging for the ``custom_pyfunc`` and disables all other logging sources
+
 Output Video Stream Codec
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
