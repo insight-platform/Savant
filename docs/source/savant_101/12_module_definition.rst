@@ -119,9 +119,9 @@ The ``log_level`` parameter defines the verbosity of logging for the framework. 
 
 .. note::
 
-  Savant uses Rust's `env_logger<https://docs.rs/env_logger/latest/env_logger/>`_-based logging configured through ``LOGLEVEL`` environment variable. Savant's python logging is setup to accept the same logging configuration format and to pass the messages down to the underlying Rust logger. As such, for logging to be enabled, the ``LOGLEVEL`` environment variable must be set to a non-empty value. Therefore, it is recommended not to change the default ``log_level`` module configuration parameter value and to use the ``LOGLEVEL`` environment variable for logging configuration instead.
+  Savant uses Rust's `env_logger <https://docs.rs/env_logger/latest/env_logger/>`_-based logging configured through ``LOGLEVEL`` environment variable. Savant's python logging is setup to accept the same logging configuration format and to pass the messages down to the underlying Rust logger. As such, for logging to be enabled, the ``LOGLEVEL`` environment variable must be set to a non-empty value. Therefore, it is recommended not to change the default ``log_level`` module configuration parameter value and to use the ``LOGLEVEL`` environment variable for logging configuration instead.
 
-The ``log_level`` parameter value is expected to be in the Rust's `env_logger<https://docs.rs/env_logger/latest/env_logger/>`_ format, i.e. a comma-separated list of logging directives of the form ``target=level``.
+The ``log_level`` parameter value is expected to be in the Rust's `env_logger <https://docs.rs/env_logger/latest/env_logger/>`_ format, i.e. a comma-separated list of logging directives of the form ``target=level``.
 
 Possible logging levels are:
 
