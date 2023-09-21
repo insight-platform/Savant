@@ -305,7 +305,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         self.ds_object_meta = object_meta
         self._frame_meta = frame_meta
         self._bbox = None
-        if not nvds_is_empty_object_meta(object_meta.parent) and level:
+        if not nvds_is_empty_object_meta(object_meta.parent) and level > 0:
             self._parent_object = _NvDsObjectMetaImpl.from_nv_ds_object_meta(
                 object_meta.parent, frame_meta, level - 1
             )
