@@ -17,7 +17,7 @@ from pygstsavantframemeta import (
     gst_buffer_get_savant_batch_meta,
     nvds_frame_meta_get_nvds_savant_frame_meta,
 )
-from savant_rs.pipeline2 import VideoPipeline
+from savant_rs.pipeline2 import VideoPipeline, VideoPipelineConfiguration
 from savant_rs.primitives import EndOfStream, IdCollisionResolutionPolicy, VideoFrame
 from savant_rs.primitives.geometry import RBBox
 
@@ -137,7 +137,11 @@ class NvDsPipeline(GstPipeline):
         else:
             root_span_name = name
 
-        self._video_pipeline = VideoPipeline(root_span_name, pipeline_stages)
+        self._video_pipeline = VideoPipeline(
+            root_span_name,
+            pipeline_stages,
+            build_video_pipeline_conf(telemetry),
+        )
         self._video_pipeline.sampling_period = telemetry.sampling_period
 
         self._source_output = create_source_output(
@@ -1044,6 +1048,12 @@ class NvDsPipeline(GstPipeline):
 
         if not self._is_running:
             raise PipelineIsNotRunningError('Pipeline is not running')
+
+
+def build_video_pipeline_conf(telemetry_params: TelemetryParameters):
+    conf = VideoPipelineConfiguration()
+    conf.append_frame_meta_to_otlp_span = telemetry_params.append_frame_meta_to_span
+    return conf
 
 
 class PipelineIsNotRunningError(Exception):
