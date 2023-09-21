@@ -5,7 +5,7 @@ from collections import defaultdict
 from pathlib import Path
 from queue import Queue
 from threading import Lock, Thread
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import pyds
 from pygstsavantframemeta import (
@@ -111,6 +111,7 @@ class NvDsPipeline(GstPipeline):
 
         self._demuxer_src_pads: List[Gst.Pad] = []
         self._free_pad_indices: List[int] = []
+        self._last_nvevent_stream_eos_seqnum: Dict[int, int] = {}
         self._muxer: Optional[Gst.Element] = None
 
         if pipeline_cfg.source.element == 'zeromq_source_bin':
@@ -985,7 +986,13 @@ class NvDsPipeline(GstPipeline):
         pad_idx = gst_nvevent_parse_stream_eos(event)
         if pad != self._demuxer_src_pads[pad_idx]:
             # nvstreamdemux redirects GST_NVEVENT_STREAM_EOS on each src pad
-            return Gst.PadProbeReturn.PASS
+            return Gst.PadProbeReturn.DROP
+
+        if event.get_seqnum() <= self._last_nvevent_stream_eos_seqnum.get(pad_idx, -1):
+            # This event has already been processed
+            return Gst.PadProbeReturn.DROP
+        self._last_nvevent_stream_eos_seqnum[pad_idx] = event.get_seqnum()
+
         self._logger.debug(
             'Got GST_NVEVENT_STREAM_EOS on %s.%s',
             pad.get_parent().get_name(),
@@ -1018,7 +1025,6 @@ class NvDsPipeline(GstPipeline):
                 'Pipeline is not running. Cancel unlinking demuxer pad %s.',
                 pad.get_name(),
             )
-            return Gst.PadProbeReturn.PASS
 
         return Gst.PadProbeReturn.DROP
 
