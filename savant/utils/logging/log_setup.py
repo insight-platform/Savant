@@ -1,6 +1,7 @@
 """Logging setup utils."""
 
 import logging
+import logging.config
 from typing import Optional
 
 from savant_rs.logging import LogLevel
@@ -9,7 +10,6 @@ from .const import LOGGING_PREFIX
 from .log_utils import (
     add_logging_level,
     get_default_log_spec,
-    get_global_log_level,
     get_log_conf,
     parse_log_spec,
     set_savant_rs_loglevel,
@@ -42,11 +42,8 @@ def init_logging(log_spec_str: Optional[str] = None):
     else:
         log_spec_dict = parse_log_spec(log_spec_str)
 
-    level = get_global_log_level(log_spec_dict)
-    set_savant_rs_loglevel(level)
+    apply_log_spec(log_spec_dict)
 
-    log_config = get_log_conf(log_spec_dict)
-    logging.config.dictConfig(log_config)
     init_logging.done = True
 
 
@@ -70,7 +67,10 @@ def update_logging(log_spec_str: str):
     :param log_spec_str: A comma-separated list of logging directives of the form target=level.
     """
     log_spec_dict = parse_log_spec(log_spec_str)
-    level = get_global_log_level(log_spec_dict)
-    set_savant_rs_loglevel(level)
+    apply_log_spec(log_spec_dict)
+
+
+def apply_log_spec(log_spec_dict: dict):
+    set_savant_rs_loglevel(log_spec_dict)
     log_config = get_log_conf(log_spec_dict)
     logging.config.dictConfig(log_config)
