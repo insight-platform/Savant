@@ -1,5 +1,5 @@
 """Base implementation of user-defined PyFunc class."""
-from typing import Optional
+from typing import Dict, Optional
 
 import cv2
 import pyds
@@ -35,6 +35,14 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
         super().__init__(**kwargs)
         self._sources = SourceInfoRegistry()
         self._video_pipeline: Optional[VideoPipeline] = None
+        self._last_nvevent_seqnum: Dict[int, Dict[int, int]] = {
+            event_type: {}
+            for event_type in [
+                GST_NVEVENT_PAD_ADDED,
+                GST_NVEVENT_PAD_DELETED,
+                GST_NVEVENT_STREAM_EOS,
+            ]
+        }
         self.frame_streams = {}
 
     def on_start(self) -> bool:
@@ -48,14 +56,22 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
         # so use GST_NVEVENT_PAD_ADDED/DELETED
         if event.type == GST_NVEVENT_PAD_ADDED:
             pad_idx = gst_nvevent_parse_pad_added(event)
+            if self._is_processed(event, pad_idx):
+                return
             source_id = self._sources.get_id_by_pad_index(pad_idx)
             self.on_source_add(source_id)
+
         elif event.type == GST_NVEVENT_PAD_DELETED:
             pad_idx = gst_nvevent_parse_pad_deleted(event)
+            if self._is_processed(event, pad_idx):
+                return
             source_id = self._sources.get_id_by_pad_index(pad_idx)
             self.on_source_delete(source_id)
+
         elif event.type == GST_NVEVENT_STREAM_EOS:
             pad_idx = gst_nvevent_parse_stream_eos(event)
+            if self._is_processed(event, pad_idx):
+                return
             source_id = self._sources.get_id_by_pad_index(pad_idx)
             self.on_source_eos(source_id)
 
@@ -153,3 +169,11 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
         :param buffer: Gstreamer buffer.
         :param frame_meta: Frame metadata for a frame in a batch.
         """
+
+    def _is_processed(self, event: Gst.Event, pad_idx: int) -> bool:
+        """Check if event has already been processed."""
+
+        if event.get_seqnum() <= self._last_nvevent_seqnum[event.type].get(pad_idx, -1):
+            return True
+        self._last_nvevent_seqnum[event.type][pad_idx] = event.get_seqnum()
+        return False
