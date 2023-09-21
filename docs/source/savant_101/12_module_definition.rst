@@ -54,7 +54,7 @@ The following parameters are defined for a Savant module by default:
 
 .. literalinclude:: ../../../savant/config/default.yml
   :language: YAML
-  :lines: 1-131
+  :lines: 1-134
 
 .. note::
 
@@ -157,6 +157,7 @@ Example:
 
     telemetry:
       sampling_period: 100
+      append_frame_meta_to_span: false
       root_span_name: demo-pipeline-root
       provider: jaeger
       provider_params:
