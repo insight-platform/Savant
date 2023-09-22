@@ -3,8 +3,7 @@ FROM python:3.9.13-slim
 ARG PROJECT_PATH=/opt/savant
 ENV PYTHONUNBUFFERED=1 \
     PROJECT_PATH=$PROJECT_PATH \
-    PYTHONPATH=$PROJECT_PATH \
-    RUST_LOG=info
+    PYTHONPATH=$PROJECT_PATH
 WORKDIR $PROJECT_PATH
 
 COPY adapters/requirements.txt $PROJECT_PATH/adapters/requirements.txt
@@ -16,3 +15,4 @@ RUN pip install --no-cache-dir -r $PROJECT_PATH/adapters/requirements-savant-rs.
 
 COPY savant $PROJECT_PATH/savant
 COPY adapters/python $PROJECT_PATH/adapters/python
+ENV LOGLEVEL=info

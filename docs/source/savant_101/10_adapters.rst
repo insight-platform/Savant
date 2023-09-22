@@ -18,17 +18,6 @@ The developer may encounter such customizations in our performance-related modul
   :emphasize-lines: 1,5
   :lines: 31-34, 45-46
 
-Or in the project template:
-
-.. literalinclude:: ../../../samples/template/module/module.yml
-  :language: YAML
-  :linenos:
-  :caption:
-  :emphasize-lines: 2,6,21,25
-  :lines: 24-42, 103-112
-
-The last listing shows default ZeroMQ-based source and sink elements commented. If the source and sink definitions are omitted, such commented elements are actually used.
-
 Currently, the single source- and multiple sink declarations are supported.
 
 Adapters

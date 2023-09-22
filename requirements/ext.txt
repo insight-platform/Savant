@@ -3,5 +3,5 @@ pyds @ https://github.com/NVIDIA-AI-IOT/deepstream_python_apps/releases/download
 pyds @ https://github.com/NVIDIA-AI-IOT/deepstream_python_apps/releases/download/v1.1.8/pyds-1.1.8-py3-none-linux_aarch64.whl; platform_machine=='aarch64'
 
 # ffmpeg-input
-ffmpeg-input @ https://github.com/insight-platform/FFmpeg-Input/releases/download/0.1.20/ffmpeg_input-0.1.20-cp38-cp38-linux_x86_64.whl; platform_machine=='x86_64'
-ffmpeg-input @ https://github.com/insight-platform/FFmpeg-Input/releases/download/0.1.20/ffmpeg_input-0.1.20-cp38-cp38-linux_aarch64.whl; platform_machine=='aarch64'
+ffmpeg-input @ https://github.com/insight-platform/FFmpeg-Input/releases/download/0.1.21/ffmpeg_input-0.1.21-cp38-cp38-linux_x86_64.whl; platform_machine=='x86_64'
+ffmpeg-input @ https://github.com/insight-platform/FFmpeg-Input/releases/download/0.1.21/ffmpeg_input-0.1.21-cp38-cp38-linux_aarch64.whl; platform_machine=='aarch64'

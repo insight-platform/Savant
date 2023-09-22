@@ -75,7 +75,8 @@ class GstPipelineRunner:
         """Starts pipeline."""
         logger.info('Starting pipeline `%s`...', self._pipeline)
         start_time = time()
-        set_module_status(self._status_filepath, ModuleStatus.STARTING)
+        if self._status_filepath is not None:
+            set_module_status(self._status_filepath, ModuleStatus.STARTING)
 
         bus = self._pipeline.get_bus()
         logger.debug('Adding signal watch and connecting callbacks...')
@@ -107,7 +108,8 @@ class GstPipelineRunner:
         )
 
         self._start_time = end_time
-        set_module_status(self._status_filepath, ModuleStatus.RUNNING)
+        if self._status_filepath is not None:
+            set_module_status(self._status_filepath, ModuleStatus.RUNNING)
 
     def shutdown(self):
         """Stops pipeline."""
@@ -116,7 +118,8 @@ class GstPipelineRunner:
             logger.debug('The pipeline is shutting down already.')
             return
 
-        set_module_status(self._status_filepath, ModuleStatus.STOPPING)
+        if self._status_filepath is not None:
+            set_module_status(self._status_filepath, ModuleStatus.STOPPING)
         self._is_running = False
 
         if isinstance(self._pipeline, GstPipeline):
@@ -140,7 +143,8 @@ class GstPipelineRunner:
             logger.debug('Calling pipeline.on_shutdown()...')
             self._pipeline.on_shutdown()
 
-        set_module_status(self._status_filepath, ModuleStatus.STOPPED)
+        if self._status_filepath is not None:
+            set_module_status(self._status_filepath, ModuleStatus.STOPPED)
 
     def on_error(  # pylint: disable=unused-argument
         self, bus: Gst.Bus, message: Gst.Message

@@ -5,7 +5,7 @@ from collections import defaultdict
 from pathlib import Path
 from queue import Queue
 from threading import Lock, Thread
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import pyds
 from pygstsavantframemeta import (
@@ -17,7 +17,7 @@ from pygstsavantframemeta import (
     gst_buffer_get_savant_batch_meta,
     nvds_frame_meta_get_nvds_savant_frame_meta,
 )
-from savant_rs.pipeline2 import VideoPipeline
+from savant_rs.pipeline2 import VideoPipeline, VideoPipelineConfiguration
 from savant_rs.primitives import EndOfStream, IdCollisionResolutionPolicy, VideoFrame
 from savant_rs.primitives.geometry import RBBox
 
@@ -111,6 +111,7 @@ class NvDsPipeline(GstPipeline):
 
         self._demuxer_src_pads: List[Gst.Pad] = []
         self._free_pad_indices: List[int] = []
+        self._last_nvevent_stream_eos_seqnum: Dict[int, int] = {}
         self._muxer: Optional[Gst.Element] = None
 
         if pipeline_cfg.source.element == 'zeromq_source_bin':
@@ -136,7 +137,11 @@ class NvDsPipeline(GstPipeline):
         else:
             root_span_name = name
 
-        self._video_pipeline = VideoPipeline(root_span_name, pipeline_stages)
+        self._video_pipeline = VideoPipeline(
+            root_span_name,
+            pipeline_stages,
+            build_video_pipeline_conf(telemetry),
+        )
         self._video_pipeline.sampling_period = telemetry.sampling_period
 
         self._source_output = create_source_output(
@@ -885,6 +890,12 @@ class NvDsPipeline(GstPipeline):
 
         muxer_sink_pad = self._request_muxer_sink_pad(source_info)
         self._check_pipeline_is_running()
+        pad.add_probe(
+            Gst.PadProbeType.EVENT_DOWNSTREAM,
+            on_pad_event,
+            {Gst.EventType.EOS: self._on_muxer_sink_pad_peer_eos},
+            source_info.source_id,
+        )
         assert pad.link(muxer_sink_pad) == Gst.PadLinkReturn.OK
 
     def _request_muxer_sink_pad(self, source_info: SourceInfo) -> Gst.Pad:
@@ -905,17 +916,13 @@ class NvDsPipeline(GstPipeline):
             )
             self._check_pipeline_is_running()
             sink_pad: Gst.Pad = self._muxer.get_request_pad(sink_pad_name)
-            sink_pad.add_probe(
-                Gst.PadProbeType.EVENT_DOWNSTREAM,
-                on_pad_event,
-                {Gst.EventType.EOS: self._on_muxer_sink_pad_eos},
-                source_info.source_id,
-            )
 
         return sink_pad
 
-    def _on_muxer_sink_pad_eos(self, pad: Gst.Pad, event: Gst.Event, source_id: str):
-        """Processes EOS event on muxer sink pad."""
+    def _on_muxer_sink_pad_peer_eos(
+        self, pad: Gst.Pad, event: Gst.Event, source_id: str
+    ):
+        """Processes EOS event on a peer of muxer sink pad."""
 
         self._logger.debug(
             'Got EOS on pad %s.%s', pad.get_parent().get_name(), pad.get_name()
@@ -983,7 +990,13 @@ class NvDsPipeline(GstPipeline):
         pad_idx = gst_nvevent_parse_stream_eos(event)
         if pad != self._demuxer_src_pads[pad_idx]:
             # nvstreamdemux redirects GST_NVEVENT_STREAM_EOS on each src pad
-            return Gst.PadProbeReturn.PASS
+            return Gst.PadProbeReturn.DROP
+
+        if event.get_seqnum() <= self._last_nvevent_stream_eos_seqnum.get(pad_idx, -1):
+            # This event has already been processed
+            return Gst.PadProbeReturn.DROP
+        self._last_nvevent_stream_eos_seqnum[pad_idx] = event.get_seqnum()
+
         self._logger.debug(
             'Got GST_NVEVENT_STREAM_EOS on %s.%s',
             pad.get_parent().get_name(),
@@ -1016,7 +1029,6 @@ class NvDsPipeline(GstPipeline):
                 'Pipeline is not running. Cancel unlinking demuxer pad %s.',
                 pad.get_name(),
             )
-            return Gst.PadProbeReturn.PASS
 
         return Gst.PadProbeReturn.DROP
 
@@ -1036,6 +1048,12 @@ class NvDsPipeline(GstPipeline):
 
         if not self._is_running:
             raise PipelineIsNotRunningError('Pipeline is not running')
+
+
+def build_video_pipeline_conf(telemetry_params: TelemetryParameters):
+    conf = VideoPipelineConfiguration()
+    conf.append_frame_meta_to_otlp_span = telemetry_params.append_frame_meta_to_span
+    return conf
 
 
 class PipelineIsNotRunningError(Exception):
