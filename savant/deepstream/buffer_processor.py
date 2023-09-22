@@ -29,8 +29,8 @@ from savant.base.model import ComplexModel, ObjectModel
 from savant.base.pyfunc import PyFuncNoopCallException
 from savant.config.schema import FrameParameters, ModelElement, PipelineElement
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
-from savant.deepstream.nvinfer.model import NvInferAttributeModel, NvInferDetector
 from savant.deepstream.nvinfer.element_config import MERGED_CLASSES
+from savant.deepstream.nvinfer.model import NvInferAttributeModel, NvInferDetector
 from savant.deepstream.source_output import (
     SourceOutput,
     SourceOutputEncoded,
@@ -405,8 +405,8 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
             element.name,
             buffer.pts,
         )
-        nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         if model.input.preprocess_object_meta:
+            nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
             for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
                 self.logger.debug(
                     'Preprocessing "%s" element object meta for frame with PTS %s.',
@@ -606,7 +606,9 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                         # for object/complex models output - `bbox_tensor` and
                         # `selected_bboxes` - indices of selected bboxes and meta
                         # for attribute/complex models output - `values`
-                        bbox_tensor, selected_bboxes, values = None, None, None
+                        bbox_tensor: Optional[np.ndarray] = None
+                        selected_bboxes: Optional[List] = None
+                        values: Optional[List] = None
                         # complex model
                         if is_complex_model:
                             # output converter returns tensor and attribute values

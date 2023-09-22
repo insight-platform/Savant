@@ -382,8 +382,7 @@ def set_ipc_socket_permissions(socket: str, permission: int = 0o777):
 
 
 def create_ipc_socket_dirs(socket: str):
-    """Create parent directories for an IPC socket.
-    """
+    """Create parent directories for an IPC socket."""
 
     parsed = urlparse(socket)
     if parsed.scheme == 'ipc':

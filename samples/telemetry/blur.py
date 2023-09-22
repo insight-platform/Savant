@@ -20,9 +20,7 @@ class Blur(NvDsPyFuncPlugin):
         # the span is available in frame_meta, `frame_meta.telemetry_span`
 
         # use attributes to enrich span with some useful information
-        frame_meta.telemetry_span.set_int_attribute(
-            'frame_num', frame_meta.frame_num
-        )
+        frame_meta.telemetry_span.set_int_attribute('frame_num', frame_meta.frame_num)
 
         # logger messages will be added to span automatically
         self.logger.info('Try to blur frame #%d.', frame_meta.frame_num)
