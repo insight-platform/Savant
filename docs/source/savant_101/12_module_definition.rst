@@ -132,7 +132,7 @@ To configure the custom value, use:
 Buffering Queues
 ^^^^^^^^^^^^^^^^
 
-The ``buffer_queues`` parameter is used to enable Python parallelization and enchance the performance in compute-intensive pipelines. By default, the parameter is disabled.
+The ``buffer_queues`` parameter is used to enable Python parallelization and enhance the performance in compute-intensive pipelines. By default, the parameter is disabled.
 
 Read about the parameter in :doc:`/recipes/1_python_multithreading`.
 
