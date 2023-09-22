@@ -73,7 +73,7 @@ def update_logging(log_spec_str: str):
 def apply_log_spec(log_spec_dict: dict):
     """Apply log specification.
 
-    :param log_spec_dict: A dictionary of of the form log_target:log_level.
+    :param log_spec_dict: A dictionary of the form log_target:log_level.
     """
     set_savant_rs_loglevel(log_spec_dict)
     log_config = get_log_conf(log_spec_dict)

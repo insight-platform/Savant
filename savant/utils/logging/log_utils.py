@@ -21,7 +21,7 @@ def parse_log_spec(log_spec_str: str) -> dict:
 
     :param log_spec_str: A comma-separated list of logging directives
         of the form target=level.
-    :return:  A dictionary of of the form log_target:log_level.
+    :return:  A dictionary of the form log_target:log_level.
     """
     log_spec_str = log_spec_str.lower()
     log_spec_str = log_spec_str.strip(string.whitespace + ',')
@@ -65,7 +65,7 @@ def set_savant_rs_loglevel(log_spec_dict: dict):
     """Set savant_rs base logging level.
     No messages with priority lower than this setting are going to be logged.
 
-    :param log_spec_dict: A dictionary of of the form log_target:log_level.
+    :param log_spec_dict: A dictionary of the form log_target:log_level.
     """
 
     log_level_order = ['trace', 'debug', 'info', 'warn', 'error']
@@ -83,7 +83,7 @@ def set_savant_rs_loglevel(log_spec_dict: dict):
 def get_log_conf(log_spec_dict: dict) -> dict:
     """Create logging configuration for use in logging.config.dictConfig().
 
-    :param log_spec_dict: A dictionary of of the form log_target:log_level.
+    :param log_spec_dict: A dictionary of the form log_target:log_level.
     :return: Logging configuration dictionary.
     """
     main_level = log_spec_dict.pop(LOGGING_PREFIX, DEFAULT_LOGLEVEL)
