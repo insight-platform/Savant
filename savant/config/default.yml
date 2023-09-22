@@ -9,10 +9,10 @@ parameter_init_priority:
 
 # base module parameters
 parameters:
-  # python logging level for the ``savant`` logger
-  # When writing custom code for your module,
-  # either name your logger with ``savant.`` prefix,
-  # or disregard this parameter and set up your own logger.
+  # Logging specification string in the rust env_logger's format
+  # https://docs.rs/env_logger/latest/env_logger/
+  # The string is parsed and Python logging is setup accordingly
+  # e.g. "info", or "info,insight::savant::target=debug"
   log_level: ${oc.env:LOGLEVEL, 'INFO'}
 
   # required paths

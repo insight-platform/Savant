@@ -2,9 +2,15 @@
 import logging
 
 import pretty_traceback
-from savant_rs.logging import log
+from savant_rs.logging import LogLevel, log
 
-from .log_utils import LOG_LEVEL_PY_TO_RS
+LOG_LEVEL_PY_TO_RS = {
+    logging.CRITICAL: LogLevel.Error,
+    logging.ERROR: LogLevel.Error,
+    logging.WARNING: LogLevel.Warning,
+    logging.INFO: LogLevel.Info,
+    logging.DEBUG: LogLevel.Debug,
+}
 
 
 class SavantRsLoggingHandler(logging.Handler):
