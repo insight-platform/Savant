@@ -1,7 +1,7 @@
 Python Multithreading in Savant
 ===============================
 
-Savant ``0.2.5`` introduced a new feature: mandatory multithreading enforcement for Python functions. By default, GStreamer is a multithreaded framework; however, Python has its own limitations regarding how multithreading is implemented.
+Savant ``0.2.5`` introduced a new feature: multithreaded Python functions. By default, GStreamer is a multithreaded framework; however, Python has its own limitations regarding how multithreading is implemented.
 
 The limitations are connected with the infamous GIL: a global mutex required to acquire when accessing Python data structures. A lot about GIL influence is written on `PythonSpeed <https://pythonspeed.com/articles/python-gil/>`__. To sum up: regular compute-related Python code cannot benefit from multithreading because GIL allows running only one thread which works with Python data structure. However, frameworks like NumPy or OpenCV release the GIL lock when running their algorithms, allowing Python to run in true parallel.
 
@@ -69,4 +69,6 @@ Python multithreading can be enabled by placing GStreamer ``queue`` elements bef
         length: 1        # keep in mind that every buffered frame occupies GPU
         byte_size: 0     # we don't recommend setting byte_size to specific values other than 0
 
-You may want setting ``length`` to a larger number to endure traffic bursts, but remember that every buffer has an associated raw frame in GPU, so, e.g. two ``pyfuncs``, one ``draw_func`` with ``length`` set to ``10`` and 16 of 720p sources processed may result in ``3 x 10 x 16 x 1280 x 720 x 4 (RGBA)`` which is almost ``1.7`` GB of GPU RAM.
+.. warning::
+
+    You may want setting ``length`` to a larger number to endure traffic bursts, but remember that every buffer has an associated raw frame in GPU, so, e.g. two ``pyfuncs``, one ``draw_func`` with ``length`` set to ``10`` and 16 of 720p sources processed may result in ``3 x 10 x 16 x 1280 x 720 x 4 (RGBA)`` which is almost ``1.7`` GB of GPU RAM.

@@ -34,14 +34,16 @@ When writing a module, a user normally defines only pipeline :py:attr:`~savant.c
 
 The units are discussed in detail in the following sections.
 
-Along with the listed units, pipeline definition may include :py:class:`~savant.config.schema.ElementGroup` nodes, which are used to introduce a condition on including the elements into the pipeline. Read more about this in the :doc:`54_conditional_unit_init` section.
+.. note::
+
+    Along with the listed units, pipeline definition may include :py:class:`~savant.config.schema.ElementGroup` nodes, which are used to introduce a condition on including the elements into the pipeline. Read more about this in the :doc:`/advanced_topics/2_element_group` section.
 
 Frame Processing Workflow
 -------------------------
 
-Savant's pipeline is linear. It doesn't support tree-like conditional processing. Every frame goes from the beginning of the pipeline to the end of the pipeline. However, it doesn't mean that every pipeline unit handles every object.
+A Savant pipeline is linear. It doesn't support tree-like processing. Every frame goes from the beginning of the pipeline to the end of the pipeline. However, it doesn't mean that every unit handles every object.
 
-To get an idea of how the frame is processed, let us take a look at the following **pseudocode**, which corresponds to the Savant's logic of operation:
+To get an idea of how the frame is processed, let us take a look at the following pseudocode reflecting the logic of operation:
 
 .. code-block:: python
 

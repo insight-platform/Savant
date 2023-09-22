@@ -4,10 +4,14 @@
 }
 
 .wy-nav-content {
-    max-width: 85% !important;
+    max-width: 70% !important;
 }
 
 .rst-content .code-block-caption {
     font-style: normal !important;
     text-align: left !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    margin-top: 1em;
 }

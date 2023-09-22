@@ -11,6 +11,8 @@ parameters:
     class_name: Overlay
   buffer_queues:
     length: 10
+  batch_size: 4
+  batched_push_timeout: 200000
 
 pipeline:
   source:
@@ -22,6 +24,7 @@ pipeline:
     - element: nvinfer@instance_segmentation
       name: yolov8_seg
       model:
+        batch_size: 4
         remote:
           url: s3://savant-data/models/yolov8m_seg/yolov8m_seg.zip
           checksum_url: s3://savant-data/models/yolov8m_seg/yolov8m_seg.md5

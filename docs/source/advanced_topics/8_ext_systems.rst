@@ -1,6 +1,9 @@
 Communication With External Systems
 ===================================
 
+.. tip::
+    Read our `article <https://betterprogramming.pub/real-time-video-analytics-challenges-and-approaches-to-surpass-them-b07793192649?source=friends_link&sk=10ff3e46cc2ea642f7c8d4da1c91ce9a>`_ on Medium to appreciate the problems connected with real-time video analytics.
+
 We consider three kinds of pipeline circuits:
 
 - end-to-end capacity (non-realtime) circuit;

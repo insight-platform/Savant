@@ -1,6 +1,9 @@
 OpenCV CUDA Usage
 =================
 
+.. warning::
+    You must avoid changing frame dimensions and memory layout with the current functionality. Doing so will result in a memory error.
+
 Sometimes video analytics pipelines need to modify frames to preprocess pictures before sending them to models, like making affine transformations for detected faces before sending them to facial models; or displaying auxiliary dashboard information on a frame to highlight valuable data.
 
 Savant provides the user with advanced instruments to access and modify video frames located in the GPU memory with Python and OpenCV CUDA functionality. Raw frames allocated in the GPU memory occupy a significant amount of RAM. E.g. for an RGBA frame with a resolution of 1280x720, the amount is larger than 3.6 MB.
