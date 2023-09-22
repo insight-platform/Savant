@@ -12,7 +12,7 @@ Why To Use OpenTelemetry
 
 In streaming systems, data flows through container stages in parallel what leads to messy logs with overlapping records for various messages. For example, when the message ``M[N]`` enters the pipeline, message ``M[N-P]`` passes the stage ``P``, and their logs overlap.
 
-For a developer, navigating through those logs without advanced filtering tools is very difficult. OpenTelemetry solves the problem by introducing the concept of Trace: a unique ID corresponding to a business transaction. In Savant, every frame coming in a pipeline may have a trace id, thus making it possible to separate logs related to a specific frame.
+For a developer, navigating through those logs without advanced filtering tools is very difficult. OpenTelemetry solves the problem by introducing the concept of Trace: a unique ID corresponding to a business transaction. In Savant, every frame coming in a pipeline can have a trace id, thus making it possible to separate logs related to a specific frame.
 
 What is more, the Trace is not a flat structure: a developer can wrap certain pieces of code with so called Spans, limiting the scope, so logs are attached to the hierarchy of spans rather than Trace directly. Every span is automatically a profiling object because OpenTelemetry collects its start time, end time and duration.
 
