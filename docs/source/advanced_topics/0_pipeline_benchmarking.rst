@@ -12,7 +12,7 @@ There is one more dimension to benchmark:
 - with adapters (end-to-end);
 - without adapters (only pipeline).
 
-When benchmarking, we usually measure the aggregate throughput of the pipeline in FPS (frames-per-second) it can handle. Sometimes, usually, when the pipeline is intended to work in real-time, we also measure end-to-end latency, but this document does not discuss it.
+When benchmarking, we usually measure the aggregate throughput of the pipeline in FPS (frames-per-second). When the pipeline is intended to work in real-time and in some other cases, we may also measure end-to-end latency, but this document does not discuss it.
 
 .. tip::
 
