@@ -81,7 +81,7 @@ In the above-mentioned :ref:`listing <isolated_uridecodebin_benchmark>` you may 
         - element: devnull_sink
 
 
-It represents benchmarking without real-life sinks which can form a bottleneck. If you want to test CV/ML performance it is what you are looking for. However, often you need to test end-to-end, including a specific sink implementation used practically. In such a situation, you need to include in the benchmark additional components, like a sink adapter you are planning to use and 3rd-party systems.
+It represents benchmarking without real-life sinks which can form a bottleneck. This is what you are looking for if you want to test CV/ML performance . However, often you need to test end-to-end, including a specific sink implementation used practically. In such a situation, you need to include additional components in the benchmark, like a sink adapter you are planning to use and 3rd-party systems.
 
 Major Performance-Related Parameters
 ------------------------------------
