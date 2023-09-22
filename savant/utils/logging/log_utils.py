@@ -36,9 +36,8 @@ def parse_log_spec(log_spec_str: str) -> dict:
             if eq_num == 1:
                 target, level = log_directive.split('=')
             elif eq_num == 0:
-                log_directive = log_directive.lower()
                 # no = sign, i.e. only target or only level
-                if log_directive in LOG_LEVEL_STR_TO_RS:
+                if log_directive.lower() in LOG_LEVEL_STR_TO_RS:
                     # only level
                     level = log_directive
                     target = LOGGING_PREFIX
