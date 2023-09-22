@@ -23,7 +23,6 @@ def parse_log_spec(log_spec_str: str) -> dict:
         of the form target=level.
     :return:  A dictionary of the form log_target:log_level.
     """
-    log_spec_str = log_spec_str.lower()
     log_spec_str = log_spec_str.strip(string.whitespace + ',')
     log_spec_str = log_spec_str.replace('::', '.')
     log_spec_dict = {}
@@ -37,6 +36,7 @@ def parse_log_spec(log_spec_str: str) -> dict:
             if eq_num == 1:
                 target, level = log_directive.split('=')
             elif eq_num == 0:
+                log_directive = log_directive.lower()
                 # no = sign, i.e. only target or only level
                 if log_directive in LOG_LEVEL_STR_TO_RS:
                     # only level
@@ -50,7 +50,7 @@ def parse_log_spec(log_spec_str: str) -> dict:
                 # more than one = sign, incorrect string
                 # skip this target_level
                 continue
-            log_spec_dict[target] = level
+            log_spec_dict[target] = level.lower()
 
     return log_spec_dict
 
