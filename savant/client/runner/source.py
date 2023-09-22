@@ -2,7 +2,11 @@ from dataclasses import dataclass
 from typing import Iterable, List, Optional
 
 import zmq
-from savant_rs.pipeline2 import VideoPipeline, VideoPipelineStagePayloadType
+from savant_rs.pipeline2 import (
+    VideoPipeline,
+    VideoPipelineConfiguration,
+    VideoPipelineStagePayloadType,
+)
 from savant_rs.primitives import EndOfStream, Shutdown
 from savant_rs.utils import TelemetrySpan
 from savant_rs.utils.serialization import Message, save_message_to_bytes
@@ -83,6 +87,7 @@ class SourceRunner:
         self._pipeline = VideoPipeline(
             'savant-client',
             [(self._pipeline_stage_name, VideoPipelineStagePayloadType.Frame)],
+            VideoPipelineConfiguration(),
         )
         self._pipeline.sampling_period = 1
 
