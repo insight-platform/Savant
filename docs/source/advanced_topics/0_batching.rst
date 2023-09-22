@@ -11,7 +11,7 @@ Savant uses two batching mechanisms:
 Stream Multiplexing Batching
 ----------------------------
 
-In Savant, a batch consists of the frames from streams processed. It is important to note that the batch can include multiple frames from a single stream, so if a pipeline processes N streams, then the batch size can be from 1 to N (ideally N), but not necessarily all streams will be presented in every batch; also, a batch is not always full: when streams delay the frames, the batch may be gathered partially, decreasing the efficiency of the processing. Thus, usually, you want to maximize batch filling.
+In Savant, a batch consists of the frames from streams processed. It is important to note that the batch can include multiple frames from a single stream, so if a pipeline processes N streams, then the batch size can be from 1 to N (ideally N), but not necessarily all streams will be present in every batch; also, a batch is not always full: when streams delay the frames, the batch may be gathered partially, decreasing the efficiency of the processing. Thus, usually, you want to maximize batch filling.
 
 Depending on the first model architecture, increasing the batch size may not improve performance. In this case, you may stay safe using an average batch size, which results in optimal performance (not necessary to increase it to the theoretical number of parallel streams processed).
 
