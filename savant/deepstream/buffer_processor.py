@@ -606,9 +606,9 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                         # for object/complex models output - `bbox_tensor` and
                         # `selected_bboxes` - indices of selected bboxes and meta
                         # for attribute/complex models output - `values`
-                        bbox_tensor: Optional[np.array] = None
-                        selected_bboxes: Optional[list] = None
-                        values: Optional[list] = None
+                        bbox_tensor: Optional[np.ndarray] = None
+                        selected_bboxes: Optional[List] = None
+                        values: Optional[List] = None
                         # complex model
                         if is_complex_model:
                             # output converter returns tensor and attribute values
