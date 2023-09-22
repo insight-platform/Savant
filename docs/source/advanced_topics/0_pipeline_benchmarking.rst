@@ -57,7 +57,7 @@ Measuring Non-Real-Time Multiple Stream Performance
 
 This kind of benchmarking is valuable to discover the maximum aggregate number of FPS the pipeline can reach. It may occur that the maximum value will be reached when ingesting 32 pipelines, but each of them will be processed at the rate of 5 FPS. That is why it is not real-time performance.
 
-To run such benchmarks we implemented a special adapter: :ref:`Multi-Stream Source Adapter <multi_stream_source_adapter>`, allowing the ingesting of a selected video file in parallel in the pipeline under benchmarking. By changing the number of parallel streams you may find out the value which is the maximum for the pipeline.
+To run such benchmarks we implemented a special adapter: :ref:`Multi-Stream Source Adapter <multi_stream_source_adapter>`, allowing the ingesting of a selected video file in parallel in the pipeline under benchmarking. By changing the number of parallel streams you can find out the maximum value for the pipeline.
 
 To measure non-real-time performance with it, use ``SYNC_OUTPUT=False``.
 
