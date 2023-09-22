@@ -9,7 +9,8 @@ parameters:
     class_name: Overlay
   buffer_queues:
     length: 10
-  batch_size: 1
+  batch_size: 4
+  batched_push_timeout: 200000
 
 pipeline:
   source:

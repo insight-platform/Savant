@@ -3,6 +3,10 @@ Module Overview
 
 A module is an executable unit that is deployed and executed on Nvidia edge devices or in the cloud on x86 servers with discrete GPUs. The module is defined in a YAML configuration file.
 
+The module is responsible for managing every activity displayed in the following picture:
+
+.. image:: ../_static/img/1_pipeline_diagram.jpg
+
 Module Runtime
 --------------
 
@@ -110,7 +114,27 @@ In the above case, environment variables have lesser priority than values fetche
 Output Queue Max Size
 ^^^^^^^^^^^^^^^^^^^^^
 
-TODO: queue_maxsize
+The ``queue_maxsize`` parameter specifies the size of the buffer located at the end of the pipeline, right before the ZeroMQ sink. The parameter may be beneficial in cases when payload metadata fluctuates between sequential frames in size significantly, causing temporary output delays. The buffer helps avoid blocking the pipeline while it has spare capacity. The default value is ``100``.
+
+To configure the custom value, use:
+
+.. code-block:: yaml
+
+    parameters:
+      queue_maxsize: 100
+
+.. warning::
+
+    Large values cause extra GPU/CPU memory usage.
+
+.. _buffering_queues:
+
+Buffering Queues
+^^^^^^^^^^^^^^^^
+
+The ``buffer_queues`` parameter is used to enable Python parallelization and enhance the performance in compute-intensive pipelines. By default, the parameter is disabled.
+
+Read about the parameter in :doc:`/recipes/1_python_multithreading`.
 
 Log Level
 ^^^^^^^^^
@@ -143,10 +167,10 @@ Some examples of logging configuration:
 Output Video Stream Codec
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If the ``output_frame`` section is set, Savant adds encoded video streams to sink. More information you will find in the next section :doc:`20_video_processing`.
+If the ``output_frame`` section is set, Savant adds encoded video streams to sink. More information you will find in the next section :doc:`12_video_processing`.
 
-Telemetry
-^^^^^^^^^
+OpenTelemetry Configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The ``telemetry`` section defines the telemetry configuration. The ``endpoint`` in ``telemetry.provider_params`` is required when ``telemetry.provider`` is set to ``'jaeger'``.
 
@@ -162,6 +186,22 @@ Example:
       provider_params:
         service_name: demo-pipeline
         endpoint: jaeger:6831
+
+Read more on OpenTelemetry in :doc:`/advanced_topics/9_open_telemetry`.
+
+DevServer Configuration
+^^^^^^^^^^^^^^^^^^^^^^^
+
+DevServer is a special module execution mode enabling change detection in custom Python code and reloading those pieces automatically without the need for container restarts.
+
+Read more on DevServer configuration in :doc:`/advanced_topics/9_dev_server`.
+
+Pipeline Shutdown Authentication
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The ``shutdown_auth`` parameter defines a secret token which can be sent in the service shutdown message to terminate the pipeline. By default ``shutdown_auth`` is unset, and the pipeline ignores shutdown messages.
+
+Currently, shutdown messages can be sent with :doc:`Client SDK </advanced_topics/10_client_sdk>`.
 
 Pipeline
 --------
