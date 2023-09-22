@@ -100,15 +100,6 @@ def main():
         if int(opts[2].replace('parameters.batch_size=', '')) >= opts[1]
     ]
 
-    # TODO: Fix yolov5nface to be able to build engine with batch-size > 1
-    # remove face detector samples with batch-size > 1
-    run_options = [
-        opts
-        for opts in run_options
-        if not ('age_gender_recognition' in opts[0] or 'face_reid' in opts[0])
-        or int(opts[2].replace('parameters.batch_size=', '')) == 1
-    ]
-
     # required arguments
     fps_period = 100
     run_args = [
