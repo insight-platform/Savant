@@ -113,6 +113,7 @@ class TelemetryParameters:
     .. code-block:: yaml
 
         sampling_period: 100
+        append_frame_meta_to_span: False
         root_span_name: demo-pipeline-root
         provider: jaeger
         provider_params:
@@ -123,6 +124,9 @@ class TelemetryParameters:
 
     sampling_period: int = 100
     """Sampling period in frames."""
+
+    append_frame_meta_to_span: bool = False
+    """Append frame metadata to telemetry span."""
 
     root_span_name: Optional[str] = None
     """Name for root span."""

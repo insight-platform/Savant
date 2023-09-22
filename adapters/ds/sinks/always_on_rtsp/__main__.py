@@ -1,6 +1,7 @@
 """Entrypoint for Always-On-RTSP sink."""
 
 import os
+import signal
 from distutils.util import strtobool
 from pathlib import Path
 from subprocess import Popen, TimeoutExpired
@@ -49,6 +50,9 @@ class Config:
 
 
 def main():
+    # To gracefully shutdown the adapter on SIGTERM (raise KeyboardInterrupt)
+    signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
+
     init_logging()
     config = Config()
 

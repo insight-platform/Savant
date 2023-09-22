@@ -111,10 +111,10 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-ENV PYTHONUNBUFFERED=1
 ARG PROJECT_PATH=/opt/savant
-ENV PROJECT_PATH=$PROJECT_PATH
-ENV PYTHONPATH=$PROJECT_PATH
+ENV PYTHONUNBUFFERED=1 \
+    PROJECT_PATH=$PROJECT_PATH \
+    PYTHONPATH=$PROJECT_PATH
 WORKDIR $PROJECT_PATH
 
 # add deepstream libs to path, so that ctypes can load them
@@ -163,8 +163,9 @@ RUN rm -f adapters/gst/gst_plugins/python/video_files_sink.py
 COPY adapters/gst/sources adapters/gst/sources
 
 COPY scripts/uri-input.py scripts/
-ENV PATH=$PROJECT_PATH/scripts:$PATH
-ENV GST_PLUGIN_PATH=$PROJECT_PATH/gst_plugins:$PROJECT_PATH/adapters/gst/gst_plugins
+ENV PATH=$PROJECT_PATH/scripts:$PATH \
+    GST_PLUGIN_PATH=$PROJECT_PATH/gst_plugins:$PROJECT_PATH/adapters/gst/gst_plugins \
+    LOGLEVEL=info
 
 # Needed a script for healthcheck, because HEALTHCHECK command does not accept ENV
 COPY healthcheck.sh ./

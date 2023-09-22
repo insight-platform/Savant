@@ -1,0 +1,97 @@
+version: "3.3"
+services:
+
+  client:
+    image: ghcr.io/insight-platform/savant-deepstream-l4t:latest
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ./assets/test_data:/test_data
+      - ./src/client:/opt/savant/src/client
+      - ./src/output:/opt/savant/src/output
+    entrypoint: python /opt/savant/src/client/run.py
+    environment:
+      - MODULE_HOSTNAME=module
+    links:
+      - jaeger
+    networks:
+      - network
+
+  uri-input:
+    image: ghcr.io/insight-platform/savant-deepstream-l4t:latest
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ./assets/test_data:/test_data
+    working_dir: /opt/savant
+    entrypoint: python
+    command:
+      - scripts/uri-input.py
+      - /test_data/elon_musk_perf.mp4
+      - --socket
+      - pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
+      - --sync
+    runtime: nvidia
+    networks:
+      - network
+
+  module:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.l4t
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ./models_cache:/models
+      - ./downloads_cache:/downloads
+      - ./src/module:/opt/savant/src/module
+    environment:
+      - HEALTHCHECK_PORT=8888
+      - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
+      - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
+    ports:
+      - "8888:8888"
+    runtime: nvidia
+    networks:
+      - network
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.49
+    environment:
+      - COLLECTOR_ZIPKIN_HOST_PORT=:9411
+    ports:
+      - "6831:6831/udp"
+      - "6832:6832/udp"
+      - "5778:5778"
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
+      - "14250:14250"
+      - "14268:14268"
+      - "14269:14269"
+      - "9411:9411"
+    networks:
+      - network
+
+  always-on-sink:
+    image: ghcr.io/insight-platform/savant-adapters-deepstream-l4t:latest
+    restart: unless-stopped
+    ports:
+      - "554:554"    # RTSP
+      - "1935:1935"  # RTMP
+      - "888:888"    # HLS
+      - "8889:8889"  # WebRTC
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ./assets/stub_imgs:/stub_imgs
+    environment:
+      - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
+      - SOURCE_ID=test
+      - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x720.jpeg
+      - DEV_MODE=True
+    command: python -m adapters.ds.sinks.always_on_rtsp
+    runtime: nvidia
+
+volumes:
+  zmq_sockets:
+
+networks:
+  network:
+    attachable: true

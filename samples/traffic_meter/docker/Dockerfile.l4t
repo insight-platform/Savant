@@ -1,9 +1,9 @@
 # build nvinfer custom library for yolo models (create engine and parse bbox functions)
 # https://github.com/marcoslucianops/DeepStream-Yolo
-FROM nvcr.io/nvidia/deepstream-l4t:6.2-triton as builder
+FROM nvcr.io/nvidia/deepstream:6.3-triton-multiarch as builder
 
 ENV CUDA_VER=11.4
-ARG DS_YOLO_VER=f630b10a8088398251bca7f2f50064b57fab06bb
+ARG DS_YOLO_VER=b738644f6e5c8918e9035647209af3814e406c17
 ARG DS_YOLO_PATH=/opt/yolo
 ARG NVDSINFER_PATH=/opt/nvidia/deepstream/deepstream/sources/libs/nvdsinfer
 

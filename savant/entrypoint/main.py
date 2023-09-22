@@ -1,5 +1,6 @@
 """Module entrypoint function."""
 import os
+import signal
 from pathlib import Path
 from threading import Thread
 
@@ -9,6 +10,7 @@ from savant.deepstream.pipeline import NvDsPipeline
 from savant.deepstream.runner import NvDsPipelineRunner
 from savant.gstreamer import Gst
 from savant.healthcheck.server import HealthCheckHttpServer
+from savant.healthcheck.status import ModuleStatus, set_module_status
 from savant.utils.logging import get_logger, init_logging, update_logging
 from savant.utils.sink_factories import sink_factory
 
@@ -20,12 +22,16 @@ def main(config_file_path: str, *args):
     :param args: Config overrides in dot-list format
     """
 
+    # To gracefully shutdown the adapter on SIGTERM (raise KeyboardInterrupt)
+    signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
+
     status_filepath = os.environ.get('SAVANT_STATUS_FILEPATH')
     if status_filepath is not None:
         status_filepath = Path(status_filepath)
         if status_filepath.exists():
             status_filepath.unlink()
         status_filepath.parent.mkdir(parents=True, exist_ok=True)
+        set_module_status(status_filepath, ModuleStatus.INITIALIZING)
 
     # load default.yml and set up logging
     config = ModuleConfig().config
@@ -74,6 +80,8 @@ def main(config_file_path: str, *args):
             try:
                 for msg in pipeline.stream():
                     sink(msg, **dict(module_name=config.name))
+            except KeyboardInterrupt:
+                logger.info('Shutting down.')
             except Exception as exc:  # pylint: disable=broad-except
                 logger.error(exc, exc_info=True)
                 # TODO: Sometimes pipeline hangs when exit(1) or not exit at all is called.

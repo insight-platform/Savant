@@ -37,9 +37,11 @@ class FacePreprocessingObjectImageGPU(BasePreprocessObjectImage):
         landmarks = object_meta.get_attr_meta(
             element_name=MODEL_NAME, attr_name='landmarks'
         ).value
-        face_landmarks = np.array(landmarks).reshape(-1, 5, 2)
+        face_landmarks = np.array(landmarks).reshape(-1, 5, 3)
 
-        tfm, _ = cv2.estimateAffinePartial2D(face_landmarks, REFERENCE_FACIAL_POINTS)
+        tfm, _ = cv2.estimateAffinePartial2D(
+            face_landmarks[:, :, :2], REFERENCE_FACIAL_POINTS
+        )
         face_img = cv2.cuda.warpAffine(
             src=frame_image.gpu_mat, M=tfm, dsize=crop_size, stream=cuda_stream
         )

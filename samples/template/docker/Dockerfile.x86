@@ -3,7 +3,8 @@ FROM ghcr.io/insight-platform/savant-deepstream:latest
 COPY requirements.txt requirements.txt
 RUN python -m pip install -r requirements.txt
 
-COPY module module
-WORKDIR /opt/savant/module
+# normally you can map a host dir, but if building a self-contained image, use copy
+# COPY module module
+WORKDIR /opt/savant/src/module
 
 ENTRYPOINT ["./run.py"]
