@@ -4,7 +4,11 @@ from pathlib import Path
 from typing import Optional
 
 import pyds
-from savant_rs.pipeline2 import VideoPipeline, VideoPipelineStagePayloadType
+from savant_rs.pipeline2 import (
+    VideoPipeline,
+    VideoPipelineConfiguration,
+    VideoPipelineStagePayloadType,
+)
 
 from savant.utils.platform import is_aarch64
 from savant.utils.zeromq import ReceiverSocketTypes
@@ -56,6 +60,7 @@ class Config:
             self.video_pipeline: Optional[VideoPipeline] = VideoPipeline(
                 'always-on-sink',
                 [(self.pipeline_stage_name, VideoPipelineStagePayloadType.Frame)],
+                VideoPipelineConfiguration(),
             )
         else:
             self.pipeline_stage_name = None
