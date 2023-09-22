@@ -18,6 +18,8 @@ The developer may encounter such customizations in our performance-related modul
   :emphasize-lines: 1,5
   :lines: 31-34, 45-46
 
+Currently, the single source- and multiple sink declarations are supported.
+
 Adapters
 ========
 
