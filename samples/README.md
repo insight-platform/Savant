@@ -108,3 +108,9 @@ Sample location: [source_adapter_with_json_metadata](./source_adapter_with_json_
 A sample demonstrating the use of OpenTelemetry in Savant.
 
 Sample location: [telemetry](./telemetry)
+
+### Kafka-Redis Adapters Demo
+
+A sample demonstrating the use of Kafka-Redis adapters in Savant.
+
+Sample location: [kafka_redis_adapter](./kafka_redis_adapter)

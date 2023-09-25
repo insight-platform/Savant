@@ -17,12 +17,20 @@ class HealthCheck:
     :param url: URL of the health check endpoint.
     :param interval: Interval between health checks in seconds.
     :param timeout: Timeout for waiting the module to be ready in seconds.
+    :param ready_statuses: List of statuses that indicate the module is ready.
     """
 
-    def __init__(self, url: str, interval: float, timeout: float):
+    def __init__(
+        self,
+        url: str,
+        interval: float,
+        timeout: float,
+        ready_statuses: List[ModuleStatus],
+    ):
         self._url = url
         self._check_interval = interval
         self._wait_timeout = timeout
+        self._ready_statuses = ready_statuses
         self._last_check_ts = 0
         self._last_status = None
 
@@ -54,18 +62,15 @@ class HealthCheck:
             logger.warning('Unknown status: %s.', status)
             return None
 
-    def wait_module_is_ready(self, statuses: List[ModuleStatus]):
-        """Wait until the module is ready.
-
-        :param statuses: List of statuses that indicate the module is ready.
-        """
+    def wait_module_is_ready(self):
+        """Wait until the module is ready."""
 
         if time.time() - self._last_check_ts >= self._check_interval:
             self._last_status = self.check()
             self._last_check_ts = time.time()
 
         time_limit = time.time() + self._wait_timeout
-        while self._last_status not in statuses:
+        while self._last_status not in self._ready_statuses:
             if time.time() > time_limit:
                 raise TimeoutError(
                     f'Module is not ready after {self._wait_timeout} seconds.'
