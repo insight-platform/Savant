@@ -9,7 +9,7 @@ parameters:
     # specify the drawfunc's python class from the module
     class_name: Overlay
     rendered_objects:
-      yolov5face:
+      yolov8nface:
         face:
           bbox:
             border_color: '00FF00FF'  # Green

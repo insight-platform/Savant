@@ -60,6 +60,54 @@ Sink usage example:
         print(result.frame_meta)
         result.logs().pretty_print()
 
+Async example (both source and sink):
+
+.. code-block:: python
+
+    import asyncio
+    from savant_rs import init_jaeger_tracer
+    from savant.client import JaegerLogProvider, JpegSource, SinkBuilder, SourceBuilder
+
+
+    async def run_source():
+        # Build the source
+        source = (
+            SourceBuilder()
+            .with_log_provider(JaegerLogProvider('http://localhost:16686'))
+            .with_socket('pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc')
+            .build_async()
+        )
+
+        # Send a JPEG image from a file to the module
+        result = await source(JpegSource('cam-1', 'data/AVG-TownCentre.jpeg'))
+        print(result.status)
+
+
+    async def run_sink():
+        # Build the sink
+        sink = (
+            SinkBuilder()
+            .with_socket('sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc')
+            .with_idle_timeout(60)
+            .with_log_provider(JaegerLogProvider('http://localhost:16686'))
+            .build_async()
+        )
+
+        # Receive results from the module and print them
+        async for result in sink:
+            print(result.frame_meta)
+            result.logs().pretty_print()
+
+
+    async def main():
+        # Initialize Jaeger tracer to send metrics and logs to Jaeger.
+        # Note: the Jaeger tracer also should be configured in the module.
+        init_jaeger_tracer('savant-client', 'localhost:6831')
+        await asyncio.gather(run_sink(), run_source())
+
+
+    asyncio.run(main())
+
 .. currentmodule:: savant.client
 
 Builders
@@ -115,4 +163,6 @@ Runners
     :template: autosummary/class.rst
 
     runner.source.SourceRunner
+    runner.source.AsyncSourceRunner
     runner.sink.SinkRunner
+    runner.sink.AsyncSinkRunner

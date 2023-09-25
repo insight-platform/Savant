@@ -511,5 +511,148 @@ def always_on_rtsp_sink(
     run_command(cmd)
 
 
+@cli.command('kafka-redis')
+@click.option(
+    '--in-endpoint',
+    default='sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc',
+    help='Adapter input (module output) ZeroMQ socket endpoint.',
+    show_default=True,
+)
+@fps_meter_options
+@click.option(
+    '--brokers',
+    required=True,
+    help='Comma-separated list of Kafka brokers.',
+)
+@click.option(
+    '--topic',
+    required=True,
+    help='Kafka topic to put messages to.',
+)
+@click.option(
+    '--create-topic',
+    is_flag=True,
+    default=False,
+    help='Create Kafka topic if it does not exist.',
+)
+@click.option(
+    '--create-topic-num-partitions',
+    type=click.INT,
+    default=1,
+    help='Number of partitions for a Kafka topic to create.',
+    show_default=True,
+)
+@click.option(
+    '--create-topic-replication-factor',
+    type=click.INT,
+    default=1,
+    help='Replication factor for a Kafka topic to create.',
+    show_default=True,
+)
+@click.option(
+    '--create-topic-config',
+    default='{}',
+    help='JSON dict of a Kafka topic configuration.',
+    show_default=True,
+)
+@click.option(
+    '--redis-host',
+    required=True,
+    help='Redis host.',
+)
+@click.option(
+    '--redis-port',
+    type=click.INT,
+    default=6379,
+    help='Redis port.',
+    show_default=True,
+)
+@click.option(
+    '--redis-db',
+    type=click.INT,
+    default=0,
+    help='Redis database.',
+    show_default=True,
+)
+@click.option(
+    '--redis-key-prefix',
+    default='savant:frames',
+    help=(
+        'Prefix for Redis keys; frame content is put to Redis with a key '
+        '"<redis-key-prefix>:<uuid>".'
+    ),
+    show_default=True,
+)
+@click.option(
+    '--redis-ttl-seconds',
+    type=click.INT,
+    default=60,
+    help='TTL for Redis keys.',
+    show_default=True,
+)
+@click.option(
+    '--queue-size',
+    type=click.INT,
+    default=50,
+    help='Maximum amount of messages in the queue.',
+    show_default=True,
+)
+@adapter_docker_image_option('py')
+def kafka_redis_sink(
+    in_endpoint: str,
+    docker_image: str,
+    fps_period_frames: Optional[int],
+    fps_period_seconds: Optional[float],
+    fps_output: Optional[str],
+    brokers: str,
+    topic: str,
+    create_topic: bool,
+    create_topic_num_partitions: int,
+    create_topic_replication_factor: int,
+    create_topic_config: str,
+    redis_host: str,
+    redis_port: int,
+    redis_db: int,
+    redis_key_prefix: str,
+    redis_ttl_seconds: int,
+    queue_size: int,
+):
+    """Sends video stream metadata to Kafka and frame content to Redis.
+
+    Frame content location is encoded as <redis-host>:<redis-port>:<redis-db>/<redis-key>.
+    """
+
+    envs = build_common_envs(
+        source_id=None,
+        fps_period_frames=fps_period_frames,
+        fps_period_seconds=fps_period_seconds,
+        fps_output=fps_output,
+    ) + [
+        f'KAFKA_BROKERS={brokers}',
+        f'KAFKA_TOPIC={topic}',
+        f'KAFKA_CREATE_TOPIC={create_topic}',
+        f'KAFKA_CREATE_TOPIC_NUM_PARTITIONS={create_topic_num_partitions}',
+        f'KAFKA_CREATE_TOPIC_REPLICATION_FACTOR={create_topic_replication_factor}',
+        f'KAFKA_CREATE_TOPIC_CONFIG={create_topic_config}',
+        f'REDIS_HOST={redis_host}',
+        f'REDIS_PORT={redis_port}',
+        f'REDIS_DB={redis_db}',
+        f'REDIS_KEY_PREFIX={redis_key_prefix}',
+        f'REDIS_TTL_SECONDS={redis_ttl_seconds}',
+        f'QUEUE_SIZE={queue_size}',
+    ]
+    cmd = build_docker_run_command(
+        f'sink-kafka-redis-{uuid.uuid4().hex}',
+        zmq_endpoint=in_endpoint,
+        zmq_type=None,
+        zmq_bind=None,
+        entrypoint='python',
+        args=['-m', 'adapters.python.sinks.kafka_redis'],
+        envs=envs,
+        docker_image=docker_image,
+    )
+    run_command(cmd)
+
+
 if __name__ == '__main__':
     cli()

@@ -1,7 +1,7 @@
 from typing import Optional
 
 from savant.client.log_provider import LogProvider
-from savant.client.runner.source import SourceRunner
+from savant.client.runner.source import AsyncSourceRunner, SourceRunner
 from savant.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -24,6 +24,19 @@ class SourceBuilder:
         )
         result = source(JpegSource('cam-1', 'data/AVG-TownCentre.jpeg'))
         result.logs().pretty_print()
+
+    Usage example (async):
+
+    .. code-block:: python
+
+        source = (
+            SourceBuilder()
+            .with_log_provider(JaegerLogProvider('http://localhost:16686'))
+            .with_socket('req+connect:ipc:///tmp/zmq-sockets/input-video.ipc')
+            .build_async()
+        )
+        result = await source(JpegSource('cam-1', 'data/AVG-TownCentre.jpeg'))
+        result.logs().pretty_print()
     """
 
     def __init__(
@@ -34,6 +47,7 @@ class SourceBuilder:
         module_health_check_url: Optional[str] = None,
         module_health_check_timeout: float = 60,
         module_health_check_interval: float = 5,
+        telemetry_enabled: bool = False,
     ):
         self._socket = socket
         self._log_provider = log_provider
@@ -41,6 +55,7 @@ class SourceBuilder:
         self._module_health_check_url = module_health_check_url
         self._module_health_check_timeout = module_health_check_timeout
         self._module_health_check_interval = module_health_check_interval
+        self._telemetry_enabled = telemetry_enabled
 
     def with_socket(self, socket: str) -> 'SourceBuilder':
         """Set ZeroMQ socket for Source."""
@@ -78,6 +93,14 @@ class SourceBuilder:
         """
         return self._with_field('module_health_check_interval', interval)
 
+    def with_telemetry_enabled(self) -> 'SourceBuilder':
+        """Enable telemetry for Source."""
+        return self._with_field('telemetry_enabled', True)
+
+    def with_telemetry_disabled(self) -> 'SourceBuilder':
+        """Disable telemetry for Source."""
+        return self._with_field('telemetry_enabled', False)
+
     def build(self) -> SourceRunner:
         """Build Source."""
 
@@ -94,6 +117,26 @@ class SourceBuilder:
             module_health_check_url=self._module_health_check_url,
             module_health_check_timeout=self._module_health_check_timeout,
             module_health_check_interval=self._module_health_check_interval,
+            telemetry_enabled=self._telemetry_enabled,
+        )
+
+    def build_async(self) -> AsyncSourceRunner:
+        """Build async Source."""
+
+        assert self._socket is not None, 'socket is required'
+        logger.debug(
+            'Building async source with socket %s and log provider %s.',
+            self._socket,
+            self._log_provider,
+        )
+        return AsyncSourceRunner(
+            socket=self._socket,
+            log_provider=self._log_provider,
+            retries=self._retries,
+            module_health_check_url=self._module_health_check_url,
+            module_health_check_timeout=self._module_health_check_timeout,
+            module_health_check_interval=self._module_health_check_interval,
+            telemetry_enabled=self._telemetry_enabled,
         )
 
     def __repr__(self):
@@ -104,7 +147,8 @@ class SourceBuilder:
             f'retries={self._retries},'
             f'module_health_check_url={self._module_health_check_url}, '
             f'module_health_check_timeout={self._module_health_check_timeout}, '
-            f'module_health_check_interval={self._module_health_check_interval})'
+            f'module_health_check_interval={self._module_health_check_interval}, '
+            f'telemetry_enabled={self._telemetry_enabled})'
         )
 
     def _with_field(self, field: str, value) -> 'SourceBuilder':
@@ -116,6 +160,7 @@ class SourceBuilder:
                 'module_health_check_url': self._module_health_check_url,
                 'module_health_check_timeout': self._module_health_check_timeout,
                 'module_health_check_interval': self._module_health_check_interval,
+                'telemetry_enabled': self._telemetry_enabled,
                 field: value,
             }
         )

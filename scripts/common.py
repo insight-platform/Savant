@@ -158,8 +158,8 @@ def build_common_envs(
 def build_docker_run_command(
     container_name: str,
     zmq_endpoint: str,
-    zmq_type: str,
-    zmq_bind: bool,
+    zmq_type: Optional[str],
+    zmq_bind: Optional[bool],
     entrypoint: str,
     docker_image: str,
     detach: bool = False,
@@ -203,10 +203,12 @@ def build_docker_run_command(
         '-e', 'LOGLEVEL',
         '-e', f'SYNC_OUTPUT={sync}',
         '-e', f'ZMQ_ENDPOINT={zmq_endpoint}',
-        '-e', f'ZMQ_TYPE={zmq_type}',
-        '-e', f'ZMQ_BIND={zmq_bind}',
     ]
     # fmt: on
+    if zmq_type is not None:
+        command += ['-e', f'ZMQ_TYPE={zmq_type}']
+    if zmq_bind is not None:
+        command += ['-e', f'ZMQ_BIND={zmq_bind}']
 
     if detach:
         command += ['--detach']

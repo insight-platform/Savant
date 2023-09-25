@@ -59,7 +59,7 @@ pipeline:
         input:
           shape: [3, 640, 640]
         output:
-          layer_names: [ 'output' ]
+          layer_names: [ 'output0' ]
           converter:
             module: savant.converter.yolo_v8face
             class_name: YoloV8faceConverter

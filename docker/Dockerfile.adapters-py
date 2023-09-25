@@ -8,6 +8,8 @@ WORKDIR $PROJECT_PATH
 
 COPY adapters/requirements.txt $PROJECT_PATH/adapters/requirements.txt
 RUN python -m pip install --no-cache-dir -r $PROJECT_PATH/adapters/requirements.txt
+COPY adapters/requirements-py.txt $PROJECT_PATH/adapters/requirements-py.txt
+RUN python -m pip install --no-cache-dir -r $PROJECT_PATH/adapters/requirements-py.txt
 COPY requirements/savant-rs.txt $PROJECT_PATH/adapters/requirements-savant-rs.txt
 RUN pip install --no-cache-dir -r $PROJECT_PATH/adapters/requirements-savant-rs.txt
 
