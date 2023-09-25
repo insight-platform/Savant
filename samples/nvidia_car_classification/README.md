@@ -55,23 +55,5 @@ mkdir -p data && curl -o data/deepstream_sample_720p.mp4 \
 Now you are ready to run the performance benchmark with the following command:
 
 ```bash
-docker run --rm -it --gpus=all \
--v `pwd`/samples:/opt/savant/samples \
--v `pwd`/data:/data:ro \
--v `pwd`/models/nvidia_car_classification:/models \
--v `pwd`/downloads/nvidia_car_classification:/downloads \
-ghcr.io/insight-platform/savant-deepstream:latest \
-samples/nvidia_car_classification/module_performance.yml
-```
-
-or for Jetson
-
-```bash
-docker run --rm -it --runtime=nvidia \
--v `pwd`/samples:/opt/savant/samples \
--v `pwd`/data:/data:ro \
--v `pwd`/models/nvidia_car_classification:/models \
--v `pwd`/downloads/nvidia_car_classification:/downloads \
-ghcr.io/insight-platform/savant-deepstream-l4t:latest \
-samples/nvidia_car_classification/module_performance.yml
+./samples/nvidia_car_classification/run_perf.sh
 ```
