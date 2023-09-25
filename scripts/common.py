@@ -162,7 +162,7 @@ def build_docker_run_command(
     zmq_bind: bool,
     entrypoint: str,
     docker_image: str,
-    detach: bool,
+    detach: bool = False,
     sync: bool = False,
     envs: List[str] = None,
     volumes: List[str] = None,
