@@ -86,3 +86,13 @@ def get_platform_info() -> dict:
             break
 
     return platform_info
+
+
+def get_jetson_stats():
+    """Returns a simplified version of tegrastats."""
+    import jtop
+
+    with jtop.jtop() as jetson:
+        stats = jetson.stats
+
+    return stats

@@ -25,7 +25,7 @@ from pathlib import Path
 from typing import Dict, Generator, Optional, Union
 
 sys.path.append(str(Path(__file__).parent.parent))
-from savant.utils.platform import get_platform_info
+from savant.utils.platform import get_platform_info, get_jetson_stats
 from savant.utils.version import version
 
 # ANSI codes are used, for example, to colorize terminal output.
@@ -150,6 +150,12 @@ def main():
             fps_list = []
             for num in range(args.num_runs):
                 log_file.write(f'run #{num}\n')
+
+                # TODO: Check
+                #  stats['nvp model'] == 'MODE_20W_6CORE'
+                #  stats['jetson_clocks'] == 'ON'
+                if platform_info['machine'] == 'aarch64':
+                    log_file.write(f'stats: {get_jetson_stats()}\n')
 
                 _fps_list = []
                 for line in launch_script(run_cmd + run_args):
