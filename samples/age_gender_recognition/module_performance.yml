@@ -19,9 +19,9 @@ parameters:
             background_color: '00000000'  # transparent
             thickness: 2
           label:
-            # Note that the label format for Primary_Detector.Car objects
+            # Note that the label format for yolov8nface.face objects
             # is overriden on a per object basis:
-            # every car has the classifier result labels added on separate lines
+            # every face has the age gender result labels added on separate lines
             format: [ '{label} #{track_id}' ]
             position:
               # position options are TopLeftInside / TopLeftOutside / Center
@@ -77,6 +77,7 @@ pipeline:
                   min_height: 40
           attributes:
             - name: landmarks
+
     # tracker
     - element: nvtracker
       properties:
@@ -84,6 +85,8 @@ pipeline:
         tracker-height: 640
         ll-lib-file: /opt/nvidia/deepstream/deepstream/lib/libnvds_nvmultiobjecttracker.so
         ll-config-file: ${oc.env:PROJECT_PATH}/samples/age_gender_recognition/config_tracker_NvDCF_perf.yml
+
+    # age-gender estimator
     - element: nvinfer@attribute_model
       name: age_gender
       model:
