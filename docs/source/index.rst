@@ -12,124 +12,123 @@ Welcome To Savant Documentation
 Why Savant Was Developed?
 -------------------------
 
-Why do we develop Savant if DeepStream solves the problem? Because DeepStream is a very tough and challenging to use technology.
+We developed it to give deep learning and computer vision engineers a pipeline development framework that is both easy-to-use and implements the best Nvidia technologies.
 
-The root cause is that DeepStream is a bunch of plug-ins for Gstreamer - the open-source multimedia framework for building highly-efficient streaming applications. It makes developing more or less sophisticated DeepStream applications very difficult because the developer must understand how the Gstreamer processes the data, making the learning curve steep and almost unreachable for ML engineers focused on model training.
+Savant is a high-level framework on Nvidia `DeepStream SDK <https://developer.nvidia.com/deepstream-sdk>`_, which hides complexity and provides practical functions for implementing blazingly fast streaming AI applications.
 
-Savant is a very high-level framework over the DeepStream, which hides all the Gstreamer internals from the developer and provides practical tools for implementing real-life streaming AI applications. So, you implement your inference pipeline as a set of declarative (YAML) blocks with several user-defined functions in Python (and C/C++ if you would like to utilize most of the CUDA runtime).
+In Savant, the pipeline is a sequence of declarative (YAML) blocks with user-defined functions in Python.
 
 Key Features
 ------------
 
-Dynamic Video Sources Management:
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Savant is packed with several killer features which skyrocket the development of Deepstream applications.
 
-In DeepStream, the sources and sinks are an integral part of the Gstreamer pipeline because it's by design. However, such a design makes it difficult to create reliable applications in the real world.
+🔧 All You Need for Building Real-Life Applications
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-There are reasons for that. The first one is low reliability. The source and sink are external entities that, being coupled into the pipeline, make it crash when they are failed or are no longer available. E.g., when the RTSP camera is not available, the corresponding RTSP Gstreamer source signals the pipeline to terminate.
+Savant supports everything you need for developing advanced pipelines: detection, classification, segmentation, tracking, and custom pre- and post-processing for meta and images.
 
-The problem becomes more serious when multiple sources ingest data into a single pipeline - a natural case in the real world. You don't want to load multiple instances of the same AI models into the GPU because of RAM limitations and overall resource over-utilization. So, following the natural Gstreamer approach, you have a muxer scheme with a high chance of failing if any source fails.
+We have implemented samples demonstrating pipelines you can build with Savant. Visit the [samples](samples) folder to learn more.
 
-That's why you want to have sources decoupled from the pipeline - to increase the stability of the pipeline and avoid unnecessarily reloads in case of source failure.
+🚀 High Performance
+^^^^^^^^^^^^^^^^^^^
 
-Another reason is dynamic source management which is a very difficult task when managed through the Gstreamer directly. You have to implement the logic which attaches and detaches the sources and sinks when needed.
+Savant is designed to be fast: it works on top of DeepStream - the fastest SDK for video analytics. Even the heavyweight segmentation models can run in real-time on Savant. See the [Performance Regression Tracking Dashboard](docs/performance.md) for the latest performance results.
 
-The third problem is connected with media formats. You have to reconfigure Gstremer pads setting proper capabilities when the data source changes the format of media, e.g., switching from h.264 to HEVC codec. The simplest way to do that is to crash and recover, which causes significant unavailability time while AI models are compiled to TensorRT and loaded in GPU RAM. So, you want to avoid that as well.
+🌐 Works On Edge and Data Center Equipment
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The framework implements the handlers, which address all the mentioned problems magically without the need to manage them someway explicitly. It helps the developer to process streams of anything without restarting the pipeline. The video files, sets of video files, image collections, network video streams, and raw video frames (USB, GigE) - all is processed universally (and can be mixed together) without the need to reload the pipeline to attach or detach the stream.
+The framework supports running the pipelines on both Nvidia's edge devices (Jetson Family) and data center devices (Tesla, Quadro, etc.) with minor or zero changes.
 
-The framework virtualizes the stream concept by decoupling it from the real-life data source and takes care of a garbage collection for no longer available streams.
-
-As a developer, you use handy source adapters to ingest media data into the framework runtime and use sink adapters to get the results out of it. The adapters can transfer the media through the network or locally. We have already implemented some useful in a real-life, and you can implement the required one for you if needed - the protocol is simple and utilizes standard open source tools.
-
-The decoupled nature of adapters also provides better reliability because the failed data source affects the adapter operation, not a framework operation.
-
-Dynamic Runtime Parameters Configuration
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Sophisticated ML pipelines can use external knowledge, which helps optimize the results based on additional knowledge from the environment.
-
-The framework enables dynamic configuration of the pipeline operational parameters with:
-
-- ingested frame parameters passed in per-frame metadata;
-- Etcd parameters watched and instantly applied;
-- 3rd-party parameters, which are received through user-defined functions.
-
-OpenCV CUDA Integration
-^^^^^^^^^^^^^^^^^^^^^^^
-
-Savant supports custom OpenCV CUDA bindings which allow accessing DeepStream's in-GPU frames with a broad range of OpenCV CUDA utilities: the feature helps implement highly efficient video transformations, including but not limited to blurring, cropping, clipping, applying banners and graphical elements over the frame, and others.
-
-To use the functionality, a developer doesn't need anything rather than Python. However, the performance is way better than what can be achieved with a naive map/change/unmap approach which is available through standard Nvidia python bindings for DeepStream.
-
-Oriented Bounding Boxes Out Of The Box
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-In our practice, when we develop commercial inference software, we often meet the cases where the bounding boxes rotated relative to a video frame (oriented bounding boxes). For example, it is often the case when the camera observes the viewport from the ceiling when the objects reside on the floor.
-
-Such cases require placing the objects within boxes in a way to overlap minimally. To achieve that, we use special models that introduce bounding boxes that are not orthogonal to frame axes. Take a look at RAPiD to get the clue.
-
-Such models require additional post-processing, which involves the rotation - otherwise, you cannot utilize most of the classifier models as they need orthogonal boxes as their input.
-
-Savant supports the bounding box rotation preprocessing function out of the box. It is applied to the boxes right before passing them to the classifier models.
-
-Works On Edge and Data Center Equipment
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The framework is designed and developed in such a way to run the pipelines on both edge Nvidia devices (Jetson Family) and datacenter devices (like Tesla, Quadro, etc.) with minor or zero changes.
-
-Despite the enormous efforts of Nvidia to make the devices fully compatible, there are architectural features that require special processing to make the code compatible between discrete GPU and Jetson appliances.
-
-Even DeepStream itself sometimes behaves unpredictably in certain conditions. The framework code handles those corner cases to avoid crashes or misbehavior.
-
-Low Latency and Capacity Processing
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-When running an inference application on an edge device, the developer usually wants real-time performance. Such requirement is due to the nature of the edge - the users place devices near the live data sources like sensors or video cameras, and they expect the device capacity is enough to handle incoming messages or video-stream without the loss.
-
-Edge devices usually are low in computing resources, including the storage, CPU, GPU, and RAM, so their overuse is not desired because it could lead to data loss.
-
-On the other hand, the data transmitted to the data center are expected to be processed with latency and delay (because the transmission itself introduces that delay and latency).
-
-Servers deployed in the data center have a lot of resources - dozens of cores, lots of RAM, a bunch of very powerful GPU accelerators, and a large amount of storage. It makes it possible to ingest the data to devices from the files or message brokers (like Apache Kafka) to utilize 100% of the device, limiting the rate only by the backpressure of the processing pipeline. Also, the data center system processes a high number of data streams in parallel - by increasing the number of GPU accelerators installed on the server and by partitioning the data among available servers.
-
-Savant provides the configuration means to run the pipeline in a real-time mode, which skips the data if the device is incapable of handling them in the real-time, and in synchronous mode, which guarantees the processing of all the data in a capacity way, maximizing the utilization of the available resources.
-
-Ready-To-Use API
-^^^^^^^^^^^^^^^^
-
-From a user perspective, the Savant pipeline is a self-contained service that accepts input data through Savant-RS API. It makes Savant ideal and ready for deployment within the systems. Whether developers use provided handy adapters or send data into a pipeline directly, both cases use API provided by the Savant.
-
-Handy Source and Sink Adapters
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-We have implemented several ready-to-use adapters, which you can utilize as is or use as a foundation to develop your own.
-
-Easy to Deploy
+❤️ Cloud-Ready
 ^^^^^^^^^^^^^^
 
-The framework and the adapters are delivered as Docker images. To implement the pipeline, you take the base image, add AI models and a custom code with extra dependencies, then build the resulting image. Some pipelines which don't require additional dependencies can be implemented just by mapping directories with models and user functions into the docker image.
+Savant pipelines run in Docker containers. We provide images for x86+dGPU and Jetson hardware.
 
-As for now, we provide images for x86 architecture and for Jetson hardware.
+### ⚡ Low Latency and High Capacity Processing
+
+Savant can be configured to execute a pipeline in real-time, skipping data when running out of capacity or in high capacity mode, which guarantees the processing of all the data, maximizing the utilization of the available resources.
+
+🤝 Ready-To-Use API
+^^^^^^^^^^^^^^^^^^^
+
+A pipeline is a self-sufficient service communicating with the world via high-performance streaming API. Whether developers use provided adapters or Client SDK, both approaches use the API.
+
+📁 Advanced Data Protocol
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The framework universally uses a common protocol for both video and metadata delivery. The protocol is highly flexible, allowing video-related information alongside arbitrary structures useful for IoT and 3rd-party integrations.
+
+⏱ OpenTelemetry Support
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+In Savant, you can precisely instrument pipelines with OpenTelemetry: a unified monitoring solution. You can use sampled or complete traces to balance the performance and precision. The traces can span from edge to core to business logic through network and storage because their propagation is supported by the Savant protocol.
+
+🧰 Client SDK
+^^^^^^^^^^^^^
+
+We provide Python-based SDK to interact with Savant pipelines (ingest and receive data). It enables simple integration with 3rd-party services. Client SDK is integrated with OpenTelemetry providing programmatic access to the pipeline traces and logs.
+
+🧘 Development Server
+^^^^^^^^^^^^^^^^^^^^^
+
+Software development for vanilla DeepStream is a pain. Savant provides a Development Server tool, which enables dynamic reloading of changed code without pipeline restarts. It helps to develop and debug pipelines much faster. Altogether with Client SDK, it makes the development of DeepStream-enabled applications really simple. With the Development Server, you can develop remotely on a Jetson device or server right from your IDE.
+
+🔀 Dynamic Sources Management
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In Savant, you can dynamically attach and detach sources and sinks to the pipeline without reloading. The framework resiliently handles situations related to source/sink outages.
+
+🏹 Handy Source and Sink Adapters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The communication interface is not limited to Client SDK: we provide several ready-to-use adapters, which you can use "as is" or modify for your needs.
+
+🎯 Dynamic Parameters Ingestion
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Advanced ML pipelines may require information from the external environment for their work. The framework enables dynamic configuration of the pipeline with:
+
+- ingested frame attributes passed in per-frame metadata;
+- Etcd's attributes watched and instantly applied;
+- 3rd-party attributes, which are received through user-defined functions.
+
+🖼 OpenCV CUDA Support
+^^^^^^^^^^^^^^^^^^^^^^
+
+Savant supports custom OpenCV CUDA bindings enabling operations on DeepStream's in-GPU frames with a broad range of OpenCV CUDA functions: the feature helps in implementing highly efficient video transformations, including but not limited to blurring, cropping, clipping, applying banners and graphical elements over the frame, and others. The feature is available from Python.
+
+↻ Rotated Detection Models Support
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+We frequently deal with the models resulting in bounding boxes rotated relative to a video frame (oriented bounding boxes). For example, it is often the case with bird-eye cameras observing the underlying area from a high point.
+
+Such cases may require detecting the objects with minimal overlap. To achieve that, special models are used which generate bounding boxes that are not orthogonal to the frame axis. Take a look at `RAPiD <https://vip.bu.edu/projects/vsns/cossy/fisheye/rapid/>`_ to find more.
+
+⇶ Parallelization
+^^^^^^^^^^^^^^^^^
+
+Savant supports processing parallelization; it helps to utilize the available resources to the maximum. The parallelization is achieved by running the pipeline stages in separate threads. Despite flow control-related Python code is not parallel; the developer can utilize GIL-releasing mechanisms to achieve the desired parallelization with NumPy, Numba, or custom native code in C++ or Rust.
 
 .. toctree::
    :maxdepth: 1
    :hidden:
-   :caption: Prepare Environments
+   :caption: Introduction
 
-   getting_started/0_configure_prod_env
-   getting_started/0_configure_dev_env
-   getting_started/0_configure_doc_env
+   introduction/1_intro
+   introduction/2_running
+   introduction/3_hardware_compatibility
+
 
 .. toctree::
    :maxdepth: 1
    :hidden:
    :caption: Getting Started
 
-   getting_started/1_intro
-   getting_started/2_running
-   getting_started/3_examples
-   getting_started/3_hardware_compatibility
+   getting_started/0_configure_prod_env
+   getting_started/1_configure_dev_env
+   getting_started/2_module_devguide
+
 
 .. toctree::
    :maxdepth: 1
@@ -139,17 +138,16 @@ As for now, we provide images for x86 architecture and for Jetson hardware.
    savant_101/00_streaming_model
    savant_101/10_adapters
    savant_101/12_module_definition
+   savant_101/12_pipeline
+   savant_101/12_video_processing
    savant_101/12_var_interpolation
-   savant_101/20_video_processing
-   savant_101/24_metadata
+   savant_101/12_metadata
    savant_101/25_top_level_roi
    savant_101/27_working_with_models
-   savant_101/29_pipeline
    savant_101/30_dm
    savant_101/40_cm
    savant_101/43_am
    savant_101/53_complexm
-   savant_101/54_conditional_unit_init
    savant_101/55_preprocessing.rst
    savant_101/60_nv_trackers
    savant_101/70_python
@@ -164,16 +162,21 @@ As for now, we provide images for x86 architecture and for Jetson hardware.
    :caption: Advanced Topics
 
    advanced_topics/0_batching
-   advanced_topics/0_pipeline_capacity
+   advanced_topics/0_pipeline_stream_limit
+   advanced_topics/0_pipeline_benchmarking
    advanced_topics/0_dead_stream_eviction
    advanced_topics/1_custom_tracking
+   advanced_topics/2_element_group
    advanced_topics/3_custom_roi
    advanced_topics/3_skipping_frames
    advanced_topics/3_hybrid_pipelines
    advanced_topics/4_etcd
    advanced_topics/6_chaining
    advanced_topics/8_ext_systems
+   advanced_topics/9_dev_server
+   advanced_topics/9_open_telemetry
    advanced_topics/9_input_json_metadata
+   advanced_topics/10_client_sdk
 
 .. toctree::
    :maxdepth: 0
@@ -188,6 +191,13 @@ As for now, we provide images for x86 architecture and for Jetson hardware.
    :caption: Reference
 
    reference/api/index
+
+.. toctree::
+   :maxdepth: 0
+   :hidden:
+   :caption: Savant Development
+
+   savantdev/0_configure_doc_env
 
 
 .. Indices and tables

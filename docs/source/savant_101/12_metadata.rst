@@ -1,7 +1,7 @@
 Metadata Operations
 ===================
 
-A Savant module's :doc:`pipeline <29_pipeline>` is comprised of units that process objects. Every object is represented by its metadata. Metadata defines an object label, location and size, identifier, and other properties. There are two kinds of metadata in Savant: primary (DeepStream-related) metadata and extended metadata.
+A Savant module's :doc:`pipeline <12_pipeline>` is comprised of units that process objects. Every object is represented by its metadata. Metadata defines an object label, location and size, identifier, and other properties. There are two kinds of metadata in Savant: primary (DeepStream-related) metadata and extended metadata.
 
 Simply speaking, every unit can produce metadata or modify it. Let us begin with a bare image frame coming into a pipeline to show you how it happens. In the first step, Savant creates a unique "frame" object whose metadata object corresponds to the whole viewport (except paddings). This object is somehow "static"; however, you may create a ``pyfunc`` unit and modify its ROI or remove it.
 

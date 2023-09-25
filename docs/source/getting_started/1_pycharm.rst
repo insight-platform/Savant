@@ -2,14 +2,18 @@
 PyCharm Professional
 ====================
 
-You can rely on the official documentation on configuring a `docker <https://www.jetbrains.com/help/pycharm/using-docker-as-a-remote-interpreter.html>`_  interpreter, but there are caveats. Below, is a modified configuration guide with screenshots and comments helping you to get started quickly.
+The official documentation on configuring a `docker <https://www.jetbrains.com/help/pycharm/using-docker-as-a-remote-interpreter.html>`_  interpreter is pretty complete, but there are caveats. Below, you will find an improved configuration guide helping you to set up the runtime quickly.
 
-The instruction is created and tested in PyCharm 2023.1 **Professional**.
+The guide tested with PyCharm 2023.1.4 Professional.
+
+.. note::
+
+    If you have a different version of PyCharm, we cannot guarantee that the settings will work and match the screenshots.
 
 Project Preparation
 -------------------
 
-#. Clone the Savant repo:
+#. Clone the repo:
 
     .. code-block:: bash
 
@@ -21,7 +25,7 @@ Project Preparation
 
         cp -r Savant/samples/template my-module
 
-#. Run the IDE and open a new project in the ``my-module`` directory.
+#. Start the IDE and create a new project in the ``my-module`` directory.
 
 #. When opening the project, skip the step related to the environment creation: click **Cancel** on **Creating Virtual Environment**:
 
@@ -40,7 +44,10 @@ Setting Up The Interpreter
 
 #. In the modal window:
 
-  * **[Step 1 of 3]**: Choose Dockerfile: ``docker/Dockerfile.x86`` or ``docker/Dockerfile.l4t``, if you are on Jetson, and set up Context folder (should be set to the root of the project). In the **Optional** section you can specify an **Image tag**:
+  * **[Step 1 of 3]**: Choose Dockerfile: ``docker/Dockerfile.x86`` or ``docker/Dockerfile.l4t``, if you are on Jetson, and set up Context folder (should be set to the root of the project). In the **Optional** section you have to specify an **Image tag**:
+
+    .. warning::
+        If you do not specify **Image tag**, docker images and container will not update correctly.
 
     .. image:: ../_static/img/dev-env/03-setup-docker-build.png
 
@@ -81,17 +88,15 @@ The ``run.py`` file is the entrypoint of the module, let's configure the launch 
 
     .. image:: ../_static/img/dev-env/10-run-output-1.png
 
-#. You may see various GStreamer error messages: it's ok. At the end you will see pipeline's output with metadata:
+#. You may see various GStreamer error messages: it's ok. At the end you will see the output with metadata:
 
     .. image:: ../_static/img/dev-env/11-run-output-2.png
 
-That's it, the environment is set up. Now you are ready to develop your own pipeline: modify the module config (``module/module.yaml``), add your own components, etc.
+That's it, the environment is set up. Now you are ready to develop your own pipeline. See the next section to find out how.
 
-Notes
------
+Update Runtime On Container Change
+----------------------------------
 
-PyCharm does not automatically detect newly installed packages in a Docker container. However, there is an option to manually scan for new packages: go to the **Settings** and look for **Rescan**, then navigate to **Plugins > Python > Rescan Available Python Modules and Packages** and set the hotkey (e.g., **Alt+R**):
+.. include:: ../includes/getting_started/1_pycharm_update_docker.rst
 
-.. image:: ../_static/img/dev-env/12-rescan.png
-
-After adding a new package to the ``requirements.txt``, simply press the specified hotkey to rebuild the image and update the packages.
+In the following sections, you will find additional details on module development.

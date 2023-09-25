@@ -167,6 +167,7 @@ def main():
         source.start()
         for message_bin, *data in source:
             message = load_message_from_bytes(message_bin)
+            message.validate_seq_id()
             image_sink.write(message, data)
     except KeyboardInterrupt:
         logger.info('Interrupted')

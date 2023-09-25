@@ -246,6 +246,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             return Gst.FlowReturn.OK
 
         message = load_message_from_gst_buffer(buffer)
+        message.validate_seq_id()
         # TODO: Pipeline message types might be extended beyond only VideoFrame
         # Additional checks for audio/raw_tensors/etc. may be required
         if message.is_video_frame():

@@ -1,8 +1,8 @@
 """`nvinfer` element configuration."""
 import logging
+from collections import defaultdict
 from pathlib import Path
 from typing import Optional, Type
-from collections import defaultdict
 
 from omegaconf import DictConfig, OmegaConf
 from savant_rs.utils.symbol_mapper import (

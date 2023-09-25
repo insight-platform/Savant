@@ -30,14 +30,14 @@ Project Preparation
 
 #. Run the IDE and open the ``my-module`` folder.
 
-Reopen in container
+Reopen in Container
 -------------------
 
 #. The following steps apply to both local and remote development (screenshots are made for remote development).
 
-#. Open the command palette with **F1** or **Ctrl+Shift+P**.
+#. Open the Command Palette with **F1** or **Ctrl+Shift+P**.
 
-#. Type ``reopen`` and choose **Dev Containers: Reopen in Container**:
+#. Type ``reopen`` and select **Dev Containers: Reopen in Container**:
 
     .. image:: ../_static/img/dev-env/13-reopen-in-container.png
 
@@ -53,3 +53,14 @@ Reopen in container
 #. Launch the module by opening the ``run.py`` script and choosing **Terminal > Run Active File** or by clicking the ``Run and Debug`` icon in the Activity Bar.  At the end you will see pipeline's output with metadata:
 
     .. image:: ../_static/img/dev-env/16-run-python-file.png
+
+That's it, the environment is set up. Now you are ready to develop your own pipeline. See the next section to find out how.
+
+.. youtube:: 0u69E8sD3rE
+
+Update Runtime On Container Change
+----------------------------------
+
+.. include:: ../includes/getting_started/1_vscode_update_docker.rst
+
+In the following sections, you will find additional details on module development.

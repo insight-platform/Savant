@@ -205,6 +205,7 @@ def main():
         source.start()
         for message_bin, *data in source:
             message = load_message_from_bytes(message_bin)
+            message.validate_seq_id()
             sink.write(message)
     except KeyboardInterrupt:
         logger.info('Interrupted')

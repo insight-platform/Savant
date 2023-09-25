@@ -1,5 +1,5 @@
-Pipeline Capacity
-====================
+Configuring Stream Limit
+========================
 
 Savant allows setting the pipeline capacity parameter to define how many streams a pipeline can simultaneously process. The parameter is defined with the ``max_parallel_streams`` property in the general parameters section. When the number of streams directed to the pipeline is higher than the value set by the parameter, the pipeline will terminate with the error.
 

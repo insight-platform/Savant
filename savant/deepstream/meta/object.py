@@ -75,20 +75,11 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         self.track_id = track_id
         self.parent = parent
 
-        if (
-            isinstance(parent, ObjectMeta)
-            and isinstance(parent.object_meta_impl, _NvDsObjectMetaImpl)
-            or parent is None
-        ):
-            pyds.nvds_add_obj_meta_to_frame(
-                self._frame_meta.frame_meta,
-                self.ds_object_meta,
-                parent.object_meta_impl.ds_object_meta if parent is not None else None,
-            )
-        else:
-            raise MetaValueError(
-                f'parent is `{type(parent)}` type, expected `{self.__class__.__name__}`'
-            )
+        pyds.nvds_add_obj_meta_to_frame(
+            self._frame_meta.frame_meta,
+            self.ds_object_meta,
+            parent.object_meta_impl.ds_object_meta if parent is not None else None,
+        )
 
         self.ds_object_meta.confidence = confidence
         self._bbox = bbox  # cached BBox or RBBox structure
@@ -265,8 +256,11 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         else:
             raise MetaValueError(
                 f'{self.__class__.__name__} supports only '
-                f'{self.__class__.__name__} as a parent object'
+                f'{self.__class__.__name__} as a parent object.'
             )
+
+        if self._parent_object and self._parent_object.uid == self.uid:
+            raise MetaValueError('An object cannot have itself as a parent.')
 
     @property
     def track_id(self) -> int:
@@ -295,21 +289,25 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
 
     @classmethod
     def from_nv_ds_object_meta(
-        cls, object_meta: pyds.NvDsObjectMeta, frame_meta: pyds.NvDsFrameMeta
+        cls,
+        object_meta: pyds.NvDsObjectMeta,
+        frame_meta: pyds.NvDsFrameMeta,
+        depth: int = 2,
     ):
         """Factory method, creates instance of this class from pyds meta.
 
         :param object_meta: Deepstream object meta.
         :param frame_meta: Deepstream frame meta.
+        :param depth: Object parent recursion depth.
         :return:
         """
         self = cls.__new__(cls)
         self.ds_object_meta = object_meta
         self._frame_meta = frame_meta
         self._bbox = None
-        if not nvds_is_empty_object_meta(object_meta.parent):
+        if not nvds_is_empty_object_meta(object_meta.parent) and depth > 0:
             self._parent_object = _NvDsObjectMetaImpl.from_nv_ds_object_meta(
-                object_meta.parent, frame_meta
+                object_meta.parent, frame_meta, depth - 1
             )
         else:
             self._parent_object = None

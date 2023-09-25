@@ -51,6 +51,7 @@ build-adapters-py:
 build-adapters-all: build-adapters-py build-adapters-gstreamer build-adapters-deepstream
 
 build-docs:
+	rm -rf docs/source/reference/api/generated
 	docker buildx build \
 		--target docs \
 		--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \

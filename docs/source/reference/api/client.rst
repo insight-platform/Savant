@@ -1,7 +1,14 @@
-Client
-======
+Client SDK
+==========
 
-Source/Sink framework for development and QA purposes. You can send frames to the module and receive results with this framework.
+Client SDK is a Python library enabling developing sources and sinks in a simplified way with pure Python. The SDK allows ingesting frames and their metadata to a running module and receiving the results from a running module.
+
+The SDK is developed to solve the following needs:
+
+- develop integration tests for Pipelines (QA);
+- implement custom source adapters without deep understanding of streaming technology;
+- implement custom sink adapters without deep understanding of streaming technology;
+- remote development.
 
 Source usage example:
 

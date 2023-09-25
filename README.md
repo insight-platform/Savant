@@ -9,7 +9,7 @@ Savant is built on DeepStream and provides a high-level abstraction layer for bu
 
 ![GitHub release (with filter)](https://img.shields.io/github/v/release/insight-platform/Savant)
 [![Build status](https://github.com/insight-platform/Savant/actions/workflows/build-docker-latest.yml/badge.svg?branch=develop)](https://github.com/insight-platform/Savant/actions/workflows/build-docker-latest.yml)
-[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/SavantFramework.svg?style=social&label=Follow%20%40SavantFramework)](https://twitter.com/SavantFramework) [![Blog](https://img.shields.io/badge/Inside%20InSight%20Blog-444444?logo=medium)](https://blog.savant-ai.io/)
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/SavantFramework.svg?style=social&label=Follow%20%40SavantFramework)](https://twitter.com/SavantFramework) [![Blog](https://img.shields.io/badge/Inside%20InSight%20Blog-444444?logo=medium)](https://blog.savant-ai.io/) [![Discord](https://img.shields.io/badge/Discord-8A2BE2)](https://discord.gg/KVAfGBsZGd)
 
 Savant is a member of Nvidia Inception Program:
 
@@ -17,10 +17,7 @@ Savant is a member of Nvidia Inception Program:
 
 ## Chat With Us
 
-The best way to approach the Savant team is to join our Discord server. We are always happy to help you with any questions you may have.
-
-[![discord](https://user-images.githubusercontent.com/15047882/229273271-d033e597-06d3-4aeb-b93d-1217e95ca07e.png)](https://discord.gg/KVAfGBsZGd)
-
+The best way to approach us is [Discord](https://discord.gg/KVAfGBsZGd). We are always happy to help you with any questions you may have.
 
 ## Quick Links
 
@@ -30,17 +27,11 @@ The best way to approach the Savant team is to join our Discord server. We are a
 - [Documentation](https://docs.savant-ai.io/)
 - [Performance Regression Tracking Dashboard](docs/performance.md)
 
-## 1-Minute Quick Start
+## Quick Start
 
-**Note**: Ubuntu 22.04 runtime configuration [guide](https://docs.savant-ai.io/getting_started/0_configure_prod_env.html) helps to configure the runtime to run Savant pipelines.
+Runtime configuration [guide](https://docs.savant-ai.io/getting_started/0_configure_prod_env.html) helps to configure the runtime to run Savant pipelines.
 
-Requirements:
-- **X86 & Volta/Turing/Ampere/Ada Lovelace**: Linux, Drivers 525+, Docker with Compose, Nvidia Container Runtime,
-- **Nvidia Jetson NX/AGX+**: JetPack 5.1+, Docker with Compose, Nvidia Container Runtime.
-
-**Note**: Savant does not support Jetson Nano (original device released at 2020) because Nvidia doesn't support newer JetPack versions for it.
-
-The demo shows how to make a pipeline featuring person detection, facial detection, tracking, facial blurring (OpenCV CUDA), and a real-time analytics dashboard:
+The [demo](https://github.com/insight-platform/Savant/tree/develop/samples/peoplenet_detector) shows a pipeline featuring person detection, facial detection, tracking, facial blurring (OpenCV CUDA), and a real-time analytics dashboard:
 
 ![](samples/peoplenet_detector/assets/peoplenet-blur-demo-loop-400.webp)
 

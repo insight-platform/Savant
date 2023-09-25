@@ -1,18 +1,22 @@
 Video Processing Workflow
 =========================
 
-In Savant every frame passes certain processing stages which you have to understand. These stages are inspired by DeepStream's internals and there is no simple way to hack them in a different way. Those stages are:
+In Savant every frame passes certain processing stages which you have to understand. These stages are inspired by DeepStream's internals and there is no simple way to hack them in a different way.
 
-- decoding;
-- scaling to a common resolution (mandatory);
-- adding commonly-specified paddings (optional);
-- multiplexing;
-- processing;
-- drawing (optional);
-- de-multiplexing;
-- encoding.
+Those stages are (see the image below):
 
-Let us consider them in details.
+- decoding (3);
+- scaling to a common resolution (**mandatory**) (4);
+- adding commonly-specified paddings (`optional`) (4);
+- multiplexing (4-5);
+- processing (6);
+- drawing (`optional`) (6);
+- de-multiplexing (7, 8);
+- encoding (9).
+
+.. image:: ../_static/img/0_streaming_model_detailed.png
+
+Discuss them in details.
 
 Decoding
 --------
@@ -23,13 +27,13 @@ Nvidia supports very fast hardware-accelerated decoding for several video/image 
 
 Hardware-accelerated with NVDEC, preferred to be used:
 
-- H264 - default;
-- HEVC/H265 - preferred (performance, bandwidth);
-- MJPEG, JPEG - when image streams or USB/CSI-cams are used.
+- ``H264``: default;
+- ``HEVC/H265``: preferred (performance, bandwidth);
+- ``MJPEG``, ``JPEG``: when image streams or USB/CSI-cams are used.
 
 Software-decoded (not recommended to use):
 
-- PNG - made for compatibility purposes.
+- ``PNG``: fallback for compatibility purposes.
 
 Scaling to a Common Resolution
 ------------------------------
@@ -72,8 +76,8 @@ You have 10 cams of FullHD and 15 cams of HD resolution. You need the outgoing v
 
 **Solution**: configure two pipelines - the first to use Full-HD resolution, the second to use HD resolution. Point Full-HD cams to the Full-HD pipeline, HD cams to the HD pipeline.
 
-Adding Paddings
----------------
+Paddings
+--------
 
 Adding paddings is useful if you need spare space for utility purposes. E.g. you may use paddings to preprocess the image before passing it to the model. Another way to use paddings is to display utility content.
 
@@ -98,12 +102,16 @@ The paddings can either be preserved or removed at the output.
 
 .. note::
 
-    If you specify ``parameters.frame.padding.keep == false``, the paddings are removed before frames are encoded. The geometry for all objects are recalculated to conform new geometry.
+    If you specify ``parameters.frame.padding.keep == false``, the paddings are removed before frame encoding. The geometry for all objects are recalculated to conform new geometry.
 
-Geometry base
+Geometry Base
 -------------
 
-The geometry base is a base value for each frame parameter (width, height, paddings). All frame parameters must be divisible by this value. The default value is 8.
+The ``geometry_base`` parameter specifies the value by which any geometry dimension of the frame (width, height, margin size) must be evenly divided. The default value is ``8``.
+
+When the developer specifies the frame dimensions do not fit the ``geometry_base``, the pipeline will stop with an error. Thus, when defining ``frame.width``, ``frame.height``, and ``frame.padding.*`` every of them must be divisible by ``geometry_base``. The parameter is introduced to overcome unexpected behavior due to platform-specific hardware limitations when a non-standard resolution is used during image processing and encoding.
+
+.. tip:: We do not recommend setting ``geometry_base`` parameter to the values other than ``8`` or ``4``.
 
 .. code-block:: yaml
 
@@ -120,7 +128,7 @@ The geometry base is a base value for each frame parameter (width, height, paddi
 Multiplexing
 ------------
 
-All streams processed by a single module instance are grouped into batches before processing. Batch is a concept used to optimize the computations on Nvidia hardware. Savant is implemented in such a way as to hide batching from the developer: you always operate with a single frame, not a batch of frames.
+All streams processed by a single module instance are grouped into batches before processing. Batch is a concept used to optimize the computations on Nvidia hardware. Savant is implemented to hide batching: developers typically work with a single frame, not a batch of frames.
 
 .. code-block:: yaml
 
@@ -129,7 +137,7 @@ All streams processed by a single module instance are grouped into batches befor
       ...
       batch_size: 1
 
-Set the batch size equal to the maximum expected number of simultaneously processed streams.
+Typically you may set ``batch_size`` equal to the maximum expected number of simultaneously processed streams. Find out more on :doc:`/advanced_topics/0_batching` in the advanced topics.
 
 Processing
 ----------
@@ -176,7 +184,7 @@ The draw function may be overriden by the developer if the stock version cannot 
 Conditional Drawing
 ^^^^^^^^^^^^^^^^^^^
 
-Savant 0.2.4 introduced a conditional drawing feature. It enables defining a special condition based on a frame tag which enables drawing. The motivation behind the feature is efficiency: often, you don't need to produce footage for all streams but only for certain streams under investigation. So you may implement a pyfunc which creates a tag for those streams.
+Savant supports a conditional drawing feature. It enables defining a special condition based on a frame tag which enables drawing. The motivation behind the feature is efficiency: often, you don't need to produce footage for all streams but only for certain streams under investigation. So you may implement a pyfunc which creates a tag for those streams.
 
 To configure conditional drawing, add a subsection to ``draw_func`` as follows:
 
@@ -209,9 +217,10 @@ The framework supports several encoding schemes:
 - HEVC/H265 (hardware ``nvv4l2h265enc``).
 
 .. note::
-    Hardware encoder for JPEG is available only on Nvidia Jetson.
 
-We highly advise using hardware NVENC-assisted codecs. The only caveat is to steer clear from GeForce GPUs in production as they have a limitation constraining simultaneous encoding to 3 streams. In case you are using GeForce, choose RAW RGBA.
+    Hardware encoder for JPEG is available only on Nvidia Jetson. On dGPU JPEG encoder is CUDA-assisted when supported by the hardware.
+
+We highly advise using hardware assisted codecs. The only caveat is to steer clear from GeForce GPUs in production as they have a limitation constraining simultaneous encoding to 3 streams. In case you are using GeForce, choose RAW RGBA.
 
 .. code-block:: yaml
 
@@ -242,206 +251,204 @@ Every codec has its own configuration parameters related to a corresponding GStr
           iframeinterval: 10
           profile: High
 
-.. note::
 
-    On Nvidia Jetson (DS 6.2) I-frame periodicity on hardware h264/h265 encoder is regulated with ``idrinterval`` instead of ``iframeinterval``.
+.. tip::
+    Find out more on the `software H264 encoder <https://blog.savant-ai.io/savant-explained-software-video-encoder-543ed147f9f?source=friends_link&sk=155e038056bbbca6d43793297e4afdda>`_ on Medium.
 
-Available properties are:
+Encoder Properties
+------------------
 
-  - For hardware **h264** encoder
+Hardware H264 Encoder (NVENC)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    1. `bitrate`
+1. ``bitrate``
 
-       Set bitrate for v4l2 encode. Unsigned Integer. Range: 0 - 4294967295. Default: 4000000
+   Sets the bitrate for the v4l2 encoder. Allowed range: ``0`` - ``4294967295``. The Default value is ``4000000``.
 
-    2. `control-rate`
+2. ``control-rate``
 
-       Set control rate for v4l2 encode. Default: 1, "constant_bitrate"
+   Sets the control rate for the v4l2 encoder. The default value is ``1``.
 
-       (0): variable_bitrate - GST_V4L2_VIDENC_VARIABLE_BITRATE
+   Options are:
 
-       (1): constant_bitrate - GST_V4L2_VIDENC_CONSTANT_BITRATE
+   - ``0`` or ``variable_bitrate``;
+   - ``1`` or ``constant_bitrate``;
 
-    3. `extended-colorformat`
 
-       Set Extended ColorFormat pixel values 0 to 255 in VUI info. Boolean. Default: false
+3. ``extended-colorformat``
 
-    4. `force-idr`
+   Sets Extended ColorFormat pixel values ``0`` to ``255`` in VUI info. The default value is ``false``.
 
-       Force an IDR frame. Boolean. Default: false
+4. ``force-idr``
 
-    5. `force-intra`
+   Forces an IDR frame. The default value is ``false``.
 
-       Force an INTRA frame. Boolean. Default: false
+5. ``force-intra``
 
-    6. `iframeinterval`
+   Forces an INTRA frame. The default value is ``false``.
 
-       Encoding Intra Frame occurance frequency. Unsigned Integer. Range: 0 - 4294967295. Default: 30
+6. ``iframeinterval``
 
-    7. `preset-id`
+   Encoding Intra Frame occurrence frequency. Range: ``0`` - ``4294967295``. The default value is ``30``.
 
-       Set CUVID Preset ID for Encoder. Unsigned Integer. Range: 1 - 7. Default: 1
+7. ``preset-id``
 
-    8. `profile`
+   Sets CUVID Preset ID for the encoder. Range: ``1`` - ``7``. The default value is ``1``.
 
-       Set profile for v4l2 encode. Default: 0, "Baseline"
+8. ``profile``
 
-       (0): Baseline         - GST_V4L2_H264_VIDENC_BASELINE_PROFILE
+   Sets the profile for the v4l2 encoder. The default value is ``0`` (``Baseline``).
 
-       (2): Main             - GST_V4L2_H264_VIDENC_MAIN_PROFILE
+   Options are:
 
-       (4): High             - GST_V4L2_H264_VIDENC_HIGH_PROFILE
+   - ``0``: ``Baseline``
+   - ``2``: ``Main``
+   - ``4``: ``High``
+   - ``7``: ``High444``
 
-       (7): High444          - GST_V4L2_H264_VIDENC_HIGH_444_PREDICTIVE
+9. ``tuning-info-id``
 
-    9. `tuning-info-id`
+   Tuning Info Preset for the encoder. The default value is ``2``.
 
-       Tuning Info Preset for encoder. Default: 2, "LowLatencyPreset"
+   Options are:
 
-       (1): HighQualityPreset - Tuning Preset for High Quality
+   - ``1``: ``HighQualityPreset``
+   - ``2``: ``LowLatencyPreset``
+   - ``3``: ``UltraLowLatencyPreset``
+   - ``4``: ``LosslessPreset``
 
-       (2): LowLatencyPreset - Tuning Preset for Low Latency
 
-       (3): UltraLowLatencyPreset - Tuning Preset for Low Latency
+Software H264 Encoder
+^^^^^^^^^^^^^^^^^^^^^
 
-       (4): LosslessPreset   - Tuning Preset for Lossless
+1. ``bitrate``
 
-  - For software **h264** encoder
+   Bitrate in kbit/sec. Range: ``1`` - ``2048000``. The default value is ``2048``.
 
-    1. `bitrate`
+2. ``key-int-max``
 
-       Bitrate in kbit/sec. Unsigned Integer. Range: 1 - 2048000 Default: 2048
+   Maximum distance between two key-frames (``0`` for automatic). Range: ``0`` - ``2147483647``. The default value is ``0``.
 
-    2. `key-int-max`
+3. ``pass``
 
-       Maximal distance between two key-frames (0 for automatic). Unsigned Integer. Range: 0 - 2147483647 Default: 0
+   Encoding pass/type. The default value is ``0`` (``cbr``)
 
-    3. `pass`
+   Options are:
 
-       Encoding pass/type. Default: 0, "cbr"
+   - ``0`` or ``cbr``: Constant Bitrate Encoding
+   - ``4`` or ``quant``: Constant Quantizer
+   - ``5`` or ``qual``: Constant Quality
+   - ``17`` or ``pass1``: VBR Encoding - Pass 1
+   - ``18`` or ``pass2``: VBR Encoding - Pass 2
+   - ``19`` or ``pass3``: VBR Encoding - Pass 3
 
-       (0): cbr              - Constant Bitrate Encoding
+4. `speed-preset`
 
-       (4): quant            - Constant Quantizer
+   Preset name for speed/quality tradeoff options (can affect decode compatibility - impose restrictions separately for your target decoder). The default value is ``6`` (or ``medium``).
 
-       (5): qual             - Constant Quality
+   Options:
 
-       (17): pass1            - VBR Encoding - Pass 1
+   - ``1`` or ``ultrafast``;
+   - ``2`` or ``superfast``;
+   - ``3`` or ``veryfast``;
+   - ``4`` or ``faster``;
+   - ``5`` or ``fast``;
+   - ``6`` or ``medium``;
+   - ``7`` or ``slow``;
+   - ``8`` or ``slower``;
+   - ``9`` or ``veryslow``;
+   - ``10`` or ``placebo``;
 
-       (18): pass2            - VBR Encoding - Pass 2
+5. `tune`
 
-       (19): pass3            - VBR Encoding - Pass 3
+   Preset name for non-psychovisual tuning options. The default value is ``0x00000000`` or ``none``.
 
-    4. `speed-preset`
+   Options:
 
-       Preset name for speed/quality tradeoff options (can affect decode compatibility - impose restrictions separately for your target decoder). Default: 6, "medium"
+   - ``0x00000000`` or ``none``
+   - ``0x00000001`` or ``stillimage``: Still image
+   - ``0x00000002`` or ``fastdecode``: Fast decode
+   - ``0x00000004`` or ``zerolatency``: Zero latency
 
-       (1): ultrafast        - ultrafast
+Hardware HEVC Codec (NVENC)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-       (2): superfast        - superfast
+1. ``bitrate``
 
-       (3): veryfast         - veryfast
+   Sets the bitrate for the v4l2 encoder. Range: ``0`` - ``4294967295``. The default value is ``4000000``.
 
-       (4): faster           - faster
+2. ``control-rate``
 
-       (5): fast             - fast
+   Sets the control rate for the v4l2 encoder. The default value is ``1`` or ``constant_bitrate``.
 
-       (6): medium           - medium
+   Options are:
 
-       (7): slow             - slow
+   - ``0`` or ``variable_bitrate``;
+   - ``1`` or ``constant_bitrate``;
 
-       (8): slower           - slower
+3. ``extended-colorformat``
 
-       (9): veryslow         - veryslow
+   Sets extended color format pixel values ``0`` to ``255`` in VUI info. The default value is ``false``.
 
-       (10): placebo          - placebo
+4. ``force-idr``
 
-    5. `tune`
+   Forces an IDR frame. The default value is ``false``.
 
-       Preset name for non-psychovisual tuning options. Default: 0x00000000, "(none)"
+5. ``force-intra``
 
-       (0x00000001): stillimage       - Still image
+   Forces an INTRA frame. The default value is ``false``.
 
-       (0x00000002): fastdecode       - Fast decode
+6. ``iframeinterval``
 
-       (0x00000004): zerolatency      - Zero latency
+   Encoding Intra Frame occurrence frequency. Range: ``0`` - ``4294967295``. The default value is ``30``.
 
+7. ``preset-id``
 
-  - For hardware **h265** codec
+   Sets CUVID Preset ID for Encoder. Range: ``1`` - ``7``. The default value is ``1``.
 
-    1. `bitrate`
+8. ``profile``
 
-       Set bitrate for v4l2 encode. Unsigned Integer. Range: 0 - 4294967295. Default: 4000000
+   Sets the profile for the v4l2 encoder. The default value is ``0`` or ``Main``.
 
-    2. `control-rate`
+   Options are:
 
-       Set control rate for v4l2 encode. Default: 1, "constant_bitrate"
+   - ``0`` or ``Main``
+   - ``1 `` or  ``Main10``
 
-       (0): variable_bitrate - GST_V4L2_VIDENC_VARIABLE_BITRATE
+9. ``tuning-info-id``
 
-       (1): constant_bitrate - GST_V4L2_VIDENC_CONSTANT_BITRATE
+   Tuning Info Preset for the encoder. The default value is ``2`` or ``LowLatencyPreset``.
 
-    3. `extended-colorformat`
+   Options are:
 
-       Set Extended ColorFormat pixel values 0 to 255 in VUI info. Boolean. Default: false
+   - ``1`` or ``HighQualityPreset``
+   - ``2`` or ``LowLatencyPreset``
+   - ``3`` or ``UltraLowLatencyPreset``
+   - ``4`` or ``LosslessPreset``
 
-    4. `force-idr`
+JPEG Codec
+^^^^^^^^^^
 
-       Force an IDR frame. Boolean. Default: false
+1. ``idct-method``
 
-    5. `force-intra`
+   The IDCT algorithm to use. The default value is ``1`` or ``ifast``.
 
-       Force an INTRA frame. Boolean. Default: false
+   Options are:
 
-    6. `iframeinterval`
+   - ``0`` or ``islow``: slow but accurate integer algorithm
+   - ``1`` or ``ifast``: faster, less accurate integer method
+   - ``2`` or ``float``: floating-point, accurate, fast on fast HW
 
-       Encoding Intra Frame occurance frequency. Unsigned Integer. Range: 0 - 4294967295. Default: 30
+2. ``quality``
 
-    7. `preset-id`
+   Quality of encoding. Range: ``0`` - ``100``. The default value is ``85``.
 
-       Set CUVID Preset ID for Encoder. Unsigned Integer. Range: 1 - 7. Default: 1
+PNG Сodec
+^^^^^^^^^
 
-    8. `profile`
+1. ``compression-level``
 
-       Set profile for v4l2 encode. Default: 0, "Main"
-
-       (0): Main             - GST_V4L2_H265_VIDENC_MAIN_PROFILE
-
-       (1): Main10           - GST_V4L2_H265_VIDENC_MAIN10_PROFILE
-
-    9. `tuning-info-id`
-
-       Tuning Info Preset for encoder. Default: 2, "LowLatencyPreset"
-
-       (1): HighQualityPreset - Tuning Preset for High Quality
-
-       (2): LowLatencyPreset - Tuning Preset for Low Latency
-
-       (3): UltraLowLatencyPreset - Tuning Preset for Low Latency
-
-       (4): LosslessPreset   - Tuning Preset for Lossless
-
-  - For **jpeg** codec
-
-    1. `idct-method`
-
-       The IDCT algorithm to use. Default: 1, "ifast"
-
-       (0): islow - Slow but accurate integer algorithm
-
-       (1): ifast - Faster, less accurate integer method
-
-       (2): float - Floating-point: accurate, fast on fast HW
-
-    2. `quality`
-
-       Quality of encoding. Integer. Range: 0 - 100. Default: 85
-
-  - For **png** codec
-
-    1. `compression-level`
-
-       PNG compression level. Unsigned Integer. Range: 0 - 9. Default: 6
+   PNG compression level. Range: ``0`` - ``9``. The default value is ``6``.
 
 Example:
 
@@ -465,7 +472,7 @@ Example:
 To list all available properties run ``gst-inspect-1.0 <encoder-name>``. E.g. ``gst-inspect-1.0 nvv4l2h264enc``.
 
 Conditional Encoding
-^^^^^^^^^^^^^^^^^^^^
+--------------------
 
 Savant 0.2.4 introduced a conditional encoding feature. It enables defining a special condition based on a frame tag, enabling encoding only certain streams. The motivation behind the feature is efficiency: often, you don't need to produce a resulting video for all streams but only for certain streams under investigation. So you may implement a pyfunc which creates a tag for those streams.
 
