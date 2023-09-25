@@ -91,6 +91,7 @@ class SinkRunner:
             return None
 
         message: Message = load_message_from_bytes(message_parts[0])
+        message.validate_seq_id()
         trace_id: Optional[str] = message.span_context.as_dict().get('uber-trace-id')
         if trace_id is not None:
             trace_id = trace_id.split(':', 1)[0]

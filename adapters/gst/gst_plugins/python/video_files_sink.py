@@ -251,6 +251,7 @@ class VideoFilesSink(LoggerMixin, Gst.Bin):
         )
 
         message = load_message_from_gst_buffer(buffer)
+        message.validate_seq_id()
         # TODO: Pipeline message types might be extended beyond only VideoFrame
         # Additional checks for audio/raw_tensors/etc. may be required
         if message.is_video_frame():
