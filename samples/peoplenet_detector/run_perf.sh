@@ -5,7 +5,7 @@ MULTISTREAM=${1:0}
 MODULE_ARGS=("$@")
 unset "MODULE_ARGS[0]"
 
-MODULE_CONFIG=samples/peoplenet_detector/demo_performance.yml
+MODULE_CONFIG=samples/peoplenet_detector/module_performance.yml
 DATA_LOCATION=data/Free_City_Street_Footage.mp4
 
 if [ "$MULTISTREAM" -gt 0 ]; then

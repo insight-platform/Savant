@@ -92,41 +92,8 @@ to build the module docker image.
 
 Now you are ready to run the performance benchmark with the following command:
 
-Peoplenet:
-
 ```bash
-docker run --rm -it --runtime=nvidia \
--e DETECTOR=peoplenet \
--v `pwd`/samples:/opt/savant/samples \
--v `pwd`/data:/data:ro \
--v `pwd`/models/traffic_meter:/models \
--v `pwd`/downloads/traffic_meter:/downloads \
-traffic_meter-module \
-samples/traffic_meter/module_performance.yml
+./samples/traffic_meter/run_perf.sh
 ```
 
-Yolov8m:
-
-```bash
-docker run --rm -it --runtime=nvidia \
--e DETECTOR=yolov8m \
--v `pwd`/samples:/opt/savant/samples \
--v `pwd`/data:/data:ro \
--v `pwd`/models/traffic_meter:/models \
--v `pwd`/downloads/traffic_meter:/downloads \
-traffic_meter-module \
-samples/traffic_meter/module_performance.yml
-```
-
-Yolov8s:
-
-```bash
-docker run --rm -it --runtime=nvidia \
--e DETECTOR=yolov8s \
--v `pwd`/samples:/opt/savant/samples \
--v `pwd`/data:/data:ro \
--v `pwd`/models/traffic_meter:/models \
--v `pwd`/downloads/traffic_meter:/downloads \
-traffic_meter-module \
-samples/traffic_meter/module_performance.yml
-```
+Note `-e DETECTOR=yolov8m` is set by default.

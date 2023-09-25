@@ -90,11 +90,5 @@ to build the module docker image.
 Now you are ready to run the performance benchmark with the following command:
 
 ```bash
-docker run --rm -it --runtime=nvidia \
--v `pwd`/samples:/opt/savant/samples \
--v `pwd`/data:/data:ro \
--v `pwd`/models/peoplenet_detector:/models \
--v `pwd`/downloads/peoplenet_detector:/downloads \
-peoplenet_detector-module \
-samples/peoplenet_detector/demo_performance.yml
+./samples/peoplenet_detector/run_perf.sh
 ```

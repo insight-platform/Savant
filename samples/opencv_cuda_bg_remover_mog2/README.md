@@ -71,19 +71,5 @@ mkdir -p data && curl -o data/road_traffic.mp4 \
 Now you are ready to run the performance benchmark with the following command:
 
 ```bash
-docker run --rm -it --gpus=all \
--v `pwd`/samples:/opt/savant/samples \
--v `pwd`/data:/data:ro \
-ghcr.io/insight-platform/savant-deepstream:latest \
-samples/opencv_cuda_bg_remover_mog2/demo_performance.yml
-```
-
-or for Jetson
-
-```bash
-docker run --rm -it --runtime=nvidia \
--v `pwd`/samples:/opt/savant/samples \
--v `pwd`/data:/data:ro \
-ghcr.io/insight-platform/savant-deepstream-l4t:latest \
-samples/opencv_cuda_bg_remover_mog2/demo_performance.yml
+./samples/opencv_cuda_bg_remover_mog2/run_perf.sh
 ```
