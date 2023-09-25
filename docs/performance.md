@@ -13,12 +13,6 @@
 
 | Savant ver.                                                                      | A4000  | Jetson NX |
 |----------------------------------------------------------------------------------|--------|-----------|
-| [#166](https://github.com/insight-platform/Savant/issues/166)                    | 261    | 37        |
-| [v0.2.4](https://github.com/insight-platform/Savant/tree/v0.2.4)                 | 255.73 | 41.08     |
-| [#334](https://github.com/insight-platform/Savant/issues/334) (no queues)        | 244.93 | 39.19     |
-| [#334](https://github.com/insight-platform/Savant/issues/334) (buffer length 10) | 241.40 | 38.59     |
-| [#341](https://github.com/insight-platform/Savant/issues/341) (no queues)        | 245.73 | 38.16     |
-| [#347](https://github.com/insight-platform/Savant/issues/347) (no queues)        | 233.78 | 37.70     |
 | [#407](https://github.com/insight-platform/Savant/issues/407) (no queues)        | 174.10 | 36.34     |
 
 ### conditional_video_processing
