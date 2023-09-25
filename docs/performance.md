@@ -19,7 +19,7 @@
 | [#334](https://github.com/insight-platform/Savant/issues/334) (buffer length 10) | 241.40 | 38.59     |
 | [#341](https://github.com/insight-platform/Savant/issues/341) (no queues)        | 245.73 | 38.16     |
 | [#347](https://github.com/insight-platform/Savant/issues/347) (no queues)        | 233.78 | 37.70     |
-| [#407](https://github.com/insight-platform/Savant/issues/407) (no queues)        | 172.04 |           |
+| [#407](https://github.com/insight-platform/Savant/issues/407) (no queues)        | 174.10 | 36.34     |
 
 ### conditional_video_processing
 
@@ -31,7 +31,7 @@
 | [#334](https://github.com/insight-platform/Savant/issues/334) (buffer length 10) | 288.91 | 61.60     |
 | [#341](https://github.com/insight-platform/Savant/issues/341) (no queues)        | 311.62 | 61.46     |
 | [#347](https://github.com/insight-platform/Savant/issues/347) (no queues)        | 263.44 | 59.86     |
-| [#407](https://github.com/insight-platform/Savant/issues/407) (no queues)        | 263.89 |           |
+| [#407](https://github.com/insight-platform/Savant/issues/407) (no queues)        | 263.89 | 63.52     |
 
 ### face_reid
 
@@ -40,7 +40,7 @@
 | [#142](https://github.com/insight-platform/Savant/issues/142)             | 124    | 26        |
 | [#341](https://github.com/insight-platform/Savant/issues/341) (no queues) | 121.11 | 25.4      |
 | [#347](https://github.com/insight-platform/Savant/issues/347) (no queues) | 118.79 | 25.99     |
-| [#407](https://github.com/insight-platform/Savant/issues/407) (no queues) | 127.37 |           |
+| [#407](https://github.com/insight-platform/Savant/issues/407) (no queues) | 127.37 | 27.61     |
 
 ### nvidia_car_classification
 
@@ -52,7 +52,7 @@
 | [#334](https://github.com/insight-platform/Savant/issues/334) (buffer length 10) | 156.72 | 43.24     |
 | [#341](https://github.com/insight-platform/Savant/issues/341) (no queues)        | 156.73 | 42.44     |
 | [#347](https://github.com/insight-platform/Savant/issues/347) (no queues)        | 151.44 | 42.97     |
-| [#407](https://github.com/insight-platform/Savant/issues/407) (no queues)        | 149.66 |           |
+| [#407](https://github.com/insight-platform/Savant/issues/407) (no queues)        | 149.66 | 41.11     |
 
 ### opencv_cuda_bg_remover_mog2
 
@@ -64,7 +64,7 @@
 | [#334](https://github.com/insight-platform/Savant/issues/334) (buffer length 10) | 671.76 | 92.41     |
 | [#341](https://github.com/insight-platform/Savant/issues/341) (no queues)        | 671.34 | 92.24     |
 | [#347](https://github.com/insight-platform/Savant/issues/347) (no queues)        | 608.54 | 91.69     |
-| [#407](https://github.com/insight-platform/Savant/issues/407) (no queues)        | 607.48 |           |
+| [#407](https://github.com/insight-platform/Savant/issues/407) (no queues)        | 607.48 | 90.92     |
 
 ### opencv_cuda_bg_remover_mog2 (multi-stream)
 
@@ -83,7 +83,7 @@
 | [#334](https://github.com/insight-platform/Savant/issues/334) (buffer length 10) | 114.51 | 29.46     |
 | [#341](https://github.com/insight-platform/Savant/issues/341) (no queues)        | 117.22 | 29.27     |
 | [#347](https://github.com/insight-platform/Savant/issues/347) (no queues)        | 116.43 | 28.05     |
-| [#407](https://github.com/insight-platform/Savant/issues/407) (no queues)        | 116.61 |           |
+| [#407](https://github.com/insight-platform/Savant/issues/407) (no queues)        | 116.61 | 28.54     |
 
 ### traffic_meter (yolov8m)
 
@@ -95,7 +95,7 @@
 | [#334](https://github.com/insight-platform/Savant/issues/334) (buffer length 10) | 123.98 | 25.61     |
 | [#341](https://github.com/insight-platform/Savant/issues/341) (no queues)        | 135.19 | 24.67     |
 | [#347](https://github.com/insight-platform/Savant/issues/347) (no queues)        | 136.49 | 24.40     |
-| [#407](https://github.com/insight-platform/Savant/issues/407) (no queues)        | 136.16 |           |
+| [#407](https://github.com/insight-platform/Savant/issues/407) (no queues)        | 136.16 | 24.66     |
 
 ### yolov8_seg
 
@@ -107,4 +107,4 @@ Note: `yolov8_seg` always has a buffer length of 10. `BUFFER_QUEUES` env doesn't
 | [#334](https://github.com/insight-platform/Savant/issues/334) | 44.33 | 14.82     |
 | [#341](https://github.com/insight-platform/Savant/issues/341) | 45.21 | 14.02     |
 | [#347](https://github.com/insight-platform/Savant/issues/347) | 44.34 | 13.07     |
-| [#407](https://github.com/insight-platform/Savant/issues/407) | 67.73 |           |
+| [#407](https://github.com/insight-platform/Savant/issues/407) | 67.73 | 21.57     |
