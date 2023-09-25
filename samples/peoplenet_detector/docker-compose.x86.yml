@@ -26,7 +26,7 @@ services:
       - ../../models/peoplenet_detector:/models
       - ../../downloads/peoplenet_detector:/downloads
       - ..:/opt/savant/samples
-    command: samples/peoplenet_detector/demo.yml
+    command: samples/peoplenet_detector/module.yml
     environment:
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
