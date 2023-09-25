@@ -1,2 +1,2 @@
-FROM ghcr.io/insight-platform/savant-deepstream-l4t:latest
+FROM ghcr.io/insight-platform/savant-deepstream-l4t:0.2.5-6.3
 RUN python -m pip install hnswlib~=0.7.0
