@@ -17,4 +17,4 @@ docker run --rm -it $DOCKER_RUNTIME \
   -v `pwd`/models/traffic_meter:/models \
   -v `pwd`/downloads/traffic_meter:/downloads \
   traffic_meter-module \
-  samples/traffic_meter/module-performance.yml
+  samples/traffic_meter/module_performance.yml

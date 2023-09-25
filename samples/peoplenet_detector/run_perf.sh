@@ -15,4 +15,4 @@ docker run --rm -it $DOCKER_RUNTIME \
   -v `pwd`/models/peoplenet_detector:/models \
   -v `pwd`/downloads/peoplenet_detector:/downloads \
   $DOCKER_IMAGE \
-  samples/peoplenet_detector/demo_performance.yml
+  samples/peoplenet_detector/module_performance.yml
