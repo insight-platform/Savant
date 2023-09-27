@@ -103,6 +103,15 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
 
         self.downloaded_bytes = 0
 
+        self.supported_demuxers = [
+            ('qtdemux', 'QuickTime'),
+            ('matroskademux', 'Matroska'),
+            ('avidemux', 'Avi'),
+            ('flvdemux', 'FLV'),
+            ('mpegpsdemux', 'MPEG Program Stream'),
+            ('tsdemux', 'MPEG transport stream'),
+        ]
+        self.demuxer_factories = self.list_demuxer_factories()
         self.typefind: Gst.Element = Gst.ElementFactory.make('typefind')
         self.typefind.connect('have-type', self.on_typefind_have_type)
         self.add(self.typefind)
@@ -258,16 +267,26 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
                 typefind.get_name(),
                 caps.to_string(),
             )
-            if caps[0].get_name().endswith('mpeg'):
-                self.logger.debug('Using `mpegpsdemux` demuxer')
-                demuxer: Gst.Element = Gst.ElementFactory.make('mpegpsdemux')
-            else:
-                self.logger.debug('Using `qtdemux` demuxer')
-                demuxer: Gst.Element = Gst.ElementFactory.make('qtdemux')
+            demuxer_factory = self.find_demuxer_factory(caps)
+            if demuxer_factory is None:
+                self.logger.error(
+                    'Cannot find a demuxer for caps %r. Currently we support only %s containers.',
+                    caps.to_string(),
+                    ', '.join(repr(x[1]) for x in self.supported_demuxers),
+                )
+                return
+            self.logger.debug('Using %r demuxer', demuxer_factory.get_name())
+            demuxer: Gst.Element = demuxer_factory.create()
             demuxer.connect('pad-added', self.on_pad_added)
             self.add(demuxer)
             self._elements.append(demuxer)
-            assert typefind.link(demuxer)
+            if not typefind.link(demuxer):
+                self.logger.error(
+                    'Failed to link %r to %r',
+                    typefind.get_name(),
+                    demuxer.get_name(),
+                )
+                return
             demuxer.sync_state_with_parent()
 
     def on_pad_added(self, element: Gst.Element, pad: Gst.GhostPad):
@@ -437,6 +456,35 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
         buffer: Gst.Buffer = info.get_buffer()
         buffer.duration = self.frame_duration
         return Gst.PadProbeReturn.OK
+
+    def list_demuxer_factories(self):
+        factories = []
+        for factory_name, container_name in self.supported_demuxers:
+            factory: Gst.ElementFactory = Gst.ElementFactory.find(factory_name)
+            if factory is not None:
+                self.logger.debug(
+                    'Found demuxer factory %r for container %r',
+                    factory_name,
+                    container_name,
+                )
+                factories.append(factory)
+            else:
+                self.logger.warning(
+                    'Demuxer factory %r for container %r not found',
+                    factory_name,
+                    container_name,
+                )
+
+        return factories
+
+    def find_demuxer_factory(self, caps: Gst.Caps) -> Optional[Gst.ElementFactory]:
+        factories = Gst.ElementFactory.list_filter(
+            self.demuxer_factories,
+            caps,
+            Gst.PadDirection.SINK,
+            False,
+        )
+        return factories[0] if factories else None
 
 
 # register plugin
