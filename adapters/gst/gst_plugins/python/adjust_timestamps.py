@@ -100,9 +100,9 @@ class AdjustTimestamps(LoggerMixin, GstBase.BaseTransform):
         if buffer.pts != Gst.CLOCK_TIME_NONE:
             if delta > 0:
                 delta = max(delta, self.max_pts - buffer.pts)
-            elif buffer.dts == Gst.CLOCK_TIME_NONE and buffer.pts < self.max_dts:
+            elif buffer.dts == Gst.CLOCK_TIME_NONE and buffer.pts < self.max_pts:
                 self.logger.info(
-                    'Buffer PTS is %s, expected: %s', buffer.pts, self.max_dts
+                    'Buffer PTS is %s, expected: %s', buffer.pts, self.max_pts
                 )
                 delta = self.max_pts - buffer.pts
 
