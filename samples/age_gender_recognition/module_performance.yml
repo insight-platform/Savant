@@ -116,5 +116,9 @@ pipeline:
       kwargs:
         history_len: 24
 
+    - element: pyfunc
+      module: savant.utils.stat_logger
+      class_name: StatLogger
+
   sink:
     - element: devnull_sink

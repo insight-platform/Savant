@@ -153,6 +153,10 @@ pipeline:
             - name: car_type
               threshold: 0.51
 
+    - element: pyfunc
+      module: savant.utils.stat_logger
+      class_name: StatLogger
+
   # noop pipeline sink, not using sink adapter
   sink:
     - element: devnull_sink

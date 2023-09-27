@@ -57,5 +57,9 @@ pipeline:
               # must be internal, output schema doesn't currently support numpy arrays
               internal: true
 
+    - element: pyfunc
+      module: savant.utils.stat_logger
+      class_name: StatLogger
+
   sink:
     - element: devnull_sink

@@ -103,6 +103,10 @@ pipeline:
         # Switch period from state to state
         protection_interval_ms: 1000
 
+    - element: pyfunc
+      module: savant.utils.stat_logger
+      class_name: StatLogger
+
   # noop pipeline sink, not using sink adapter
   sink:
     - element: devnull_sink

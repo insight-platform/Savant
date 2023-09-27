@@ -126,5 +126,9 @@ pipeline:
         # maximum successful match distance
         dist_threshold: 0.5
 
+    - element: pyfunc
+      module: savant.utils.stat_logger
+      class_name: StatLogger
+
   sink:
     - element: devnull_sink

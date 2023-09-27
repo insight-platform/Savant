@@ -71,7 +71,6 @@ def files_source(
     out_bind: bool,
     sync: bool,
     docker_image: str,
-    detach: bool,
     fps_period_frames: Optional[int],
     fps_period_seconds: Optional[float],
     fps_output: str,
@@ -80,6 +79,7 @@ def files_source(
     envs: List[str],
     entrypoint: str = '/opt/savant/adapters/gst/sources/media_files.sh',
     extra_volumes: List[str] = None,
+    detach: bool = False,
 ):
     """Read picture or video files from LOCATION.
     LOCATION can be single file, directory or HTTP URL.

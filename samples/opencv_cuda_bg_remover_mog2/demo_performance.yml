@@ -34,6 +34,10 @@ pipeline:
       # specify the pyfunc's python class from the module
       class_name: BgRemover
 
+    - element: pyfunc
+      module: savant.utils.stat_logger
+      class_name: StatLogger
+
   # noop pipeline sink, not using sink adapter
   sink:
     - element: devnull_sink
