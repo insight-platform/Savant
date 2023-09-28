@@ -37,4 +37,18 @@ class MemLeak(NvDsPyFuncPlugin):
             col_range = start_left, start_left + noise_width
             frame_roi = cv2.cuda.GpuMat(frame_mat, row_range, col_range)
 
+            # leak
             cv2.cuda.alphaComp(overlay, frame_roi, cv2.cuda.ALPHA_OVER, frame_roi, stream=stream)
+
+            # no leak
+            # cv2.cuda.alphaComp(overlay, frame_roi, cv2.cuda.ALPHA_OVER, frame_roi)
+
+            # leak
+            # res_mat = cv2.cuda.GpuMat(noise_height, noise_width, cv2.CV_8UC4)
+            # cv2.cuda.alphaComp(overlay, frame_roi, cv2.cuda.ALPHA_OVER, res_mat, stream=stream)
+            # res_mat.copyTo(stream, frame_roi)
+
+            # no leak
+            # res_mat = cv2.cuda.GpuMat(noise_height, noise_width, cv2.CV_8UC4)
+            # cv2.cuda.alphaComp(overlay, frame_roi, cv2.cuda.ALPHA_OVER, res_mat)
+            # res_mat.copyTo(stream, frame_roi)
