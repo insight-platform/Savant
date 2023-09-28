@@ -25,7 +25,7 @@ class Blur(NvDsPyFuncPlugin):
         # logger messages will be added to span automatically
         self.logger.info('Try to blur frame #%d.', frame_meta.frame_num)
 
-        stream = self.get_cuda_stream()
+        stream = self.get_cuda_stream(frame_meta)
         with nvds_to_gpu_mat(buffer, frame_meta.frame_meta) as frame_mat:
             # create a new span for an important code section
             # to track the time spent on its execution

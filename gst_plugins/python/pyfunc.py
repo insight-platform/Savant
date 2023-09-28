@@ -70,7 +70,7 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             'VideoPipeline object from savant-rs.',
             GObject.ParamFlags.READWRITE,
         ),
-        'max-stream-pool-size': (
+        'stream-pool-size': (
             int,
             'Max stream pool size',
             'Max stream pool size',
@@ -116,7 +116,7 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             return self.kwargs
         if prop.name == 'pipeline':
             return self.video_pipeline
-        if prop.name == 'max-stream-pool-size':
+        if prop.name == 'stream-pool-size':
             return self.max_stream_pool_size
         if prop.name == 'dev-mode':
             return self.dev_mode
@@ -136,7 +136,7 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             self.kwargs = value
         elif prop.name == 'pipeline':
             self.video_pipeline = value
-        elif prop.name == 'max-stream-pool-size':
+        elif prop.name == 'stream-pool-size':
             self.max_stream_pool_size = value
         elif prop.name == 'dev-mode':
             self.dev_mode = value

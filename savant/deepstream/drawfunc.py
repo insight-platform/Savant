@@ -43,7 +43,7 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
             self.default_spec_no_track_id = get_default_draw_spec(track_id=False)
 
     def draw(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
-        stream = self.get_cuda_stream()
+        stream = self.get_cuda_stream(frame_meta)
         with nvds_to_gpu_mat(buffer, frame_meta.frame_meta) as frame_mat:
             with Artist(frame_mat, stream) as artist:
                 self.draw_on_frame(frame_meta, artist)

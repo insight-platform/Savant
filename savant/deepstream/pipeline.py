@@ -203,7 +203,7 @@ class NvDsPipeline(GstPipeline):
         if element_idx is not None:
             if isinstance(element, PyFuncElement):
                 gst_element.set_property('pipeline', self._video_pipeline)
-                gst_element.set_property('max-stream-pool-size', self._batch_size)
+                gst_element.set_property('stream-pool-size', self._batch_size)
             # TODO: add stage names to element config?
             if isinstance(element_idx, int):
                 stage = self._element_stages[element_idx]

@@ -1,5 +1,4 @@
 """Base implementation of user-defined PyFunc class."""
-from collections import deque
 from typing import Dict, Optional
 
 import cv2
@@ -44,16 +43,14 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
                 GST_NVEVENT_STREAM_EOS,
             ]
         }
-        self._max_stream_pool_size: int = 1
+        self._stream_pool_size = None
         self._stream_pool = []
-        self._accessed_stream_idxs = None
 
     def on_start(self) -> bool:
         """Do on plugin start."""
         self._video_pipeline = self.gst_element.get_property('pipeline')
-        self._max_stream_pool_size = self.gst_element.get_property(
-            'max-stream-pool-size'
-        )
+        # the prop is set to pipeline batch size during init
+        self._stream_pool_size = self.gst_element.get_property('stream-pool-size')
         return True
 
     def on_event(self, event: Gst.Event):
@@ -93,53 +90,21 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
         """On source delete event callback."""
         # self.logger.debug('Source %s deleted.', source_id)
 
-    def get_cuda_stream(self):
-        """Get a CUDA stream that can be used to
-        asynchronously process a frame in a batch.
+    def get_cuda_stream(self, frame_meta: NvDsFrameMeta):
+        """Get a CUDA stream that can be used to asynchronously process
+        a frame in a batch.
+
         All frame CUDA streams will be waited for at the end of batch processing.
         """
         if not self._stream_pool:
             self.logger.debug(
-                'Getting CUDA stream: stream pool is empty, init new.',
+                'Creating CUDA stream pool of size %d.', self._stream_pool_size
             )
-            self._stream_pool = [cv2.cuda.Stream()]
-            self._accessed_stream_idxs = deque([0], self._max_stream_pool_size)
-            return self._stream_pool[0]
-
-        for idx, stream in enumerate(self._stream_pool):
-            if stream.queryIfComplete():
-                self.logger.debug(
-                    'Getting CUDA stream: %d-th stream is free, returning it.', idx
-                )
-                self._accessed_stream_idxs.append(idx)
-                return stream
-
-        if len(self._stream_pool) < self._max_stream_pool_size:
-            self.logger.debug(
-                'Getting CUDA stream: no free streams, pool size %d < max %d, init new stream.',
-                len(self._stream_pool),
-                self._max_stream_pool_size,
-            )
-            self._accessed_stream_idxs.append(len(self._stream_pool))
-            self._stream_pool.append(cv2.cuda.Stream())
-            return self._stream_pool[-1]
-
-        idx = self._accessed_stream_idxs.popleft()
-        self.logger.debug(
-            'Getting CUDA stream: no free streams, pool is size %d (max %d), waiting for oldest accessed stream (idx %d) to complete.',
-            len(self._stream_pool),
-            self._max_stream_pool_size,
-            idx,
-        )
-
-        stream = self._stream_pool[idx]
-        stream.waitForCompletion()
-
-        self.logger.debug(
-            'Getting CUDA stream: wait for %d-th stream is done, returning it.', idx
-        )
-        self._accessed_stream_idxs.append(idx)
-        return stream
+            self._stream_pool = [
+                cv2.cuda.Stream() for _ in range(self._stream_pool_size)
+            ]
+        self.logger.debug('Using CUDA stream %d.', frame_meta.batch_id)
+        return self._stream_pool[frame_meta.batch_id]
 
     def process_buffer(self, buffer: Gst.Buffer):
         """Process gstreamer buffer directly. Throws an exception if fatal

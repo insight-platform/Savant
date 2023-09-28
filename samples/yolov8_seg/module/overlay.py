@@ -17,7 +17,7 @@ class Overlay(NvDsDrawFunc):
         self.bg_color = np.array([0, 0, 0, 0], dtype=np.uint8)
 
     def draw(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
-        stream = self.get_cuda_stream()
+        stream = self.get_cuda_stream(frame_meta)
         with nvds_to_gpu_mat(buffer, frame_meta.frame_meta) as frame_mat:
             for obj_meta in frame_meta.objects:
                 if obj_meta.is_primary:
