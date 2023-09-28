@@ -106,9 +106,7 @@ class ObjectsPreprocessing:
                 copy_frame_image = GPUImage(
                     image=frame_mat.clone(), cuda_stream=cuda_stream
                 )
-                self._frames_map[buffer][
-                    nvds_frame_meta.batch_id
-                ] = copy_frame_image
+                self._frames_map[buffer][nvds_frame_meta.batch_id] = copy_frame_image
                 for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
                     if nvds_obj_meta.class_id != class_id:
                         continue
