@@ -146,25 +146,27 @@ The communication interface is not limited to Client SDK: we provide several rea
 
 Currently, the following source adapters are available:
 
-- [Local video file](docs/adapters.md#the-video-file-source-adapter);
-- [Local directory of video files](docs/adapters.md#the-video-file-source-adapter);
-- [Loop local video file](docs/adapters.md#the-video-loop-file-source-adapter);
-- [Local image file](docs/adapters.md#the-image-file-source-adapter);
-- [Local directory of image files](docs/adapters.md#the-image-file-source-adapter);
-- [Image URL](docs/adapters.md#the-image-file-source-adapter);
-- [Video URL](docs/adapters.md#the-video-file-source-adapter);
-- [Video loop URL](docs/adapters.md#the-video-loop-file-source-adapter);
-- [RTSP stream](docs/adapters.md#the-rtsp-source-adapter);
-- [USB/CSI camera](docs/adapters.md#the-usb-cam-source-adapter);
-- [GigE (Genicam) industrial cam](docs/adapters.md#the-gige-source-adapter).
+- [Local video file](https://docs.savant-ai.io/savant_101/10_adapters.html#video-file-source-adapter);
+- [Local directory of video files](https://docs.savant-ai.io/savant_101/10_adapters.html#video-file-source-adapter);
+- [Video URL](https://docs.savant-ai.io/savant_101/10_adapters.html#video-file-source-adapter);
+- [Local image file](https://docs.savant-ai.io/savant_101/10_adapters.html#image-file-source-adapter);
+- [Local directory of image files](https://docs.savant-ai.io/savant_101/10_adapters.html#image-file-source-adapter);
+- [Image URL](https://docs.savant-ai.io/savant_101/10_adapters.html#image-file-source-adapter);
+- [RTSP stream](https://docs.savant-ai.io/savant_101/10_adapters.html#rtsp-source-adapter);
+- [USB/CSI camera](https://docs.savant-ai.io/savant_101/10_adapters.html#usb-cam-source-adapter);
+- [GigE (Genicam) industrial cam](https://docs.savant-ai.io/savant_101/10_adapters.html#gige-vision-source-adapter);
+- [Kafka-Redis](https://docs.savant-ai.io/savant_101/10_adapters.html#kafka-redis-source-adapter);
+- [Video loop URL](https://docs.savant-ai.io/savant_101/10_adapters.html#video-loop-source-adapter);
+
 
 There are basic sink adapters implemented:
 
-- [Inference results are placed into JSON file stream](docs/adapters.md#the-json-meta-sink-adapter);
-- [Resulting video overlay displayed on a screen (per source)](docs/adapters.md#the-display-sink-adapter);
-- [MP4 file (per source)](docs/adapters.md#the-video-file-sink-adapter);
-- [image directory (per source)](docs/adapters.md#the-image-file-sink-adapter);
-- [Always-On RTSP Stream Sink](docs/adapters.md#the-always-on-rtsp-sink-adapter).
+- [Inference results are placed into JSON file stream](https://docs.savant-ai.io/savant_101/10_adapters.html#json-metadata-sink-adapter);
+- [Resulting video overlay displayed on a screen (per source)](https://docs.savant-ai.io/savant_101/10_adapters.html#display-sink-adapter);
+- [MP4 file (per source)](https://docs.savant-ai.io/savant_101/10_adapters.html#video-file-sink-adapter);
+- [Image directory (per source)](https://docs.savant-ai.io/savant_101/10_adapters.html#image-file-sink-adapter);
+- [Always-On RTSP Stream Sink](https://docs.savant-ai.io/savant_101/10_adapters.html#always-on-rtsp-sink-adapter);
+- [Kafka-Redis](https://docs.savant-ai.io/savant_101/10_adapters.html#kafka-redis-sink-adapter).
 
 ### 🎯 Dynamic Parameters Ingestion
 
