@@ -30,9 +30,10 @@ class ArtistGPUMat(AbstractContextManager):
     def __exit__(self, *exc_details):
         # apply alpha comp if overlay is not null
         if self.overlay is not None:
-            overlay = cv2.cuda.GpuMat(self.overlay)
+            overlay_gpu = cv2.cuda.GpuMat(self.height, self.width, cv2.CV_8UC4)
+            overlay_gpu.upload(self.overlay, self.stream)
             cv2.cuda.alphaComp(
-                overlay, self.frame, self.alpha_op, self.frame, stream=self.stream
+                overlay_gpu, self.frame, self.alpha_op, self.frame, stream=self.stream
             )
 
     @property
