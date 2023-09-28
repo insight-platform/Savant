@@ -144,7 +144,7 @@ In Savant, you can dynamically attach and detach sources and sinks to the pipeli
 
 The communication interface is not limited to Client SDK: we provide several ready-to-use adapters, which you can use "as is" or modify for your needs.
 
-Currently, the following source adapters are available:
+The following source adapters are available:
 
 - [Local video file](https://docs.savant-ai.io/savant_101/10_adapters.html#video-file-source-adapter);
 - [Local directory of video files](https://docs.savant-ai.io/savant_101/10_adapters.html#video-file-source-adapter);
@@ -157,9 +157,9 @@ Currently, the following source adapters are available:
 - [GigE (Genicam) industrial cam](https://docs.savant-ai.io/savant_101/10_adapters.html#gige-vision-source-adapter);
 - [Kafka-Redis](https://docs.savant-ai.io/savant_101/10_adapters.html#kafka-redis-source-adapter);
 - [Video loop URL](https://docs.savant-ai.io/savant_101/10_adapters.html#video-loop-source-adapter);
+- [Multi-stream Source](https://docs.savant-ai.io/savant_101/10_adapters.html#multi-stream-source-adapter).
 
-
-There are basic sink adapters implemented:
+Several sink adapters are implemented:
 
 - [Inference results are placed into JSON file stream](https://docs.savant-ai.io/savant_101/10_adapters.html#json-metadata-sink-adapter);
 - [Resulting video overlay displayed on a screen (per source)](https://docs.savant-ai.io/savant_101/10_adapters.html#display-sink-adapter);
