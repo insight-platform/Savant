@@ -1,0 +1,36 @@
+name: memleak
+
+parameters:
+  batch_size: 1
+  frame:
+    width: 1280
+    height: 720
+    # padding:
+    #   keep: true
+    #   left: 0
+    #   right: 0
+    #   top: 0
+    #   bottom: 0
+  output_frame:
+    codec: raw-rgba
+
+
+pipeline:
+
+  # source:
+  #   element: uridecodebin
+  #   properties:
+  #     uri: file:///data/jumanji_cast.mp4
+
+  source:
+    element: videotestsrc
+    properties:
+      num-buffers: 3000
+
+  elements:
+    - element: pyfunc
+      module: samples.memleak.memleak
+      class_name: MemLeak
+
+  sink:
+    - element: devnull_sink
