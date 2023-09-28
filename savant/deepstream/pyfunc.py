@@ -1,6 +1,6 @@
 """Base implementation of user-defined PyFunc class."""
-from typing import Dict, Optional
 from collections import deque
+from typing import Dict, Optional
 
 import cv2
 import pyds
@@ -51,7 +51,9 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
     def on_start(self) -> bool:
         """Do on plugin start."""
         self._video_pipeline = self.gst_element.get_property('pipeline')
-        self._max_stream_pool_size = self.gst_element.get_property('max-stream-pool-size')
+        self._max_stream_pool_size = self.gst_element.get_property(
+            'max-stream-pool-size'
+        )
         return True
 
     def on_event(self, event: Gst.Event):
@@ -127,15 +129,14 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
             'Getting CUDA stream: no free streams, pool is size %d (max %d), waiting for oldest accessed stream (idx %d) to complete.',
             len(self._stream_pool),
             self._max_stream_pool_size,
-            idx
+            idx,
         )
 
         stream = self._stream_pool[idx]
         stream.waitForCompletion()
 
         self.logger.debug(
-            'Getting CUDA stream: wait for %d-th stream is done, returning it.',
-            idx
+            'Getting CUDA stream: wait for %d-th stream is done, returning it.', idx
         )
         self._accessed_stream_idxs.append(idx)
         return stream
