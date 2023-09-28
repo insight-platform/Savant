@@ -8,4 +8,7 @@ docker run --rm -it $RUNTIME \
   -v `pwd`/data:/data \
   --entrypoint python \
   $DOCKER_IMAGE \
-  samples/memleak/memleak_script.py
+  samples/memleak/stream_pool_script.py
+  # samples/memleak/memleak_script.py
+
+
