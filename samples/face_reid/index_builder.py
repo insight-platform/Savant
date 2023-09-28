@@ -54,7 +54,7 @@ class IndexBuilder(NvDsPyFuncPlugin):
                 location,
             )
         else:
-            stream = self.get_cuda_stream(frame_meta)
+            stream = self.get_cuda_stream()
             with nvds_to_gpu_mat(buffer, frame_meta.frame_meta) as frame_mat:
                 with Artist(frame_mat, stream) as artist:
                     root, _ = os.path.splitext(location)

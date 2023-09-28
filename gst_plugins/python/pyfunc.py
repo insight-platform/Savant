@@ -70,6 +70,15 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             'VideoPipeline object from savant-rs.',
             GObject.ParamFlags.READWRITE,
         ),
+        'max-stream-pool-size': (
+            int,
+            'Max stream pool size',
+            'Max stream pool size',
+            1,
+            GLib.MAXINT,
+            1,
+            GObject.ParamFlags.READWRITE,
+        ),
         'dev-mode': (
             bool,
             'Dev mode flag',
@@ -90,6 +99,7 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
         self.kwargs: Optional[str] = None
         self.video_pipeline: Optional[VideoPipeline] = None
         self.dev_mode: bool = False
+        self.max_stream_pool_size: int = 1
         # pyfunc object
         self.pyfunc: Optional[PyFunc] = None
 
@@ -106,6 +116,8 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             return self.kwargs
         if prop.name == 'pipeline':
             return self.video_pipeline
+        if prop.name == 'max-stream-pool-size':
+            return self.max_stream_pool_size
         if prop.name == 'dev-mode':
             return self.dev_mode
         raise AttributeError(f'Unknown property {prop.name}.')
@@ -124,6 +136,8 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             self.kwargs = value
         elif prop.name == 'pipeline':
             self.video_pipeline = value
+        elif prop.name == 'max-stream-pool-size':
+            self.max_stream_pool_size = value
         elif prop.name == 'dev-mode':
             self.dev_mode = value
         else:
