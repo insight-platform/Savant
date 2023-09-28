@@ -98,7 +98,7 @@ class NvDsPipeline(GstPipeline):
         self._sources = SourceInfoRegistry()
 
         # c++ preprocessing class
-        self._objects_preprocessing = ObjectsPreprocessing()
+        self._objects_preprocessing = ObjectsPreprocessing(self._batch_size)
 
         self._internal_attrs = set()
         telemetry: TelemetryParameters = kwargs['telemetry']
