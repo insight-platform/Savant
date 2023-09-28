@@ -11,8 +11,8 @@ parameters:
     #   right: 0
     #   top: 0
     #   bottom: 0
-  output_frame:
-    codec: raw-rgba
+  # output_frame:
+  #   codec: raw-rgba
 
 
 pipeline:
