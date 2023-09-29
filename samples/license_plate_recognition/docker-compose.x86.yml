@@ -2,7 +2,7 @@ version: "3.3"
 services:
 
   video-loop-source:
-    image: savant-adapters-gstreamer:latest
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -24,8 +24,7 @@ services:
       dockerfile: docker/Dockerfile.x86
     restart: unless-stopped
     volumes:
-#      - zmq_sockets:/tmp/zmq-sockets
-      - /tmp/zmq-sockets:/tmp/zmq-sockets
+      - zmq_sockets:/tmp/zmq-sockets
       - ../../models/license_plate_recognition:/models
       - ../../downloads/license_plate_recognition:/downloads
       - .:/opt/savant/samples/license_plate_recognition
@@ -42,34 +41,34 @@ services:
               count: 1
               capabilities: [gpu]
 
-#  always-on-sink:
-#    image: savant-adapters-deepstream:latest
-#    restart: unless-stopped
-#    ports:
-#      - "554:554"    # RTSP
-#      - "1935:1935"  # RTMP
-#      - "888:888"    # HLS
-#      - "8889:8889"  # WebRTC
-#    volumes:
-#      - zmq_sockets:/tmp/zmq-sockets
-#      - ../assets/stub_imgs:/stub_imgs
-#    environment:
-#      - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
-#      - SOURCE_ID=nvidia-sample-processed
-#      - STUB_FILE_LOCATION=/stub_imgs/smpte100_3840x2160.jpeg
-#      - DEV_MODE=True
-#      - RTSP_LATENCY_MS=500
-#      - ENCODER_PROFILE=High
-#      - ENCODER_BITRATE=16000000
-#      - FRAMERATE=30/1
-#    command: python -m adapters.ds.sinks.always_on_rtsp
-#    deploy:
-#      resources:
-#        reservations:
-#          devices:
-#            - driver: nvidia
-#              count: 1
-#              capabilities: [gpu]
+  always-on-sink:
+    image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
+    restart: unless-stopped
+    ports:
+      - "554:554"    # RTSP
+      - "1935:1935"  # RTMP
+      - "888:888"    # HLS
+      - "8889:8889"  # WebRTC
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ../assets/stub_imgs:/stub_imgs
+    environment:
+      - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
+      - SOURCE_ID=nvidia-sample-processed
+      - STUB_FILE_LOCATION=/stub_imgs/smpte100_3840x2160.jpeg
+      - DEV_MODE=True
+      - RTSP_LATENCY_MS=500
+      - ENCODER_PROFILE=High
+      - ENCODER_BITRATE=16000000
+      - FRAMERATE=30/1
+    command: python -m adapters.ds.sinks.always_on_rtsp
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
 
 volumes:
   zmq_sockets:

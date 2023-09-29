@@ -24,8 +24,7 @@ services:
       dockerfile: docker/Dockerfile.l4t
     restart: unless-stopped
     volumes:
-#      - zmq_sockets:/tmp/zmq-sockets
-      - /tmp/zmq-sockets:/tmp/zmq-sockets
+      - zmq_sockets:/tmp/zmq-sockets
       - ../../models/license_plate_recognition:/models
       - ../../downloads/license_plate_recognition:/downloads
       - .:/opt/savant/samples/license_plate_recognition
