@@ -18,7 +18,7 @@ RUN git clone https://github.com/NVIDIA-AI-IOT/deepstream_lpr_app.git $DS_LPR_AP
     && cd $DS_LPR_APP_PATH \
     && git checkout $DS_LPR_APP_VER \
     && cd $DS_LPR_APP_PATH/nvinfer_custom_lpr_parser \
-    && make \
+    && make
 
 RUN git clone https://github.com/marcoslucianops/DeepStream-Yolo.git $DS_YOLO_PATH \
     && cd $DS_YOLO_PATH \
