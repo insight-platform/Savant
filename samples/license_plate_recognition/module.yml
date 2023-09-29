@@ -2,10 +2,10 @@ name: ${oc.env:MODULE_NAME, 'license_plate_recognition'}
 
 parameters:
   output_frame:
-    codec: raw-rgba
-#    codec: h264
-#    encoder_params:
-#      bitrate: 16000000
+#    codec: raw-rgba
+    codec: h264
+    encoder_params:
+      bitrate: 16000000
   frame:
     width: ${oc.decode:${oc.env:FRAME_WIDTH, 3840}}
     height: ${oc.decode:${oc.env:FRAME_HEIGHT, 2160}}
