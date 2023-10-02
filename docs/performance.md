@@ -63,7 +63,7 @@
 | [#341](https://github.com/insight-platform/Savant/issues/341) (no queues)        | 671.34 | 92.24     |
 | [#347](https://github.com/insight-platform/Savant/issues/347) (no queues)        | 608.54 | 91.69     |
 | [#407](https://github.com/insight-platform/Savant/issues/407) (no queues)        | 607.48 | 90.92     |
-| [#456](https://github.com/insight-platform/Savant/issues/456) (no queues)        | 606.74 | 65.27     |
+| [#456](https://github.com/insight-platform/Savant/issues/456) (no queues)        | 606.74 | 95.05     |
 
 ### opencv_cuda_bg_remover_mog2 (multi-stream)
 
