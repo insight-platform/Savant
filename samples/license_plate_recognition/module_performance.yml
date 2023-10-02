@@ -3,9 +3,11 @@ name: ${oc.env:MODULE_NAME, 'nvidia_car_classification_perf'}
 parameters:
   output_frame:
     codec: h264
+    encoder_params:
+      bitrate: 8000000
   frame:
-    width: ${oc.decode:${oc.env:FRAME_WIDTH, 3840}}
-    height: ${oc.decode:${oc.env:FRAME_HEIGHT, 2160}}
+    width: ${oc.decode:${oc.env:FRAME_WIDTH, 1920}}
+    height: ${oc.decode:${oc.env:FRAME_HEIGHT, 1080}}
   draw_func:
     module: samples.license_plate_recognition.overlay
     class_name: Overlay
@@ -35,7 +37,7 @@ pipeline:
   source:
     element: uridecodebin
     properties:
-      uri: file:///data/lpr_test.mp4
+      uri: file:///data/lpr_test_1080p.mp4
 
   elements:
     - element: nvinfer@detector

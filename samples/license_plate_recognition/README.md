@@ -46,8 +46,8 @@ Download the video file to your local folder. For example, create a data folder 
 ```bash
 # you are expected to be in Savant/ directory
 
-mkdir -p data && curl -o data/lpr_test.mp4 \
-   https://eu-central-1.linodeobjects.com/savant-data/demo/lpr_test.mp4
+mkdir -p data && curl -o data/lpr_test_1080p.mp4 \
+   https://eu-central-1.linodeobjects.com/savant-data/demo/lpr_test_1080p.mp4
 ```
 
 Now you are ready to run the performance benchmark with the following command:

@@ -2,13 +2,12 @@ name: ${oc.env:MODULE_NAME, 'license_plate_recognition'}
 
 parameters:
   output_frame:
-#    codec: raw-rgba
     codec: h264
     encoder_params:
-      bitrate: 16000000
+      bitrate: 8000000
   frame:
-    width: ${oc.decode:${oc.env:FRAME_WIDTH, 3840}}
-    height: ${oc.decode:${oc.env:FRAME_HEIGHT, 2160}}
+    width: ${oc.decode:${oc.env:FRAME_WIDTH, 1920}}
+    height: ${oc.decode:${oc.env:FRAME_HEIGHT, 1080}}
   draw_func:
     module: samples.license_plate_recognition.overlay
     class_name: Overlay
@@ -18,12 +17,12 @@ parameters:
           bbox:
             border_color: '00FF00FF'  # Green
             background_color: '00000000'  # transparent
-            thickness: 6
+            thickness: 4
       LPDNet:
         lpd:
           bbox:
             border_color: '0000FFFF'  # Blue
-            thickness: 6
+            thickness: 4
           label:
             font_color: 'FFFFFFFF'  # White
             font_scale: 1.5
