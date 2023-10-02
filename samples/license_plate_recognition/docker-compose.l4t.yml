@@ -8,7 +8,7 @@ services:
       - zmq_sockets:/tmp/zmq-sockets
       - /tmp/video-loop-source-downloads:/tmp/video-loop-source-downloads
     environment:
-      - LOCATION=https://eu-central-1.linodeobjects.com/savant-data/demo/lpr_test.mp4
+      - LOCATION=https://eu-central-1.linodeobjects.com/savant-data/demo/lpr_test_1080p.mp4
       - DOWNLOAD_PATH=/tmp/video-loop-source-downloads
       - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
       - SOURCE_ID=nvidia-sample-processed
@@ -49,11 +49,11 @@ services:
     environment:
       - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
       - SOURCE_ID=nvidia-sample-processed
-      - STUB_FILE_LOCATION=/stub_imgs/smpte100_3840x2160.jpeg
+      - STUB_FILE_LOCATION=/stub_imgs/smpte100_1920x1080.jpeg
       - DEV_MODE=True
       - RTSP_LATENCY_MS=500
       - ENCODER_PROFILE=High
-      - ENCODER_BITRATE=16000000
+      - ENCODER_BITRATE=8000000
       - FRAMERATE=30/1
     command: python -m adapters.ds.sinks.always_on_rtsp
     runtime: nvidia
