@@ -217,6 +217,8 @@ class FFmpegSrc(LoggerMixin, GstBase.BaseSrc):
         tb_num, tb_denum = frame.time_base
         buffer.pts = pts * tb_num * Gst.SECOND // tb_denum
         buffer.dts = dts * tb_num * Gst.SECOND // tb_denum
+        if not frame.key_frame:
+            buffer.set_flags(Gst.BufferFlags.DELTA_UNIT)
 
         self.logger.debug(
             'Pushing buffer of size %s with PTS=%s, DTS=%s and duration=%s to src pad.',
