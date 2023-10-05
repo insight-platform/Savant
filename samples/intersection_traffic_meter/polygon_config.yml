@@ -1,0 +1,36 @@
+leeds:
+  points:
+    - [140, 465]
+    - [250, 295]
+    - [465, 190]
+    - [840, 125]
+    - [1565, 440]
+    - [1295, 760]
+
+  # do not use "->" or "+" in the edge tags
+  # as these strings serve as separators for dynamically generated crossing direction names
+  edges:
+    - left
+    - null
+    - top
+    - null
+    - bottom
+    - null
+
+# for the *-performance module configs
+'0':
+  points:
+    - [140, 465]
+    - [250, 295]
+    - [465, 190]
+    - [840, 125]
+    - [1565, 440]
+    - [1295, 760]
+
+  edges:
+    - left
+    - null
+    - top
+    - null
+    - bottom
+    - null
