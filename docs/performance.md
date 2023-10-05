@@ -47,6 +47,7 @@
 | [#341](https://github.com/insight-platform/Savant/issues/341) (no queues)        | 156.73 | 42.44     |
 | [#347](https://github.com/insight-platform/Savant/issues/347) (no queues)        | 151.44 | 42.97     |
 | [#407](https://github.com/insight-platform/Savant/issues/407) (no queues)        | 149.66 | 41.11     |
+| [#455](https://github.com/insight-platform/Savant/issues/455) | 80    | 14.84     |
 
 ### opencv_cuda_bg_remover_mog2
 
@@ -102,3 +103,9 @@ Note: `yolov8_seg` always has a buffer length of 10. `BUFFER_QUEUES` env doesn't
 | [#341](https://github.com/insight-platform/Savant/issues/341) | 45.21 | 14.02     |
 | [#347](https://github.com/insight-platform/Savant/issues/347) | 44.34 | 13.07     |
 | [#407](https://github.com/insight-platform/Savant/issues/407) | 67.73 | 21.57     |
+
+### license_plate_recognition
+
+| Savant ver.                                                   | A4000 | Jetson NX |
+|---------------------------------------------------------------|-------|-----------|
+| [#455](https://github.com/insight-platform/Savant/issues/455) | 92.4  | 25.29     |
