@@ -1,4 +1,4 @@
-"""Draw func adds car classification models outputs: car color, car make, car type."""
+"""Draw func adds license plate"""
 from savant_rs.draw_spec import LabelDraw, ObjectDraw
 
 from savant.deepstream.drawfunc import NvDsDrawFunc
@@ -9,7 +9,7 @@ class Overlay(NvDsDrawFunc):
     def override_draw_spec(
         self, object_meta: ObjectMeta, draw_spec: ObjectDraw
     ) -> ObjectDraw:
-        """Override draw spec for objects with label 'Car'.
+        """Override draw spec for objects with label 'lpd' (license plate detection).
         Add classifier attributes labels to the object visualisation.
         """
         if object_meta.label == 'lpd':
