@@ -6,9 +6,14 @@ on:
     tags: ['v*.*.*']
     branches: ['develop']
 
+  # to run this workflow manually from the Actions tab
+  # the init job fails if branch is different from 'releases/*.*.*' or 'develop'
+  # TODO: Add inputs to select a part of the workflow to run (e.g. build docs only)
+  workflow_dispatch:
+
 # allow one concurrent deployment
 concurrency:
-  group: main
+  group: ${{ github.workflow }}-${{ github.ref_name }}
   cancel-in-progress: true
 
 env:
@@ -35,7 +40,16 @@ jobs:
           DEEPSTREAM_TAG=latest
           ADAPTERS_TAG=latest
           if [ "${{ github.ref_name }}" != "develop" ]; then
-            if [ "v${{ steps.get-savant-version.outputs.savant-version }}" != "${{ github.ref_name }}" ]; then
+            TAG=${{ github.ref_name }}
+            if [ "${{ github.ref_type }}" == "branch" ]; then
+              if [[ "$TAG" != releases/* ]]; then
+                echo "::error::Wrong branch"
+                exit 1
+              fi
+              TAG="v${TAG/releases\//}"
+            fi
+            echo "detected tag $TAG"
+            if [ "$TAG" != "v${{ steps.get-savant-version.outputs.savant-version }}" ]; then
               echo "::error::Tag and Savant version mismatch"
               exit 1
             fi
@@ -50,8 +64,7 @@ jobs:
   # build deepstream dockers
   build-savant-deepstream:
     needs: init
-    runs-on: ubuntu-latest
-#    runs-on: self-hosted
+    runs-on: self-hosted
     permissions:
       contents: read
       packages: write
@@ -63,9 +76,9 @@ jobs:
           - docker_file: docker/Dockerfile.deepstream
             docker_image_suffix: deepstream
             arch: linux/amd64
-#          - docker_file: docker/Dockerfile.deepstream
-#            docker_image_suffix: deepstream-l4t
-#            arch: linux/arm64
+          - docker_file: docker/Dockerfile.deepstream
+            docker_image_suffix: deepstream-l4t
+            arch: linux/arm64
 
     steps:
       - uses: actions/checkout@v4
@@ -99,71 +112,71 @@ jobs:
           target: base
           push: true
 
-#      # adapters image
-#      - name: Build and push savant-adapters-deepstream docker image
-#        uses: docker/build-push-action@v5
-#        with:
-#          file: ${{ matrix.docker_file }}
-#          tags: |
-#            ${{ env.REGISTRY }}/${{ github.repository_owner }}/savant-adapters-${{ matrix.docker_image_suffix }}:${{ needs.init.outputs.savant-deepstream-tag }}
-#          build-args: |
-#            SAVANT_VERSION=${{ needs.init.outputs.savant-version }}
-#            DEEPSTREAM_VERSION=${{ needs.init.outputs.deepstream-version }}
-#          platforms: ${{ matrix.arch }}
-#          target: adapters
-#          push: true
+      # adapters image
+      - name: Build and push savant-adapters-deepstream docker image
+        uses: docker/build-push-action@v5
+        with:
+          file: ${{ matrix.docker_file }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/savant-adapters-${{ matrix.docker_image_suffix }}:${{ needs.init.outputs.savant-deepstream-tag }}
+          build-args: |
+            SAVANT_VERSION=${{ needs.init.outputs.savant-version }}
+            DEEPSTREAM_VERSION=${{ needs.init.outputs.deepstream-version }}
+          platforms: ${{ matrix.arch }}
+          target: adapters
+          push: true
 
-#  # build adapter's dockers (except deepstream adapters)
-#  build-savant-adapters:
-#    needs: init
-#    runs-on: ubuntu-latest
-#    permissions:
-#      contents: read
-#      packages: write
-#
-#    strategy:
-#      fail-fast: false
-#      matrix:
-#        include:
-#          - docker_file: docker/Dockerfile.adapters-gstreamer
-#            docker_image: savant-adapters-gstreamer
-#            arch: linux/amd64
-#          - docker_file: docker/Dockerfile.adapters-gstreamer
-#            docker_image: savant-adapters-gstreamer-l4t
-#            arch: linux/arm64
-#          - docker_file: docker/Dockerfile.adapters-py
-#            docker_image: savant-adapters-py
-#            arch: linux/amd64
-#          - docker_file: docker/Dockerfile.adapters-py
-#            docker_image: savant-adapters-py-l4t
-#            arch: linux/arm64
-#
-#    steps:
-#      - uses: actions/checkout@v4
-#
-#      # setup-docker action ---
-#      - name: Log in to the container registry
-#        uses: docker/login-action@v3
-#        with:
-#          registry: ${{ env.REGISTRY }}
-#          username: ${{ github.actor }}
-#          password: ${{ github.token }}
-#
-#      - name: Set up QEMU
-#        uses: docker/setup-qemu-action@v3
-#
-#      - name: Set up docker buildx
-#        uses: docker/setup-buildx-action@v3
-#      # --- setup-docker action
-#
-#      - name: Build and push docker image
-#        uses: docker/build-push-action@v5
-#        with:
-#          file: ${{ matrix.docker_file }}
-#          tags: |
-#            ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.docker_image }}:${{ needs.init.outputs.savant-adapters-tag }}
-#          platforms: ${{ matrix.arch }}
-#          push: true
+  # build adapter's dockers (except deepstream adapters)
+  build-savant-adapters:
+    needs: init
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - docker_file: docker/Dockerfile.adapters-gstreamer
+            docker_image: savant-adapters-gstreamer
+            arch: linux/amd64
+          - docker_file: docker/Dockerfile.adapters-gstreamer
+            docker_image: savant-adapters-gstreamer-l4t
+            arch: linux/arm64
+          - docker_file: docker/Dockerfile.adapters-py
+            docker_image: savant-adapters-py
+            arch: linux/amd64
+          - docker_file: docker/Dockerfile.adapters-py
+            docker_image: savant-adapters-py-l4t
+            arch: linux/arm64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # setup-docker action ---
+      - name: Log in to the container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up docker buildx
+        uses: docker/setup-buildx-action@v3
+      # --- setup-docker action
+
+      - name: Build and push docker image
+        uses: docker/build-push-action@v5
+        with:
+          file: ${{ matrix.docker_file }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.docker_image }}:${{ needs.init.outputs.savant-adapters-tag }}
+          platforms: ${{ matrix.arch }}
+          push: true
 
   # build documentation
   build-docs:

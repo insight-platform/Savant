@@ -42,18 +42,23 @@ class GHRequest:
         return self.request(endpoint, 'application/octet-stream')
 
 
+def tag_name_to_version(tag_name: str) -> str:
+    # version = tag_name without leading v (*.*.*)
+    return tag_name[1:]
+
+
 def get_latest(req: GHRequest) -> str:
     """Returns latest release tag_name."""
     try:
         res = urlopen(req.request_json(endpoint='releases/latest'))
         release = json.loads(res.read())
-        return release['tag_name']
+        return tag_name_to_version(release['tag_name'])
     except HTTPError as exc:
         print(f'Request latest release. {exc}')
 
 
 def get_versions(req: GHRequest) -> dict:
-    """Returns releases dict(tag_name: asset_id)."""
+    """Returns releases dict(version: asset_id)."""
     try:
         res = urlopen(req.request_json(endpoint='releases'))
         releases = json.loads(res.read())
@@ -80,7 +85,7 @@ def get_versions(req: GHRequest) -> dict:
             print('\tnot found asset')
             continue
 
-        result[release['tag_name']] = asset_id
+        result[tag_name_to_version(release['tag_name'])] = asset_id
 
     return result
 
@@ -112,10 +117,16 @@ def render_templates(variables: dict, dst: Path, src: Path = None):
     src_path = Path(src) if src else Path(__file__).parent.resolve() / '_templates'
     env = jinja2.Environment(loader=jinja2.FileSystemLoader(src_path))
 
+    def get_url(version: str) -> str:
+        version_path = version if version == 'develop' else f'v{version}'
+        return f'{variables["pages_url"]}/{version_path}'
+
     for tpl in src_path.glob('*.tpl'):
         print(f'render {tpl.name} => {str(dst / tpl.stem)}')
+        template = env.get_template(tpl.name)
+        template.globals.update(dict(get_url=get_url))
         with open(dst / tpl.stem, 'w') as fp:
-            fp.write(env.get_template(tpl.name).render(variables))
+            fp.write(template.render(variables))
 
 
 def main(repository: str, token: str, dst_path: str):
@@ -153,9 +164,9 @@ def main(repository: str, token: str, dst_path: str):
     )
 
     # download and unpack release docs
-    for tag_name, assetid in versions.items():
-        print(f'download release {tag_name} asset', end='')
-        version_path = result_path / tag_name
+    for version, assetid in versions.items():
+        print(f'download release v{version} asset', end='')
+        version_path = result_path / f'v{version}'
         version_path.mkdir(parents=True, exist_ok=True)
         tar_file_path = download_asset(request, assetid, version_path)
         untar(tar_file_path)
