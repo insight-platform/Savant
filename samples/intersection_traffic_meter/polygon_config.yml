@@ -1,4 +1,6 @@
+# The id of the video source that sends the intersection video
 leeds:
+  # The points define a polygon in the frame that delimits the intersection
   points:
     - [140, 465]
     - [250, 295]
@@ -7,7 +9,12 @@ leeds:
     - [1565, 440]
     - [1295, 760]
 
-  # do not use "->" or "+" in the edge tags
+  # Edges list contain the string tags for the polygon edges.
+  # The 1st list element is the edge between the 1st and the 2nd points from the list above,
+  # the 2nd is the edge between the 2nd and 3rd points and so on.
+  # If the edge tag is null, then it is disabled:
+  # the edge is not drawn on the frame and the crossings are not checked for it.
+  # Do not use "->" or "+" in the edge tags
   # as these strings serve as separators for dynamically generated crossing direction names
   edges:
     - left
@@ -17,7 +24,7 @@ leeds:
     - bottom
     - null
 
-# for the *-performance module configs
+# for the performance module config
 '0':
   points:
     - [140, 465]
