@@ -12,7 +12,7 @@ parameters:
     module: samples.license_plate_recognition.overlay
     class_name: Overlay
     rendered_objects:
-      yolov8m:
+      yolov8n:
         Car:
           bbox:
             border_color: '00FF00FF'  # Green
@@ -34,15 +34,15 @@ parameters:
 pipeline:
   elements:
     - element: nvinfer@detector
-      name: yolov8m
+      name: yolov8n
       model:
         remote:
-          url: s3://savant-data/models/yolov8m_f630b10/yolov8m_f630b10.zip
-          checksum_url: s3://savant-data/models/yolov8m_f630b10/yolov8m_f630b10.md5
+          url: s3://savant-data/models/yolov8n/yolov8n_000bcd6.zip
+          checksum_url: s3://savant-data/models/yolov8n/yolov8n_000bcd6.md5
           parameters:
             endpoint: https://eu-central-1.linodeobjects.com
         format: onnx
-        model_file: yolov8m.onnx
+        model_file: yolov8n.onnx
         config_file: config_infer_primary_yoloV8.txt
         # max GPU RAM used to build the engine, 6GB by default
         # set lower than total GPU RAM available on your hardware
@@ -67,7 +67,7 @@ pipeline:
         precision: fp16
         batch_size: 1
         input:
-          object: yolov8m.Car
+          object: yolov8n.Car
           layer_name: input_1
           shape: [3, 480, 640]
           scale_factor: 0.00392156862745098
