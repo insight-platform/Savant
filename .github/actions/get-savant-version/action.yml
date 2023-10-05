@@ -1,0 +1,23 @@
+name: Savant/DeepStream versions
+description: Outputs actual Savant and DeepStream versions
+outputs:
+  savant-version:
+    description: Savant version
+    value: ${{ steps.get-savant-version.outputs.savant-version }}
+  deepstream-version:
+    description: DeepStream version
+    value: ${{ steps.get-deepstream-version.outputs.deepstream-version }}
+runs:
+  using: composite
+  steps:
+#    - uses: actions/checkout@v4
+    - id: get-savant-version
+      run: echo "savant-version=$(cat savant/VERSION | awk -F= '$1=="SAVANT"{print $2}' | sed 's/"//g')" >> $GITHUB_OUTPUT
+      shell: bash
+    - id: get-deepstream-version
+      run: echo "deepstream-version=$(cat savant/VERSION | awk -F= '$1=="DEEPSTREAM"{print $2}' | sed 's/"//g')" >> $GITHUB_OUTPUT
+      shell: bash
+    - run: |
+        echo Savant version: ${{ steps.get-savant-version.outputs.savant-version }}
+        echo DeepStream version: ${{ steps.get-deepstream-version.outputs.deepstream-version }}
+      shell: bash
