@@ -8,7 +8,6 @@ from savant_rs.primitives.geometry import BBox
 
 from savant.base.model import OutputImage
 from savant.base.pyfunc import BasePyFuncCallableImpl, PyFuncNoopCallException
-from savant.deepstream.cudastream import CudaStreams
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
 from savant.deepstream.opencv_utils import nvds_to_gpu_mat
 from savant.deepstream.utils import nvds_frame_meta_iterator, nvds_obj_meta_iterator
@@ -52,9 +51,10 @@ class BasePreprocessObjectImage(BasePyFuncCallableImpl):
 
 
 class ObjectsPreprocessing:
-    def __init__(self):
+    def __init__(self, batch_size: int):
         self._preprocessing_functions = {}
         self._frames_map = {}
+        self._stream_pool = [cv2.cuda.Stream() for _ in range(batch_size)]
         self.logger = get_logger(__name__)
 
     def add_preprocessing_function(
@@ -95,77 +95,78 @@ class ObjectsPreprocessing:
         self._frames_map[buffer] = {}
 
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(buffer)
-        with CudaStreams() as cuda_streams:
-            for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
-                left = 0
-                top = 0
-                row_height = 0
-                cuda_stream = cuda_streams.get_cuda_stream(nvds_frame_meta)
-                with nvds_to_gpu_mat(buffer, nvds_frame_meta) as frame_mat:
-                    frame_image = GPUImage(image=frame_mat, cuda_stream=cuda_stream)
-                    copy_frame_image = GPUImage(
-                        image=frame_mat.clone(), cuda_stream=cuda_stream
+
+        for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
+            left = 0
+            top = 0
+            row_height = 0
+            cuda_stream = self._stream_pool[nvds_frame_meta.batch_id]
+            with nvds_to_gpu_mat(buffer, nvds_frame_meta) as frame_mat:
+                frame_image = GPUImage(image=frame_mat, cuda_stream=cuda_stream)
+                copy_frame_image = GPUImage(
+                    image=frame_mat.clone(), cuda_stream=cuda_stream
+                )
+                self._frames_map[buffer][nvds_frame_meta.batch_id] = copy_frame_image
+                for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
+                    if nvds_obj_meta.class_id != class_id:
+                        continue
+                    if nvds_obj_meta.unique_component_id != model_uid:
+                        continue
+                    object_meta = _NvDsObjectMetaImpl.from_nv_ds_object_meta(
+                        object_meta=nvds_obj_meta, frame_meta=nvds_frame_meta
                     )
-                    self._frames_map[buffer][
-                        nvds_frame_meta.batch_id
-                    ] = copy_frame_image
-                    for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
-                        if nvds_obj_meta.class_id != class_id:
-                            continue
-                        if nvds_obj_meta.unique_component_id != model_uid:
-                            continue
-                        object_meta = _NvDsObjectMetaImpl.from_nv_ds_object_meta(
-                            object_meta=nvds_obj_meta, frame_meta=nvds_frame_meta
+
+                    try:
+                        preprocess_image = preprocessing_func(
+                            object_meta=object_meta,
+                            frame_image=copy_frame_image,
+                            cuda_stream=cuda_stream,
                         )
+                    except Exception as exc:
+                        if dev_mode:
+                            if not isinstance(exc, PyFuncNoopCallException):
+                                self.logger.exception(
+                                    'Error in input image preprocessing.'
+                                )
+                            continue
+                        raise exc
 
-                        try:
-                            preprocess_image = preprocessing_func(
-                                object_meta=object_meta,
-                                frame_image=copy_frame_image,
-                                cuda_stream=cuda_stream,
-                            )
-                        except Exception as exc:
-                            if dev_mode:
-                                if not isinstance(exc, PyFuncNoopCallException):
-                                    self.logger.exception(
-                                        'Error in input image preprocessing.'
-                                    )
-                                continue
-                            raise exc
-
-                        if not isinstance(preprocess_image, GPUImage):
-                            raise ValueError(
-                                'Preprocessing function must return Image object.'
-                            )
-                        if output_image is not None:
-                            preprocess_image = preprocess_image.resize(
-                                resolution=(output_image.width, output_image.height),
-                                method=output_image.method,
-                                interpolation=output_image.cv2_interpolation,
-                            )
-                        if left + preprocess_image.width > frame_image.width:
-                            left = 0
-                            if row_height == 0:
-                                row_height = preprocess_image.height
-                            top += row_height
-                            row_height = 0
-                        if top >= frame_image.height:
-                            raise ValueError(
-                                'There is no place on frame ' 'to put object image.'
-                            )
-                        if top + preprocess_image.height > frame_image.height:
-                            raise ValueError(
-                                'There is no place on frame ' 'to put object image.'
-                            )
-                        if preprocess_image.height > row_height:
+                    if not isinstance(preprocess_image, GPUImage):
+                        raise ValueError(
+                            'Preprocessing function must return Image object.'
+                        )
+                    if output_image is not None:
+                        preprocess_image = preprocess_image.resize(
+                            resolution=(output_image.width, output_image.height),
+                            method=output_image.method,
+                            interpolation=output_image.cv2_interpolation,
+                        )
+                    if left + preprocess_image.width > frame_image.width:
+                        left = 0
+                        if row_height == 0:
                             row_height = preprocess_image.height
+                        top += row_height
+                        row_height = 0
+                    if top >= frame_image.height:
+                        raise ValueError(
+                            'There is no place on frame ' 'to put object image.'
+                        )
+                    if top + preprocess_image.height > frame_image.height:
+                        raise ValueError(
+                            'There is no place on frame ' 'to put object image.'
+                        )
+                    if preprocess_image.height > row_height:
+                        row_height = preprocess_image.height
 
-                        frame_image.paste(preprocess_image, (left, top))
-                        nvds_obj_meta.rect_params.top = top
-                        nvds_obj_meta.rect_params.left = left
-                        nvds_obj_meta.rect_params.width = preprocess_image.width
-                        nvds_obj_meta.rect_params.height = preprocess_image.height
-                        left += preprocess_image.width
+                    frame_image.paste(preprocess_image, (left, top))
+                    nvds_obj_meta.rect_params.top = top
+                    nvds_obj_meta.rect_params.left = left
+                    nvds_obj_meta.rect_params.width = preprocess_image.width
+                    nvds_obj_meta.rect_params.height = preprocess_image.height
+                    left += preprocess_image.width
+
+        for stream in self._stream_pool:
+            stream.waitForCompletion()
 
     def restore_frame(self, buffer: Gst.Buffer):
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))

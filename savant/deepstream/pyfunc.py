@@ -43,11 +43,14 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
                 GST_NVEVENT_STREAM_EOS,
             ]
         }
-        self.frame_streams = {}
+        self._stream_pool_size = None
+        self._stream_pool = []
 
     def on_start(self) -> bool:
         """Do on plugin start."""
         self._video_pipeline = self.gst_element.get_property('pipeline')
+        # the prop is set to pipeline batch size during init
+        self._stream_pool_size = self.gst_element.get_property('stream-pool-size')
         return True
 
     def on_event(self, event: Gst.Event):
@@ -88,21 +91,20 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
         # self.logger.debug('Source %s deleted.', source_id)
 
     def get_cuda_stream(self, frame_meta: NvDsFrameMeta):
-        """Get a CUDA stream that can be used to
-        asynchronously process a frame in a batch.
+        """Get a CUDA stream that can be used to asynchronously process
+        a frame in a batch.
+
         All frame CUDA streams will be waited for at the end of batch processing.
         """
-        self.logger.debug(
-            'Getting CUDA stream for frame with batch_id=%d', frame_meta.batch_id
-        )
-        if frame_meta.batch_id not in self.frame_streams:
+        if not self._stream_pool:
             self.logger.debug(
-                'No existing CUDA stream for frame with batch_id=%d, init new',
-                frame_meta.batch_id,
+                'Creating CUDA stream pool of size %d.', self._stream_pool_size
             )
-            self.frame_streams[frame_meta.batch_id] = cv2.cuda.Stream()
-
-        return self.frame_streams[frame_meta.batch_id]
+            self._stream_pool = [
+                cv2.cuda.Stream() for _ in range(self._stream_pool_size)
+            ]
+        self.logger.debug('Using CUDA stream %d.', frame_meta.batch_id)
+        return self._stream_pool[frame_meta.batch_id]
 
     def process_buffer(self, buffer: Gst.Buffer):
         """Process gstreamer buffer directly. Throws an exception if fatal
@@ -156,9 +158,8 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
                 ) as frame_meta:
                     self.process_frame(buffer, frame_meta)
 
-        for stream in self.frame_streams.values():
+        for stream in self._stream_pool:
             stream.waitForCompletion()
-        self.frame_streams.clear()
 
     def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
         """Process gstreamer buffer and frame metadata. Throws an exception if fatal
