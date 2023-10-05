@@ -71,5 +71,5 @@ docker run --rm -it --runtime=nvidia \
 -v `pwd`/models/license_plate_recognition:/models \
 -v `pwd`/downloads/license_plate_recognition:/downloads \
 license_plate_recognition-module \
-samples/nvidia_car_classification/module_performance.yml
+samples/license_plate_recognition/module_performance.yml
 ```
