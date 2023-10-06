@@ -404,6 +404,23 @@ class SourceOutputH26X(SourceOutputEncoded):
             'Added parser %s with params %s', self._codec.parser, parser_params
         )
 
+    def _build_output_caps(self, width: int, height: int) -> Gst.Caps:
+        caps_params = [
+            self._codec.caps_with_params,
+            f'width={width}',
+            f'height={height}',
+        ]
+        if (
+            self._codec.name == Codec.H264.value.name
+            and self._encoder == self._codec.sw_encoder
+        ):
+            profile = self._output_frame.get('profile')
+            if profile is None:
+                profile = 'baseline'
+            caps_params.append(f'profile={profile}')
+
+        return Gst.Caps.from_string(', '.join(caps_params))
+
 
 def create_source_output(
     frame_params: FrameParameters,
