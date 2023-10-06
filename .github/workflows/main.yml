@@ -1,0 +1,263 @@
+# Build and publish packages, docker images and documentation
+name: main
+
+on:
+  push:
+    tags: ['v*.*.*']
+    branches: ['develop']
+
+  # to run this workflow manually from the Actions tab
+  # the init job fails if branch is different from 'releases/*.*.*' or 'develop'
+  # TODO: Add inputs to select a part of the workflow to run (e.g. build docs only)
+  workflow_dispatch:
+
+# allow one concurrent deployment
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+
+  init:
+    runs-on: ubuntu-latest
+    outputs:
+      savant-version: ${{ steps.get-savant-version.outputs.savant-version }}
+      deepstream-version: ${{ steps.get-savant-version.outputs.deepstream-version }}
+      savant-deepstream-tag: ${{ steps.get-docker-vars.outputs.deepstream-tag }}
+      savant-adapters-tag: ${{ steps.get-docker-vars.outputs.adapters-tag }}
+      docs-docker-image: ${{ steps.get-docker-vars.outputs.docs-docker-image }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: get-savant-version
+        uses: ./.github/actions/get-savant-version
+
+      - id: get-docker-vars
+        run: |
+          DEEPSTREAM_TAG=latest
+          ADAPTERS_TAG=latest
+          if [ "${{ github.ref_name }}" != "develop" ]; then
+            TAG=${{ github.ref_name }}
+            if [ "${{ github.ref_type }}" == "branch" ]; then
+              if [[ "$TAG" != releases/* ]]; then
+                echo "::error::Wrong branch"
+                exit 1
+              fi
+              TAG="v${TAG/releases\//}"
+            fi
+            echo "detected tag $TAG"
+            if [ "$TAG" != "v${{ steps.get-savant-version.outputs.savant-version }}" ]; then
+              echo "::error::Tag and Savant version mismatch"
+              exit 1
+            fi
+            DEEPSTREAM_TAG=${{ steps.get-savant-version.outputs.savant-version }}-${{ steps.get-savant-version.outputs.deepstream-version }}
+            ADAPTERS_TAG=${{ steps.get-savant-version.outputs.savant-version }}
+          fi
+          echo "deepstream-tag=$DEEPSTREAM_TAG" >> $GITHUB_OUTPUT
+          echo "adapters-tag=$ADAPTERS_TAG" >> $GITHUB_OUTPUT
+          echo "docs-docker-image=${{ env.REGISTRY }}/${{ github.repository_owner }}/savant-deepstream:$DEEPSTREAM_TAG" >> $GITHUB_OUTPUT
+        shell: bash
+
+  # build deepstream dockers
+  build-savant-deepstream:
+    needs: init
+    runs-on: self-hosted
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - docker_file: docker/Dockerfile.deepstream
+            docker_image_suffix: deepstream
+            arch: linux/amd64
+          - docker_file: docker/Dockerfile.deepstream
+            docker_image_suffix: deepstream-l4t
+            arch: linux/arm64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # setup-docker action ---
+      - name: Log in to the container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up docker buildx
+        uses: docker/setup-buildx-action@v3
+      # --- setup-docker action
+
+      # base image
+      - name: Build and push savant-deepstream docker image
+        uses: docker/build-push-action@v5
+        with:
+          file: ${{ matrix.docker_file }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/savant-${{ matrix.docker_image_suffix }}:${{ needs.init.outputs.savant-deepstream-tag }}
+          build-args: |
+            SAVANT_VERSION=${{ needs.init.outputs.savant-version }}
+            DEEPSTREAM_VERSION=${{ needs.init.outputs.deepstream-version }}
+          platforms: ${{ matrix.arch }}
+          target: base
+          push: true
+
+      # adapters image
+      - name: Build and push savant-adapters-deepstream docker image
+        uses: docker/build-push-action@v5
+        with:
+          file: ${{ matrix.docker_file }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/savant-adapters-${{ matrix.docker_image_suffix }}:${{ needs.init.outputs.savant-deepstream-tag }}
+          build-args: |
+            SAVANT_VERSION=${{ needs.init.outputs.savant-version }}
+            DEEPSTREAM_VERSION=${{ needs.init.outputs.deepstream-version }}
+          platforms: ${{ matrix.arch }}
+          target: adapters
+          push: true
+
+  # build adapter's dockers (except deepstream adapters)
+  build-savant-adapters:
+    needs: init
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - docker_file: docker/Dockerfile.adapters-gstreamer
+            docker_image: savant-adapters-gstreamer
+            arch: linux/amd64
+          - docker_file: docker/Dockerfile.adapters-gstreamer
+            docker_image: savant-adapters-gstreamer-l4t
+            arch: linux/arm64
+          - docker_file: docker/Dockerfile.adapters-py
+            docker_image: savant-adapters-py
+            arch: linux/amd64
+          - docker_file: docker/Dockerfile.adapters-py
+            docker_image: savant-adapters-py-l4t
+            arch: linux/arm64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # setup-docker action ---
+      - name: Log in to the container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up docker buildx
+        uses: docker/setup-buildx-action@v3
+      # --- setup-docker action
+
+      - name: Build and push docker image
+        uses: docker/build-push-action@v5
+        with:
+          file: ${{ matrix.docker_file }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.docker_image }}:${{ needs.init.outputs.savant-adapters-tag }}
+          platforms: ${{ matrix.arch }}
+          push: true
+
+  # build documentation
+  build-docs:
+    needs: [init, build-savant-deepstream]
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ needs.init.outputs.docs-docker-image }}
+    permissions:
+      contents: write
+    env:
+      MODE: ${{ github.ref_name == 'develop' && 'develop' || 'release' }}
+
+    steps:
+      - name: Install git-lfs
+        run: |
+          apt update && apt install --no-install-recommends -y git-lfs
+
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Install dependencies
+        run: |
+          apt update && apt install --no-install-recommends -y graphviz
+          python -m pip install --upgrade pip
+          python -m pip install -r docs/requirements.txt
+
+      - name: Build documentation
+        run: |
+          cd docs
+          make clean html
+
+      # release ---
+      - name: Archive documentation
+        if: github.ref_name != 'develop'
+        run: |
+          tar \
+            --dereference --hard-dereference \
+            --directory docs/build/html \
+            -cvf docs.tar \
+            .
+
+      - name: Attach to release
+        if: github.ref_name != 'develop'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: docs.tar
+      # --- release
+
+      # develop ---
+      - name: Compose docs
+        if: github.ref_name == 'develop'
+        run: |
+          ./docs/source/gh_script.py ${{ github.repository }} ${{ github.token }} docs/root
+          mv docs/build/html docs/root/develop
+          mv docs/root/versions.js docs/root/develop/_static/js/versions.js
+
+      - name: Upload pages artifact
+        if: github.ref_name == 'develop'
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: docs/root
+      # --- develop
+
+  # develop ---
+  deploy-docs:
+    if: github.ref_name == 'develop'
+    runs-on: ubuntu-latest
+    needs: build-docs
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Setup Pages
+        uses: actions/configure-pages@v1
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1
+  # --- develop
