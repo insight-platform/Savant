@@ -61,20 +61,6 @@ mkdir -p data
 curl -o data/leeds_1080p.mp4 https://eu-central-1.linodeobjects.com/savant-data/demo/leeds_1080p.mp4
 ```
 
-Next, if you haven't run the sample in the default mode yet (following the instructions above), run
-
-```bash
-docker compose -f samples/traffic_meter/docker-compose.x86.yml build module
-```
-
-or
-
-```bash
-docker compose -f samples/traffic_meter/docker-compose.l4t.yml build module
-```
-
-to build the module docker image.
-
 Now you are ready to run the performance benchmark with the following command:
 
 ```bash
