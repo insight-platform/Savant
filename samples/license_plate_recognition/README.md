@@ -53,23 +53,6 @@ mkdir -p data && curl -o data/lpr_test_1080p.mp4 \
 Now you are ready to run the performance benchmark with the following command:
 
 ```bash
-docker run --rm -it --gpus=all \
--v `pwd`/samples:/opt/savant/samples \
--v `pwd`/data:/data:ro \
--v `pwd`/models/license_plate_recognition:/models \
--v `pwd`/downloads/license_plate_recognition:/downloads \
-license_plate_recognition-module \
-samples/license_plate_recognition/module_performance.yml
+./samples/license_plate_recognition/run_perf.sh
 ```
 
-or for Jetson
-
-```bash
-docker run --rm -it --runtime=nvidia \
--v `pwd`/samples:/opt/savant/samples \
--v `pwd`/data:/data:ro \
--v `pwd`/models/license_plate_recognition:/models \
--v `pwd`/downloads/license_plate_recognition:/downloads \
-license_plate_recognition-module \
-samples/license_plate_recognition/module_performance.yml
-```

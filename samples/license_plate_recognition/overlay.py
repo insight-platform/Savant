@@ -13,12 +13,8 @@ class Overlay(NvDsDrawFunc):
         Add classifier attributes labels to the object visualisation.
         """
         if object_meta.label == 'lpd':
-            new_label_format = draw_spec.label.format
 
-            # one attribute per line
-            # if there's no specific attribute for the object on this frame
-            # reserve a line for it anyway
-            # so that the object's labels don't jump up and down
+            # drawing a licence plate instead of the label or empty label
             attr_meta = object_meta.get_attr_meta('LPRNet', 'lpr')
             if attr_meta is not None:
                 new_label_format = [str(attr_meta.value)]
