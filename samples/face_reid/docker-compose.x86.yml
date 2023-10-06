@@ -1,25 +1,24 @@
 version: "3.3"
 services:
 
-  pictures-source:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+  index-client:
+    image: ghcr.io/insight-platform/savant-deepstream:latest
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ./assets/gallery:/gallery
+      - ./index_client:/opt/savant/client
+      - ./index_files:/index
     environment:
-      - LOCATION=/gallery
-      - FILE_TYPE=picture
-      - ZMQ_ENDPOINT=req+connect:ipc:///tmp/zmq-sockets/input-video.ipc
-      - SOURCE_ID=gallery
-      - READ_METADATA=False
-    entrypoint: /opt/savant/adapters/gst/sources/media_files.sh
+      - ZMQ_SRC_ENDPOINT=req+connect:ipc:///tmp/zmq-sockets/input-video.ipc
+      - ZMQ_SINK_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
+    entrypoint: python /opt/savant/client/run.py
     profiles:
       - index
     depends_on:
-      index-builder:
+      index-module:
         condition: service_healthy
 
-  index-builder:
+  index-module:
     build:
       context: .
       dockerfile: docker/Dockerfile.x86
@@ -31,6 +30,7 @@ services:
     command: samples/face_reid/index_builder.yml
     environment:
       - ZMQ_SRC_ENDPOINT=rep+bind:ipc:///tmp/zmq-sockets/input-video.ipc
+      - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
     deploy:
       resources:
         reservations:

@@ -5,11 +5,16 @@ parameters:
     width: 1280
     height: 720
 
+  output_frame:
+    codec: raw-rgba
+
   face_width: 112
   face_height: 112
   detection_model_name: yolov8nface
 
   reid_model_name: adaface_ir50_webface4m_90fb74c
+
+  shutdown_auth: "shutdown"
 
 pipeline:
 
@@ -75,21 +80,21 @@ pipeline:
           attributes:
             - name: feature
 
-    - element: pyfunc
-      module: samples.face_reid.index_builder
-      class_name: IndexBuilder
-      kwargs:
-        index_dir: /opt/savant/samples/face_reid/index_files/
-        index_space: cosine
-        # index_dim is set according to the reid model output dimensions
-        index_dim: 512
-        # hnswlib index parameters
-        # for details refer to hnswlib doc
-        # https://github.com/nmslib/hnswlib#api-description
-        index_max_elements: 100
-        index_ef_construction: 200
-        index_m: 16
+    # - element: pyfunc
+    #   module: samples.face_reid.index_builder
+    #   class_name: IndexBuilder
+    #   kwargs:
+    #     index_dir: /opt/savant/samples/face_reid/index_files/
+    #     index_space: cosine
+    #     # index_dim is set according to the reid model output dimensions
+    #     index_dim: 512
+    #     # hnswlib index parameters
+    #     # for details refer to hnswlib doc
+    #     # https://github.com/nmslib/hnswlib#api-description
+    #     index_max_elements: 100
+    #     index_ef_construction: 200
+    #     index_m: 16
 
   # output sink adapter is not used
-  sink:
-    - element: devnull_sink
+  # sink:
+  #   - element: devnull_sink
