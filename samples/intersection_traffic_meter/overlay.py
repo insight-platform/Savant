@@ -1,7 +1,8 @@
 from collections import defaultdict
 from itertools import combinations
-import yaml
+
 import cv2
+import yaml
 
 from samples.intersection_traffic_meter.utils import RandColorIterator
 from savant.deepstream.drawfunc import NvDsDrawFunc
@@ -43,17 +44,16 @@ class Overlay(NvDsDrawFunc):
 
             self.directions[source_id] = src_directions
 
-
     def draw_on_frame(self, frame_meta: NvDsFrameMeta, artist: Artist):
 
         crossing_counts = defaultdict(int)
         for obj_meta in frame_meta.objects:
             if obj_meta.is_primary:
                 for direction in self.directions[frame_meta.source_id]:
-                    dir_crossing_n = obj_meta.get_attr_meta(
-                        'analytics', direction
+                    dir_crossing_n = obj_meta.get_attr_meta('analytics', direction)
+                    crossing_counts[direction] = (
+                        dir_crossing_n.value if dir_crossing_n else 0
                     )
-                    crossing_counts[direction] = dir_crossing_n.value if dir_crossing_n else 0
 
             else:
                 # mark obj center

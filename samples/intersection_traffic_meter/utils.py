@@ -12,10 +12,6 @@ from savant_rs.primitives.geometry import (
 )
 
 
-
-
-
-
 class TwoLinesCrossingTracker:
     """Determines the direction based on the order in which two lines are crossed.
     This is more reliable method in the case of a line at the frame boundary due to
@@ -75,11 +71,9 @@ class TwoLinesCrossingTracker:
                 else:
                     ret[track_idx] = '+'.join(['exit'] + cross_edge_labels)
 
-
             if len(set(cross_edge_labels)) == 2:
                 # the track exited the area through a different edge than it entered
                 ret[track_idx] = '->'.join(cross_edge_labels)
-
 
         return ret
 

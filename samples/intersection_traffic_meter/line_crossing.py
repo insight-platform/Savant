@@ -1,6 +1,7 @@
 import sys
 from collections import defaultdict
 from itertools import permutations
+
 import yaml
 from savant_rs.primitives.geometry import Point, PolygonalArea
 from statsd import StatsClient
@@ -45,23 +46,28 @@ class LineCrossing(NvDsPyFuncPlugin):
 
         self.intersections = {}
         for source_id, poly_cfg in self.line_config.items():
-            points = [
-                Point(*coords)
-                for coords in poly_cfg['points']
-            ]
+            points = [Point(*coords) for coords in poly_cfg['points']]
 
             points_permutations = permutations(points)
             config_order = next(points_permutations)
             polygon = PolygonalArea(config_order, poly_cfg['edges'])
             if polygon.is_self_intersecting():
                 # try to find a permutation of points that does not produce a self-intersecting polygon
-                self.logger.warn('Polygon config for the "%s" source id produced a self-intersecting polygon. Trying to find a valid permutation...', source_id)
+                self.logger.warn(
+                    'Polygon config for the "%s" source id produced a self-intersecting polygon.'
+                    ' Trying to find a valid permutation...',
+                    source_id,
+                )
                 while True:
                     try:
                         points_perm = next(points_permutations)
                         polygon = PolygonalArea(points_perm, poly_cfg['edges'])
                         if not polygon.is_self_intersecting():
-                            self.logger.info('Found a valid points permutation "%s" for the "%s" source id.', points_perm, source_id)
+                            self.logger.info(
+                                'Found a valid points permutation "%s" for the "%s" source id.',
+                                points_perm,
+                                source_id,
+                            )
                             break
                     except StopIteration:
                         self.logger.error(
@@ -97,7 +103,6 @@ class LineCrossing(NvDsPyFuncPlugin):
         if source_id in self.crossing_counts:
             del self.crossing_counts[source_id]
 
-
     def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
         """Process frame metadata.
 
@@ -112,7 +117,10 @@ class LineCrossing(NvDsPyFuncPlugin):
                 primary_meta_object = obj_meta
                 break
 
-        if primary_meta_object is not None and frame_meta.source_id in self.intersections:
+        if (
+            primary_meta_object is not None
+            and frame_meta.source_id in self.intersections
+        ):
             if frame_meta.source_id not in self.lc_trackers:
                 self.lc_trackers[frame_meta.source_id] = TwoLinesCrossingTracker(
                     self.intersections[frame_meta.source_id]
@@ -168,10 +176,10 @@ class LineCrossing(NvDsPyFuncPlugin):
                 for direction_name, frame_pts in obj_events:
                     obj_meta.add_attr_meta('lc_tracker', direction_name, frame_pts)
 
-            for direction, crossings_n in self.crossing_counts[frame_meta.source_id].items():
-                primary_meta_object.add_attr_meta(
-                    'analytics', direction, crossings_n
-                )
+            for direction, crossings_n in self.crossing_counts[
+                frame_meta.source_id
+            ].items():
+                primary_meta_object.add_attr_meta('analytics', direction, crossings_n)
 
         # periodically remove stale tracks
         if not (frame_meta.frame_num % self.stale_track_del_period):
