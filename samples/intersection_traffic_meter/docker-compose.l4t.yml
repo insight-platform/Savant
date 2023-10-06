@@ -2,7 +2,7 @@ version: "3.3"
 services:
 
   video-loop-source:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:latest
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -21,7 +21,7 @@ services:
   module:
     build:
       context: .
-      dockerfile: docker/Dockerfile.x86
+      dockerfile: docker/Dockerfile.l4t
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../models/intersection_traffic_meter:/models
@@ -32,16 +32,10 @@ services:
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
       - FPS_PERIOD=1000
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+    runtime: nvidia
 
   always-on-sink:
-    image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
+    image: ghcr.io/insight-platform/savant-adapters-deepstream-l4t:latest
     restart: unless-stopped
     ports:
       - "554:554"    # RTSP
@@ -57,13 +51,7 @@ services:
       - STUB_FILE_LOCATION=/stub_imgs/smpte100_1920x1080.jpeg
       - DEV_MODE=True
     command: python -m adapters.ds.sinks.always_on_rtsp
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+    runtime: nvidia
 
   graphite:
     image: graphiteapp/graphite-statsd
