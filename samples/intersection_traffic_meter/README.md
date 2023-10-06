@@ -57,7 +57,8 @@ Download the video file to your local folder. For example, create a data folder 
 ```bash
 # you are expected to be in Savant/ directory
 
-mkdir -p data && curl -o data/leeds_1080p.mp4 https://eu-central-1.linodeobjects.com/savant-data/demo/leeds_1080p.mp4
+mkdir -p data
+curl -o data/leeds_1080p.mp4 https://eu-central-1.linodeobjects.com/savant-data/demo/leeds_1080p.mp4
 ```
 
 Next, if you haven't run the sample in the default mode yet (following the instructions above), run
