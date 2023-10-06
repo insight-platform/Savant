@@ -4,11 +4,14 @@ import sys
 import os
 import time
 import pathlib
+import shutil
 import cv2
 import numpy as np
+import hnswlib
 
-
+from samples.face_reid.utils import pack_person_id_img_n
 from savant.client import  JpegSource, SinkBuilder, SourceBuilder
+
 
 print('Starting Savant client...')
 
@@ -22,7 +25,12 @@ except KeyError:
 
 source_id = 'test-source'
 shutdown_auth = 'shutdown'
-result_img_path = '/index'
+index_dir = '/index'
+
+processed_gallery_dir = os.path.join(index_dir, 'processed_gallery')
+
+shutil.rmtree(processed_gallery_dir, ignore_errors=True)
+os.makedirs(processed_gallery_dir)
 
 # Build the source
 source = (
@@ -40,7 +48,7 @@ sink = (
 
 src_jpegs = [
     JpegSource(source_id, str(img_path))
-    for img_path in pathlib.Path('/gallery').glob('*.jpeg')
+    for img_path in sorted(pathlib.Path('/gallery').glob('*.jpeg'))
 ]
 
 for src_jpeg in src_jpegs:
@@ -49,11 +57,28 @@ source.send_eos(source_id)
 
 time.sleep(1)  # Wait for the module to process the frame
 
+index_space='cosine'
+# index_dim is set according to the reid model output dimensions
+index_dim = 512
+# hnswlib index parameter
+index_max_elements = 100
+index_ef_construction = 200
+index_m = 16
+
+index = hnswlib.Index(space=index_space, dim=index_dim)
+index.init_index(
+    max_elements=index_max_elements,
+    ef_construction=index_ef_construction,
+    M=index_m,
+)
+
+
 print('Receiving results from the module...')
 
 feature_namespace = 'adaface_ir50_webface4m_90fb74c'
 feature_name = 'feature'
 
+person_names = []
 results_count = 0
 for result in sink:
 
@@ -64,33 +89,61 @@ for result in sink:
     img = img.reshape(result.frame_meta.height, result.frame_meta.width, 4)
     print(img.shape)
 
+    loc_attr = result.frame_meta.get_attribute('default', 'location')
+    location = loc_attr.values[0].as_string()
+
+    root, _ = os.path.splitext(location)
+    file_name = os.path.basename(root)
+    # gallery images are named as <person_name>_<img_n>.jpeg
+    person_name, img_n = file_name.rsplit('_', maxsplit=1)
+    # assign person_id to person_name in the order of appearance
+    try:
+        person_id = person_names.index(person_name)
+    except ValueError:
+        person_id = len(person_names)
+        person_names.append(person_name)
+
+    img_n = int(img_n)
+
+    # get the face feature vector from metadata
     for obj in result.frame_meta.get_all_objects():
         if obj.label == 'face':
-            print('received face')
-            # for namespace, name in obj.attributes:
-            #     attr = obj.get_attribute(namespace, name)
-            #     print(namespace, name, type(attr))
-            #     for attr_val in attr.values:
-            #         print(type(attr_val))
+            feature_attr = obj.get_attribute(feature_namespace, feature_name)
+            feature = feature_attr.values[0].as_floats()
 
-            attr = obj.get_attribute(feature_namespace, feature_name)
-            attr_val = attr.values[0]
-            feature = attr_val.as_floats()
-            print(len(feature))
+            # index stores single int label for each feature
+            # we assume that the gallery holds no more than 2^32 people or images per person
+            # and pack both person_id and img_n into single int64
+            feature_id = pack_person_id_img_n(person_id, img_n)
+            index.add_items(feature, feature_id)
+
+            left, top, right, bottom = obj.detection_box.as_ltrb_int()
+
+            try:
+                face_img = img[top:bottom, left:right]
+            except:
+                print('Error')
+            else:
+                face_img = cv2.cvtColor(face_img, cv2.COLOR_RGBA2BGR)
+                img_path = os.path.join(
+                    processed_gallery_dir,
+                    f'{person_name}_{person_id:03d}_{img_n:03d}.jpeg',
+                )
+                cv2.imwrite(img_path, face_img)
+
+            # assume only one face per image
+            break
 
 
     results_count += 1
     if results_count == len(src_jpegs):
-        source.send_shutdown(source_id, shutdown_auth)
         break
-        # source.send_shutdown(source_id, shutdown_auth)
-        # break
 
 
     # save the result image
     # cv2.imwrite(result_img_path, cv2.cvtColor(img, cv2.COLOR_RGBA2BGRA))
 
-
+source.send_shutdown(source_id, shutdown_auth)
 print('Done.')
 
 

@@ -2,16 +2,19 @@ version: "3.3"
 services:
 
   index-client:
-    image: ghcr.io/insight-platform/savant-deepstream:latest
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.x86
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ./assets/gallery:/gallery
-      - ./index_client:/opt/savant/client
+      - ./src:/opt/savant/samples/face_reid
       - ./index_files:/index
     environment:
       - ZMQ_SRC_ENDPOINT=req+connect:ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SINK_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
-    entrypoint: python /opt/savant/client/run.py
+    entrypoint: python
+    command: samples/face_reid/index_builder_client.py
     profiles:
       - index
     depends_on:
@@ -19,14 +22,12 @@ services:
         condition: service_healthy
 
   index-module:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.x86
+    image: ghcr.io/insight-platform/savant-deepstream:latest
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../models/face_reid:/models
       - ../../downloads/face_reid:/downloads
-      - ..:/opt/savant/samples
+      - ./src:/opt/savant/samples/face_reid
     command: samples/face_reid/index_builder.yml
     environment:
       - ZMQ_SRC_ENDPOINT=rep+bind:ipc:///tmp/zmq-sockets/input-video.ipc
