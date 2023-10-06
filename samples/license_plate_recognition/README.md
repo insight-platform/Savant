@@ -4,7 +4,7 @@ The app partially reproduces [deepstream_lpr_app](https://github.com/NVIDIA-AI-I
 
 Preview:
 
-![](assets/license-plate-recognition-1080.webp)
+![](assets/license-plate-recognition.webp)
 
 Tested on platforms:
 
