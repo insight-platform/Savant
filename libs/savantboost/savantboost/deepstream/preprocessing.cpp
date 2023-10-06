@@ -156,15 +156,18 @@ GstFlowReturn ObjectsPreprocessing::preprocessing(
                     else
                     {
                         NppiRect crop_rect = {
-                            .x =rect_params.left, 
-                            .y=rect_params.top, 
-                            .width = rect_params.width, 
-                            .height = rect_params.height
+                            .x =static_cast<int>(rect_params.left),
+                            .y=static_cast<int>(rect_params.top),
+                            .width = static_cast<int>(rect_params.width),
+                            .height = static_cast<int>(rect_params.height)
                         };
                         NppiSize src_image_size = {.width = frame_width, .height = frame_height};
 
                         preproc_object = new savantboost::Image(rect_params.width, rect_params.height);
-                        NppiSize dst_image_size = {.width = rect_params.width, .height = rect_params.height};
+                        NppiSize dst_image_size = {
+                            .width = static_cast<int>(rect_params.width),
+                            .height = static_cast<int>(rect_params.height)
+                            };
 
                         cudaCrop(
                             (Npp8u *) copy_frame,
