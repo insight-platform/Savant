@@ -346,6 +346,10 @@ class SourceOutputEncoded(SourceOutputWithFrame):
     def codec(self) -> CodecInfo:
         return self._codec
 
+    @property
+    def encoder(self) -> str:
+        return self._encoder
+
     def _add_transform_elems(self, pipeline: GstPipeline, source_info: SourceInfo):
         encoder = pipeline.add_element(
             PipelineElement(self._encoder, properties=self._params)
