@@ -63,7 +63,7 @@ parameters:
   #     iframeinterval: 25
   #   condition:
   #     tag: encode
-  #  # Profile for software h264 encoder. Can be "baseline", "main", "high", "high-4:2:2", "high-4:4:4".
+  #  # Profile for software h264 encoder. Can be "baseline", "main", "high".
   #  # Default is "baseline".
   #  profile: baseline
 

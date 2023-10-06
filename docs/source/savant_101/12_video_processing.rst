@@ -372,7 +372,7 @@ Software H264 Encoder
 
 .. note::
 
-    For this encoder a profile can be specified in ``output_frame.profile`` parameter (one of ``baseline``, ``main``, ``high``, ``high-4:2:2``, ``high-4:4:4``). The default value is ``baseline``.
+    For this encoder a profile can be specified in ``output_frame.profile`` parameter (one of ``baseline``, ``main``, ``high``). The default value is ``baseline``.
 
 Hardware HEVC Codec (NVENC)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^

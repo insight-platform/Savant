@@ -32,6 +32,7 @@ def check_encoder_is_available(parameters: Dict[str, Any]) -> bool:
     if not is_aarch64():
         converter_props['nvbuf-memory-type'] = int(pyds.NVBUF_MEM_CUDA_UNIFIED)
 
+    encoder = codec.value.encoder(output_frame.get('encoder'))
     elements = [
         PipelineElement(
             'videotestsrc',
@@ -46,11 +47,33 @@ def check_encoder_is_available(parameters: Dict[str, Any]) -> bool:
             properties=converter_props,
         ),
         PipelineElement(
-            codec.value.encoder(output_frame.get('encoder')),
+            encoder,
             properties=output_frame.get('encoder_params', {}),
         ),
-        PipelineElement('fakesink'),
     ]
+    if codec in [Codec.H264, Codec.HEVC]:
+        elements.append(
+            PipelineElement(
+                codec.value.parser,
+                properties={'config-interval': -1},
+            )
+        )
+    caps = codec.value.caps_with_params
+    if codec == Codec.H264 and encoder == codec.value.sw_encoder:
+        profile = output_frame.get('profile')
+        if profile is None:
+            profile = 'baseline'
+        caps = f'{caps},profile={profile}'
+    elements.extend(
+        [
+            PipelineElement(
+                'capsfilter',
+                properties={'caps': caps},
+            ),
+            PipelineElement('fakesink'),
+        ]
+    )
+
     last_gst_element = None
     for element in elements:
         if element.element == 'capsfilter':
@@ -61,7 +84,11 @@ def check_encoder_is_available(parameters: Dict[str, Any]) -> bool:
         pipeline.add(gst_element)
         if last_gst_element is not None:
             logger.debug('Linking %r -> %r', last_gst_element.name, gst_element.name)
-            assert last_gst_element.link(gst_element)
+            if not last_gst_element.link(gst_element):
+                logger.error(
+                    'Failed to link %r -> %r', last_gst_element.name, gst_element.name
+                )
+                return False
         last_gst_element = gst_element
 
     with NvDsPipelineRunner(pipeline) as runner:
