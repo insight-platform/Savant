@@ -1,10 +1,9 @@
 """SavantParseBin element."""
-import inspect
 from typing import Optional
 
 from savant.gstreamer import GObject, Gst  # noqa:F401
-from savant.gstreamer.codecs import CODEC_BY_CAPS_NAME, Codec
-from savant.gstreamer.utils import on_pad_event, propagate_gst_error
+from savant.gstreamer.codecs import CODEC_BY_CAPS_NAME, Codec, CodecInfo
+from savant.gstreamer.utils import on_pad_event
 from savant.utils.logging import LoggerMixin
 
 SINK_PAD_TEMPLATE = Gst.PadTemplate.new(
@@ -60,23 +59,8 @@ class SavantParseBin(LoggerMixin, Gst.Bin):
     def on_sink_pad_caps(self, pad: Gst.Pad, event: Gst.Event):
         caps: Gst.Caps = event.parse_caps()
         self.logger.debug('Got caps %r. Trying to find parser.', caps.to_string())
-        try:
-            codec = CODEC_BY_CAPS_NAME[caps[0].get_name()]
-        except KeyError:
-            error = f'Cannot found parser for caps {caps.to_string()!r}.'
-            self.logger.error(error)
-            frame = inspect.currentframe()
-            propagate_gst_error(
-                gst_element=self,
-                frame=frame,
-                file_path=__file__,
-                domain=Gst.ParseError.quark(),
-                code=Gst.ParseError.NO_SUCH_ELEMENT,
-                text=error,
-            )
-            return Gst.PadProbeReturn.REMOVE
-
-        parser_name = codec.value.parser or 'identity'
+        codec: CodecInfo = CODEC_BY_CAPS_NAME[caps[0].get_name()].value
+        parser_name = codec.parser or 'identity'
         self.logger.debug('Adding parser %r.', parser_name)
         self._parser = Gst.ElementFactory.make(parser_name)
         if parser_name in ['h264parse', 'h265parse']:
