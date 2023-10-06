@@ -43,37 +43,40 @@ class LineCrossing(NvDsPyFuncPlugin):
         with open(self.config_path, 'r', encoding='utf8') as stream:
             self.line_config = yaml.safe_load(stream)
 
-        self.areas = {}
+        self.intersections = {}
         for source_id, poly_cfg in self.line_config.items():
-            # The conversion from 2 lines to a 4 point polygon is as follows:
-            # assuming the lines are AB and CD, the polygon is ABDC.
-            # The AB polygon edge is marked as "from" and the CD edge is marked as "to".
             points = [
                 Point(*coords)
                 for coords in poly_cfg['points']
             ]
 
-            success = False
-            for points_perm in permutations(points):
-                area = PolygonalArea(points_perm, poly_cfg['edges'])
-                if not area.is_self_intersecting():
-                    success = True
-                    break
+            points_permutations = permutations(points)
+            config_order = next(points_permutations)
+            polygon = PolygonalArea(config_order, poly_cfg['edges'])
+            if polygon.is_self_intersecting():
+                # try to find a permutation of points that does not produce a self-intersecting polygon
+                self.logger.warn('Polygon config for the "%s" source id produced a self-intersecting polygon. Trying to find a valid permutation...', source_id)
+                while True:
+                    try:
+                        points_perm = next(points_permutations)
+                        polygon = PolygonalArea(points_perm, poly_cfg['edges'])
+                        if not polygon.is_self_intersecting():
+                            self.logger.info('Found a valid points permutation "%s" for the "%s" source id.', points_perm, source_id)
+                            break
+                    except StopIteration:
+                        self.logger.error(
+                            'Polygon config for the "%s" source id produced a self-intersecting polygon.'
+                            ' Please correct coordinates "%s" in the config file and restart the pipeline.',
+                            source_id,
+                            poly_cfg,
+                        )
+                        sys.exit(1)
 
-            if not success:
-                self.logger.error(
-                    'Lines config for the "%s" source id produced a self-intersecting polygon.'
-                    ' Please correct coordinates "%s" in the config file and restart the pipeline.',
-                    source_id,
-                    poly_cfg,
-                )
-                sys.exit(1)
-            self.areas[source_id] = area
+            self.intersections[source_id] = polygon
 
         self.lc_trackers = {}
         self.track_last_frame_num = defaultdict(lambda: defaultdict(int))
         self.crossing_counts = defaultdict(lambda: defaultdict(int))
-
         self.cross_events = defaultdict(lambda: defaultdict(list))
 
         # metrics namescheme
@@ -109,10 +112,10 @@ class LineCrossing(NvDsPyFuncPlugin):
                 primary_meta_object = obj_meta
                 break
 
-        if primary_meta_object is not None and frame_meta.source_id in self.areas:
+        if primary_meta_object is not None and frame_meta.source_id in self.intersections:
             if frame_meta.source_id not in self.lc_trackers:
                 self.lc_trackers[frame_meta.source_id] = TwoLinesCrossingTracker(
-                    self.areas[frame_meta.source_id]
+                    self.intersections[frame_meta.source_id]
                 )
             lc_tracker = self.lc_trackers[frame_meta.source_id]
 
@@ -169,7 +172,6 @@ class LineCrossing(NvDsPyFuncPlugin):
                 primary_meta_object.add_attr_meta(
                     'analytics', direction, crossings_n
                 )
-
 
         # periodically remove stale tracks
         if not (frame_meta.frame_num % self.stale_track_del_period):
