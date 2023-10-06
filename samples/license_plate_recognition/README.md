@@ -13,7 +13,7 @@ Tested on platforms:
 
 Demonstrated adapters:
 
-- RTSP source adapter;
+- Video loop source adapter;
 - Always-ON RTSP sink adapter.
 
 **Note**: Ubuntu 22.04 runtime configuration [guide](../../docs/runtime-configuration.md) helps to configure the runtime to run Savant pipelines.
