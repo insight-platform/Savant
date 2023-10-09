@@ -29,6 +29,8 @@ class JpegSource(FrameSource):
     :param filepath: Path to a JPEG file.
     :param pts: Frame presentation timestamp.
     :param framerate: Framerate (numerator, denominator).
+    :param source_id_add_size_suffix: Whether to add a suffix
+        of a form width-height to the source ID.
     :param img_size: Target image size (width, height),
         None if the original image size should be used.
     """
