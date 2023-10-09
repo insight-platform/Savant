@@ -27,7 +27,7 @@ parameters:
     module: samples.face_reid.overlay
     class_name: Overlay
     kwargs:
-      gallery_path: /opt/savant/samples/face_reid/index_files/processed_gallery
+      gallery_path: /index/processed_gallery
       face_width: ${parameters.face_width}
       face_height: ${parameters.face_height}
       face_tile_padding: ${parameters.face_tile_padding}
@@ -112,7 +112,7 @@ pipeline:
       module: samples.face_reid.recognition
       class_name: Recognition
       kwargs:
-        index_dir: /opt/savant/samples/face_reid/index_files/
+        index_dir: /index
         index_space: cosine
         # index_dim is set according to the reid model output dimensions
         index_dim: 512

@@ -79,22 +79,3 @@ pipeline:
             class_name: TensorToVectorConverter
           attributes:
             - name: feature
-
-    # - element: pyfunc
-    #   module: samples.face_reid.index_builder
-    #   class_name: IndexBuilder
-    #   kwargs:
-    #     index_dir: /opt/savant/samples/face_reid/index_files/
-    #     index_space: cosine
-    #     # index_dim is set according to the reid model output dimensions
-    #     index_dim: 512
-    #     # hnswlib index parameters
-    #     # for details refer to hnswlib doc
-    #     # https://github.com/nmslib/hnswlib#api-description
-    #     index_max_elements: 100
-    #     index_ef_construction: 200
-    #     index_m: 16
-
-  # output sink adapter is not used
-  # sink:
-  #   - element: devnull_sink

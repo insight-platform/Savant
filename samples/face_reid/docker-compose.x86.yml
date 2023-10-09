@@ -1,7 +1,7 @@
 version: "3.3"
 services:
 
-  index-client:
+  index-builder-client:
     build:
       context: .
       dockerfile: docker/Dockerfile.x86
@@ -18,10 +18,10 @@ services:
     profiles:
       - index
     depends_on:
-      index-module:
+      index-builder-pipeline:
         condition: service_healthy
 
-  index-module:
+  index-builder-pipeline:
     image: ghcr.io/insight-platform/savant-deepstream:latest
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -70,7 +70,8 @@ services:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../models/face_reid:/models
       - ../../downloads/face_reid:/downloads
-      - ..:/opt/savant/samples
+      - ./src:/opt/savant/samples/face_reid
+      - ./index_files:/index
     command: samples/face_reid/module.yml
     environment:
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
