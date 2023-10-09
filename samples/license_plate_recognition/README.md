@@ -4,7 +4,7 @@ The app partially reproduces [deepstream_lpr_app](https://github.com/NVIDIA-AI-I
 
 Preview:
 
-![](assets/license-plate-recognition-1080.webp)
+![](assets/license-plate-recognition.webp)
 
 Tested on platforms:
 
@@ -13,7 +13,7 @@ Tested on platforms:
 
 Demonstrated adapters:
 
-- RTSP source adapter;
+- Video loop source adapter;
 - Always-ON RTSP sink adapter.
 
 **Note**: Ubuntu 22.04 runtime configuration [guide](../../docs/runtime-configuration.md) helps to configure the runtime to run Savant pipelines.
