@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import logging
 import mimetypes
 import os
 import string
@@ -12,7 +11,7 @@ from urllib.parse import urlparse
 import click
 
 from savant.utils.file_types import FileType, parse_mime_types
-from savant.utils.logging import get_logger
+from savant.utils.logging import get_logger, init_logging
 
 logger = get_logger('uri-input')
 
@@ -109,10 +108,7 @@ def run_source(
     Note: this script should be run inside the module container.
     """
 
-    logging.basicConfig(
-        level=os.environ.get('LOGLEVEL', 'INFO'),
-        format='%(asctime)s [%(levelname)s] [%(name)s] [%(threadName)s] %(message)s',
-    )
+    init_logging()
     source_adapter, uri = parse_uri(uri)
 
     if source_adapter == SourceAdapter.FFMPEG:

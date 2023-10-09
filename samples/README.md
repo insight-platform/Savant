@@ -61,6 +61,14 @@ Preview:
 
 ![](face_reid/assets/face-reid-loop-400.webp)
 
+### License plate recognition 
+
+Sample location: [LPR](./license_plate_recognition)
+
+Preview:
+
+![](license_plate_recognition/assets/license-plate-recognition-400.webp)
+
 ## Utility And Coding Examples
 
 ### OpenCV CUDA MOG2 Background Segmentation Demo

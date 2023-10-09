@@ -82,21 +82,12 @@ GstSavantBatchMeta *gst_buffer_add_savant_batch_meta(GstBuffer *buffer,
                            idx);
         return NULL;
     }
-    meta = gst_buffer_get_savant_batch_meta(buffer);
-    if (meta) {
-        GST_DEBUG_OBJECT(buffer,
-                         "Buffer already have savant batch meta with IDX %d, "
-                         "replacing with IDX %d",
-                         idx, meta->idx);
-    } else {
-        meta = (GstSavantBatchMeta *)gst_buffer_add_meta(
-            buffer, gst_savant_batch_meta_get_info(), NULL);
-        if (!meta) {
-            GST_WARNING_OBJECT(buffer,
-                               "Failed to add savant batch meta with IDX %d",
-                               idx);
-            return NULL;
-        }
+    meta = (GstSavantBatchMeta *)gst_buffer_add_meta(
+        buffer, gst_savant_batch_meta_get_info(), NULL);
+    if (!meta) {
+        GST_WARNING_OBJECT(buffer,
+                           "Failed to add savant batch meta with IDX %d", idx);
+        return NULL;
     }
     meta->idx = idx;
     GST_INFO_OBJECT(buffer, "Added savant batch meta with IDX %d", idx);
