@@ -1,7 +1,7 @@
 import os
 from os import PathLike
-from typing import List, Tuple, Union
-
+from typing import List, Tuple, Union, Optional
+import math
 import cv2
 from savant_rs.primitives import (
     Attribute,
@@ -26,6 +26,10 @@ class JpegSource(FrameSource):
 
     :param source_id: Source ID.
     :param filepath: Path to a JPEG file.
+    :param pts: Frame presentation timestamp.
+    :param framerate: Framerate (numerator, denominator).
+    :param img_size: Target image size (width, height),
+        None if the original image size should be used.
     """
 
     def __init__(
@@ -34,12 +38,23 @@ class JpegSource(FrameSource):
         filepath: Union[str, PathLike],
         pts: int = 0,
         framerate: Tuple[int, int] = (30, 1),
-        updates: List[VideoFrameUpdate] = None,
+        source_id_add_size_suffix: bool = False,
+        img_size: Optional[Tuple[int, int]] = None,
+        updates: Optional[List[VideoFrameUpdate]] = None,
     ):
         if not os.path.exists(filepath):
             raise ValueError(f'File {filepath!r} does not exist')
-        self._source_id = source_id
         self._filepath = filepath
+
+        if img_size is not None:
+            self._width, self._height = img_size
+        else:
+            # TODO: get image size without decoding
+            img = cv2.imread(self._filepath)
+            self._height, self._width, _ = img.shape
+
+        self._source_id = source_id
+        self._source_id_add_size_suffix = source_id_add_size_suffix
         self._pts = pts
         self._framerate = framerate
         self._updates = updates or []
@@ -49,6 +64,8 @@ class JpegSource(FrameSource):
     @property
     def source_id(self) -> str:
         """Source ID."""
+        if self._source_id_add_size_suffix:
+            return f'{self._source_id}-{self._width}-{self._height}'
         return self._source_id
 
     @property
@@ -76,6 +93,11 @@ class JpegSource(FrameSource):
         """Frame duration."""
         return self._duration
 
+    @property
+    def img_size(self) -> Tuple[int, int]:
+        """Target image size (width, height)."""
+        return self._width, self._height
+
     def with_pts(self, pts: int) -> 'FrameSource':
         """Set frame presentation timestamp."""
         return self._update_param('pts', pts)
@@ -87,18 +109,59 @@ class JpegSource(FrameSource):
     def with_update(self, update: VideoFrameUpdate) -> 'JpegSource':
         return self._update_param('updates', self._updates + [update])
 
+    def with_aspect_ratio(self, aspect: Tuple[int, int]) -> 'JpegSource':
+        new_aspect = aspect[0] / aspect[1]
+        current_aspect = self._width / self._height
+
+        if math.isclose(current_aspect, new_aspect, rel_tol=1e-3):
+            new_width = self._width
+            new_height = self._height
+        elif current_aspect < new_aspect:
+            # increase width
+            new_width = round(self._height * aspect[0] / aspect[1])
+            new_height = self._height
+        else:
+            # increase height
+            new_width = self._width
+            new_height = round(self._width * aspect[1] / aspect[0])
+
+        return self._update_param('img_size', (new_width, new_height))
+
+    def with_source_id_add_size_suffix(self, val: bool) -> 'JpegSource':
+        return self._update_param('source_id_add_size_suffix', val)
+
     def build_frame(self) -> Tuple[VideoFrame, bytes]:
         # TODO: get image size without decoding
         img = cv2.imread(self._filepath)
-        height, width, _ = img.shape
-        with open(self._filepath, 'rb') as f:
-            content = f.read()
+        height, width, channels = img.shape
+
+        if self._height >= height and self._width >= width:
+            # add padding
+            if self._height > height:
+                top = (self._height - height) // 2
+                bottom = self._height - height - top
+            else:
+                top = bottom = 0
+            if self._width > width:
+                left = (self._width - width) // 2
+                right = self._width - width - left
+            else:
+                left = right = 0
+
+            img = cv2.copyMakeBorder(img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=[0]*channels)
+        else:
+            # resize
+            img = cv2.resize(img, (self._width, self._height))
+
+        _, buf = cv2.imencode('.jpeg', img)
+        content = buf.tobytes()
+
         video_frame = VideoFrame(
-            source_id=self._source_id,
+            source_id=self.source_id,
             framerate=f'{self._framerate[0]}/{self._framerate[1]}',
             codec='jpeg',
-            width=width,
-            height=height,
+            width=self._width,
+            height=self._height,
             content=VideoFrameContent.external(ExternalFrameType.ZEROMQ.value, None),
             keyframe=True,
             pts=self._pts,
@@ -131,6 +194,7 @@ class JpegSource(FrameSource):
                 'pts': self._pts,
                 'framerate': self._framerate,
                 'updates': self._updates,
+                'img_size': (self._width, self._height),
                 name: value,
             }
         )

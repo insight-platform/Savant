@@ -14,7 +14,7 @@ from savant.client import  JpegSource, SinkBuilder, SourceBuilder
 from savant.utils.logging import init_logging, get_logger
 
 init_logging()
-logger = get_logger('index_builder_client')
+logger = get_logger('index_client')
 
 logger.info('Starting Savant client...')
 
@@ -26,7 +26,7 @@ except KeyError:
     sys.exit(1)
 
 
-source_id = 'test-source'
+source_id = 'gallery-img'
 shutdown_auth = 'shutdown'
 index_dir = '/index'
 
@@ -52,11 +52,18 @@ sink = (
 
 src_jpegs = [
     JpegSource(source_id, str(img_path))
+        .with_aspect_ratio((16,9))
+        .with_source_id_add_size_suffix(True)
     for img_path in sorted(pathlib.Path('/gallery').glob('*.jpeg'))
 ]
 
+source_ids = set()
 for src_jpeg in src_jpegs:
-    source(src_jpeg)
+    source(src_jpeg, send_eos=False)
+    source_ids.add(src_jpeg.source_id)
+
+for src_id in source_ids:
+    source.send_eos(src_id)
 
 time.sleep(1)  # Wait for the module to process the frame
 
@@ -114,10 +121,8 @@ for result in sink:
     img = img.reshape(result.frame_meta.height, result.frame_meta.width, 4)
 
     for obj in objs:
-
         feature_attr = obj.get_attribute(feature_namespace, feature_name)
         feature = feature_attr.values[0].as_floats()
-
         # index stores single int label for each feature
         # we assume that the gallery holds no more than 2^32 people or images per person
         # and pack both person_id and img_n into single int64
