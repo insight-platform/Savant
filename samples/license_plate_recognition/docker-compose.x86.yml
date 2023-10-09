@@ -1,0 +1,74 @@
+version: "3.3"
+services:
+
+  video-loop-source:
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    restart: unless-stopped
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - /tmp/video-loop-source-downloads:/tmp/video-loop-source-downloads
+    environment:
+      - LOCATION=https://eu-central-1.linodeobjects.com/savant-data/demo/lpr_test_1080p.mp4
+      - DOWNLOAD_PATH=/tmp/video-loop-source-downloads
+      - ZMQ_ENDPOINT=dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc
+      - SOURCE_ID=nvidia-sample-processed
+      - SYNC_OUTPUT=True
+    entrypoint: /opt/savant/adapters/gst/sources/video_loop.sh
+    depends_on:
+      module:
+        condition: service_healthy
+
+  module:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.x86
+    restart: unless-stopped
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ../../models/license_plate_recognition:/models
+      - ../../downloads/license_plate_recognition:/downloads
+      - .:/opt/savant/samples/license_plate_recognition
+    command: samples/license_plate_recognition/module.yml
+    environment:
+      - ZMQ_SRC_ENDPOINT=router+bind:ipc:///tmp/zmq-sockets/input-video.ipc
+      - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
+      - FPS_PERIOD=1000
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  always-on-sink:
+    image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
+    restart: unless-stopped
+    ports:
+      - "554:554"    # RTSP
+      - "1935:1935"  # RTMP
+      - "888:888"    # HLS
+      - "8889:8889"  # WebRTC
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ../assets/stub_imgs:/stub_imgs
+    environment:
+      - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
+      - SOURCE_ID=nvidia-sample-processed
+      - STUB_FILE_LOCATION=/stub_imgs/smpte100_1920x1080.jpeg
+      - DEV_MODE=True
+      - RTSP_LATENCY_MS=500
+      - ENCODER_PROFILE=High
+      - ENCODER_BITRATE=8000000
+      - FRAMERATE=30/1
+    command: python -m adapters.ds.sinks.always_on_rtsp
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+volumes:
+  zmq_sockets:

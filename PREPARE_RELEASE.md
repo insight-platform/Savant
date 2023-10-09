@@ -30,3 +30,4 @@ git push -u origin releases/X.Y.Z
 
 Next, create a release (`vX.Y.Z`) from `releases/X.Y.Z`. The release initiates git workflows that build the Savant package and docker images for the version.
 
+The last step is to change the version number to the next release version number in the `savant/VERSION` file.

@@ -1,0 +1,133 @@
+name: ${oc.env:MODULE_NAME, 'license_plate_recognition_perf'}
+
+parameters:
+  output_frame:
+    codec: h264
+    encoder_params:
+      bitrate: 8000000
+  frame:
+    width: ${oc.decode:${oc.env:FRAME_WIDTH, 1920}}
+    height: ${oc.decode:${oc.env:FRAME_HEIGHT, 1080}}
+  draw_func:
+    module: samples.license_plate_recognition.overlay
+    class_name: Overlay
+    rendered_objects:
+      yolov8n:
+        Car:
+          bbox:
+            border_color: '00FF00FF'  # Green
+            background_color: '00000000'  # transparent
+            thickness: 4
+      LPDNet:
+        lpd:
+          bbox:
+            border_color: '0000FFFF'  # Blue
+            thickness: 4
+          label:
+            font_color: 'FFFFFFFF'  # White
+            font_scale: 1.5
+            thickness: 2
+  detected_object:
+    id: 2
+    label: Car
+  buffer_queues: ${json:${oc.env:BUFFER_QUEUES, null}}
+
+pipeline:
+  # local video file source, not using source adapter
+  source:
+    element: uridecodebin
+    properties:
+      uri: file:///data/lpr_test_1080p.mp4
+
+  elements:
+    - element: nvinfer@detector
+      name: yolov8n
+      model:
+        remote:
+          url: s3://savant-data/models/yolov8n/yolov8n_000bcd6.zip
+          checksum_url: s3://savant-data/models/yolov8n/yolov8n_000bcd6.md5
+          parameters:
+            endpoint: https://eu-central-1.linodeobjects.com
+        format: onnx
+        model_file: yolov8n.onnx
+        config_file: config_infer_primary_yoloV8.txt
+        # max GPU RAM used to build the engine, 6GB by default
+        # set lower than total GPU RAM available on your hardware
+        workspace_size: 6144
+        output:
+          objects:
+            - class_id: ${parameters.detected_object.id}
+              label: ${parameters.detected_object.label}
+
+    # LPD https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/lpdnet
+    - element: nvinfer@detector
+      name: LPDNet
+      model:
+        remote:
+          url: s3://savant-data/models/nvidia_license_plate_detection/lpd_usa_pruned.zip
+          checksum_url: s3://savant-data/models/nvidia_license_plate_detection/lpd_usa_pruned.md5
+          parameters:
+            endpoint: https://eu-central-1.linodeobjects.com
+        format: etlt
+        model_file: usa_pruned.etlt
+        config_file: usa_pruned_config.txt
+        tlt_model_key: nvidia_tlt
+        precision: fp16
+        batch_size: 1
+        input:
+          object: yolov8n.Car
+          layer_name: input_1
+          shape: [3, 480, 640]
+          scale_factor: 0.00392156862745098
+        output:
+          num_detected_classes: 1
+          layer_names: [output_cov/Sigmoid, output_bbox/BiasAdd]
+          objects:
+            - class_id: 0
+              label: lpd
+              selector:
+                kwargs:
+                  confidence_threshold: 0.1
+                  nms_iou_threshold: 0.1
+                  min_width: 25
+                  min_height: 18
+
+
+    # tracker
+    - element: nvtracker
+      properties:
+        tracker-width: 640
+        tracker-height: 384
+        ll-lib-file: /opt/nvidia/deepstream/deepstream/lib/libnvds_nvmultiobjecttracker.so
+        ll-config-file: ${oc.env:PROJECT_PATH}/samples/nvidia_car_classification/config_tracker_NvDCF_perf.yml
+
+    # LPR https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/lprnet
+    - element: nvinfer@classifier
+      name: LPRNet
+      model:
+        remote:
+          url: s3://savant-data/models/nvidia_license_plate_recognition/lpr_usa.zip
+          checksum_url: s3://savant-data/models/nvidia_license_plate_recognition/lpr_usa.md5
+          parameters:
+            endpoint: https://eu-central-1.linodeobjects.com
+        format: etlt
+        model_file: us_lprnet_baseline18_deployable.etlt
+        tlt_model_key: nvidia_tlt
+        precision: fp16
+        batch_size: 1
+        custom_lib_path: /opt/savant/lib/libnvdsinfer_custom_impl_lpr.so
+        parse_classifier_func_name: NvDsInferParseCustomNVPlate
+        input:
+          object: LPDNet.lpd
+          layer_name: input_1
+          shape: [3, 48, 96]
+          scale_factor: 0.00392156862745098
+        output:
+          layer_names: [tf_op_layer_ArgMax, tf_op_layer_Max]
+          attributes:
+            - name: lpr
+              threshold: 0.1
+
+  # noop pipeline sink, not using sink adapter
+  sink:
+    - element: devnull_sink

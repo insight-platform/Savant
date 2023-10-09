@@ -1,0 +1,13 @@
+{%- extends "!layout.html" %}
+
+{%- block footer %}
+  <div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="{{ _('Versions') }}">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+      <span class="fa fa-book"> {{ project }}</span>
+      {{ version }}
+      <span class="fa fa-caret-down"></span>
+    </span>
+    <div class="rst-other-versions">
+    </div>
+  </div>
+{%- endblock %}

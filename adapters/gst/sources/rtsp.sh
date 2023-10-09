@@ -41,6 +41,7 @@ trap handler SIGINT SIGTERM
 PIPELINE=(
     ffmpeg_src uri="${RTSP_URI}" params="rtsp_transport=${RTSP_TRANSPORT}"
     queue-len="${BUFFER_LEN}" loglevel="${FFMPEG_LOGLEVEL}" !
+    savant_parse_bin !
     fps_meter "${FPS_PERIOD}" output="${FPS_OUTPUT}" !
     savant_rs_serializer source-id="${SOURCE_ID}" !
     zeromq_sink socket="${ZMQ_ENDPOINT}" socket-type="${ZMQ_SOCKET_TYPE}" bind="${ZMQ_SOCKET_BIND}"
