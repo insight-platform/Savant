@@ -1,17 +1,18 @@
 """Index builder module."""
 
-import sys
 import os
-import time
 import pathlib
 import shutil
+import sys
+import time
+
 import cv2
-import numpy as np
 import hnswlib
+import numpy as np
 
 from samples.face_reid.utils import pack_person_id_img_n
-from savant.client import  JpegSource, SinkBuilder, SourceBuilder
-from savant.utils.logging import init_logging, get_logger
+from savant.client import JpegSource, SinkBuilder, SourceBuilder
+from savant.utils.logging import get_logger, init_logging
 
 init_logging()
 logger = get_logger('index_client')
@@ -37,23 +38,14 @@ shutil.rmtree(processed_gallery_dir, ignore_errors=True)
 os.makedirs(processed_gallery_dir)
 
 # Build the source
-source = (
-    SourceBuilder()
-    .with_socket(zmq_src_socket)
-    .build()
-)
+source = SourceBuilder().with_socket(zmq_src_socket).build()
 
-sink = (
-    SinkBuilder()
-    .with_socket(zmq_sink_socket)
-    .with_idle_timeout(10)
-    .build()
-)
+sink = SinkBuilder().with_socket(zmq_sink_socket).with_idle_timeout(10).build()
 
 src_jpegs = [
     JpegSource(source_id, str(img_path))
-        .with_aspect_ratio((16,9))
-        .with_source_id_add_size_suffix(True)
+    .with_aspect_ratio((16, 9))
+    .with_source_id_add_size_suffix(True)
     for img_path in sorted(pathlib.Path('/gallery').glob('*.jpeg'))
 ]
 
@@ -67,7 +59,7 @@ for src_id in source_ids:
 
 time.sleep(1)  # Wait for the module to process the frame
 
-index_space='cosine'
+index_space = 'cosine'
 # index_dim is set according to the reid model output dimensions
 index_dim = 512
 # hnswlib index parameter
@@ -104,7 +96,11 @@ for result in sink:
     # get the face feature vector from metadata
     objs = result.frame_meta.get_all_objects()
     if len(objs) != 1:
-        logger.warn('%s: expected 1 object, got %s, not adding any faces to index.', file_name, len(objs))
+        logger.warn(
+            '%s: expected 1 object, got %s, not adding any faces to index.',
+            file_name,
+            len(objs),
+        )
         continue
 
     # gallery images are named as <person_name>_<img_n>.jpeg

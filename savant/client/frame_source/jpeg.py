@@ -1,7 +1,8 @@
+import math
 import os
 from os import PathLike
-from typing import List, Tuple, Union, Optional
-import math
+from typing import List, Optional, Tuple, Union
+
 import cv2
 from savant_rs.primitives import (
     Attribute,
@@ -148,7 +149,9 @@ class JpegSource(FrameSource):
             else:
                 left = right = 0
 
-            img = cv2.copyMakeBorder(img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=[0]*channels)
+            img = cv2.copyMakeBorder(
+                img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=[0] * channels
+            )
         else:
             # resize
             img = cv2.resize(img, (self._width, self._height))
