@@ -139,18 +139,6 @@ class TelemetryParameters:
 
 
 @dataclass
-class DynamicGstProperty:
-    """Allows configuring a gstreamer element property to be automatically
-    updated to current value of a dynamic parameter from parameter storage."""
-
-    storage_key: str
-    """Dynamic parameters name in the storage."""
-
-    default: Any
-    """Default value for the property."""
-
-
-@dataclass
 class PipelineElement:
     """Base pipeline element configuration template. Validates entries in a
     module config file under ``pipeline.source``, ``pipeline.elements`` and
@@ -243,9 +231,6 @@ class PipelineElement:
 
     properties: Dict[str, Any] = field(default_factory=dict)
     """GstElement properties."""
-
-    dynamic_properties: Dict[str, DynamicGstProperty] = field(default_factory=dict)
-    """GstElement properties that can be updated during runtime."""
 
     @property
     def full_name(self):
@@ -490,47 +475,8 @@ class Module:
     name: str
     """Module name."""
 
-    parameter_init_priority: Dict[str, int] = field(default_factory=dict)
-    """Priority of use for various sources during module's parameters initialization
-    through ``initializer`` resolver. Lower numbers mean higher priority. Example:
-
-    .. code-block:: yaml
-
-        parameter_init_priority:
-            environment: 20
-            etcd: 10
-
-    Two init sources are configured, ``etcd`` (higher priority)
-    and ``environment`` (lower priority).
-    For every parameter that is configured to use ``initializer`` resolver, eg
-
-    .. code-block:: yaml
-
-        parameters:
-            frame:
-                width: ${initializer:frame_width,1280}
-
-    Etcd storage will be polled for the current value first,
-    in the event etcd is unavailable resolver will
-    try to get ``frame_width`` environment variable, and if that is not set,
-    then default value of 1280 will be used.
-    """
-
     parameters: Dict[str, Any] = field(default_factory=dict)
     """Module parameters."""
-
-    dynamic_parameters: Dict[str, Any] = field(default_factory=dict)
-    """Those module parameters current value of which is dependent on remote storage
-    and can be updated at runtime.
-
-    For example, ``roi`` config node in
-
-    .. code-block:: yaml
-
-        dynamic_parameters:
-            # (x_center, y_center, width, height, angle)
-            roi: [960, 540, 1920, 1080, 0]
-    """
 
     pipeline: Pipeline = MISSING
     """Pipeline configuration.
