@@ -45,9 +45,7 @@ def main(args):
 
     logger.info('Starting Savant client...')
 
-    processed_gallery_dir = os.path.join(
-        args.index_dir, 'processed_gallery'
-    )
+    processed_gallery_dir = os.path.join(args.index_dir, 'processed_gallery')
     index_file_path = os.path.join(args.index_dir, 'index.bin')
 
     shutil.rmtree(processed_gallery_dir, ignore_errors=True)
