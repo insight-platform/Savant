@@ -66,7 +66,7 @@ pipeline:
         config_file: usa_pruned_config.txt
         tlt_model_key: nvidia_tlt
         precision: fp16
-        batch_size: 1
+        batch_size: 8
         input:
           object: yolov8n.Car
           layer_name: input_1
@@ -107,7 +107,7 @@ pipeline:
         model_file: us_lprnet_baseline18_deployable.etlt
         tlt_model_key: nvidia_tlt
         precision: fp16
-        batch_size: 1
+        batch_size: 8
         custom_lib_path: /opt/savant/lib/libnvdsinfer_custom_impl_lpr.so
         parse_classifier_func_name: NvDsInferParseCustomNVPlate
         input:
