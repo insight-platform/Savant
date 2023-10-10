@@ -96,27 +96,36 @@ def main():
             sys.exit('jetson_clocks should be ON.')
 
     # check perf scripts
-    perf_scripts = sorted(args.path.glob('**/run_perf.sh'))
+    perf_scripts = sorted(str(path) for path in args.path.glob('**/run_perf.sh'))
     if not perf_scripts:
         sys.exit('No run_perf.sh scripts found.')
 
-    # uridecodebin, multistream=1, multistream=2, etc.
-    stream_options = [0, 1, 2, 4] if is_jetson else [0, 1, 2, 4, 8]
-    batch_options = [1, 4] if is_jetson else [1, 4, 8]
-
-    # set of arguments to test
-    run_options = [
-        perf_scripts,
-        stream_options,
-        [f'parameters.batch_size={batch_size}' for batch_size in batch_options],
-        ['parameters.buffer_queues=null', 'parameters.buffer_queues.length=10'],
+    # source + batch combinations
+    # where source: uridecodebin=0, multistream=1, multistream=2, etc.
+    source_batch_options = [
+        # num_streams=1, batch_size=1,4
+        # (nvstreammux doesn't collect batch size > 4 with one source)
+        ('0', 'parameters.batch_size=1'),
+        ('0', 'parameters.batch_size=4'),
+        ('1', 'parameters.batch_size=1'),
+        ('1', 'parameters.batch_size=4'),
+        # num_streams=4, batch_size=4,8
+        ('4', 'parameters.batch_size=4'),
+        ('4', 'parameters.batch_size=8'),
+        # num_streams=8, batch_size=8
+        ('8', 'parameters.batch_size=8'),
     ]
 
+    queue_options = [
+        'parameters.buffer_queues=null',
+        'parameters.buffer_queues.length=10',
+    ]
+
+    # set of arguments to test
+    run_options = [perf_scripts, source_batch_options, queue_options]
     run_options = [
-        [str(opt) for opt in opts]
+        [opts[0], opts[1][0], opts[1][1], opts[2]]
         for opts in itertools.product(*run_options)
-        # only combinations where batch_size >= number-of-streams
-        if int(opts[2].replace('parameters.batch_size=', '')) >= opts[1]
     ]
 
     # required arguments
