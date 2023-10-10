@@ -1,7 +1,7 @@
 #!/bin/bash
 # you are expected to be in Savant/ directory
 
-MULTISTREAM=${1:0}
+MULTISTREAM=${1:-0}
 MODULE_ARGS=("$@")
 unset "MODULE_ARGS[0]"
 
