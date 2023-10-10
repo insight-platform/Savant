@@ -2,7 +2,6 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 
-import pyds
 from pygstsavantframemeta import add_pad_probe_to_move_frame
 from savant_rs.pipeline2 import VideoPipeline
 
@@ -11,12 +10,12 @@ from savant.config.schema import (
     FrameProcessingCondition,
     PipelineElement,
 )
+from savant.deepstream.utils.misc import get_nvvideoconvert_properties
 from savant.gstreamer import Gst  # noqa:F401
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec, CodecInfo
 from savant.gstreamer.pipeline import GstPipeline
 from savant.gstreamer.utils import link_pads
 from savant.utils.logging import get_logger
-from savant.utils.platform import is_aarch64
 from savant.utils.source_info import SourceInfo
 
 
@@ -99,11 +98,7 @@ class SourceOutputWithFrame(SourceOutput):
             'Added pad probe to convert savant frame meta from NvDsMeta to GstMeta (source_id=%s)',
             source_info.source_id,
         )
-        output_converter_props = {}
-        if not is_aarch64():
-            output_converter_props['nvbuf-memory-type'] = int(
-                pyds.NVBUF_MEM_CUDA_UNIFIED
-            )
+        output_converter_props = get_nvvideoconvert_properties()
         if self._frame_params.padding and not self._frame_params.padding.keep:
             output_converter_props['src_crop'] = ':'.join(
                 str(x)

@@ -4,6 +4,7 @@ from adapters.ds.sinks.always_on_rtsp.config import Config
 from adapters.ds.sinks.always_on_rtsp.last_frame import LastFrame
 from adapters.ds.sinks.always_on_rtsp.pipeline import add_elements
 from savant.config.schema import PipelineElement
+from savant.deepstream.utils.misc import get_nvvideoconvert_properties
 from savant.gstreamer import Gst
 from savant.gstreamer.codecs import CODEC_BY_CAPS_NAME, Codec
 from savant.gstreamer.element_factory import GstElementFactory
@@ -119,7 +120,7 @@ def build_input_pipeline(
     sink_elements = [
         PipelineElement(
             'nvvideoconvert',
-            properties=config.nvvideoconvert_properties,
+            properties=get_nvvideoconvert_properties(),
         ),
         PipelineElement(
             'capsfilter',
