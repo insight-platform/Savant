@@ -65,7 +65,7 @@ The sample includes an option to choose the model used for object detection. Cho
 - `DETECTOR=yolov8m` for yolov8m
 - `DETECTOR=yolov8s` for yolov8s
 
-YOLOv8 implementation is based on the [DeepStream-Yolo](https://github.com/marcoslucianops/DeepStream-Yolo/) repo. If YOLO versions other than `yolov8m` / `yolov8s` are required, export the ONNX following the instructions [here](https://github.com/marcoslucianops/DeepStream-Yolo/blob/master/docs/YOLOv8.md).
+This demo uses [DeepStream-Yolo](https://github.com/marcoslucianops/DeepStream-Yolo/) to process YOLO models and allows you to use any YOLO model that DeepStream-Yolo supports. The demo contains 2 already prepared models - `yolov8m` / `yolov8s`. If you are going to use any other model (e.g. custom yolov8m), follow the DeepStream-Yolo export instructions. For example, YOLOv8 instructions are [here](https://github.com/marcoslucianops/DeepStream-Yolo/blob/master/docs/YOLOv8.md).
 
 ## Performance Measurement
 
