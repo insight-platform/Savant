@@ -50,6 +50,10 @@ cd ../..
 
 To create a custom Grafana dashboard, sign in with `admin\admin` credentials.
 
+## Detector model
+
+YOLOv8 implementation is based on the [DeepStream-Yolo](https://github.com/marcoslucianops/DeepStream-Yolo/) repo. If YOLO versions other than `yolov8m` is required, export the ONNX following the instructions [here](https://github.com/marcoslucianops/DeepStream-Yolo/blob/master/docs/YOLOv8.md).
+
 ## Performance Measurement
 
 Download the video file to your local folder. For example, create a data folder and download the video into it (all commands must be executed from the root directory of the project Savant)
