@@ -1,19 +1,23 @@
 """JPEG header parse utility."""
 import re
 from os import PathLike
-from typing import Tuple, Union
+from typing import BinaryIO, Tuple, Union
 
 import magic
 
 PATTERN = re.compile(r'(?<=, )(?P<width>\d+)x(?P<height>\d+)')
 
 
-def get_jpeg_size(filepath: Union[str, PathLike]) -> Tuple[int, int]:
+def get_jpeg_size(file: Union[str, PathLike, BinaryIO]) -> Tuple[int, int]:
     """Get JPEG image width and height by parsing the file header.
-    :param filepath: Path to a JPEG file.
+    :param file: Path to a JPEG file or a file handle to a JPEG file opened as binary.
     :return: Image width and height.
     """
-    magic_out = magic.from_file(filepath)
+    if hasattr(file, 'read') and hasattr(file, 'seek'):
+        magic_out = magic.from_buffer(file.read(2048))
+        file.seek(0)
+    else:
+        magic_out = magic.from_file(file)
     if magic_out.startswith('JPEG image data'):
         out = PATTERN.search(magic_out)
         if out:

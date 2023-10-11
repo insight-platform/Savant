@@ -9,6 +9,8 @@ from io import BytesIO
 import cv2
 import hnswlib
 import numpy as np
+from savant_rs.primitives import Attribute, AttributeValue, VideoFrameUpdate
+from savant_rs.utils.serialization import clear_source_seq_id
 
 from samples.face_reid.utils import pack_person_id_img_n
 from savant.client import JpegSource, SinkBuilder, SourceBuilder
@@ -56,18 +58,40 @@ def main(args):
 
     # Build the source
     source = SourceBuilder().with_socket(args.zmq_src_socket).build()
-
+    # Build the sink
     sink = SinkBuilder().with_socket(args.zmq_sink_socket).with_idle_timeout(10).build()
 
     img_paths = list(sorted(pathlib.Path(args.gallery_dir).glob('*.jpeg')))
     for img_path in img_paths:
+        # resize image to pipeline frame size
         img = cv2.imread(str(img_path))
-        img_resized = resize_preserving_aspect(img, args.pipeline_frame_size)
-        _, buf = cv2.imencode('.jpeg', img_resized)
-        source(JpegSource(args.source_id, img_path, file_handle=BytesIO(buf.tobytes())))
+        img = resize_preserving_aspect(img, args.pipeline_frame_size)
+        # JpegSource can take a buffer that contains JPEG data
+        _, img = cv2.imencode('.jpeg', img)
+        img = BytesIO(img.tobytes())
+
+        # attach image path to metadata
+        upd = VideoFrameUpdate()
+        upd.add_frame_attribute(
+            Attribute(
+                namespace='default',
+                name='location',
+                values=[AttributeValue.string(str(img_path))],
+            )
+        )
+
+        # create a JpegSource
+        jpg_src = JpegSource(args.source_id, img).with_update(upd)
+        # send the jpeg to the module
+        source(jpg_src, send_eos=False)
+
+    # finish sending frames
+    source.send_eos(args.source_id)
+    clear_source_seq_id(args.source_id)
 
     time.sleep(1)  # Wait for the module to process the frames
 
+    # Init index
     index = hnswlib.Index(space=args.index_space, dim=args.index_dim)
     index.init_index(
         max_elements=args.index_max_elements,

@@ -25,8 +25,7 @@ class JpegSource(FrameSource):
     """Frame source for JPEG files.
 
     :param source_id: Source ID.
-    :param filepath: Path to a JPEG file.
-    :param file_handle: File handle to a JPEG file.
+    :param file: Path to a JPEG file or a file handle to a JPEG file opened as binary.
     :param pts: Frame presentation timestamp.
     :param framerate: Framerate (numerator, denominator).
     """
@@ -34,18 +33,16 @@ class JpegSource(FrameSource):
     def __init__(
         self,
         source_id: str,
-        filepath: Union[str, PathLike],
-        file_handle: Optional[BinaryIO] = None,
+        file: Union[str, PathLike, BinaryIO],
         pts: int = 0,
         framerate: Tuple[int, int] = (30, 1),
         updates: Optional[List[VideoFrameUpdate]] = None,
     ):
-        if not file_handle and not os.path.exists(filepath):
-            raise ValueError(f'File {filepath!r} does not exist.')
+        if not hasattr(file, 'read') and not os.path.exists(file):
+            raise ValueError(f'File path is set, but file {file!r} does not exist.')
 
         self._source_id = source_id
-        self._filepath = filepath
-        self._file_handle = file_handle
+        self._file = file
         self._pts = pts
         self._framerate = framerate
         self._updates = updates or []
@@ -58,9 +55,11 @@ class JpegSource(FrameSource):
         return self._source_id
 
     @property
-    def filepath(self) -> Union[str, PathLike]:
+    def filepath(self) -> Optional[Union[str, PathLike]]:
         """Path to a JPEG file."""
-        return self._filepath
+        if isinstance(self._file, (str, PathLike)):
+            return self._file
+        return None
 
     @property
     def pts(self) -> int:
@@ -94,12 +93,12 @@ class JpegSource(FrameSource):
         return self._update_param('updates', self._updates + [update])
 
     def build_frame(self) -> Tuple[VideoFrame, bytes]:
-        width, height = get_jpeg_size(self._filepath)
+        width, height = get_jpeg_size(self._file)
 
-        if self._file_handle:
-            content = self._file_handle.read()
+        if hasattr(self._file, 'read'):
+            content = self._file.read()
         else:
-            with open(self._filepath, 'rb') as f:
+            with open(self._file, 'rb') as f:
                 content = f.read()
 
         video_frame = VideoFrame(
@@ -114,20 +113,21 @@ class JpegSource(FrameSource):
             duration=self._duration,
             time_base=self._time_base,
         )
-        video_frame.set_attribute(
-            Attribute(
-                namespace=DEFAULT_NAMESPACE,
-                name='location',
-                values=[AttributeValue.string(str(self._filepath))],
+        if isinstance(self._file, (str, PathLike)):
+            video_frame.set_attribute(
+                Attribute(
+                    namespace=DEFAULT_NAMESPACE,
+                    name='location',
+                    values=[AttributeValue.string(str(self._file))],
+                )
             )
-        )
         for update in self._updates:
             video_frame.update(update)
         logger.debug(
             'Built video frame %s/%s from file %s.',
             video_frame.source_id,
             video_frame.pts,
-            self._filepath,
+            self._file,
         )
 
         return video_frame, content
@@ -136,8 +136,7 @@ class JpegSource(FrameSource):
         return JpegSource(
             **{
                 'source_id': self._source_id,
-                'filepath': self._filepath,
-                'file_handle': self._file_handle,
+                'file': self._file,
                 'pts': self._pts,
                 'framerate': self._framerate,
                 'updates': self._updates,
@@ -149,6 +148,6 @@ class JpegSource(FrameSource):
         return (
             f'JpegSource('
             f'source_id={self._source_id}, '
-            f'filepath={self._filepath}, '
+            f'file={self._file}, '
             f'pts={self._pts})'
         )
