@@ -98,6 +98,13 @@
 | [#407](https://github.com/insight-platform/Savant/issues/407) (no queues)        | 136.16 | 24.66     |
 | [#456](https://github.com/insight-platform/Savant/issues/456) (no queues)        | 136.80 | 23.29     |
 
+
+### intersection_traffic_meter (yolov8m)
+
+| Savant ver.                                                   | A4000  | Jetson NX |
+|---------------------------------------------------------------|--------|-----------|
+| [#356](https://github.com/insight-platform/Savant/issues/356) | 93.03   | 21.22     |
+
 ### yolov8_seg
 
 Note: `yolov8_seg` always has a buffer length of 10. `BUFFER_QUEUES` env doesn't affect it.

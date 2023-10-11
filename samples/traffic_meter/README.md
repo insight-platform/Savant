@@ -65,6 +65,8 @@ The sample includes an option to choose the model used for object detection. Cho
 - `DETECTOR=yolov8m` for yolov8m
 - `DETECTOR=yolov8s` for yolov8s
 
+This demo uses [DeepStream-Yolo](https://github.com/marcoslucianops/DeepStream-Yolo/) to process YOLO models and allows you to use any YOLO model that DeepStream-Yolo supports. The demo contains 2 already prepared models - `yolov8m` / `yolov8s`. If you are going to use any other model (e.g. custom yolov8m), follow the DeepStream-Yolo export instructions. For example, YOLOv8 instructions are [here](https://github.com/marcoslucianops/DeepStream-Yolo/blob/master/docs/YOLOv8.md).
+
 ## Performance Measurement
 
 Download the video file to your local folder. For example, create a data folder and download the video into it (all commands must be executed from the root directory of the project Savant)
