@@ -22,6 +22,7 @@ import json
 import re
 import subprocess
 import sys
+from collections import OrderedDict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Generator, Optional, Union
@@ -76,6 +77,12 @@ def main():
     parser.add_argument(
         '-v', '--verbose', action='store_true', help='print script output'
     )
+    parser.add_argument(
+        '-s',
+        '--short',
+        action='store_true',
+        help='run only the option: uridecodebin, batch_size=1, buffer_queues=null',
+    )
     args = parser.parse_args()
 
     # check platform
@@ -102,31 +109,40 @@ def main():
 
     # source + batch combinations
     # where source: uridecodebin=0, multistream=1, multistream=2, etc.
-    source_batch_options = [
-        # num_streams=1, batch_size=1,4
-        # (nvstreammux doesn't collect batch size > 4 with one source)
-        ('0', 'parameters.batch_size=1'),
-        ('0', 'parameters.batch_size=4'),
-        ('1', 'parameters.batch_size=1'),
-        ('1', 'parameters.batch_size=4'),
-        # num_streams=4, batch_size=4,8
-        ('4', 'parameters.batch_size=4'),
-        ('4', 'parameters.batch_size=8'),
-        # num_streams=8, batch_size=8
-        ('8', 'parameters.batch_size=8'),
-    ]
+    if args.short:
+        run_options = [
+            [
+                perf_script,
+                '0',
+                'parameters.batch_size=1',
+                'parameters.buffer_queues=null',
+            ]
+            for perf_script in perf_scripts
+        ]
 
-    queue_options = [
-        'parameters.buffer_queues=null',
-        'parameters.buffer_queues.length=10',
-    ]
-
-    # set of arguments to test
-    run_options = [perf_scripts, source_batch_options, queue_options]
-    run_options = [
-        [opts[0], opts[1][0], opts[1][1], opts[2]]
-        for opts in itertools.product(*run_options)
-    ]
+    else:
+        source_batch_options = [
+            # num_streams=1, batch_size=1,4
+            # (nvstreammux doesn't collect batch size > 4 with one source)
+            ('0', 'parameters.batch_size=1'),
+            ('0', 'parameters.batch_size=4'),
+            ('1', 'parameters.batch_size=1'),
+            ('1', 'parameters.batch_size=4'),
+            # num_streams=4, batch_size=4,8
+            ('4', 'parameters.batch_size=4'),
+            ('4', 'parameters.batch_size=8'),
+            # num_streams=8, batch_size=8
+            ('8', 'parameters.batch_size=8'),
+        ]
+        queue_options = [
+            'parameters.buffer_queues=null',
+            'parameters.buffer_queues.length=10',
+        ]
+        run_options = [perf_scripts, source_batch_options, queue_options]
+        run_options = [
+            [opts[0], opts[1][0], opts[1][1], opts[2]]
+            for opts in itertools.product(*run_options)
+        ]
 
     # required arguments
     fps_period = 100
@@ -150,7 +166,7 @@ def main():
 
     dtm = datetime.now(timezone.utc)
 
-    data = dict(
+    data = OrderedDict(
         time=dtm.isoformat(),
         savant=version.SAVANT,
         deepstream=version.DEEPSTREAM,
@@ -230,7 +246,7 @@ def main():
             fps_list = [round(fps, 2) for fps in fps_list]
             print(f'fps: {fps:.2f}\nfps_avg: {fps_list}')
 
-            measurement = dict(
+            measurement = OrderedDict(
                 cmd=run_cmd,
                 fps_avg=fps_list,
                 fps=round(fps, 2),
