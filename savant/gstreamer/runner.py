@@ -25,14 +25,17 @@ class GstPipelineRunner:
 
     :param pipeline: GstPipeline or Gst.Pipeline to run.
     :param status_filepath: Path to status file.
+    :param shutdown_timeout: Seconds to wait for pipeline shutdown.
     """
 
     def __init__(
         self,
         pipeline: Union[GstPipeline, Gst.Pipeline],
         status_filepath: Optional[Path] = None,
+        shutdown_timeout: int = 10,  # make configurable
     ):
         self._status_filepath = status_filepath
+        self._shutdown_timeout = shutdown_timeout
 
         # pipeline error storage
         self._error: Optional[str] = None
@@ -130,14 +133,25 @@ class GstPipelineRunner:
             logger.debug('Quitting main loop...')
             self._main_loop.quit()
 
+        pipeline_state_thread = threading.Thread(
+            target=self._pipeline.set_state,
+            args=(Gst.State.NULL,),
+            daemon=True,
+        )
         logger.debug('Setting pipeline to NULL...')
-        self._pipeline.set_state(Gst.State.NULL)
+        pipeline_state_thread.start()
+        try:
+            pipeline_state_thread.join(self._shutdown_timeout)
+        except RuntimeError:
+            logger.error('Failed to join thread.')
 
         exec_seconds = time() - self._start_time
         logger.info(
             'The pipeline is about to stop. Operation took %s.',
             timedelta(seconds=exec_seconds),
         )
+        if pipeline_state_thread.is_alive():
+            logger.warning('Pipeline shutdown timeout exceeded.')
 
         if isinstance(self._pipeline, GstPipeline):
             logger.debug('Calling pipeline.on_shutdown()...')
