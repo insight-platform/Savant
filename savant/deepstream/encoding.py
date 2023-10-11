@@ -1,3 +1,4 @@
+import glob
 import time
 from typing import Any, Dict
 
@@ -8,6 +9,7 @@ from savant.gstreamer import Gst  # noqa:F401
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
 from savant.gstreamer.element_factory import GstElementFactory
 from savant.utils.logging import get_logger
+from savant.utils.platform import is_aarch64
 
 
 def check_encoder_is_available(parameters: Dict[str, Any]) -> bool:
@@ -24,10 +26,30 @@ def check_encoder_is_available(parameters: Dict[str, Any]) -> bool:
         return True
 
     logger.info('Checking if encoder for codec %r is available', output_frame['codec'])
-    pipeline: Gst.Pipeline = Gst.Pipeline.new()
-
-    converter_props = get_nvvideoconvert_properties()
     encoder = codec.value.encoder(output_frame.get('encoder'))
+    if (
+        is_aarch64()
+        and encoder == codec.value.nv_encoder
+        and not glob.glob('/dev/nvhost-nvenc*')
+    ):
+        # We need to check the existence of the device file because Orin Nano
+        # freezes and reboots when the pipeline contains HW encoder.
+        # https://forums.developer.nvidia.com/t/orin-nano-freezes-and-reboots-when-pipeline-contains-hw-encoder/257357
+        logger.error(
+            'You have configured NVENC-accelerated encoding, '
+            'but your device doesn\'t support NVENC.'
+        )
+        return False
+
+    output_caps = codec.value.caps_with_params
+    if codec == Codec.H264 and encoder == codec.value.sw_encoder:
+        profile = output_frame.get('profile')
+        if profile is None:
+            profile = 'baseline'
+        output_caps = f'{output_caps},profile={profile}'
+
+    pipeline: Gst.Pipeline = Gst.Pipeline.new()
+    converter_props = get_nvvideoconvert_properties()
     elements = [
         PipelineElement(
             'videotestsrc',
@@ -45,29 +67,16 @@ def check_encoder_is_available(parameters: Dict[str, Any]) -> bool:
             encoder,
             properties=output_frame.get('encoder_params', {}),
         ),
+        PipelineElement(
+            codec.value.parser,
+            properties={'config-interval': -1},
+        ),
+        PipelineElement(
+            'capsfilter',
+            properties={'caps': output_caps},
+        ),
+        PipelineElement('fakesink'),
     ]
-    if codec in [Codec.H264, Codec.HEVC]:
-        elements.append(
-            PipelineElement(
-                codec.value.parser,
-                properties={'config-interval': -1},
-            )
-        )
-    caps = codec.value.caps_with_params
-    if codec == Codec.H264 and encoder == codec.value.sw_encoder:
-        profile = output_frame.get('profile')
-        if profile is None:
-            profile = 'baseline'
-        caps = f'{caps},profile={profile}'
-    elements.extend(
-        [
-            PipelineElement(
-                'capsfilter',
-                properties={'caps': caps},
-            ),
-            PipelineElement('fakesink'),
-        ]
-    )
 
     last_gst_element = None
     for element in elements:
