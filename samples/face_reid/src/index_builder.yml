@@ -1,9 +1,11 @@
 name: face_reid_index_builder
 
 parameters:
+  detector_w: 640
+  detector_h: 640
   frame:
-    width: 1280
-    height: 720
+    width: ${parameters.detector_w}
+    height: ${parameters.detector_h}
 
   output_frame:
     codec: raw-rgba
@@ -31,7 +33,10 @@ pipeline:
         format: onnx
         config_file: yolov8n-face.txt
         input:
-          shape: [3, 640, 640]
+          shape:
+            - 3
+            - ${parameters.detector_h}
+            - ${parameters.detector_w}
         output:
           layer_names: [ 'output0' ]
           converter:

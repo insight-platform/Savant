@@ -1,8 +1,7 @@
 import os
 from os import PathLike
-from typing import List, Tuple, Union
+from typing import BinaryIO, List, Optional, Tuple, Union
 
-import cv2
 from savant_rs.primitives import (
     Attribute,
     AttributeValue,
@@ -14,6 +13,7 @@ from savant_rs.primitives import (
 from savant.api.constants import DEFAULT_NAMESPACE
 from savant.api.enums import ExternalFrameType
 from savant.client.frame_source import FrameSource
+from savant.client.utils import get_jpeg_size
 from savant.utils.logging import get_logger
 
 SECOND_IN_NS = 10**9
@@ -26,6 +26,7 @@ class JpegSource(FrameSource):
 
     :param source_id: Source ID.
     :param filepath: Path to a JPEG file.
+    :param file_handle: File handle to a JPEG file.
     :param pts: Frame presentation timestamp.
     :param framerate: Framerate (numerator, denominator).
     """
@@ -34,14 +35,17 @@ class JpegSource(FrameSource):
         self,
         source_id: str,
         filepath: Union[str, PathLike],
+        file_handle: Optional[BinaryIO] = None,
         pts: int = 0,
         framerate: Tuple[int, int] = (30, 1),
-        updates: List[VideoFrameUpdate] = None,
+        updates: Optional[List[VideoFrameUpdate]] = None,
     ):
-        if not os.path.exists(filepath):
-            raise ValueError(f'File {filepath!r} does not exist')
+        if not file_handle and not os.path.exists(filepath):
+            raise ValueError(f'File {filepath!r} does not exist.')
+
         self._source_id = source_id
         self._filepath = filepath
+        self._file_handle = file_handle
         self._pts = pts
         self._framerate = framerate
         self._updates = updates or []
@@ -90,11 +94,14 @@ class JpegSource(FrameSource):
         return self._update_param('updates', self._updates + [update])
 
     def build_frame(self) -> Tuple[VideoFrame, bytes]:
-        # TODO: get image size without decoding
-        img = cv2.imread(self._filepath)
-        height, width, _ = img.shape
-        with open(self._filepath, 'rb') as f:
-            content = f.read()
+        width, height = get_jpeg_size(self._filepath)
+
+        if self._file_handle:
+            content = self._file_handle.read()
+        else:
+            with open(self._filepath, 'rb') as f:
+                content = f.read()
+
         video_frame = VideoFrame(
             source_id=self._source_id,
             framerate=f'{self._framerate[0]}/{self._framerate[1]}',
@@ -130,6 +137,7 @@ class JpegSource(FrameSource):
             **{
                 'source_id': self._source_id,
                 'filepath': self._filepath,
+                'file_handle': self._file_handle,
                 'pts': self._pts,
                 'framerate': self._framerate,
                 'updates': self._updates,

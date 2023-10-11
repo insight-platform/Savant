@@ -4,6 +4,7 @@ import os
 import pathlib
 import shutil
 import time
+from io import BytesIO
 
 import cv2
 import hnswlib
@@ -11,6 +12,7 @@ import numpy as np
 
 from samples.face_reid.utils import pack_person_id_img_n
 from savant.client import JpegSource, SinkBuilder, SourceBuilder
+from savant.client.utils import resize_preserving_aspect
 from savant.utils.logging import get_logger, init_logging
 
 
@@ -20,6 +22,7 @@ def parse_args():
     parser.add_argument(
         '--zmq_sink_socket', default=os.environ.get('ZMQ_SINK_ENDPOINT')
     )
+    parser.add_argument('--pipeline_frame_size', default=(640, 640))
     parser.add_argument('--source_id', default='gallery-img')
     parser.add_argument('--index_dir', default='/index')
     parser.add_argument('--gallery_dir', default='/gallery')
@@ -56,22 +59,14 @@ def main(args):
 
     sink = SinkBuilder().with_socket(args.zmq_sink_socket).with_idle_timeout(10).build()
 
-    src_jpegs = [
-        JpegSource(args.source_id, str(img_path))
-        .with_aspect_ratio((16, 9))
-        .with_source_id_add_size_suffix(True)
-        for img_path in pathlib.Path(args.gallery_dir).glob('*.jpeg')
-    ]
+    img_paths = list(sorted(pathlib.Path(args.gallery_dir).glob('*.jpeg')))
+    for img_path in img_paths:
+        img = cv2.imread(str(img_path))
+        img_resized = resize_preserving_aspect(img, args.pipeline_frame_size)
+        _, buf = cv2.imencode('.jpeg', img_resized)
+        source(JpegSource(args.source_id, img_path, file_handle=BytesIO(buf.tobytes())))
 
-    source_ids = set()
-    for src_jpeg in src_jpegs:
-        source(src_jpeg, send_eos=False)
-        source_ids.add(src_jpeg.source_id)
-
-    for src_id in source_ids:
-        source.send_eos(src_id)
-
-    time.sleep(1)  # Wait for the module to process the frame
+    time.sleep(1)  # Wait for the module to process the frames
 
     index = hnswlib.Index(space=args.index_space, dim=args.index_dim)
     index.init_index(
@@ -145,7 +140,7 @@ def main(args):
         results_count += 1
 
         # don't wait for sink timeout if all images were processed
-        if results_count == len(src_jpegs):
+        if results_count == len(img_paths):
             logger.info('All images processed, stopping the module.')
             break
 

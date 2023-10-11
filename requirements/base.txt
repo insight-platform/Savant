@@ -27,3 +27,6 @@ protobuf<3.21
 requests~=2.27
 boto3~=1.23
 tqdm~=4.64
+
+# ClientSDK JpegSource
+python-magic~=0.4.27
