@@ -57,7 +57,7 @@ INFO ... > Setting module status to ModuleStatus.RUNNING
 
 After that the `index-builder-client` container will be started automatically.
 
-The `index-builder-client` service runs the [index_builder_client.py](./src/index_builder_client.py) script, which loads the images from the [gallery](./assets/gallery), pads them to 16:9 aspect ratio if necessary, sends them to the `index-builder-pipeline` and uses the received results to create `index_files/index.bin` index file and the cropped face images in the `index_files/processed_gallery` dir.
+The `index-builder-client` service runs the [index_builder_client.py](./src/index_builder_client.py) script, which loads the images from the [gallery](./assets/gallery), resizes them to the pipeline frame size while preserving content aspect ratio, sends them to the `index-builder-pipeline` and uses the received results to create `index_files/index.bin` index file and the cropped face images in the `index_files/processed_gallery` dir.
 
 After the services complete, the containers shut down automatically. Check that the `index_files` directory is created and `index.bin` file and `processed_gallery` image directory is written into it.
 
