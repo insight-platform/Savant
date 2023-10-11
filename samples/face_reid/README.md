@@ -14,7 +14,7 @@ The sample is split into two parts: Index Builder and Demo modules.
 
 Index builder module loads images from [gallery](./assets/gallery), detects faces and facial landmarks, performs face preprocessing and facial recognition model inference. The resulting feature vectors are added into [hnswlib](https://github.com/nmslib/hnswlib) index, and the index (along with cropped face images from gallery) is saved on disk in the `index_files` directory.
 
-Note that the Index Builder pipeline processes all images in a single resolution with 16:9 aspect ratio, but the gallery is sent to the pipeline through the Client SDK which can take care of padding the image to a target aspect ratio. As such it's safe to add new images of any aspect ratio to the gallery. The gallery images are still expected to contain 1 face each and to be named according to scheme `<person_name>_<img_n>.jpeg`.
+Note that the Index Builder pipeline processes all images in a single resolution with 16:9 aspect ratio, but the gallery is sent to the pipeline through the Client SDK which can take care of padding the image to a target aspect ratio. As such it's safe to add new images of any aspect ratio to the gallery. The gallery images are expected to contain 1 face each and to be named according to scheme `<person_name>_<img_n>.jpeg`.
 
 ## Demo
 
