@@ -8,10 +8,10 @@ Savant is built on DeepStream and provides a high-level abstraction layer for bu
 :star: Star us on GitHub — it motivates us a lot and helps the project become more visible to developers.
 
 ![GitHub release (with filter)](https://img.shields.io/github/v/release/insight-platform/Savant)
-[![Build status](https://github.com/insight-platform/Savant/actions/workflows/build-docker-latest.yml/badge.svg?branch=develop)](https://github.com/insight-platform/Savant/actions/workflows/build-docker-latest.yml)
+[![Build status](https://github.com/insight-platform/Savant/actions/workflows/main.yml/badge.svg?branch=develop)](https://github.com/insight-platform/Savant/actions/workflows/main.yml)
 [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/SavantFramework.svg?style=social&label=Follow%20%40SavantFramework)](https://twitter.com/SavantFramework) [![Blog](https://img.shields.io/badge/Inside%20InSight%20Blog-444444?logo=medium)](https://blog.savant-ai.io/) [![Discord](https://img.shields.io/badge/Discord-8A2BE2)](https://discord.gg/KVAfGBsZGd)
 
-Savant is a member of Nvidia Inception Program:
+Savant is a member of the Nvidia Inception Program:
 
 ![savant_inception_member](https://github.com/insight-platform/Savant/assets/15047882/12928291-05cc-4639-b43c-6b13d36a01fd)
 
