@@ -1,11 +1,14 @@
 """Buffer processor for GStreamer pipeline."""
+import inspect
 from abc import ABC, abstractmethod
 from queue import Queue
+from types import FrameType
 from typing import Iterator
 
 from gi.repository import Gst
 
 from savant.config.schema import PipelineElement
+from savant.gstreamer.utils import propagate_gst_error
 from savant.utils.fps_meter import FPSMeter
 from savant.utils.logging import get_logger
 from savant.utils.sink_factories import SinkMessage
@@ -55,7 +58,15 @@ class GstBufferProcessor(ABC):
         """Attach pipeline input processor to pad."""
 
         buffer = info.get_buffer()
-        self.prepare_input(buffer)
+        try:
+            self.prepare_input(buffer)
+        except Exception as exc:  # pylint: disable=broad-except
+            self._report_error(
+                pad,
+                f'Failed to prepare input for buffer with PTS {buffer.pts}: {exc}.',
+                inspect.currentframe(),
+            )
+
         return Gst.PadProbeReturn.OK
 
     def output_probe(  # pylint: disable=unused-argument
@@ -67,11 +78,19 @@ class GstBufferProcessor(ABC):
         """Attach pipeline output processor to pad."""
 
         buffer = info.get_buffer()
-        for sink_message in self.prepare_output(buffer, user_data):
-            self._queue.put(sink_message)
-            # measure and logging FPS
-            if self._fps_meter():
-                self._logger.info(self._fps_meter.message)
+        try:
+            for sink_message in self.prepare_output(buffer, user_data):
+                self._queue.put(sink_message)
+                # measure and logging FPS
+                if self._fps_meter():
+                    self._logger.info(self._fps_meter.message)
+        except Exception as exc:  # pylint: disable=broad-except
+            self._report_error(
+                pad,
+                f'Failed to prepare output for buffer with PTS {buffer.pts}: {exc}.',
+                inspect.currentframe(),
+            )
+
         return Gst.PadProbeReturn.OK
 
     def element_input_probe(  # pylint: disable=unused-argument
@@ -83,7 +102,15 @@ class GstBufferProcessor(ABC):
         """Attach element input processor to pad."""
 
         buffer = info.get_buffer()
-        self.prepare_element_input(element, buffer)
+        try:
+            self.prepare_element_input(element, buffer)
+        except Exception as exc:  # pylint: disable=broad-except
+            self._report_error(
+                pad,
+                f'Failed to prepare "{element.name}" element input for buffer with PTS {buffer.pts}: {exc}.',
+                inspect.currentframe(),
+            )
+
         return Gst.PadProbeReturn.OK
 
     def element_output_probe(  # pylint: disable=unused-argument
@@ -95,5 +122,24 @@ class GstBufferProcessor(ABC):
         """Attach element output processor to pad."""
 
         buffer = info.get_buffer()
-        self.prepare_element_output(element, buffer)
+        try:
+            self.prepare_element_output(element, buffer)
+        except Exception as exc:  # pylint: disable=broad-except
+            self._report_error(
+                pad,
+                f'Failed to prepare "{element.name}" element output for buffer with PTS {buffer.pts}: {exc}.',
+                inspect.currentframe(),
+            )
+
         return Gst.PadProbeReturn.OK
+
+    def _report_error(self, pad: Gst.Pad, error: str, frame: FrameType):
+        self._logger.exception(error)
+        propagate_gst_error(
+            gst_element=pad.get_parent_element(),
+            frame=frame,
+            file_path=__file__,
+            domain=Gst.StreamError.quark(),
+            code=Gst.StreamError.FAILED,
+            text=error,
+        )
