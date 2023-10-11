@@ -3,6 +3,7 @@ import os
 from os import PathLike
 from typing import List, Optional, Tuple, Union
 
+import numpy as np
 import cv2
 from savant_rs.primitives import (
     Attribute,
@@ -151,12 +152,60 @@ class JpegSource(FrameSource):
             else:
                 left = right = 0
 
+            black_color = [0] * channels
+            if channels == 4:
+                black_color[3] = 255
+
             img = cv2.copyMakeBorder(
-                img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=[0] * channels
+                img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=black_color
             )
-        else:
-            # resize
-            img = cv2.resize(img, (self._width, self._height))
+        elif self._height != height or self._width != width:
+            # resize while preserving aspect ratio
+
+            new_aspect = self._width / self._height
+            current_aspect = width / height
+
+            if math.isclose(current_aspect, new_aspect, rel_tol=1e-3):
+                # aspect ratios are close enough
+                img = cv2.resize(img, (self._width, self._height))
+            else:
+                new_img = np.zeros((self._height, self._width, channels), dtype=np.uint8)
+                if channels == 4:
+                    new_img[:, :, 3] = 255
+
+                if current_aspect > new_aspect:
+                    # add padding on top and bottom
+                    # and possibly resize to match the target width
+                    if width != self._width:
+                        # resize so that the width matches the target width
+                        # while preserving aspect ratio
+                        resized_w = self._width
+                        resized_h = round(height * self._width / width)
+                        resized = cv2.resize(img, (resized_w, resized_h))
+                    else:
+                        # width matches, no need to resize
+                        resized_w = width
+                        resized_h = height
+                        resized = img
+                    top = (self._height - resized_h) // 2
+                    bottom = top + resized_h
+                    new_img[top:bottom, :, :] = resized
+                else:
+                    # add padding on left and right
+                    # and possibly resize to match the target height
+                    if height != self._height:
+                        # resize so that the height matches the target height
+                        # while preserving aspect ratio
+                        resized_h = self._height
+                        resized_w = round(width * self._height / height)
+                        resized = cv2.resize(img, (resized_w, resized_h))
+                    else:
+                        resized_h = height
+                        resized_w = width
+                        resized = img
+                    left = (self._width - resized_w) // 2
+                    right = left + resized_w
+                    new_img[:, left:right, :] = resized
 
         _, buf = cv2.imencode('.jpeg', img)
         content = buf.tobytes()
