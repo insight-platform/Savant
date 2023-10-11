@@ -3,7 +3,6 @@ import colorsys
 import math
 import random
 from collections import defaultdict, deque
-from enum import Enum
 from typing import List, Optional, Sequence, Tuple
 
 from savant_rs.primitives.geometry import (
@@ -12,11 +11,6 @@ from savant_rs.primitives.geometry import (
     PolygonalArea,
     Segment,
 )
-
-
-class Direction(Enum):
-    entry = 0
-    exit = 1
 
 
 class TwoLinesCrossingTracker:
@@ -37,7 +31,7 @@ class TwoLinesCrossingTracker:
     def add_track_point(self, track_id: int, point: Point):
         self._track_last_points[track_id].append(point)
 
-    def check_tracks(self, track_ids: Sequence[int]) -> List[Optional[Direction]]:
+    def check_tracks(self, track_ids: Sequence[int]) -> List[Optional[str]]:
         ret = [None] * len(track_ids)
         check_track_idxs = []
         segments = []
@@ -56,8 +50,18 @@ class TwoLinesCrossingTracker:
             track_id = track_ids[track_idx]
             cross_edge_labels = [edge[1] for edge in cross_result.edges]
 
+            unlabeled_edge_crossed = False
+            for edge_label in cross_edge_labels:
+                if not edge_label:
+                    unlabeled_edge_crossed = True
+                    break
+
+            if unlabeled_edge_crossed:
+                continue
+
             if cross_result.kind == IntersectionKind.Enter:
                 self._prev_cross_edge_label[track_id] = cross_edge_labels
+                ret[track_idx] = '+'.join(['entry'] + cross_edge_labels)
                 continue
 
             if cross_result.kind == IntersectionKind.Leave:
@@ -65,14 +69,12 @@ class TwoLinesCrossingTracker:
                     cross_edge_labels = (
                         self._prev_cross_edge_label[track_id] + cross_edge_labels
                     )
+                else:
+                    ret[track_idx] = '+'.join(['exit'] + cross_edge_labels)
 
-            cross_edge_labels = list(filter(lambda x: x is not None, cross_edge_labels))
-
-            if cross_edge_labels == ['from', 'to']:
-                ret[track_idx] = Direction.entry
-
-            elif cross_edge_labels == ['to', 'from']:
-                ret[track_idx] = Direction.exit
+            if len(set(cross_edge_labels)) == 2:
+                # the track exited the area through a different edge than it entered
+                ret[track_idx] = '->'.join(cross_edge_labels)
 
         return ret
 
