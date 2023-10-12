@@ -152,14 +152,15 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             dev_mode=self.dev_mode,
         )
 
-        self.pyfunc.load_user_code()
-
-        assert isinstance(
-            self.pyfunc.instance, BasePyFuncPlugin
-        ), f'"{self.pyfunc}" should be an instance of "BasePyFuncPlugin" subclass.'
-        self.pyfunc.instance.gst_element = self
-
         try:
+            self.pyfunc.load_user_code()
+
+            assert isinstance(
+                self.pyfunc.instance, BasePyFuncPlugin
+            ), f'"{self.pyfunc}" should be an instance of "BasePyFuncPlugin" subclass.'
+            self.pyfunc.instance.gst_element = self
+
+
             return self.pyfunc.instance.on_start()
         except Exception as exc:
             return self.handle_error(exc, 'Error in pyfunc do_start()', True, False)
