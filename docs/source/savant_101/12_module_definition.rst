@@ -54,7 +54,7 @@ The following parameters are defined for a Savant module by default:
 
 .. literalinclude:: ../../../savant/config/default.yml
   :language: YAML
-  :lines: 1-137
+  :lines: 1-132
 
 .. note::
 
@@ -73,43 +73,24 @@ To access parameter values in runtime use the :py:class:`~savant.parameter_stora
 Dynamic Parameters
 ^^^^^^^^^^^^^^^^^^
 
-Savant supports module-wide dynamic parameters. Those parameters can retrieve their current values during the module execution. They are defined within the ``dynamic_parameters`` section. Currently, only Etcd is supported as a dynamic parameter source. The Etcd connection is configured with the ``parameters.etcd_config`` section.
+Savant supports module-wide dynamic parameters. Those parameters can retrieve their current values during the module execution. Currently, only Etcd is supported as a dynamic parameter source. The Etcd connection is configured in the ``parameters.etcd`` section.
 
-The dynamic parameters are also available in the functions:
+.. code-block:: yaml
+
+      etcd:
+        hosts: [127.0.0.1:2379]
+        connect_timeout: 5
+        watch_path: 'savant'
+
+The dynamic parameters are available in the functions via ``eval_expr``. Example of getting the value for ``savant/some_dynamic_parameter_name`` from Etcd:
 
 .. code-block:: python
 
-  from savant.parameter_storage import param_storage
+  from savant_rs.utils import eval_expr
 
 
-  parameter_value = param_storage()['some_dynamic_parameter_name']
+  parameter_value, _ = eval_expr('etcd("some_dynamic_parameter_name", "default_value")')
 
-
-Etcd must be configured with the ``parameters.etcd_config`` and ``parameters.dynamic_parameter_storage``:
-
-.. code-block:: yaml
-
-      # storages
-      dynamic_parameter_storage: etcd
-      etcd_config:
-        endpoints:
-          - host: etcd-server
-            port: 2379
-        timeout: 15
-
-
-Parameter Initializing Priority
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The section defines what parameter values source receives higher priority when resolving parameters. The lower number, the higher the priority:
-
-.. code-block:: yaml
-
-    parameter_init_priority:
-        environment: 20
-        etcd: 10
-
-In the above case, environment variables have lesser priority than values fetched from the configured Etcd source.
 
 Output Queue Max Size
 ^^^^^^^^^^^^^^^^^^^^^

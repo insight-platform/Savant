@@ -17,6 +17,12 @@ parameters:
     # Draw only on frames with tag "draw"
     condition:
       tag: draw
+  # Etcd storage to manage processing sources
+  etcd:
+    # Etcd hosts to connect to
+    hosts: [etcd:2379]
+    # Path in Etcd to watch changes
+    watch_path: savant
 
 # pipeline definition
 pipeline:
@@ -24,6 +30,11 @@ pipeline:
 
   # define pipeline's main elements
   elements:
+    # check the source is set for processing in etcd, skip processing otherwise
+    - element: pyfunc
+      module: samples.conditional_video_processing.conditional_video_processing
+      class_name: ConditionalSkipProcessing
+
     # primary detector element, inference is provided by the nvinfer Deepstream element
     # model type is detector (other available types are: classifier, custom)
     - element: nvinfer@detector
