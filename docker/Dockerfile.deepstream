@@ -68,7 +68,7 @@ COPY libs/savantboost/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY libs/savantboost .
-RUN python setup.py bdist_wheel -- -DCMAKE_BUILD_TYPE:STR=Release  && rm -rf _skbuild
+RUN python setup.py bdist_wheel -- -DCMAKE_BUILD_TYPE:STRING=Release  && rm -rf _skbuild
 
 # Savant amd64 base container
 FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_BASE_IMAGE AS base_amd64
