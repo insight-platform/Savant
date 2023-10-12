@@ -34,7 +34,6 @@ from savant.deepstream.nvinfer.model import NvInferAttributeModel, NvInferDetect
 from savant.deepstream.source_output import (
     SourceOutput,
     SourceOutputEncoded,
-    SourceOutputH26X,
     SourceOutputWithFrame,
 )
 from savant.deepstream.utils import (
@@ -1145,7 +1144,7 @@ def create_buffer_processor(
     """Create buffer processor."""
 
     if isinstance(source_output, SourceOutputEncoded):
-        if isinstance(source_output, SourceOutputH26X) and is_aarch64():
+        if is_aarch64() and source_output.encoder in ['nvv4l2h264enc', 'nvv4l2h265enc']:
             buffer_processor_class = NvDsJetsonH26XBufferProcessor
         else:
             buffer_processor_class = NvDsEncodedBufferProcessor

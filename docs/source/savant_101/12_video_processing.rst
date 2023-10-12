@@ -370,6 +370,10 @@ Software H264 Encoder
    - ``0x00000002`` or ``fastdecode``: Fast decode
    - ``0x00000004`` or ``zerolatency``: Zero latency
 
+.. note::
+
+    For this encoder a profile can be specified in ``output_frame.profile`` parameter (one of ``baseline``, ``main``, ``high``). The default value is ``baseline``.
+
 Hardware HEVC Codec (NVENC)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

@@ -2,7 +2,6 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 
-import pyds
 from pygstsavantframemeta import add_pad_probe_to_move_frame
 from savant_rs.pipeline2 import VideoPipeline
 
@@ -16,7 +15,6 @@ from savant.gstreamer.codecs import CODEC_BY_NAME, Codec, CodecInfo
 from savant.gstreamer.pipeline import GstPipeline
 from savant.gstreamer.utils import link_pads
 from savant.utils.logging import get_logger
-from savant.utils.platform import is_aarch64
 from savant.utils.source_info import SourceInfo
 
 
@@ -100,10 +98,6 @@ class SourceOutputWithFrame(SourceOutput):
             source_info.source_id,
         )
         output_converter_props = {}
-        if not is_aarch64():
-            output_converter_props['nvbuf-memory-type'] = int(
-                pyds.NVBUF_MEM_CUDA_UNIFIED
-            )
         if self._frame_params.padding and not self._frame_params.padding.keep:
             output_converter_props['src_crop'] = ':'.join(
                 str(x)
@@ -346,6 +340,10 @@ class SourceOutputEncoded(SourceOutputWithFrame):
     def codec(self) -> CodecInfo:
         return self._codec
 
+    @property
+    def encoder(self) -> str:
+        return self._encoder
+
     def _add_transform_elems(self, pipeline: GstPipeline, source_info: SourceInfo):
         encoder = pipeline.add_element(
             PipelineElement(self._encoder, properties=self._params)
@@ -399,6 +397,23 @@ class SourceOutputH26X(SourceOutputEncoded):
         self._logger.debug(
             'Added parser %s with params %s', self._codec.parser, parser_params
         )
+
+    def _build_output_caps(self, width: int, height: int) -> Gst.Caps:
+        caps_params = [
+            self._codec.caps_with_params,
+            f'width={width}',
+            f'height={height}',
+        ]
+        if (
+            self._codec.name == Codec.H264.value.name
+            and self._encoder == self._codec.sw_encoder
+        ):
+            profile = self._output_frame.get('profile')
+            if profile is None:
+                profile = 'baseline'
+            caps_params.append(f'profile={profile}')
+
+        return Gst.Caps.from_string(', '.join(caps_params))
 
 
 def create_source_output(

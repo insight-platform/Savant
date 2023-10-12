@@ -4,9 +4,9 @@ from adapters.ds.sinks.always_on_rtsp.config import Config
 from adapters.ds.sinks.always_on_rtsp.last_frame import LastFrame
 from adapters.ds.sinks.always_on_rtsp.pipeline import add_elements
 from savant.config.schema import PipelineElement
+from savant.deepstream.element_factory import NvDsElementFactory
 from savant.gstreamer import Gst
 from savant.gstreamer.codecs import CODEC_BY_CAPS_NAME, Codec
-from savant.gstreamer.element_factory import GstElementFactory
 from savant.utils.logging import get_logger
 
 LOGGER_NAME = 'adapters.ao_sink.input_pipeline'
@@ -47,7 +47,7 @@ def on_demuxer_pad_added(
     src_pad: Gst.Pad,
     config: Config,
     pipeline: Gst.Pipeline,
-    factory: GstElementFactory,
+    factory: NvDsElementFactory,
     sink_pad: Gst.Pad,
 ):
     caps: Gst.Caps = src_pad.get_pad_template_caps()
@@ -90,7 +90,7 @@ def on_demuxer_pad_added(
 def build_input_pipeline(
     config: Config,
     last_frame: LastFrame,
-    factory: GstElementFactory,
+    factory: NvDsElementFactory,
 ):
     pipeline: Gst.Pipeline = Gst.Pipeline.new('input-pipeline')
 
@@ -117,10 +117,7 @@ def build_input_pipeline(
         ),
     ]
     sink_elements = [
-        PipelineElement(
-            'nvvideoconvert',
-            properties=config.nvvideoconvert_properties,
-        ),
+        PipelineElement('nvvideoconvert'),
         PipelineElement(
             'capsfilter',
             properties={'caps': 'video/x-raw(memory:NVMM), format=RGBA'},
