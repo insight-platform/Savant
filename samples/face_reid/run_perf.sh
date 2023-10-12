@@ -10,7 +10,8 @@ else
 fi
 
 docker run --rm -it $DOCKER_RUNTIME \
-  -v `pwd`/samples:/opt/savant/samples \
+  -v `pwd`/samples/face_reid/src:/opt/savant/samples/face_reid \
+  -v `pwd`/samples/face_reid/index_files:/index \
   -v `pwd`/data:/data:ro \
   -v `pwd`/downloads/face_reid:/downloads \
   -v `pwd`/models/face_reid:/models \

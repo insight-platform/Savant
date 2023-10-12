@@ -1,36 +1,37 @@
 version: "3.3"
 services:
 
-  pictures-source:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
-    volumes:
-      - zmq_sockets:/tmp/zmq-sockets
-      - ./assets/gallery:/gallery
-    environment:
-      - LOCATION=/gallery
-      - FILE_TYPE=picture
-      - ZMQ_ENDPOINT=req+connect:ipc:///tmp/zmq-sockets/input-video.ipc
-      - SOURCE_ID=gallery
-      - READ_METADATA=False
-    entrypoint: /opt/savant/adapters/gst/sources/media_files.sh
-    profiles:
-      - index
-    depends_on:
-      index-builder:
-        condition: service_healthy
-
-  index-builder:
+  index-builder-client:
     build:
       context: .
       dockerfile: docker/Dockerfile.x86
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
+      - ./assets/gallery:/gallery
+      - ./src:/opt/savant/samples/face_reid
+      - ./index_files:/index
+    environment:
+      - ZMQ_SRC_ENDPOINT=req+connect:ipc:///tmp/zmq-sockets/input-video.ipc
+      - ZMQ_SINK_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
+    entrypoint: python
+    command: samples/face_reid/index_builder_client.py
+    profiles:
+      - index
+    depends_on:
+      index-builder-pipeline:
+        condition: service_healthy
+
+  index-builder-pipeline:
+    image: ghcr.io/insight-platform/savant-deepstream:latest
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
       - ../../models/face_reid:/models
       - ../../downloads/face_reid:/downloads
-      - ..:/opt/savant/samples
+      - ./src:/opt/savant/samples/face_reid
     command: samples/face_reid/index_builder.yml
     environment:
       - ZMQ_SRC_ENDPOINT=rep+bind:ipc:///tmp/zmq-sockets/input-video.ipc
+      - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
     deploy:
       resources:
         reservations:
@@ -69,7 +70,8 @@ services:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../models/face_reid:/models
       - ../../downloads/face_reid:/downloads
-      - ..:/opt/savant/samples
+      - ./src:/opt/savant/samples/face_reid
+      - ./index_files:/index
     command: samples/face_reid/module.yml
     environment:
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc

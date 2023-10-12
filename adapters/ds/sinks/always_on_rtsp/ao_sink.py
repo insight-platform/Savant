@@ -6,8 +6,8 @@ from adapters.ds.sinks.always_on_rtsp.input_pipeline import build_input_pipeline
 from adapters.ds.sinks.always_on_rtsp.last_frame import LastFrame
 from adapters.ds.sinks.always_on_rtsp.output_pipeline import build_output_pipeline
 from adapters.ds.sinks.always_on_rtsp.pipeline import PipelineThread
+from savant.deepstream.element_factory import NvDsElementFactory
 from savant.gstreamer import Gst
-from savant.gstreamer.element_factory import GstElementFactory
 from savant.utils.logging import get_logger, init_logging
 
 LOGGER_NAME = 'adapters.ao_sink'
@@ -23,7 +23,7 @@ def run_ao_sink():
     Gst.init(None)
 
     logger.info('Source %s. Starting Always-On-RTSP sink', config.source_id)
-    factory = GstElementFactory()
+    factory = NvDsElementFactory()
     output_pipeline_thread = PipelineThread(
         build_output_pipeline,
         'OutputPipeline',

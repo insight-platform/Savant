@@ -37,6 +37,14 @@ Preview:
 
 ![](traffic_meter/assets/traffic-meter-loop-400.webp)
 
+### Intersection traffic meter demo
+
+Sample Location: [intersection_traffic_meter](./intersection_traffic_meter)
+
+Preview:
+
+![](intersection_traffic_meter/assets/intersection-traffic-meter-loop-400.webp)
+
 ### Age gender recognition
 
 Sample Location: [age gender recognition](./age_gender_recognition)

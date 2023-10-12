@@ -37,6 +37,7 @@ from savant.deepstream.buffer_processor import (
     NvDsBufferProcessor,
     create_buffer_processor,
 )
+from savant.deepstream.element_factory import NvDsElementFactory
 from savant.deepstream.metadata import (
     nvds_attr_meta_output_converter,
     nvds_obj_meta_output_converter,
@@ -75,6 +76,8 @@ class NvDsPipeline(GstPipeline):
     :key batch_size: Primary batch size (nvstreammux batch-size).
     :key output_frame: Whether to include frame in module output, not just metadata.
     """
+
+    _element_factory = NvDsElementFactory()
 
     def __init__(
         self,
@@ -485,20 +488,14 @@ class NvDsPipeline(GstPipeline):
 
         add_pad_probe_to_move_frame(new_pad, self._video_pipeline, 'source-convert')
 
-        nv_video_converter = self._element_factory.create(
-            PipelineElement('nvvideoconvert')
-        )
-        if not is_aarch64():
-            nv_video_converter.set_property(
-                'nvbuf-memory-type', int(pyds.NVBUF_MEM_CUDA_UNIFIED)
-            )
-        elif new_pad_caps.get_structure(0).get_value('format') == 'RGB':
+        nv_video_converter_props = {}
+        if is_aarch64() and new_pad_caps.get_structure(0).get_value('format') == 'RGB':
             #   https://forums.developer.nvidia.com/t/buffer-transform-failed-for-nvvideoconvert-for-num-input-channels-num-output-channels-on-jetson/237578
             #   https://forums.developer.nvidia.com/t/nvvideoconvert-buffer-transform-failed-on-jetson/261370
             self._logger.info(
-                'Input stream is RGB, using  compute-hw=1 as recommended by Nvidia'
+                'Input stream is RGB, using compute-hw=1 as recommended by Nvidia'
             )
-            nv_video_converter.set_property('compute-hw', 1)
+            nv_video_converter_props['compute-hw'] = 1
         if self._frame_params.padding:
             dest_crop = ':'.join(
                 str(x)
@@ -509,7 +506,11 @@ class NvDsPipeline(GstPipeline):
                     self._frame_params.height,
                 ]
             )
-            nv_video_converter.set_property('dest-crop', dest_crop)
+            nv_video_converter_props['dest-crop'] = dest_crop
+
+        nv_video_converter = self._element_factory.create(
+            PipelineElement('nvvideoconvert', properties=nv_video_converter_props)
+        )
 
         self._check_pipeline_is_running()
         self._pipeline.add(nv_video_converter)
@@ -781,17 +782,14 @@ class NvDsPipeline(GstPipeline):
             )
             if parent_id is not None:
                 parents[obj_meta.id] = parent_id
-            for attr_meta_list in nvds_attr_meta_iterator(
+            for attr_meta in nvds_attr_meta_iterator(
                 frame_meta=nvds_frame_meta, obj_meta=nvds_obj_meta
             ):
-                for attr_meta in attr_meta_list:
-                    if (
-                        attr_meta.element_name,
-                        attr_meta.name,
-                    ) not in self._internal_attrs:
-                        obj_meta.set_attribute(
-                            nvds_attr_meta_output_converter(attr_meta)
-                        )
+                if (
+                    attr_meta.element_name,
+                    attr_meta.name,
+                ) not in self._internal_attrs:
+                    obj_meta.set_attribute(nvds_attr_meta_output_converter(attr_meta))
             nvds_remove_obj_attrs(nvds_frame_meta, nvds_obj_meta)
 
             # skip empty primary object that equals to frame

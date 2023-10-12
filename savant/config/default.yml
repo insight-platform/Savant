@@ -57,6 +57,9 @@ parameters:
   #     iframeinterval: 25
   #   condition:
   #     tag: encode
+  #  # Profile for software h264 encoder. Can be "baseline", "main", "high".
+  #  # Default is "baseline".
+  #  profile: baseline
 
   # PyFunc for drawing on frames. Should be an instance of savant.config.schema.DrawFunc.
   #
