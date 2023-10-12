@@ -152,8 +152,15 @@ class ObjectMeta:
                 element_name=element_name, name=name, value=value, confidence=confidence
             )
         else:
-            self._attributes[(element_name, name)] = AttributeMeta(
-                element_name=element_name, name=name, value=value, confidence=confidence
+            if (element_name, name) not in self._attributes:
+                self._attributes[(element_name, name)] = []
+            self._attributes[(element_name, name)].append(
+                AttributeMeta(
+                    element_name=element_name,
+                    name=name,
+                    value=value,
+                    confidence=confidence,
+                )
             )
 
     @property
