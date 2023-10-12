@@ -2,16 +2,15 @@ from adapters.ds.sinks.always_on_rtsp.config import Config
 from adapters.ds.sinks.always_on_rtsp.last_frame import LastFrame
 from adapters.ds.sinks.always_on_rtsp.pipeline import add_elements
 from savant.config.schema import PipelineElement
-from savant.deepstream.utils.misc import get_nvvideoconvert_properties
+from savant.deepstream.element_factory import NvDsElementFactory
 from savant.gstreamer import Gst
-from savant.gstreamer.element_factory import GstElementFactory
 from savant.utils.platform import is_aarch64
 
 
 def build_output_pipeline(
     config: Config,
     last_frame: LastFrame,
-    factory: GstElementFactory,
+    factory: NvDsElementFactory,
 ) -> Gst.Pipeline:
     pipeline: Gst.Pipeline = Gst.Pipeline.new('output-pipeline')
 
@@ -33,10 +32,7 @@ def build_output_pipeline(
         PipelineElement('jpegparse'),
         PipelineElement('jpegdec'),
         PipelineElement('imagefreeze'),
-        PipelineElement(
-            'nvvideoconvert',
-            properties=get_nvvideoconvert_properties(),
-        ),
+        PipelineElement('nvvideoconvert'),
         PipelineElement(
             'capsfilter',
             properties={
@@ -51,10 +47,7 @@ def build_output_pipeline(
                 'last-frame': last_frame,
             },
         ),
-        PipelineElement(
-            'nvvideoconvert',
-            properties=get_nvvideoconvert_properties(),
-        ),
+        PipelineElement('nvvideoconvert'),
         PipelineElement(
             'nvv4l2h264enc',
             properties=encoder_properties,

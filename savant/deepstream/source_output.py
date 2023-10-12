@@ -10,7 +10,6 @@ from savant.config.schema import (
     FrameProcessingCondition,
     PipelineElement,
 )
-from savant.deepstream.utils.misc import get_nvvideoconvert_properties
 from savant.gstreamer import Gst  # noqa:F401
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec, CodecInfo
 from savant.gstreamer.pipeline import GstPipeline
@@ -98,7 +97,7 @@ class SourceOutputWithFrame(SourceOutput):
             'Added pad probe to convert savant frame meta from NvDsMeta to GstMeta (source_id=%s)',
             source_info.source_id,
         )
-        output_converter_props = get_nvvideoconvert_properties()
+        output_converter_props = {}
         if self._frame_params.padding and not self._frame_params.padding.keep:
             output_converter_props['src_crop'] = ':'.join(
                 str(x)

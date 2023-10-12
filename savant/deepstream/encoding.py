@@ -3,8 +3,8 @@ import time
 from typing import Any, Dict
 
 from savant.config.schema import PipelineElement
+from savant.deepstream.element_factory import NvDsElementFactory
 from savant.deepstream.runner import NvDsPipelineRunner
-from savant.deepstream.utils.misc import get_nvvideoconvert_properties
 from savant.gstreamer import Gst  # noqa:F401
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
 from savant.gstreamer.element_factory import GstElementFactory
@@ -49,7 +49,6 @@ def check_encoder_is_available(parameters: Dict[str, Any]) -> bool:
         output_caps = f'{output_caps},profile={profile}'
 
     pipeline: Gst.Pipeline = Gst.Pipeline.new()
-    converter_props = get_nvvideoconvert_properties()
     elements = [
         PipelineElement(
             'videotestsrc',
@@ -59,10 +58,7 @@ def check_encoder_is_available(parameters: Dict[str, Any]) -> bool:
             'capsfilter',
             properties={'caps': 'video/x-raw,width=256,height=256'},
         ),
-        PipelineElement(
-            'nvvideoconvert',
-            properties=converter_props,
-        ),
+        PipelineElement('nvvideoconvert'),
         PipelineElement(
             encoder,
             properties=output_frame.get('encoder_params', {}),
@@ -81,7 +77,10 @@ def check_encoder_is_available(parameters: Dict[str, Any]) -> bool:
     last_gst_element = None
     for element in elements:
         if element.element == 'capsfilter':
+            # Cannot use NvDsElementFactory().create() since it creates videotestsrc as a bin.
             gst_element = GstElementFactory.create_caps_filter(element)
+        elif element.element == 'nvvideoconvert':
+            gst_element = NvDsElementFactory.create_nvvideoconvert(element)
         else:
             gst_element = GstElementFactory.create_element(element)
         logger.debug('Created element %r', gst_element.name)

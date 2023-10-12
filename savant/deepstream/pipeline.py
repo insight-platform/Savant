@@ -37,6 +37,7 @@ from savant.deepstream.buffer_processor import (
     NvDsBufferProcessor,
     create_buffer_processor,
 )
+from savant.deepstream.element_factory import NvDsElementFactory
 from savant.deepstream.metadata import (
     nvds_attr_meta_output_converter,
     nvds_obj_meta_output_converter,
@@ -50,7 +51,6 @@ from savant.deepstream.utils import (
     nvds_obj_meta_iterator,
     nvds_remove_obj_attrs,
 )
-from savant.deepstream.utils.misc import get_nvvideoconvert_properties
 from savant.deepstream.utils.pipeline import (
     add_queues_to_pipeline,
     build_pipeline_stages,
@@ -76,6 +76,8 @@ class NvDsPipeline(GstPipeline):
     :key batch_size: Primary batch size (nvstreammux batch-size).
     :key output_frame: Whether to include frame in module output, not just metadata.
     """
+
+    _element_factory = NvDsElementFactory()
 
     def __init__(
         self,
@@ -486,7 +488,7 @@ class NvDsPipeline(GstPipeline):
 
         add_pad_probe_to_move_frame(new_pad, self._video_pipeline, 'source-convert')
 
-        nv_video_converter_props = get_nvvideoconvert_properties()
+        nv_video_converter_props = {}
         if is_aarch64() and new_pad_caps.get_structure(0).get_value('format') == 'RGB':
             #   https://forums.developer.nvidia.com/t/buffer-transform-failed-for-nvvideoconvert-for-num-input-channels-num-output-channels-on-jetson/237578
             #   https://forums.developer.nvidia.com/t/nvvideoconvert-buffer-transform-failed-on-jetson/261370
