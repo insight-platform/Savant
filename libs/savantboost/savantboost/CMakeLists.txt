@@ -12,18 +12,18 @@ find_package(Python3 COMPONENTS Interpreter Development)
 find_package(pybind11 CONFIG REQUIRED)
 find_package(CUDAToolkit REQUIRED)
 
-IF(CMAKE_BUILD_TYPE MATCHES Debug)
+if(CMAKE_BUILD_TYPE EQUAL Debug)
     message("Added OpenCV package for debuging")
     find_package( OpenCV REQUIRED )
-ENDIF()
+endif()
 
 pkg_check_modules(GLIB REQUIRED glib-2.0)
 pkg_check_modules(GSTREAMER gstreamer-1.0)
 pkg_check_modules(GSTREAMER_PLUGIN gstreamer-plugins-base-1.0)
 
-IF(NOT DEFINED DeepStream_DIR)
+if(NOT DEFINED DeepStream_DIR)
     set(DeepStream_DIR /opt/nvidia/deepstream/deepstream)
-ENDIF()
+endif()
 
 include_directories(
         "${DeepStream_DIR}/sources/includes"
@@ -38,11 +38,11 @@ link_directories(
         "${DeepStream_DIR}/lib"
 )
 
-IF(CMAKE_BUILD_TYPE MATCHES Debug)
+if(CMAKE_BUILD_TYPE MATCHES Debug)
         link_directories(
                 ${OPENCV_LIBRARY_DIRS}
         )
-ENDIF()
+endif()
 
 message("CMAKE_SYSTEM_PROCESSOR: ${CMAKE_SYSTEM_PROCESSOR}")
 
@@ -70,13 +70,25 @@ target_link_libraries(
         CUDA::npps
 )
 
-IF(CMAKE_BUILD_TYPE MATCHES Debug)
+if(CMAKE_BUILD_TYPE EQUAL Debug)
         target_link_libraries(
                 ${library_name}
                 ${OpenCV_LIBS}
         )
-ENDIF()
+endif()
 
-#
+if(CMAKE_SYSTEM_PROCESSOR MATCHES arm)
+    message("Building for ${CMAKE_SYSTEM_PROCESSOR}")
+    set(ARCH "72\;87")
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES x86_64)
+    message("Building for ${CMAKE_SYSTEM_PROCESSOR}")
+    set(ARCH "61\;70\;75\;80\;86\;89\;90")
+else()
+    message(FATAL_ERROR "Unsupported arhitecture: ${CMAKE_SYSTEM_PROCESSOR}")
+endif()
+
+file(GLOB HEADER_FILES *.h  */*.h )
+set_target_properties(savantboost PROPERTIES CUDA_ARCHITECTURES ${ARCH} PUBLIC_HEADER ${HEADER_FILES})
+
 install(TARGETS ${library_name} LIBRARY DESTINATION ../lib
         PUBLIC_HEADER DESTINATION ../include)

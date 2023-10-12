@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.27)
+cmake_minimum_required(VERSION 3.22...3.27)
 
 set(python_module_name pysavantboost)
 set(CMAKE_CXX_STANDARD 14)
@@ -18,10 +18,10 @@ find_package(Python3 COMPONENTS Interpreter Development)
 find_package(CUDAToolkit REQUIRED)
 find_package(pybind11 CONFIG REQUIRED)
 
-IF(CMAKE_BUILD_TYPE MATCHES Debug)
+if(CMAKE_BUILD_TYPE EQUAL Debug)
     message("Added OpenCV package for debuging")
     find_package( OpenCV REQUIRED )
-ENDIF()
+endif()
 
 pkg_check_modules(GLIB REQUIRED glib-2.0)
 pkg_check_modules(GSTREAMER gstreamer-1.0)
@@ -43,14 +43,14 @@ link_directories(
         ${CUDA_LIBRARY_DIRS}
         "${DeepStream_DIR}/lib"
 )
-IF(CMAKE_BUILD_TYPE MATCHES Debug)
+if(CMAKE_BUILD_TYPE MATCHES Debug)
     link_directories(
         ${OPENCV_LIBRARY_DIRS}   
     )
     include_directories(
         ${OpenCV_INCLUDE_DIRS}
     )
-ENDIF()
+endif()
 
 add_subdirectory(savantboost ../build/savantboost)
 
@@ -58,29 +58,25 @@ file(GLOB SRC_FILES pysavantboost/src/*.cpp)
 
 pybind11_add_module(${python_module_name} MODULE ${SRC_FILES})
 
-if ($ENV{ENABLE_DEBUG})
-    target_compile_definitions(${python_module_name} PUBLIC ENABLE_DEBUG)
-endif($ENV{ENABLE_DEBUG})
-
 set(CUDA_LINK_LIBRARIES_KEYWORD PUBLIC)
 
 target_link_libraries(${python_module_name} PRIVATE
-${Python3_LIBRARIES}
-pybind11::module
-pybind11::lto
-CUDA::cudart
-CUDA::nppc
-CUDA::nppig
-CUDA::npps
-savantboost
+    ${Python3_LIBRARIES}
+    pybind11::module
+    pybind11::lto
+    CUDA::cudart
+    CUDA::nppc
+    CUDA::nppig
+    CUDA::npps
+    savantboost
 )
 
-IF(CMAKE_BUILD_TYPE MATCHES Debug)
+if(CMAKE_BUILD_TYPE MATCHES Debug)
     target_link_libraries(${python_module_name} PRIVATE
                 ${OPENCV_LIBRARY_DIRS}
                 ${OpenCV_LIBS}
             )
-ENDIF()
+endif()
 
 pybind11_extension(${python_module_name})
 pybind11_strip(${python_module_name})
