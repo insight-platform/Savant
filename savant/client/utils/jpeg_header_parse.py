@@ -16,8 +16,10 @@ def get_jpeg_size(file: Union[str, PathLike, BinaryIO]) -> Tuple[int, int]:
     if hasattr(file, 'read') and hasattr(file, 'seek'):
         magic_out = magic.from_buffer(file.read(2048))
         file.seek(0)
-    else:
+    elif isinstance(file, (str,  PathLike)):
         magic_out = magic.from_file(file)
+    else:
+        raise ValueError('File path or file handle is expected.')
     if magic_out.startswith('JPEG image data'):
         out = PATTERN.search(magic_out)
         if out:

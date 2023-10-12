@@ -95,11 +95,13 @@ class JpegSource(FrameSource):
     def build_frame(self) -> Tuple[VideoFrame, bytes]:
         width, height = get_jpeg_size(self._file)
 
-        if hasattr(self._file, 'read'):
-            content = self._file.read()
-        else:
+        if isinstance(self._file, (str, PathLike)):
             with open(self._file, 'rb') as f:
                 content = f.read()
+        elif hasattr(self._file, 'read'):
+            content = self._file.read()
+        else:
+            raise ValueError('File path or file handle is expected.')
 
         video_frame = VideoFrame(
             source_id=self._source_id,
