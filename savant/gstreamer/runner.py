@@ -210,3 +210,8 @@ class GstPipelineRunner:
             Gst.debug_bin_to_dot_file_with_ts(
                 self._gst_pipeline, Gst.DebugGraphDetails.ALL, file_name
             )
+
+    @property
+    def error(self) -> Optional[str]:
+        """Returns error message."""
+        return self._error
