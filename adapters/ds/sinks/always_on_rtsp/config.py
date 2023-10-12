@@ -3,14 +3,12 @@ from distutils.util import strtobool
 from pathlib import Path
 from typing import Optional
 
-import pyds
 from savant_rs.pipeline2 import (
     VideoPipeline,
     VideoPipelineConfiguration,
     VideoPipelineStagePayloadType,
 )
 
-from savant.utils.platform import is_aarch64
 from savant.utils.zeromq import ReceiverSocketTypes
 
 
@@ -75,11 +73,4 @@ class Config:
             props['period-seconds'] = self.fps_period_seconds
         else:
             props['period-frames'] = self.fps_period_frames
-        return props
-
-    @property
-    def nvvideoconvert_properties(self):
-        props = {}
-        if not is_aarch64():
-            props['nvbuf-memory-type'] = int(pyds.NVBUF_MEM_CUDA_UNIFIED)
         return props
