@@ -12,7 +12,7 @@ find_package(Python3 COMPONENTS Interpreter Development)
 find_package(pybind11 CONFIG REQUIRED)
 find_package(CUDAToolkit REQUIRED)
 
-if(CMAKE_BUILD_TYPE EQUAL Debug)
+if(CMAKE_BUILD_TYPE STREQUAL Debug)
     message("Added OpenCV package for debuging")
     find_package( OpenCV REQUIRED )
 endif()
@@ -38,7 +38,7 @@ link_directories(
         "${DeepStream_DIR}/lib"
 )
 
-if(CMAKE_BUILD_TYPE MATCHES Debug)
+if(CMAKE_BUILD_TYPE STREQUAL Debug)
         link_directories(
                 ${OPENCV_LIBRARY_DIRS}
         )
@@ -48,7 +48,7 @@ message("CMAKE_SYSTEM_PROCESSOR: ${CMAKE_SYSTEM_PROCESSOR}")
 
 file(GLOB SOURCE_FILES *.cpp *.h */*.cpp */*.cu */*.h )
 
-add_library(${library_name} SHARED    ${SOURCE_FILES})
+add_library(${library_name} SHARED  ${SOURCE_FILES})
 
 target_compile_features(${library_name} PRIVATE cuda_std_14 )
 
@@ -70,17 +70,17 @@ target_link_libraries(
         CUDA::npps
 )
 
-if(CMAKE_BUILD_TYPE EQUAL Debug)
+if(CMAKE_BUILD_TYPE STREQUAL Debug)
         target_link_libraries(
                 ${library_name}
                 ${OpenCV_LIBS}
         )
 endif()
 
-if(CMAKE_SYSTEM_PROCESSOR EQUAL aarch64)
+if(CMAKE_SYSTEM_PROCESSOR STREQUAL aarch64)
     message("Building for ${CMAKE_SYSTEM_PROCESSOR}")
     set(ARCH "72\;87")
-elseif(CMAKE_SYSTEM_PROCESSOR EQUAL x86_64)
+elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL x86_64)
     message("Building for ${CMAKE_SYSTEM_PROCESSOR}")
     set(ARCH "61\;70\;75\;80\;86\;89\;90")
 else()

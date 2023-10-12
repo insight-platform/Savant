@@ -18,7 +18,7 @@ find_package(Python3 COMPONENTS Interpreter Development)
 find_package(CUDAToolkit REQUIRED)
 find_package(pybind11 CONFIG REQUIRED)
 
-if(CMAKE_BUILD_TYPE EQUAL Debug)
+if(CMAKE_BUILD_TYPE STREQUAL Debug)
     message("Added OpenCV package for debuging")
     find_package( OpenCV REQUIRED )
 endif()
@@ -43,7 +43,7 @@ link_directories(
         ${CUDA_LIBRARY_DIRS}
         "${DeepStream_DIR}/lib"
 )
-if(CMAKE_BUILD_TYPE MATCHES Debug)
+if(CMAKE_BUILD_TYPE STREQUAL Debug)
     link_directories(
         ${OPENCV_LIBRARY_DIRS}   
     )
@@ -71,7 +71,7 @@ target_link_libraries(${python_module_name} PRIVATE
     savantboost
 )
 
-if(CMAKE_BUILD_TYPE MATCHES Debug)
+if(CMAKE_BUILD_TYPE STREQUAL Debug)
     target_link_libraries(${python_module_name} PRIVATE
                 ${OPENCV_LIBRARY_DIRS}
                 ${OpenCV_LIBS}
