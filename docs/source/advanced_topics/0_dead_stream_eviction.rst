@@ -18,10 +18,10 @@ Let us consider the situation when the pipeline is designed to process the data 
 
 Another case is when you handle file fragments from S3. This case assumes that the fragment may be late. To address the situation, you may want to increase the ``source_timeout`` parameter to ``120`` seconds and ``source_eviction_interval`` to ``10`` seconds.
 
-Take a look at the ``default.yaml`` for details:
+Take a look at the ``default.yml`` for details:
 
 .. literalinclude:: ../../../savant/config/default.yml
   :language: YAML
-  :lines: 136-152
+  :lines: 133-149
 
 You can override only required parameters in your module YAML configuration file. Also, take a look at corresponding environment variables helping to configure the parameters without specifying them in the module config.

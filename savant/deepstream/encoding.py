@@ -1,9 +1,9 @@
+import glob
 import time
 from typing import Any, Dict
 
-import pyds
-
 from savant.config.schema import PipelineElement
+from savant.deepstream.element_factory import NvDsElementFactory
 from savant.deepstream.runner import NvDsPipelineRunner
 from savant.gstreamer import Gst  # noqa:F401
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
@@ -26,12 +26,29 @@ def check_encoder_is_available(parameters: Dict[str, Any]) -> bool:
         return True
 
     logger.info('Checking if encoder for codec %r is available', output_frame['codec'])
+    encoder = codec.value.encoder(output_frame.get('encoder'))
+    if (
+        is_aarch64()
+        and encoder == codec.value.nv_encoder
+        and not glob.glob('/dev/nvhost-nvenc*')
+    ):
+        # We need to check the existence of the device file because Orin Nano
+        # freezes and reboots when the pipeline contains HW encoder.
+        # https://forums.developer.nvidia.com/t/orin-nano-freezes-and-reboots-when-pipeline-contains-hw-encoder/257357
+        logger.error(
+            'You have configured NVENC-accelerated encoding, '
+            'but your device doesn\'t support NVENC.'
+        )
+        return False
+
+    output_caps = codec.value.caps_with_params
+    if codec == Codec.H264 and encoder == codec.value.sw_encoder:
+        profile = output_frame.get('profile')
+        if profile is None:
+            profile = 'baseline'
+        output_caps = f'{output_caps},profile={profile}'
+
     pipeline: Gst.Pipeline = Gst.Pipeline.new()
-
-    converter_props = {}
-    if not is_aarch64():
-        converter_props['nvbuf-memory-type'] = int(pyds.NVBUF_MEM_CUDA_UNIFIED)
-
     elements = [
         PipelineElement(
             'videotestsrc',
@@ -41,27 +58,40 @@ def check_encoder_is_available(parameters: Dict[str, Any]) -> bool:
             'capsfilter',
             properties={'caps': 'video/x-raw,width=256,height=256'},
         ),
+        PipelineElement('nvvideoconvert'),
         PipelineElement(
-            'nvvideoconvert',
-            properties=converter_props,
+            encoder,
+            properties=output_frame.get('encoder_params', {}),
         ),
         PipelineElement(
-            codec.value.encoder(output_frame.get('encoder')),
-            properties=output_frame.get('encoder_params', {}),
+            codec.value.parser,
+            properties={'config-interval': -1},
+        ),
+        PipelineElement(
+            'capsfilter',
+            properties={'caps': output_caps},
         ),
         PipelineElement('fakesink'),
     ]
+
     last_gst_element = None
     for element in elements:
         if element.element == 'capsfilter':
+            # Cannot use NvDsElementFactory().create() since it creates videotestsrc as a bin.
             gst_element = GstElementFactory.create_caps_filter(element)
+        elif element.element == 'nvvideoconvert':
+            gst_element = NvDsElementFactory.create_nvvideoconvert(element)
         else:
             gst_element = GstElementFactory.create_element(element)
         logger.debug('Created element %r', gst_element.name)
         pipeline.add(gst_element)
         if last_gst_element is not None:
             logger.debug('Linking %r -> %r', last_gst_element.name, gst_element.name)
-            assert last_gst_element.link(gst_element)
+            if not last_gst_element.link(gst_element):
+                logger.error(
+                    'Failed to link %r -> %r', last_gst_element.name, gst_element.name
+                )
+                return False
         last_gst_element = gst_element
 
     with NvDsPipelineRunner(pipeline) as runner:

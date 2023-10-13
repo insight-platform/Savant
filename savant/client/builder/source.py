@@ -47,7 +47,7 @@ class SourceBuilder:
         module_health_check_url: Optional[str] = None,
         module_health_check_timeout: float = 60,
         module_health_check_interval: float = 5,
-        telemetry_enabled: bool = False,
+        telemetry_enabled: bool = True,
     ):
         self._socket = socket
         self._log_provider = log_provider

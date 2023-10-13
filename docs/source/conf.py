@@ -24,7 +24,7 @@ copyright = '2020-2023 BWSoft Management, LLC'
 from savant import __version__
 
 release = __version__
-version = __version__
+version = __version__ + (' (develop)' if os.getenv('MODE') == 'develop' else '')
 
 # -- General configuration ---------------------------------------------------
 
@@ -101,6 +101,8 @@ html_css_files = [
 
 html_js_files = [
     'js/custom.js',
+    # will be added with versions, see build-docs workflow
+    'js/versions.js',
 ]
 
 # Example configuration for intersphinx: refer to the Python standard library.

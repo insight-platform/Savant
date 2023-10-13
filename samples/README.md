@@ -37,6 +37,14 @@ Preview:
 
 ![](traffic_meter/assets/traffic-meter-loop-400.webp)
 
+### Intersection traffic meter demo
+
+Sample Location: [intersection_traffic_meter](./intersection_traffic_meter)
+
+Preview:
+
+![](intersection_traffic_meter/assets/intersection-traffic-meter-loop-400.webp)
+
 ### Age gender recognition
 
 Sample Location: [age gender recognition](./age_gender_recognition)
@@ -60,6 +68,14 @@ Sample location: [face_reid](./face_reid)
 Preview:
 
 ![](face_reid/assets/face-reid-loop-400.webp)
+
+### License plate recognition 
+
+Sample location: [LPR](./license_plate_recognition)
+
+Preview:
+
+![](license_plate_recognition/assets/license-plate-recognition-400.webp)
 
 ## Utility And Coding Examples
 

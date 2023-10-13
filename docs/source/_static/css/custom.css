@@ -15,3 +15,24 @@
 h1, h2, h3, h4, h5, h6 {
     margin-top: 1em;
 }
+
+.rst-versions {
+    display: none;
+}
+.rst-versions.shift-up {
+    overflow-y: hidden;
+}
+
+/* alerts */
+.alert {}
+.alert-checkbox {
+  display: none;
+}
+:checked + .alert {
+  display: none;
+}
+.alert .fa-close {
+  float: right;
+  padding-left: 10px;
+  cursor: pointer;
+}

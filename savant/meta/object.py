@@ -1,6 +1,6 @@
 """Object meta."""
 from abc import ABC, abstractmethod
-from typing import Any, List, Optional, Union
+from typing import Any, Iterable, List, Optional, Union
 
 from savant_rs.primitives.geometry import BBox, RBBox
 
@@ -76,7 +76,7 @@ class ObjectMeta:
         Default value is :py:const:`~savant.meta.constants.UNTRACKED_OBJECT_ID`.
         It indicates the object has not been tracked.
     :param parent: The parent object metadata.
-    :param attributes: The list of additional attributes of object.
+    :param attributes: The list of object attributes.
     """
 
     def __init__(
@@ -87,7 +87,7 @@ class ObjectMeta:
         confidence: Optional[float] = DEFAULT_CONFIDENCE,
         track_id: int = UNTRACKED_OBJECT_ID,
         parent: Optional['ObjectMeta'] = None,
-        attributes: Optional[List[AttributeMeta]] = None,
+        attributes: Optional[Iterable[AttributeMeta]] = None,
         draw_label: Optional[str] = None,
     ):
         self._element_name = element_name
@@ -102,9 +102,12 @@ class ObjectMeta:
         self._attributes = {}
         if attributes:
             for attr in attributes:
-                if (attr.element_name, attr.name) not in self._attributes:
-                    self._attributes[(attr.element_name, attr.name)] = []
-                self._attributes[(attr.element_name, attr.name)].append(attr)
+                self.add_attr_meta(
+                    element_name=attr.element_name,
+                    name=attr.name,
+                    value=attr.value,
+                    confidence=attr.confidence,
+                )
 
     def get_attr_meta_list(
         self, element_name: str, attr_name: str
@@ -152,8 +155,15 @@ class ObjectMeta:
                 element_name=element_name, name=name, value=value, confidence=confidence
             )
         else:
-            self._attributes[(element_name, name)] = AttributeMeta(
-                element_name=element_name, name=name, value=value, confidence=confidence
+            if not (element_name, name) in self._attributes:
+                self._attributes[(element_name, name)] = []
+            self._attributes[(element_name, name)].append(
+                AttributeMeta(
+                    element_name=element_name,
+                    name=name,
+                    value=value,
+                    confidence=confidence,
+                )
             )
 
     @property
