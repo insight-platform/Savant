@@ -71,7 +71,6 @@ RBBoxIterator::RBBoxIterator(const RBBoxIterator& it)
 
 RBBoxIterator::RBBoxIterator(NvDsUserMetaList *meta_list)
 {
-    NvDsUserMeta* user_meta;
     user_meta_item = meta_list;
     while ((user_meta_item != nullptr) && (((NvDsUserMeta* ) user_meta_item->data)->base_meta.meta_type != NVDS_USER_META_ROTATED_BBOX))
     {
