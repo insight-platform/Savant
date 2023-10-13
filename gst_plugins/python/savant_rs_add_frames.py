@@ -10,7 +10,7 @@ from savant.api.constants import DEFAULT_FRAMERATE, DEFAULT_TIME_BASE
 from savant.gstreamer import GObject, Gst, GstBase  # noqa: F401
 from savant.gstreamer.utils import (
     RequiredPropertyError,
-    propagate_gst_setting_error,
+    gst_post_library_settings_error,
     required_property,
 )
 from savant.utils.logging import LoggerMixin
@@ -122,7 +122,7 @@ class SavantRsAddFrames(LoggerMixin, GstBase.BaseTransform):
         except RequiredPropertyError as exc:
             self.logger.exception('Failed to start element: %s', exc, exc_info=True)
             frame = inspect.currentframe()
-            propagate_gst_setting_error(self, frame, __file__, text=exc.args[0])
+            gst_post_library_settings_error(self, frame, __file__, text=exc.args[0])
             return False
 
         return True

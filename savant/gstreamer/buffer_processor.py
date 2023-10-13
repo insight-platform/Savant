@@ -8,7 +8,7 @@ from typing import Iterator
 from gi.repository import Gst
 
 from savant.config.schema import PipelineElement
-from savant.gstreamer.utils import propagate_gst_error
+from savant.gstreamer.utils import gst_post_stream_failed_error
 from savant.utils.fps_meter import FPSMeter
 from savant.utils.logging import get_logger
 from savant.utils.sink_factories import SinkMessage
@@ -135,11 +135,9 @@ class GstBufferProcessor(ABC):
 
     def _report_error(self, pad: Gst.Pad, error: str, frame: FrameType):
         self._logger.exception(error)
-        propagate_gst_error(
+        gst_post_stream_failed_error(
             gst_element=pad.get_parent_element(),
             frame=frame,
             file_path=__file__,
-            domain=Gst.StreamError.quark(),
-            code=Gst.StreamError.FAILED,
             text=error,
         )
