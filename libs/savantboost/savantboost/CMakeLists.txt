@@ -25,6 +25,8 @@ if(NOT DEFINED DeepStream_DIR)
     set(DeepStream_DIR /opt/nvidia/deepstream/deepstream)
 endif()
 
+add_compile_options(-Wall)
+
 include_directories(
         "${DeepStream_DIR}/sources/includes"
         ${GSTREAMER_INCLUDE_DIRS}

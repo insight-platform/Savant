@@ -40,11 +40,9 @@ RUN python setup.py bdist_wheel && rm -rf _skbuild
 
 
 # Savant boost(cuda) library builder
-# TODO: Update library code, CMakeLists (see build process warnings)
 # TODO: Check Jetson requirements (Xavier t194, Orin t234)
 FROM base_builder AS savantboost_build
 
-# newer cmake ver. needed for "FindCUDAToolkit"
 ARG CMAKE_VER=3.27.7
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
       wget -nv -O /tmp/cmake.sh https://github.com/Kitware/CMake/releases/download/v$CMAKE_VER/cmake-$CMAKE_VER-linux-x86_64.sh; \
