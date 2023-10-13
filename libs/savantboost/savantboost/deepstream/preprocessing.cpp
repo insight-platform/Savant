@@ -92,8 +92,7 @@ GstFlowReturn ObjectsPreprocessing::preprocessing(
     NvDsMetaList *frame_meta_list_item;
     NvDsObjectMetaList *object_meta_list;
     NvDsObjectMeta *object_meta;
-    NvDsUserMeta *user_meta;
-    
+
     Npp8u *ref_frame, *copy_frame;
     NvRBboxCoords* rbbox;
     savantboost::Image *preproc_object;
@@ -101,7 +100,6 @@ GstFlowReturn ObjectsPreprocessing::preprocessing(
 
     int frame_height, frame_width;
     NppiSize ref_frame_size;
-    size_t ref_image_bytes;
     gboolean status;
     status = gst_buffer_map (inbuf, &in_map_info, GST_MAP_READ);
     const std::function<savantboost::Image* (savantboost::Image *)> &custom_preprocess_func = this->preprocessing_functions[element_name];
@@ -133,8 +131,6 @@ GstFlowReturn ObjectsPreprocessing::preprocessing(
             frames_map[(size_t) inbuf].insert({frame_meta->batch_id, (void *) copy_frame});
             
             int left=0, top=0, row_height=0;
-            int tmp_i = 0;
-            int tmp_j = 0;
             for (object_meta_list = frame_meta->obj_meta_list; object_meta_list != nullptr; object_meta_list = object_meta_list -> next)
             {
                 object_meta = (NvDsObjectMeta *) (object_meta_list->data);
@@ -183,10 +179,10 @@ GstFlowReturn ObjectsPreprocessing::preprocessing(
                     {
                         savantboost::Image *tmp_preproc_object;
                         tmp_preproc_object = custom_preprocess_func(preproc_object);
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
                         delete preproc_object;
                         preproc_object = tmp_preproc_object;
                     }
-
 
                     NppiRect crop_rect = {.x =0, .y=0, .width = preproc_object->getWidth(), .height = preproc_object->getHeight()};
                     NppiSize clc_image_size = {.width = preproc_object->getWidth(), .height = preproc_object->getHeight()};
