@@ -48,17 +48,6 @@ class GstElementFactory:
             if prop_value is not None:
                 gst_element.set_property(prop_name, prop_value)
 
-        for prop_name, dyn_gst_prop in element.dynamic_properties.items():
-
-            def on_change(response_value: Any, property_name: str = prop_name):
-                gst_element.set_property(property_name, response_value)
-
-            param_storage().register_dynamic_parameter(
-                dyn_gst_prop.storage_key, dyn_gst_prop.default, on_change
-            )
-            prop_value = param_storage()[dyn_gst_prop.storage_key]
-            gst_element.set_property(prop_name, prop_value)
-
         return gst_element
 
     @staticmethod

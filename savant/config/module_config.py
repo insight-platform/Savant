@@ -19,6 +19,7 @@ from savant.config.schema import (
     get_element_name,
 )
 from savant.deepstream.nvinfer.element_config import nvinfer_element_configurator
+from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
 from savant.parameter_storage import init_param_storage
 from savant.utils.logging import get_logger
 from savant.utils.singleton import SingletonMeta
@@ -363,6 +364,30 @@ def validate_frame_parameters(config: Module):
         )
 
 
+def validate_output_frame_parameters(config: Module):
+    output_frame = config.parameters.get('output_frame')
+    if not output_frame:
+        return
+    try:
+        codec = CODEC_BY_NAME[output_frame['codec']]
+    except KeyError:
+        raise ModuleConfigException(
+            f'Unknown codec {output_frame["codec"]!r} in output_frame config.'
+        )
+    profile = output_frame.get('profile')
+    if profile is not None:
+        if codec not in [Codec.H264]:
+            raise ModuleConfigException(
+                f'Profile can be configured only for {Codec.H264.value.name!r} codec.'
+            )
+        supported_profiles = ['baseline', 'main', 'high']
+        if profile not in supported_profiles:
+            raise ModuleConfigException(
+                f'Profile {profile!r} is not supported. '
+                f'Supported profiles: {supported_profiles}.'
+            )
+
+
 class ModuleConfig(metaclass=SingletonMeta):
     """Singleton that provides module configuration loading and access."""
 
@@ -397,6 +422,7 @@ class ModuleConfig(metaclass=SingletonMeta):
         self._config = OmegaConf.to_object(module_cfg)
 
         validate_frame_parameters(self._config)
+        validate_output_frame_parameters(self._config)
 
         setup_batch_size(self._config)
 
