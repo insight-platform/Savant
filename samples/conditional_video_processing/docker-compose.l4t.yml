@@ -31,6 +31,9 @@ services:
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
       - FPS_PERIOD=1000
+    depends_on:
+      etcd:
+        condition: service_healthy
     runtime: nvidia
 
   always-on-sink:
@@ -52,6 +55,21 @@ services:
       - DEV_MODE=True
     command: python -m adapters.ds.sinks.always_on_rtsp
     runtime: nvidia
+
+  etcd:
+    container_name: etcd
+    image: docker.io/bitnami/etcd:3.5
+    restart: unless-stopped
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_ADVERTISE_CLIENT_URLS=http://etcd:2379
+    ports:
+      - "2379:2379"
+    healthcheck:
+      test: ["CMD", "/opt/bitnami/scripts/etcd/healthcheck.sh"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
 
 volumes:
   zmq_sockets:

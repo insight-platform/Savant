@@ -43,7 +43,7 @@ def nvds_add_attr_meta_to_obj(  # pylint: disable=too-many-arguments
 def nvds_attr_meta_iterator(
     frame_meta: pyds.NvDsFrameMeta,
     obj_meta: pyds.NvDsObjectMeta,
-) -> Iterable[List[AttributeMeta]]:
+) -> Iterable[AttributeMeta]:
     """AttributeMeta iterator(iterable).
 
     :param frame_meta: object parent frame.
@@ -53,7 +53,9 @@ def nvds_attr_meta_iterator(
     skey = nvds_get_obj_uid(frame_meta, obj_meta)
     if skey not in NVDS_OBJ_ATTR_STORAGE:
         return []
-    return NVDS_OBJ_ATTR_STORAGE[skey].values()
+    return [
+        item for sublist in NVDS_OBJ_ATTR_STORAGE[skey].values() for item in sublist
+    ]
 
 
 def nvds_get_obj_attr_meta_list(
@@ -74,23 +76,6 @@ def nvds_get_obj_attr_meta_list(
     if skey not in NVDS_OBJ_ATTR_STORAGE:
         return None
     return NVDS_OBJ_ATTR_STORAGE[skey].get((model_name, attr_name), None)
-
-
-def nvds_get_all_obj_attrs(
-    frame_meta: pyds.NvDsFrameMeta,
-    obj_meta: pyds.NvDsObjectMeta,
-) -> Optional[List[AttributeMeta]]:
-    """Returns all object attribute.
-
-    :param frame_meta: object parent frame.
-    :param obj_meta: object metadata.
-    :return: List of AttributeMeta/None
-    """
-    skey = nvds_get_obj_uid(frame_meta, obj_meta)
-    if skey not in NVDS_OBJ_ATTR_STORAGE:
-        return None
-    all_attr_dict = NVDS_OBJ_ATTR_STORAGE[skey]
-    return list(all_attr_dict.values())
 
 
 def nvds_get_obj_attr_meta(

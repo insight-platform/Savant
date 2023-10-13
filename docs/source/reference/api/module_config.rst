@@ -27,7 +27,6 @@ Main module configuration entities
     ElementGroup
     GroupCondition
     DrawFunc
-    DynamicGstProperty
 
 Module configuration manager
 ----------------------------
@@ -49,6 +48,5 @@ OmegaConf resolvers
     :nosignatures:
     :template: autosummary/function.rst
 
-    initializer_resolver
     calc_resolver
     json_resolver

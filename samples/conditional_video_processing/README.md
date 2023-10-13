@@ -1,6 +1,6 @@
 # Conditional Video Processing
 
-A simple pipeline that demonstrates conditional drawing on frames and encoding. The pipeline uses standard [Nvidia PeopleNet](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/peoplenet) model to detect persons in the video. When the model detects person, the pyfunc [ConditionalVideoProcessing](conditional_video_processing.py) adds tags `draw` and `encode` to the frame. DrawFunc draws on frame only when tag `draw` is present and encoder encodes frame only when tag `encode` is present. On Always-On RTSP sink you can see the video constantly switching between original and stub frames.
+A simple pipeline that demonstrates conditional video processing, drawing on frames and encoding. The first element of the pipeline is the pyfunc [ConditionalSkipProcessing](conditional_video_processing.py). Pyfunc checks if the source should be processed by checking the value of the corresponding parameter (the source name) in Etcd. If not, it removes the primary object and therefore disables downstream inference. The secondary element is the [Nvidia PeopleNet](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/peoplenet) model. The model is used to detect persons in the video. When the model detects person, the pyfunc [ConditionalVideoProcessing](conditional_video_processing.py) adds tags `draw` and `encode` to the frame. DrawFunc draws on frame only when tag `draw` is present and encoder encodes frame only when tag `encode` is present. On Always-On RTSP sink you can see the video constantly switching between original and stub frames.
 
 Preview:
 
@@ -28,6 +28,16 @@ git lfs pull
 cd ../..
 ```
 
+## Source processing control
+
+By default, the pipeline processes any source. Etcd is used to control the processing. By changing the value of the key `savant/sources/{source-id}` in Etcd you can enable or disable processing of the corresponding source.
+
+To enable/disable source processing it is convenient to use the script:
+```bash
+./source-switch.sh on
+# or
+./source-switch.sh off
+```
 
 ## Performance Measurement
 

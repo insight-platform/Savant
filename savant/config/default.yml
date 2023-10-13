@@ -1,12 +1,6 @@
 # module name, required
 name: ${oc.env:MODULE_NAME}
 
-# init sources priority used in 'initializer' resolver
-# lower numbers mean higher priority
-parameter_init_priority:
-  environment: 20
-  etcd: 10
-
 # base module parameters
 parameters:
   # Logging specification string in the rust env_logger's format
@@ -21,13 +15,13 @@ parameters:
   # the path to the downloads directory within the module container
   download_path: ${oc.env:DOWNLOAD_PATH, /downloads}
 
-  # storages
-  dynamic_parameter_storage: etcd
-  etcd_config:
-    endpoints:
-      - host: etcd-server
-        port: 2379
-    timeout: 15
+  # Etcd storage configuration (see savant.parameter_storage.EtcdStorageConfig).
+  # Etcd is used to store dynamic module parameters.
+  #etcd:
+  #  # Etcd hosts to connect to
+  #  hosts: [127.0.0.1:2379]
+  #  # Path in Etcd to watch changes
+  #  watch_path: savant
 
   # pipeline processing frame parameters, default 720p
   frame:
