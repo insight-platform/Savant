@@ -15,6 +15,7 @@ from pygstsavantframemeta import (
 from savant_rs.pipeline2 import VideoPipeline
 from savant_rs.primitives import VideoFrame, VideoFrameContent, VideoFrameTransformation
 from savant_rs.primitives.geometry import BBox, RBBox
+from savant_rs.utils import VideoObjectBBoxTransformation
 from savant_rs.utils.symbol_mapper import (
     build_model_object_key,
     get_model_id,
@@ -116,15 +117,28 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
             frame_params.width,
             frame_params.height,
         )
-        if frame_params.padding and frame_params.padding.keep:
-            self._padding_transformation = VideoFrameTransformation.padding(
-                frame_params.padding.left,
-                frame_params.padding.top,
-                frame_params.padding.right,
-                frame_params.padding.bottom,
+        self._padding_transformation: Optional[VideoFrameTransformation] = None
+        self._input_obj_transformation: Optional[VideoObjectBBoxTransformation] = None
+        self._output_obj_transformation: Optional[VideoObjectBBoxTransformation] = None
+
+        if frame_params.padding:
+            self._input_obj_transformation = VideoObjectBBoxTransformation.shift(
+                self._frame_params.padding.left,
+                self._frame_params.padding.top,
             )
-        else:
-            self._padding_transformation = None
+            if frame_params.padding.keep:
+                self._padding_transformation = VideoFrameTransformation.padding(
+                    frame_params.padding.left,
+                    frame_params.padding.top,
+                    frame_params.padding.right,
+                    frame_params.padding.bottom,
+                )
+            if pass_through_mode or not frame_params.padding.keep:
+                self._output_obj_transformation = VideoObjectBBoxTransformation.shift(
+                    -self._frame_params.padding.left,
+                    -self._frame_params.padding.top,
+                )
+
         self._last_frame_id: Dict[str, int] = {}
         self._pending_frames: Dict[str, List[_PendingFrame]] = {}
 
@@ -196,14 +210,27 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
             source_info=source_info,
             video_frame=video_frame,
         )
-        scale_factor_x = self._frame_params.width / source_info.src_resolution.width
-        scale_factor_y = self._frame_params.height / source_info.src_resolution.height
+        obj_transformations = [
+            VideoObjectBBoxTransformation.scale(
+                self._frame_params.width / video_frame.width,
+                self._frame_params.height / video_frame.height,
+            )
+        ]
+        if self._input_obj_transformation is not None:
+            obj_transformations.append(self._input_obj_transformation)
+        video_frame.transform_geometry(obj_transformations)
+
         primary_bbox = BBox(
             self._frame_params.width / 2,
             self._frame_params.height / 2,
             self._frame_params.width,
             self._frame_params.height,
         )
+        if self._frame_params.padding:
+            primary_bbox.shift(
+                self._frame_params.padding.left,
+                self._frame_params.padding.top,
+            )
         self.logger.debug(
             'Init primary bbox for frame with PTS %s: %s', frame_pts, primary_bbox
         )
@@ -220,7 +247,6 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                 # if not a full frame then correct primary object
                 if not bbox.almost_eq(primary_bbox, 1e-6):
                     primary_bbox = bbox
-                    primary_bbox.scale(scale_factor_x, scale_factor_y)
                     self.logger.debug(
                         'Corrected primary bbox for frame with PTS %s: %s',
                         frame_pts,
@@ -236,11 +262,6 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                 selection_type = ObjectSelectionType.ROTATED_BBOX
             else:
                 selection_type = ObjectSelectionType.REGULAR_BBOX
-
-            bbox.scale(scale_factor_x, scale_factor_y)
-            if self._frame_params.padding:
-                bbox.left += self._frame_params.padding.left
-                bbox.top += self._frame_params.padding.top
 
             track_id = obj_meta.get_track_id()
             if track_id is None:
@@ -286,9 +307,6 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
         # add primary frame object
         model_name, label = parse_compound_key(PRIMARY_OBJECT_KEY)
         model_uid, class_id = get_object_id(model_name, label)
-        if self._frame_params.padding:
-            primary_bbox.xc += self._frame_params.padding.left
-            primary_bbox.yc += self._frame_params.padding.top
         self.logger.debug(
             'Add primary object to frame meta with PTS %s, bbox: %s',
             frame_pts,
@@ -316,6 +334,9 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
         source_info: SourceInfo,
         video_frame: VideoFrame,
     ):
+        if self._pass_through_mode:
+            return
+
         self.logger.debug(
             'Adding transformations for frame of source %s with IDX %s and PTS %s.',
             video_frame.source_id,
@@ -360,22 +381,60 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
         )
         for output_frame in self._iterate_output_frames(buffer, source_info):
             sink_video_frame = self._build_sink_video_frame(output_frame, source_info)
-            yield from self._reorder_frames(
+            yield from self._fix_frames_order(
                 source_info.source_id,
                 output_frame.idx,
                 sink_video_frame,
             )
 
-    def _reorder_frames(
+    def _fix_frames_order(
         self,
         source_id: str,
         frame_id: int,
         sink_video_frame: SinkVideoFrame,
     ):
+        """Fix the order of the frames if needed.
+
+        It is needed when pass-through mode is enabled and the source stream contains B-frames.
+        """
+
         if not self._pass_through_mode:
+            self.logger.trace(
+                'Pushing frame of source %s with IDX %s, PTS %s and DTS %s.',
+                source_id,
+                frame_id,
+                sink_video_frame.video_frame.pts,
+                sink_video_frame.video_frame.dts,
+            )
             yield sink_video_frame
             return
+
         pending_frames = self._pending_frames.setdefault(source_id, [])
+        if sink_video_frame.video_frame.keyframe:
+            # Normally pending_frames should be empty here. But in the case if
+            # some frames are lost in the pipeline we need to send them before
+            # the keyframe to prevent pipeline from hanging.
+            for pending_frame in pending_frames:
+                self.logger.trace(
+                    'Pushing frame of source %s with IDX %s, PTS %s and DTS %s.',
+                    source_id,
+                    pending_frame.frame_id,
+                    pending_frame.frame.video_frame.pts,
+                    pending_frame.frame.video_frame.dts,
+                )
+                yield pending_frame.frame
+            self.logger.trace(
+                'Pushing frame of source %s with IDX %s, PTS %s and DTS %s.',
+                source_id,
+                frame_id,
+                sink_video_frame.video_frame.pts,
+                sink_video_frame.video_frame.dts,
+            )
+            yield sink_video_frame
+            self._pending_frames[source_id] = []
+            self._last_frame_id[source_id] = frame_id
+            return
+
         last_frame_id = self._last_frame_id.get(source_id)
         previous_frame_id_attr = sink_video_frame.video_frame.get_attribute(
             INTERNAL_NAMESPACE, PREVIOUS_FRAME_ID_ATTR_NAME
@@ -384,10 +443,17 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
             previous_frame_id = previous_frame_id_attr.values[0].as_integer()
             if previous_frame_id == last_frame_id:
                 last_frame_id = frame_id
+                self.logger.trace(
+                    'Pushing frame of source %s with IDX %s, PTS %s and DTS %s.',
+                    source_id,
+                    frame_id,
+                    sink_video_frame.video_frame.pts,
+                    sink_video_frame.video_frame.dts,
+                )
                 yield sink_video_frame
             else:
-                self.logger.debug(
-                    'Reordering frame of source %s with IDX %s, PTS %s and DTS %s.',
+                self.logger.trace(
+                    'Storing frame of source %s with IDX %s, PTS %s and DTS %s in a buffer.',
                     source_id,
                     frame_id,
                     sink_video_frame.video_frame.pts,
@@ -403,16 +469,24 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                 )
         else:
             last_frame_id = frame_id
+            self.logger.trace(
+                'Pushing frame of source %s with IDX %s, PTS %s and DTS %s.',
+                source_id,
+                frame_id,
+                sink_video_frame.video_frame.pts,
+                sink_video_frame.video_frame.dts,
+            )
             yield sink_video_frame
 
         while pending_frames and pending_frames[0].previous_frame_id == last_frame_id:
             pending_frame = heappop(pending_frames)
-            self.logger.debug(
-                'Sending reordered frame of source %s with IDX %s, PTS %s and DTS %s.',
+            self.logger.trace(
+                'Pushing frame of source %s with IDX %s, PTS %s and DTS %s. %s pending frames left.',
                 source_id,
                 pending_frame.frame_id,
                 pending_frame.frame.video_frame.pts,
                 pending_frame.frame.video_frame.dts,
+                len(pending_frames),
             )
             yield pending_frame.frame
             last_frame_id = pending_frame.frame_id
@@ -433,13 +507,11 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
             output_frame.dts,
         )
 
+        video_frame: VideoFrame
         video_frame, video_frame_span = self._video_pipeline.get_independent_frame(
             output_frame.idx,
         )
         with video_frame_span.nested_span('prepare_output'):
-            video_frame.width = self._frame_params.output_width
-            video_frame.height = self._frame_params.output_height
-
             if self._pass_through_mode:
                 if video_frame.content.is_internal():
                     content = video_frame.content.get_data_as_bytes()
@@ -457,12 +529,17 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                         output_frame.idx,
                     )
                     content = None
+
             else:
+                video_frame.width = self._frame_params.output_width
+                video_frame.height = self._frame_params.output_height
                 video_frame.dts = output_frame.dts
                 if output_frame.codec is not None:
                     video_frame.codec = output_frame.codec.name
                 video_frame.keyframe = output_frame.keyframe
                 content = output_frame.frame
+
+            self._transform_geometry(video_frame)
 
             # TODO: Do we need to delete frame after it was sent to sink?
             spans = self._video_pipeline.delete(output_frame.idx)
@@ -473,6 +550,23 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
             frame=content,
             span_context=span_context,
         )
+
+    def _transform_geometry(self, video_frame: VideoFrame):
+        transformations = []
+        if self._output_obj_transformation is not None:
+            transformations.append(self._output_obj_transformation)
+        if self._pass_through_mode and (
+            video_frame.width != self._frame_params.width
+            or video_frame.height != self._frame_params.height
+        ):
+            transformations.append(
+                VideoObjectBBoxTransformation.scale(
+                    video_frame.width / self._frame_params.width,
+                    video_frame.height / self._frame_params.height,
+                )
+            )
+
+        video_frame.transform_geometry(transformations)
 
     def on_eos(self, source_info: SourceInfo) -> SinkVideoFrame:
         """Pipeline EOS handler."""

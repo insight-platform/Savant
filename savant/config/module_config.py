@@ -222,6 +222,14 @@ def configure_module_parameters(module_cfg: DictConfig) -> None:
         FrameParameters,
         OmegaConf.structured(FrameParameters),
     )
+    output_frame = module_cfg.parameters.get('output_frame')
+    frame_parameters: FrameParameters = module_cfg.parameters['frame']
+    if frame_parameters.padding:
+        if output_frame and output_frame['codec'] == 'copy':
+            if frame_parameters.padding.keep:
+                logger.warning('Padding keep is ignored in pass-through mode.')
+            frame_parameters.padding.keep = False
+
     apply_schema(module_cfg.parameters, 'draw_func', DrawFunc)
     if module_cfg.parameters.dev_mode and module_cfg.parameters.draw_func:
         logger.debug('Setting draw_func dev mode to true.')

@@ -13,7 +13,7 @@ class FramePadding:
     """Pipeline processing frame parameters"""
 
     keep: bool = True
-    """Whether to keep paddings on the output frame"""
+    """Whether to keep paddings on the output frame."""
 
     left: int = 0
     """Size of the left padding"""

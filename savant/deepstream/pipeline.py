@@ -790,7 +790,6 @@ class NvDsPipeline(GstPipeline):
             obj_meta, parent_id = nvds_obj_meta_output_converter(
                 nvds_frame_meta,
                 nvds_obj_meta,
-                self._frame_params,
             )
             if parent_id is not None:
                 parents[obj_meta.id] = parent_id
