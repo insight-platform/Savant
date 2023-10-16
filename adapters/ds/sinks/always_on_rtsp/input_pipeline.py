@@ -93,13 +93,15 @@ def build_input_pipeline(
     factory: NvDsElementFactory,
 ):
     pipeline: Gst.Pipeline = Gst.Pipeline.new('input-pipeline')
-
-    savant_rs_video_demux_properties = {}
+    savant_rs_video_demux_properties = {
+        'max-allowed-resolution-width': config.max_allowed_resolution[0],
+        'max-allowed-resolution-height': config.max_allowed_resolution[1],
+    }
     if config.pipeline_stage_name is not None:
-        savant_rs_video_demux_properties = {
-            'pipeline-stage-name': config.pipeline_stage_name,
-            'pipeline': config.video_pipeline,
-        }
+        savant_rs_video_demux_properties[
+            'pipeline-stage-name'
+        ] = config.pipeline_stage_name
+        savant_rs_video_demux_properties['pipeline'] = config.video_pipeline
 
     source_elements = [
         PipelineElement(

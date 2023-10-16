@@ -5,7 +5,7 @@ import time
 from dataclasses import dataclass
 from fractions import Fraction
 from threading import Lock, Thread
-from typing import Dict, NamedTuple, Optional
+from typing import Dict, NamedTuple, Optional, Tuple
 
 from savant_rs.pipeline2 import VideoPipeline
 from savant_rs.primitives import (
@@ -82,6 +82,24 @@ SAVANT_RS_VIDEO_DEMUX_PROPERTIES = {
         'Authentication key for Shutdown message.',
         'Authentication key for Shutdown message.',
         None,
+        GObject.ParamFlags.READWRITE,
+    ),
+    'max-allowed-resolution-width': (
+        int,
+        'Maximum allowable resolution width of the video stream',
+        'Maximum allowable resolution width of the video stream',
+        0,
+        GObject.G_MAXINT,
+        0,
+        GObject.ParamFlags.READWRITE,
+    ),
+    'max-allowed-resolution-height': (
+        int,
+        'Maximum allowable resolution height of the video stream',
+        'Maximum allowable resolution height of the video stream',
+        0,
+        GObject.G_MAXINT,
+        0,
         GObject.ParamFlags.READWRITE,
     ),
 }
@@ -164,6 +182,8 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
         self.video_pipeline: Optional[VideoPipeline] = None
         self.pipeline_stage_name: Optional[str] = None
         self.shutdown_auth: Optional[str] = None
+        self.max_allowed_resolution_width: int = 0
+        self.max_allowed_resolution_height: int = 0
 
         self._frame_idx_gen = itertools.count()
 
@@ -205,6 +225,10 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             return self.pipeline_stage_name
         if prop.name == 'shutdown-auth':
             return self.shutdown_auth
+        if prop.name == 'max-allowed-resolution-width':
+            return self.max_allowed_resolution_width
+        if prop.name == 'max-allowed-resolution-height':
+            return self.max_allowed_resolution_height
         raise AttributeError(f'Unknown property {prop.name}')
 
     def do_set_property(self, prop, value):
@@ -223,6 +247,10 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             self.pipeline_stage_name = value
         elif prop.name == 'shutdown-auth':
             self.shutdown_auth = value
+        elif prop.name == 'max-allowed-resolution-width':
+            self.max_allowed_resolution_width = value
+        elif prop.name == 'max-allowed-resolution-height':
+            self.max_allowed_resolution_height = value
         else:
             raise AttributeError(f'Unknown property {prop.name}')
 
@@ -272,7 +300,6 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
         buffer: Gst.Buffer,
     ) -> Gst.FlowReturn:
         """Handle VideoFrame message."""
-
         if self.video_pipeline is not None:
             if span_context.as_dict():
                 frame_idx = self.video_pipeline.add_frame_with_telemetry(
@@ -438,6 +465,9 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
 
     def add_source(self, source_id: str, source_info: SourceInfo):
         """Handle adding new source."""
+
+        self.check_max_allowed_resolution(source_info)
+
         caps = build_caps(source_info.params)
         source_info.src_pad = Gst.Pad.new_from_template(
             Gst.PadTemplate.new(
@@ -472,6 +502,9 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
 
     def update_frame_params(self, source_info: SourceInfo, frame_params: FrameParams):
         """Handle changed frame parameters on a source."""
+
+        self.check_max_allowed_resolution(source_info)
+
         if source_info.params != frame_params:
             self.logger.info(
                 'Frame parameters on pad %s was changed from %s to %s',
@@ -524,6 +557,32 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
                 source_info.source_id,
             )
             self.send_eos(source_info)
+
+    def check_max_allowed_resolution(self, source_info: SourceInfo):
+        if self.max_allowed_resolution_width and self.max_allowed_resolution_height:
+            if (
+                int(source_info.params.width) > self.max_allowed_resolution_width
+                or int(source_info.params.height) > self.max_allowed_resolution_height
+            ):
+                text_error = (
+                    f"The resolution of the incoming stream is "
+                    f"{source_info.params.width}x{source_info.params.height} and "
+                    f"treater than the allowed max "
+                    f"{self.max_allowed_resolution_width}x"
+                    f"{self.max_allowed_resolution_height}"
+                    f" resolutions. Terminate. You can override the max allowed "
+                    f"resolution with 'MAX_ALLOWED_RESOLUTION' environment variable."
+                )
+                self.logger.error(text_error)
+                frame = inspect.currentframe()
+                propagate_gst_error(
+                    gst_element=self,
+                    frame=frame,
+                    file_path=__file__,
+                    domain=Gst.StreamError.quark(),
+                    code=Gst.StreamError.DEMUX,
+                    text=text_error,
+                )
 
     def send_eos(self, source_info: SourceInfo):
         """Send EOS event to a src pad."""
