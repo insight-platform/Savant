@@ -368,15 +368,14 @@ def validate_output_frame_parameters(config: Module):
     output_frame = config.parameters.get('output_frame')
     if not output_frame:
         return
-    try:
-        codec = CODEC_BY_NAME[output_frame['codec']]
-    except KeyError:
-        raise ModuleConfigException(
-            f'Unknown codec {output_frame["codec"]!r} in output_frame config.'
-        )
+
+    codec = output_frame['codec']
+    if codec != 'copy' and codec not in CODEC_BY_NAME:
+        raise ModuleConfigException(f'Unknown codec {codec!r} in output_frame config.')
+
     profile = output_frame.get('profile')
     if profile is not None:
-        if codec not in [Codec.H264]:
+        if codec != Codec.H264.value.name:
             raise ModuleConfigException(
                 f'Profile can be configured only for {Codec.H264.value.name!r} codec.'
             )

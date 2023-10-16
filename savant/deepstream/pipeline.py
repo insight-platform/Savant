@@ -62,6 +62,7 @@ from savant.gstreamer.pipeline import GstPipeline
 from savant.gstreamer.utils import on_pad_event, pad_to_source_id
 from savant.meta.constants import PRIMARY_OBJECT_KEY, UNTRACKED_OBJECT_ID
 from savant.utils.fps_meter import FPSMeter
+from savant.utils.logging import get_logger
 from savant.utils.platform import is_aarch64
 from savant.utils.sink_factories import SinkEndOfStream
 from savant.utils.source_info import Resolution, SourceInfo, SourceInfoRegistry
@@ -85,6 +86,8 @@ class NvDsPipeline(GstPipeline):
         pipeline_cfg: Pipeline,
         **kwargs,
     ):
+        self._logger = get_logger(name)
+
         # pipeline internal processing frame size
         self._frame_params: FrameParameters = kwargs['frame']
 
@@ -108,8 +111,15 @@ class NvDsPipeline(GstPipeline):
         init_telemetry(name, telemetry)
 
         output_frame = kwargs.get('output_frame')
+        self._pass_through_mode = bool(output_frame) and output_frame['codec'] == 'copy'
         draw_func: Optional[DrawFunc] = kwargs.get('draw_func')
         if draw_func is not None and output_frame:
+            if self._pass_through_mode:
+                self._logger.warning(
+                    'The pipeline is configured in video pass-through mode. '
+                    'In this mode, frame modifications exist only in the '
+                    'pipeline but are not propagated through the sinks.'
+                )
             pipeline_cfg.elements.append(draw_func)
 
         self._demuxer_src_pads: List[Gst.Pad] = []
@@ -178,6 +188,7 @@ class NvDsPipeline(GstPipeline):
             frame_params=self._frame_params,
             source_output=self._source_output,
             video_pipeline=self._video_pipeline,
+            pass_through_mode=self._pass_through_mode,
         )
 
     def add_element(
@@ -275,6 +286,7 @@ class NvDsPipeline(GstPipeline):
         _source = self.add_element(source)
         if source.element == 'zeromq_source_bin':
             _source.set_property('pipeline', self._video_pipeline)
+            _source.set_property('pass-through-mode', self._pass_through_mode)
             _source.connect('shutdown', self._on_shutdown_signal)
             add_frames_to_pipeline = False
         else:

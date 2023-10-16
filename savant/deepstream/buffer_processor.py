@@ -13,7 +13,7 @@ from pygstsavantframemeta import (
     nvds_frame_meta_get_nvds_savant_frame_meta,
 )
 from savant_rs.pipeline2 import VideoPipeline
-from savant_rs.primitives import VideoFrame, VideoFrameTransformation
+from savant_rs.primitives import VideoFrame, VideoFrameContent, VideoFrameTransformation
 from savant_rs.primitives.geometry import BBox, RBBox
 from savant_rs.utils.symbol_mapper import (
     build_model_object_key,
@@ -23,6 +23,7 @@ from savant_rs.utils.symbol_mapper import (
 )
 from savant_rs.video_object_query import MatchQuery
 
+from savant.api.constants import INTERNAL_NAMESPACE, PREVIOUS_FRAME_ID_ATTR_NAME
 from savant.api.parser import parse_attribute_value
 from savant.base.input_preproc import ObjectsPreprocessing
 from savant.base.model import ComplexModel, ObjectModel
@@ -75,6 +76,12 @@ class _OutputFrame(NamedTuple):
     keyframe: bool
 
 
+class _PendingFrame(NamedTuple):
+    frame_id: int
+    previous_frame_id: int
+    frame: SinkVideoFrame
+
+
 class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
     def __init__(
         self,
@@ -84,6 +91,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
         objects_preprocessing: ObjectsPreprocessing,
         frame_params: FrameParameters,
         video_pipeline: VideoPipeline,
+        pass_through_mode: bool,
     ):
         """Buffer processor for DeepStream pipeline.
 
@@ -92,6 +100,8 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
         :param sources: Source info registry.
         :param objects_preprocessing: Objects processing registry.
         :param frame_params: Processing frame parameters (after nvstreammux).
+        :param video_pipeline: Video pipeline.
+        :param pass_through_mode: Video pass through mode.
         """
 
         super().__init__(queue, fps_meter)
@@ -100,6 +110,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
         self._frame_params = frame_params
         self._queue = queue
         self._video_pipeline = video_pipeline
+        self._pass_through_mode = pass_through_mode
 
         self._scale_transformation = VideoFrameTransformation.scale(
             frame_params.width,
@@ -114,6 +125,8 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
             )
         else:
             self._padding_transformation = None
+        self._last_frame_id: Dict[str, int] = {}
+        self._pending_frames: Dict[str, List[_PendingFrame]] = {}
 
     def prepare_input(self, buffer: Gst.Buffer):
         """Input meta processor.
@@ -346,7 +359,66 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
             source_info.source_id,
         )
         for output_frame in self._iterate_output_frames(buffer, source_info):
-            yield self._build_sink_video_frame(output_frame, source_info)
+            sink_video_frame = self._build_sink_video_frame(output_frame, source_info)
+            yield from self._reorder_frames(
+                source_info.source_id,
+                output_frame.idx,
+                sink_video_frame,
+            )
+
+    def _reorder_frames(
+        self,
+        source_id: str,
+        frame_id: int,
+        sink_video_frame: SinkVideoFrame,
+    ):
+        if not self._pass_through_mode:
+            yield sink_video_frame
+            return
+        pending_frames = self._pending_frames.setdefault(source_id, [])
+        last_frame_id = self._last_frame_id.get(source_id)
+        previous_frame_id_attr = sink_video_frame.video_frame.get_attribute(
+            INTERNAL_NAMESPACE, PREVIOUS_FRAME_ID_ATTR_NAME
+        )
+        if previous_frame_id_attr is not None:
+            previous_frame_id = previous_frame_id_attr.values[0].as_integer()
+            if previous_frame_id == last_frame_id:
+                last_frame_id = frame_id
+                yield sink_video_frame
+            else:
+                self.logger.debug(
+                    'Reordering frame of source %s with IDX %s, PTS %s and DTS %s.',
+                    source_id,
+                    frame_id,
+                    sink_video_frame.video_frame.pts,
+                    sink_video_frame.video_frame.dts,
+                )
+                heappush(
+                    pending_frames,
+                    _PendingFrame(
+                        frame_id=frame_id,
+                        previous_frame_id=previous_frame_id,
+                        frame=sink_video_frame,
+                    ),
+                )
+        else:
+            last_frame_id = frame_id
+            yield sink_video_frame
+
+        while pending_frames and pending_frames[0].previous_frame_id == last_frame_id:
+            pending_frame = heappop(pending_frames)
+            self.logger.debug(
+                'Sending reordered frame of source %s with IDX %s, PTS %s and DTS %s.',
+                source_id,
+                pending_frame.frame_id,
+                pending_frame.frame.video_frame.pts,
+                pending_frame.frame.video_frame.dts,
+            )
+            yield pending_frame.frame
+            last_frame_id = pending_frame.frame_id
+
+        self._last_frame_id[source_id] = last_frame_id
+        self._pending_frames[source_id] = pending_frames
 
     def _build_sink_video_frame(
         self,
@@ -365,19 +437,40 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
             output_frame.idx,
         )
         with video_frame_span.nested_span('prepare_output'):
-            video_frame.dts = output_frame.dts
             video_frame.width = self._frame_params.output_width
             video_frame.height = self._frame_params.output_height
-            if output_frame.codec is not None:
-                video_frame.codec = output_frame.codec.name
-            video_frame.keyframe = output_frame.keyframe
+
+            if self._pass_through_mode:
+                if video_frame.content.is_internal():
+                    content = video_frame.content.get_data_as_bytes()
+                    self.logger.debug(
+                        'Pass-through mode is enabled. '
+                        'Sending frame with IDX %s to sink without any changes. %s bytes.',
+                        output_frame.idx,
+                        len(content),
+                    )
+                    video_frame.content = VideoFrameContent.none()
+                else:
+                    self.logger.warning(
+                        'Pass-through mode is enabled. '
+                        'Sending frame with IDX %s to sink without any changes. No content.',
+                        output_frame.idx,
+                    )
+                    content = None
+            else:
+                video_frame.dts = output_frame.dts
+                if output_frame.codec is not None:
+                    video_frame.codec = output_frame.codec.name
+                video_frame.keyframe = output_frame.keyframe
+                content = output_frame.frame
+
             # TODO: Do we need to delete frame after it was sent to sink?
             spans = self._video_pipeline.delete(output_frame.idx)
             span_context = spans[output_frame.idx].propagate()
 
         return SinkVideoFrame(
             video_frame=video_frame,
-            frame=output_frame.frame,
+            frame=content,
             span_context=span_context,
         )
 
@@ -911,6 +1004,7 @@ class NvDsEncodedBufferProcessor(NvDsBufferProcessor):
             objects_preprocessing=objects_preprocessing,
             frame_params=frame_params,
             video_pipeline=video_pipeline,
+            pass_through_mode=False,
         )
 
     def _iterate_output_frames(
@@ -1056,6 +1150,7 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
         frame_params: FrameParameters,
         output_frame: bool,
         video_pipeline: VideoPipeline,
+        pass_through_mode: bool,
     ):
         """Buffer processor for DeepStream pipeline.
 
@@ -1065,6 +1160,8 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
         :param objects_preprocessing: Objects processing registry.
         :param frame_params: Processing frame parameters (after nvstreammux).
         :param output_frame: Whether to output frame or not.
+        :param video_pipeline: Video pipeline.
+        :param pass_through_mode: Video pass through mode.
         """
 
         self._output_frame = output_frame
@@ -1076,6 +1173,7 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
             objects_preprocessing=objects_preprocessing,
             frame_params=frame_params,
             video_pipeline=video_pipeline,
+            pass_through_mode=pass_through_mode,
         )
 
     def _iterate_output_frames(
@@ -1140,8 +1238,19 @@ def create_buffer_processor(
     frame_params: FrameParameters,
     source_output: SourceOutput,
     video_pipeline: VideoPipeline,
+    pass_through_mode: bool,
 ):
-    """Create buffer processor."""
+    """Create buffer processor.
+
+    :param queue: Queue for output data.
+    :param fps_meter: FPS meter.
+    :param sources: Source info registry.
+    :param objects_preprocessing: Objects processing registry.
+    :param frame_params: Processing frame parameters (after nvstreammux).
+    :param source_output: Source output.
+    :param video_pipeline: Video pipeline.
+    :param pass_through_mode: Video pass through mode.
+    """
 
     if isinstance(source_output, SourceOutputEncoded):
         if is_aarch64() and source_output.encoder in ['nvv4l2h264enc', 'nvv4l2h265enc']:
@@ -1166,4 +1275,5 @@ def create_buffer_processor(
         frame_params=frame_params,
         output_frame=isinstance(source_output, SourceOutputWithFrame),
         video_pipeline=video_pipeline,
+        pass_through_mode=pass_through_mode,
     )

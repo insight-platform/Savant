@@ -7,6 +7,7 @@ from savant_rs.primitives import EndOfStream, VideoFrame, VideoFrameContent
 from savant_rs.utils import PropagatedContext
 from savant_rs.utils.serialization import Message, save_message_to_bytes
 
+from savant.api.constants import INTERNAL_NAMESPACE
 from savant.api.enums import ExternalFrameType
 from savant.config.schema import PipelineElement
 from savant.utils.logging import get_logger
@@ -159,6 +160,7 @@ class ZeroMQSinkFactory(SinkFactory):
                     msg.video_frame.pts,
                 )
 
+                msg.video_frame.delete_attributes(INTERNAL_NAMESPACE)
                 if msg.frame:
                     logger.debug(
                         'Size of frame of source %r with PTS %s is %s bytes',

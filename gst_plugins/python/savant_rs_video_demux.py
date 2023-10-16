@@ -5,18 +5,25 @@ import time
 from dataclasses import dataclass
 from fractions import Fraction
 from threading import Lock, Thread
-from typing import Dict, NamedTuple, Optional
+from typing import Dict, NamedTuple, Optional, Union
 
 from savant_rs.pipeline2 import VideoPipeline
 from savant_rs.primitives import (
+    Attribute,
+    AttributeValue,
     EndOfStream,
     Shutdown,
     VideoFrame,
+    VideoFrameContent,
     VideoFrameTransformation,
 )
 from savant_rs.utils import PropagatedContext
 
-from savant.api.constants import DEFAULT_FRAMERATE
+from savant.api.constants import (
+    DEFAULT_FRAMERATE,
+    INTERNAL_NAMESPACE,
+    PREVIOUS_FRAME_ID_ATTR_NAME,
+)
 from savant.api.enums import ExternalFrameType
 from savant.api.parser import convert_ts
 from savant.gstreamer import GObject, Gst
@@ -84,6 +91,14 @@ SAVANT_RS_VIDEO_DEMUX_PROPERTIES = {
         None,
         GObject.ParamFlags.READWRITE,
     ),
+    'pass-through-mode': (
+        bool,
+        'Run module in a pass-through mode.',
+        'Run module in a pass-through mode. Store frame content in VideoFrame '
+        'object as an internal VideoFrameContent.',
+        False,
+        GObject.ParamFlags.READWRITE,
+    ),
 }
 
 
@@ -115,6 +130,7 @@ class SourceInfo:
     timestamp: float = 0
     last_pts: int = 0
     last_dts: int = 0
+    last_idx: Optional[int] = None
 
 
 class SavantRsVideoDemux(LoggerMixin, Gst.Element):
@@ -164,6 +180,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
         self.video_pipeline: Optional[VideoPipeline] = None
         self.pipeline_stage_name: Optional[str] = None
         self.shutdown_auth: Optional[str] = None
+        self.pass_through_mode = False
 
         self._frame_idx_gen = itertools.count()
 
@@ -205,6 +222,8 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             return self.pipeline_stage_name
         if prop.name == 'shutdown-auth':
             return self.shutdown_auth
+        if prop.name == 'pass-through-mode':
+            return self.pass_through_mode
         raise AttributeError(f'Unknown property {prop.name}')
 
     def do_set_property(self, prop, value):
@@ -223,6 +242,8 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             self.pipeline_stage_name = value
         elif prop.name == 'shutdown-auth':
             self.shutdown_auth = value
+        elif prop.name == 'pass-through-mode':
+            self.pass_through_mode = value
         else:
             raise AttributeError(f'Unknown property {prop.name}')
 
@@ -301,8 +322,9 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             else Gst.CLOCK_TIME_NONE
         )
         self.logger.debug(
-            'Received frame %s from source %s; frame %s a keyframe',
+            'Received frame %s/%s from source %s; frame %s a keyframe',
             frame_pts,
+            frame_dts,
             video_frame.source_id,
             'is' if video_frame.keyframe else 'is not',
         )
@@ -359,29 +381,26 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
                 )
                 return Gst.FlowReturn.OK
 
-        if video_frame.content.is_none():
-            result = Gst.FlowReturn.OK
-        else:
-            if video_frame.content.is_internal():
-                frame_buf: Gst.Buffer = Gst.Buffer.new_wrapped(
-                    video_frame.content.get_data_as_bytes()
-                )
-            else:
-                frame_type = ExternalFrameType(video_frame.content.get_method())
-                if frame_type != ExternalFrameType.ZEROMQ:
-                    self.logger.error('Unsupported frame type "%s".', frame_type.value)
-                    self.is_running = False
-                    return self._delete_frame_with_error(frame_idx)
-                if buffer.n_memory() < 2:
-                    self.logger.error(
-                        'Buffer has %s regions of memory, expected at least 2.',
-                        buffer.n_memory(),
+        frame_buf = self._build_frame_buffer(frame_idx, video_frame, buffer)
+        if isinstance(frame_buf, Gst.Buffer):
+            if self.pass_through_mode:
+                if source_info.last_idx is not None:
+                    # To keep the original frame order
+                    video_frame.set_attribute(
+                        Attribute(
+                            namespace=INTERNAL_NAMESPACE,
+                            name=PREVIOUS_FRAME_ID_ATTR_NAME,
+                            values=[AttributeValue.integer(source_info.last_idx)],
+                        )
                     )
-                    self.is_running = False
-                    return self._delete_frame_with_error(frame_idx)
-
-                frame_buf: Gst.Buffer = Gst.Buffer.new()
-                frame_buf.append_memory(buffer.get_memory_range(1, -1))
+                if not video_frame.content.is_internal():
+                    content = frame_buf.extract_dup(0, frame_buf.get_size())
+                    self.logger.debug(
+                        'Storing content of frame with IDX %s as an internal VideoFrameContent (%s) bytes.',
+                        frame_idx,
+                        len(content),
+                    )
+                    video_frame.content = VideoFrameContent.internal(content)
             frame_buf.pts = frame_pts
             frame_buf.dts = frame_dts
             frame_buf.duration = (
@@ -392,10 +411,46 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
                 'Pushing frame with idx=%s and pts=%s', frame_idx, frame_pts
             )
             result: Gst.FlowReturn = source_info.src_pad.push(frame_buf)
+            if result == Gst.FlowReturn.OK:
+                source_info.last_idx = frame_idx
+
+        else:
+            result: Gst.FlowReturn = frame_buf
+
         self.logger.debug(
-            'end handle_buffer (return buffer with timestamp %d).', frame_pts
+            'Frame with idx=%s and pts=%s processed.', frame_idx, frame_pts
         )
         return result
+
+    def _build_frame_buffer(
+        self,
+        idx: int,
+        video_frame: VideoFrame,
+        buffer: Gst.Buffer,
+    ) -> Union[Gst.Buffer, Gst.FlowReturn]:
+        if video_frame.content.is_none():
+            return Gst.FlowReturn.OK
+
+        if video_frame.content.is_internal():
+            return Gst.Buffer.new_wrapped(video_frame.content.get_data_as_bytes())
+
+        frame_type = ExternalFrameType(video_frame.content.get_method())
+        if frame_type != ExternalFrameType.ZEROMQ:
+            self.logger.error('Unsupported frame type "%s".', frame_type.value)
+            self.is_running = False
+            return self._delete_frame_with_error(idx)
+        if buffer.n_memory() < 2:
+            self.logger.error(
+                'Buffer has %s regions of memory, expected at least 2.',
+                buffer.n_memory(),
+            )
+            self.is_running = False
+            return self._delete_frame_with_error(idx)
+
+        frame_buf: Gst.Buffer = Gst.Buffer.new()
+        frame_buf.append_memory(buffer.get_memory_range(1, -1))
+
+        return frame_buf
 
     def handle_eos(self, eos: EndOfStream) -> Gst.FlowReturn:
         """Handle EndOfStream message."""
@@ -535,6 +590,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
         self.logger.debug('Removing pad %s', source_info.src_pad.get_name())
         self.remove_pad(source_info.src_pad)
         source_info.src_pad = None
+        source_info.last_idx = None
 
     def eviction_job(self):
         """Eviction job."""
@@ -575,7 +631,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
                 )
             gst_buffer_add_savant_frame_meta(frame_buf, idx)
 
-    def _delete_frame_with_error(self, frame_idx: int):
+    def _delete_frame_with_error(self, frame_idx: int) -> Gst.FlowReturn:
         if self.video_pipeline is not None:
             self.video_pipeline.delete(frame_idx)
         return Gst.FlowReturn.ERROR
