@@ -1,4 +1,3 @@
-import glob
 import time
 from typing import Any, Dict
 
@@ -9,7 +8,6 @@ from savant.gstreamer import Gst  # noqa:F401
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
 from savant.gstreamer.element_factory import GstElementFactory
 from savant.utils.logging import get_logger
-from savant.utils.platform import is_aarch64
 
 
 def check_encoder_is_available(parameters: Dict[str, Any]) -> bool:
@@ -27,20 +25,6 @@ def check_encoder_is_available(parameters: Dict[str, Any]) -> bool:
 
     logger.info('Checking if encoder for codec %r is available', output_frame['codec'])
     encoder = codec.value.encoder(output_frame.get('encoder'))
-    if (
-        is_aarch64()
-        and encoder == codec.value.nv_encoder
-        and not glob.glob('/dev/nvhost-nvenc*')
-    ):
-        # We need to check the existence of the device file because Orin Nano
-        # freezes and reboots when the pipeline contains HW encoder.
-        # https://forums.developer.nvidia.com/t/orin-nano-freezes-and-reboots-when-pipeline-contains-hw-encoder/257357
-        logger.error(
-            'You have configured NVENC-accelerated encoding, '
-            'but your device doesn\'t support NVENC.'
-        )
-        return False
-
     output_caps = codec.value.caps_with_params
     if codec == Codec.H264 and encoder == codec.value.sw_encoder:
         profile = output_frame.get('profile')
