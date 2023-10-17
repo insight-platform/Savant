@@ -67,13 +67,13 @@ class Config:
         self.framerate = opt_config('FRAMERATE', '30/1')
         self.sync = opt_config('SYNC_OUTPUT', False, strtobool)
         self.max_allowed_resolution = opt_config(
-            'MAX_ALLOWED_RESOLUTION',
+            'MAX_RESOLUTION',
             (3840, 2152),
             lambda x: tuple(map(int, x.split("x"))),
         )
 
         assert len(self.max_allowed_resolution) == 2, (
-            "Incorrect value for environment variable MAX_ALLOWED_RESOLUTION, "
+            "Incorrect value for environment variable MAX_RESOLUTION, "
             "you should specify the width and height of the maximum resolution "
             "in format WIDTHxHEIGHT, for example 1920x1080."
         )
