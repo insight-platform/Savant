@@ -8,6 +8,7 @@ from savant_rs.primitives.geometry import BBox
 from savant_rs.utils.symbol_mapper import parse_compound_key
 
 from savant.api.builder import build_attribute_value
+from savant.config.schema import FrameParameters
 from savant.deepstream.utils import nvds_get_obj_bbox
 from savant.deepstream.utils.object import nvds_get_obj_uid, nvds_is_empty_object_meta
 from savant.meta.attribute import AttributeMeta
@@ -20,11 +21,13 @@ logger = get_logger(__name__)
 def nvds_obj_meta_output_converter(
     nvds_frame_meta: pyds.NvDsFrameMeta,
     nvds_obj_meta: pyds.NvDsObjectMeta,
+    frame_params: FrameParameters,
 ) -> Tuple[VideoObject, Optional[int]]:
     """Convert object meta to savant-rs format.
 
     :param nvds_frame_meta: NvDsFrameMeta
     :param nvds_obj_meta: NvDsObjectMeta
+    :param frame_params: Frame parameters (width/height, to scale to [0..1])
     :return: Object meta in savant-rs format and its parent id.
     """
     model_name, label = parse_compound_key(nvds_obj_meta.obj_label)
@@ -43,6 +46,13 @@ def nvds_obj_meta_output_converter(
     bbox = nvds_get_obj_bbox(nvds_obj_meta)
     if logger.isEnabledFor(logging.TRACE):
         logger.trace('Object DS bbox %s', bbox)
+    if frame_params.padding and not frame_params.padding.keep:
+        bbox.xc -= frame_params.padding.left
+        bbox.yc -= frame_params.padding.top
+        if logger.isEnabledFor(logging.TRACE):
+            logger.trace(
+                'Applied frame padding %s, bbox: %s', frame_params.padding, bbox
+            )
     if isinstance(bbox, BBox):
         bbox = bbox.as_rbbox()
         bbox.angle = 0

@@ -117,22 +117,15 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
             frame_params.width,
             frame_params.height,
         )
-        self._padding_transformation: Optional[VideoFrameTransformation] = None
-        self._output_obj_transformation: Optional[VideoObjectBBoxTransformation] = None
-
-        if frame_params.padding:
-            if frame_params.padding.keep:
-                self._padding_transformation = VideoFrameTransformation.padding(
-                    frame_params.padding.left,
-                    frame_params.padding.top,
-                    frame_params.padding.right,
-                    frame_params.padding.bottom,
-                )
-            if pass_through_mode or not frame_params.padding.keep:
-                self._output_obj_transformation = VideoObjectBBoxTransformation.shift(
-                    -self._frame_params.padding.left,
-                    -self._frame_params.padding.top,
-                )
+        if frame_params.padding and frame_params.padding.keep:
+            self._padding_transformation = VideoFrameTransformation.padding(
+                frame_params.padding.left,
+                frame_params.padding.top,
+                frame_params.padding.right,
+                frame_params.padding.bottom,
+            )
+        else:
+            self._padding_transformation = None
 
         self._last_frame_id: Dict[str, int] = {}
         self._pending_frames: Dict[str, List[_PendingFrame]] = {}
@@ -543,21 +536,18 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
         )
 
     def _transform_geometry(self, video_frame: VideoFrame):
-        transformations = []
-        if self._output_obj_transformation is not None:
-            transformations.append(self._output_obj_transformation)
         if self._pass_through_mode and (
             video_frame.width != self._frame_params.width
             or video_frame.height != self._frame_params.height
         ):
-            transformations.append(
-                VideoObjectBBoxTransformation.scale(
-                    video_frame.width / self._frame_params.width,
-                    video_frame.height / self._frame_params.height,
-                )
+            video_frame.transform_geometry(
+                [
+                    VideoObjectBBoxTransformation.scale(
+                        video_frame.width / self._frame_params.width,
+                        video_frame.height / self._frame_params.height,
+                    )
+                ]
             )
-
-        video_frame.transform_geometry(transformations)
 
     def on_eos(self, source_info: SourceInfo) -> SinkVideoFrame:
         """Pipeline EOS handler."""
