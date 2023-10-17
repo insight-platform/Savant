@@ -70,10 +70,15 @@ class YoloV8faceConverter(BaseComplexModelOutputConverter):
             xywh *= np.tile(np.float32([ration_width, ratio_height]), 2)
             landmarks = selected_nms_prediction[:, 5:20] * np.tile(
                 np.float32([ration_width, ratio_height, 1.0]), 5
-            )
+            ).reshape(-1, 5, 3)
             bbox = np.concatenate((class_num, conf, xywh), axis=1)
-            landmarks_output = list(
-                map(lambda x: [(atr_name, x, 1.0)], landmarks.tolist())
-            )
+            landmarks_output = [
+                [(atr_name, lms, conf)]
+                for lms, conf in zip(
+                    landmarks[:, :, :2].reshape(-1, 10).tolist(),
+                    landmarks[:, :, 2].mean(1),
+                )
+            ]
             return bbox, landmarks_output
+
         return np.float32([]), []
