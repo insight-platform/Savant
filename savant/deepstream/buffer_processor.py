@@ -42,6 +42,7 @@ from savant.deepstream.utils import (
     get_nvds_buf_surface,
     nvds_add_attr_meta_to_obj,
     nvds_add_obj_meta_to_frame,
+    nvds_attr_meta_iterator,
     nvds_clf_meta_iterator,
     nvds_frame_meta_iterator,
     nvds_infer_tensor_meta_to_outputs,
@@ -51,7 +52,6 @@ from savant.deepstream.utils import (
     nvds_set_obj_uid,
     nvds_tensor_output_iterator,
 )
-from savant.deepstream.utils.attribute import nvds_get_all_obj_attrs
 from savant.gstreamer import Gst  # noqa:F401
 from savant.gstreamer.buffer_processor import GstBufferProcessor
 from savant.gstreamer.codecs import Codec, CodecInfo
@@ -635,7 +635,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                             parent_object_meta.bbox.copy(),
                             parent_object_meta.confidence,
                             parent_object_meta.track_id,
-                            attributes=nvds_get_all_obj_attrs(
+                            attributes=nvds_attr_meta_iterator(
                                 nvds_frame_meta,
                                 parent_object_meta.ds_object_meta,
                             ),
@@ -666,7 +666,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                         object_meta.confidence,
                         object_meta.track_id,
                         user_parent_object_meta,
-                        attributes=nvds_get_all_obj_attrs(
+                        attributes=nvds_attr_meta_iterator(
                             frame_meta=nvds_frame_meta,
                             obj_meta=object_meta.ds_object_meta,
                         ),

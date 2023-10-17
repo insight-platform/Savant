@@ -14,7 +14,7 @@ The sample is split into two parts: Index Builder and Demo modules.
 
 Index builder module loads images from [gallery](./assets/gallery), detects faces and facial landmarks, performs face preprocessing and facial recognition model inference. The resulting feature vectors are added into [hnswlib](https://github.com/nmslib/hnswlib) index, and the index (along with cropped face images from gallery) is saved on disk in the `index_files` directory.
 
-Note, when adding new gallery images it is important to make sure that they are as close to 16:9 aspect ratio as possible. The reason being that Index Builder pipeline processes all images in a single resolution with 16:9 aspect ratio, and resizing may introduce image warping that will negatively affect both detector and ReID models' performance.
+Note that the Index Builder pipeline processes all images in a single resolution with 16:9 aspect ratio, but the gallery is sent to the pipeline through the Client SDK which can take care of padding the image to a target aspect ratio. As such it's safe to add new images of any aspect ratio to the gallery. The gallery images are expected to contain 1 face each and to be named according to scheme `<person_name>_<img_n>.jpeg`.
 
 ## Demo
 
@@ -37,7 +37,7 @@ git lfs pull
 
 Note, there is a bug in the nvv4l2decoder on the Jetson platform so the example currently does not work correctly on that platform. See https://github.com/insight-platform/Savant/issues/314
 
-To build the face reid index, start the `index-builder` and create the `pictures-source` containers and wait for them to complete building the index.
+To build the face reid index, start the `index` docker compose profile and wait for the services to complete building the index.
 
 ```bash
 # if x86
@@ -48,24 +48,18 @@ docker compose -f docker-compose.x86.yml --profile index up
 docker compose -f docker-compose.l4t.yml --profile index up
 ```
 
-First startup can take several minutes as the module needs to convert ONNX models into TRT format. Successful module start is indicated by a log message like
+First startup can take several minutes as the `index-builder-pipeline` needs to convert ONNX models into TRT format. Successful module start is indicated by a log messages like
 
 ```
-INFO ... > The pipeline is initialized and ready to process data...
+INFO ... > The pipeline is initialized and ready to process data. Initialization took ...
+INFO ... > Setting module status to ModuleStatus.RUNNING
 ```
 
-After that the `pictures-source` container will be started automatically.
+After that the `index-builder-client` container will be started automatically.
 
-Index Builder module does not stop automatically and requires manual exit. It is safe to do so once the `face_reid-pictures-source` container exits and `face_reid-index-builder` container logs the message following messages (assuming the default gallery image set)
+The `index-builder-client` service runs the [index_builder_client.py](./src/index_builder_client.py) script, which loads the images from the [gallery](./assets/gallery), resizes them to the pipeline frame size while preserving content aspect ratio, sends them to the `index-builder-pipeline` and uses the received results to create `index_files/index.bin` index file and the cropped face images in the `index_files/processed_gallery` dir.
 
-```
-nvstreammux: Successfully handled EOS for source_id=9
-...
-INFO ... > Face processed, index file refreshed
-INFO ... > Resources for source gallery has been released.
-```
-
-Check that the `index_files` directory is created and `index.bin` file and `processed_gallery` image directory is written into it.
+After the services complete, the containers shut down automatically. Check that the `index_files` directory is created and `index.bin` file and `processed_gallery` image directory is written into it.
 
 ### Demo
 
@@ -94,8 +88,8 @@ Download the video file to your local folder. For example, create a data folder 
 ```bash
 # you are expected to be in Savant/ directory
 
-mkdir -p data && curl -o data/jumanji_cast.mp4 \
-   https://eu-central-1.linodeobjects.com/savant-data/demo/jumanji_cast.mp4
+mkdir -p data
+curl -o data/jumanji_cast.mp4 https://eu-central-1.linodeobjects.com/savant-data/demo/jumanji_cast.mp4
 ```
 
 Build the module image

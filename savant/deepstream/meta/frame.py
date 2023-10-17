@@ -191,6 +191,19 @@ class NvDsFrameMeta(AbstractContextManager, LoggerMixin):
             )
             object_meta.object_meta_impl = ds_object_meta
             self._objects[object_meta.uid] = object_meta
+
+            for (
+                element_name,
+                attr_name,
+            ), attr_meta_list in object_meta._attributes.items():
+                for attr_meta in attr_meta_list:
+                    ds_object_meta.add_attr_meta(
+                        element_name=element_name,
+                        name=attr_name,
+                        value=attr_meta.value,
+                        confidence=attr_meta.confidence,
+                    )
+
         else:
             raise MetaValueError(
                 f"{self.__class__.__name__} doesn't "
