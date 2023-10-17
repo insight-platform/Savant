@@ -214,7 +214,8 @@ The framework supports several encoding schemes:
 - JPEG (hardware ``nvjpegenc``, software ``jpegenc``);
 - PNG (software ``pngenc``);
 - H264 (hardware ``nvv4l2h264enc``, software ``x264enc``);
-- HEVC/H265 (hardware ``nvv4l2h265enc``).
+- HEVC/H265 (hardware ``nvv4l2h265enc``);
+- COPY (pass-through mode, the module sends frames from the source to the sink as is).
 
 .. note::
 
@@ -492,3 +493,23 @@ To configure conditional encoding, add a subsection to ``output_frame`` as follo
         tag: <tagname, e.g. encode>
 
 An example of conditional drawing can be found in a dedicated Savant `sample <https://github.com/insight-platform/Savant/tree/develop/samples/conditional_video_processing>`__.
+
+Pass-through mode
+-----------------
+
+Pass-through mode is a special mode when the module doesn't encode the frame but passes it to the sink as is. This mode is useful when your module doesn't modify the frame but only adds some metadata to it.
+
+To configure pass-through mode, set ``output_frame.codec`` to ``copy``:
+
+.. code-block:: yaml
+
+    output_frame:
+      codec: copy
+
+.. note::
+
+    Conditional encoding is ignored in pass-through mode.
+
+.. note::
+
+    Drawing on frames is not ignored in pass-through mode but the frame modifications exist only in the pipeline and are not propagated through the sinks.
