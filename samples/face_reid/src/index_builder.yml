@@ -75,8 +75,8 @@ pipeline:
           scale_factor: 0.007843137254902
           color_format: bgr
           preprocess_object_image:
-            module: samples.face_reid.face_preproc
-            class_name: FacePreprocessingObjectImageGPU
+            module: savant.input_preproc.align_face
+            class_name: AlignFacePreprocessingObjectImageGPU
         output:
           layer_names: [ 'feature' ]
           converter:
