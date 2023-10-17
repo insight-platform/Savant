@@ -1,2 +1,2 @@
-pybind11[global]==2.10.0
-scikit-build==0.15.0
+pybind11[global]==2.11.1
+scikit-build==0.17.6

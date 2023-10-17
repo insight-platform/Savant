@@ -1,10 +1,7 @@
 #include "cudaCrop.h"
 #include "cuda_utils.h"
 #include "npp.h"
-#include <gst/base/gstbasetransform.h>
-#include <gst/video/video.h>
-//GST_DEBUG_CATEGORY_STATIC (gst_dsclcprepro_debug);
-//#define GST_CAT_DEFAULT gst_dsclcprepro_debug
+
 
 inline void __getLastCudaError(const char *errorMessage, const char *file,
                                const int line) {

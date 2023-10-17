@@ -30,7 +30,6 @@ namespace pysavantboost {
      }
 
      py::array_t<uint8_t, py::array::c_style> PyImage::to_numpy(){
-          ssize_t              ndim    = 3;
           std::vector<ssize_t> shape   = { image->getHeight(), image->getWidth(), 4};
           std::vector<ssize_t> strides = {
             (ssize_t) (sizeof(Npp8u) * image->getWidth() * 4),
@@ -45,16 +44,6 @@ namespace pysavantboost {
                     (const unsigned char *) image->getCPUDataPtr(),
                     py::cast(image->getCPUDataPtr())
           );
-
-          // return py::array(py::buffer_info(
-          //           (Npp8u*) image->getCPUDataPtr(),          /* data as contiguous array  */
-          //           sizeof(Npp8u),                            /* size of one scalar        */
-          //           py::format_descriptor<uint8_t>::format(), /* data type                 */
-          //           ndim,                                          /* number of dimensions      */
-          //           shape,                                 /* shape of the matrix       */
-          //           strides                                /* strides for each axis     */
-          //      )
-          // );
      }
 
 
@@ -116,7 +105,7 @@ namespace pysavantboost {
                     ){
                          // std::cout << "Test21sdfsdfsdfds" << std::endl;
                          auto *buffer = reinterpret_cast<GstBuffer *>(inbuf);
-                         int status = (int) self.preprocessing(
+                         self.preprocessing(
                               element_name, buffer, model_uid, class_id, padding_width, padding_height
                          );
                          
