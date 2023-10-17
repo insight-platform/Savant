@@ -118,14 +118,9 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
             frame_params.height,
         )
         self._padding_transformation: Optional[VideoFrameTransformation] = None
-        self._input_obj_transformation: Optional[VideoObjectBBoxTransformation] = None
         self._output_obj_transformation: Optional[VideoObjectBBoxTransformation] = None
 
         if frame_params.padding:
-            self._input_obj_transformation = VideoObjectBBoxTransformation.shift(
-                self._frame_params.padding.left,
-                self._frame_params.padding.top,
-            )
             if frame_params.padding.keep:
                 self._padding_transformation = VideoFrameTransformation.padding(
                     frame_params.padding.left,
@@ -210,27 +205,14 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
             source_info=source_info,
             video_frame=video_frame,
         )
-        obj_transformations = [
-            VideoObjectBBoxTransformation.scale(
-                self._frame_params.width / video_frame.width,
-                self._frame_params.height / video_frame.height,
-            )
-        ]
-        if self._input_obj_transformation is not None:
-            obj_transformations.append(self._input_obj_transformation)
-        video_frame.transform_geometry(obj_transformations)
-
+        scale_factor_x = self._frame_params.width / source_info.src_resolution.width
+        scale_factor_y = self._frame_params.height / source_info.src_resolution.height
         primary_bbox = BBox(
             self._frame_params.width / 2,
             self._frame_params.height / 2,
             self._frame_params.width,
             self._frame_params.height,
         )
-        if self._frame_params.padding:
-            primary_bbox.shift(
-                self._frame_params.padding.left,
-                self._frame_params.padding.top,
-            )
         self.logger.debug(
             'Init primary bbox for frame with PTS %s: %s', frame_pts, primary_bbox
         )
@@ -247,6 +229,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                 # if not a full frame then correct primary object
                 if not bbox.almost_eq(primary_bbox, 1e-6):
                     primary_bbox = bbox
+                    primary_bbox.scale(scale_factor_x, scale_factor_y)
                     self.logger.debug(
                         'Corrected primary bbox for frame with PTS %s: %s',
                         frame_pts,
@@ -262,6 +245,11 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                 selection_type = ObjectSelectionType.ROTATED_BBOX
             else:
                 selection_type = ObjectSelectionType.REGULAR_BBOX
+
+            bbox.scale(scale_factor_x, scale_factor_y)
+            if self._frame_params.padding:
+                bbox.left += self._frame_params.padding.left
+                bbox.top += self._frame_params.padding.top
 
             track_id = obj_meta.get_track_id()
             if track_id is None:
@@ -307,6 +295,9 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
         # add primary frame object
         model_name, label = parse_compound_key(PRIMARY_OBJECT_KEY)
         model_uid, class_id = get_object_id(model_name, label)
+        if self._frame_params.padding:
+            primary_bbox.xc += self._frame_params.padding.left
+            primary_bbox.yc += self._frame_params.padding.top
         self.logger.debug(
             'Add primary object to frame meta with PTS %s, bbox: %s',
             frame_pts,
