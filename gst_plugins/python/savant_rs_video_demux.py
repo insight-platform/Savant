@@ -5,7 +5,7 @@ import time
 from dataclasses import dataclass
 from fractions import Fraction
 from threading import Lock, Thread
-from typing import Dict, NamedTuple, Optional, Tuple
+from typing import Dict, NamedTuple, Optional
 
 from savant_rs.pipeline2 import VideoPipeline
 from savant_rs.primitives import (
