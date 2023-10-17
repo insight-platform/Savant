@@ -151,13 +151,17 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
     def do_start(self):
         """Do on plugin start."""
         # pylint: disable=broad-exception-caught
-        try:
-            kwargs = json.loads(self.kwargs)
-        except Exception as exc:
-            self.handle_non_fatal_error(
-                exc,
-                f'Failed to parse kwargs for "{self.module}.{self.class_name}" pyfunc.',
-            )
+        if self.kwargs:
+            try:
+                kwargs = json.loads(self.kwargs)
+            except Exception as exc:
+                return self.handle_fatal_error(
+                    exc,
+                    f'Failed to parse kwargs for "{self.module}.{self.class_name}" pyfunc.',
+                    True,
+                    False,
+                )
+        else:
             kwargs = None
 
         try:
