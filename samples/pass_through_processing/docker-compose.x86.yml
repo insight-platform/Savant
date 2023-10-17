@@ -1,0 +1,125 @@
+version: "3.3"
+services:
+
+  video-loop-source:
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    restart: unless-stopped
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - /tmp/video-loop-source-downloads:/tmp/video-loop-source-downloads
+    environment:
+      - LOCATION=https://eu-central-1.linodeobjects.com/savant-data/demo/Free_City_Street_Footage.mp4
+      - DOWNLOAD_PATH=/tmp/video-loop-source-downloads
+      - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
+      - SOURCE_ID=city-traffic
+      - SYNC_OUTPUT=True
+    entrypoint: /opt/savant/adapters/gst/sources/video_loop.sh
+    depends_on:
+      module-detector:
+        condition: service_healthy
+      module-tracker:
+        condition: service_healthy
+      module-draw-func:
+        condition: service_healthy
+
+  module-detector:
+    image: ghcr.io/insight-platform/savant-deepstream:latest
+    restart: unless-stopped
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ../../models/peoplenet_detector:/models
+      - ../../downloads/peoplenet_detector:/downloads
+      - ..:/opt/savant/samples
+    command: samples/pass_through_processing/module.yml
+    environment:
+      - MODULE_NAME=pass-through-processing-detector
+      - MODULE_STAGE=detector
+      - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
+      - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/detector-output.ipc
+      - FPS_PERIOD=1000
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+
+  module-tracker:
+    image: ghcr.io/insight-platform/savant-deepstream:latest
+    restart: unless-stopped
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ../../models/peoplenet_detector:/models
+      - ../../downloads/peoplenet_detector:/downloads
+      - ..:/opt/savant/samples
+    command: samples/pass_through_processing/module.yml
+    environment:
+      - MODULE_NAME=pass-through-processing-tracker
+      - MODULE_STAGE=tracker
+      - BATCH_SIZE=1
+      - ZMQ_SRC_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/detector-output.ipc
+      - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/tracker-output.ipc
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+
+  module-draw-func:
+    image: ghcr.io/insight-platform/savant-deepstream:latest
+    restart: unless-stopped
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ../../models/peoplenet_detector:/models
+      - ../../downloads/peoplenet_detector:/downloads
+      - ..:/opt/savant/samples
+    command: samples/pass_through_processing/module.yml
+    environment:
+      - MODULE_NAME=pass-through-processing-draw-func
+      - MODULE_STAGE=draw-func
+      - BATCH_SIZE=1
+      # Use default draw_func (savant.deepstream.drawfunc.NvDsDrawFunc)
+      - DRAW_FUNC={}
+      - CODEC=h264
+      - ZMQ_SRC_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/tracker-output.ipc
+      - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
+      - FPS_PERIOD=1000
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+
+  always-on-sink:
+    image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
+    restart: unless-stopped
+    ports:
+      - "554:554"    # RTSP
+      - "1935:1935"  # RTMP
+      - "888:888"    # HLS
+      - "8889:8889"  # WebRTC
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ../assets/stub_imgs:/stub_imgs
+    environment:
+      - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
+      - SOURCE_ID=city-traffic
+      - FRAMERATE=25/1
+      - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x720.jpeg
+      - DEV_MODE=True
+    command: python -m adapters.ds.sinks.always_on_rtsp
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+
+volumes:
+  zmq_sockets:
