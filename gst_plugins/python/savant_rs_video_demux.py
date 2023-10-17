@@ -21,7 +21,10 @@ from savant.api.enums import ExternalFrameType
 from savant.api.parser import convert_ts
 from savant.gstreamer import GObject, Gst
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
-from savant.gstreamer.utils import load_message_from_gst_buffer, propagate_gst_error
+from savant.gstreamer.utils import (
+    gst_post_stream_demux_error,
+    load_message_from_gst_buffer,
+)
 from savant.utils.logging import LoggerMixin
 
 DEFAULT_SOURCE_TIMEOUT = 60
@@ -321,12 +324,10 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
                     )
                     self.logger.error(error)
                     frame = inspect.currentframe()
-                    propagate_gst_error(
+                    gst_post_stream_demux_error(
                         gst_element=self,
                         frame=frame,
                         file_path=__file__,
-                        domain=Gst.StreamError.quark(),
-                        code=Gst.StreamError.DEMUX,
                         text=error,
                     )
                     return self._delete_frame_with_error(frame_idx)

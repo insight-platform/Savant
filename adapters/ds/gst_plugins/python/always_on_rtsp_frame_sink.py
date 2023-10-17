@@ -6,7 +6,7 @@ from adapters.ds.sinks.always_on_rtsp.last_frame import LastFrame
 from adapters.ds.sinks.always_on_rtsp.timestamp_overlay import TimestampOverlay
 from savant.deepstream.opencv_utils import nvds_to_gpu_mat
 from savant.gstreamer import GObject, Gst, GstBase
-from savant.gstreamer.utils import propagate_gst_setting_error
+from savant.gstreamer.utils import gst_post_library_settings_error
 from savant.utils.logging import LoggerMixin
 
 CAPS = Gst.Caps.from_string('video/x-raw(memory:NVMM), format=RGBA')
@@ -60,7 +60,7 @@ class AlwaysOnRtspFrameSink(LoggerMixin, GstBase.BaseSink):
         if self._last_frame is None:
             self.logger.exception('Property "last-frame" is not set')
             frame = inspect.currentframe()
-            propagate_gst_setting_error(self, frame, __file__)
+            gst_post_library_settings_error(self, frame, __file__)
             return False
         return True
 

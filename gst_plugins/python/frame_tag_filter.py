@@ -15,8 +15,8 @@ from savant.deepstream.utils import nvds_frame_meta_iterator
 from savant.gstreamer import GObject, Gst
 from savant.gstreamer.utils import (
     RequiredPropertyError,
+    gst_post_library_settings_error,
     on_pad_event,
-    propagate_gst_setting_error,
     required_property,
 )
 from savant.utils.logging import LoggerMixin
@@ -126,7 +126,7 @@ class FrameTagFilter(LoggerMixin, Gst.Element):
             except RequiredPropertyError as exc:
                 self.logger.exception('Failed to start element: %s', exc, exc_info=True)
                 frame = inspect.currentframe()
-                propagate_gst_setting_error(self, frame, __file__, text=exc.args[0])
+                gst_post_library_settings_error(self, frame, __file__, text=exc.args[0])
 
     def do_get_property(self, prop):
         """Get property callback."""

@@ -8,8 +8,8 @@ from gst_plugins.python.zeromq_properties import ZEROMQ_PROPERTIES, socket_type_
 from savant.gstreamer import GObject, Gst, GstBase
 from savant.gstreamer.utils import (
     gst_buffer_from_list,
-    propagate_gst_error,
-    propagate_gst_setting_error,
+    gst_post_library_settings_error,
+    gst_post_stream_failed_error,
 )
 from savant.utils.logging import LoggerMixin
 from savant.utils.zeromq import (
@@ -148,7 +148,7 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
             error = f'Failed to create ZeroMQ source with socket {self.socket}.'
             self.logger.exception(error, exc_info=True)
             frame = inspect.currentframe()
-            propagate_gst_setting_error(self, frame, __file__, error)
+            gst_post_library_settings_error(self, frame, __file__, error)
             # prevents pipeline from starting
             return False
 
@@ -161,15 +161,13 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
             error = f'Failed to start ZeroMQ source with socket {self.socket}.'
             self.logger.exception(error, exc_info=True)
             frame = inspect.currentframe()
-            propagate_gst_error(
+            gst_post_stream_failed_error(
                 gst_element=self,
                 frame=frame,
                 file_path=__file__,
-                domain=Gst.StreamError.quark(),
-                code=Gst.StreamError.FAILED,
                 text=error,
             )
-            propagate_gst_setting_error(self, frame, __file__)
+            gst_post_library_settings_error(self, frame, __file__)
             return False
         return True
 
