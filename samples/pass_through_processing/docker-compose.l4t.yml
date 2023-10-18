@@ -32,7 +32,6 @@ services:
       - ..:/opt/savant/samples
     command: samples/pass_through_processing/module.yml
     environment:
-      - MODULE_NAME=pass-through-processing-detector
       - MODULE_STAGE=detector
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/detector-output.ipc
@@ -49,9 +48,7 @@ services:
       - ..:/opt/savant/samples
     command: samples/pass_through_processing/module.yml
     environment:
-      - MODULE_NAME=pass-through-processing-tracker
       - MODULE_STAGE=tracker
-      - BATCH_SIZE=1
       - ZMQ_SRC_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/detector-output.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/tracker-output.ipc
     runtime: nvidia
@@ -66,9 +63,7 @@ services:
       - ..:/opt/savant/samples
     command: samples/pass_through_processing/module.yml
     environment:
-      - MODULE_NAME=pass-through-processing-draw-func
       - MODULE_STAGE=draw-func
-      - BATCH_SIZE=1
       # Use default draw_func (savant.deepstream.drawfunc.NvDsDrawFunc)
       - DRAW_FUNC={}
       - CODEC=h264

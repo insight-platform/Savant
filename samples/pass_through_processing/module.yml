@@ -1,5 +1,5 @@
 # module name, required
-name: ${oc.env:MODULE_NAME, 'pass-through-processing'}
+name: pass-through-processing-${oc.env:MODULE_STAGE}
 
 # base module parameters
 parameters:
@@ -11,7 +11,7 @@ parameters:
     # "copy" codec means the pipeline works in pass-through mode
     codec: ${oc.env:CODEC, 'copy'}
   draw_func: ${json:${oc.env:DRAW_FUNC, null}}
-  batch_size: ${oc.decode:${oc.env:BATCH_SIZE, null}}
+  batch_size: 1
   detected_object:
     id: 0
     label: person
