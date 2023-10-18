@@ -69,13 +69,13 @@ class Config:
         self.max_allowed_resolution = opt_config(
             'MAX_RESOLUTION',
             (3840, 2152),
-            lambda x: tuple(map(int, x.split("x"))),
+            lambda x: tuple(map(int, x.split('x'))),
         )
 
         assert len(self.max_allowed_resolution) == 2, (
-            "Incorrect value for environment variable MAX_RESOLUTION, "
-            "you should specify the width and height of the maximum resolution "
-            "in format WIDTHxHEIGHT, for example 1920x1080."
+            'Incorrect value for environment variable MAX_RESOLUTION, '
+            'you should specify the width and height of the maximum resolution '
+            'in format WIDTHxHEIGHT, for example 1920x1080.'
         )
 
     def fps_meter_properties(self, measurer_name: str):

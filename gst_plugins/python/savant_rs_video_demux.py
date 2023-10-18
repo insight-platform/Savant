@@ -570,15 +570,15 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
                 or int(video_frame.height) > self.max_height
             ):
                 self.logger.warning(
-                    f"The resolution of the incoming stream is "
-                    f"{video_frame.width}x{video_frame.height} and "
-                    f"treater than the allowed max "
-                    f"{self.max_width}x"
-                    f"{self.max_height}"
-                    f" resolutions. Terminate. You can override the max allowed "
+                    f'The resolution of the incoming stream is '
+                    f'{video_frame.width}x{video_frame.height} and '
+                    f'treater than the allowed max '
+                    f'{self.max_width}x'
+                    f'{self.max_height}'
+                    f' resolutions. Terminate. You can override the max allowed '
                     f"resolution with 'MAX_RESOLUTION' environment variable."
                 )
-            return True
+                return True
         return False
 
     def send_eos(self, source_info: SourceInfo):
