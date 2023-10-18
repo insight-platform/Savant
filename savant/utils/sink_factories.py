@@ -7,7 +7,6 @@ from savant_rs.primitives import EndOfStream, VideoFrame, VideoFrameContent
 from savant_rs.utils import PropagatedContext
 from savant_rs.utils.serialization import Message, save_message_to_bytes
 
-from savant.api.constants import INTERNAL_NAMESPACE
 from savant.api.enums import ExternalFrameType
 from savant.config.schema import PipelineElement
 from savant.utils.logging import get_logger
@@ -37,7 +36,7 @@ class SinkVideoFrame(SinkMessage, NamedTuple):
 
     video_frame: VideoFrame
     frame: Optional[bytes]
-    span_context: PropagatedContext
+    span_context: Optional[PropagatedContext] = None
 
     @property
     def source_id(self) -> str:
@@ -160,7 +159,6 @@ class ZeroMQSinkFactory(SinkFactory):
                     msg.video_frame.pts,
                 )
 
-                msg.video_frame.delete_attributes(INTERNAL_NAMESPACE)
                 if msg.frame:
                     logger.debug(
                         'Size of frame of source %r with PTS %s is %s bytes',
@@ -180,7 +178,8 @@ class ZeroMQSinkFactory(SinkFactory):
                     msg.video_frame.content = VideoFrameContent.none()
 
                 message = Message.video_frame(msg.video_frame)
-                message.span_context = msg.span_context
+                if msg.span_context is not None:
+                    message.span_context = msg.span_context
                 zmq_message.append(save_message_to_bytes(message))
                 if msg.frame:
                     zmq_message.append(msg.frame)

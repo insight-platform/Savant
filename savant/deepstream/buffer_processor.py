@@ -24,7 +24,6 @@ from savant_rs.utils.symbol_mapper import (
 )
 from savant_rs.video_object_query import MatchQuery
 
-from savant.api.constants import INTERNAL_NAMESPACE, PREVIOUS_FRAME_ID_ATTR_NAME
 from savant.api.parser import parse_attribute_value
 from savant.base.input_preproc import ObjectsPreprocessing
 from savant.base.model import ComplexModel, ObjectModel
@@ -365,11 +364,12 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
         )
         for output_frame in self._iterate_output_frames(buffer, source_info):
             sink_video_frame = self._build_sink_video_frame(output_frame, source_info)
-            yield from self._fix_frames_order(
+            for frame_idx, sink_message in self._fix_frames_order(
                 source_info.source_id,
                 output_frame.idx,
                 sink_video_frame,
-            )
+            ):
+                yield self._delete_frame_from_pipeline(frame_idx, sink_message)
 
     def _fix_frames_order(
         self,
@@ -390,10 +390,10 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                 sink_video_frame.video_frame.pts,
                 sink_video_frame.video_frame.dts,
             )
-            yield sink_video_frame
+            yield frame_id, sink_video_frame
             return
 
-        pending_frames = self._pending_frames.setdefault(source_id, [])
+        pending_frames = self._pending_frames.get(source_id, [])
         if sink_video_frame.video_frame.keyframe:
             # Normally pending_frames should be empty here. But in the case if
             # some frames are lost in the pipeline we need to send them before
@@ -406,7 +406,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                     pending_frame.frame.video_frame.pts,
                     pending_frame.frame.video_frame.dts,
                 )
-                yield pending_frame.frame
+                yield pending_frame.frame_id, pending_frame.frame
             self.logger.trace(
                 'Pushing frame of source %s with IDX %s, PTS %s and DTS %s.',
                 source_id,
@@ -414,17 +414,25 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                 sink_video_frame.video_frame.pts,
                 sink_video_frame.video_frame.dts,
             )
-            yield sink_video_frame
+            yield frame_id, sink_video_frame
             self._pending_frames[source_id] = []
             self._last_frame_id[source_id] = frame_id
             return
 
         last_frame_id = self._last_frame_id.get(source_id)
-        previous_frame_id_attr = sink_video_frame.video_frame.get_attribute(
-            INTERNAL_NAMESPACE, PREVIOUS_FRAME_ID_ATTR_NAME
-        )
-        if previous_frame_id_attr is not None:
-            previous_frame_id = previous_frame_id_attr.values[0].as_integer()
+        try:
+            previous_frame_id = self._video_pipeline.get_previous_frame_id(
+                source_id, frame_id
+            )
+        except ValueError:
+            self.logger.warning(
+                'Failed to get previous frame ID for frame %s from source %s.',
+                frame_id,
+                source_id,
+            )
+            previous_frame_id = None
+
+        if previous_frame_id is not None:
             if previous_frame_id == last_frame_id:
                 last_frame_id = frame_id
                 self.logger.trace(
@@ -434,7 +442,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                     sink_video_frame.video_frame.pts,
                     sink_video_frame.video_frame.dts,
                 )
-                yield sink_video_frame
+                yield frame_id, sink_video_frame
             else:
                 self.logger.trace(
                     'Storing frame of source %s with IDX %s, PTS %s and DTS %s in a buffer.',
@@ -460,7 +468,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                 sink_video_frame.video_frame.pts,
                 sink_video_frame.video_frame.dts,
             )
-            yield sink_video_frame
+            yield frame_id, sink_video_frame
 
         while pending_frames and pending_frames[0].previous_frame_id == last_frame_id:
             pending_frame = heappop(pending_frames)
@@ -472,7 +480,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                 pending_frame.frame.video_frame.dts,
                 len(pending_frames),
             )
-            yield pending_frame.frame
+            yield pending_frame.frame_id, pending_frame.frame
             last_frame_id = pending_frame.frame_id
 
         self._last_frame_id[source_id] = last_frame_id
@@ -525,15 +533,16 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
 
             self._transform_geometry(video_frame)
 
-            # TODO: Do we need to delete frame after it was sent to sink?
-            spans = self._video_pipeline.delete(output_frame.idx)
-            span_context = spans[output_frame.idx].propagate()
+        return SinkVideoFrame(video_frame=video_frame, frame=content)
 
-        return SinkVideoFrame(
-            video_frame=video_frame,
-            frame=content,
-            span_context=span_context,
-        )
+    def _delete_frame_from_pipeline(
+        self,
+        frame_idx: int,
+        sink_video_frame: SinkVideoFrame,
+    ):
+        spans = self._video_pipeline.delete(frame_idx)
+        span_context = spans[frame_idx].propagate()
+        return sink_video_frame._replace(span_context=span_context)
 
     def _transform_geometry(self, video_frame: VideoFrame):
         if self._pass_through_mode and (
@@ -549,8 +558,22 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                 ]
             )
 
-    def on_eos(self, source_info: SourceInfo) -> SinkVideoFrame:
+    def on_eos(self, source_info: SourceInfo):
         """Pipeline EOS handler."""
+        pending_frames = self._pending_frames.pop(source_info.source_id, [])
+        for pending_frame in pending_frames:
+            self.logger.trace(
+                'Pushing frame of source %s with IDX %s, PTS %s and DTS %s.',
+                source_info.source_id,
+                pending_frame.frame_id,
+                pending_frame.frame.video_frame.pts,
+                pending_frame.frame.video_frame.dts,
+            )
+            sink_message = self._delete_frame_from_pipeline(
+                pending_frame.frame_id,
+                pending_frame.frame,
+            )
+            self._queue.put(sink_message)
 
     def prepare_element_input(self, element: PipelineElement, buffer: Gst.Buffer):
         """Model input preprocessing.
@@ -1209,6 +1232,7 @@ class NvDsJetsonH26XBufferProcessor(NvDsEncodedBufferProcessor):
                 buffer=buffer,
             )
             sink_message = self._build_sink_video_frame(output_frame, source_info)
+            sink_message = self._delete_frame_from_pipeline(idx, sink_message)
             self._queue.put(sink_message)
             # measure and logging FPS
             if self._fps_meter():
