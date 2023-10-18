@@ -1,6 +1,10 @@
 """Module entrypoint.
 
 >>> python -m savant.entrypoint {config_file_path} [{dot_list_yaml_config_args}]
+
+TODO: Add configuration support from STDIN to be able
+    to create configuration on the fly using, for example, yq
+    `if sys.argv[1] == '-': ...`
 """
 import sys
 
