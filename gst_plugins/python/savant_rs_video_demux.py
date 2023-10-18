@@ -357,7 +357,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
                         text=error,
                     )
                     return self._delete_frame_with_error(frame_idx)
-                if self.check_max_allowed_resolution(frame_params):
+                if self.is_greater_than_max_resolution(frame_params):
                     return Gst.FlowReturn.OK
                 if not video_frame.keyframe:
                     self.logger.warning(
@@ -371,7 +371,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
                 self.sources[video_frame.source_id] = source_info
             source_info.timestamp = time.time()
         if source_info.src_pad is not None and source_info.params != frame_params:
-            if self.check_max_allowed_resolution(frame_params):
+            if self.is_greater_than_max_resolution(frame_params):
                 self.send_eos(source_info)
             self.update_frame_params(source_info, frame_params)
         if source_info.src_pad is not None:
@@ -558,7 +558,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             )
             self.send_eos(source_info)
 
-    def check_max_allowed_resolution(self, video_frame: FrameParams) -> bool:
+    def is_greater_than_max_resolution(self, video_frame: FrameParams) -> bool:
         """Check if the resolution of the incoming stream is greater than the
         max allowed resolution. Return True if the resolution is greater than
         the max allowed resolution, otherwise False.
