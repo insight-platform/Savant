@@ -17,8 +17,6 @@ from savant.gstreamer.utils import link_pads
 from savant.utils.logging import get_logger
 from savant.utils.source_info import SourceInfo
 
-logger = get_logger(__name__)
-
 
 class SourceOutput(ABC):
     """Adds an output elements to a DeepStream pipeline."""
@@ -425,15 +423,7 @@ def create_source_output(
 ) -> SourceOutput:
     """Create an instance of SourceOutput class based on the output_frame config."""
 
-    if not output_frame:
-        return SourceOutputOnlyMeta(video_pipeline=video_pipeline)
-
-    if output_frame['codec'] == 'copy':
-        if output_frame.get('condition'):
-            logger.warning(
-                'Conditional video encoding is configured for the pipeline, '
-                'which is incompatible with pass-through mode and will be ignored.'
-            )
+    if not output_frame or output_frame['codec'] == 'copy':
         return SourceOutputOnlyMeta(video_pipeline=video_pipeline)
 
     codec = CODEC_BY_NAME[output_frame['codec']]
