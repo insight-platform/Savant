@@ -578,7 +578,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
                     f" resolutions. Terminate. You can override the max allowed "
                     f"resolution with 'MAX_RESOLUTION' environment variable."
                 )
-            return True
+                return True
         return False
 
     def send_eos(self, source_info: SourceInfo):
