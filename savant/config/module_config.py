@@ -223,9 +223,10 @@ def configure_module_parameters(module_cfg: DictConfig) -> None:
         OmegaConf.structured(FrameParameters),
     )
     output_frame = module_cfg.parameters.get('output_frame')
+    is_pass_through_mode = output_frame and output_frame['codec'] == 'copy'
     frame_parameters: FrameParameters = module_cfg.parameters['frame']
     if frame_parameters.padding:
-        if output_frame and output_frame['codec'] == 'copy':
+        if is_pass_through_mode:
             if frame_parameters.padding.keep:
                 logger.warning('Padding keep is ignored in pass-through mode.')
             frame_parameters.padding.keep = False
@@ -234,6 +235,12 @@ def configure_module_parameters(module_cfg: DictConfig) -> None:
     if module_cfg.parameters.dev_mode and module_cfg.parameters.draw_func:
         logger.debug('Setting draw_func dev mode to true.')
         module_cfg.parameters.draw_func.dev_mode = True
+        if is_pass_through_mode:
+            logger.warning(
+                'The pipeline is configured in video pass-through mode. '
+                'In this mode, frame modifications exist only in the '
+                'pipeline but are not propagated through the sinks.'
+            )
     apply_schema(module_cfg.parameters, 'buffer_queues', BufferQueuesParameters)
     apply_schema(
         module_cfg.parameters,
