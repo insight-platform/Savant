@@ -1,5 +1,6 @@
 """GStreamer utils."""
 from contextlib import contextmanager
+from types import FrameType
 from typing import Any, Callable, Dict, List, Optional
 
 from gi.repository import Gst  # noqa:F401
@@ -80,35 +81,163 @@ def on_pad_event(
     return event_handler(pad, event, *data)
 
 
-def propagate_gst_setting_error(gst_element: Gst.Element, frame, file_path, text=None):
-    propagate_gst_error(
+def gst_post_library_settings_error(
+    gst_element: Gst.Element,
+    frame: Optional[FrameType],
+    file_path: str,
+    text: Optional[str] = None,
+    debug: Optional[str] = None,
+):
+    """Post a library settings error message on the bus from inside an element."""
+    gst_post_error(
         gst_element=gst_element,
         frame=frame,
         file_path=file_path,
         domain=Gst.LibraryError.quark(),
         code=Gst.LibraryError.SETTINGS,
         text=text,
+        debug=debug,
     )
 
 
-def propagate_gst_error(
+def gst_post_error(
     gst_element: Gst.Element,
-    frame,
-    file_path,
-    domain,
-    code,
-    text=None,
-    debug=None,
+    frame: Optional[FrameType],
+    file_path: str,
+    domain: int,
+    code: int,
+    text: Optional[str] = None,
+    debug: Optional[str] = None,
 ):
+    """Post an error message on the bus from inside an element."""
+    gst_post_message(
+        msg_type=Gst.MessageType.ERROR,
+        gst_element=gst_element,
+        frame=frame,
+        file_path=file_path,
+        domain=domain,
+        code=code,
+        text=text,
+        debug=debug,
+    )
+
+
+def gst_post_warning(
+    gst_element: Gst.Element,
+    frame: Optional[FrameType],
+    file_path: str,
+    domain: int,
+    code: int,
+    text: Optional[str] = None,
+    debug: Optional[str] = None,
+):
+    """Post a warning message on the bus from inside an element."""
+    gst_post_message(
+        msg_type=Gst.MessageType.WARNING,
+        gst_element=gst_element,
+        frame=frame,
+        file_path=file_path,
+        domain=domain,
+        code=code,
+        text=text,
+        debug=debug,
+    )
+
+
+def gst_post_stream_failed_warning(
+    gst_element: Gst.Element,
+    frame: Optional[FrameType],
+    file_path: str,
+    text: Optional[str] = None,
+    debug: Optional[str] = None,
+):
+    """Post a stream failed warning message on the bus from inside an element."""
+    gst_post_warning(
+        gst_element=gst_element,
+        frame=frame,
+        file_path=file_path,
+        domain=Gst.StreamError.quark(),
+        code=Gst.StreamError.FAILED,
+        text=text,
+        debug=debug,
+    )
+
+
+def gst_post_stream_failed_error(
+    gst_element: Gst.Element,
+    frame: Optional[FrameType],
+    file_path: str,
+    text: Optional[str] = None,
+    debug: Optional[str] = None,
+):
+    """Post a stream failed error message on the bus from inside an element."""
+    gst_post_error(
+        gst_element=gst_element,
+        frame=frame,
+        file_path=file_path,
+        domain=Gst.StreamError.quark(),
+        code=Gst.StreamError.FAILED,
+        text=text,
+        debug=debug,
+    )
+
+
+def gst_post_stream_demux_error(
+    gst_element: Gst.Element,
+    frame: Optional[FrameType],
+    file_path: str,
+    text: Optional[str] = None,
+    debug: Optional[str] = None,
+):
+    """Post a stream demux error message on the bus from inside an element."""
+    gst_post_error(
+        gst_element=gst_element,
+        frame=frame,
+        file_path=file_path,
+        domain=Gst.StreamError.quark(),
+        code=Gst.StreamError.DEMUX,
+        text=text,
+        debug=debug,
+    )
+
+
+def gst_post_message(
+    msg_type: int,
+    gst_element: Gst.Element,
+    frame: Optional[FrameType],
+    file_path: str,
+    domain: int,
+    code: int,
+    text: Optional[str] = None,
+    debug: Optional[str] = None,
+):
+    """Post an error, warning or info message on the bus from inside an element.
+
+    :param msg_type: Must be one of Gst.MessageType.ERROR, Gst.MessageType.WARNING, Gst.MessageType.INFO.
+    :param gst_element: Gst Element that posts the message.
+    :param frame: Frame object from inspect.currentframe().
+    :param file_path: Path to the file that posts the message.
+    :param domain: The GStreamer error domain this error belongs to.
+    :param code: The error code belonging to the domain, check here
+        https://gstreamer.freedesktop.org/documentation/gstreamer/gsterror.html?gi-language=python
+    :param text: Error text.
+    :param debug: Debug info.
+    """
+    if frame:
+        function = frame.f_code.co_name
+        line = frame.f_code.co_firstlineno
+    else:
+        function = 'Unknown'
+        line = 0
     gst_element.message_full(
-        type=Gst.MessageType.ERROR,
+        type=msg_type,
         domain=domain,
         code=code,
         text=text,
         debug=debug,
         file=file_path,
-        function=frame.f_code.co_name,
-        line=frame.f_code.co_firstlineno,
+        function=function,
+        line=line,
     )
 
 

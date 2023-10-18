@@ -333,6 +333,9 @@ def pyfunc_module_spec_factory(pyfunc: PyFunc) -> ModuleSpec:
     else:
         spec = importlib_util.find_spec(pyfunc.module, package=None)
 
+    if not spec:
+        raise PyFuncException(f'Python module "{pyfunc.module}" not found.')
+
     if not spec.has_location:
         # can be a built-in or a namespace packge, for example
         logger.warning(

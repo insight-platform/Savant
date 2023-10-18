@@ -27,8 +27,6 @@ parameters:
               margin_y: 0
   age_min: 0
   age_max: 101
-  face_width: 112
-  face_height: 112
   detection_model_name: yolov8nface
   batch_size: 1
 
@@ -98,8 +96,8 @@ pipeline:
         input:
           object: ${parameters.detection_model_name}.face
           preprocess_object_image:
-            module: samples.age_gender_recognition.age_gender_preproc
-            class_name: AgeGenderPreprocessingObjectImageGPU
+            module: savant.input_preproc.align_face
+            class_name: AlignFacePreprocessingObjectImageGPU
         output:
           layer_names: [ 'age', 'gender' ]
           converter:

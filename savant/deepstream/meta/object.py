@@ -188,12 +188,16 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         if isinstance(value, str):
             obj_key = build_model_object_key(self.element_name, value)
             if len(obj_key) > MAX_LABEL_SIZE:
-                self.logger.warn(
-                    f"The length of label '{value}' "
-                    f'and element_name `{self.element_name}` is greater '
-                    f'than {MAX_LABEL_SIZE} characters, '
-                    f'so it will be reduced '
-                    f'to {MAX_LABEL_SIZE} characters'
+                self.logger.warning(
+                    'The length of label "%s" '
+                    'and element_name "%s" is greater '
+                    'than %d characters, '
+                    'so it will be reduced '
+                    'to %d characters',
+                    value,
+                    self.element_name,
+                    MAX_LABEL_SIZE,
+                    MAX_LABEL_SIZE,
                 )
 
                 self.ds_object_meta.obj_label = obj_key[:MAX_LABEL_SIZE]

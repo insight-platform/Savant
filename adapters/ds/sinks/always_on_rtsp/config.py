@@ -3,14 +3,12 @@ from distutils.util import strtobool
 from pathlib import Path
 from typing import Optional
 
-import pyds
 from savant_rs.pipeline2 import (
     VideoPipeline,
     VideoPipelineConfiguration,
     VideoPipelineStagePayloadType,
 )
 
-from savant.utils.platform import is_aarch64
 from savant.utils.zeromq import ReceiverSocketTypes
 
 
@@ -68,6 +66,17 @@ class Config:
 
         self.framerate = opt_config('FRAMERATE', '30/1')
         self.sync = opt_config('SYNC_OUTPUT', False, strtobool)
+        self.max_allowed_resolution = opt_config(
+            'MAX_RESOLUTION',
+            (3840, 2152),
+            lambda x: tuple(map(int, x.split('x'))),
+        )
+
+        assert len(self.max_allowed_resolution) == 2, (
+            'Incorrect value for environment variable MAX_RESOLUTION, '
+            'you should specify the width and height of the maximum resolution '
+            'in format WIDTHxHEIGHT, for example 1920x1080.'
+        )
 
     def fps_meter_properties(self, measurer_name: str):
         props = {'output': self.fps_output, 'measurer-name': measurer_name}
@@ -75,11 +84,4 @@ class Config:
             props['period-seconds'] = self.fps_period_seconds
         else:
             props['period-frames'] = self.fps_period_frames
-        return props
-
-    @property
-    def nvvideoconvert_properties(self):
-        props = {}
-        if not is_aarch64():
-            props['nvbuf-memory-type'] = int(pyds.NVBUF_MEM_CUDA_UNIFIED)
         return props

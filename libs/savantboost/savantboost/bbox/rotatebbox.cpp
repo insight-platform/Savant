@@ -63,9 +63,6 @@ savantboost::Image* RotateBBox::CutFromFrame(Npp8u* frame, NppiSize frame_size, 
             .width = image_width,
             .height = image_height};
 
-
-    const unsigned int pencil_image_bytes = ex_rect_pencil_bbox.width * ex_rect_pencil_bbox.height * sizeof(char) * 4;
-
     float shift_x = -rotated_ex_rect_bbox[0][0] -
                     (rotated_ex_rect_bbox[1][0] - rotated_ex_rect_bbox[0][0]) / 2 + _width / 2 + padding_width;
     float shift_y = -rotated_ex_rect_bbox[0][1] -

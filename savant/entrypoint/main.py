@@ -76,7 +76,7 @@ def main(config_file_path: str, *args):
     )
 
     try:
-        with NvDsPipelineRunner(pipeline, status_filepath):
+        with NvDsPipelineRunner(pipeline, status_filepath) as runner:
             try:
                 for msg in pipeline.stream():
                     sink(msg, **dict(module_name=config.name))
@@ -90,3 +90,7 @@ def main(config_file_path: str, *args):
                 os._exit(1)  # pylint: disable=protected-access
     except Exception as exc:  # pylint: disable=broad-except
         logger.error(exc, exc_info=True)
+        exit(1)
+
+    if runner.error is not None:
+        exit(1)

@@ -1,8 +1,30 @@
 from typing import Dict, List, Set
 
+from savant_rs.utils import eval_expr
+
 from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.deepstream.pyfunc import NvDsPyFuncPlugin
 from savant.gstreamer import Gst
+
+
+class ConditionalSkipProcessing(NvDsPyFuncPlugin):
+    @staticmethod
+    def source_should_be_processed(source_id: str) -> bool:
+        """Checks if the source should be processed."""
+        val = eval_expr(f'etcd("sources/{source_id}", "true")')[0]
+        return val.lower() in ('y', 'yes', 't', 'true', 'on', '1')
+
+    def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
+        primary_meta_object = None
+        for obj_meta in frame_meta.objects:
+            if obj_meta.is_primary:
+                primary_meta_object = obj_meta
+                break
+
+        if primary_meta_object is not None and not self.source_should_be_processed(
+            frame_meta.source_id
+        ):
+            frame_meta.remove_obj_meta(primary_meta_object)
 
 
 class ConditionalVideoProcessing(NvDsPyFuncPlugin):

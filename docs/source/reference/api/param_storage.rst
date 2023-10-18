@@ -15,5 +15,4 @@ Parameter storage
     :nosignatures:
     :template: autosummary/class.rst
 
-    ParameterStorage
-    EtcdStorage
+    EtcdStorageConfig

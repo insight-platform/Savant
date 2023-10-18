@@ -145,12 +145,23 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
             offset_sign = 1
 
         for format_str in lines_sequence:
-            text = format_str.format(
-                model=obj_meta.element_name,
-                label=obj_meta.draw_label,
-                confidence=obj_meta.confidence,
-                track_id=obj_meta.track_id,
-            )
+            try:
+                text = format_str.format(
+                    model=obj_meta.element_name,
+                    label=obj_meta.draw_label,
+                    confidence=obj_meta.confidence,
+                    track_id=obj_meta.track_id,
+                )
+            except (ValueError, KeyError, IndexError) as exc:
+                self.logger.warning(
+                    'Got %s while processing format string "%s". '
+                    'Using the string as is.',
+                    type(exc).__name__,
+                    format_str,
+                    exc_info=exc,
+                )
+                text = format_str
+
             text_box_height = artist.add_text(
                 text,
                 (anchor_x, anchor_y),

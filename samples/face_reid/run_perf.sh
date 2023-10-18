@@ -25,3 +25,6 @@ if [ "$MULTISTREAM" -gt 0 ]; then
 fi
 
 ./scripts/run_module.py -i face_reid-module $MODULE_CONFIG "${MODULE_ARGS[@]}"
+# TODO:
+#  -v `pwd`/samples/face_reid/src:/opt/savant/samples/face_reid \
+#  -v `pwd`/samples/face_reid/index_files:/index \
