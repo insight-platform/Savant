@@ -7,8 +7,8 @@ from ffmpeg_input import FFmpegLogLevel, FFMpegSource, VideoFrameEnvelope
 from savant.gstreamer import GObject, Gst, GstBase
 from savant.gstreamer.codecs import Codec
 from savant.gstreamer.utils import (
-    propagate_gst_error,
-    propagate_gst_setting_error,
+    gst_post_library_settings_error,
+    gst_post_stream_demux_error,
     required_property,
 )
 from savant.utils.logging import LoggerMixin
@@ -172,7 +172,7 @@ class FFmpegSrc(LoggerMixin, GstBase.BaseSrc):
         except Exception as exc:
             self.logger.exception('Failed to start element: %s.', exc, exc_info=True)
             frame = inspect.currentframe()
-            propagate_gst_setting_error(self, frame, __file__, text=exc.args[0])
+            gst_post_library_settings_error(self, frame, __file__, text=exc.args[0])
             return False
 
         return True
@@ -240,12 +240,10 @@ class FFmpegSrc(LoggerMixin, GstBase.BaseSrc):
             error = f'Unsupported codec {frame_params.codec_name!r}.'
             self.logger.error(error)
             frame = inspect.currentframe()
-            propagate_gst_error(
+            gst_post_stream_demux_error(
                 gst_element=self,
                 frame=frame,
                 file_path=__file__,
-                domain=Gst.StreamError.quark(),
-                code=Gst.StreamError.DEMUX,
                 text=error,
                 debug=f'Supported codecs: {sorted(CONVERT_CODEC.keys())}.',
             )

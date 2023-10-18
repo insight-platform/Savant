@@ -3,6 +3,7 @@
 Can be used for metadata conversion, inference post-processing, and
 other tasks.
 """
+import inspect
 import json
 from typing import Any, Optional
 
@@ -10,6 +11,10 @@ from savant_rs.pipeline2 import VideoPipeline
 
 from savant.base.pyfunc import BasePyFuncPlugin, PyFunc, PyFuncNoopCallException
 from savant.gstreamer import GLib, GObject, Gst, GstBase  # noqa: F401
+from savant.gstreamer.utils import (
+    gst_post_stream_failed_error,
+    gst_post_stream_failed_warning,
+)
 from savant.utils.logging import LoggerMixin
 
 # RGBA format is required to access the frame (pyds.get_nvds_buf_surface)
@@ -145,56 +150,114 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
 
     def do_start(self):
         """Do on plugin start."""
-        self.pyfunc = PyFunc(
-            module=self.module,
-            class_name=self.class_name,
-            kwargs=json.loads(self.kwargs) if self.kwargs else None,
-            dev_mode=self.dev_mode,
-        )
+        # pylint: disable=broad-exception-caught
+        if self.kwargs:
+            try:
+                kwargs = json.loads(self.kwargs)
+            except Exception as exc:
+                return self.handle_fatal_error(
+                    exc,
+                    f'Failed to parse kwargs for "{self.module}.{self.class_name}" pyfunc.',
+                    True,
+                    False,
+                )
+        else:
+            kwargs = None
 
-        self.pyfunc.load_user_code()
+        try:
+            self.pyfunc = PyFunc(
+                module=self.module,
+                class_name=self.class_name,
+                kwargs=kwargs,
+                dev_mode=self.dev_mode,
+            )
+        except Exception as exc:
+            return self.handle_fatal_error(
+                exc,
+                f'Failed to initialize "{self.module}.{self.class_name}" pyfunc.',
+                True,
+                False,
+            )
 
-        assert isinstance(
-            self.pyfunc.instance, BasePyFuncPlugin
-        ), f'"{self.pyfunc}" should be an instance of "BasePyFuncPlugin" subclass.'
-        self.pyfunc.instance.gst_element = self
+        try:
+            self.pyfunc.load_user_code()
+            assert isinstance(
+                self.pyfunc.instance, BasePyFuncPlugin
+            ), f'"{self.pyfunc}" should be an instance of "BasePyFuncPlugin" subclass.'
+            self.pyfunc.instance.gst_element = self
+        except Exception as exc:
+            return self.handle_fatal_error(
+                exc, f'Failed to load user code for {self.pyfunc}.', True, False
+            )
 
         try:
             return self.pyfunc.instance.on_start()
         except Exception as exc:
-            return self.handle_error(exc, 'Error in pyfunc do_start()', True, False)
+            return self.handle_fatal_error(
+                exc, f'Error in on_start() call for {self.pyfunc}', True, False
+            )
 
     def do_stop(self):
         """Do on plugin stop."""
+        # pylint: disable=broad-exception-caught
         try:
             return self.pyfunc.instance.on_stop()
         except Exception as exc:
-            return self.handle_error(exc, 'Error in pyfunc do_stop()', True, False)
+            return self.handle_fatal_error(
+                exc, f'Error in do_stop() call for {self.pyfunc}', True, False
+            )
 
     def do_sink_event(self, event: Gst.Event) -> bool:
         """Do on sink event."""
+        # pylint: disable=broad-exception-caught
         try:
             self.pyfunc.instance.on_event(event)
         except Exception as exc:
-            self.handle_error(exc, 'Error in pyfunc do_sink_event()', True, False)
+            self.handle_non_fatal_error(
+                exc, f'Error in do_sink_event() call for {self.pyfunc}.'
+            )
         return self.srcpad.push_event(event)
 
     def do_transform_ip(self, buffer: Gst.Buffer):
         """Transform buffer in-place function."""
+        # pylint: disable=broad-exception-caught
         try:
             self.pyfunc.instance.process_buffer(buffer)
         except Exception as exc:
-            return self.handle_error(exc, 'Failed to process buffer/frame.')
+            return self.handle_fatal_error(
+                exc, f'Error in process_buffer() call for {self.pyfunc}.'
+            )
 
         return Gst.FlowReturn.OK
 
-    def handle_error(
+    def handle_non_fatal_error(self, exc, msg):
+        if self.dev_mode:
+            if not isinstance(exc, PyFuncNoopCallException):
+                self.logger.warning(msg)
+            return
+
+        gst_post_stream_failed_warning(
+            gst_element=self,
+            frame=inspect.currentframe(),
+            file_path=__file__,
+            text=msg,
+        )
+        self.logger.warning(msg, exc_info=exc)
+
+    def handle_fatal_error(
         self, exc, msg, return_ok=Gst.FlowReturn.OK, return_err=Gst.FlowReturn.ERROR
     ):
         if self.dev_mode:
             if not isinstance(exc, PyFuncNoopCallException):
                 self.logger.exception(msg)
             return return_ok
+
+        gst_post_stream_failed_error(
+            gst_element=self,
+            frame=inspect.currentframe(),
+            file_path=__file__,
+            text=msg,
+        )
         self.logger.exception(msg)
         return return_err
 

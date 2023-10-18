@@ -22,7 +22,10 @@ from savant.api.enums import ExternalFrameType
 from savant.api.parser import convert_ts
 from savant.gstreamer import GObject, Gst
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
-from savant.gstreamer.utils import load_message_from_gst_buffer, propagate_gst_error
+from savant.gstreamer.utils import (
+    gst_post_stream_demux_error,
+    load_message_from_gst_buffer,
+)
 from savant.utils.logging import LoggerMixin
 
 DEFAULT_SOURCE_TIMEOUT = 60
@@ -83,6 +86,24 @@ SAVANT_RS_VIDEO_DEMUX_PROPERTIES = {
         'Authentication key for Shutdown message.',
         'Authentication key for Shutdown message.',
         None,
+        GObject.ParamFlags.READWRITE,
+    ),
+    'max-width': (
+        int,
+        'Maximum allowable resolution width of the video stream',
+        'Maximum allowable resolution width of the video stream',
+        0,
+        GObject.G_MAXINT,
+        0,
+        GObject.ParamFlags.READWRITE,
+    ),
+    'max-height': (
+        int,
+        'Maximum allowable resolution height of the video stream',
+        'Maximum allowable resolution height of the video stream',
+        0,
+        GObject.G_MAXINT,
+        0,
         GObject.ParamFlags.READWRITE,
     ),
     'pass-through-mode': (
@@ -173,6 +194,8 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
         self.video_pipeline: Optional[VideoPipeline] = None
         self.pipeline_stage_name: Optional[str] = None
         self.shutdown_auth: Optional[str] = None
+        self.max_width: int = 0
+        self.max_height: int = 0
         self.pass_through_mode = False
 
         self._frame_idx_gen = itertools.count()
@@ -215,6 +238,10 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             return self.pipeline_stage_name
         if prop.name == 'shutdown-auth':
             return self.shutdown_auth
+        if prop.name == 'max-width':
+            return self.max_width
+        if prop.name == 'max-height':
+            return self.max_height
         if prop.name == 'pass-through-mode':
             return self.pass_through_mode
         raise AttributeError(f'Unknown property {prop.name}')
@@ -235,6 +262,10 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             self.pipeline_stage_name = value
         elif prop.name == 'shutdown-auth':
             self.shutdown_auth = value
+        elif prop.name == 'max-width':
+            self.max_width = value
+        elif prop.name == 'max-height':
+            self.max_height = value
         elif prop.name == 'pass-through-mode':
             self.pass_through_mode = value
         else:
@@ -321,15 +352,15 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
                     )
                     self.logger.error(error)
                     frame = inspect.currentframe()
-                    propagate_gst_error(
+                    gst_post_stream_demux_error(
                         gst_element=self,
                         frame=frame,
                         file_path=__file__,
-                        domain=Gst.StreamError.quark(),
-                        code=Gst.StreamError.DEMUX,
                         text=error,
                     )
                     return Gst.FlowReturn.ERROR
+                if self.is_greater_than_max_resolution(frame_params):
+                    return Gst.FlowReturn.OK
                 if not video_frame.keyframe:
                     self.logger.warning(
                         'Frame %s from source %s is not a keyframe, skipping it. '
@@ -342,6 +373,8 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
                 self.sources[video_frame.source_id] = source_info
             source_info.timestamp = time.time()
         if source_info.src_pad is not None and source_info.params != frame_params:
+            if self.is_greater_than_max_resolution(frame_params):
+                self.send_eos(source_info)
             self.update_frame_params(source_info, frame_params)
         if source_info.src_pad is not None:
             self.check_timestamps(source_info, frame_pts, frame_dts)
@@ -507,6 +540,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
 
     def add_source(self, source_id: str, source_info: SourceInfo):
         """Handle adding new source."""
+
         caps = build_caps(source_info.params)
         source_info.src_pad = Gst.Pad.new_from_template(
             Gst.PadTemplate.new(
@@ -541,6 +575,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
 
     def update_frame_params(self, source_info: SourceInfo, frame_params: FrameParams):
         """Handle changed frame parameters on a source."""
+
         if source_info.params != frame_params:
             self.logger.info(
                 'Frame parameters on pad %s was changed from %s to %s',
@@ -593,6 +628,28 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
                 source_info.source_id,
             )
             self.send_eos(source_info)
+
+    def is_greater_than_max_resolution(self, video_frame: FrameParams) -> bool:
+        """Check if the resolution of the incoming stream is greater than the
+        max allowed resolution. Return True if the resolution is greater than
+        the max allowed resolution, otherwise False.
+        """
+        if self.max_width and self.max_height:
+            if (
+                int(video_frame.width) > self.max_width
+                or int(video_frame.height) > self.max_height
+            ):
+                self.logger.warning(
+                    f"The resolution of the incoming stream is "
+                    f"{video_frame.width}x{video_frame.height} and "
+                    f"treater than the allowed max "
+                    f"{self.max_width}x"
+                    f"{self.max_height}"
+                    f" resolutions. Terminate. You can override the max allowed "
+                    f"resolution with 'MAX_RESOLUTION' environment variable."
+                )
+            return True
+        return False
 
     def send_eos(self, source_info: SourceInfo):
         """Send EOS event to a src pad."""
