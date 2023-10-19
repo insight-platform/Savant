@@ -9,7 +9,7 @@ Savant is built on DeepStream and provides a high-level abstraction layer for bu
 
 ![GitHub release (with filter)](https://img.shields.io/github/v/release/insight-platform/Savant)
 [![Build status](https://github.com/insight-platform/Savant/actions/workflows/main.yml/badge.svg?branch=develop)](https://github.com/insight-platform/Savant/actions/workflows/main.yml)
-[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/SavantFramework.svg?style=social&label=Follow%20%40SavantFramework)](https://twitter.com/SavantFramework) [![Blog](https://img.shields.io/badge/Inside%20InSight%20Blog-444444?logo=medium)](https://blog.savant-ai.io/) [![Discord](https://img.shields.io/badge/Discord-8A2BE2)](https://discord.gg/KVAfGBsZGd)
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/SavantFramework.svg?style=social&label=Follow%20%40SavantFramework)](https://twitter.com/SavantFramework) [![Blog](https://img.shields.io/badge/Inside%20InSight%20Blog-444444?logo=medium)](https://b.savant-ai.io/) [![Discord](https://img.shields.io/badge/Discord-8A2BE2)](https://discord.gg/KVAfGBsZGd)
 
 Savant is a member of the Nvidia Inception Program:
 
@@ -21,8 +21,8 @@ The best way to approach us is [Discord](https://discord.gg/KVAfGBsZGd). We are 
 
 ## Quick Links
 
-- [Blog](https://blog.savant-ai.io/)
-- [Getting Started Tutorial](https://blog.savant-ai.io/meet-savant-a-new-high-performance-python-video-analytics-framework-for-nvidia-hardware-22cc830ead4d?source=friends_link&sk=c7169b378b31451ab8de3d882c22a774)
+- [Blog](https://b.savant-ai.io/)
+- [Getting Started Tutorial](https://docs.savant-ai.io/v0.2.5/getting_started/2_module_devguide.html)
 - [Pipeline Samples](https://github.com/insight-platform/Savant/tree/develop/samples)
 - [Documentation](https://docs.savant-ai.io/)
 - [Performance Regression Tracking Dashboard](docs/performance.md)
@@ -194,7 +194,7 @@ Savant supports processing parallelization; it helps to utilize the available re
 
 ## What's Next
 
-- [Getting Started Tutorial](https://blog.savant-ai.io/meet-savant-a-new-high-performance-python-video-analytics-framework-for-nvidia-hardware-22cc830ead4d?source=friends_link&sk=c7169b378b31451ab8de3d882c22a774)
+- [Getting Started Tutorial](https://docs.savant-ai.io/v0.2.5/getting_started/2_module_devguide.html)
 - [Publications and Samples](https://github.com/insight-platform/Savant/tree/develop/samples)
 - [Documentation](https://docs.savant-ai.io/)
 

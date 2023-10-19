@@ -359,10 +359,10 @@ class RoutingIdFilter:
 
         if topic not in self.routing_ids:
             self.routing_ids[topic] = routing_id
-            self.routing_ids_cache[routing_id] = None
+            self.routing_ids_cache[(topic, routing_id)] = None
 
         elif self.routing_ids[topic] != routing_id:
-            if routing_id in self.routing_ids_cache:
+            if (topic, routing_id) in self.routing_ids_cache:
                 logger.debug(
                     'Skipping message from topic %s: routing ID %s, expected %s.',
                     topic,
@@ -379,7 +379,7 @@ class RoutingIdFilter:
                     routing_id,
                 )
                 self.routing_ids[topic] = routing_id
-                self.routing_ids_cache[routing_id] = None
+                self.routing_ids_cache[(topic, routing_id)] = None
 
         return True
 
