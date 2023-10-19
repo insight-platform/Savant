@@ -157,35 +157,24 @@ def setup_batch_size(config: Module) -> None:
                             return element
         return None
 
-    first_model_element = find_first_model_element(config.pipeline)
-    if first_model_element is not None:
-        first_model_batch_size = first_model_element.model.batch_size
-        logger.debug(
-            'Found first ModelElement "%s" of the pipeline with the batch size of %s.',
-            first_model_element.name,
-            first_model_batch_size,
-        )
-    else:
-        first_model_batch_size = None
-        logger.debug('No ModelElements found in the pipeline.')
+    batch_size = config.parameters.get('batch_size')
+    logger.debug('Pipeline batch size parameter is %s.', batch_size)
 
-    parameter_batch_size = config.parameters.get('batch_size')
-    logger.debug('Pipeline batch size parameter is %s.', parameter_batch_size)
-
-    if first_model_batch_size is not None:
-        if (
-            parameter_batch_size is not None
-            and parameter_batch_size != first_model_batch_size
-        ):
-            raise ModuleConfigException(
-                'Module parameter "batch_size" is set explicitly '
-                'and does not match first pipeline model "batch_size".'
+    if batch_size is None:
+        first_model_element = find_first_model_element(config.pipeline)
+        if first_model_element is not None:
+            batch_size = first_model_element.model.batch_size
+            logger.debug(
+                'Found first ModelElement "%s" of the pipeline with '
+                'the batch size of %s.',
+                first_model_element.name,
+                batch_size,
             )
-        batch_size = first_model_batch_size
-    elif parameter_batch_size is None:
+        else:
+            logger.debug('No ModelElements found in the pipeline.')
+
+    if batch_size is None:
         raise ModuleConfigException('Parameter "batch_size" is required.')
-    else:
-        batch_size = parameter_batch_size
 
     if not (0 < batch_size <= 1024):
         raise ModuleConfigException(
@@ -401,20 +390,15 @@ class ModuleConfig(metaclass=SingletonMeta):
         logger.debug('Loaded default config\n%s', OmegaConf.to_yaml(self._default_cfg))
         self._config = None
 
-    def load(self, config_file_path: Union[str, Path], *args) -> Module:
+    def load(self, config_file_path: Union[str, Path]) -> Module:
         """Loads and prepares module configuration.
 
         :param config_file_path: Module config file path
-        :param args: Config overrides in dot-list format
         :return: Module configuration, structured
         """
-        cfgs = [OmegaConf.load(config_file_path)]
+        module_cfg = OmegaConf.load(config_file_path)
         logger.info('Configure module...')
-
-        if args:
-            cfgs.append(OmegaConf.from_dotlist(args))
-
-        module_cfg = merge_configs(cfgs, self._default_cfg)
+        module_cfg = merge_configs([module_cfg], self._default_cfg)
 
         module_cfg = OmegaConf.unsafe_merge(OmegaConf.structured(Module), module_cfg)
 
