@@ -27,6 +27,7 @@ parameters:
 
   batch_size: 1
   detector: ${oc.env:DETECTOR}
+  send_stats: True
 
 pipeline:
 
@@ -144,4 +145,4 @@ pipeline:
         config_path: ${oc.env:PROJECT_PATH}/samples/traffic_meter/line_config.yml
         stale_track_del_period: 5000
         target_obj_label: ${parameters.detected_object.label}
-        send_stats: True
+        send_stats: ${parameters.send_stats}
