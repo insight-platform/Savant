@@ -1,5 +1,5 @@
 # module name, required
-name: ${oc.env:MODULE_NAME, 'demo'}
+name: conditional_video_processing
 
 # base module parameters
 parameters:
@@ -23,6 +23,7 @@ parameters:
     hosts: [etcd:2379]
     # Path in Etcd to watch changes
     watch_path: savant
+  batch_size: 1
 
 # pipeline definition
 pipeline:
@@ -57,6 +58,7 @@ pipeline:
 
         # model file name, without location
         model_file: resnet34_peoplenet_pruned.etlt  # v2.0 Accuracy: 84.3 Size 20.9 MB
+        batch_size: ${parameters.batch_size}
 
         # configuration of input data and custom preprocessing methods
         input:

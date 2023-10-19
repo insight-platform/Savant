@@ -1,21 +1,19 @@
 #!/bin/bash
 # you are expected to be in Savant/ directory
+# Usage: run_perf.sh [MULTISTREAM] [YQ_ARGS]...
+# The MULTISTREAM argument is an integer, 0 means using uridecodebin source,
+# >0 means using the the multistream source adapter with specified number of streams.
+# The YQ_ARGS are module configuration updates in yq notation,
+# e.g. ".parameters.batch_size=4".
 
-MULTISTREAM=${1:-0}
-MODULE_ARGS=("$@")
-unset "MODULE_ARGS[0]"
-
-MODULE_CONFIG=samples/opencv_cuda_bg_remover_mog2/demo_performance.yml
+MODULE_CONFIG=samples/opencv_cuda_bg_remover_mog2/demo.yml
 DATA_LOCATION=data/road_traffic.mp4
+PERF_CONFIG="${MODULE_CONFIG%.*}_perf.yml"
 
-if [ "$MULTISTREAM" -gt 0 ]; then
-  MODULE_ARGS+=("pipeline.source=null" "parameters.shutdown_auth=shutdown")
-  SOURCE_ADAPTER=$(./scripts/run_source.py multi-stream --detach \
-    --number-of-streams="$MULTISTREAM" \
-    --shutdown-auth=shutdown \
-    $DATA_LOCATION)
-  trap "docker kill $SOURCE_ADAPTER >/dev/null 2>/dev/null" EXIT
-  sleep 5
-fi
+source samples/assets/run_perf_helper.sh
 
-./scripts/run_module.py $MODULE_CONFIG "${MODULE_ARGS[@]}"
+set_source $DATA_LOCATION
+
+config_perf $MODULE_CONFIG $PERF_CONFIG "${YQ_ARGS[@]}"
+
+./scripts/run_module.py $PERF_CONFIG

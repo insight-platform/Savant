@@ -12,6 +12,8 @@ parameters:
     kwargs:
       config_path: ${oc.env:PROJECT_PATH}/samples/intersection_traffic_meter/polygon_config.yml
   detected_object_label: transport
+  send_stats: True
+  batch_size: 1
 
 pipeline:
 
@@ -95,4 +97,4 @@ pipeline:
         config_path: ${oc.env:PROJECT_PATH}/samples/intersection_traffic_meter/polygon_config.yml
         stale_track_del_period: 5000
         target_obj_label: ${parameters.detected_object_label}
-        send_stats: True
+        send_stats: ${parameters.send_stats}

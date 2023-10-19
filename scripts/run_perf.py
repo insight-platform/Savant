@@ -114,8 +114,8 @@ def main():
             [
                 perf_script,
                 '0',
-                'parameters.batch_size=1',
-                'parameters.buffer_queues=null',
+                '.parameters.batch_size=1',
+                '.parameters.buffer_queues=null',
             ]
             for perf_script in perf_scripts
         ]
@@ -124,19 +124,19 @@ def main():
         source_batch_options = [
             # num_streams=1, batch_size=1,4
             # (nvstreammux doesn't collect batch size > 4 with one source)
-            ('0', 'parameters.batch_size=1'),
-            ('0', 'parameters.batch_size=4'),
-            ('1', 'parameters.batch_size=1'),
-            ('1', 'parameters.batch_size=4'),
+            ('0', '.parameters.batch_size=1'),
+            ('0', '.parameters.batch_size=4'),
+            ('1', '.parameters.batch_size=1'),
+            ('1', '.parameters.batch_size=4'),
             # num_streams=4, batch_size=4,8
-            ('4', 'parameters.batch_size=4'),
-            ('4', 'parameters.batch_size=8'),
+            ('4', '.parameters.batch_size=4'),
+            ('4', '.parameters.batch_size=8'),
             # num_streams=8, batch_size=8
-            ('8', 'parameters.batch_size=8'),
+            ('8', '.parameters.batch_size=8'),
         ]
         queue_options = [
-            'parameters.buffer_queues=null',
-            'parameters.buffer_queues.length=10',
+            '.parameters.buffer_queues=null',
+            '.parameters.buffer_queues.length=10',
         ]
         run_options = [perf_scripts, source_batch_options, queue_options]
         run_options = [
@@ -148,10 +148,10 @@ def main():
     fps_period = 100
     run_args = [
         # increase time to collect batch
-        'parameters.batched_push_timeout=40000',
+        '.parameters.batched_push_timeout=40000',
         # short measurement period to drop the 1st and the last measurements (outliers)
         # TODO: Implement delayed start and early stop of fps measurements in pipeline
-        f'parameters.fps_period={fps_period}',
+        f'.parameters.fps_period={fps_period}',
     ]
 
     fps_pattern = re.compile(r'^.*Processed \d+ frames, (?P<fps>\d+\.\d+) FPS\.$')

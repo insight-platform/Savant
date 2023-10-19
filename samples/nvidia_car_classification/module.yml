@@ -1,4 +1,4 @@
-name: ${oc.env:MODULE_NAME, 'nvidia_car_classification'}
+name: nvidia_car_classification
 
 parameters:
   output_frame:
@@ -34,6 +34,8 @@ parameters:
             border_color: '0000FFFF'  # Blue
             thickness: 2
 
+  batch_size: 1
+
 pipeline:
   elements:
     # detector
@@ -47,7 +49,7 @@ pipeline:
           parameters:
             endpoint: https://eu-central-1.linodeobjects.com
         model_file: resnet10.caffemodel
-        batch_size: 1
+        batch_size: ${parameters.batch_size}
         precision: int8
         int8_calib_file: cal_trt.bin
         label_file: labels.txt

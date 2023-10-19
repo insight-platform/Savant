@@ -6,7 +6,10 @@ from savant.gstreamer import Gst  # noqa: F401
 
 
 class StatLogger(NvDsPyFuncPlugin):
-    """Helper to log stats for run_perf script."""
+    """Helper to log stats for run_perf script.
+    TODO: Add fps measurement 1) per source and 2) with "padding"
+        (to avoid the influence of slow start and delay in forming the last batch)
+    """
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -22,36 +25,41 @@ class StatLogger(NvDsPyFuncPlugin):
 
         # the last batch can differ (depends on video length)
         num_frames_in_batch = self.counters['num_frames_in_batch'][:-1]
-        avg = sum(num_frames_in_batch) / len(num_frames_in_batch)
-        log_msgs.append(
-            f'num_frames_in_batch: '
-            f'min={min(num_frames_in_batch)}, '
-            f'max={max(num_frames_in_batch)}, '
-            f'avg={avg:.2f}'
-        )
+        if num_frames_in_batch:
+            avg = sum(num_frames_in_batch) / len(num_frames_in_batch)
+            log_msgs.append(
+                f'num_frames_in_batch: '
+                f'min={min(num_frames_in_batch)}, '
+                f'max={max(num_frames_in_batch)}, '
+                f'avg={avg:.2f}'
+            )
 
         num_frames = self.counters['num_frames_per_source']
-        for source_id in sorted(num_frames):
-            log_msgs.append(f'num_frames[{source_id}]: {num_frames[source_id]}')
-        avg = sum(num_frames.values()) / len(num_frames)
-        log_msgs.append(
-            f'num_frames_per_source: '
-            f'min={min(num_frames.values())}, '
-            f'max={max(num_frames.values())}, '
-            f'avg={avg:.2f}'
-        )
+        if num_frames:
+            for source_id in sorted(num_frames):
+                log_msgs.append(f'num_frames[{source_id}]: {num_frames[source_id]}')
+            avg = sum(num_frames.values()) / len(num_frames)
+            log_msgs.append(
+                f'num_frames_per_source: '
+                f'min={min(num_frames.values())}, '
+                f'max={max(num_frames.values())}, '
+                f'avg={avg:.2f}'
+            )
 
         num_objects = self.counters['num_objects_per_source']
-        for source_id in sorted(num_objects):
-            log_msgs.append(f'num_objects[{source_id}]: {num_objects[source_id]}')
-        avg = sum(num_objects.values()) / len(num_objects)
-        log_msgs.append(
-            f'num_objects_per_source: '
-            f'min={min(num_objects.values())}, '
-            f'max={max(num_objects.values())}, '
-            f'avg={avg:.2f}'
-        )
+        if num_objects:
+            for source_id in sorted(num_objects):
+                log_msgs.append(f'num_objects[{source_id}]: {num_objects[source_id]}')
+            avg = sum(num_objects.values()) / len(num_objects)
+            log_msgs.append(
+                f'num_objects_per_source: '
+                f'min={min(num_objects.values())}, '
+                f'max={max(num_objects.values())}, '
+                f'avg={avg:.2f}'
+            )
 
+        if not log_msgs:
+            log_msgs.append('something went wrong..')
         self.logger.info('Stats\n' + '\n'.join(log_msgs))
 
         return super().on_stop()
