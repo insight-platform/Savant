@@ -1,4 +1,3 @@
-
 PyCharm Professional
 ====================
 

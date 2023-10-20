@@ -30,6 +30,36 @@ Project Preparation
 
 #. Run the IDE and open the ``my-module`` folder.
 
+#. Update the ``devcontainer.json`` file according to the folder name and your platform (``.devcontainer/l4t/devcontainer.json`` for Jetson, ``.devcontainer/x86/devcontainer.json`` for x86):
+
+   * Update ``--network`` value in ``runArgs``
+
+      .. code-block:: json
+
+        "runArgs": [ "--gpus=all", "--network=my-module_network" ],
+
+
+   * Update zmq sockets volume source in ``mounts``
+
+      .. code-block:: json
+
+        {
+            "source": "my-module_zmq_sockets",
+            "target": "/tmp/zmq-sockets",
+            "type": "volume"
+        },
+
+Deploy Jaeger service
+---------------------
+
+Sample module and client are configured to send traces to Jaeger service by default. Run the following command to deploy Jaeger service:
+
+.. code-block:: bash
+
+    docker compose -f docker-compose.x86.yml up jaeger -d
+
+Docker Compose takes care of creating the network and volume required for communication.
+
 Reopen in Container
 -------------------
 
@@ -45,7 +75,6 @@ Reopen in Container
 
     .. image:: ../_static/img/dev-env/14-select-devcontainer.png
 
-
 #. Wait until the container is built and the project is opened. The remote host in the Status Bar should indicate that you are working in the container:
 
     .. image:: ../_static/img/dev-env/15-remote-host-status-bar.png
@@ -53,6 +82,18 @@ Reopen in Container
 #. Launch the module by opening the ``run.py`` script and choosing **Terminal > Run Active File** or by clicking the ``Run and Debug`` icon in the Activity Bar.  At the end you will see pipeline's output with metadata:
 
     .. image:: ../_static/img/dev-env/16-run-python-file.png
+
+#. Open the ``client.py`` script and run it by selecting ``Run Python File in Dedicated Terminal``. You will see the client's output:
+
+    .. image:: ../_static/img/dev-env/17-run-client.png
+
+#. Check the results:
+
+   * Open ``output/result_img.jpeg`` in the IDE Explorer to see the result image.
+
+     .. image:: ../_static/img/dev-env/18-check-result-img.png
+
+   * Visit ``http://127.0.0.1:16686`` to access the Jaeger UI.
 
 That's it, the environment is set up. Now you are ready to develop your own pipeline. See the next section to find out how.
 
