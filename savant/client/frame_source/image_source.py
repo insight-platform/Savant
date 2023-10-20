@@ -1,6 +1,6 @@
 import os
 from os import PathLike
-from typing import BinaryIO, List, Optional, Tuple, Union
+from typing import Any, BinaryIO, List, Optional, Tuple, TypeVar, Union
 
 from savant_rs.primitives import (
     Attribute,
@@ -18,6 +18,7 @@ from savant.utils.logging import get_logger
 from .base import FrameSource
 
 SECOND_IN_NS = 10**9
+T = TypeVar('T', bound='ImageSource')
 
 logger = get_logger(__name__)
 
@@ -86,15 +87,15 @@ class ImageSource(FrameSource):
         """Frame duration."""
         return self._duration
 
-    def with_pts(self, pts: int) -> 'FrameSource':
+    def with_pts(self: T, pts: int) -> T:
         """Set frame presentation timestamp."""
         return self._update_param('pts', pts)
 
-    def with_framerate(self, framerate: Tuple[int, int]) -> 'FrameSource':
+    def with_framerate(self: T, framerate: Tuple[int, int]) -> T:
         """Set framerate."""
         return self._update_param('framerate', framerate)
 
-    def with_update(self, update: VideoFrameUpdate) -> 'ImageSource':
+    def with_update(self: T, update: VideoFrameUpdate) -> T:
         return self._update_param('updates', self._updates + [update])
 
     def build_frame(self) -> Tuple[VideoFrame, bytes]:
@@ -137,8 +138,8 @@ class ImageSource(FrameSource):
 
         return video_frame, content
 
-    def _update_param(self, name, value) -> 'ImageSource':
-        return ImageSource(
+    def _update_param(self: T, name: str, value: Any) -> T:
+        return self.__class__(
             **{
                 'source_id': self._source_id,
                 'file': self._file,
@@ -151,7 +152,7 @@ class ImageSource(FrameSource):
 
     def __repr__(self):
         return (
-            f'ImageSource('
+            f'{self.__class__.__name__}('
             f'source_id={self._source_id}, '
             f'file={self._file}, '
             f'pts={self._pts})'
