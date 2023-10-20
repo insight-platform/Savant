@@ -186,6 +186,8 @@ def main():
     logs_root = Path('logs')
     logs_root.mkdir(parents=True, exist_ok=True)
     log_file_name = f'{platform_info["nodename"]}-{dtm.strftime("%Y%m%d-%H%M%S")}'
+    if args.short:
+        log_file_name += '-short'
     log_file_path = logs_root / f'{log_file_name}.log'
     json_file_path = logs_root / f'{log_file_name}.json'
     with open(log_file_path, mode='w', encoding='utf-8') as log_file:
