@@ -135,6 +135,8 @@ pipeline:
                 kwargs:
                   # minimal detector confidence of the objects of this class to be included in output
                   confidence_threshold: 0.1
+                  min_width: 10
+                  min_height: 10
 
     # nvtracker element from Deepstream, provides tracking
     - element: nvtracker

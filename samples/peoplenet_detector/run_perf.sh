@@ -8,12 +8,6 @@
 
 MODULE_CONFIG=samples/peoplenet_detector/module.yml
 DATA_LOCATION=data/Free_City_Street_Footage.mp4
-PERF_CONFIG="${MODULE_CONFIG%.*}_perf.yml"
 
 source samples/assets/run_perf_helper.sh
-
-set_source $DATA_LOCATION
-
-config_perf $MODULE_CONFIG $PERF_CONFIG "${YQ_ARGS[@]}"
-
-./scripts/run_module.py $PERF_CONFIG
+run_perf $MODULE_CONFIG $DATA_LOCATION

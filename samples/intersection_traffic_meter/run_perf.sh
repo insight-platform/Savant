@@ -8,7 +8,6 @@
 
 MODULE_CONFIG=samples/intersection_traffic_meter/module.yml
 DATA_LOCATION=data/leeds_1080p.mp4
-PERF_CONFIG="${MODULE_CONFIG%.*}_perf.yml"
 
 if [ "$(uname -m)" = "aarch64" ]; then
   docker compose -f samples/intersection_traffic_meter/docker-compose.l4t.yml build module
@@ -17,9 +16,8 @@ else
 fi
 
 source samples/assets/run_perf_helper.sh
-
 set_source $DATA_LOCATION
+PERF_CONFIG="${MODULE_CONFIG%.*}_perf.yml"
 YQ_ARGS+=('.parameters.send_stats=False')
 config_perf $MODULE_CONFIG $PERF_CONFIG "${YQ_ARGS[@]}"
-
 ./scripts/run_module.py -i intersection_traffic_meter-module $PERF_CONFIG

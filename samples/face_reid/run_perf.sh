@@ -8,7 +8,6 @@
 
 MODULE_CONFIG=samples/face_reid/src/module.yml
 DATA_LOCATION=data/jumanji_cast.mp4
-PERF_CONFIG="${MODULE_CONFIG%.*}_perf.yml"
 
 if [ "$(uname -m)" = "aarch64" ]; then
   DOCKER_RUNTIME="--runtime=nvidia"
@@ -19,12 +18,11 @@ else
 fi
 
 source samples/assets/run_perf_helper.sh
-
 set_source $DATA_LOCATION
-
+PERF_CONFIG="${MODULE_CONFIG%.*}_perf.yml"
 config_perf $MODULE_CONFIG $PERF_CONFIG "${YQ_ARGS[@]}"
 
-docker run --rm -it $DOCKER_RUNTIME \
+docker run --rm $DOCKER_RUNTIME \
   -v `pwd`/samples/face_reid/src:/opt/savant/samples/face_reid \
   -v `pwd`/samples/face_reid/index_files:/index \
   -v `pwd`/data:/data:ro \

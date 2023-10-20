@@ -8,12 +8,6 @@
 
 MODULE_CONFIG=samples/nvidia_car_classification/module.yml
 DATA_LOCATION=data/deepstream_sample_720p.mp4
-PERF_CONFIG="${MODULE_CONFIG%.*}_perf.yml"
 
 source samples/assets/run_perf_helper.sh
-
-set_source $DATA_LOCATION
-
-config_perf $MODULE_CONFIG $PERF_CONFIG "${YQ_ARGS[@]}"
-
-./scripts/run_module.py $PERF_CONFIG
+run_perf $MODULE_CONFIG $DATA_LOCATION
