@@ -32,7 +32,9 @@ Let us observe basic operations you may encounter during the pipeline developmen
 Recommended Module Layout
 -------------------------
 
-Small and medium-size pipelines can have a flat layout with all the components placed in a single directory. You can find a number of such pipelines in `samples <https://github.com/insight-platform/Savant/tree/develop/samples>`_ directory.
+.. _samples: https://github.com/insight-platform/Savant/tree/develop/samples
+
+Small and medium-size pipelines can have a flat layout with all the components placed in a single directory. You can find a number of such pipelines in `samples`_ directory.
 
 You don't need to have a whole Savant repo to develop a module, only what is inside a module directory.
 
@@ -55,9 +57,9 @@ There are three Python files ``run.py``, ``overlay_custom.py``, ``overlay_draw_s
 
 The  file ``run.py`` is an auxiliary file used as a module entrypoint. Docker images are configure to use it. Also, you use it to run and stop the pipeline from IDE. For production deployments, you normally don't need it, but you can use it to implement custom code initialization if necessary.
 
-The file ``custom_pyfunc.py`` is a stub file for a `pyfunc` element which implements custom logic. You will find a lot of various pyfuncs in `samples <https://github.com/insight-platform/Savant/tree/develop/samples>`_.
+The file ``custom_pyfunc.py`` is a stub file for a `pyfunc` element which implements custom logic. You will find a lot of various pyfuncs in `samples`_.
 
-The file ``overlay_custom.py`` represents a custom `draw_func` element used to customize video drawing functionality of Savant. It is usually used when you need to add some non-standard fancy graphics in your frames. The `samples <https://github.com/insight-platform/Savant/tree/develop/samples>`_ demonstrate custom ``draw_func`` implementations as well. ``overlay_draw_spec.py`` on the other hand shows a simpler way to customize some drawing properties, e.g. change boxes colors or thickness, enable/disable labels or blur etc.
+The file ``overlay_custom.py`` represents a custom `draw_func` element used to customize video drawing functionality of Savant. It is usually used when you need to add some non-standard fancy graphics in your frames. The `samples`_ demonstrate custom ``draw_func`` implementations as well. ``overlay_draw_spec.py`` on the other hand shows a simpler way to customize some drawing properties, e.g. change boxes colors or thickness, enable/disable labels or blur etc.
 
 Rebuilding Docker Image
 -----------------------
