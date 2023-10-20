@@ -10,7 +10,6 @@ import cv2
 import hnswlib
 import numpy as np
 from savant_rs.primitives import Attribute, AttributeValue, VideoFrameUpdate
-from savant_rs.utils.serialization import clear_source_seq_id
 
 from samples.face_reid.utils import pack_person_id_img_n
 from savant.client import JpegSource, SinkBuilder, SourceBuilder
@@ -87,7 +86,6 @@ def main(args):
 
     # finish sending frames
     source.send_eos(args.source_id)
-    clear_source_seq_id(args.source_id)
 
     time.sleep(1)  # Wait for the module to process the frames
 

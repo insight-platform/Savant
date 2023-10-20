@@ -9,7 +9,11 @@ from savant_rs.pipeline2 import (
 )
 from savant_rs.primitives import EndOfStream, Shutdown, VideoFrame
 from savant_rs.utils import TelemetrySpan
-from savant_rs.utils.serialization import Message, save_message_to_bytes
+from savant_rs.utils.serialization import (
+    Message,
+    clear_source_seq_id,
+    save_message_to_bytes,
+)
 
 from savant.client.frame_source import FrameSource
 from savant.client.log_provider import LogProvider
@@ -180,7 +184,7 @@ class SourceRunner:
         self._send_zmq_message([zmq_topic, serialized_message])
         logger.debug('Sent EOS for source %s.', source_id)
         result.status = 'ok'
-
+        clear_source_seq_id(source_id)
         return result
 
     def send_shutdown(self, source_id: str, auth: str) -> SourceResult:
@@ -341,7 +345,7 @@ class AsyncSourceRunner(SourceRunner):
         await self._send_zmq_message([zmq_topic, serialized_message])
         logger.debug('Sent EOS for source %s.', source_id)
         result.status = 'ok'
-
+        clear_source_seq_id(source_id)
         return result
 
     async def send_shutdown(self, source_id: str, auth: str) -> SourceResult:
