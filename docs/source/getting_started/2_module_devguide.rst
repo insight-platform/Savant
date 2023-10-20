@@ -57,7 +57,7 @@ The  file ``run.py`` is an auxiliary file used as a module entrypoint. Docker im
 
 The file ``custom_pyfunc.py`` is a stub file for a `pyfunc` element which implements custom logic. You will find a lot of various pyfuncs in `samples <https://github.com/insight-platform/Savant/tree/develop/samples>`_.
 
-The files ``overlay_custom.py`` represents a custom `draw_func` element used to customize video drawing functionality of Savant. It is usually used when you need to add some non-standard fancy graphics in your frames. The samples demonstrate custom ``draw_func`` implementations as well. ``overlay_draw_spec.py`` on the other hand shows a simpler way to customize some drawing properties, e.g. change boxes colors or thickness, enable/disable labels or blur etc.
+The file ``overlay_custom.py`` represents a custom `draw_func` element used to customize video drawing functionality of Savant. It is usually used when you need to add some non-standard fancy graphics in your frames. The `samples <https://github.com/insight-platform/Savant/tree/develop/samples>`_ demonstrate custom ``draw_func`` implementations as well. ``overlay_draw_spec.py`` on the other hand shows a simpler way to customize some drawing properties, e.g. change boxes colors or thickness, enable/disable labels or blur etc.
 
 Rebuilding Docker Image
 -----------------------
