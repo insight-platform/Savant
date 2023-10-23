@@ -22,7 +22,6 @@ import json
 import re
 import subprocess
 import sys
-from collections import OrderedDict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Generator, Optional, Union
@@ -168,7 +167,7 @@ def main():
 
     dtm = datetime.now(timezone.utc)
 
-    data = OrderedDict(
+    data = dict(
         time=dtm.isoformat(),
         savant=version.SAVANT,
         deepstream=version.DEEPSTREAM,
@@ -250,7 +249,7 @@ def main():
             fps_list = [round(fps, 2) for fps in fps_list]
             print(f'fps: {fps:.2f}\nfps_avg: {fps_list}')
 
-            measurement = OrderedDict(
+            measurement = dict(
                 cmd=run_cmd,
                 fps_avg=fps_list,
                 fps=round(fps, 2),
