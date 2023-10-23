@@ -1,0 +1,69 @@
+name: ${oc.env:MODULE_NAME, 'key_point_detection'}
+
+parameters:
+  output_frame:
+    codec: h264
+    encoder_params:
+      bitrate: 8000000
+  frame:
+    width: ${oc.decode:${oc.env:FRAME_WIDTH, 1920}}
+    height: ${oc.decode:${oc.env:FRAME_HEIGHT, 1080}}
+  draw_func:
+    module: samples.key_point_detection.overlay
+    class_name: Overlay
+    rendered_objects:
+      yolov8npose:
+        person:
+          bbox:
+            border_color: '00FF00FF'  # Green
+            background_color: '00000000'  # transparent
+            thickness: 4
+  detected_object:
+    id: 0
+    label: person
+
+pipeline:
+  elements:
+    - element: nvinfer@key_point
+      name: yolov8npose
+      model:
+        local_path: /models/yolov8npose
+#        remote:
+#          url: s3://savant-data/models/yolov8n/yolov8n_000bcd6.zip
+#          checksum_url: s3://savant-data/models/yolov8n/yolov8n_000bcd6.md5
+#          parameters:
+#            endpoint: https://eu-central-1.linodeobjects.com
+        format: onnx
+        model_file: yolov8n-pose.onnx
+        config_file: config_infer_primary_yoloV8_pose.txt
+        # max GPU RAM used to build the engine, 6GB by default
+        # set lower than total GPU RAM available on your hardware
+        workspace_size: 6144
+        output:
+          objects:
+            - class_id: ${parameters.detected_object.id}
+              label: ${parameters.detected_object.label}
+
+#    - element: pyfunc
+#      module: samples.key_point_detection.keypoint
+#      class_name: KeyPoint
+
+
+#    - element: nvinfer@detector
+#      name: yolov8n
+#      model:
+#        remote:
+#          url: s3://savant-data/models/yolov8n/yolov8n_000bcd6.zip
+#          checksum_url: s3://savant-data/models/yolov8n/yolov8n_000bcd6.md5
+#          parameters:
+#            endpoint: https://eu-central-1.linodeobjects.com
+#        format: onnx
+#        model_file: yolov8n.onnx
+#        config_file: config_infer_primary_yoloV8.txt
+#        # max GPU RAM used to build the engine, 6GB by default
+#        # set lower than total GPU RAM available on your hardware
+#        workspace_size: 6144
+#        output:
+#          objects:
+#            - class_id: ${parameters.detected_object.id}
+#              label: ${parameters.detected_object.label}

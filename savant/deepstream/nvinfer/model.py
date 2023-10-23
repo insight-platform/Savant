@@ -14,6 +14,7 @@ from savant.base.model import (
     ObjectModel,
     ObjectModelOutput,
     ObjectModelOutputObject,
+    KeyPointModelOutput,
 )
 from savant.base.pyfunc import PyFunc
 from savant.utils.registry import Registry
@@ -219,6 +220,11 @@ class NvInferComplexModelOutput(ComplexModelOutput, NvInferObjectModelOutput):
     """ComplexModel output configuration template."""
 
 
+@dataclass
+class NvInferKeyPointModelOutput(KeyPointModelOutput, NvInferObjectModelOutput):
+    """ComplexModel output configuration template."""
+
+
 @NVINFER_MODEL_TYPE_REGISTRY.register('detector')
 @dataclass
 class NvInferDetector(NvInferModel, ObjectModel):
@@ -340,3 +346,15 @@ class NvInferInstanceSegmentation(NvInferComplexModel):
     """Name of the custom instance segmentation parsing function.
     It is mandatory for instance segmentation network
     as there is no internal function."""
+
+
+@NVINFER_MODEL_TYPE_REGISTRY.register('key_point')
+@dataclass
+class NvInferKeyPoint(NvInferModel, ObjectModel):
+    """Instance segmentation model configuration template."""
+
+    parse_bbox_instance_mask_func_name: Optional[str] = None
+    """Name of the custom instance segmentation parsing function.
+    It is mandatory for instance segmentation network
+    as there is no internal function."""
+    output: NvInferKeyPointModelOutput = NvInferKeyPointModelOutput()

@@ -342,6 +342,17 @@ class ComplexModelOutput(ObjectModelOutput, AttributeModelOutput):
 
 
 @dataclass
+class KeyPointModelOutput(ObjectModelOutput):
+    """ComplexModel output configuration template.
+
+    Validates entries in a module config file under ``model.output``.
+
+    Look for examples in :py:class:`.ObjectModelOutput` and
+    :py:class:`.AttributeModelOutput`.
+    """
+
+
+@dataclass
 class Model:
     """Base model configuration template.
 
