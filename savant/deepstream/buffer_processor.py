@@ -515,7 +515,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                     )
                     video_frame.content = VideoFrameContent.none()
                 else:
-                    self.logger.warning(
+                    self.logger.debug(
                         'Pass-through mode is enabled. '
                         'Sending frame with IDX %s to sink without any changes. No content.',
                         output_frame.idx,
