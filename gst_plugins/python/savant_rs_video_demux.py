@@ -5,7 +5,7 @@ import time
 from dataclasses import dataclass
 from fractions import Fraction
 from threading import Lock, Thread
-from typing import Dict, NamedTuple, Optional, Union
+from typing import Dict, NamedTuple, Optional
 
 from savant_rs.pipeline2 import VideoPipeline
 from savant_rs.primitives import (
@@ -392,31 +392,50 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
                 )
                 return Gst.FlowReturn.OK
 
-        frame_buf = self._build_frame_buffer(video_frame, buffer)
-        if isinstance(frame_buf, Gst.Buffer):
-            frame_idx = self._add_frame_to_pipeline(video_frame, span_context)
-            if self.pass_through_mode:
-                if not video_frame.content.is_internal():
-                    content = frame_buf.extract_dup(0, frame_buf.get_size())
-                    self.logger.debug(
-                        'Storing content of frame with IDX %s as an internal VideoFrameContent (%s) bytes.',
-                        frame_idx,
-                        len(content),
-                    )
-                    video_frame.content = VideoFrameContent.internal(content)
-            frame_buf.pts = frame_pts
-            frame_buf.dts = frame_dts
-            frame_buf.duration = (
-                Gst.CLOCK_TIME_NONE if frame_duration is None else frame_duration
-            )
-            self.add_frame_meta(frame_idx, frame_buf, video_frame)
+        if video_frame.content.is_none():
             self.logger.debug(
-                'Pushing frame with idx=%s and pts=%s', frame_idx, frame_pts
+                'Frame %s from source %s has not content, skipping it.',
+                frame_pts,
+                video_frame.source_id,
             )
-            result: Gst.FlowReturn = source_info.src_pad.push(frame_buf)
+            return Gst.FlowReturn.OK
 
-        else:
-            result: Gst.FlowReturn = frame_buf
+        try:
+            frame_buf = self._build_frame_buffer(video_frame, buffer)
+        except ValueError as e:
+            self.is_running = False
+            error = (
+                f'Failed to build buffer for video frame {frame_pts} '
+                f'from source {video_frame.source_id}: {e}'
+            )
+            self.logger.error(error)
+            frame = inspect.currentframe()
+            gst_post_stream_demux_error(
+                gst_element=self,
+                frame=frame,
+                file_path=__file__,
+                text=error,
+            )
+            return Gst.FlowReturn.ERROR
+
+        frame_idx = self._add_frame_to_pipeline(video_frame, span_context)
+        if self.pass_through_mode:
+            if not video_frame.content.is_internal():
+                content = frame_buf.extract_dup(0, frame_buf.get_size())
+                self.logger.debug(
+                    'Storing content of frame with IDX %s as an internal VideoFrameContent (%s) bytes.',
+                    frame_idx,
+                    len(content),
+                )
+                video_frame.content = VideoFrameContent.internal(content)
+        frame_buf.pts = frame_pts
+        frame_buf.dts = frame_dts
+        frame_buf.duration = (
+            Gst.CLOCK_TIME_NONE if frame_duration is None else frame_duration
+        )
+        self.add_frame_meta(frame_idx, frame_buf, video_frame)
+        self.logger.debug('Pushing frame with idx=%s and pts=%s', frame_idx, frame_pts)
+        result: Gst.FlowReturn = source_info.src_pad.push(frame_buf)
 
         self.logger.debug(
             'Frame from source %s with PTS %s was processed.',
@@ -429,25 +448,17 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
         self,
         video_frame: VideoFrame,
         buffer: Gst.Buffer,
-    ) -> Union[Gst.Buffer, Gst.FlowReturn]:
-        if video_frame.content.is_none():
-            return Gst.FlowReturn.OK
-
+    ) -> Gst.Buffer:
         if video_frame.content.is_internal():
             return Gst.Buffer.new_wrapped(video_frame.content.get_data_as_bytes())
 
         frame_type = ExternalFrameType(video_frame.content.get_method())
         if frame_type != ExternalFrameType.ZEROMQ:
-            self.logger.error('Unsupported frame type "%s".', frame_type.value)
-            self.is_running = False
-            return Gst.FlowReturn.ERROR
+            raise ValueError(f'Unsupported frame type "{frame_type.value}".')
         if buffer.n_memory() < 2:
-            self.logger.error(
-                'Buffer has %s regions of memory, expected at least 2.',
-                buffer.n_memory(),
+            raise ValueError(
+                f'Buffer has {buffer.n_memory()} regions of memory, expected at least 2.'
             )
-            self.is_running = False
-            return Gst.FlowReturn.ERROR
 
         frame_buf: Gst.Buffer = Gst.Buffer.new()
         frame_buf.append_memory(buffer.get_memory_range(1, -1))
