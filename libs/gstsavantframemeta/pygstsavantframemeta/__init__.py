@@ -173,3 +173,7 @@ def add_pad_probe_to_unpack_and_move_batch(
         video_pipeline.memory_handle,
         stage,
     )
+
+
+def add_pad_probe_to_remove_tracker_objs(pad:Gst.Pad):
+    pygstsavantframemeta.add_pad_probe_to_remove_tracker_objs(hash(pad))

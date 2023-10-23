@@ -1,12 +1,11 @@
 """GStreamer pipeline elements factory."""
-from typing import Any
 
 from gi.repository import Gst  # noqa:F401
-
+from pygstsavantframemeta import add_pad_probe_to_remove_tracker_objs
 from savant.config.schema import PipelineElement
-from savant.parameter_storage import param_storage
 
-
+from savant.utils.logging import get_logger
+logger = get_logger(__name__)
 class CreateElementException(Exception):
     """Unable to create Gst.Element Exception."""
 
@@ -26,6 +25,9 @@ class GstElementFactory:
 
         if element.element == 'videotestsrc':
             return self.create_videotestsrc(element)
+
+        if element.element == 'nvtracker':
+            return self.create_nvtracker(element)
 
         if isinstance(element, PipelineElement):
             return self.create_element(element)
@@ -92,3 +94,24 @@ class GstElementFactory:
         src_element.link(decodebin)
 
         return src_decodebin
+
+    @staticmethod
+    def create_nvtracker(element: PipelineElement) -> Gst.Element:
+        """Creates nvtracker element with optional probe
+        that removes objects created by the tracker."""
+        logger.warning('Creating nvtracker element with probe to remove objects.')
+
+        for key, val in element.properties.items():
+            logger.warning('key: %s, val: %s, val type %s', key, val, type(val))
+
+        disable_obj_init = False
+        if 'disable-obj-init' in element.properties and isinstance(element.properties['disable-obj-init'], bool):
+            disable_obj_init = element.properties['disable-obj-init']
+            del element.properties['disable-obj-init']
+
+        tracker = GstElementFactory.create_element(element)
+
+        if disable_obj_init:
+            add_pad_probe_to_remove_tracker_objs(tracker.get_static_pad('src'))
+
+        return tracker
