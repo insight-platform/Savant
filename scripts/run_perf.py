@@ -114,8 +114,6 @@ def main():
             [
                 perf_script,
                 '0',
-                '.parameters.batch_size=1',
-                '.parameters.buffer_queues=null',
             ]
             for perf_script in perf_scripts
         ]
@@ -128,12 +126,16 @@ def main():
             ('0', '.parameters.batch_size=4'),
             ('1', '.parameters.batch_size=1'),
             ('1', '.parameters.batch_size=4'),
-            # num_streams=4, batch_size=4,8
+            # num_streams=4, batch_size=4
             ('4', '.parameters.batch_size=4'),
-            ('4', '.parameters.batch_size=8'),
-            # num_streams=8, batch_size=8
-            ('8', '.parameters.batch_size=8'),
         ]
+        if not is_jetson:
+            source_batch_options += [
+                # num_streams=4, batch_size=8
+                ('4', '.parameters.batch_size=8'),
+                # num_streams=8, batch_size=8
+                ('8', '.parameters.batch_size=8'),
+            ]
         queue_options = [
             '.parameters.buffer_queues=null',
             '.parameters.buffer_queues.length=10',
