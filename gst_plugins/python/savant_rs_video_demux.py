@@ -13,6 +13,7 @@ from savant_rs.primitives import (
     Shutdown,
     VideoFrame,
     VideoFrameContent,
+    VideoFrameTranscodingMethod,
     VideoFrameTransformation,
 )
 from savant_rs.utils import PropagatedContext
@@ -420,6 +421,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
 
         frame_idx = self._add_frame_to_pipeline(video_frame, span_context)
         if self.pass_through_mode:
+            video_frame.transcoding_method = VideoFrameTranscodingMethod.Copy
             if not video_frame.content.is_internal():
                 content = frame_buf.extract_dup(0, frame_buf.get_size())
                 self.logger.debug(
@@ -428,6 +430,8 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
                     len(content),
                 )
                 video_frame.content = VideoFrameContent.internal(content)
+        else:
+            video_frame.transcoding_method = VideoFrameTranscodingMethod.Encoded
         frame_buf.pts = frame_pts
         frame_buf.dts = frame_dts
         frame_buf.duration = (
