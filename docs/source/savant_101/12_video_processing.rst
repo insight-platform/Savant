@@ -508,8 +508,4 @@ To configure pass-through mode, set ``output_frame.codec`` to ``copy``:
 
 .. note::
 
-    Conditional encoding is ignored in pass-through mode.
-
-.. note::
-
     Drawing on frames is not ignored in pass-through mode but the frame modifications exist only in the pipeline and are not propagated through the sinks.

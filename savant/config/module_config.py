@@ -401,11 +401,6 @@ def validate_output_frame_parameters(config: Module):
                 f'Supported profiles: {supported_profiles}.'
             )
 
-    if output_frame['codec'] == 'copy' and output_frame.get('condition'):
-        raise ModuleConfigException(
-            'Conditional video encoding is incompatible with video pass-through mode.'
-        )
-
 
 class ModuleConfig(metaclass=SingletonMeta):
     """Singleton that provides module configuration loading and access."""
