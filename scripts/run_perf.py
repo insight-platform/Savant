@@ -95,8 +95,8 @@ def main():
 
     if is_jetson:
         jetson_stats = get_jetson_stats()
-        # TODO: Support check for other Jetsons, currently Xavier NX specific
-        # nvp_model = 'MODE_20W_6CORE'
+        # TODO: Check nvp model
+        # nvp_model = 'MODE_20W_6CORE'  # Xavier NX
         # if jetson_stats['nvp model'] != nvp_model:
         #     sys.exit(f'nvp model should be set in {nvp_model}')
         if jetson_stats['jetson_clocks'] != 'ON':
