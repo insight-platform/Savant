@@ -12,8 +12,8 @@
  * @param user_data Pointer to user data.
  */
 GstPadProbeReturn remove_tracker_objs_pad_probe(GstPad *pad,
-                                             GstPadProbeInfo *info,
-                                             gpointer user_data);
+                                                GstPadProbeInfo *info,
+                                                gpointer user_data);
 
 /**
  * A helper function to check if the object was created by the nvtracker element.
