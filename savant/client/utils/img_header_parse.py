@@ -14,7 +14,7 @@ PATTERN = re.compile(r'(?<=, )(?P<width>\d+)( x |x)(?P<height>\d+)')
 def get_image_size_codec(file: Union[str, PathLike, BinaryIO]) -> Tuple[int, int, str]:
     """Get JPEG or PNG image width and height by parsing the file header.
     :param file: Path to an image file or a file handle to an image file opened as binary.
-    :return: Image width and height.
+    :return: Image width, height and codec.
     """
     if hasattr(file, 'read') and hasattr(file, 'seek'):
         magic_out = magic.from_buffer(file.read(2048))
