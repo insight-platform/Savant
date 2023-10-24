@@ -1,12 +1,8 @@
 """GStreamer pipeline elements factory."""
 
 from gi.repository import Gst  # noqa:F401
-from pygstsavantframemeta import add_pad_probe_to_remove_tracker_objs
 
 from savant.config.schema import PipelineElement
-from savant.utils.logging import get_logger
-
-logger = get_logger(__name__)
 
 
 class CreateElementException(Exception):
@@ -28,9 +24,6 @@ class GstElementFactory:
 
         if element.element == 'videotestsrc':
             return self.create_videotestsrc(element)
-
-        if element.element == 'nvtracker':
-            return self.create_nvtracker(element)
 
         if isinstance(element, PipelineElement):
             return self.create_element(element)
@@ -97,20 +90,3 @@ class GstElementFactory:
         src_element.link(decodebin)
 
         return src_decodebin
-
-    @staticmethod
-    def create_nvtracker(element: PipelineElement) -> Gst.Element:
-        """Creates nvtracker element with optional src pad probe
-        that removes objects created by the tracker."""
-        disable_obj_init = element.properties.pop('disable-obj-init', False)
-
-        tracker = GstElementFactory.create_element(element)
-
-        if isinstance(disable_obj_init, bool) and disable_obj_init:
-            logger.debug(
-                'Nvtracker factory: adding a probe '
-                'that removes objects created by the tracker.'
-            )
-            add_pad_probe_to_remove_tracker_objs(tracker)
-
-        return tracker
