@@ -108,9 +108,8 @@ class NvDsPipeline(GstPipeline):
         init_telemetry(name, telemetry)
 
         output_frame = kwargs.get('output_frame')
-
         draw_func: Optional[DrawFunc] = kwargs.get('draw_func')
-        if draw_func is not None:
+        if draw_func is not None and output_frame:
             pipeline_cfg.elements.append(draw_func)
 
         self._demuxer_src_pads: List[Gst.Pad] = []
