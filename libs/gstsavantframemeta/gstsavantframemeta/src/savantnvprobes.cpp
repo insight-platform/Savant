@@ -8,7 +8,7 @@ GstPadProbeReturn remove_tracker_objs_pad_probe(GstPad *pad,
                                                 gpointer user_data) {
     GstBuffer *buffer = GST_PAD_PROBE_INFO_BUFFER(info);
     if (!buffer) {
-        GST_INFO_OBJECT(pad, "Tracker obj remover: skipping NULL buffer.");
+        GST_INFO_OBJECT(pad, "Skipping NULL buffer.");
         return GST_PAD_PROBE_PASS;
     }
 
@@ -16,7 +16,7 @@ GstPadProbeReturn remove_tracker_objs_pad_probe(GstPad *pad,
     if (batch_meta->num_frames_in_batch == 0) {
         GST_INFO_OBJECT(
             pad,
-            "Tracker obj remover: skipping buffer %ld, batch is empty.",
+            "Skipping buffer %ld, batch is empty.",
             buffer->pts);
         return GST_PAD_PROBE_PASS;
     }
@@ -30,7 +30,7 @@ GstPadProbeReturn remove_tracker_objs_pad_probe(GstPad *pad,
             NvDsObjectMeta *obj_meta = (NvDsObjectMeta *) (l_obj->data);
 
             if (obj_is_tracker_created(obj_meta)) {
-                GST_INFO_OBJECT(pad, "Tracker obj remover: found obj created by the tracker, marking for removal.");
+                GST_INFO_OBJECT(pad, "Found obj created by the tracker, marking for removal.");
                 removal_list.push_back(obj_meta);
             }
         }
