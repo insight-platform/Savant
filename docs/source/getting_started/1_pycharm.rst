@@ -124,9 +124,9 @@ The ``client/run.py`` This is a script that allows you to interact with the modu
 
     .. image:: ../_static/img/dev-env/09-run-config-client.png
 
-#. Launch the module by choosing **Run 'run client'** or with the hotkey **Ctrl+Shift+F10**:
+#. Launch the client script by choosing **Run 'run client'** or with the hotkey **Ctrl+Shift+F10**:
 
-    .. image:: ../_static/img/dev-env/10-run-output-1.png
+    .. image:: ../_static/img/dev-env/25-run-client.png
 
 #. Check the results:
 
