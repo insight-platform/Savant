@@ -80,7 +80,7 @@ Setting Up The Interpreter
 
     .. image:: ../_static/img/dev-env/22-setup-python-interpreter-docker-compose-client.png
 
-#. Open the ``my-module/run.py`` file in the IDE.
+#. Open the ``module/run.py`` file in the IDE.
 
 #. Wait for IDE to update the skeletons and check that IDE `sees` dependencies pointing the mouse over the line with the ``import`` directive: the popup must appear with the description of the function:
 
