@@ -1,6 +1,6 @@
 import os
 from os import PathLike
-from typing import BinaryIO, List, Optional, Tuple, Union
+from typing import Any, BinaryIO, List, Optional, Tuple, TypeVar, Union
 
 from savant_rs.primitives import (
     Attribute,
@@ -12,22 +12,25 @@ from savant_rs.primitives import (
 
 from savant.api.constants import DEFAULT_NAMESPACE
 from savant.api.enums import ExternalFrameType
-from savant.client.frame_source import FrameSource
-from savant.client.utils import get_jpeg_size
+from savant.client.utils import get_image_size_codec
 from savant.utils.logging import get_logger
 
+from .base import FrameSource
+
 SECOND_IN_NS = 10**9
+T = TypeVar('T', bound='ImageSource')
 
 logger = get_logger(__name__)
 
 
-class JpegSource(FrameSource):
-    """Frame source for JPEG files.
+class ImageSource(FrameSource):
+    """Frame source for image files.
 
     :param source_id: Source ID.
-    :param file: Path to a JPEG file or a file handle to a JPEG file opened as binary.
+    :param file: Path to an image file or a file handle to an image file opened as binary.
     :param pts: Frame presentation timestamp.
     :param framerate: Framerate (numerator, denominator).
+    :param updates: List of frame updates.
     """
 
     def __init__(
@@ -38,8 +41,11 @@ class JpegSource(FrameSource):
         framerate: Tuple[int, int] = (30, 1),
         updates: Optional[List[VideoFrameUpdate]] = None,
     ):
-        if not hasattr(file, 'read') and not os.path.exists(file):
-            raise ValueError(f'File path is set, but file {file!r} does not exist.')
+        if isinstance(file, (str, PathLike)):
+            if not os.path.exists(file):
+                raise ValueError(f'File path is set, but file {file!r} does not exist.')
+        elif not hasattr(file, 'read'):
+            raise ValueError('File path or file handle is expected.')
 
         self._source_id = source_id
         self._file = file
@@ -81,32 +87,30 @@ class JpegSource(FrameSource):
         """Frame duration."""
         return self._duration
 
-    def with_pts(self, pts: int) -> 'FrameSource':
+    def with_pts(self: T, pts: int) -> T:
         """Set frame presentation timestamp."""
         return self._update_param('pts', pts)
 
-    def with_framerate(self, framerate: Tuple[int, int]) -> 'FrameSource':
+    def with_framerate(self: T, framerate: Tuple[int, int]) -> T:
         """Set framerate."""
         return self._update_param('framerate', framerate)
 
-    def with_update(self, update: VideoFrameUpdate) -> 'JpegSource':
+    def with_update(self: T, update: VideoFrameUpdate) -> T:
         return self._update_param('updates', self._updates + [update])
 
     def build_frame(self) -> Tuple[VideoFrame, bytes]:
-        width, height = get_jpeg_size(self._file)
+        width, height, codec = get_image_size_codec(self._file)
 
         if isinstance(self._file, (str, PathLike)):
             with open(self._file, 'rb') as f:
                 content = f.read()
-        elif hasattr(self._file, 'read'):
-            content = self._file.read()
         else:
-            raise ValueError('File path or file handle is expected.')
+            content = self._file.read()
 
         video_frame = VideoFrame(
             source_id=self._source_id,
             framerate=f'{self._framerate[0]}/{self._framerate[1]}',
-            codec='jpeg',
+            codec=codec,
             width=width,
             height=height,
             content=VideoFrameContent.external(ExternalFrameType.ZEROMQ.value, None),
@@ -134,8 +138,8 @@ class JpegSource(FrameSource):
 
         return video_frame, content
 
-    def _update_param(self, name, value) -> 'JpegSource':
-        return JpegSource(
+    def _update_param(self: T, name: str, value: Any) -> T:
+        return self.__class__(
             **{
                 'source_id': self._source_id,
                 'file': self._file,
@@ -148,8 +152,30 @@ class JpegSource(FrameSource):
 
     def __repr__(self):
         return (
-            f'JpegSource('
+            f'{self.__class__.__name__}('
             f'source_id={self._source_id}, '
             f'file={self._file}, '
             f'pts={self._pts})'
         )
+
+
+class JpegSource(ImageSource):
+    """Frame source for JPEG files.
+
+    :param source_id: Source ID.
+    :param file: Path to a JPEG file or a file handle to a JPEG file opened as binary.
+    :param pts: Frame presentation timestamp.
+    :param framerate: Framerate (numerator, denominator).
+    :param updates: List of frame updates.
+    """
+
+
+class PngSource(ImageSource):
+    """Frame source for PNG files.
+
+    :param source_id: Source ID.
+    :param file: Path to a PNG file or a file handle to a PNG file opened as binary.
+    :param pts: Frame presentation timestamp.
+    :param framerate: Framerate (numerator, denominator).
+    :param updates: List of frame updates.
+    """

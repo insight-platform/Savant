@@ -131,6 +131,7 @@ Frame sources
 
     FrameSource
     JpegSource
+    PngSource
 
 Log providers
 -------------
