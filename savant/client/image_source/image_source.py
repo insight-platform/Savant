@@ -12,10 +12,9 @@ from savant_rs.primitives import (
 
 from savant.api.constants import DEFAULT_NAMESPACE
 from savant.api.enums import ExternalFrameType
+from savant.client.frame_source import FrameSource
 from savant.client.utils import get_image_size_codec
 from savant.utils.logging import get_logger
-
-from .base import FrameSource
 
 SECOND_IN_NS = 10**9
 T = TypeVar('T', bound='ImageSource')
