@@ -1,6 +1,7 @@
 #include "gstsavantbatchmeta.h"
 #include "gstsavantframemeta.h"
 #include "savantrsprobes.h"
+#include "savantnvprobes.h"
 #include <pybind11/pybind11.h>
 
 namespace py = pybind11;
@@ -138,5 +139,15 @@ PYBIND11_MODULE(pygstsavantframemeta, m) {
             move_and_unpack_batch_pad_probe,
             (gpointer)data,
             (GDestroyNotify)release_savant_rs_pad_probe_data);
+    });
+
+    m.def("add_pad_probe_to_remove_tracker_objs", [](size_t gst_pad) {
+        auto *pad = reinterpret_cast<GstPad *>(gst_pad);
+        gst_pad_add_probe(
+            pad,
+            GST_PAD_PROBE_TYPE_BUFFER,
+            remove_tracker_objs_pad_probe,
+            NULL,
+            NULL);
     });
 }

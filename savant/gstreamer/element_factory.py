@@ -1,10 +1,8 @@
 """GStreamer pipeline elements factory."""
-from typing import Any
 
 from gi.repository import Gst  # noqa:F401
 
 from savant.config.schema import PipelineElement
-from savant.parameter_storage import param_storage
 
 
 class CreateElementException(Exception):
