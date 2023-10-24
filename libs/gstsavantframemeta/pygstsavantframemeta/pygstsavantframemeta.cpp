@@ -141,9 +141,9 @@ PYBIND11_MODULE(pygstsavantframemeta, m) {
             (GDestroyNotify)release_savant_rs_pad_probe_data);
     });
 
-    m.def("add_pad_probe_to_remove_tracker_objs", [](size_t gst_pad) {
-        auto *pad = reinterpret_cast<GstPad *>(gst_pad);
-
+    m.def("add_pad_probe_to_remove_tracker_objs", [](size_t gst_element) {
+        auto *tracker = reinterpret_cast<GstElement *>(gst_element);
+        auto *pad = gst_element_get_static_pad(tracker, "src");
         gst_pad_add_probe(
             pad,
             GST_PAD_PROBE_TYPE_BUFFER,
