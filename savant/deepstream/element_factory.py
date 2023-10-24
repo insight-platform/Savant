@@ -71,6 +71,6 @@ class NvDsElementFactory(GstElementFactory):
                 'Nvtracker factory: adding a probe '
                 'that removes objects created by the tracker.'
             )
-            add_pad_probe_to_remove_tracker_objs(tracker)
+            add_pad_probe_to_remove_tracker_objs(tracker.get_static_pad('src'))
 
         return tracker
