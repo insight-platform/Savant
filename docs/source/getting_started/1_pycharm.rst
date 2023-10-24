@@ -38,9 +38,9 @@ Setting Up The Interpreter
 
 #. Open the project settings with **File > Settings ...** or **Ctrl+Alt+S**.
 
-#. Choose **Project: my-module > Python Interpreter** section.
+#. Select **Project: my-module > Python Interpreter** section.
 
-#. Add a new **Python Interpreter** by clicking the **Add Interpreter**, and choosing **On Docker Compose...**:
+#. Add a new **Python Interpreter** by clicking the **Add Interpreter**, and selecting **On Docker Compose...**:
 
     .. image:: ../_static/img/dev-env/02-setup-python-interpreter.png
 
@@ -50,7 +50,7 @@ Setting Up The Interpreter
 
     .. image:: ../_static/img/dev-env/20-setup-docker.png
 
-  * **[Step 2 of 4]**: Choose Configuration file: ``docker-compose.x86.yml`` or ``docker-compose.l4t.yml``, if you are on Jetson, and select the service **module**:
+  * **[Step 2 of 4]**: Select Configuration file: ``docker-compose.x86.yml`` (``docker-compose.l4t.yml`` for Jetson) and select the service **module**:
 
     .. image:: ../_static/img/dev-env/03-setup-python-interpreter-docker-compose-module.png
 
@@ -64,13 +64,13 @@ Setting Up The Interpreter
 
     .. image:: ../_static/img/dev-env/05-check-savant-package.png
 
-#. Add a another **Python Interpreter** by clicking the **Add Interpreter**, and choosing **On Docker Compose...**:
+#. Add another **Python Interpreter** by clicking the **Add Interpreter**, and selecting **On Docker Compose...**:
 
     .. image:: ../_static/img/dev-env/02-setup-python-interpreter.png
 
 #. In the modal window:
 
-  * **[Step 1 of 3]**: Choose Configuration file: ``docker-compose.x86.yml`` or ``docker-compose.l4t.yml``, if you are on Jetson, and select the service **client**:
+  * **[Step 1 of 3]**: Select Configuration file: ``docker-compose.x86.yml`` (``docker-compose.l4t.yml`` for Jetson) and select the service **client**:
 
     .. image:: ../_static/img/dev-env/03-setup-python-interpreter-docker-compose-module.png
 
@@ -93,7 +93,7 @@ The ``module/run.py`` file is the entrypoint of the module, let's configure the 
 
 #. Open the ``module/run.py`` script
 
-#. Right click of mouse on the tab ``module/run.py`` and choose **Modify Run Configuration** in ""More Run/Debug:
+#. Right click of mouse on the tab ``module/run.py`` and select **Modify Run Configuration** in ""More Run/Debug:
 
     .. image:: ../_static/img/dev-env/23-modify-run-configureation.png
 
@@ -101,7 +101,7 @@ The ``module/run.py`` file is the entrypoint of the module, let's configure the 
 
     .. image:: ../_static/img/dev-env/08-run-config-module.png
 
-#. Launch the module by choosing **Run 'run'** or with the hotkey **Ctrl+Shift+F10**:
+#. Launch the module by selecting **Run 'run'** or with the hotkey **Ctrl+Shift+F10**:
 
     .. image:: ../_static/img/dev-env/10-run-output-1.png
 
@@ -112,11 +112,11 @@ The ``module/run.py`` file is the entrypoint of the module, let's configure the 
 Configure Client Run
 --------------------
 
-The ``client/run.py`` This is a script that allows you to interact with the module by sending data and receiving results., let's configure the launch command for the script.
+The ``client/run.py`` This is a script that allows you to interact with the module by sending data and receiving results. Let's configure the launch command for the script.
 
 #. Open the ``client/run.py`` script
 
-#. Right click of mouse on the tab ``client/run.py`` and choose **Modify Run Configuration** in ""More Run/Debug:
+#. Right click of mouse on the tab ``client/run.py`` and select **Modify Run Configuration** in ""More Run/Debug:
 
     .. image:: ../_static/img/dev-env/23-modify-run-configureation.png
 
@@ -124,7 +124,7 @@ The ``client/run.py`` This is a script that allows you to interact with the modu
 
     .. image:: ../_static/img/dev-env/09-run-config-client.png
 
-#. Launch the module by choosing **Run 'run client'** or with the hotkey **Ctrl+Shift+F10**:
+#. Launch the module by selecting **Run 'run client'** or with the hotkey **Ctrl+Shift+F10**:
 
     .. image:: ../_static/img/dev-env/10-run-output-1.png
 
