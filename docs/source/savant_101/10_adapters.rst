@@ -876,7 +876,7 @@ Running the adapter with the helper script:
 Kafka-Redis Sink Adapter
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-The Kafka-Redis Sink Adapter sends video stream metadata to Kafka and frame content to Redis. Frame content location is encoded as ``<redis-host>:<redis-port>:<redis-db>/<redis-key>``.
+The Kafka-Redis Sink Adapter sends video stream metadata to Kafka and frame content to Redis. Frame content location is encoded as ``<redis-host>:<redis-port>:<redis-db>/<redis-key>``. ``<redis-key>`` is in format ``REDIS_KEY_PREFIX:UUID`` where ``UUID`` is a unique identifier of the video frame.
 
 **Parameters**:
 

@@ -1,6 +1,5 @@
 import asyncio
 import os
-import uuid
 from asyncio import Queue
 from typing import Tuple
 
@@ -181,7 +180,15 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
     async def put_frame_to_redis(self, frame: VideoFrame, content: bytes):
         """Save frame content to Redis and update frame metadata with the content location."""
 
-        content_key = f'{self._config.redis.key_prefix}:{uuid.uuid4()}'
+        content_key = f'{self._config.redis.key_prefix}:{frame.uuid}'
+        location = f'{self._config.redis.host}:{self._config.redis.port}:{self._config.redis.db}/{content_key}'
+        self._logger.debug(
+            'Saving content of the frame %s from source %s to Redis location %r (%s bytes)',
+            frame.source_id,
+            frame.pts,
+            location,
+            len(content),
+        )
         await self._redis_client.set(
             content_key,
             content,
@@ -189,8 +196,9 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
         )
         frame.content = VideoFrameContent.external(
             ExternalFrameType.REDIS.value,
-            f'{self._config.redis.host}:{self._config.redis.port}:{self._config.redis.db}/{content_key}',
+            location,
         )
+
         return frame
 
     def send_to_producer(self, key: str, value: bytes):
