@@ -2,9 +2,9 @@
 Changes to the Dockerfile or the base image
 ```````````````````````````````````````````
 
-You should check that the "Rebuild image automatically every time before running code" option is enabled in the "Python interpreters" settings. If this option is enabled and you have made any changes to the Dockerfile or updated the base image, you don't need to do anything else. At the next run a new image will be built and the container will be updated.
+If you used a custom Dockerfile you should check that the ``up --build module``option is set in the **Run configuration** settings. If this option is set and you have made any changes to the Dockerfile or updated the base image, you don't need to do anything else. At the next run a new image will be built and the container will be updated.
 
-.. image:: ../_static/img/dev-env/03-setup-docker-build.png
+.. image:: ../_static/img/dev-env/08-run-config-module.png
     :width: 500
 
 
