@@ -211,10 +211,25 @@ def configure_module_parameters(module_cfg: DictConfig) -> None:
         FrameParameters,
         OmegaConf.structured(FrameParameters),
     )
+    output_frame = module_cfg.parameters.get('output_frame')
+    is_pass_through_mode = output_frame and output_frame['codec'] == 'copy'
+    frame_parameters: FrameParameters = module_cfg.parameters['frame']
+    if frame_parameters.padding:
+        if is_pass_through_mode:
+            if frame_parameters.padding.keep:
+                logger.warning('Padding keep is ignored in pass-through mode.')
+            frame_parameters.padding.keep = False
+
     apply_schema(module_cfg.parameters, 'draw_func', DrawFunc)
     if module_cfg.parameters.dev_mode and module_cfg.parameters.draw_func:
         logger.debug('Setting draw_func dev mode to true.')
         module_cfg.parameters.draw_func.dev_mode = True
+        if is_pass_through_mode:
+            logger.warning(
+                'The pipeline is configured in video pass-through mode. '
+                'In this mode, frame modifications exist only in the '
+                'pipeline but are not propagated through the sinks.'
+            )
     apply_schema(module_cfg.parameters, 'buffer_queues', BufferQueuesParameters)
     apply_schema(
         module_cfg.parameters,
@@ -360,15 +375,14 @@ def validate_output_frame_parameters(config: Module):
     output_frame = config.parameters.get('output_frame')
     if not output_frame:
         return
-    try:
-        codec = CODEC_BY_NAME[output_frame['codec']]
-    except KeyError:
-        raise ModuleConfigException(
-            f'Unknown codec {output_frame["codec"]!r} in output_frame config.'
-        )
+
+    codec = output_frame['codec']
+    if codec != 'copy' and codec not in CODEC_BY_NAME:
+        raise ModuleConfigException(f'Unknown codec {codec!r} in output_frame config.')
+
     profile = output_frame.get('profile')
     if profile is not None:
-        if codec not in [Codec.H264]:
+        if codec != Codec.H264.value.name:
             raise ModuleConfigException(
                 f'Profile can be configured only for {Codec.H264.value.name!r} codec.'
             )

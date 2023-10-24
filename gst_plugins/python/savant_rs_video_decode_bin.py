@@ -25,6 +25,7 @@ NESTED_DEMUX_PROPERTIES = {
         'source-eviction-interval',
         'max-parallel-streams',
         'shutdown-auth',
+        'pass-through-mode',
     ]
 }
 SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES = {

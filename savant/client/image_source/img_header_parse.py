@@ -5,8 +5,6 @@ from typing import BinaryIO, Tuple, Union
 
 import magic
 
-from savant.gstreamer.codecs import Codec
-
 # positive lookbehind is included to avoid matching density in the JPEG header
 PATTERN = re.compile(r'(?<=, )(?P<width>\d+)( x |x)(?P<height>\d+)')
 
@@ -24,10 +22,13 @@ def get_image_size_codec(file: Union[str, PathLike, BinaryIO]) -> Tuple[int, int
     else:
         raise ValueError('File path or file handle is expected.')
 
+    # codec str should correspond to savant.gstreamer.codecs.Codec enum values
+    # can't import directly because of extra dependencies (gstreamer)
+    # that aren't going to be present in all the adapter images
     if magic_out.startswith('JPEG image data'):
-        codec = Codec.JPEG.value.name
+        codec = 'jpeg'
     elif magic_out.startswith('PNG image data'):
-        codec = Codec.PNG.value.name
+        codec = 'png'
     else:
         raise ValueError('Not a JPEG or PNG file.')
 

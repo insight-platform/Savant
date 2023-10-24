@@ -2,14 +2,21 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 
-from pygstsavantframemeta import add_pad_probe_to_move_frame
+import pyds
+from pygstsavantframemeta import (
+    add_pad_probe_to_move_frame,
+    nvds_frame_meta_get_nvds_savant_frame_meta,
+)
 from savant_rs.pipeline2 import VideoPipeline
+from savant_rs.primitives import VideoFrameContent
 
+from savant.api.constants import DEFAULT_NAMESPACE
 from savant.config.schema import (
     FrameParameters,
     FrameProcessingCondition,
     PipelineElement,
 )
+from savant.deepstream.utils import nvds_frame_meta_iterator
 from savant.gstreamer import Gst  # noqa:F401
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec, CodecInfo
 from savant.gstreamer.pipeline import GstPipeline
@@ -48,6 +55,14 @@ class SourceOutputOnlyMeta(SourceOutput):
     Output contains only frames metadata (without the frames).
     """
 
+    def __init__(
+        self,
+        video_pipeline: VideoPipeline,
+        condition: Optional[FrameProcessingCondition] = None,
+    ):
+        super().__init__(video_pipeline)
+        self._condition = condition
+
     def add_output(
         self,
         pipeline: GstPipeline,
@@ -57,8 +72,36 @@ class SourceOutputOnlyMeta(SourceOutput):
         self._logger.debug(
             'Do not add additional output elements since we output only frame metadata'
         )
+        if self._condition is not None and self._condition.tag is not None:
+            input_pad.add_probe(Gst.PadProbeType.BUFFER, self._check_encoding_condition)
         add_pad_probe_to_move_frame(input_pad, self._video_pipeline, 'sink')
         return input_pad
+
+    def _check_encoding_condition(self, pad: Gst.Pad, info: Gst.PadProbeInfo):
+        buffer: Gst.Buffer = info.get_buffer()
+        nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
+        for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
+            savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(
+                nvds_frame_meta
+            )
+            frame_id = savant_frame_meta.idx
+            frame, _ = self._video_pipeline.get_independent_frame(frame_id)
+            attr = frame.get_attribute(DEFAULT_NAMESPACE, self._condition.tag)
+            if attr is not None:
+                self._logger.debug(
+                    'Frame %s has tag %r. Keeping content.',
+                    frame_id,
+                    self._condition.tag,
+                )
+            else:
+                self._logger.debug(
+                    'Frame %s does not have tag %r. Removing content.',
+                    frame_id,
+                    self._condition.tag,
+                )
+                frame.content = VideoFrameContent.none()
+
+        return Gst.PadProbeReturn.OK
 
 
 class SourceOutputWithFrame(SourceOutput):
@@ -425,6 +468,10 @@ def create_source_output(
 
     if not output_frame:
         return SourceOutputOnlyMeta(video_pipeline=video_pipeline)
+
+    condition = FrameProcessingCondition(**(output_frame.get('condition') or {}))
+    if output_frame['codec'] == 'copy':
+        return SourceOutputOnlyMeta(video_pipeline=video_pipeline, condition=condition)
 
     codec = CODEC_BY_NAME[output_frame['codec']]
     if codec == Codec.RAW_RGBA:
