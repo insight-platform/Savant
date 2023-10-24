@@ -30,7 +30,7 @@ GstPadProbeReturn remove_tracker_objs_pad_probe(GstPad *pad,
             NvDsObjectMeta *obj_meta = (NvDsObjectMeta *) (l_obj->data);
 
             if (obj_is_tracker_created(obj_meta)) {
-                GST_WARNING_OBJECT(pad, "Tracker obj remover: found obj created by the tracker, marking for removal.");
+                GST_INFO_OBJECT(pad, "Tracker obj remover: found obj created by the tracker, marking for removal.");
                 removal_list.push_back(obj_meta);
             }
         }

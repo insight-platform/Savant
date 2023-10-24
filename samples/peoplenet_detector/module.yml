@@ -141,7 +141,6 @@ pipeline:
         ll-lib-file: /opt/nvidia/deepstream/deepstream/lib/libnvds_nvmultiobjecttracker.so
         # specify tracking config file
         ll-config-file: ${oc.env:PROJECT_PATH}/samples/peoplenet_detector/config_tracker_NvSORT.yml
-        disable-obj-init: False
 
     # analytics element realized in custom pyfunc
     - element: pyfunc
