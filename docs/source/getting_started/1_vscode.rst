@@ -83,7 +83,7 @@ Reopen in Container
 
     .. image:: ../_static/img/dev-env/16-run-python-file.png
 
-#. Open the ``client.py`` script and run it by selecting ``Run Python File in Dedicated Terminal``. You will see the client's output:
+#. Open the ``client/run.py`` script and run it by selecting ``Run Python File in Dedicated Terminal``. You will see the client's output:
 
     .. image:: ../_static/img/dev-env/17-run-client.png
 
