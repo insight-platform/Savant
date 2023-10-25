@@ -13,7 +13,12 @@ from pygstsavantframemeta import (
     nvds_frame_meta_get_nvds_savant_frame_meta,
 )
 from savant_rs.pipeline2 import VideoPipeline
-from savant_rs.primitives import VideoFrame, VideoFrameContent, VideoFrameTransformation
+from savant_rs.primitives import (
+    VideoFrame,
+    VideoFrameContent,
+    VideoFrameTranscodingMethod,
+    VideoFrameTransformation,
+)
 from savant_rs.primitives.geometry import BBox, RBBox
 from savant_rs.utils import VideoObjectBBoxTransformation
 from savant_rs.utils.symbol_mapper import (
@@ -521,6 +526,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                         output_frame.idx,
                     )
                     content = None
+                video_frame.transcoding_method = VideoFrameTranscodingMethod.Copy
 
             else:
                 video_frame.width = self._frame_params.output_width
@@ -530,6 +536,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                     video_frame.codec = output_frame.codec.name
                 video_frame.keyframe = output_frame.keyframe
                 content = output_frame.frame
+                video_frame.transcoding_method = VideoFrameTranscodingMethod.Encoded
 
             self._transform_geometry(video_frame)
 
