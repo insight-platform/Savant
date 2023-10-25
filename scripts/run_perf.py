@@ -165,11 +165,13 @@ def main():
     stats_pattern = re.compile(
         r'^(?P<name>\w+): min=(?P<min>\d+), max=(?P<max>\d+), avg=(?P<avg>\d+\.\d+)$'
     )
-    stats_vars = {
-        'num_frames_in_batch',
-        'num_frames_per_source',
-        'num_objects_per_source',
-    }
+    stats_vars = []
+    if args.stats:
+        stats_vars += [
+            'num_frames_in_batch',
+            'num_frames_per_source',
+            'num_objects_per_source',
+        ]
 
     dtm = datetime.now(timezone.utc)
 
