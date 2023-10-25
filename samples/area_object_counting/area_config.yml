@@ -1,0 +1,27 @@
+# The id of the video source that sends the intersection video
+test:
+  left-sidewalk:
+    # The points define a polygon in the frame that delimits the intersection
+    - [25, 575]
+    - [25, 335]
+    - [765, 10]
+    - [960, 10]
+
+
+# for the performance module config
+# '0':
+#   points:
+#     - [140, 465]
+#     - [250, 295]
+#     - [465, 190]
+#     - [840, 125]
+#     - [1565, 440]
+#     - [1295, 760]
+
+#   edges:
+#     - left
+#     - null
+#     - top
+#     - null
+#     - bottom
+#     - null
