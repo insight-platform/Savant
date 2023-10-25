@@ -56,16 +56,10 @@ function config_perf {
 
   # default updates:
   # - reset output_frame & draw_func
-  # - add stat_logger pyfunc
   # - set devnull_sink
   yq_cmd=$(cat <<-END
 .parameters.output_frame = null |
 .parameters.draw_func = null |
-.pipeline.elements += {
-  "element": "pyfunc",
-  "module": "savant.utils.stat_logger",
-  "class_name": "StatLogger"
-} |
 .pipeline.sink = [{"element": "devnull_sink"}]
 END
   )

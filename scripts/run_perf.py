@@ -74,13 +74,16 @@ def main():
         '-p', '--path', type=Path, default=Path('samples'), help='path to sample(s)'
     )
     parser.add_argument(
-        '-v', '--verbose', action='store_true', help='print script output'
+        '-v', '--verbose', action='store_true', help='print perf script output'
+    )
+    parser.add_argument(
+        '-m', '--multi-option', action='store_true', help='multi-option launch'
     )
     parser.add_argument(
         '-s',
-        '--short',
+        '--stats',
         action='store_true',
-        help='run only the option: uridecodebin, batch_size=1, buffer_queues=null',
+        help='add stat_logger to count frames and objects',
     )
     args = parser.parse_args()
 
@@ -101,23 +104,14 @@ def main():
         if jetson_stats['jetson_clocks'] != 'ON':
             sys.exit('jetson_clocks should be ON.')
 
-    # check perf scripts
+    # collect perf scripts
     perf_scripts = sorted(str(path) for path in args.path.glob('**/run_perf.sh'))
     if not perf_scripts:
         sys.exit('No run_perf.sh scripts found.')
 
-    # source + batch combinations
-    # where source: uridecodebin=0, multistream=1, multistream=2, etc.
-    if args.short:
-        run_options = [
-            [
-                perf_script,
-                '0',
-            ]
-            for perf_script in perf_scripts
-        ]
-
-    else:
+    if args.multi_option:
+        # source + batch combinations
+        # where source: uridecodebin=0, multistream=1, multistream=2, etc.
         source_batch_options = [
             # num_streams=1, batch_size=1,4
             # (nvstreammux doesn't collect batch size > 4 with one source)
@@ -145,6 +139,10 @@ def main():
             for opts in itertools.product(*run_options)
         ]
 
+    # default: uridecodebin
+    else:
+        run_options = [[perf_script, '0'] for perf_script in perf_scripts]
+
     # required arguments
     fps_period = 100
     run_args = [
@@ -154,6 +152,14 @@ def main():
         # TODO: Implement delayed start and early stop of fps measurements in pipeline
         f'.parameters.fps_period={fps_period}',
     ]
+    if args.stats:
+        run_args += [
+            '.pipeline.elements += {'
+            '"element": "pyfunc", '
+            '"module": "savant.utils.stat_logger", '
+            '"class_name": "StatLogger"'
+            '}'
+        ]
 
     fps_pattern = re.compile(r'^.*Processed \d+ frames, (?P<fps>\d+\.\d+) FPS\.$')
     stats_pattern = re.compile(
@@ -187,8 +193,8 @@ def main():
     logs_root = Path('logs')
     logs_root.mkdir(parents=True, exist_ok=True)
     log_file_name = f'{platform_info["nodename"]}-{dtm.strftime("%Y%m%d-%H%M%S")}'
-    if args.short:
-        log_file_name += '-short'
+    if args.multi_option:
+        log_file_name += '-multi'
     log_file_path = logs_root / f'{log_file_name}.log'
     json_file_path = logs_root / f'{log_file_name}.json'
     with open(log_file_path, mode='w', encoding='utf-8') as log_file:
