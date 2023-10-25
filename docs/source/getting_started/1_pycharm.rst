@@ -30,8 +30,9 @@ Project Preparation
 
    .. image:: ../_static/img/dev-env/01-creating-project.png
 
-Setting Up The Interpreter
---------------------------
+Setting Up The Interpreter for the Module
+-----------------------------------------
+
 #. Open the project settings with **File > Settings ...** or **Ctrl+Alt+S**. Set **Use compose V2** in **Build, Execution,Deployment > Docker > Tools**
 
    .. image:: ../_static/img/dev-env/21-select-docker-compose-v2.png
@@ -46,45 +47,41 @@ Setting Up The Interpreter
 
 #. In the modal window:
 
-   * **[Step 1 of 4]**: Click on the three dots under **Server** and set up access to the docker service
+   a. Click on the three dots under **Server** and set up access to the docker service
 
-     .. image:: ../_static/img/dev-env/20-setup-docker.png
+      .. image:: ../_static/img/dev-env/20-setup-docker.png
 
-   * **[Step 2 of 4]**: Select Configuration file: ``docker-compose.x86.yml`` (``docker-compose.l4t.yml`` for Jetson) and select the service **module**:
+   #. Select Configuration file: ``docker-compose.x86.yml`` (``docker-compose.l4t.yml`` for Jetson) and select the service **module**:
 
-     .. image:: ../_static/img/dev-env/03-setup-python-interpreter-docker-compose-module.png
+      .. image:: ../_static/img/dev-env/03-setup-python-interpreter-docker-compose-module.png
 
-   * **[Step 3 of 4]**: Click **Next** button, make sure docker build is successful and then again click **Next** button.
+   #. Click **Next** button, make sure docker build is successful and then again click **Next** button.
+   #. Keep the default python interpreter (python3) and click **Create**:
 
-   * **[Step 4 of 4]**: Keep the default python interpreter (python3) and click **Create**:
-
-     .. image:: ../_static/img/dev-env/04-setup-interpreter-in-docker.png
+      .. image:: ../_static/img/dev-env/04-setup-interpreter-in-docker.png
 
 #. Make sure that the ``savant`` package is in the package list, click **OK**:
 
    .. image:: ../_static/img/dev-env/05-check-savant-package.png
 
-#. Add another **Python Interpreter** by clicking the **Add Interpreter**, and selecting **On Docker Compose...**:
+Setting Up The Interpreter for the Client
+-----------------------------------------
+
+#. Add **Python Interpreter** by clicking the **Add Interpreter**, and selecting **On Docker Compose...**:
 
    .. image:: ../_static/img/dev-env/02-setup-python-interpreter.png
 
 #. In the modal window:
 
-   * **[Step 1 of 3]**: Select Configuration file: ``docker-compose.x86.yml`` (``docker-compose.l4t.yml`` for Jetson) and select the service **client**:
+    a. Select Configuration file: ``docker-compose.x86.yml`` (``docker-compose.l4t.yml`` for Jetson) and select the service **client**:
 
-     .. image:: ../_static/img/dev-env/03-setup-python-interpreter-docker-compose-module.png
+       .. image:: ../_static/img/dev-env/22-setup-python-interpreter-docker-compose-client.png
 
-   * **[Step 2 of 3]**: Make sure docker build is successful and then click **Next** button.
+    #. Click **Next** button, make sure docker build is successful and then again click **Next** button.
 
-   * **[Step 3 of 3]**: Keep the default python interpreter (python3) and click **Create**:
+    #. Keep the default python interpreter (python3) and click **Create**:
 
-     .. image:: ../_static/img/dev-env/22-setup-python-interpreter-docker-compose-client.png
-
-#. Open the ``module/run.py`` file in the IDE.
-
-#. Wait for IDE to update the skeletons and check that IDE `sees` dependencies pointing the mouse over the line with the ``import`` directive: the popup must appear with the description of the function:
-
-   .. image:: ../_static/img/dev-env/06-check-func-spec.png
+       .. image:: ../_static/img/dev-env/04-setup-interpreter-in-docker.png
 
 Configure Module Run
 --------------------
