@@ -45,7 +45,10 @@ class Config(BaseConfig):
         super().__init__()
         self.zmq_endpoint = os.environ['ZMQ_ENDPOINT']
         self.kafka = KafkaConfig()
-        self.redis = RedisConfig()
+        try:
+            self.redis = RedisConfig()
+        except KeyError:
+            self.redis = None
 
 
 class KafkaRedisSink(BaseKafkaRedisAdapter):
@@ -58,11 +61,23 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
     def __init__(self, config: Config):
         super().__init__(config)
         self._producer = build_producer(config.kafka)
-        self._redis_client = Redis(
-            host=config.redis.host,
-            port=config.redis.port,
-            db=config.redis.db,
-        )
+        if config.redis is not None:
+            self._logger.info(
+                'Redis is configured at %s:%s/%s. Frame content will be stored to Redis.',
+                config.redis.host,
+                config.redis.port,
+                config.redis.db,
+            )
+            self._redis_client = Redis(
+                host=config.redis.host,
+                port=config.redis.port,
+                db=config.redis.db,
+            )
+        else:
+            self._logger.info(
+                'Redis is not configured. Frame content will be stored internally.'
+            )
+            self._redis_client = None
         self._sink = (
             SinkBuilder()
             .with_socket(config.zmq_endpoint)
@@ -164,7 +179,7 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
                 frame_meta.keyframe,
             )
             if result.frame_content is not None:
-                frame_meta = await self.put_frame_to_redis(
+                frame_meta.content = await self.store_frame_content(
                     frame_meta, result.frame_content
                 )
             message = Message.video_frame(frame_meta)
@@ -177,13 +192,31 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
 
         return message, source_id
 
-    async def put_frame_to_redis(self, frame: VideoFrame, content: bytes):
-        """Save frame content to Redis and update frame metadata with the content location."""
+    async def store_frame_content(
+        self,
+        frame: VideoFrame,
+        content: bytes,
+    ) -> VideoFrameContent:
+        """Store frame content.
+
+        If Redis is configured, store frame content to Redis and update frame
+        metadata with the content location. Otherwise, store frame content
+        directly to the VideoFrame.
+        """
+
+        if self._redis_client is None:
+            self._logger.debug(
+                'Storing content of the frame %s from source %s internally (%s bytes)',
+                frame.source_id,
+                frame.pts,
+                len(content),
+            )
+            return VideoFrameContent.internal(content)
 
         content_key = f'{self._config.redis.key_prefix}:{frame.uuid}'
         location = f'{self._config.redis.host}:{self._config.redis.port}:{self._config.redis.db}/{content_key}'
         self._logger.debug(
-            'Saving content of the frame %s from source %s to Redis location %r (%s bytes)',
+            'Storing content of the frame %s from source %s to Redis location %r (%s bytes)',
             frame.source_id,
             frame.pts,
             location,
@@ -194,12 +227,7 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
             content,
             ex=self._config.redis.ttl_seconds,
         )
-        frame.content = VideoFrameContent.external(
-            ExternalFrameType.REDIS.value,
-            location,
-        )
-
-        return frame
+        return VideoFrameContent.external(ExternalFrameType.REDIS.value, location)
 
     def send_to_producer(self, key: str, value: bytes):
         """Send message to Kafka topic."""

@@ -876,7 +876,7 @@ Running the adapter with the helper script:
 Kafka-Redis Sink Adapter
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-The Kafka-Redis Sink Adapter sends video stream metadata to Kafka and frame content to Redis. Frame content location is encoded as ``<redis-host>:<redis-port>:<redis-db>/<redis-key>``. ``<redis-key>`` is in format ``REDIS_KEY_PREFIX:UUID`` where ``UUID`` is a unique identifier of the video frame.
+The Kafka-Redis Sink Adapter sends video stream metadata to Kafka and frame content to Redis. Frame content location is encoded as ``<redis-host>:<redis-port>:<redis-db>/<redis-key>``. ``<redis-key>`` is in format ``REDIS_KEY_PREFIX:UUID`` where ``UUID`` is a unique identifier of the video frame. When Redis is not configured (i.e. ``REDIS_HOST`` is not set) the adapter will store frame content internally in the video frame.
 
 **Parameters**:
 
@@ -886,7 +886,7 @@ The Kafka-Redis Sink Adapter sends video stream metadata to Kafka and frame cont
 - ``KAFKA_CREATE_TOPIC_NUM_PARTITIONS``: a number of partitions for a Kafka topic to create; default is ``1``;
 - ``KAFKA_CREATE_TOPIC_REPLICATION_FACTOR``: a replication factor for a Kafka topic to create; default is ``1``;
 - ``KAFKA_CREATE_TOPIC_CONFIG``: a json dict of a Kafka topic configuration, see `topic configs <https://kafka.apache.org/documentation.html#topicconfigs>`__ (e.g. ``{"retention.ms": 300000}``); default is ``{}``;
-- ``REDIS_HOST`` (**required**): a Redis host;
+- ``REDIS_HOST``: a Redis host;
 - ``REDIS_PORT``: a Redis port; default is ``6379``;
 - ``REDIS_DB``: a Redis database; default is ``0``;
 - ``REDIS_KEY_PREFIX``: a prefix for Redis keys; frame content is put to Redis with a key ``REDIS_KEY_PREFIX:UUID``; default is ``savant:frames``;

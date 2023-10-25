@@ -25,3 +25,5 @@ git lfs pull
 # to get back to project root
 cd ../..
 ```
+
+[docker-compose-no-keydb.x86.yml](docker-compose-no-keydb.x86.yml) and [docker-compose-no-keydb.l4t.yml](docker-compose-no-keydb.l4t.yml) contain the sample without using KeyDB. The frame content is stored internally in the video frame.
