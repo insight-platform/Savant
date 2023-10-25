@@ -5,7 +5,11 @@ from typing import Tuple
 
 from confluent_kafka import Producer
 from redis.asyncio import Redis
-from savant_rs.primitives import VideoFrame, VideoFrameContent
+from savant_rs.primitives import (
+    VideoFrame,
+    VideoFrameContent,
+    VideoFrameTranscodingMethod,
+)
 from savant_rs.utils.serialization import Message, save_message_to_bytes
 
 from adapters.python.shared.config import opt_config
@@ -44,6 +48,7 @@ class Config(BaseConfig):
     def __init__(self):
         super().__init__()
         self.zmq_endpoint = os.environ['ZMQ_ENDPOINT']
+        self.deduplicate = opt_config('DEDUPLICATE', False, bool)
         self.kafka = KafkaConfig()
         try:
             self.redis = RedisConfig()
@@ -72,6 +77,10 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
                 host=config.redis.host,
                 port=config.redis.port,
                 db=config.redis.db,
+            )
+            self._logger.info(
+                'Deduplication is %s.',
+                'enabled' if config.deduplicate else 'disabled',
             )
         else:
             self._logger.info(
@@ -215,30 +224,81 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
 
         content_key = f'{self._config.redis.key_prefix}:{frame.uuid}'
         location = f'{self._config.redis.host}:{self._config.redis.port}:{self._config.redis.db}/{content_key}'
-        self._logger.debug(
-            'Storing content of the frame %s from source %s to Redis location %r (%s bytes)',
-            frame.source_id,
-            frame.pts,
-            location,
-            len(content),
-        )
-        await self._redis_client.set(
-            content_key,
-            content,
-            ex=self._config.redis.ttl_seconds,
-        )
+
+        if await self.need_to_store_content_to_redis(frame, content_key, location):
+            self._logger.debug(
+                'Storing content of the frame %s from source %s to Redis location %r (%s bytes)',
+                frame.pts,
+                frame.source_id,
+                location,
+                len(content),
+            )
+            await self._redis_client.set(
+                content_key,
+                content,
+                ex=self._config.redis.ttl_seconds,
+            )
+
         return VideoFrameContent.external(ExternalFrameType.REDIS.value, location)
+
+    async def need_to_store_content_to_redis(
+        self,
+        frame: VideoFrame,
+        content_key: str,
+        location: str,
+    ):
+        """Check if the frame content needs to be stored to Redis.
+
+        The frame content doesn't need tobe stored in Redis when the following conditions are met:
+        - the deduplication is enabled;
+        - the module before the adapter works in pass-through mode;
+        - Redis already contains the frame content at the location.
+
+        In that case only TTL of the content in Redis is updated. Otherwise,
+        the frame content should be stored in Redis.
+        """
+
+        if not self._config.deduplicate:
+            return True
+
+        if frame.transcoding_method == VideoFrameTranscodingMethod.Encoded:
+            self._logger.debug(
+                'Content of the frame %s from source %s was modified.',
+                location,
+                frame.source_id,
+            )
+            return True
+
+        if await self._redis_client.expire(
+            content_key,
+            self._config.redis.ttl_seconds,
+        ):
+            self._logger.debug(
+                'Content of the frame %s from source %s is already in Redis at %r. TTL was updated.',
+                frame.pts,
+                frame.source_id,
+                location,
+            )
+            return False
+
+        self._logger.debug(
+            'Content of the frame %s from source %s is not in Redis at %r.',
+            frame.pts,
+            frame.source_id,
+            location,
+        )
+        return True
 
     def send_to_producer(self, key: str, value: bytes):
         """Send message to Kafka topic."""
 
         self._logger.debug(
-            'Sending message to kafka topic %s with key %s. Message size is %s bytes. Value: %s.',
+            'Sending message to kafka topic %s with key %s. Message size is %s bytes.',
             self._config.kafka.topic,
             key,
             len(value),
-            value,
         )
+        self._logger.trace('Value: %s.', value)
         self._producer.produce(self._config.kafka.topic, key=key, value=value)
 
 
