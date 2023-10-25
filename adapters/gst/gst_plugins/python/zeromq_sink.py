@@ -6,7 +6,10 @@ import zmq
 
 from gst_plugins.python.zeromq_properties import ZEROMQ_PROPERTIES, socket_type_property
 from savant.gstreamer import GObject, Gst, GstBase
-from savant.gstreamer.utils import propagate_gst_error, propagate_gst_setting_error
+from savant.gstreamer.utils import (
+    gst_post_library_settings_error,
+    gst_post_stream_failed_error,
+)
 from savant.utils.logging import LoggerMixin
 from savant.utils.zeromq import (
     END_OF_STREAM_MESSAGE,
@@ -155,7 +158,7 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
         except ZMQException:
             self.logger.exception('Element start error.')
             frame = inspect.currentframe()
-            propagate_gst_setting_error(self, frame, __file__)
+            gst_post_library_settings_error(self, frame, __file__)
             # prevents pipeline from starting
             return False
 
@@ -204,12 +207,10 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
                 )
                 self.logger.error(error)
                 frame = inspect.currentframe()
-                propagate_gst_error(
+                gst_post_stream_failed_error(
                     gst_element=self,
                     frame=frame,
                     file_path=__file__,
-                    domain=Gst.StreamError.quark(),
-                    code=Gst.StreamError.FAILED,
                     text=error,
                 )
                 return Gst.FlowReturn.ERROR
@@ -241,12 +242,10 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
                 )
                 self.logger.error(error)
                 frame = inspect.currentframe()
-                propagate_gst_error(
+                gst_post_stream_failed_error(
                     gst_element=self,
                     frame=frame,
                     file_path=__file__,
-                    domain=Gst.StreamError.quark(),
-                    code=Gst.StreamError.FAILED,
                     text=error,
                 )
                 return False

@@ -226,11 +226,12 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
         self.logger.debug(
             'Added pad %s on element %s', new_pad.get_name(), element.get_name()
         )
-        add_pad_probe_to_move_frame(
-            new_pad,
-            self._video_pipeline,
-            self._pipeline_decoder_stage_name,
-        )
+        if self._video_pipeline:
+            add_pad_probe_to_move_frame(
+                new_pad,
+                self._video_pipeline,
+                self._pipeline_decoder_stage_name,
+            )
         source_id = pad_to_source_id(new_pad)
         caps = new_pad.get_pad_template_caps()
         new_pad.add_probe(

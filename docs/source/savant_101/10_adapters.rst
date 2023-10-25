@@ -833,6 +833,7 @@ The simplified design of the adapter is depicted in the following diagram:
 - ``SYNC_OUTPUT``: a flag indicates whether to show frames on sink synchronously (i.e. at the source rate); the streaming may be not stable with this flag, try to avoid it; the default value is ``False``;
 - ``SOURCE_ID``: a filter to receive frames with a specific ``source_id`` only. The sink works in single-stream mode when this option is specified;
 - ``SOURCE_IDS``: a filter to receive frames with specific ``source_id``-s only. The sink works in multi-stream mode when this option is specified.
+- ``MAX_RESOLUTION``: Maximum resolution of the incoming stream. If the resolution is greater than the allowed resolution, the video stream will terminate. You can override the max allowed resolution be setting width and height of frames. The default value is ``3840x2152``.
 
 When ``DEV_MODE=True`` the stream is available at:
 
