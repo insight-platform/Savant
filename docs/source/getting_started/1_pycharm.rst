@@ -46,7 +46,7 @@ Setting Up The Interpreter
 
 #. In the modal window:
 
-   * **[step 1 of 4]**: Click on the three dots under **Server** and set up access to the docker service
+   * **[Step 1 of 4]**: Click on the three dots under **Server** and set up access to the docker service
 
      .. image:: ../_static/img/dev-env/20-setup-docker.png
 
