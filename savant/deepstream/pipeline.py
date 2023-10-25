@@ -108,6 +108,7 @@ class NvDsPipeline(GstPipeline):
         init_telemetry(name, telemetry)
 
         output_frame = kwargs.get('output_frame')
+        self._pass_through_mode = bool(output_frame) and output_frame['codec'] == 'copy'
         draw_func: Optional[DrawFunc] = kwargs.get('draw_func')
         if draw_func is not None and output_frame:
             pipeline_cfg.elements.append(draw_func)
@@ -178,6 +179,7 @@ class NvDsPipeline(GstPipeline):
             frame_params=self._frame_params,
             source_output=self._source_output,
             video_pipeline=self._video_pipeline,
+            pass_through_mode=self._pass_through_mode,
         )
 
     def add_element(
@@ -275,6 +277,7 @@ class NvDsPipeline(GstPipeline):
         _source = self.add_element(source)
         if source.element == 'zeromq_source_bin':
             _source.set_property('pipeline', self._video_pipeline)
+            _source.set_property('pass-through-mode', self._pass_through_mode)
             _source.connect('shutdown', self._on_shutdown_signal)
             add_frames_to_pipeline = False
         else:

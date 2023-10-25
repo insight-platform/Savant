@@ -60,6 +60,8 @@ set(SOURCE_FILES
     ${PROJECT_SOURCE_DIR}/gstsavantframemeta.cpp
     ${PROJECT_INCLUDE_DIR}/savantrsprobes.h
     ${PROJECT_SOURCE_DIR}/savantrsprobes.cpp
+    ${PROJECT_INCLUDE_DIR}/savantnvprobes.h
+    ${PROJECT_SOURCE_DIR}/savantnvprobes.cpp
 )
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${SOURCE_FILES})

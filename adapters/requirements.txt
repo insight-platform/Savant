@@ -1,3 +1,5 @@
 pyzmq~=22.2.1
 cachetools~=5.3.0
 pretty-traceback==2023.1019
+# ClientSDK JpegSource, PngSource
+python-magic~=0.4.27

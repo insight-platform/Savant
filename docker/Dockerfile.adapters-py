@@ -6,6 +6,12 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONPATH=$PROJECT_PATH
 WORKDIR $PROJECT_PATH
 
+RUN export DEBIAN_FRONTEND=noninteractive \
+    && apt-get update \
+    && apt-get install --no-install-recommends -y \
+        libmagic1 \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY adapters/requirements.txt $PROJECT_PATH/adapters/requirements.txt
 RUN python -m pip install --no-cache-dir -r $PROJECT_PATH/adapters/requirements.txt
 COPY adapters/requirements-py.txt $PROJECT_PATH/adapters/requirements-py.txt

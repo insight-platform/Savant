@@ -130,3 +130,9 @@ Sample location: [telemetry](./telemetry)
 A sample demonstrating the use of Kafka-Redis adapters in Savant.
 
 Sample location: [kafka_redis_adapter](./kafka_redis_adapter)
+
+### Pass-through Processing
+
+A sample demonstrating the use of pass-through mode in Savant.
+
+Sample location: [pass_through_processing](./pass_through_processing)

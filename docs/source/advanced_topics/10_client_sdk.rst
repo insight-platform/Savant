@@ -56,7 +56,7 @@ Sources ingest frames and their metadata to a running module.
 
 .. note::
 
-    Currently, Client SDK supports only JPEG source, but you can implement your own source based on :py:class:`savant.client.JpegSource`.
+    Currently, Client SDK supports only JPEG or PNG sources, but you can implement your own source based on :py:class:`savant.client.JpegSource` or :py:class:`savant.client.PngSource`.
 
 .. code-block:: python
 
