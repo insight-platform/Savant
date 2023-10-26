@@ -1,4 +1,4 @@
-name: ${oc.env:MODULE_NAME, 'traffic-meter'}
+name: area-object-counting
 
 parameters:
   sidebar_width: 296
