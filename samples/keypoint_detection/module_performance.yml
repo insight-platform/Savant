@@ -3,11 +3,9 @@ name: ${oc.env:MODULE_NAME, 'key_point_detection'}
 parameters:
   output_frame:
     codec: h264
-    encoder_params:
-      bitrate: 8000000
   frame:
-    width: ${oc.decode:${oc.env:FRAME_WIDTH, 1920}}
-    height: ${oc.decode:${oc.env:FRAME_HEIGHT, 1080}}
+    width: ${oc.decode:${oc.env:FRAME_WIDTH, 1280}}
+    height: ${oc.decode:${oc.env:FRAME_HEIGHT, 720}}
   draw_func:
     module: samples.key_point_detection.overlay
     class_name: Overlay

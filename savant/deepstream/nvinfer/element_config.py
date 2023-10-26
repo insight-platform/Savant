@@ -28,7 +28,6 @@ from savant.deepstream.nvinfer.model import (
     NvInferModelFormat,
     NvInferModelType,
     NvInferObjectModelOutputObject,
-    NvInferKeyPoint,
 )
 from savant.parameter_storage import param_storage
 from savant.remote_file import process_remote
@@ -476,11 +475,7 @@ def nvinfer_element_configurator(
             ] = NvInferModelType.INSTANCE_SEGMENTATION.value
             # clustering is done by the model itself
             nvinfer_config['property']['cluster-mode'] = 4
-        elif model_type == NvInferKeyPoint:
-            nvinfer_config['property'][
-                'network-type'
-            ] = NvInferModelType.INSTANCE_SEGMENTATION.value
-            nvinfer_config['property']['cluster-mode'] = 4
+
         # detector
         else:
             nvinfer_config['property']['network-type'] = NvInferModelType.DETECTOR.value
