@@ -25,7 +25,6 @@ parameters:
   detected_object:
     id: 0
     label: person
-  dev_mode: true
 
 pipeline:
 
