@@ -36,7 +36,6 @@ pipeline:
       kwargs:
         config_path: ${oc.env:PROJECT_PATH}/samples/area_object_counting/area_config.yml
 
-
     - element: nvinfer@detector
       name: peoplenet
       model:

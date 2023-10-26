@@ -1,5 +1,4 @@
 import sys
-from collections import defaultdict
 from itertools import permutations
 
 import yaml
@@ -14,7 +13,7 @@ class ConditionalDetectorSkip(NvDsPyFuncPlugin):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         with open(self.config_path, 'r', encoding='utf8') as stream:
-            self.line_config = yaml.safe_load(stream)
+            self.area_config = yaml.safe_load(stream)
 
     def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
         primary_meta_object = None
@@ -31,7 +30,7 @@ class ConditionalDetectorSkip(NvDsPyFuncPlugin):
         # in 'secondary' mode and inserts a primary 'frame' object into the DS meta
         if (
             primary_meta_object is not None
-            and frame_meta.source_id not in self.line_config
+            and frame_meta.source_id not in self.area_config
         ):
             frame_meta.remove_obj_meta(primary_meta_object)
 
