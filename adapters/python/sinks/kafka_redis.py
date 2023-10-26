@@ -249,7 +249,7 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
     ):
         """Check if the frame content needs to be stored to Redis.
 
-        The frame content doesn't need tobe stored in Redis when the following conditions are met:
+        The frame content doesn't need to be stored in Redis when the following conditions are met:
         - the deduplication is enabled;
         - the module before the adapter works in pass-through mode;
         - Redis already contains the frame content at the location.
