@@ -45,6 +45,12 @@ Preview:
 
 ![](intersection_traffic_meter/assets/intersection-traffic-meter-loop-400.webp)
 
+### Area object counting demo
+
+Sample Location: [area_object_counting](./area_object_counting/)
+
+![](area_object_counting/assets/area-object-counting-loop-400.webp)
+
 ### Age gender recognition
 
 Sample Location: [age gender recognition](./age_gender_recognition)
@@ -69,7 +75,7 @@ Preview:
 
 ![](face_reid/assets/face-reid-loop-400.webp)
 
-### License plate recognition 
+### License plate recognition
 
 Sample location: [LPR](./license_plate_recognition)
 
