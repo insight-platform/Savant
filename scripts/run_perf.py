@@ -253,6 +253,10 @@ def main():
 
         # results
         fps_list = [stat['fps']['avg'] for stat in stats]
+        if not fps_list:
+            print('fail')
+            continue
+
         fps = sum(fps_list) / len(fps_list)
         fps_list = [round(fps, 2) for fps in fps_list]
         print(f'fps: {fps:.2f}\nfps_avg: {fps_list}')
