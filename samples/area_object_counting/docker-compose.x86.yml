@@ -11,7 +11,7 @@ services:
       - LOCATION=https://eu-central-1.linodeobjects.com/savant-data/demo/AVG-TownCentre.mp4
       - DOWNLOAD_PATH=/tmp/video-loop-source-downloads
       - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
-      - SOURCE_ID=test
+      - SOURCE_ID=town-centre
       - SYNC_OUTPUT=True
     entrypoint: /opt/savant/adapters/gst/sources/video_loop.sh
     depends_on:
@@ -52,7 +52,7 @@ services:
       - ../assets/stub_imgs:/stub_imgs
     environment:
       - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
-      - SOURCE_ID=test
+      - SOURCE_ID=town-centre
       - STUB_FILE_LOCATION=/stub_imgs/smpte100_1576x720.jpeg
       - DEV_MODE=True
     command: python -m adapters.ds.sinks.always_on_rtsp

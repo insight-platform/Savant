@@ -45,7 +45,9 @@ class ObjectCounting(NvDsPyFuncPlugin):
         self.areas = {}
         for source_id, areas in self.area_config.items():
             self.areas[source_id] = {}
-            for area_name, coords_list in areas.items():
+            for area_name, area_dict in areas.items():
+
+                coords_list = area_dict['points']
 
                 points = [Point(*pt_coords) for pt_coords in coords_list]
 
@@ -85,14 +87,6 @@ class ObjectCounting(NvDsPyFuncPlugin):
 
                 self.areas[source_id][area_name] = polygon
 
-        self.logger.info(self.areas)
-
-
-
-    def on_source_eos(self, source_id: str):
-        """On source EOS event callback."""
-
-
     def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
         """Process frame metadata.
 
@@ -111,10 +105,7 @@ class ObjectCounting(NvDsPyFuncPlugin):
         if not primary_meta_object:
             return
 
-        obj_centers = [
-            Point(obj.bbox.xc, obj.bbox.yc)
-            for obj in obj_metas
-        ]
+        obj_centers = [Point(obj.bbox.xc, obj.bbox.yc) for obj in obj_metas]
 
         areas = self.areas.get(frame_meta.source_id, [])
         for area_name, area in areas.items():
@@ -124,6 +115,4 @@ class ObjectCounting(NvDsPyFuncPlugin):
                     obj.draw_label = area_name
             n_objs_in_area = sum(contain_flags)
 
-            primary_meta_object.add_attr_meta(
-                'analytics', area_name, n_objs_in_area
-            )
+            primary_meta_object.add_attr_meta('analytics', area_name, n_objs_in_area)
