@@ -891,7 +891,8 @@ The Kafka-Redis Sink Adapter sends video stream metadata to Kafka and frame cont
 - ``REDIS_DB``: a Redis database; default is ``0``;
 - ``REDIS_KEY_PREFIX``: a prefix for Redis keys; frame content is put to Redis with a key ``REDIS_KEY_PREFIX:UUID``; default is ``savant:frames``;
 - ``REDIS_TTL_SECONDS``: a TTL for Redis keys; default is ``60``;
-- ``QUEUE_SIZE``: a maximum amount of messages in the queue; default is ``50``.
+- ``QUEUE_SIZE``: a maximum amount of messages in the queue; default is ``50``;
+- ``DEDUPLICATE``: when ``True`` and the frame content was not encoded by the module (i.e. the module works in pass-through mode) the adapter will only update TTL of the frame content in Redis; default is ``False``.
 
 Running the adapter with Docker:
 
