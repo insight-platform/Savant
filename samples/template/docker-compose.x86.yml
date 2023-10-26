@@ -54,6 +54,8 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
+    links:
+      - jaeger
     networks:
       - network
 

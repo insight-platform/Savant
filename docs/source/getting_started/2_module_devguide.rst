@@ -32,7 +32,9 @@ Let us observe basic operations you may encounter during the pipeline developmen
 Recommended Module Layout
 -------------------------
 
-Small and medium-size pipelines can have a flat layout with all the components placed in a single directory. You can find a number of such pipelines in `samples <https://github.com/insight-platform/Savant/tree/develop/samples>`_ directory.
+.. _samples: https://github.com/insight-platform/Savant/tree/develop/samples
+
+Small and medium-size pipelines can have a flat layout with all the components placed in a single directory. You can find a number of such pipelines in `samples`_ directory.
 
 You don't need to have a whole Savant repo to develop a module, only what is inside a module directory.
 
@@ -51,13 +53,13 @@ The `module` Directory
 
 The **module.yml** contains pipeline manifest describing pipeline stages and properties. This is where you the structure and declarative behavior with predefined properties and specify custom Python invocations when you need domain-specific processing. You can think of it as of ``HTML`` with ``JavaScript`` blocks if you have web-development experience.
 
-There are three Python files ``run.py``, ``overlay.py``, ``custom_pyfunc.py``. Let us discuss them.
+There are three Python files ``run.py``, ``overlay_custom.py``, ``overlay_draw_spec.py``, ``custom_pyfunc.py``. Let us discuss them.
 
 The  file ``run.py`` is an auxiliary file used as a module entrypoint. Docker images are configure to use it. Also, you use it to run and stop the pipeline from IDE. For production deployments, you normally don't need it, but you can use it to implement custom code initialization if necessary.
 
-The file ``custom_pyfunc.py`` is a stub file for a `pyfunc` element which implements custom logic. You will find a lot of various pyfuncs in `samples <https://github.com/insight-platform/Savant/tree/develop/samples>`.
+The file ``custom_pyfunc.py`` is a stub file for a `pyfunc` element which implements custom logic. You will find a lot of various pyfuncs in `samples`_.
 
-The file ``overlay.py`` represents a custom `draw_func` element used to customize video drawing functionality of Savant. It is usually used when you need to add some non-standard fancy graphics in your frames. The samples demonstrate custom ``draw_func`` implementations as well.
+The file ``overlay_custom.py`` represents a custom `draw_func` element used to customize video drawing functionality of Savant. It is usually used when you need to add some non-standard fancy graphics in your frames. The `samples`_ demonstrate custom ``draw_func`` implementations as well. ``overlay_draw_spec.py`` on the other hand shows a simpler way to customize some drawing properties, e.g. change boxes colors or thickness, enable/disable labels or blur etc.
 
 Rebuilding Docker Image
 -----------------------
@@ -112,11 +114,11 @@ Also you can do it from the CLI like:
 
 .. code-block:: bash
 
-    python /opt/project/module/run.py
+    python /opt/savant/src/module/run.py
 
 Use IDEs controls to stop the module as usual.
 
-You must use hard restarts when introducing changes in the module’s YAML manifest. The YAML manifest corresponds to the pipeline; Savant does not implement rebuilding the pipeline on change.
+You must use hard restarts when introducing changes in the module's YAML manifest. The YAML manifest corresponds to the pipeline; Savant does not implement rebuilding the pipeline on change.
 
 These starts/stops are time-consuming; we recommend building the development process to decrease the number of such restarts. From our perspective, it can be achieved by development iteratively (from the pipeline beginning to the pipeline end) following the waterfall principle.
 
