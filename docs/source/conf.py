@@ -41,7 +41,12 @@ extensions = [
     'sphinx.ext.autosectionlabel',
     'sphinxcontrib.youtube',
     'repo_link',
+    'sphinxcontrib.images',
 ]
+
+images_config = {
+    'override_image_directive': True,
+}
 
 repo_link = 'https://github.com/insight-platform/Savant'
 
