@@ -62,7 +62,7 @@ class NvDsElementFactory(GstElementFactory):
     def create_nvtracker(element: PipelineElement) -> Gst.Element:
         """Creates nvtracker element with optional src pad probe
         that removes objects created by the tracker."""
-        disable_obj_init = element.properties.pop('disable-obj-init', False)
+        disable_obj_init = element.properties.pop('disable-obj-init', True)
 
         tracker = GstElementFactory.create_element(element)
 
