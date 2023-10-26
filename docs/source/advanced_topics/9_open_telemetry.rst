@@ -1,7 +1,7 @@
 OpenTelemetry Support
 ---------------------
 
-**What is OpenTelemetry (from the official website).** OpenTelemetry is a collection of APIs, SDKs, and tools. Use it to instrument, generate, collect, and export telemetry data (metrics, logs, and traces) to help you analyze your software’s performance and behavior.
+**What is OpenTelemetry (from the official website).** OpenTelemetry is a collection of APIs, SDKs, and tools. Use it to instrument, generate, collect, and export telemetry data (metrics, logs, and traces) to help you analyze your software's performance and behavior.
 
 .. tip::
 
