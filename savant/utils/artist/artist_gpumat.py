@@ -248,6 +248,24 @@ class ArtistGPUMat(AbstractContextManager):
         self.__init_overlay()
         cv2.circle(self.overlay, center, radius, color, thickness, line_type)
 
+    def add_line(
+            self, pt1: Tuple[int, int],
+            pt2: Tuple[int, int],
+            color: Tuple[int, int, int, int] = (255, 0, 0, 255),  # RGBA, Red,
+            thickness: int = 3
+    ):
+        """Draw line.
+
+        :param pt1: First point.
+        :param pt2: Second point.
+        :param color: Line color, RGBA, ints in range [0;255].
+        :param thickness: Line thickness.
+        """
+        if color[3] <= 0 or thickness <= 0:
+            return
+        self.__init_overlay()
+        cv2.line(self.overlay, pt1, pt2, color, thickness)
+
     def add_polygon(
         self,
         vertices: List[Tuple[int, int]],

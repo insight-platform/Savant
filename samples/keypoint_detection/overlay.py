@@ -34,18 +34,17 @@ class Overlay(NvDsDrawFunc):
                 key_points = np.array(key_points).reshape(-1, 2)
 
                 for pair, color in skeleton:
-                    artist.add_polygon(
-                        vertices=[
-                            (int(key_points[pair[0]][0]), int(key_points[pair[0]][1])),
-                            (int(key_points[pair[1]][0]), int(key_points[pair[1]][1]))
-                        ],
-                        line_color=color
+                    artist.add_line(
+                        pt1=(int(key_points[pair[0]][0]), int(key_points[pair[0]][1])),
+                        pt2=(int(key_points[pair[1]][0]), int(key_points[pair[1]][1])),
+                        color=color,
+                        thickness=2
                     )
                 for key_point in key_points:
                     if key_point[0] > 0 and key_point[1] > 0:
                         artist.add_circle(
                             center=(int(key_point[0]), int(key_point[1])),
-                            radius=3,
+                            radius=2,
                             color=(255, 0, 0, 255),
-                            thickness=6
+                            thickness=2
                         )
