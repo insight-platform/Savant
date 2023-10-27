@@ -1,4 +1,4 @@
-name: ${oc.env:MODULE_NAME, 'key_point_detection'}
+name: ${oc.env:MODULE_NAME, 'keypoint_detection'}
 
 parameters:
   output_frame:
@@ -7,7 +7,7 @@ parameters:
     width: ${oc.decode:${oc.env:FRAME_WIDTH, 1280}}
     height: ${oc.decode:${oc.env:FRAME_HEIGHT, 720}}
   draw_func:
-    module: samples.key_point_detection.overlay
+    module: samples.keypoint_detection.overlay
     class_name: Overlay
     rendered_objects:
       yolov8npose:
@@ -25,7 +25,6 @@ pipeline:
     - element: nvinfer@complex_model
       name: yolov8npose
       model:
-#        local_path: /models/yolov8npose
         remote:
           url: s3://savant-data/models/yolov8npose/yolov8npose.zip
           checksum_url: s3://savant-data/models/yolov8npose/yolov8npose.md5
@@ -42,7 +41,7 @@ pipeline:
         output:
           layer_names: [ 'boxes', 'scores', 'kpts' ]
           converter:
-            module: samples.key_point_detection.yolo_v8pose
+            module: samples.keypoint_detection.yolo_v8pose
             class_name: YoloV8faceConverter
             kwargs:
               confidence_threshold: 0.6

@@ -23,9 +23,9 @@ services:
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
-      - ../../models/key_point_detection:/models
-      - ../../downloads/key_point_detection:/downloads
-      - .:/opt/savant/samples/key_point_detection
+      - ../../models/keypoint_detection:/models
+      - ../../downloads/keypoint_detection:/downloads
+      - .:/opt/savant/samples/keypoint_detection
     command: samples/key_point_detection/module.yml
     environment:
       - ZMQ_SRC_ENDPOINT=router+bind:ipc:///tmp/zmq-sockets/input-video.ipc
