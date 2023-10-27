@@ -39,20 +39,3 @@ cd Savant/samples/keypoint_detection
 cd ../..
 ```
 
-## Performance Measurement
-
-Download the video file to your local folder. For example, create a data folder and download the video into it (all commands must be executed from the root directory of the project Savant)
-
-```bash
-# you are expected to be in Savant/ directory
-
-mkdir -p data && curl -o data/shuffle_dance.mp4 \
-   https://eu-central-1.linodeobjects.com/savant-data/demo/shuffle_dance.mp4
-```
-
-Now you are ready to run the performance benchmark with the following command:
-
-```bash
-./samples/keypoint_detection/run_perf.sh
-```
-
