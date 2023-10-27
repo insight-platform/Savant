@@ -22,15 +22,15 @@ skeleton = [
     ([1, 3], (255, 255, 0, 255)),  # head
     ([2, 4], (255, 255, 0, 255)),  # head
     ([3, 5], (255, 255, 0, 255)),  # head
-    ([4, 6], (255, 255, 0, 255))  # head
+    ([4, 6], (255, 255, 0, 255)),  # head
 ]
 
 
 class Overlay(NvDsDrawFunc):
     def draw_on_frame(self, frame_meta: NvDsFrameMeta, artist: Artist):
         for obj in frame_meta.objects:
-            if obj.label == "person":
-                key_points = obj.get_attr_meta("yolov8npose", "keypoint").value
+            if obj.label == 'person':
+                key_points = obj.get_attr_meta('yolov8npose', 'keypoint').value
                 key_points = np.array(key_points).reshape(-1, 2)
 
                 for pair, color in skeleton:
@@ -38,7 +38,7 @@ class Overlay(NvDsDrawFunc):
                         pt1=(int(key_points[pair[0]][0]), int(key_points[pair[0]][1])),
                         pt2=(int(key_points[pair[1]][0]), int(key_points[pair[1]][1])),
                         color=color,
-                        thickness=2
+                        thickness=2,
                     )
                 for key_point in key_points:
                     if key_point[0] > 0 and key_point[1] > 0:
@@ -46,5 +46,5 @@ class Overlay(NvDsDrawFunc):
                             center=(int(key_point[0]), int(key_point[1])),
                             radius=2,
                             color=(255, 0, 0, 255),
-                            thickness=2
+                            thickness=2,
                         )

@@ -249,10 +249,11 @@ class ArtistGPUMat(AbstractContextManager):
         cv2.circle(self.overlay, center, radius, color, thickness, line_type)
 
     def add_line(
-            self, pt1: Tuple[int, int],
-            pt2: Tuple[int, int],
-            color: Tuple[int, int, int, int] = (255, 0, 0, 255),  # RGBA, Red,
-            thickness: int = 3
+        self,
+        pt1: Tuple[int, int],
+        pt2: Tuple[int, int],
+        color: Tuple[int, int, int, int] = (255, 0, 0, 255),  # RGBA, Red,
+        thickness: int = 3,
     ):
         """Draw line.
 

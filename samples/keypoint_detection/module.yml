@@ -9,13 +9,6 @@ parameters:
   draw_func:
     module: samples.keypoint_detection.overlay
     class_name: Overlay
-    rendered_objects:
-      yolov8npose:
-        person:
-          bbox:
-            border_color: '00FF00FF'  # Green
-            background_color: '00000000'  # transparent
-            thickness: 4
   detected_object:
     id: 0
     label: person

@@ -23,7 +23,7 @@ class YoloV8faceConverter(BaseComplexModelOutputConverter):
         nms_iou_threshold: float = 0.45,
         **kwargs,
     ):
-        """Initialize YOLOv5face converter."""
+        """Initialize YOLOv8pose converter."""
         super().__init__(**kwargs)
         self.confidence_threshold = confidence_threshold
         self.nms_iou_threshold = nms_iou_threshold
@@ -37,9 +37,8 @@ class YoloV8faceConverter(BaseComplexModelOutputConverter):
         """Converts output layer tensor to bbox tensor and addition
         attribute(key points).
 
-        :param output_layers: Output layer tensor
-        :param model: Model definition, required parameters: input tensor shape,
-            maintain_aspect_ratio
+        :param output_layers: Output layers tensor
+        :param model: Model definition, required parameters: input tensor shape
         :param roi: [top, left, width, height] of the rectangle
             on which the model infers
         :return: a combination of :py:class:`.BaseObjectModelOutputConverter` and
@@ -54,15 +53,9 @@ class YoloV8faceConverter(BaseComplexModelOutputConverter):
         scores = np.float32(output_layers[1])
         kpts = np.float32(output_layers[2])
 
-        bboxes = bboxes[
-            scores[:, 0] > self.confidence_threshold
-        ]
-        kpts = kpts[
-            scores[:, 0] > self.confidence_threshold
-        ]
-        scores = scores[
-            scores[:, 0] > self.confidence_threshold
-        ]
+        bboxes = bboxes[scores[:, 0] > self.confidence_threshold]
+        kpts = kpts[scores[:, 0] > self.confidence_threshold]
+        scores = scores[scores[:, 0] > self.confidence_threshold]
 
         atr_name = model.output.attributes[0].name
 
@@ -79,7 +72,7 @@ class YoloV8faceConverter(BaseComplexModelOutputConverter):
         if bboxes is not None and bboxes.size:
             keep = nms_cpu(
                 bboxes,
-                scores[:,0],
+                scores[:, 0],
                 self.nms_iou_threshold,
             )
             bboxes = bboxes[keep == 1]
@@ -92,17 +85,12 @@ class YoloV8faceConverter(BaseComplexModelOutputConverter):
             kpts -= np.float32([pad_x, pad_y])
             kpts *= np.float32([ratio, ratio])
             bboxes = np.concatenate(
-                (
-                    np.zeros((bboxes.shape[0], 1), dtype=np.float32),
-                    scores,
-                    bboxes
-                 ),
-                axis=1
+                (np.zeros((bboxes.shape[0], 1), dtype=np.float32), scores, bboxes),
+                axis=1,
             )
             key_points = [
                 [(atr_name, lms, conf)]
                 for lms, conf in zip(kpts.reshape(-1, 34).tolist(), mean_conf.tolist())
-
             ]
             return bboxes, key_points
 

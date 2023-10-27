@@ -1,6 +1,6 @@
 # Keypoint detection demo
 
-This application demonstrates the use of the human body key point detection model.
+This application demonstrates the human body key point detection model.
 
 Preview:
 
@@ -8,7 +8,7 @@ Preview:
 
 Tested on platforms:
 
-- Xavier NX, Xavier AGX, Orin Nano;
+- Xavier NX, Orin Nano;
 - Nvidia Turing, Ampere.
 
 Demonstrated adapters:
