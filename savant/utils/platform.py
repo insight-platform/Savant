@@ -64,15 +64,16 @@ def get_platform_info() -> dict:
         try:
             import jtop
 
-            with jtop.jtop() as jetson:
-                board_info = jetson.board
+            jetson = jtop.jtop()
+            jetson.start()
             platform_info['jetson'] = dict(
-                model=board_info['hardware']['Model'],
-                l4t=board_info['hardware']['L4T'],
-                jetpack=board_info['hardware']['Jetpack'],
-                cuda=board_info['libraries']['CUDA'],
-                tensorrt=board_info['libraries']['TensorRT'],
+                model=jetson.board['hardware']['Model'],
+                l4t=jetson.board['hardware']['L4T'],
+                jetpack=jetson.board['hardware']['Jetpack'],
+                cuda=jetson.board['libraries']['CUDA'],
+                tensorrt=jetson.board['libraries']['TensorRT'],
             )
+            jetson.close()
         except:
             platform_info['jetson'] = dict(l4t='.'.join(get_l4t_version()))
 
@@ -92,7 +93,9 @@ def get_jetson_stats():
     """Returns a simplified version of tegrastats."""
     import jtop
 
-    with jtop.jtop() as jetson:
-        stats = jetson.stats
+    jetson = jtop.jtop()
+    jetson.start()
+    stats = jetson.stats
+    jetson.close()
 
     return stats
