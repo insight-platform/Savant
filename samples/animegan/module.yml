@@ -1,0 +1,49 @@
+name: animegan
+
+parameters:
+  frame:
+    width: 1280
+    height: 720
+    padding:
+      keep: true
+      left: 0
+      # right: ${parameters.frame.width}
+      right: 0
+      top: 0
+      bottom: 0
+  output_frame:
+    codec: h264
+
+
+pipeline:
+  source:
+    element: uridecodebin
+    properties:
+      uri: file:///data/deepstream_sample_720p.mp4
+
+  elements:
+
+    - element: nvinfer@attribute_model
+      name: v2_paprika
+      model:
+        # remote:
+        #   url: s3://savant-data/models/age_gender/age_gender.zip
+        #   checksum_url: s3://savant-data/models/age_gender/age_gender.md5
+        #   parameters:
+        #     endpoint: https://eu-central-1.linodeobjects.com
+        format: onnx
+        config_file: animegan_v2_paprika_config.txt
+        output:
+          layer_names: [ 'output' ]
+          converter:
+            module:  samples.animegan.animegan_converter
+            class_name: AnimeganConverter
+          attributes:
+            - name: gan
+              internal: true
+
+
+    - element: pyfunc
+      module: samples.animegan.video_tile
+      class_name: VideoTile
+
