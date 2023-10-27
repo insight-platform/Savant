@@ -249,6 +249,7 @@ def main():
             if 'fps' not in _stats:
                 print('fail')
                 continue
+            print(f'stats\n{json.dumps(_stats, indent=2)}')
             stats.append(_stats)
 
         # results
