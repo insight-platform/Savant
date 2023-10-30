@@ -1,33 +1,29 @@
 version: "3.3"
 services:
 
-  # video-loop-source:
-  #   image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
-  #   restart: unless-stopped
-  #   volumes:
-  #     - zmq_sockets:/tmp/zmq-sockets
-  #     - /tmp/video-loop-source-downloads:/tmp/video-loop-source-downloads
-  #     - ../../data/modules/animegan/:/data
-  #   environment:
-  #     - LOCATION=https://eu-central-1.linodeobjects.com/savant-data/demo/jumanji_cast.mp4
-  #     - DOWNLOAD_PATH=/tmp/video-loop-source-downloads
-  #     - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
-  #     - SOURCE_ID=video
-  #     - SYNC_OUTPUT=True
-  #   entrypoint: /opt/savant/adapters/gst/sources/video_loop.sh
-  #   depends_on:
-  #     module:
-  #       condition: service_healthy
+  source:
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    entrypoint: /opt/savant/adapters/gst/sources/multi_stream.sh
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ../../data/:/data
+    environment:
+      - LOCATION=/data/deepstream_sample_720p.mp4
+      - SHUTDOWN_AUTH=shutdown
+      - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
+      - SOURCE_ID_PATTERN=camera_%d
+      - NUMBER_OF_STREAMS=1
+    depends_on:
+      module:
+        condition: service_healthy
 
   module:
     image: ghcr.io/insight-platform/savant-deepstream:latest
-
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../models/animegan:/models
       - ../../downloads/animegan:/downloads
       - ..:/opt/savant/samples
-      - ../../data:/data
     command: samples/animegan/module.yml
     environment:
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
@@ -41,37 +37,11 @@ services:
               count: 1
               capabilities: [gpu]
 
-  # always-on-sink:
-  #   image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
-  #   restart: unless-stopped
-  #   ports:
-  #     - "554:554"    # RTSP
-  #     - "1935:1935"  # RTMP
-  #     - "888:888"    # HLS
-  #     - "8889:8889"  # WebRTC
-  #   volumes:
-  #     - zmq_sockets:/tmp/zmq-sockets
-  #     - ../assets/stub_imgs:/stub_imgs
-  #   environment:
-  #     - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
-  #     - SOURCE_ID=video
-  #     - FRAMERATE=25/1
-  #     - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x720.jpeg
-  #     - DEV_MODE=True
-  #   command: python -m adapters.ds.sinks.always_on_rtsp
-  #   deploy:
-  #     resources:
-  #       reservations:
-  #         devices:
-  #           - driver: nvidia
-  #             count: 1
-  #             capabilities: [gpu]
-
   video-sink:
     image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
-      - ../../results/:/data
+      - ../../data/results:/data
     environment:
       - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
       - DIR_LOCATION=/data
