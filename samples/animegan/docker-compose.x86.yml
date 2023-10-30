@@ -8,7 +8,7 @@ services:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../data/:/data
     environment:
-      - LOCATION=/data/deepstream_sample_720p.mp4
+      - LOCATION=/data/${INPUT_FILENAME}
       - SHUTDOWN_AUTH=shutdown
       - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
       - SOURCE_ID_PATTERN=camera_%d

@@ -69,7 +69,7 @@ Preview:
 
 ![](face_reid/assets/face-reid-loop-400.webp)
 
-### License plate recognition 
+### License plate recognition
 
 Sample location: [LPR](./license_plate_recognition)
 
@@ -86,6 +86,14 @@ Sample Location: [opencv_cuda_bg_remover_mog2](./opencv_cuda_bg_remover_mog2)
 Preview:
 
 ![](opencv_cuda_bg_remover_mog2/assets/opencv_cuda_bg_remover_mog2-800.webp)
+
+### AnimeGAN demo
+
+Sample Location: [animegan](./animegan)
+
+Preview:
+
+![](animegan/assets/animegan-loop-400.webp)
 
 ### Conditional Video Processing
 
