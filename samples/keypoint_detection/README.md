@@ -8,7 +8,7 @@ Preview:
 
 Tested on platforms:
 
-- Xavier NX, Orin Nano;
+- Xavier NX, Xavier AGX;
 - Nvidia Turing, Ampere.
 
 Demonstrated adapters:
