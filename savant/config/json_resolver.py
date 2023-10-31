@@ -15,11 +15,10 @@ def json_resolver(  # pylint:disable=unused-argument
     """OmegaConf resolver that provides config variable value by parsing a JSON
     string."""
     logger.debug('Parsing param JSON "%s"', json_string)
+    if json_string is None:
+        return None
     try:
-        if json_string is not None:
-            parsed_conf_node = json.loads(json_string)
-        else:
-            return None
+        parsed_conf_node = json.loads(json_string)
     except TypeError:
         logger.warning('JSON loads fail, returning None for "%s".', json_string)
         return None

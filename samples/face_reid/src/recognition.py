@@ -2,8 +2,8 @@
 import os
 
 import hnswlib
-
 from samples.face_reid.utils import unpack_person_id_img_n
+
 from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.deepstream.pyfunc import NvDsPyFuncPlugin
 from savant.gstreamer import Gst

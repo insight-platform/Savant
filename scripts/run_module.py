@@ -115,9 +115,12 @@ def run_module(
             'Path to module config is expected to end with ".yml" suffix.'
         )
 
-    module_name = module_config_path.parent.stem
-    if module_name == 'module':
-        module_name = module_config_path.parent.parent.stem
+    # module name = module folder name, samples/<folder>
+    if module_config_path.parts[0] != 'samples':
+        raise click.BadParameter(
+            'Currently it is only supported to run modules from the "samples/" folder.'
+        )
+    module_name = module_config_path.parts[1]
 
     volumes = [
         f'{(repo_root_dir / "samples").resolve()}:/opt/savant/samples',

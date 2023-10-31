@@ -205,4 +205,3 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
                 obj_meta.bbox,
                 exc_info=exc,
             )
-

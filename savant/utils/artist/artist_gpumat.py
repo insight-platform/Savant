@@ -150,7 +150,7 @@ class ArtistGPUMat(AbstractContextManager):
                 PaddingDraw(*padding), border_width, self.max_col, self.max_row
             ).as_ltrb_int()
 
-            if (right - left) == 0 or (bottom - top) == 0:
+            if (right - left) < 1 or (bottom - top) < 1:
                 raise ValueError('Wrong bbox size.')
 
             if draw_bg:
@@ -310,7 +310,7 @@ class ArtistGPUMat(AbstractContextManager):
             PaddingDraw(*padding), 0, self.max_col, self.max_row
         ).as_ltwh_int()
 
-        if width == 0 or height == 0:
+        if width < 1 or height < 1:
             raise ValueError('Wrong bbox size.')
 
         roi_mat = cv2.cuda.GpuMat(self.frame, (left, top, width, height))

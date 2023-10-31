@@ -34,7 +34,9 @@ from savant.utils.version import version
 # They come from savant_rs logging.
 # ANSI codes interfere with parsing FPS from the output.
 ANSI_ESCAPE_PATTERN = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
-FPS_PATTERN = re.compile(r'^.*Processed \d+ frames, (?P<fps>\d+\.\d+) FPS\.$')
+FPS_PATTERN = re.compile(
+    r'^.*Processed (?P<num_frames>\d+) frames, (?P<fps>\d+\.\d+) FPS\.$'
+)
 STATS_PATTERN = re.compile(
     r'^(?P<name>\w+): min=(?P<min>\d+), max=(?P<max>\d+), avg=(?P<avg>\d+\.\d+)$'
 )
@@ -60,7 +62,7 @@ def process_logs_file(logs_file_path: Path, stats_vars: List[str]) -> Dict[str, 
             if ' Processed ' in line:
                 match = FPS_PATTERN.match(line)
                 if match:
-                    fps_list.append(float(match['fps']))
+                    fps_list.append((int(match['num_frames']), float(match['fps'])))
                 continue
 
             for stats_var in stats_vars:
@@ -77,11 +79,11 @@ def process_logs_file(logs_file_path: Path, stats_vars: List[str]) -> Dict[str, 
         fps_list = fps_list[1:-1]
     # average
     if len(fps_list) > 1:
-        num_frames = len(fps_list) * FPS_PERIOD
-        duration = sum({FPS_PERIOD / fps for fps in fps_list})
-        fps_list = [num_frames / duration]
+        num_frames = sum([num for num, _ in fps_list])
+        duration = sum({num / fps for num, fps in fps_list})
+        fps_list = [(num_frames, num_frames / duration)]
     if fps_list:
-        stats['fps'] = {'avg': fps_list[0]}
+        stats['fps'] = {'avg': fps_list[0][1]}
 
     return stats
 
