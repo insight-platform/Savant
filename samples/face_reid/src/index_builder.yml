@@ -17,6 +17,7 @@ parameters:
   reid_model_name: adaface_ir50_webface4m_90fb74c
 
   shutdown_auth: "shutdown"
+  batch_size: 1
 
 pipeline:
 
@@ -32,6 +33,7 @@ pipeline:
             endpoint: https://eu-central-1.linodeobjects.com
         format: onnx
         config_file: yolov8n-face.txt
+        batch_size: ${parameters.batch_size}
         input:
           shape:
             - 3
@@ -67,7 +69,7 @@ pipeline:
             endpoint: https://eu-central-1.linodeobjects.com
         format: onnx
         model_file: adaface_ir50_webface4m.onnx
-        batch_size: 4
+        batch_size: 16
         input:
           object: ${parameters.detection_model_name}.face
           shape: [3, 112, 112]

@@ -1,5 +1,5 @@
 # module name, required
-name: ${oc.env:MODULE_NAME, 'demo'}
+name: opencv_cuda_bg_remover_mog2
 
 # base module parameters
 parameters:
@@ -20,7 +20,6 @@ parameters:
     # this is to circumvent 3 hardware decoding processes limit on NVIDIA consumer hardware
     codec: raw-rgba
   batch_size: 1
-
 
 # pipeline definition
 pipeline:

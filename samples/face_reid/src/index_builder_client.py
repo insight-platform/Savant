@@ -9,9 +9,9 @@ from io import BytesIO
 import cv2
 import hnswlib
 import numpy as np
+from samples.face_reid.utils import pack_person_id_img_n
 from savant_rs.primitives import Attribute, AttributeValue, VideoFrameUpdate
 
-from samples.face_reid.utils import pack_person_id_img_n
 from savant.client import JpegSource, SinkBuilder, SourceBuilder
 from savant.client.utils import resize_preserving_aspect
 from savant.utils.logging import get_logger, init_logging

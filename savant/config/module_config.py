@@ -111,7 +111,7 @@ def get_elem_type_ver(
                 'Mixing short notation and full definition is not supported.'
             )
         logger.debug(
-            'Parsed full definiton, result element="%s" elem_type="%s" elem_ver="%s"',
+            'Parsed full definition, result element="%s" elem_type="%s" elem_ver="%s"',
             element,
             elem_type,
             elem_ver,
@@ -157,35 +157,24 @@ def setup_batch_size(config: Module) -> None:
                             return element
         return None
 
-    first_model_element = find_first_model_element(config.pipeline)
-    if first_model_element is not None:
-        first_model_batch_size = first_model_element.model.batch_size
-        logger.debug(
-            'Found first ModelElement "%s" of the pipeline with the batch size of %s.',
-            first_model_element.name,
-            first_model_batch_size,
-        )
-    else:
-        first_model_batch_size = None
-        logger.debug('No ModelElements found in the pipeline.')
+    batch_size = config.parameters.get('batch_size')
+    logger.debug('Pipeline batch size parameter is %s.', batch_size)
 
-    parameter_batch_size = config.parameters.get('batch_size')
-    logger.debug('Pipeline batch size parameter is %s.', parameter_batch_size)
-
-    if first_model_batch_size is not None:
-        if (
-            parameter_batch_size is not None
-            and parameter_batch_size != first_model_batch_size
-        ):
-            raise ModuleConfigException(
-                'Module parameter "batch_size" is set explicitly '
-                'and does not match first pipeline model "batch_size".'
+    if batch_size is None:
+        first_model_element = find_first_model_element(config.pipeline)
+        if first_model_element is not None:
+            batch_size = first_model_element.model.batch_size
+            logger.debug(
+                'Found first ModelElement "%s" of the pipeline with '
+                'the batch size of %s.',
+                first_model_element.name,
+                batch_size,
             )
-        batch_size = first_model_batch_size
-    elif parameter_batch_size is None:
+        else:
+            logger.debug('No ModelElements found in the pipeline.')
+
+    if batch_size is None:
         raise ModuleConfigException('Parameter "batch_size" is required.')
-    else:
-        batch_size = parameter_batch_size
 
     if not (0 < batch_size <= 1024):
         raise ModuleConfigException(
@@ -199,7 +188,7 @@ def setup_batch_size(config: Module) -> None:
 def configure_module_parameters(module_cfg: DictConfig) -> None:
     """Resolve parameters on module config ("frame", "draw_func", etc.).
 
-    :param config: Module config.
+    :param module_cfg: Module config.
     """
     if 'parameters' not in module_cfg or module_cfg.parameters is None:
         module_cfg.parameters = {}
@@ -301,7 +290,10 @@ def merge_configs(
     # if source for module is specified,
     # it should be used instead of default source (not merged)
     if 'pipeline' in user_cfg and 'source' in user_cfg.pipeline:
-        del default_cfg.pipeline.source
+        if user_cfg.pipeline.source:
+            del default_cfg.pipeline.source
+        else:
+            del user_cfg.pipeline.source
 
     return OmegaConf.unsafe_merge(default_cfg, user_cfg)
 
@@ -409,7 +401,7 @@ class ModuleConfig(metaclass=SingletonMeta):
         self._default_cfg = OmegaConf.load(
             Path(__file__).parent.resolve() / 'default.yml'
         )
-        logger.debug('loaded default config\n%s', OmegaConf.to_yaml(self._default_cfg))
+        logger.debug('Loaded default config\n%s', OmegaConf.to_yaml(self._default_cfg))
         self._config = None
 
     def load(self, config_file_path: Union[str, Path]) -> Module:
@@ -430,7 +422,7 @@ class ModuleConfig(metaclass=SingletonMeta):
         logger.debug('Configure module parameters...')
         configure_module_parameters(module_cfg)
 
-        logger.info('Configure pipeline elements...')
+        logger.debug('Configure pipeline elements...')
         configure_pipeline_elements(module_cfg)
 
         self._config = OmegaConf.to_object(module_cfg)
