@@ -1,0 +1,65 @@
+name: area-object-counting
+
+parameters:
+  sidebar_width: 296
+  frame:
+    width: 1280
+    height: 720
+    padding:
+      keep: true
+      left: 0
+      right: ${parameters.sidebar_width}
+      top: 0
+      bottom: 0
+    geometry_base: 4
+  output_frame:
+    codec: h264
+  draw_func:
+    module: samples.area_object_counting.overlay
+    class_name: Overlay
+    kwargs:
+      config_path: ${oc.env:PROJECT_PATH}/samples/area_object_counting/area_config.yml
+      sidebar_width: ${parameters.sidebar_width}
+      target_obj_label: ${parameters.detected_object.label}
+
+  detected_object:
+    id: 0
+    label: person
+
+pipeline:
+
+  elements:
+
+    - element: pyfunc
+      module: samples.area_object_counting.object_counting
+      class_name: ConditionalDetectorSkip
+      kwargs:
+        config_path: ${oc.env:PROJECT_PATH}/samples/area_object_counting/area_config.yml
+
+    - element: nvinfer@detector
+      name: peoplenet
+      model:
+        format: etlt
+        remote:
+          url: s3://savant-data/models/peoplenet/peoplenet_pruned_v2.0.zip
+          checksum_url: s3://savant-data/models/peoplenet/peoplenet_pruned_v2.0.md5
+          parameters:
+            endpoint: https://eu-central-1.linodeobjects.com
+        model_file: resnet34_peoplenet_pruned.etlt
+        input:
+          layer_name: input_1
+          shape: [3, 544, 960]
+          scale_factor: 0.0039215697906911373
+        output:
+          layer_names: [output_bbox/BiasAdd, output_cov/Sigmoid]
+          num_detected_classes: 3
+          objects:
+            - class_id: ${parameters.detected_object.id}
+              label: ${parameters.detected_object.label}
+
+    - element: pyfunc
+      module: samples.area_object_counting.object_counting
+      class_name: ObjectCounting
+      kwargs:
+        config_path: ${oc.env:PROJECT_PATH}/samples/area_object_counting/area_config.yml
+        target_obj_label: ${parameters.detected_object.label}

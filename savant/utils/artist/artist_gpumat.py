@@ -52,7 +52,7 @@ class ArtistGPUMat(AbstractContextManager):
         bg_color: Optional[Tuple[int, int, int, int]] = (0, 0, 0, 255),  # black
         padding: Tuple[int, int, int, int] = (0, 0, 0, 0),
         anchor_point_type: Position = Position.CENTER,
-    ) -> int:
+    ) -> Tuple[Tuple[int, int], int]:
         """Draw text, text backround box and text background box border on the frame.
         Does not draw anything if text is empty.
 
@@ -69,7 +69,9 @@ class ArtistGPUMat(AbstractContextManager):
         :param anchor_point_type: Anchor point of a  rectangle with text.
             For example, if you select Position.CENTER, the rectangle with the text
             will be drawn so that the center of the rectangle is at (x,y).
-        :return: Text box height, even if nothing was drawn.
+        :return: Text [width, height] and baseline height
+            (total text box height = text height + baseline).
+            Returns this even if nothing was drawn.
         """
         draw_text = font_scale > 0 and len(text) > 0 and font_color[3] > 0
         draw_border = border_width > 0 and border_color[3] > 0
@@ -117,7 +119,7 @@ class ArtistGPUMat(AbstractContextManager):
                     font_thickness,
                     cv2.LINE_AA,
                 )
-        return text_size[1] + baseline
+        return text_size, baseline
 
     # pylint:disable=too-many-arguments
     def add_bbox(

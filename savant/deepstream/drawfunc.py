@@ -162,7 +162,7 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
                 )
                 text = format_str
 
-            text_box_height = artist.add_text(
+            text_size, baseline = artist.add_text(
                 text,
                 (anchor_x, anchor_y),
                 spec.font_scale,
@@ -174,6 +174,7 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
                 padding,
                 anchor_point,
             )
+            text_box_height = text_size[1] + baseline
             anchor_y += offset_sign * text_box_height
 
     def _draw_central_dot(self, obj_meta: ObjectMeta, artist: Artist, spec: DotDraw):
