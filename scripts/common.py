@@ -45,6 +45,10 @@ def docker_image_option(default_docker_image_name: str, tag: Optional[str] = Non
     )
 
 
+def get_docker_runtime() -> str:
+    return '--runtime=nvidia' if is_aarch64() else '--gpus=all'
+
+
 def adapter_docker_image_option(default_suffix: str):
     return docker_image_option(f'savant-adapters-{default_suffix}')
 
@@ -105,6 +109,15 @@ def source_id_option(required: bool):
     )
 
 
+detach_option = click.option(
+    '--detach',
+    is_flag=True,
+    default=False,
+    help='Run docker container in background and print container ID.',
+    show_default=True,
+)
+
+
 def fps_meter_options(func):
     func = click.option(
         '--fps-output',
@@ -149,6 +162,7 @@ def build_docker_run_command(
     zmq_bind: Optional[bool],
     entrypoint: str,
     docker_image: str,
+    detach: bool = False,
     sync: bool = False,
     envs: List[str] = None,
     volumes: List[str] = None,
@@ -169,6 +183,7 @@ def build_docker_run_command(
     :param zmq_bind: add ``ZMQ_BIND`` env var to container
     :param entrypoint: add ``--entrypoint`` parameter
     :param docker_image: docker image to run
+    :param detach: run docker container in background
     :param sync: add ``SYNC_OUTPUT`` env var to container
     :param envs: add ``-e`` parameters
     :param volumes: add ``-v`` parametrs
@@ -183,7 +198,6 @@ def build_docker_run_command(
     command = [
         'docker', 'run',
         '--rm',
-        '-it',
         '--name', container_name,
         '-e', f'GST_DEBUG={gst_debug}',
         '-e', 'LOGLEVEL',
@@ -195,6 +209,9 @@ def build_docker_run_command(
         command += ['-e', f'ZMQ_TYPE={zmq_type}']
     if zmq_bind is not None:
         command += ['-e', f'ZMQ_BIND={zmq_bind}']
+
+    if detach:
+        command += ['--detach']
 
     command += get_tcp_parameters((zmq_endpoint,))
 
@@ -215,7 +232,7 @@ def build_docker_run_command(
             command += ['--device', device]
 
     if with_gpu:
-        command.append('--gpus=all')
+        command.append(get_docker_runtime())
 
     if host_network:
         command.append('--network=host')

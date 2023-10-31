@@ -1,16 +1,13 @@
 #!/bin/bash
 # you are expected to be in Savant/ directory
+# Usage: run_perf.sh [MULTISTREAM] [YQ_ARGS]...
+# The MULTISTREAM argument is an integer, 0 means using uridecodebin source,
+# >0 means using the the multistream source adapter with specified number of streams.
+# The YQ_ARGS are module configuration updates in yq notation,
+# e.g. ".parameters.batch_size=4".
 
-DOCKER_IMAGE=ghcr.io/insight-platform/savant-deepstream:latest
-DOCKER_RUNTIME="--gpus=all"
-if [ "$(uname -m)" = "aarch64" ]; then
-  DOCKER_IMAGE=ghcr.io/insight-platform/savant-deepstream-l4t:latest
-  DOCKER_RUNTIME="--runtime=nvidia"
-fi
+MODULE_CONFIG=samples/opencv_cuda_bg_remover_mog2/demo.yml
+DATA_LOCATION=data/road_traffic.mp4
 
-docker run --rm -it $DOCKER_RUNTIME \
-  -e BUFFER_QUEUES \
-  -v `pwd`/samples:/opt/savant/samples \
-  -v `pwd`/data:/data:ro \
-  $DOCKER_IMAGE \
-  samples/opencv_cuda_bg_remover_mog2/demo_performance.yml
+source samples/assets/run_perf_helper.sh
+run_perf $MODULE_CONFIG $DATA_LOCATION

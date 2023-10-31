@@ -37,6 +37,8 @@ parameters:
       # this is to prevent flickering when gallery images are equally close to a detected face
       match_linger_frames: 20
 
+  batch_size: 1
+
 pipeline:
 
   elements:
@@ -51,6 +53,7 @@ pipeline:
             endpoint: https://eu-central-1.linodeobjects.com
         format: onnx
         config_file: yolov8n-face.txt
+        batch_size: ${parameters.batch_size}
         input:
           shape: [3, 640, 640]
         output:
@@ -90,7 +93,7 @@ pipeline:
             endpoint: https://eu-central-1.linodeobjects.com
         format: onnx
         model_file: adaface_ir50_webface4m.onnx
-        batch_size: 4
+        batch_size: 16
         input:
           object: ${parameters.detection_model_name}.face
           shape: [3, 112, 112]

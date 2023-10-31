@@ -81,7 +81,7 @@ cd ../..
 
 ## Performance measurement
 
-Run the Index Builder according to instuctions [above](#index-builder).
+Run the Index Builder according to instructions [above](#index-builder).
 
 Download the video file to your local folder. For example, create a data folder and download the video into it (all commands must be executed from the root directory of the project Savant)
 
@@ -92,17 +92,7 @@ mkdir -p data
 curl -o data/jumanji_cast.mp4 https://eu-central-1.linodeobjects.com/savant-data/demo/jumanji_cast.mp4
 ```
 
-Build the module image
-
-```bash
-# if x86
-docker compose -f docker-compose.x86.yml --profile demo build
-
-# if Jetson
-docker compose -f docker-compose.l4t.yml --profile demo build
-```
-
-Now you are ready to run the performance benchmark with the following command:
+Run the performance benchmark with the following command:
 
 ```bash
 ./samples/face_reid/run_perf.sh

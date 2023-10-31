@@ -104,13 +104,22 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
             padding = spec.padding.padding
         else:
             padding = (0, 0, 0, 0)
-        artist.add_bbox(
-            obj_meta.bbox,
-            spec.thickness,
-            spec.border_color.rgba,
-            spec.background_color.rgba,
-            padding,
-        )
+        try:
+            artist.add_bbox(
+                obj_meta.bbox,
+                spec.thickness,
+                spec.border_color.rgba,
+                spec.background_color.rgba,
+                padding,
+            )
+        except Exception as exc:
+            self.logger.warning(
+                'Got "%s: %s" when trying to draw bounding box of the object %s.',
+                type(exc).__name__,
+                exc,
+                obj_meta.bbox,
+                exc_info=exc,
+            )
 
     def _draw_label(self, obj_meta: ObjectMeta, artist: Artist, spec: LabelDraw):
         if (
@@ -186,4 +195,13 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
         )
 
     def _blur(self, obj_meta: ObjectMeta, artist: Artist):
-        artist.blur(obj_meta.bbox)
+        try:
+            artist.blur(obj_meta.bbox)
+        except Exception as exc:
+            self.logger.warning(
+                'Got "%s: %s" when trying to blur the object %s.',
+                type(exc).__name__,
+                exc,
+                obj_meta.bbox,
+                exc_info=exc,
+            )

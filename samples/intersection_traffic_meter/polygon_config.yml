@@ -41,3 +41,139 @@ leeds:
     - null
     - bottom
     - null
+
+'source-0':
+  points:
+    - [140, 465]
+    - [250, 295]
+    - [465, 190]
+    - [840, 125]
+    - [1565, 440]
+    - [1295, 760]
+
+  edges:
+    - left
+    - null
+    - top
+    - null
+    - bottom
+    - null
+
+'source-1':
+  points:
+    - [140, 465]
+    - [250, 295]
+    - [465, 190]
+    - [840, 125]
+    - [1565, 440]
+    - [1295, 760]
+
+  edges:
+    - left
+    - null
+    - top
+    - null
+    - bottom
+    - null
+
+'source-2':
+  points:
+    - [140, 465]
+    - [250, 295]
+    - [465, 190]
+    - [840, 125]
+    - [1565, 440]
+    - [1295, 760]
+
+  edges:
+    - left
+    - null
+    - top
+    - null
+    - bottom
+    - null
+
+'source-3':
+  points:
+    - [140, 465]
+    - [250, 295]
+    - [465, 190]
+    - [840, 125]
+    - [1565, 440]
+    - [1295, 760]
+
+  edges:
+    - left
+    - null
+    - top
+    - null
+    - bottom
+    - null
+
+'source-4':
+  points:
+    - [140, 465]
+    - [250, 295]
+    - [465, 190]
+    - [840, 125]
+    - [1565, 440]
+    - [1295, 760]
+
+  edges:
+    - left
+    - null
+    - top
+    - null
+    - bottom
+    - null
+
+'source-5':
+  points:
+    - [140, 465]
+    - [250, 295]
+    - [465, 190]
+    - [840, 125]
+    - [1565, 440]
+    - [1295, 760]
+
+  edges:
+    - left
+    - null
+    - top
+    - null
+    - bottom
+    - null
+
+'source-6':
+  points:
+    - [140, 465]
+    - [250, 295]
+    - [465, 190]
+    - [840, 125]
+    - [1565, 440]
+    - [1295, 760]
+
+  edges:
+    - left
+    - null
+    - top
+    - null
+    - bottom
+    - null
+
+'source-7':
+  points:
+    - [140, 465]
+    - [250, 295]
+    - [465, 190]
+    - [840, 125]
+    - [1565, 440]
+    - [1295, 760]
+
+  edges:
+    - left
+    - null
+    - top
+    - null
+    - bottom
+    - null

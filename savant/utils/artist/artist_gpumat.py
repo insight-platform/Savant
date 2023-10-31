@@ -149,6 +149,10 @@ class ArtistGPUMat(AbstractContextManager):
             left, top, right, bottom = bbox.visual_box(
                 PaddingDraw(*padding), border_width, self.max_col, self.max_row
             ).as_ltrb_int()
+
+            if (right - left) < 1 or (bottom - top) < 1:
+                raise ValueError('Wrong bbox size.')
+
             if draw_bg:
                 self.frame.colRange(left, right).rowRange(top, bottom).setTo(
                     bg_color, stream=self.stream
@@ -305,6 +309,10 @@ class ArtistGPUMat(AbstractContextManager):
         left, top, width, height = bbox.visual_box(
             PaddingDraw(*padding), 0, self.max_col, self.max_row
         ).as_ltwh_int()
+
+        if width < 1 or height < 1:
+            raise ValueError('Wrong bbox size.')
+
         roi_mat = cv2.cuda.GpuMat(self.frame, (left, top, width, height))
 
         gaussian_filter.apply(roi_mat, roi_mat, stream=self.stream)
@@ -315,6 +323,8 @@ class ArtistGPUMat(AbstractContextManager):
         """Copy a region of the frame to a new GpuMat.
 
         :param bbox: ROI specified as Savant bbox.
+        :param padding: Increase the size of the region in each direction,
+            value in pixels, left, top, right, bottom.
         :return: GpuMat with the specified region.
         """
         left, top, width, height = bbox.visual_box(

@@ -1,4 +1,4 @@
-name: ${oc.env:MODULE_NAME, 'yolov8_seg'}
+name: yolov8_seg
 
 parameters:
   frame:
@@ -11,6 +11,7 @@ parameters:
     class_name: Overlay
   buffer_queues:
     length: 10
+  batch_size: 1
 
 pipeline:
   elements:
@@ -24,6 +25,7 @@ pipeline:
             endpoint: https://eu-central-1.linodeobjects.com
         format: onnx
         model_file: yolov8m-seg.onnx
+        batch_size: ${parameters.batch_size}
         input:
           shape: [3, 640, 640]
           maintain_aspect_ratio: true
