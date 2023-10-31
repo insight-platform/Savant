@@ -8,7 +8,7 @@ The Savant framework requires a complex environment, including GStreamer, Nvidia
 Development Environment Problem
 -------------------------------
 
-When we develop the code, we expect IDE’s assistance on available classes, their methods, properties, etc. The Savant codebase is in Docker, which makes a problem for the IDE because it cannot collect the database for symbols.
+When we develop the code, we expect IDE's assistance on available classes, their methods, properties, etc. The Savant codebase is in Docker, which makes a problem for the IDE because it cannot collect the database for symbols.
 
 Normally, we use VENV to install packages, and IDE knows how to gather symbols from VENV; however, the Savant environment is too complex to install in VENV.
 

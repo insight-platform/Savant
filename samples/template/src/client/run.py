@@ -19,7 +19,8 @@ jaeger_endpoint = 'http://jaeger:16686'
 healthcheck_url = f'http://{module_hostname}:8888/healthcheck'
 source_id = 'test-source'
 shutdown_auth = 'shutdown'
-result_img_path = '/opt/savant/src/output/result_img.jpeg'
+parent_dir = os.path.dirname(os.path.dirname(__file__))
+result_img_path = os.path.join(parent_dir, 'output', 'result_img.jpeg')
 
 # Build the source
 source = (
