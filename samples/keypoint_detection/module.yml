@@ -1,4 +1,4 @@
-name: ${oc.env:MODULE_NAME, 'keypoint_detection'}
+name: keypoint_detection
 
 parameters:
   output_frame:
