@@ -56,7 +56,6 @@ services:
       - ENCODER_BITRATE=8000000
       - FRAMERATE=30/1
     command: python -m adapters.ds.sinks.always_on_rtsp
-    runtime: nvidia
 
 volumes:
   zmq_sockets:
