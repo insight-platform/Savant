@@ -9,6 +9,7 @@ from savant_rs.pipeline2 import (
     VideoPipelineStagePayloadType,
 )
 
+from adapters.ds.sinks.always_on_rtsp.utils import nvidia_runtime_is_available
 from savant.utils.zeromq import ReceiverSocketTypes
 
 
@@ -77,6 +78,34 @@ class Config:
             'you should specify the width and height of the maximum resolution '
             'in format WIDTHxHEIGHT, for example 1920x1080.'
         )
+
+        self._nvidia_runtime_is_available: Optional[bool] = None
+        self._converter: Optional[str] = None
+        self._video_raw_caps: Optional[str] = None
+
+    @property
+    def nvidia_runtime_is_available(self) -> bool:
+        if self._nvidia_runtime_is_available is None:
+            self._nvidia_runtime_is_available = nvidia_runtime_is_available()
+        return self._nvidia_runtime_is_available
+
+    @property
+    def converter(self) -> str:
+        if self._converter is None:
+            self._converter = (
+                'nvvideoconvert' if self.nvidia_runtime_is_available else 'videoconvert'
+            )
+        return self._converter
+
+    @property
+    def video_raw_caps(self) -> str:
+        if self._video_raw_caps is None:
+            self._video_raw_caps = (
+                'video/x-raw(memory:NVMM)'
+                if self.nvidia_runtime_is_available
+                else 'video/x-raw'
+            )
+        return self._video_raw_caps
 
     def fps_meter_properties(self, measurer_name: str):
         props = {'output': self.fps_output, 'measurer-name': measurer_name}
