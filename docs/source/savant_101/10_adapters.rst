@@ -805,7 +805,9 @@ Always-On RTSP Sink Adapter
 
 The Always-On RTSP Sink Adapter broadcasts the video stream as RTSP/LL-HLS/WebRTC. The adapter works in two modes: single-stream and multi-stream. In the single-stream mode, the adapter accepts only one input stream with source ID specified in ``SOURCE_ID``. In the multi-stream mode, the adapter accepts multiple input streams with source IDs specified in ``SOURCE_IDS``.
 
-This adapter uses DeepStream SDK and **always** performs hardware transcoding of the incoming stream to ensure continuous streaming even when its source stops operating. In this case, the adapter continues to stream a static image waiting for the source to resume sending data.
+This adapter **always** performs transcoding of the incoming stream to ensure continuous streaming even when its source stops operating. In this case, the adapter continues to stream a static image waiting for the source to resume sending data.
+
+When Nvidia Runtime is available this adapter uses DeepStream SDK and performs hardware transcoding and scaling of the incoming stream, otherwise it performs software transcoding and scaling.
 
 The simplified design of the adapter is depicted in the following diagram:
 
