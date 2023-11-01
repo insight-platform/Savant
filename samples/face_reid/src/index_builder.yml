@@ -8,7 +8,7 @@ parameters:
     height: ${parameters.detector_h}
 
   output_frame:
-    codec: raw-rgba
+    codec: ${oc.env:CODEC, 'raw-rgba'}
 
   face_width: 112
   face_height: 112

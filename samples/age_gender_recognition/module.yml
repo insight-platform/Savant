@@ -5,7 +5,7 @@ parameters:
     width: 1280
     height: 720
   output_frame:
-    codec: raw-rgba
+    codec: ${oc.env:CODEC, 'raw-rgba'}
   draw_func:
     module: samples.age_gender_recognition.overlay
     # specify the drawfunc's python class from the module

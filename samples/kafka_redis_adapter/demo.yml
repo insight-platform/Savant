@@ -8,7 +8,7 @@ parameters:
     width: 1280
     height: 720
   output_frame:
-    codec: h264
+    codec: ${oc.env:CODEC, 'h264'}
   # PyFunc for drawing on frames
   draw_func: {}
 

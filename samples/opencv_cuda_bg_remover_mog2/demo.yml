@@ -18,7 +18,7 @@ parameters:
   output_frame:
     # Frame is output without any encoding
     # this is to circumvent 3 hardware decoding processes limit on NVIDIA consumer hardware
-    codec: raw-rgba
+    codec: ${oc.env:CODEC, 'raw-rgba'}
   batch_size: 1
 
 # pipeline definition

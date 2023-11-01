@@ -5,7 +5,7 @@ parameters:
     width: 1280
     height: 720
   output_frame:
-    codec: hevc
+    codec: ${oc.env:CODEC, 'hevc'}
   draw_func:
     module: samples.yolov8_seg.module.overlay
     class_name: Overlay

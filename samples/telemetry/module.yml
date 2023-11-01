@@ -5,7 +5,7 @@ name: ${oc.env:MODULE_NAME, 'telemetry-demo'}
 parameters:
   batch_size: 1
   output_frame:
-    codec: h264
+    codec: ${oc.env:CODEC, 'h264'}
 
   # We use the default telemetry parameters from `savant/config/default.yml`,
   # which can be configured with environment variables in Docker compose manifests.

@@ -66,7 +66,7 @@ services:
       - MODULE_STAGE=draw-func
       # Use default draw_func (savant.deepstream.drawfunc.NvDsDrawFunc)
       - DRAW_FUNC={}
-      - CODEC=h264
+      - CODEC=raw-rgba
       - ZMQ_SRC_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/tracker-output.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
       - FPS_PERIOD=1000
