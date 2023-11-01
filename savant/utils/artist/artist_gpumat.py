@@ -2,9 +2,8 @@
 from contextlib import AbstractContextManager
 from typing import List, Optional, Tuple, Union
 
-import numpy as np
-
 import cv2
+import numpy as np
 from savant_rs.draw_spec import PaddingDraw
 from savant_rs.primitives.geometry import BBox, RBBox
 

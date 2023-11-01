@@ -17,15 +17,11 @@ how-to guides published on the Medium portal, where one can study them step-by-s
 
 Sample Location: [peoplenet_detector](./peoplenet_detector)
 
-Preview:
-
 ![](peoplenet_detector/assets/peoplenet-blur-demo-loop-400.webp)
 
 ### Car Detection and Classification (Nvidia detectors and classifiers, Nvidia tracker)
 
 Sample Location: [nvidia_car_classification](./nvidia_car_classification)
-
-Preview:
 
 ![](nvidia_car_classification/assets/nvidia-car-classification-loop-400.webp)
 
@@ -33,15 +29,11 @@ Preview:
 
 Sample Location: [traffic_meter](./traffic_meter)
 
-Preview:
-
 ![](traffic_meter/assets/traffic-meter-loop-400.webp)
 
 ### Intersection Traffic Meter
 
 Sample Location: [intersection_traffic_meter](./intersection_traffic_meter)
-
-Preview:
 
 ![](intersection_traffic_meter/assets/intersection-traffic-meter-loop-400.webp)
 
@@ -55,15 +47,11 @@ Sample Location: [area_object_counting](./area_object_counting/)
 
 Sample Location: [age gender recognition](./age_gender_recognition)
 
-Preview:
-
 ![](age_gender_recognition/assets/age-gender-recognition-loop-400.webp)
 
 ### YOLOv8 Instance Segmentation
 
 Sample Location: [yolov8_seg](./yolov8_seg)
-
-Preview:
 
 ![](yolov8_seg/assets/shuffle_dance-400.webp)
 
@@ -71,15 +59,11 @@ Preview:
 
 Sample location: [face_reid](./face_reid)
 
-Preview:
-
 ![](face_reid/assets/face-reid-loop-400.webp)
 
 ### License Plate Recognition
 
 Sample location: [LPR](./license_plate_recognition)
-
-Preview:
 
 ![](license_plate_recognition/assets/license-plate-recognition-400.webp)
 
@@ -87,15 +71,11 @@ Preview:
 
 Sample location: [keypoint_detection](./keypoint_detection)
 
-Preview:
-
 ![](keypoint_detection/assets/shuffle_dance-400.webp)
 
 ### Super Resolution 
 
 Sample location: [super_resolution](./super_resolution)
-
-Preview:
 
 ![](super_resolution/assets/shuffle_dance_360p_1080p_small.webp)
 
@@ -105,15 +85,11 @@ Preview:
 
 Sample Location: [opencv_cuda_bg_remover_mog2](./opencv_cuda_bg_remover_mog2)
 
-Preview:
-
 ![](opencv_cuda_bg_remover_mog2/assets/opencv_cuda_bg_remover_mog2-800.webp)
 
 ### Conditional Video Processing
 
 Sample location: [conditional_video_processing](./conditional_video_processing)
-
-Preview:
 
 ![](conditional_video_processing/assets/conditional-video-processing_400.webp)
 
