@@ -83,6 +83,15 @@ Preview:
 
 ![](license_plate_recognition/assets/license-plate-recognition-400.webp)
 
+
+### Keypoint detection 
+
+Sample location: [keypoint_detection](./keypoint_detection)
+
+Preview:
+
+![](keypoint_detection/assets/shuffle_dance-400.webp)
+
 ## Utility And Coding Examples
 
 ### OpenCV CUDA MOG2 Background Segmentation Demo
