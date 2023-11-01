@@ -2,8 +2,9 @@
 from contextlib import AbstractContextManager
 from typing import List, Optional, Tuple, Union
 
-import cv2
 import numpy as np
+
+import cv2
 from savant_rs.draw_spec import PaddingDraw
 from savant_rs.primitives.geometry import BBox, RBBox
 
@@ -254,6 +255,7 @@ class ArtistGPUMat(AbstractContextManager):
         pt2: Tuple[int, int],
         color: Tuple[int, int, int, int] = (255, 0, 0, 255),  # RGBA, Red,
         thickness: int = 3,
+        type: int = cv2.LINE_AA,
     ):
         """Draw line.
 
@@ -261,11 +263,12 @@ class ArtistGPUMat(AbstractContextManager):
         :param pt2: Second point.
         :param color: Line color, RGBA, ints in range [0;255].
         :param thickness: Line thickness.
+        :param type: Line type.
         """
         if color[3] <= 0 or thickness <= 0:
             return
         self.__init_overlay()
-        cv2.line(self.overlay, pt1, pt2, color, thickness)
+        cv2.line(self.overlay, pt1, pt2, color, thickness, type)
 
     def add_polygon(
         self,
