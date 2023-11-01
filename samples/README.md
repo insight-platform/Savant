@@ -29,7 +29,7 @@ Preview:
 
 ![](nvidia_car_classification/assets/nvidia-car-classification-loop-400.webp)
 
-### Traffic meter demo
+### Traffic Meter
 
 Sample Location: [traffic_meter](./traffic_meter)
 
@@ -37,7 +37,7 @@ Preview:
 
 ![](traffic_meter/assets/traffic-meter-loop-400.webp)
 
-### Intersection traffic meter demo
+### Intersection Traffic Meter
 
 Sample Location: [intersection_traffic_meter](./intersection_traffic_meter)
 
@@ -45,13 +45,13 @@ Preview:
 
 ![](intersection_traffic_meter/assets/intersection-traffic-meter-loop-400.webp)
 
-### Area object counting demo
+### Area Object Counting
 
 Sample Location: [area_object_counting](./area_object_counting/)
 
 ![](area_object_counting/assets/area-object-counting-loop-400.webp)
 
-### Age gender recognition
+### Age Gender Recognition
 
 Sample Location: [age gender recognition](./age_gender_recognition)
 
@@ -75,7 +75,7 @@ Preview:
 
 ![](face_reid/assets/face-reid-loop-400.webp)
 
-### License plate recognition
+### License Plate Recognition
 
 Sample location: [LPR](./license_plate_recognition)
 
@@ -83,14 +83,21 @@ Preview:
 
 ![](license_plate_recognition/assets/license-plate-recognition-400.webp)
 
-
-### Keypoint detection 
+### Keypoint Detection 
 
 Sample location: [keypoint_detection](./keypoint_detection)
 
 Preview:
 
 ![](keypoint_detection/assets/shuffle_dance-400.webp)
+
+### Super Resolution 
+
+Sample location: [super_resolution](./super_resolution)
+
+Preview:
+
+![](super_resolution/assets/shuffle_dance_360p_1080p_small.webp)
 
 ## Utility And Coding Examples
 
