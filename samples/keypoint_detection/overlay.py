@@ -1,7 +1,8 @@
+import numpy as np
+
 from savant.deepstream.drawfunc import NvDsDrawFunc
 from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.utils.artist import Artist
-import numpy as np
 
 skeleton = [
     ([15, 13], (255, 0, 0, 255)),  # left leg
