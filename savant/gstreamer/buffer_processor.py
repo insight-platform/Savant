@@ -11,7 +11,7 @@ from savant.config.schema import PipelineElement
 from savant.gstreamer.utils import gst_post_stream_failed_error
 from savant.utils.fps_meter import FPSMeter
 from savant.utils.logging import get_logger
-from savant.utils.sink_factories import SinkMessage
+from savant.utils.sink_factories import SinkMessage, SinkVideoFrame
 
 
 class GstBufferProcessor(ABC):
@@ -80,6 +80,15 @@ class GstBufferProcessor(ABC):
         buffer = info.get_buffer()
         try:
             for sink_message in self.prepare_output(buffer, user_data):
+
+                if isinstance(sink_message, SinkVideoFrame):
+                    # egress filter here
+                    self._logger.info('OUTPUT Got sink video frame')
+                    if sink_message.video_frame.content.is_none():
+                        self._logger.info('OUTPUT Video frame content is none.')
+                    else:
+                        self._logger.info('OUTPUT Video frame content is NOT none.')
+
                 self._queue.put(sink_message)
                 # measure and logging FPS
                 if self._fps_meter():

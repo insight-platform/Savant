@@ -278,6 +278,7 @@ class NvDsPipeline(GstPipeline):
         if source.element == 'zeromq_source_bin':
             _source.set_property('pipeline', self._video_pipeline)
             _source.set_property('pass-through-mode', self._pass_through_mode)
+            # add setting pyfunc module/class/kwargs props
             _source.connect('shutdown', self._on_shutdown_signal)
             add_frames_to_pipeline = False
         else:

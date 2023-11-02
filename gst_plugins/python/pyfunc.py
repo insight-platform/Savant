@@ -3,18 +3,16 @@
 Can be used for metadata conversion, inference post-processing, and
 other tasks.
 """
-import inspect
-import json
+
 from typing import Any, Optional
 
 from savant_rs.pipeline2 import VideoPipeline
+from gst_plugins.python.pyfunc_common import init_pyfunc, handle_fatal_error, handle_non_fatal_error
 
-from savant.base.pyfunc import BasePyFuncPlugin, PyFunc, PyFuncNoopCallException
+from savant.base.pyfunc import  PyFunc, BasePyFuncPlugin
+
 from savant.gstreamer import GLib, GObject, Gst, GstBase  # noqa: F401
-from savant.gstreamer.utils import (
-    gst_post_stream_failed_error,
-    gst_post_stream_failed_warning,
-)
+
 from savant.utils.logging import LoggerMixin
 
 # RGBA format is required to access the frame (pyds.get_nvds_buf_surface)
@@ -150,52 +148,20 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
 
     def do_start(self):
         """Do on plugin start."""
-        # pylint: disable=broad-exception-caught
-        if self.kwargs:
-            try:
-                kwargs = json.loads(self.kwargs)
-            except Exception as exc:
-                return self.handle_fatal_error(
-                    exc,
-                    f'Failed to parse kwargs for "{self.module}.{self.class_name}" pyfunc.',
-                    True,
-                    False,
-                )
-        else:
-            kwargs = None
+        self.pyfunc = init_pyfunc(self,self.logger,self.module, self.class_name, self.kwargs, self.dev_mode)
 
         try:
-            self.pyfunc = PyFunc(
-                module=self.module,
-                class_name=self.class_name,
-                kwargs=kwargs,
-                dev_mode=self.dev_mode,
-            )
-        except Exception as exc:
-            return self.handle_fatal_error(
-                exc,
-                f'Failed to initialize "{self.module}.{self.class_name}" pyfunc.',
-                True,
-                False,
-            )
-
-        try:
-            self.pyfunc.load_user_code()
             assert isinstance(
-                self.pyfunc.instance, BasePyFuncPlugin
+            self.pyfunc.instance, BasePyFuncPlugin
             ), f'"{self.pyfunc}" should be an instance of "BasePyFuncPlugin" subclass.'
             self.pyfunc.instance.gst_element = self
-        except Exception as exc:
-            return self.handle_fatal_error(
-                exc, f'Failed to load user code for {self.pyfunc}.', True, False
-            )
-
-        try:
             return self.pyfunc.instance.on_start()
         except Exception as exc:
-            return self.handle_fatal_error(
-                exc, f'Error in on_start() call for {self.pyfunc}', True, False
+            return handle_fatal_error(
+                self,
+                self.logger, exc, f'Error in on_start() call for {self.pyfunc}', self.dev_mode,True, False
             )
+
 
     def do_stop(self):
         """Do on plugin stop."""
@@ -203,7 +169,7 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
         try:
             return self.pyfunc.instance.on_stop()
         except Exception as exc:
-            return self.handle_fatal_error(
+            return handle_fatal_error(
                 exc, f'Error in do_stop() call for {self.pyfunc}', True, False
             )
 
@@ -213,7 +179,7 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
         try:
             self.pyfunc.instance.on_event(event)
         except Exception as exc:
-            self.handle_non_fatal_error(
+            handle_non_fatal_error(
                 exc, f'Error in do_sink_event() call for {self.pyfunc}.'
             )
         return self.srcpad.push_event(event)
@@ -224,42 +190,11 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
         try:
             self.pyfunc.instance.process_buffer(buffer)
         except Exception as exc:
-            return self.handle_fatal_error(
+            return handle_fatal_error(
                 exc, f'Error in process_buffer() call for {self.pyfunc}.'
             )
 
         return Gst.FlowReturn.OK
-
-    def handle_non_fatal_error(self, exc, msg):
-        if self.dev_mode:
-            if not isinstance(exc, PyFuncNoopCallException):
-                self.logger.warning(msg)
-            return
-
-        gst_post_stream_failed_warning(
-            gst_element=self,
-            frame=inspect.currentframe(),
-            file_path=__file__,
-            text=msg,
-        )
-        self.logger.warning(msg, exc_info=exc)
-
-    def handle_fatal_error(
-        self, exc, msg, return_ok=Gst.FlowReturn.OK, return_err=Gst.FlowReturn.ERROR
-    ):
-        if self.dev_mode:
-            if not isinstance(exc, PyFuncNoopCallException):
-                self.logger.exception(msg)
-            return return_ok
-
-        gst_post_stream_failed_error(
-            gst_element=self,
-            frame=inspect.currentframe(),
-            file_path=__file__,
-            text=msg,
-        )
-        self.logger.exception(msg)
-        return return_err
 
 
 # register plugin

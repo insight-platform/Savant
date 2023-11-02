@@ -266,6 +266,40 @@ def get_element_name(element: Union[DictConfig, PipelineElement]) -> str:
 
 
 @dataclass
+class SourceElement(PipelineElement, PyFunc):
+    module: str = 'savant.base.ingress_filter'
+    """Module name to import."""
+
+    class_name: str = 'DefaultIngressFilter'
+    """Python class name to instantiate."""
+
+    def __post_init__(self):
+        if self.element == 'zeromq_source_bin':
+            super().__post_init__()
+            kwargs = {}
+            if 'kwargs' in self.properties and self.properties['kwargs']:
+                kwargs = json.loads(self.properties['kwargs'])
+            if self.kwargs:
+                kwargs.update(self.kwargs)
+
+            self.properties.update(
+                {
+                    'ingress-module': self.module,
+                    'ingress-class': self.class_name,
+                    'ingress-kwargs': json.dumps(kwargs),
+                    'ingress-dev-mode': self.dev_mode,
+                }
+            )
+
+@dataclass
+class SinkElement(PipelineElement, PyFunc):
+    module: str = 'savant.base.egress_filter'
+    """Module name to import."""
+
+    class_name: str = 'DefaultEgressFilter'
+    """Python class name to instantiate."""
+
+@dataclass
 class PyFuncElement(PipelineElement, PyFunc):
     """A pipeline element that will use an object implementing
     :py:class:`~savant.base.pyfunc.BasePyFuncPlugin` to apply custom processing to
@@ -299,6 +333,8 @@ class PyFuncElement(PipelineElement, PyFunc):
                 'dev-mode': self.dev_mode,
             }
         )
+
+
 
 
 @dataclass
@@ -437,7 +473,7 @@ class Pipeline:
 
     # TODO: Add format, e.g. NvDs
 
-    source: PipelineElement = MISSING
+    source: SourceElement = MISSING
     """The source element of a pipeline."""
 
     # Union[] is not supported -> Any
@@ -446,7 +482,7 @@ class Pipeline:
     or :py:class:`ElementGroup` nodes.
     """
 
-    sink: List[PipelineElement] = field(default_factory=list)
+    sink: List[SinkElement] = field(default_factory=list)
     """Sink elements of a pipeline."""
 
 

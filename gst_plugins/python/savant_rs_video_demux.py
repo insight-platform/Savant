@@ -20,6 +20,9 @@ from savant_rs.utils import PropagatedContext
 from savant.api.constants import DEFAULT_FRAMERATE
 from savant.api.enums import ExternalFrameType
 from savant.api.parser import convert_ts
+from savant.base.pyfunc import PyFunc
+from gst_plugins.python.pyfunc_common import init_pyfunc, handle_fatal_error, handle_non_fatal_error
+
 from savant.gstreamer import GObject, Gst
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
 from savant.gstreamer.utils import (
@@ -114,6 +117,37 @@ SAVANT_RS_VIDEO_DEMUX_PROPERTIES = {
         False,
         GObject.ParamFlags.READWRITE,
     ),
+    'ingress-module': (
+        str,
+        'Python module',
+        'Python module name to import or module path.',
+        None,
+        GObject.ParamFlags.READWRITE,
+    ),
+    'ingress-class': (
+        str,
+        'Python class name',
+        'Python class name to instantiate.',
+        None,
+        GObject.ParamFlags.READWRITE,
+    ),
+    'ingress-kwargs': (
+        str,
+        'Keyword arguments for class initialization',
+        'Keyword argument for Python class initialization.',
+        None,
+        GObject.ParamFlags.READWRITE,
+    ),
+    'ingress-dev-mode': (
+        bool,
+        'Dev mode flag',
+        (
+            'Whether to monitor source file changes at runtime'
+            ' and reload the pyfunc objects when necessary.'
+        ),
+        False,
+        GObject.ParamFlags.READWRITE,
+    ),
 }
 
 
@@ -198,6 +232,12 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
         self.max_height: int = 0
         self.pass_through_mode = False
 
+        self.ingress_module: Optional[str] = None
+        self.ingress_class_name: Optional[str] = None
+        self.ingress_kwargs: Optional[str] = None
+        self.ingress_dev_mode: bool = False
+        self.ingress_pyfunc: Optional[PyFunc] = None
+
         self._frame_idx_gen = itertools.count()
 
         self.sink_pad: Gst.Pad = Gst.Pad.new_from_template(
@@ -214,6 +254,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
 
     def do_state_changed(self, old: Gst.State, new: Gst.State, pending: Gst.State):
         """Start an expiration thread if state changed from NULL."""
+        self.logger.info('state %s -> %s', old, new)
         if (
             old == Gst.State.NULL
             and new != Gst.State.NULL
@@ -221,6 +262,9 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
         ):
             self.is_running = True
             self.expiration_thread.start()
+
+        if (old == Gst.State.NULL and new == Gst.State.READY):
+            self.ingress_pyfunc = init_pyfunc(self, self.logger, self.ingress_module, self.ingress_class_name, self.ingress_kwargs, self.ingress_dev_mode)
 
     def do_get_property(self, prop):
         """Get property callback."""
@@ -244,6 +288,16 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             return self.max_height
         if prop.name == 'pass-through-mode':
             return self.pass_through_mode
+
+
+        if prop.name == 'ingress-module':
+            return self.ingress_module
+        if prop.name == 'ingress-class':
+            return self.ingress_class_name
+        if prop.name == 'ingress-kwargs':
+            return self.ingress_kwargs
+        if prop.name == 'ingress-dev-mode':
+            return self.ingress_dev_mode
         raise AttributeError(f'Unknown property {prop.name}')
 
     def do_set_property(self, prop, value):
@@ -268,6 +322,14 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             self.max_height = value
         elif prop.name == 'pass-through-mode':
             self.pass_through_mode = value
+        elif prop.name == 'ingress-module':
+            self.ingress_module = value
+        elif prop.name == 'ingress-class':
+            self.ingress_class_name = value
+        elif prop.name == 'ingress-kwargs':
+            self.ingress_kwargs = value
+        elif prop.name == 'ingress-dev-mode':
+            self.ingress_dev_mode = value
         else:
             raise AttributeError(f'Unknown property {prop.name}')
 
@@ -392,13 +454,29 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
                 )
                 return Gst.FlowReturn.OK
 
-        if video_frame.content.is_none():
-            self.logger.debug(
-                'Frame %s from source %s has not content, skipping it.',
-                frame_pts,
-                video_frame.source_id,
-            )
-            return Gst.FlowReturn.OK
+        try:
+            if not self.ingress_pyfunc(video_frame):
+                self.logger.debug(
+                    'Frame %s from source %s didnt pass ingress filter, skipping it.',
+                    frame_pts,
+                    video_frame.source_id,
+                )
+                return Gst.FlowReturn.OK
+            else:
+                self.logger.debug(
+                    'Frame %s from source %s passed ingress filter.',
+                    frame_pts,
+                    video_frame.source_id,
+                )
+        except Exception as exc:
+            handle_non_fatal_error(self, self.logger, exc, f'Error in ingress pyfunc call {self.ingress_pyfunc}', self.ingress_dev_mode)
+            if video_frame.content.is_none():
+                self.logger.debug(
+                    'Frame %s from source %s has not content, skipping it.',
+                    frame_pts,
+                    video_frame.source_id,
+                )
+                return Gst.FlowReturn.OK
 
         try:
             frame_buf = self._build_frame_buffer(video_frame, buffer)
