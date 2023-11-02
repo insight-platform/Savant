@@ -58,7 +58,9 @@ def main():
 
     Gst.init(None)
     if nvidia_runtime_is_available():
-        logger.info('NVIDIA runtime is available.')
+        logger.info(
+            'NVIDIA runtime is available. Using hardware-based decoding/encoding.'
+        )
         from savant.deepstream.encoding import check_encoder_is_available
 
         if not check_encoder_is_available(
@@ -66,7 +68,13 @@ def main():
         ):
             return
     else:
-        logger.warning('NVIDIA runtime is not available. Using CPU decoders/encoders.')
+        logger.warning(
+            'You are using the AO-RTSP adapter with a software-based decoder/encoder '
+            '(without NVDEC/NVENC). This mode must be used only when hardware-based '
+            'encoding is not available (Jetson Orin Nano, A100, H100). '
+            'If the hardware-based encoding is available, run the adapter with Nvidia '
+            'runtime enabled to activate hardware-based decoding/encoding.'
+        )
 
     if not config.source_id:
         internal_socket = 'ipc:///tmp/ao-sink-internal-socket.ipc'
