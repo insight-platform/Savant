@@ -426,9 +426,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
 
         last_frame_id = self._last_frame_id.get(source_id)
         try:
-            previous_frame_id = self._video_pipeline.get_previous_frame_id(
-                source_id, frame_id
-            )
+            previous_frame_id = sink_video_frame.video_frame.previous_frame_seq_id
         except ValueError:
             self.logger.warning(
                 'Failed to get previous frame ID for frame %s from source %s.',
@@ -436,6 +434,12 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                 source_id,
             )
             previous_frame_id = None
+        self.logger.trace(
+            'Frame %s from source %s has previous frame ID %s. Last frame ID is %s.',
+            frame_id,
+            previous_frame_id,
+            last_frame_id,
+        )
 
         if previous_frame_id is not None:
             if previous_frame_id == last_frame_id:
