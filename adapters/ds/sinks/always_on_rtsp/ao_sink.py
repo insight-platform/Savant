@@ -1,9 +1,8 @@
 import time
-from datetime import datetime
 
 from adapters.ds.sinks.always_on_rtsp.config import Config
 from adapters.ds.sinks.always_on_rtsp.input_pipeline import build_input_pipeline
-from adapters.ds.sinks.always_on_rtsp.last_frame import LastFrame
+from adapters.ds.sinks.always_on_rtsp.last_frame import LastFrameRef
 from adapters.ds.sinks.always_on_rtsp.output_pipeline import build_output_pipeline
 from adapters.ds.sinks.always_on_rtsp.pipeline import PipelineThread
 from savant.gstreamer import Gst
@@ -29,7 +28,7 @@ def run_ao_sink():
     init_logging()
     config = Config()
 
-    last_frame = LastFrame(timestamp=datetime.utcfromtimestamp(0))
+    last_frame = LastFrameRef()
 
     Gst.init(None)
 

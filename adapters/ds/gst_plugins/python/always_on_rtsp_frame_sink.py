@@ -5,8 +5,8 @@ from typing import Any, Optional
 import cv2
 import numpy as np
 
-from adapters.ds.sinks.always_on_rtsp.last_frame import LastFrame
-from adapters.ds.sinks.always_on_rtsp.utils import Frame, get_frame_resolution
+from adapters.ds.sinks.always_on_rtsp.last_frame import LastFrame, LastFrameRef
+from adapters.ds.sinks.always_on_rtsp.utils import Frame
 from savant.gstreamer import GObject, Gst, GstBase
 from savant.gstreamer.utils import (
     gst_post_library_settings_error,
@@ -44,8 +44,8 @@ class AlwaysOnRtspFrameSink(LoggerMixin, GstBase.BaseSink):
     __gproperties__ = {
         'last-frame': (
             object,
-            'Last frame with its timestamp.',
-            'Last frame with its timestamp.',
+            'Reference to last frame with its timestamp and resolution.',
+            'Reference to last frame with its timestamp and resolution.',
             GObject.ParamFlags.READWRITE,
         ),
     }
@@ -53,7 +53,7 @@ class AlwaysOnRtspFrameSink(LoggerMixin, GstBase.BaseSink):
     def __init__(self):
         super().__init__()
         # properties
-        self._last_frame: Optional[LastFrame] = None
+        self._last_frame: Optional[LastFrameRef] = None
 
         self._use_gpu = nvds_to_gpu_mat is not None
         self._width = 0
@@ -95,10 +95,11 @@ class AlwaysOnRtspFrameSink(LoggerMixin, GstBase.BaseSink):
                 raise RuntimeError('Frame resolution is not set')
             if self._use_gpu:
                 with nvds_to_gpu_mat(buffer, batch_id=0) as frame:
-                    self._process_frame(frame)
+                    last_frame = self._process_frame(frame)
             else:
-                frame = self._create_np_array(buffer)
-                self._process_frame(frame)
+                frame = buffer.extract_dup(0, buffer.get_size())
+                last_frame = self._process_frame(frame)
+            self._last_frame.frame = last_frame
         except Exception as e:
             error = f'Failed to process frame with PTS {buffer.pts}: {e}'
             self.logger.exception(error)
@@ -109,16 +110,20 @@ class AlwaysOnRtspFrameSink(LoggerMixin, GstBase.BaseSink):
         return Gst.FlowReturn.OK
 
     def _process_frame(self, frame: Frame):
-        self.logger.debug(
-            'Input frame resolution is %sx%s', *get_frame_resolution(frame)
-        )
+        self.logger.debug('Input frame resolution is %sx%s', self._width, self._height)
         if isinstance(frame, cv2.cuda.GpuMat):
             # Clone image for thread safety. The original CUDA memory will be released in this thread.
             # TODO: don't allocate CUDA memory if frame size wasn't changed (threadsafe?)
-            self._last_frame.frame = frame.clone()
+            content = frame.clone()
         else:
-            self._last_frame.frame = frame.copy()
-        self._last_frame.timestamp = datetime.now()
+            content = frame
+
+        return LastFrame(
+            timestamp=datetime.now(),
+            width=self._width,
+            height=self._height,
+            content=content,
+        )
 
     def _create_np_array(self, buffer: Gst.Buffer):
         """Create numpy array from Gst.Buffer."""

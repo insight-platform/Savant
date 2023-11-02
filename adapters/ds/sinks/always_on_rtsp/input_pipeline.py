@@ -1,7 +1,7 @@
 from pygstsavantframemeta import gst_buffer_get_savant_frame_meta
 
 from adapters.ds.sinks.always_on_rtsp.config import Config
-from adapters.ds.sinks.always_on_rtsp.last_frame import LastFrame
+from adapters.ds.sinks.always_on_rtsp.last_frame import LastFrameRef
 from adapters.ds.sinks.always_on_rtsp.pipeline import add_elements
 from savant.config.schema import PipelineElement
 from savant.gstreamer import Gst
@@ -89,7 +89,7 @@ def on_demuxer_pad_added(
 
 def build_input_pipeline(
     config: Config,
-    last_frame: LastFrame,
+    last_frame: LastFrameRef,
     factory: GstElementFactory,
 ):
     pipeline: Gst.Pipeline = Gst.Pipeline.new('input-pipeline')

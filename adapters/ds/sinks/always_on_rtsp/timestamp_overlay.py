@@ -3,7 +3,7 @@ from datetime import datetime
 import cv2
 import numpy as np
 
-from adapters.ds.sinks.always_on_rtsp.utils import Frame, get_frame_resolution
+from adapters.ds.sinks.always_on_rtsp.utils import Frame
 from savant.utils.logging import get_logger
 
 
@@ -26,19 +26,24 @@ class TimestampOverlay:
             'Timestamp placeholder size is %sx%s', self._width, self._height
         )
 
-    def overlay_timestamp(self, frame: Frame, timestamp: datetime):
+    def overlay_timestamp(
+        self,
+        width: int,
+        height: int,
+        frame: Frame,
+        timestamp: datetime,
+    ):
         # TODO: make timestamp precision configurable
-        frame_width, frame_height = get_frame_resolution(frame)
         self.logger.debug(
             'Placing timestamp %s on a frame of a size %sx%s',
             timestamp,
-            frame_width,
-            frame_height,
+            width,
+            height,
         )
         if isinstance(frame, cv2.cuda.GpuMat):
             placeholder = self._placeholder
         else:
-            placeholder = frame[0 : self._height, frame_width - self._width :]
+            placeholder = frame[0 : self._height, width - self._width :]
         placeholder.fill(0)
         cv2.putText(
             placeholder,
@@ -54,7 +59,7 @@ class TimestampOverlay:
             cv2.cuda.GpuMat(
                 frame,
                 (
-                    frame_width - self._width,
+                    width - self._width,
                     0,
                     self._width,
                     self._height,

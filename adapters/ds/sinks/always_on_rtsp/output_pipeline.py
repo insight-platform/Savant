@@ -1,7 +1,7 @@
 from typing import List
 
 from adapters.ds.sinks.always_on_rtsp.config import Config
-from adapters.ds.sinks.always_on_rtsp.last_frame import LastFrame
+from adapters.ds.sinks.always_on_rtsp.last_frame import LastFrameRef
 from adapters.ds.sinks.always_on_rtsp.pipeline import add_elements
 from savant.config.schema import PipelineElement
 from savant.gstreamer import Gst
@@ -11,7 +11,7 @@ from savant.utils.platform import is_aarch64
 
 def build_output_pipeline(
     config: Config,
-    last_frame: LastFrame,
+    last_frame: LastFrameRef,
     factory: GstElementFactory,
 ) -> Gst.Pipeline:
     pipeline: Gst.Pipeline = Gst.Pipeline.new('output-pipeline')
