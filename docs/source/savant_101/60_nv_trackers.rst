@@ -45,3 +45,19 @@ The **IOU** tracker is the most lightweight, but suitable only for the simplest 
 More information about parameters of Nvidia's object tracking library can be found in NvMultiObjectTracker `documentation <https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_plugin_gst-nvtracker.html#configuration-parameters>`__.
 
 As an alternative to Nvidia's trackers, it is possible to implement custom object tracking, which is described in more detail in advanced topics.
+
+Phantom Object Creation Modifier
+--------------------------------
+
+By default, the vanilla Nvidia tracker can create phantom objects not associated with objects in the scene. It can introduce weird and unexpected results for certain videos and requires additional checks on the code side.
+
+To overcome that, Savant introduces an alternated behavior when all such phantom objects are removed immediately after a tracker unit to help developer simplify the code. However, you can activate the default behavior with the following attribute:
+
+
+.. code-block:: yaml
+
+    - element: nvtracker
+      properties:
+        disable-obj-init: false
+
+

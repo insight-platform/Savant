@@ -1,0 +1,29 @@
+# Video source id
+town-centre:
+  # Area name
+  left-sidewalk:
+    # The points define a polygon in the frame that delimits the target area
+    # Coordinates should be integer
+    points:
+      - [25, 565]
+      - [25, 280]
+      - [685, 10]
+      - [935, 10]
+    # Color used to draw the area and marks the objects that are inside it
+    # RGBA, int values in range [0;255]
+    color: [255, 0, 0, 255]
+  center-road:
+    points:
+      - [25, 575]
+      - [955, 10]
+      - [1175, 10]
+      - [520, 690]
+    color: [255, 0, 255, 255]
+  right-sidewalk:
+    points:
+      - [1125, 705]
+      - [1230, 405]
+      - [1270, 10]
+      - [1185, 10]
+      - [520, 705]
+    color: [0, 0, 255, 255]

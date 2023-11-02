@@ -1,4 +1,4 @@
-name: ${oc.env:MODULE_NAME, 'age-gender-recognition'}
+name: age_gender_recognition
 
 parameters:
   frame:
@@ -30,7 +30,7 @@ parameters:
   age_min: 0
   age_max: 101
   detection_model_name: yolov8nface
-
+  batch_size: 1
 
 pipeline:
 
@@ -47,6 +47,7 @@ pipeline:
             endpoint: https://eu-central-1.linodeobjects.com
         format: onnx
         config_file: yolov8n-face.txt
+        batch_size: ${parameters.batch_size}
         input:
           shape: [3, 640, 640]
         output:
@@ -88,6 +89,7 @@ pipeline:
             endpoint: https://eu-central-1.linodeobjects.com
         format: onnx
         config_file: age_gender_mobilenet_v2_dynBatch_config.txt
+        batch_size: 16
         input:
           object: ${parameters.detection_model_name}.face
           preprocess_object_image:

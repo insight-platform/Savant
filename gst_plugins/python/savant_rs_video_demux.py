@@ -670,6 +670,11 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
         source_info.src_pad.push_event(Gst.Event.new_eos())
         self.logger.debug('Removing pad %s', source_info.src_pad.get_name())
         self.remove_pad(source_info.src_pad)
+        if self.video_pipeline is not None:
+            try:
+                self.video_pipeline.clear_source_ordering(source_info.source_id)
+            except ValueError:
+                pass
         source_info.src_pad = None
 
     def eviction_job(self):
@@ -690,11 +695,6 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
                 if source_info.timestamp < limit:
                     self.logger.debug('Source %s has expired', source_id)
                     if source_info.src_pad is not None:
-                        if self.video_pipeline is not None:
-                            try:
-                                self.video_pipeline.clear_source_ordering(source_id)
-                            except ValueError:
-                                pass
                         self.send_eos(source_info)
                     del self.sources[source_id]
                 else:

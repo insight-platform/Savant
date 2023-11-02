@@ -2,8 +2,9 @@
 from contextlib import AbstractContextManager
 from typing import List, Optional, Tuple, Union
 
-import cv2
 import numpy as np
+
+import cv2
 from savant_rs.draw_spec import PaddingDraw
 from savant_rs.primitives.geometry import BBox, RBBox
 
@@ -52,7 +53,7 @@ class ArtistGPUMat(AbstractContextManager):
         bg_color: Optional[Tuple[int, int, int, int]] = (0, 0, 0, 255),  # black
         padding: Tuple[int, int, int, int] = (0, 0, 0, 0),
         anchor_point_type: Position = Position.CENTER,
-    ) -> int:
+    ) -> Tuple[Tuple[int, int], int]:
         """Draw text, text backround box and text background box border on the frame.
         Does not draw anything if text is empty.
 
@@ -69,7 +70,9 @@ class ArtistGPUMat(AbstractContextManager):
         :param anchor_point_type: Anchor point of a  rectangle with text.
             For example, if you select Position.CENTER, the rectangle with the text
             will be drawn so that the center of the rectangle is at (x,y).
-        :return: Text box height, even if nothing was drawn.
+        :return: Text [width, height] and baseline height
+            (total text box height = text height + baseline).
+            Returns this even if nothing was drawn.
         """
         draw_text = font_scale > 0 and len(text) > 0 and font_color[3] > 0
         draw_border = border_width > 0 and border_color[3] > 0
@@ -117,7 +120,7 @@ class ArtistGPUMat(AbstractContextManager):
                     font_thickness,
                     cv2.LINE_AA,
                 )
-        return text_size[1] + baseline
+        return text_size, baseline
 
     # pylint:disable=too-many-arguments
     def add_bbox(
@@ -147,6 +150,10 @@ class ArtistGPUMat(AbstractContextManager):
             left, top, right, bottom = bbox.visual_box(
                 PaddingDraw(*padding), border_width, self.max_col, self.max_row
             ).as_ltrb_int()
+
+            if (right - left) < 1 or (bottom - top) < 1:
+                raise ValueError('Wrong bbox size.')
+
             if draw_bg:
                 self.frame.colRange(left, right).rowRange(top, bottom).setTo(
                     bg_color, stream=self.stream
@@ -248,6 +255,27 @@ class ArtistGPUMat(AbstractContextManager):
         self.__init_overlay()
         cv2.circle(self.overlay, center, radius, color, thickness, line_type)
 
+    def add_line(
+        self,
+        pt1: Tuple[int, int],
+        pt2: Tuple[int, int],
+        color: Tuple[int, int, int, int] = (255, 0, 0, 255),  # RGBA, Red,
+        thickness: int = 3,
+        type: int = cv2.LINE_AA,
+    ):
+        """Draw line.
+
+        :param pt1: First point.
+        :param pt2: Second point.
+        :param color: Line color, RGBA, ints in range [0;255].
+        :param thickness: Line thickness.
+        :param type: Line type.
+        """
+        if color[3] <= 0 or thickness <= 0:
+            return
+        self.__init_overlay()
+        cv2.line(self.overlay, pt1, pt2, color, thickness, type)
+
     def add_polygon(
         self,
         vertices: List[Tuple[int, int]],
@@ -303,6 +331,10 @@ class ArtistGPUMat(AbstractContextManager):
         left, top, width, height = bbox.visual_box(
             PaddingDraw(*padding), 0, self.max_col, self.max_row
         ).as_ltwh_int()
+
+        if width < 1 or height < 1:
+            raise ValueError('Wrong bbox size.')
+
         roi_mat = cv2.cuda.GpuMat(self.frame, (left, top, width, height))
 
         gaussian_filter.apply(roi_mat, roi_mat, stream=self.stream)
@@ -313,6 +345,8 @@ class ArtistGPUMat(AbstractContextManager):
         """Copy a region of the frame to a new GpuMat.
 
         :param bbox: ROI specified as Savant bbox.
+        :param padding: Increase the size of the region in each direction,
+            value in pixels, left, top, right, bottom.
         :return: GpuMat with the specified region.
         """
         left, top, width, height = bbox.visual_box(
