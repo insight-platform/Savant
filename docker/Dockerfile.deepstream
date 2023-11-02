@@ -207,6 +207,8 @@ RUN apt-get update \
 
 COPY --from=mediamtx /mediamtx/mediamtx mediamtx/mediamtx
 COPY adapters/ds adapters/ds
+# To avoid ImportError when Nvidia runtime is not available
+RUN rm gst_plugins/python/frame_tag_filter.py
 ENV GST_PLUGIN_PATH=$GST_PLUGIN_PATH:$PROJECT_PATH/adapters/ds/gst_plugins
 
 ENTRYPOINT []
