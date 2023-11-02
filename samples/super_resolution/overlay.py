@@ -68,7 +68,6 @@ class SROverlay(NvDsPyFuncPlugin):
                 sr_image_np = np.transpose(sr_image_np, (1, 2, 0))
                 # rgb => rgba
                 sr_image_np = np.dstack(
-                    (sr_image_np, np.zeros(SUPER_RESOLUTION[::-1], dtype=np.uint8))
+                    (sr_image_np, np.full(SUPER_RESOLUTION[::-1], 255, dtype=np.uint8))
                 )
-                sr_image = cv2.cuda_GpuMat(sr_image_np)
-                artist.add_graphic(sr_image, sr_lt)
+                artist.add_graphic(sr_image_np, sr_lt)

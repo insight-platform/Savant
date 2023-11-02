@@ -354,17 +354,25 @@ class ArtistGPUMat(AbstractContextManager):
         roi_mat = cv2.cuda_GpuMat(self.frame, (left, top, width, height))
         return roi_mat
 
-    def add_graphic(self, img: cv2.cuda.GpuMat, origin: Tuple[int, int]):
+    def add_graphic(
+        self, img: Union[cv2.cuda.GpuMat, np.ndarray], origin: Tuple[int, int]
+    ):
         """Overlays an image onto the frame, e.g. a logo.
 
-        :param img: RGBA image in GPU memory
+        :param img: RGBA image in GPU memory or as numpy array
         :param origin: Coordinates of left top corner of img in frame space. (left, top)
         """
         frame_left, frame_top = origin
         if frame_left >= self.width or frame_top >= self.height:
             return
 
-        img_w, img_h = img.size()
+        if isinstance(img, np.ndarray):
+            gpu_img = cv2.cuda.GpuMat(img.shape[0], img.shape[1], cv2.CV_8UC4)
+            gpu_img.upload(img, self.stream)
+        else:
+            gpu_img = img
+
+        img_w, img_h = gpu_img.size()
         if frame_left + img_w < 0 or frame_top + img_h < 0:
             return
 
@@ -399,7 +407,7 @@ class ArtistGPUMat(AbstractContextManager):
         frame_roi = self.frame.colRange(frame_left, frame_right).rowRange(
             frame_top, frame_bottom
         )
-        img_roi = img.colRange(img_left, img_right).rowRange(img_top, img_bottom)
+        img_roi = gpu_img.colRange(img_left, img_right).rowRange(img_top, img_bottom)
 
         img_roi.copyTo(self.stream, frame_roi)
 
