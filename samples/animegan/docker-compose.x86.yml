@@ -10,9 +10,10 @@ services:
     environment:
       - LOCATION=/data/${INPUT_FILENAME}
       - SHUTDOWN_AUTH=shutdown
-      - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
+      - ZMQ_ENDPOINT=dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc
       - SOURCE_ID_PATTERN=camera_%d
       - NUMBER_OF_STREAMS=1
+      - RECEIVE_TIMEOUT=50000
     depends_on:
       module:
         condition: service_healthy
@@ -26,7 +27,7 @@ services:
       - ..:/opt/savant/samples
     command: samples/animegan/module.yml
     environment:
-      - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
+      - ZMQ_SRC_ENDPOINT=router+bind:ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
       - FPS_PERIOD=1000
     deploy:
