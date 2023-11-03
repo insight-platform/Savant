@@ -1,3 +1,4 @@
+import functools
 from typing import Union
 
 import cv2
@@ -9,6 +10,7 @@ Frame = Union[cv2.cuda.GpuMat, np.ndarray, bytes]
 """Type alias for a frame content."""
 
 
+@functools.lru_cache
 def nvidia_runtime_is_available() -> bool:
     """Check if Nvidia runtime is available."""
 

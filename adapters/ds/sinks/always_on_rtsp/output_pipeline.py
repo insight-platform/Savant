@@ -3,6 +3,7 @@ from typing import List
 from adapters.ds.sinks.always_on_rtsp.config import Config
 from adapters.ds.sinks.always_on_rtsp.last_frame import LastFrameRef
 from adapters.ds.sinks.always_on_rtsp.pipeline import add_elements
+from adapters.ds.sinks.always_on_rtsp.utils import nvidia_runtime_is_available
 from savant.config.schema import PipelineElement
 from savant.gstreamer import Gst
 from savant.gstreamer.element_factory import GstElementFactory
@@ -74,7 +75,7 @@ def build_output_pipeline(
 
 
 def build_encoder_elements(config: Config) -> List[PipelineElement]:
-    if config.nvidia_runtime_is_available:
+    if nvidia_runtime_is_available():
         return build_nvenc_encoder_elements(config)
     else:
         return build_sw_encoder_elements(config)

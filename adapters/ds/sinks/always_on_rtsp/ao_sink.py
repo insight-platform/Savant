@@ -5,6 +5,7 @@ from adapters.ds.sinks.always_on_rtsp.input_pipeline import build_input_pipeline
 from adapters.ds.sinks.always_on_rtsp.last_frame import LastFrameRef
 from adapters.ds.sinks.always_on_rtsp.output_pipeline import build_output_pipeline
 from adapters.ds.sinks.always_on_rtsp.pipeline import PipelineThread
+from adapters.ds.sinks.always_on_rtsp.utils import nvidia_runtime_is_available
 from savant.gstreamer import Gst
 from savant.gstreamer.element_factory import GstElementFactory
 from savant.utils.logging import get_logger, init_logging
@@ -13,8 +14,8 @@ LOGGER_NAME = 'adapters.ao_sink'
 logger = get_logger(LOGGER_NAME)
 
 
-def create_element_factory(config: Config) -> GstElementFactory:
-    if config.nvidia_runtime_is_available:
+def create_element_factory() -> GstElementFactory:
+    if nvidia_runtime_is_available():
         from savant.deepstream.element_factory import NvDsElementFactory
 
         logger.debug('Using NvDsElementFactory')
@@ -33,7 +34,7 @@ def run_ao_sink():
     Gst.init(None)
 
     logger.info('Source %s. Starting Always-On-RTSP sink', config.source_id)
-    factory = create_element_factory(config)
+    factory = create_element_factory()
     output_pipeline_thread = PipelineThread(
         build_output_pipeline,
         'OutputPipeline',
