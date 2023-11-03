@@ -15,8 +15,6 @@ Demonstrated adapters:
 - Multi-stream source adapter;
 - Video/Metadata sink adapter.
 
-**Note**: Ubuntu 22.04 runtime configuration [guide](../../docs/runtime-configuration.md) helps to configure the runtime to run Savant pipelines.
-
 Download sample video:
 
 ```bash
@@ -33,6 +31,18 @@ Run the demo:
 
 ./samples/animegan/run.sh
 ```
+
+The script waits for the module to complete processing and removes containers afterwards. While waiting for the script to finish you can check current progress by reading container logs from a separate terminal:
+
+```bash
+docker logs -f animegan-source-1
+# or
+docker logs -f animegan-module-1
+# or
+docker logs -f animegan-video-sink-1
+```
+
+Result is written into `Savant/data/results/animegan_result_0`.
 
 ## Change input video
 

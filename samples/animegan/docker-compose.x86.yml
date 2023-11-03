@@ -11,7 +11,7 @@ services:
       - LOCATION=/data/${INPUT_FILENAME}
       - SHUTDOWN_AUTH=shutdown
       - ZMQ_ENDPOINT=dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc
-      - SOURCE_ID_PATTERN=camera_%d
+      - SOURCE_ID_PATTERN=animegan_result_%d
       - NUMBER_OF_STREAMS=1
       - RECEIVE_TIMEOUT=50000
     depends_on:
