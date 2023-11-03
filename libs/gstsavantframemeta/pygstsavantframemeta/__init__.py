@@ -1,7 +1,6 @@
 from typing import Optional
 
 import gi
-import pyds
 from savant_rs.pipeline2 import VideoPipeline
 
 from . import pygstsavantframemeta
@@ -83,7 +82,7 @@ def gst_buffer_get_savant_frame_meta(
 
 
 def nvds_frame_meta_get_nvds_savant_frame_meta(
-    frame_meta: pyds.NvDsFrameMeta,
+    frame_meta: 'pyds.NvDsFrameMeta',
 ) -> Optional[pygstsavantframemeta.GstSavantFrameMeta]:
     """Get savant frame metadata from NvDs frame metadata.
 

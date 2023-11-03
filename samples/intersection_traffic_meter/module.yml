@@ -5,7 +5,7 @@ parameters:
     width: 1920
     height: 1080
   output_frame:
-    codec: h264
+    codec: ${oc.env:CODEC, 'h264'}
   draw_func:
     module: samples.intersection_traffic_meter.overlay
     class_name: Overlay
