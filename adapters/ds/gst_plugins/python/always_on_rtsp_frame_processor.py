@@ -14,6 +14,7 @@ from savant.gstreamer import GObject, Gst, GstBase
 from savant.gstreamer.utils import (
     gst_post_library_settings_error,
     gst_post_stream_failed_error,
+    map_gst_buffer,
 )
 from savant.utils.logging import LoggerMixin
 
@@ -311,26 +312,16 @@ class AlwaysOnRtspFrameProcessor(LoggerMixin, GstBase.BaseTransform):
 
     @contextmanager
     def _gst_buffer_to_np_array(self, buffer: Gst.Buffer):
-        """Convert Gst.Buffer to numpy array.
+        """Convert Gst.Buffer to a writable numpy array.
         All the changes will be applied to the buffer.
         """
 
-        is_mapped, map_info = buffer.map(Gst.MapFlags.READ | Gst.MapFlags.WRITE)
-        if not is_mapped:
-            raise RuntimeError('Failed to map buffer')
-
-        # TODO: make numpy array writable
-        np_arr = np.ndarray(
-            shape=(self._height, self._width, 4),
-            dtype=np.uint8,
-            buffer=map_info.data,
-        ).copy()
-        buffer.unmap(map_info)
-
-        yield np_arr
-
-        mem: Gst.Buffer = Gst.Buffer.new_wrapped(np_arr.tobytes())
-        buffer.replace_all_memory(mem.get_memory(0))
+        with map_gst_buffer(buffer, Gst.MapFlags.READ | Gst.MapFlags.WRITE) as map_info:
+            np_arr = np.ctypeslib.as_array(
+                map_info.data,
+                shape=(self._height, self._width, 4),
+            )
+            yield np_arr
 
 
 # register plugin
