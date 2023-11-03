@@ -84,7 +84,7 @@ Preview:
 ![](license_plate_recognition/assets/license-plate-recognition-400.webp)
 
 
-### Keypoint detection 
+### Keypoint detection
 
 Sample location: [keypoint_detection](./keypoint_detection)
 
@@ -105,8 +105,6 @@ Preview:
 ### AnimeGAN demo
 
 Sample Location: [animegan](./animegan)
-
-Preview:
 
 ![](animegan/assets/animegan-loop-400.webp)
 
