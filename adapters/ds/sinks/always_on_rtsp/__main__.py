@@ -9,8 +9,8 @@ from threading import Thread
 from typing import Dict, List, Optional
 
 from adapters.ds.sinks.always_on_rtsp.config import opt_config
+from adapters.ds.sinks.always_on_rtsp.utils import nvidia_runtime_is_available
 from adapters.ds.sinks.always_on_rtsp.zeromq_proxy import ZeroMqProxy
-from savant.deepstream.encoding import check_encoder_is_available
 from savant.gstreamer import Gst
 from savant.gstreamer.codecs import Codec
 from savant.utils.logging import get_logger, init_logging
@@ -57,10 +57,24 @@ def main():
     config = Config()
 
     Gst.init(None)
-    if not check_encoder_is_available(
-        {'output_frame': {'codec': Codec.H264.value.name}}
-    ):
-        return
+    if nvidia_runtime_is_available():
+        logger.info(
+            'NVIDIA runtime is available. Using hardware-based decoding/encoding.'
+        )
+        from savant.deepstream.encoding import check_encoder_is_available
+
+        if not check_encoder_is_available(
+            {'output_frame': {'codec': Codec.H264.value.name}}
+        ):
+            return
+    else:
+        logger.warning(
+            'You are using the AO-RTSP adapter with a software-based decoder/encoder '
+            '(without NVDEC/NVENC). This mode must be used only when hardware-based '
+            'encoding is not available (Jetson Orin Nano, A100, H100). '
+            'If the hardware-based encoding is available, run the adapter with Nvidia '
+            'runtime enabled to activate hardware-based decoding/encoding.'
+        )
 
     if not config.source_id:
         internal_socket = 'ipc:///tmp/ao-sink-internal-socket.ipc'

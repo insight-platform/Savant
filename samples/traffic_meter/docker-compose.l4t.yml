@@ -34,6 +34,7 @@ services:
       - FPS_PERIOD=1000
       - DETECTOR=${DETECTOR}
       - MODULE_NAME=traffic_meter-${DETECTOR}
+      - CODEC=raw-rgba
     runtime: nvidia
 
   always-on-sink:
@@ -53,7 +54,6 @@ services:
       - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x720.jpeg
       - DEV_MODE=True
     command: python -m adapters.ds.sinks.always_on_rtsp
-    runtime: nvidia
 
   graphite:
     image: graphiteapp/graphite-statsd

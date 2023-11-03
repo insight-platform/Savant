@@ -401,6 +401,13 @@ def video_files_sink(
     ),
     show_default=True,
 )
+@click.option(
+    '--cpu',
+    default=False,
+    is_flag=True,
+    help='Use CPU for transcoding and scaling.',
+    show_default=True,
+)
 @fps_meter_options
 @common_options
 @adapter_docker_image_option('deepstream')
@@ -428,6 +435,7 @@ def always_on_rtsp_sink(
     sync: bool,
     dev_mode: bool,
     publish_ports: bool,
+    cpu: bool,
     rtsp_uri: Optional[str],
 ):
     """Send video stream from specific source to RTSP server.
@@ -504,7 +512,7 @@ def always_on_rtsp_sink(
         args=['-m', 'adapters.ds.sinks.always_on_rtsp'],
         envs=envs,
         volumes=[f'{stub_file_location}:{stub_file_location}:ro'],
-        with_gpu=True,
+        with_gpu=not cpu,
         docker_image=docker_image,
         ports=ports,
     )

@@ -31,6 +31,7 @@ services:
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
       - FPS_PERIOD=1000
+      - CODEC=raw-rgba
     depends_on:
       etcd:
         condition: service_healthy
@@ -54,7 +55,6 @@ services:
       - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x720.jpeg
       - DEV_MODE=True
     command: python -m adapters.ds.sinks.always_on_rtsp
-    runtime: nvidia
 
   etcd:
     container_name: etcd

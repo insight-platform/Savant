@@ -13,7 +13,7 @@ parameters:
       bottom: 0
     geometry_base: 4
   output_frame:
-    codec: h264
+    codec: ${oc.env:CODEC, 'h264'}
   draw_func:
     module: samples.area_object_counting.overlay
     class_name: Overlay

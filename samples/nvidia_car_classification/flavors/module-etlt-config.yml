@@ -2,7 +2,7 @@ name: ${oc.env:MODULE_NAME, 'nvidia_car_classification'}
 
 parameters:
   output_frame:
-    codec: raw-rgba
+    codec: ${oc.env:CODEC, 'raw-rgba'}
   draw_func:
     module: savant.deepstream.drawfunc
     class_name: NvDsDrawFunc

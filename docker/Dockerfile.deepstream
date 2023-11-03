@@ -198,8 +198,17 @@ FROM base AS adapters
 
 HEALTHCHECK NONE
 
+RUN apt-get update \
+    && apt-get install -y \
+        gstreamer1.0-libav \
+    && apt-get autoremove -y \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY --from=mediamtx /mediamtx/mediamtx mediamtx/mediamtx
 COPY adapters/ds adapters/ds
+# To avoid ImportError when Nvidia runtime is not available
+RUN rm gst_plugins/python/frame_tag_filter.py
 ENV GST_PLUGIN_PATH=$GST_PLUGIN_PATH:$PROJECT_PATH/adapters/ds/gst_plugins
 
 ENTRYPOINT []
