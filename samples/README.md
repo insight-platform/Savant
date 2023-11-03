@@ -87,7 +87,7 @@ Sample Location: [opencv_cuda_bg_remover_mog2](./opencv_cuda_bg_remover_mog2)
 
 ![](opencv_cuda_bg_remover_mog2/assets/opencv_cuda_bg_remover_mog2-800.webp)
 
-### AnimeGAN demo
+### AnimeGAN Demo
 
 Sample Location: [animegan](./animegan)
 

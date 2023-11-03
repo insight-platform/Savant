@@ -1,4 +1,4 @@
-# AnimeGAN demo
+# AnimeGAN Demo
 
 Use [AnimeGANv2](https://github.com/TachibanaYoshino/AnimeGANv2) to apply Hayao Miyazaki anime-like style to a video.
 
