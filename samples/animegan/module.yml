@@ -1,0 +1,43 @@
+name: animegan
+
+parameters:
+  frame:
+    width: 1280
+    height: 720
+
+  output_frame:
+    codec: h264
+
+  gan_name: animegan_v2_miyazaki
+
+  shutdown_auth: shutdown
+
+pipeline:
+
+  elements:
+
+    - element: nvinfer@attribute_model
+      name: ${parameters.gan_name}
+      model:
+        remote:
+          url: s3://savant-data/models/${parameters.gan_name}/${parameters.gan_name}.zip
+          checksum_url: s3://savant-data/models/${parameters.gan_name}/${parameters.gan_name}.md5
+          parameters:
+            endpoint: https://eu-central-1.linodeobjects.com
+        format: onnx
+        model_file: ${parameters.gan_name}.onnx
+        input:
+          scale_factor: 0.0189673343
+          offsets: [127.5, 127.5, 127.5]
+        output:
+          layer_names: [ 'output' ]
+          converter:
+            module:  samples.animegan.animegan_converter
+            class_name: AnimeganConverter
+          attributes:
+            - name: gan
+              internal: true
+
+    - element: pyfunc
+      module: samples.animegan.frame_replacer
+      class_name: FrameReplacer

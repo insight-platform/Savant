@@ -67,13 +67,13 @@ Sample location: [LPR](./license_plate_recognition)
 
 ![](license_plate_recognition/assets/license-plate-recognition-400.webp)
 
-### Keypoint Detection 
+### Keypoint Detection
 
 Sample location: [keypoint_detection](./keypoint_detection)
 
 ![](keypoint_detection/assets/shuffle_dance-400.webp)
 
-### Super Resolution 
+### Super Resolution
 
 Sample location: [super_resolution](./super_resolution)
 
@@ -86,6 +86,12 @@ Sample location: [super_resolution](./super_resolution)
 Sample Location: [opencv_cuda_bg_remover_mog2](./opencv_cuda_bg_remover_mog2)
 
 ![](opencv_cuda_bg_remover_mog2/assets/opencv_cuda_bg_remover_mog2-800.webp)
+
+### AnimeGAN Demo
+
+Sample Location: [animegan](./animegan)
+
+![](animegan/assets/animegan-loop-400.webp)
 
 ### Conditional Video Processing
 

@@ -26,6 +26,12 @@ fi
 READ_METADATA="${READ_METADATA:="false"}"
 NUMBER_OF_STREAMS="${NUMBER_OF_STREAMS:=1}"
 
+if [[ -n "${RECEIVE_TIMEOUT}" ]]; then
+    SENDER_RECEIVE_TIMEOUT="receive-timeout=${RECEIVE_TIMEOUT}"
+else
+    SENDER_RECEIVE_TIMEOUT=
+fi
+
 MEDIA_FILES_SRC_BIN_OPTS=(
     location="${LOCATION}"
     file-type=video
@@ -66,7 +72,7 @@ PIPELINE+=(
     fps_meter "${FPS_PERIOD}" output="${FPS_OUTPUT}" !
     adjust_timestamps !
     savant_rs_serializer "${SAVANT_RS_SERIALIZER_OPTS[@]}" !
-    zeromq_sink socket="${ZMQ_ENDPOINT}" socket-type="${ZMQ_SOCKET_TYPE}" bind="${ZMQ_SOCKET_BIND}" sync="${SYNC_OUTPUT}"
+    zeromq_sink socket="${ZMQ_ENDPOINT}" socket-type="${ZMQ_SOCKET_TYPE}" bind="${ZMQ_SOCKET_BIND}" sync="${SYNC_OUTPUT}" "${SENDER_RECEIVE_TIMEOUT}"
 )
 
 handler() {
