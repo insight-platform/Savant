@@ -172,10 +172,10 @@ ENV PATH=$PROJECT_PATH/scripts:$PATH \
     LOGLEVEL=info
 
 # Needed a script for healthcheck, because HEALTHCHECK command does not accept ENV
-COPY healthcheck.sh ./
+COPY healthcheck.sh .
 ENV SAVANT_STATUS_FILEPATH=$PROJECT_PATH/status.txt
 HEALTHCHECK --interval=5s --timeout=5s --start-period=30m --retries=3 \
-    CMD [ "sh", "healthcheck.sh" ]
+    CMD [ "sh", "/opt/savant/healthcheck.sh" ]
 
 ENTRYPOINT ["python", "-m", "savant.entrypoint"]
 
