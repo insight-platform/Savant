@@ -1,0 +1,51 @@
+name: super_resolution
+
+parameters:
+  # set the super resolution model scale (x2/3/4) and name (ninasr_b0/1)
+  sr_scale: 3
+  sr_model: ninasr_b0
+  frame:
+    width: 640
+    height: 360
+    padding:
+      keep: true
+      left: 0
+      top: 0
+      # to output super resolution only
+#      right: ${calc:"arg_0*arg_1-arg_0", ${parameters.frame.width}, ${parameters.sr_scale}}
+#      bottom: ${calc:"arg_0*arg_1-arg_0", ${parameters.frame.height}, ${parameters.sr_scale}}
+      # to output scaled original + super resolution
+      right: ${calc:"arg_0*arg_1*2-arg_0", ${parameters.frame.width}, ${parameters.sr_scale}}
+      bottom: ${calc:"arg_0*arg_1-arg_0", ${parameters.frame.height}, ${parameters.sr_scale}}
+  output_frame:
+    codec: hevc
+  batch_size: 1
+
+pipeline:
+  elements:
+    - element: nvinfer@attribute_model
+      name: ${parameters.sr_model}
+      model:
+        remote:
+          url: s3://savant-data/models/super_resolution/${parameters.sr_model}/${parameters.sr_model}_x${parameters.sr_scale}.zip
+          checksum_url: s3://savant-data/models/super_resolution/${parameters.sr_model}/${parameters.sr_model}_x${parameters.sr_scale}.md5
+          parameters:
+            endpoint: https://eu-central-1.linodeobjects.com
+        format: onnx
+        model_file: ${parameters.sr_model}_x${parameters.sr_scale}.onnx
+        input:
+          shape: [3, 360, 640]
+          scale_factor: 0.003921569
+          offsets: [0.0, 0.0, 0.0]
+        output:
+          layer_names: [output]
+          converter:
+            module: savant.converter.raw_output
+            class_name: ModelRawOutputConverter
+          attributes:
+            - name: sr_frame
+              # just a way to save model output before place on frame, no need to output
+              internal: true
+    - element: pyfunc
+      module: samples.super_resolution.overlay
+      class_name: SROverlay

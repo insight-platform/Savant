@@ -1,12 +1,12 @@
 from pygstsavantframemeta import gst_buffer_get_savant_frame_meta
 
 from adapters.ds.sinks.always_on_rtsp.config import Config
-from adapters.ds.sinks.always_on_rtsp.last_frame import LastFrame
+from adapters.ds.sinks.always_on_rtsp.last_frame import LastFrameRef
 from adapters.ds.sinks.always_on_rtsp.pipeline import add_elements
 from savant.config.schema import PipelineElement
-from savant.deepstream.element_factory import NvDsElementFactory
 from savant.gstreamer import Gst
 from savant.gstreamer.codecs import CODEC_BY_CAPS_NAME, Codec
+from savant.gstreamer.element_factory import GstElementFactory
 from savant.utils.logging import get_logger
 
 LOGGER_NAME = 'adapters.ao_sink.input_pipeline'
@@ -47,7 +47,7 @@ def on_demuxer_pad_added(
     src_pad: Gst.Pad,
     config: Config,
     pipeline: Gst.Pipeline,
-    factory: NvDsElementFactory,
+    factory: GstElementFactory,
     sink_pad: Gst.Pad,
 ):
     caps: Gst.Caps = src_pad.get_pad_template_caps()
@@ -89,8 +89,8 @@ def on_demuxer_pad_added(
 
 def build_input_pipeline(
     config: Config,
-    last_frame: LastFrame,
-    factory: NvDsElementFactory,
+    last_frame: LastFrameRef,
+    factory: GstElementFactory,
 ):
     pipeline: Gst.Pipeline = Gst.Pipeline.new('input-pipeline')
     savant_rs_video_demux_properties = {
@@ -119,10 +119,10 @@ def build_input_pipeline(
         ),
     ]
     sink_elements = [
-        PipelineElement('nvvideoconvert'),
+        PipelineElement(config.converter),
         PipelineElement(
             'capsfilter',
-            properties={'caps': 'video/x-raw(memory:NVMM), format=RGBA'},
+            properties={'caps': f'{config.video_raw_caps}, format=RGBA'},
         ),
         PipelineElement(
             'fps_meter',
@@ -149,7 +149,7 @@ def build_input_pipeline(
     gst_source_elements = add_elements(pipeline, source_elements, factory)
     gst_sink_elements = add_elements(pipeline, sink_elements, factory)
     savant_rs_video_demux = gst_source_elements[-1]
-    nvvideoconvert = gst_sink_elements[0]
+    converter = gst_sink_elements[0]
 
     savant_rs_video_demux.connect(
         'pad-added',
@@ -157,7 +157,7 @@ def build_input_pipeline(
         config,
         pipeline,
         factory,
-        nvvideoconvert.get_static_pad('sink'),
+        converter.get_static_pad('sink'),
     )
 
     return pipeline

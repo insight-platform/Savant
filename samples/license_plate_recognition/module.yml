@@ -2,7 +2,7 @@ name: license_plate_recognition
 
 parameters:
   output_frame:
-    codec: h264
+    codec: ${oc.env:CODEC, 'h264'}
     encoder_params:
       bitrate: 8000000
   frame:

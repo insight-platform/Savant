@@ -3,7 +3,7 @@ from threading import Thread
 from typing import Callable, List, Optional
 
 from adapters.ds.sinks.always_on_rtsp.config import Config
-from adapters.ds.sinks.always_on_rtsp.last_frame import LastFrame
+from adapters.ds.sinks.always_on_rtsp.last_frame import LastFrameRef
 from savant.config.schema import PipelineElement
 from savant.gstreamer import Gst
 from savant.gstreamer.element_factory import GstElementFactory
@@ -31,10 +31,12 @@ def add_elements(
 class PipelineThread:
     def __init__(
         self,
-        build_pipeline: Callable[[Config, LastFrame, GstElementFactory], Gst.Pipeline],
+        build_pipeline: Callable[
+            [Config, LastFrameRef, GstElementFactory], Gst.Pipeline
+        ],
         thread_name: str,
         config: Config,
-        last_frame: LastFrame,
+        last_frame: LastFrameRef,
         factory: GstElementFactory,
     ):
         self.build_pipeline = build_pipeline

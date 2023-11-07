@@ -1,3 +1,4 @@
+import functools
 import os
 from distutils.util import strtobool
 from pathlib import Path
@@ -9,6 +10,7 @@ from savant_rs.pipeline2 import (
     VideoPipelineStagePayloadType,
 )
 
+from adapters.ds.sinks.always_on_rtsp.utils import nvidia_runtime_is_available
 from savant.utils.zeromq import ReceiverSocketTypes
 
 
@@ -76,6 +78,18 @@ class Config:
             'Incorrect value for environment variable MAX_RESOLUTION, '
             'you should specify the width and height of the maximum resolution '
             'in format WIDTHxHEIGHT, for example 1920x1080.'
+        )
+
+    @functools.cached_property
+    def converter(self) -> str:
+        return 'nvvideoconvert' if nvidia_runtime_is_available() else 'videoconvert'
+
+    @functools.cached_property
+    def video_raw_caps(self) -> str:
+        return (
+            'video/x-raw(memory:NVMM)'
+            if nvidia_runtime_is_available()
+            else 'video/x-raw'
         )
 
     def fps_meter_properties(self, measurer_name: str):
