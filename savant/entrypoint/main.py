@@ -11,6 +11,7 @@ from savant.deepstream.runner import NvDsPipelineRunner
 from savant.gstreamer import Gst
 from savant.healthcheck.server import HealthCheckHttpServer
 from savant.healthcheck.status import ModuleStatus, set_module_status
+from savant.utils.check_display import check_display_env
 from savant.utils.logging import get_logger, init_logging, update_logging
 from savant.utils.sink_factories import sink_factory
 
@@ -43,6 +44,8 @@ def main(config_file_path: str):
     # reconfigure savant logger with updated loglevel
     update_logging(config.parameters['log_level'])
     logger = get_logger('main')
+
+    check_display_env(logger)
 
     if status_filepath is not None:
         healthcheck_port = config.parameters.get('healthcheck_port')

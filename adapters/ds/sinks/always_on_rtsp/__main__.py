@@ -61,6 +61,10 @@ def main():
         logger.info(
             'NVIDIA runtime is available. Using hardware-based decoding/encoding.'
         )
+        from savant.utils.check_display import check_display_env
+
+        check_display_env(logger)
+
         from savant.deepstream.encoding import check_encoder_is_available
 
         if not check_encoder_is_available(
