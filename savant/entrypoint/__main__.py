@@ -1,17 +1,43 @@
 """Module entrypoint.
+Usage examples:
 
->>> python -m savant.entrypoint {config_file_path}
+> echo "
+name: test-module
+parameters:
+  batch_size: 1
+" | python -m savant.entrypoint
 
-TODO: Support configuration from STDIN to be able
-    to create configuration on the fly using, for example, yq
-    `if sys.argv[1] == '-': ...`
+> python -m savant.entrypoint -e some/module/config.yml
+
+> cat some/module/config.yml | python -m savant.entrypoint
 """
+import argparse
 import sys
 
-from savant.entrypoint.main import main
+from savant.entrypoint.main import build_module_engines, run_module
 
 if __name__ == '__main__':
-    if len(sys.argv) >= 2:
-        main(sys.argv[1])
+    parser = argparse.ArgumentParser(prog='python -m savant.entrypoint')
+    parser.add_argument(
+        '-e',
+        '--build-engines-only',
+        action='store_true',
+        help='builds module model\'s engines and exit',
+    )
+    parser.add_argument(
+        'config',
+        nargs='?',
+        type=argparse.FileType('r'),
+        default=sys.stdin,
+        help='config file to read, if empty, STDIN is used',
+    )
+    args = parser.parse_args()
+
+    if args.config.isatty():
+        parser.print_help()
+        exit(0)
+
+    if args.build_engines_only:
+        build_module_engines(args.config)
     else:
-        print('Module config file path is expected as a CLI argument.')
+        run_module(args.config)
