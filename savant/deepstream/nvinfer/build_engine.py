@@ -38,7 +38,7 @@ def build_engine(element: ModelElement, rebuild: bool = True):
             properties={
                 'width': model.input.width if model.input.width else 1280,
                 'height': model.input.height if model.input.height else 720,
-                'batch-size': model.batch_size,
+                'batch-size': 1,
             },
         ),
         nvinfer_element,
