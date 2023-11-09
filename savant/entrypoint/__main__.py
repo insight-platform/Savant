@@ -14,7 +14,7 @@ parameters:
 import argparse
 import sys
 
-from savant.entrypoint.main import build_module_engines, run_module
+from savant.entrypoint.main import build_module_engines, main
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='python -m savant.entrypoint')
@@ -40,4 +40,4 @@ if __name__ == '__main__':
     if args.build_engines_only:
         build_module_engines(args.config)
     else:
-        run_module(args.config)
+        main(args.config)

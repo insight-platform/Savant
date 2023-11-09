@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import os
 
-from savant.entrypoint.main import run_module
+from savant.entrypoint.main import main
 
 if __name__ == '__main__':
-    run_module(os.path.join(os.path.dirname(__file__), 'module.yml'))
+    main(os.path.join(os.path.dirname(__file__), 'module.yml'))
     print('done')

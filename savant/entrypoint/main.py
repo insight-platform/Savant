@@ -20,7 +20,7 @@ from savant.utils.logging import get_logger, init_logging, update_logging
 from savant.utils.sink_factories import sink_factory
 
 
-def run_module(module_config: Union[str, Path, IO[Any]]):
+def main(module_config: Union[str, Path, IO[Any]]):
     """Runs NvDsPipeline based module.
 
     :param module_config: Module configuration.
