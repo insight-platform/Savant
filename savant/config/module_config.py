@@ -411,7 +411,7 @@ class ModuleConfig(metaclass=SingletonMeta):
         :return: Module configuration, structured
         """
         module_cfg = OmegaConf.load(config)
-        logger.info('Configure module...')
+        logger.info('Configure module "%s"...', module_cfg.name)
         module_cfg = merge_configs([module_cfg], self._default_cfg)
 
         module_cfg = OmegaConf.unsafe_merge(OmegaConf.structured(Module), module_cfg)

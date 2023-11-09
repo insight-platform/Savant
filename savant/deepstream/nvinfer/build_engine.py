@@ -9,6 +9,10 @@ from savant.gstreamer import Gst  # noqa:F401
 from savant.gstreamer.element_factory import CreateElementException, GstElementFactory
 
 
+class BuildEngineException(Exception):
+    """Unable to build engine Exception."""
+
+
 def build_engine(element: ModelElement, rebuild: bool = True):
     """Builds specified model engine (TRT)."""
 
@@ -32,8 +36,8 @@ def build_engine(element: ModelElement, rebuild: bool = True):
             element='nvstreammux',
             name='muxer',
             properties={
-                'width': model.input.width,
-                'height': model.input.height,
+                'width': model.input.width if model.input.width else 1280,
+                'height': model.input.height if model.input.height else 720,
                 'batch-size': model.batch_size,
             },
         ),
@@ -61,3 +65,6 @@ def build_engine(element: ModelElement, rebuild: bool = True):
     with NvDsPipelineRunner(pipeline) as runner:
         while runner.is_running:
             time.sleep(0.1)
+
+    if runner.error is not None:
+        raise BuildEngineException(runner.error)

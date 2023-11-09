@@ -166,14 +166,14 @@ class ModelInput:
     """
 
     @property
-    def height(self):
+    def height(self) -> Optional[int]:
         """Input image height."""
-        return self.shape[1]
+        return self.shape[1] if self.shape else None
 
     @property
-    def width(self):
+    def width(self) -> Optional[int]:
         """Input image width."""
-        return self.shape[2]
+        return self.shape[2] if self.shape else None
 
 
 @dataclass
