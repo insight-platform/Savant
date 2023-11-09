@@ -1,6 +1,6 @@
 import dataclasses
-from pathlib import Path
 import time
+from pathlib import Path
 
 from savant.config.schema import ModelElement, PipelineElement
 from savant.deepstream.nvinfer.model import NvInferModel
@@ -14,7 +14,14 @@ class BuildEngineException(Exception):
 
 
 def build_engine(element: ModelElement, rebuild: bool = True):
-    """Builds specified model engine (TRT)."""
+    """Builds the specified model engine (TRT).
+
+    :param element: The model element for which the engine should be generated.
+    :param rebuild: Flag to force regeneration if the engine already exists.
+    :raises:
+        CreateElementException: Failed to create or link elements.
+        BuildEngineException: Failed to run the pipeline.
+    """
 
     model: NvInferModel = element.model
 
