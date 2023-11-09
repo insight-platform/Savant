@@ -9,15 +9,6 @@ Savant also translates its manifest to a GStreamer pipeline, but with custom Zer
 
 Those elements are defined in the module definition by default and usually are hidden from developers. However, the interested person may change the default source and sink to GStreamer elements like ``uridecodebin`` if the pipeline benefits from it.
 
-The developer may encounter such customizations in our performance-related module definitions like shown in the example below:
-
-.. literalinclude:: ../../../samples/opencv_cuda_bg_remover_mog2/demo_performance.yml
-  :language: YAML
-  :linenos:
-  :caption:
-  :emphasize-lines: 1,5
-  :lines: 31-34, 45-46
-
 Currently, the single source- and multiple sink declarations are supported.
 
 Adapters
