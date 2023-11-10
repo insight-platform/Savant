@@ -215,3 +215,8 @@ class GstPipelineRunner:
     def error(self) -> Optional[str]:
         """Returns error message."""
         return self._error
+
+    @property
+    def is_running(self) -> bool:
+        """Checks if the pipeline is running."""
+        return self._is_running

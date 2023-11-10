@@ -79,9 +79,9 @@ def check_encoder_is_available(parameters: Dict[str, Any]) -> bool:
         last_gst_element = gst_element
 
     with NvDsPipelineRunner(pipeline) as runner:
-        while runner._is_running:
+        while runner.is_running:
             time.sleep(0.1)
-        if runner._error is not None:
+        if runner.error is not None:
             logger.error(
                 'You have configured NVENC-accelerated encoding, '
                 'but your device doesn\'t support NVENC.'

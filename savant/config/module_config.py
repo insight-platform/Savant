@@ -1,7 +1,7 @@
 """Module configuration."""
 import re
 from pathlib import Path
-from typing import Any, Callable, Iterable, Optional, Tuple, Type, Union
+from typing import IO, Any, Callable, Iterable, Optional, Tuple, Type, Union
 
 from omegaconf import DictConfig, OmegaConf
 
@@ -404,14 +404,14 @@ class ModuleConfig(metaclass=SingletonMeta):
         logger.debug('Loaded default config\n%s', OmegaConf.to_yaml(self._default_cfg))
         self._config = None
 
-    def load(self, config_file_path: Union[str, Path]) -> Module:
+    def load(self, config: Union[str, Path, IO[Any]]) -> Module:
         """Loads and prepares module configuration.
 
-        :param config_file_path: Module config file path
+        :param config: Module config
         :return: Module configuration, structured
         """
-        module_cfg = OmegaConf.load(config_file_path)
-        logger.info('Configure module...')
+        module_cfg = OmegaConf.load(config)
+        logger.info('Configure module "%s"...', module_cfg.name)
         module_cfg = merge_configs([module_cfg], self._default_cfg)
 
         module_cfg = OmegaConf.unsafe_merge(OmegaConf.structured(Module), module_cfg)
