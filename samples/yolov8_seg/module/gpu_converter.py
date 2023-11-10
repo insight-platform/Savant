@@ -1,13 +1,15 @@
 """YOLOv8-seg postprocessing (converter)."""
 from typing import Any, List, Tuple
 
+import cupy as cp
 import cv2
-import numba as nb
+
+# import numba as nb
 import numpy as np
 
 from savant.base.converter import BaseComplexModelOutputConverter
 from savant.deepstream.nvinfer.model import NvInferInstanceSegmentation
-from savant.utils.nms import nms_cpu
+from savant.utils.nms import nms_gpu
 
 
 class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
@@ -17,6 +19,7 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
     :param nms_iou_threshold: nms iou threshold
     :param top_k: leave no more than top K bboxes with maximum confidence
     """
+    gpu = True
 
     def __init__(
         self,
@@ -31,7 +34,7 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
 
     def __call__(
         self,
-        *output_layers: np.ndarray,
+        *output_layers: cp.ndarray,
         model: NvInferInstanceSegmentation,
         roi: Tuple[float, float, float, float],
     ) -> Tuple[np.ndarray, List[List[Tuple[str, Any, float]]]]:
@@ -45,6 +48,7 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
         :return: a combination of :py:class:`.BaseObjectModelOutputConverter` and
             corresponding segmentation masks
         """
+
         tensors, masks = _postproc(
             output=output_layers[0],
             protos=output_layers[1],
@@ -75,7 +79,7 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
         tensors[:, 3] += roi_top
 
         # scale masks (transpose to use cv2.resize)
-        masks = masks.transpose((1, 2, 0))
+        masks = masks.transpose((1, 2, 0)).get()
         mask_width = int(ratio_x * model.input.width)
         mask_height = int(ratio_y * model.input.height)
         masks = cv2.resize(masks, (mask_width, mask_height), cv2.INTER_LINEAR)
@@ -104,46 +108,46 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
             for i in range(len(masks))
         ]
 
-        return tensors, mask_list
+        return tensors.get(), mask_list
 
 
-@nb.njit('Tuple((u2[:], f4[:]))(f4[:, :])', nogil=True)
-def _parse_scores(scores: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-    class_ids = np.empty(scores.shape[0], dtype=np.uint16)
-    confidences = np.empty(scores.shape[0], dtype=scores.dtype)
-    for i in range(scores.shape[0]):
-        class_ids[i] = scores[i, :].argmax()
-        confidences[i] = scores[i, class_ids[i]]
-    return class_ids, confidences
+# @nb.njit('Tuple((u2[:], f4[:]))(f4[:, :])', nogil=True)
+# def _parse_scores(scores: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+#     class_ids = np.empty(scores.shape[0], dtype=np.uint16)
+#     confidences = np.empty(scores.shape[0], dtype=scores.dtype)
+#     for i in range(scores.shape[0]):
+#         class_ids[i] = scores[i, :].argmax()
+#         confidences[i] = scores[i, class_ids[i]]
+#     return class_ids, confidences
 
 
-@nb.njit('f4[:, ::1](f4[:, :])', nogil=True)
-def sigmoid(a: np.ndarray) -> np.ndarray:
-    ones = np.ones(a.shape, dtype=np.float32)
-    return np.divide(ones, (ones + np.exp(-a)))
+# @nb.njit('f4[:, ::1](f4[:, :])', nogil=True)
+def sigmoid(a: cp.ndarray) -> cp.ndarray:
+    ones = cp.ones(a.shape, dtype=cp.float32)
+    return cp.divide(ones, (ones + cp.exp(-a)))
 
 
-@nb.njit(
-    'Tuple((f4[:, ::1], f4[:, :, ::1]))(f4[:, ::1], f4[:, :, ::1], u2, f4, f4, u2)',
-    nogil=True,
-)
+# @nb.njit(
+#     'Tuple((f4[:, ::1], f4[:, :, ::1]))(f4[:, ::1], f4[:, :, ::1], u2, f4, f4, u2)',
+#     nogil=True,
+# )
 def _postproc(
-    output: np.ndarray,
-    protos: np.ndarray,
+    output: cp.ndarray,
+    protos: cp.ndarray,
     num_detected_classes: int,
     nms_iou_threshold: float,
     confidence_threshold: float,
     top_k: int,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> Tuple[cp.ndarray, cp.ndarray]:
     # bbox postprocessing
     # shape(4 + num_classes + num_masks, num_boxes) => shape(num_boxes, ...)
     output = output.transpose(-1, -2)
 
     bboxes = output[:, :4]  # xc, yc, width, height
     scores = output[:, 4 : 4 + num_detected_classes]
-    # class_ids = np.argmax(scores, axis=-1)
-    # confidences = np.max(scores, axis=-1)
-    class_ids, confidences = _parse_scores(scores)
+    class_ids = cp.argmax(scores, axis=-1)
+    confidences = cp.max(scores, axis=-1)
+    # class_ids, confidences = _parse_scores(scores)
     masks = output[:, 4 + num_detected_classes :]
 
     # filter by confidence
@@ -156,7 +160,7 @@ def _postproc(
 
     # select top k
     if bboxes.shape[0] > top_k:
-        top_k_mask = np.argpartition(confidences, -top_k)[-top_k:]
+        top_k_mask = cp.argpartition(confidences, -top_k)[-top_k:]
         bboxes = bboxes[top_k_mask]
         class_ids = class_ids[top_k_mask]
         confidences = confidences[top_k_mask]
@@ -164,23 +168,23 @@ def _postproc(
 
     # nms, class agnostic (all classes are treated as one)
     if nms_iou_threshold and bboxes.shape[0] > 0:
-        nms_mask = nms_cpu(bboxes, confidences, nms_iou_threshold) == 1
+        nms_mask = nms_gpu(bboxes, confidences, nms_iou_threshold) == 1
         bboxes = bboxes[nms_mask]
         class_ids = class_ids[nms_mask]
         confidences = confidences[nms_mask]
         masks = masks[nms_mask]
 
     if bboxes.shape[0] == 0:
-        return np.empty((0, 0), dtype=np.float32), np.empty((0, 0, 0), dtype=np.float32)
+        return cp.empty((0, 0), dtype=cp.float32), cp.empty((0, 0, 0), dtype=cp.float32)
 
-    tensors = np.empty((bboxes.shape[0], 6), dtype=np.float32)
+    tensors = cp.empty((bboxes.shape[0], 6), dtype=cp.float32)
     tensors[:, 0] = class_ids
     tensors[:, 1] = confidences
     tensors[:, 2:] = bboxes
 
     # proto masks postprocessing
     mask_dim, mask_height, mask_width = protos.shape
-    masks = sigmoid(np.ascontiguousarray(masks) @ protos.reshape(mask_dim, -1))
+    masks = sigmoid(cp.ascontiguousarray(masks) @ protos.reshape(mask_dim, -1))
     masks = masks.reshape(-1, mask_height, mask_width)
 
     return tensors, masks
