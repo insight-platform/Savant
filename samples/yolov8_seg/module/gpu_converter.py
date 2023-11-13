@@ -3,8 +3,6 @@ from typing import Any, List, Tuple
 
 import cupy as cp
 import cv2
-
-# import numba as nb
 import numpy as np
 
 from savant.base.converter import BaseComplexModelOutputConverter
@@ -19,6 +17,7 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
     :param nms_iou_threshold: nms iou threshold
     :param top_k: leave no more than top K bboxes with maximum confidence
     """
+
     gpu = True
 
     def __init__(
@@ -59,7 +58,7 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
         )
 
         if tensors.shape[0] == 0:
-            return tensors, []
+            return tensors.get(), []
 
         roi_left, roi_top, roi_width, roi_height = roi
 
@@ -78,59 +77,108 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
         tensors[:, 2] += roi_left
         tensors[:, 3] += roi_top
 
-        # scale masks (transpose to use cv2.resize)
-        masks = masks.transpose((1, 2, 0)).get()
+        # scale masks & prepare mask list
         mask_width = int(ratio_x * model.input.width)
         mask_height = int(ratio_y * model.input.height)
-        masks = cv2.resize(masks, (mask_width, mask_height), cv2.INTER_LINEAR)
-        masks = (
-            masks.transpose((2, 0, 1)) if len(masks.shape) == 3 else masks[None, ...]
-        )
 
-        masks = masks > 0.5
+        mask_list = []
+        for i in range(masks.shape[0]):
+            gpu_mat = cv_cuda_gpumat_from_cp_array(masks[i])
 
-        mask_list = [
-            [
-                (
-                    model.output.attributes[0].name,
-                    masks[
-                        i,
-                        max(0, int(tensors[i, 3] - tensors[i, 5] / 2)) : min(
-                            mask_height, int(tensors[i, 3] + tensors[i, 5] / 2)
-                        ),
-                        max(0, int(tensors[i, 2] - tensors[i, 4] / 2)) : min(
-                            mask_width, int(tensors[i, 2] + tensors[i, 4] / 2)
-                        ),
-                    ],
-                    1.0,
-                )
-            ]
-            for i in range(len(masks))
-        ]
+            resized_gpu_mat = cv2.cuda.resize(
+                src=gpu_mat,
+                dsize=(mask_width, mask_height),
+                interpolation=cv2.INTER_LINEAR,
+            )
+
+            mask = cp_array_from_cv_cuda_gpumat(resized_gpu_mat) > 0.5
+
+            mask_list.append(
+                [
+                    (
+                        model.output.attributes[0].name,
+                        mask[
+                            max(0, int(tensors[i, 3] - tensors[i, 5] / 2)) : min(
+                                mask_height, int(tensors[i, 3] + tensors[i, 5] / 2)
+                            ),
+                            max(0, int(tensors[i, 2] - tensors[i, 4] / 2)) : min(
+                                mask_width, int(tensors[i, 2] + tensors[i, 4] / 2)
+                            ),
+                        ].get(),
+                        1.0,
+                    )
+                ]
+            )
 
         return tensors.get(), mask_list
 
 
-# @nb.njit('Tuple((u2[:], f4[:]))(f4[:, :])', nogil=True)
-# def _parse_scores(scores: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-#     class_ids = np.empty(scores.shape[0], dtype=np.uint16)
-#     confidences = np.empty(scores.shape[0], dtype=scores.dtype)
-#     for i in range(scores.shape[0]):
-#         class_ids[i] = scores[i, :].argmax()
-#         confidences[i] = scores[i, class_ids[i]]
-#     return class_ids, confidences
+def cv_cuda_gpumat_from_cp_array(arr: cp.ndarray) -> cv2.cuda.GpuMat:
+    """TODO: Refactor
+    https://github.com/rapidsai/cucim/issues/329"""
+    assert len(arr.shape) in (2, 3), "CuPy array must have 2 or 3 dimensions to be a valid GpuMat"
+    type_map = {
+        cp.dtype('uint8'): cv2.CV_8U,
+        cp.dtype('int8'): cv2.CV_8S,
+        cp.dtype('uint16'): cv2.CV_16U,
+        cp.dtype('int16'): cv2.CV_16S,
+        cp.dtype('int32'): cv2.CV_32S,
+        cp.dtype('float32'): cv2.CV_32F,
+        cp.dtype('float64'): cv2.CV_64F,
+    }
+    depth = type_map.get(arr.dtype)
+    assert depth is not None, 'Unsupported CuPy array dtype'
+    channels = 1 if len(arr.shape) == 2 else arr.shape[2]
+    # equivalent to unexposed opencv C++ macro CV_MAKETYPE(depth,channels):
+    # (depth&7) + ((channels - 1) << 3)
+    mat_type = depth + ((channels - 1) << 3)
+    mat = cv2.cuda.createGpuMatFromCudaMemory(
+        arr.__cuda_array_interface__['shape'][1::-1],
+        mat_type,
+        arr.__cuda_array_interface__['data'][0],
+    )
+    return mat
 
 
-# @nb.njit('f4[:, ::1](f4[:, :])', nogil=True)
+def cp_array_from_cv_cuda_gpumat(mat: cv2.cuda.GpuMat) -> cp.ndarray:
+    """TODO: Refactor
+    https://github.com/rapidsai/cucim/issues/329"""
+    class CudaArrayInterface:
+        def __init__(self, gpu_mat: cv2.cuda.GpuMat):
+            w, h = gpu_mat.size()
+            type_map = {
+                cv2.CV_8U: '|u1',
+                cv2.CV_8S: '|i1',
+                cv2.CV_16U: '<u2',
+                cv2.CV_16S: '<i2',
+                cv2.CV_32S: '<i4',
+                cv2.CV_32F: '<f4',
+                cv2.CV_64F: '<f8',
+            }
+            self.__cuda_array_interface__ = {
+                'version': 3,
+                'shape': (h, w, gpu_mat.channels())
+                if gpu_mat.channels() > 1
+                else (h, w),
+                'typestr': type_map[gpu_mat.depth()],
+                'descr': [('', type_map[gpu_mat.depth()])],
+                'stream': 1,
+                'strides': (gpu_mat.step, gpu_mat.elemSize(), gpu_mat.elemSize1())
+                if gpu_mat.channels() > 1
+                else (gpu_mat.step, gpu_mat.elemSize()),
+                'data': (gpu_mat.cudaPtr(), False),
+            }
+
+    arr = cp.asarray(CudaArrayInterface(mat))
+
+    return arr
+
+
+@cp.fuse()
 def sigmoid(a: cp.ndarray) -> cp.ndarray:
-    ones = cp.ones(a.shape, dtype=cp.float32)
-    return cp.divide(ones, (ones + cp.exp(-a)))
+    return cp.divide(1, (1 + cp.exp(-a)))
 
 
-# @nb.njit(
-#     'Tuple((f4[:, ::1], f4[:, :, ::1]))(f4[:, ::1], f4[:, :, ::1], u2, f4, f4, u2)',
-#     nogil=True,
-# )
 def _postproc(
     output: cp.ndarray,
     protos: cp.ndarray,
@@ -147,7 +195,6 @@ def _postproc(
     scores = output[:, 4 : 4 + num_detected_classes]
     class_ids = cp.argmax(scores, axis=-1)
     confidences = cp.max(scores, axis=-1)
-    # class_ids, confidences = _parse_scores(scores)
     masks = output[:, 4 + num_detected_classes :]
 
     # filter by confidence

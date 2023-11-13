@@ -34,7 +34,7 @@ pipeline:
         output:
           layer_names: [output0, output1]
           converter:
-            module: samples.yolov8_seg.module.converter
+            module: samples.yolov8_seg.module.gpu_converter
             class_name: TensorToBBoxSegConverter
             kwargs:
               confidence_threshold: 0.7

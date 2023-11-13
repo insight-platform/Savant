@@ -1,8 +1,7 @@
 """Non-max suppression (NMS) implementation.
 
 We can't use the same code with different array modules (cupy, numpy) because of
-the numba limitation. Trying to use nms_cpu in a numba jit decorated function
-results in the error "Cannot determine Numba type of <class 'function'>".
+the numba limitation "Cannot determine Numba type of <class 'function'>".
 
 TODO: Compare with chainer implementation.
     https://github.com/chainer/chainercv/blob/master/chainercv/utils/bbox/non_maximum_suppression.py

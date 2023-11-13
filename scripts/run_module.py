@@ -7,10 +7,10 @@ import click
 from common import (
     detach_option,
     docker_image_option,
-    gpus_option,
     get_docker_runtime,
     get_ipc_mounts,
     get_tcp_parameters,
+    gpus_option,
     run_command,
 )
 

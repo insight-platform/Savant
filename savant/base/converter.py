@@ -2,8 +2,8 @@
 from abc import abstractmethod
 from typing import Any, List, Optional, Tuple, Union
 
-import numpy as np
 import cupy as cp
+import numpy as np
 
 from savant.base.model import AttributeModel, ComplexModel, ObjectModel
 from savant.base.pyfunc import BasePyFuncCallableImpl

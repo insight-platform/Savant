@@ -57,7 +57,7 @@ def get_docker_runtime(value: Optional[str] = None) -> str:
     if is_aarch64():
         return '--runtime=nvidia'
     if value is not None:
-        return f'--gpus=\'{value}\''
+        return f'--gpus={value}'
     return '--gpus=all'
 
 
