@@ -7,6 +7,7 @@ import click
 from common import (
     detach_option,
     docker_image_option,
+    gpus_option,
     get_docker_runtime,
     get_ipc_mounts,
     get_tcp_parameters,
@@ -29,7 +30,6 @@ def get_models_mount(
 
 
 @click.argument('module-config')
-@click.argument('module-args', nargs=-1)
 @click.option(
     '--in-endpoint',
     default='ipc:///tmp/zmq-sockets/input-video.ipc',
@@ -67,10 +67,10 @@ def get_models_mount(
     show_default=True,
 )
 @docker_image_option('savant-deepstream')
+@gpus_option
 @detach_option
 def run_module(
     module_config: str,
-    module_args: list,
     in_endpoint: str,
     in_type: str,
     in_bind: bool,
@@ -78,6 +78,7 @@ def run_module(
     out_type: str,
     out_bind: bool,
     docker_image: Optional[str],
+    gpus: Optional[str],
     detach: bool,
 ):
     """Run sample module."""
@@ -132,12 +133,10 @@ def run_module(
     for volume in volumes:
         command += ['-v', volume]
 
-    command.append(get_docker_runtime())
+    command.append(get_docker_runtime(gpus))
     command.append(docker_image)
     # entrypoint arg
     command.append(str(module_config_path))
-    if module_args:
-        command.extend(module_args)
 
     run_command(command)
 
