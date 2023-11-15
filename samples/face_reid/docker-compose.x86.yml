@@ -25,11 +25,12 @@ services:
     image: ghcr.io/insight-platform/savant-deepstream:latest
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
-      - ../../models/face_reid:/models
-      - ../../downloads/face_reid:/downloads
+      - ../../cache:/cache
       - ./src:/opt/savant/samples/face_reid
     command: samples/face_reid/index_builder.yml
     environment:
+      - MODEL_PATH=/cache/models/face_reid
+      - DOWNLOAD_PATH=/cache/downloads/face_reid
       - ZMQ_SRC_ENDPOINT=rep+bind:ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
     deploy:
@@ -68,12 +69,13 @@ services:
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
-      - ../../models/face_reid:/models
-      - ../../downloads/face_reid:/downloads
+      - ../../cache:/cache
       - ./src:/opt/savant/samples/face_reid
       - ./index_files:/index
     command: samples/face_reid/module.yml
     environment:
+      - MODEL_PATH=/cache/models/face_reid
+      - DOWNLOAD_PATH=/cache/downloads/face_reid
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
       - FPS_PERIOD=1000

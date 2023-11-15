@@ -15,20 +15,6 @@ from common import (
 )
 
 
-def get_downloads_mount(
-    host_parent_dir: pathlib.Path, sample_name: str, container_dir: str
-):
-    host_downloads_dir = (host_parent_dir / 'downloads' / sample_name).resolve()
-    return f'{host_downloads_dir}:{container_dir}'
-
-
-def get_models_mount(
-    host_parent_dir: pathlib.Path, sample_name: str, container_dir: str
-):
-    host_models_dir = (host_parent_dir / 'models' / sample_name).resolve()
-    return f'{host_models_dir}:{container_dir}'
-
-
 @click.argument('module-config')
 @click.option(
     '--in-endpoint',
@@ -84,14 +70,26 @@ def run_module(
     """Run sample module."""
     repo_root_dir = pathlib.Path(__file__).parent.parent
 
-    container_downloads_dir = '/downloads'
-    container_model_dir = '/models'
+    module_config_path = pathlib.Path(module_config)
+    if module_config_path.suffix != '.yml':
+        raise click.BadParameter(
+            'Path to module config is expected to end with ".yml" suffix.'
+        )
+
+    # module name = module folder name, samples/<folder>
+    if module_config_path.parts[0] != 'samples':
+        raise click.BadParameter(
+            'Currently it is only supported to run modules from the "samples/" folder.'
+        )
+    module_name = module_config_path.parts[1]
+
     # fmt: off
     command = [
         'docker', 'run',
         '--rm',
-        '-e', f'DOWNLOAD_PATH={container_downloads_dir}',
-        '-e', f'MODEL_PATH={container_model_dir}',
+        '-e', f'DOWNLOAD_PATH=/cache/downloads/{module_name}',
+        '-e', f'MODEL_PATH=/cache/models/{module_name}',
+        '-e', 'CUPY_CACHE_DIR=/cache/cupy',
         '-e', 'GST_DEBUG',
         '-e', 'LOGLEVEL',
         '-e', 'FPS_PERIOD',
@@ -110,24 +108,10 @@ def run_module(
 
     command += get_tcp_parameters((in_endpoint, out_endpoint))
 
-    module_config_path = pathlib.Path(module_config)
-    if module_config_path.suffix != '.yml':
-        raise click.BadParameter(
-            'Path to module config is expected to end with ".yml" suffix.'
-        )
-
-    # module name = module folder name, samples/<folder>
-    if module_config_path.parts[0] != 'samples':
-        raise click.BadParameter(
-            'Currently it is only supported to run modules from the "samples/" folder.'
-        )
-    module_name = module_config_path.parts[1]
-
     volumes = [
         f'{(repo_root_dir / "samples").resolve()}:/opt/savant/samples',
         f'{(repo_root_dir / "data").resolve()}:/data:ro',
-        get_downloads_mount(repo_root_dir, module_name, container_downloads_dir),
-        get_models_mount(repo_root_dir, module_name, container_model_dir),
+        f'{(repo_root_dir / "cache").resolve()}:/cache',
     ]
     volumes += get_ipc_mounts((in_endpoint, out_endpoint))
     for volume in volumes:

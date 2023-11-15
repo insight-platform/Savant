@@ -25,11 +25,12 @@ services:
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
-      - ../../models/license_plate_recognition:/models
-      - ../../downloads/license_plate_recognition:/downloads
+      - ../../cache:/cache
       - ..:/opt/savant/samples
     command: samples/license_plate_recognition/module.yml
     environment:
+      - MODEL_PATH=/cache/models/license_plate_recognition
+      - DOWNLOAD_PATH=/cache/downloads/license_plate_recognition
       - ZMQ_SRC_ENDPOINT=router+bind:ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
       - FPS_PERIOD=1000

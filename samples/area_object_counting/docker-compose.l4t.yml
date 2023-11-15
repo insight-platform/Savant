@@ -22,11 +22,12 @@ services:
     image: ghcr.io/insight-platform/savant-deepstream-l4t:latest
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
-      - ../../models/area_object_counting:/models
-      - ../../downloads/area_object_counting:/downloads
+      - ../../cache:/cache
       - .:/opt/savant/samples/area_object_counting
     command: samples/area_object_counting/module.yml
     environment:
+      - MODEL_PATH=/cache/models/area_object_counting
+      - DOWNLOAD_PATH=/cache/downloads/area_object_counting
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
       - FPS_PERIOD=1000

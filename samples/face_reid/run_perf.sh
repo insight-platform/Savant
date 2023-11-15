@@ -23,12 +23,13 @@ PERF_CONFIG="${MODULE_CONFIG%.*}_perf.yml"
 config_perf $MODULE_CONFIG $PERF_CONFIG "${YQ_ARGS[@]}"
 
 docker run --rm $DOCKER_RUNTIME \
+  -e MODEL_PATH=/cache/models/face_reid \
+  -e DOWNLOAD_PATH=/cache/downloads/face_reid \
   -e ZMQ_SRC_ENDPOINT=router+bind:ipc:///tmp/zmq-sockets/input-video.ipc \
   -v `pwd`/samples/face_reid/src:/opt/savant/samples/face_reid \
   -v `pwd`/samples/face_reid/index_files:/index \
   -v `pwd`/data:/data:ro \
-  -v `pwd`/downloads/face_reid:/downloads \
-  -v `pwd`/models/face_reid:/models \
+  -v `pwd`/cache:/cache \
   -v /tmp/zmq-sockets:/tmp/zmq-sockets \
   face_reid-module \
   samples/face_reid/module_perf.yml

@@ -24,11 +24,12 @@ services:
       dockerfile: docker/Dockerfile.x86
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
-      - ../../models/intersection_traffic_meter:/models
-      - ../../downloads/intersection_traffic_meter:/downloads
+      - ../../cache:/cache
       - ..:/opt/savant/samples
     command: samples/intersection_traffic_meter/module.yml
     environment:
+      - MODEL_PATH=/cache/models/intersection_traffic_meter
+      - DOWNLOAD_PATH=/cache/downloads/intersection_traffic_meter
       - ZMQ_SRC_ENDPOINT=router+bind:ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
       - FPS_PERIOD=1000

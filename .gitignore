@@ -57,8 +57,8 @@ coverage.xml
 docs/build/
 generated
 
-# local cached models
-models
+# cached models, downloads, etc.
+cache
 
 # data
 data
