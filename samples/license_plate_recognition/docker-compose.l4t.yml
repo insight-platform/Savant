@@ -27,7 +27,7 @@ services:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../models/license_plate_recognition:/models
       - ../../downloads/license_plate_recognition:/downloads
-      - .:/opt/savant/samples/license_plate_recognition
+      - ..:/opt/savant/samples
     command: samples/license_plate_recognition/module.yml
     environment:
       - ZMQ_SRC_ENDPOINT=router+bind:ipc:///tmp/zmq-sockets/input-video.ipc

@@ -25,7 +25,7 @@ services:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../models/nvidia_car_classification:/models
       - ../../downloads/nvidia_car_classification:/downloads
-      - .:/opt/savant/samples/nvidia_car_classification
+      - ..:/opt/savant/samples
     command: samples/nvidia_car_classification/module.yml
     environment:
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc

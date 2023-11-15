@@ -26,7 +26,7 @@ services:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../models/traffic_meter:/models
       - ../../downloads/traffic_meter:/downloads
-      - .:/opt/savant/samples/traffic_meter
+      - ..:/opt/savant/samples
     command: samples/traffic_meter/module.yml
     environment:
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
