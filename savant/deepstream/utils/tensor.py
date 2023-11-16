@@ -10,7 +10,7 @@ import pyds
 def nvds_infer_tensor_meta_to_outputs(
     tensor_meta: pyds.NvDsInferTensorMeta,
     layer_names: List[str],
-    gpu: bool = True,
+    gpu: bool = False,
 ) -> List[Optional[Union[np.ndarray, cp.ndarray]]]:
     """Fetches output of specified layers from pyds.NvDsInferTensorMeta.
 
