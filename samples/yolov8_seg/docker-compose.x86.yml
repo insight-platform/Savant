@@ -27,6 +27,7 @@ services:
       - ..:/opt/savant/samples
     command: samples/yolov8_seg/module/module.yml
     environment:
+      - MODEL_OUTPUT_CONVERTER=gpu_converter
       - MODEL_PATH=/cache/models/yolov8_seg
       - DOWNLOAD_PATH=/cache/downloads/yolov8_seg
       - CUPY_CACHE_DIR=/cache/cupy

@@ -12,6 +12,7 @@ parameters:
   buffer_queues:
     length: 10
   batch_size: 1
+  model_output_converter: ${oc.env:MODEL_OUTPUT_CONVERTER, converter}
 
 pipeline:
   elements:
@@ -34,7 +35,7 @@ pipeline:
         output:
           layer_names: [output0, output1]
           converter:
-            module: samples.yolov8_seg.module.gpu_converter
+            module: samples.yolov8_seg.module.${parameters.model_output_converter}
             class_name: TensorToBBoxSegConverter
             kwargs:
               confidence_threshold: 0.7
