@@ -90,6 +90,7 @@ def run_module(
         '-e', f'DOWNLOAD_PATH=/cache/downloads/{module_name}',
         '-e', f'MODEL_PATH=/cache/models/{module_name}',
         '-e', 'CUPY_CACHE_DIR=/cache/cupy',
+        '-e', 'NUMBA_CACHE_DIR=/cache/numba',
         '-e', 'GST_DEBUG',
         '-e', 'LOGLEVEL',
         '-e', 'FPS_PERIOD',

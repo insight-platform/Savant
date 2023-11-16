@@ -5,7 +5,6 @@ Based on code from https://github.com/derronqi/yolov8-face>
 from typing import Any, List, Tuple
 
 import numpy as np
-from numba.typed import List
 
 from savant.base.converter import BaseComplexModelOutputConverter
 from savant.base.model import ComplexModel
@@ -22,7 +21,7 @@ class YoloV8faceConverter(BaseComplexModelOutputConverter):
         nms_iou_threshold: float = 0.5,
         **kwargs,
     ):
-        """Initialize YOLOv5face converter."""
+        """Initialize YOLOv8-face converter."""
         super().__init__(**kwargs)
         self.confidence_threshold = confidence_threshold
         self.nms_iou_threshold = nms_iou_threshold
@@ -49,37 +48,45 @@ class YoloV8faceConverter(BaseComplexModelOutputConverter):
             * list of attributes values with confidences
               ``(attr_name, value, confidence)``
         """
-        atr_name = model.output.attributes[0].name
+        attr_name = model.output.attributes[0].name
+
         ration_width = roi[2] / model.input.shape[2]
         ratio_height = roi[3] / model.input.shape[1]
-        raw_predictions = output_layers[0]
-        if raw_predictions is not None and raw_predictions.size:
-            raw_predictions = np.float32(np.transpose(raw_predictions))
-            selected_preds = raw_predictions[
-                raw_predictions[:, 4] > self.confidence_threshold
-            ]
-            keep = nms_cpu(
-                selected_preds[:, :4],
-                selected_preds[:, 4],
-                self.nms_iou_threshold,
-            )
-            selected_nms_prediction = selected_preds[keep == 1]
-            xywh = selected_nms_prediction[:, :4]
-            conf = selected_nms_prediction[:, 4:5]
-            class_num = np.zeros_like(conf, dtype=np.float32)
-            xywh *= np.tile(np.float32([ration_width, ratio_height]), 2)
-            landmarks = (
-                selected_nms_prediction[:, 5:20]
-                * np.tile(np.float32([ration_width, ratio_height, 1.0]), 5)
-            ).reshape(-1, 5, 3)
-            bbox = np.concatenate((class_num, conf, xywh), axis=1)
-            landmarks_output = [
-                [(atr_name, lms, conf)]
-                for lms, conf in zip(
-                    landmarks[:, :, :2].reshape(-1, 10).tolist(),
-                    landmarks[:, :, 2].mean(1),
-                )
-            ]
-            return bbox, landmarks_output
 
-        return np.float32([]), []
+        raw_predictions = np.transpose(output_layers[0])
+
+        selected_predictions = raw_predictions[
+            raw_predictions[:, 4] > self.confidence_threshold
+        ]
+        if selected_predictions.shape[0] == 0:
+            return np.float32([]), []
+
+        keep = nms_cpu(
+            selected_predictions[:, :4],
+            selected_predictions[:, 4],
+            self.nms_iou_threshold,
+        )
+
+        selected_nms_predictions = selected_predictions[keep]
+        if selected_nms_predictions.shape[0] == 0:
+            return np.float32([]), []
+
+        xywh = selected_nms_predictions[:, :4]
+        conf = selected_nms_predictions[:, 4:5]
+        class_num = np.zeros_like(conf)
+        xywh *= np.tile(np.float32([ration_width, ratio_height]), 2)
+        bbox_output = np.concatenate((class_num, conf, xywh), axis=1)
+
+        landmarks = (
+            selected_nms_predictions[:, 5:20]
+            * np.tile(np.float32([ration_width, ratio_height, 1.0]), 5)
+        ).reshape(-1, 5, 3)
+        landmarks_output = [
+            [(attr_name, lms, conf)]
+            for lms, conf in zip(
+                landmarks[:, :, :2].reshape(-1, 10).tolist(),
+                landmarks[:, :, 2].mean(1),
+            )
+        ]
+
+        return bbox_output, landmarks_output

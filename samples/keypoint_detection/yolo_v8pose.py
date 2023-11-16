@@ -75,9 +75,9 @@ class YoloV8faceConverter(BaseComplexModelOutputConverter):
                 scores[:, 0],
                 self.nms_iou_threshold,
             )
-            bboxes = bboxes[keep == 1]
-            scores = scores[keep == 1]
-            kpts = kpts[keep == 1].reshape(-1, 17, 3)
+            bboxes = bboxes[keep]
+            scores = scores[keep]
+            kpts = kpts[keep].reshape(-1, 17, 3)
             mean_conf = kpts[:, :, 2].mean(1)
             kpts = kpts[:, :, :2]
             bboxes -= np.tile(np.float32([pad_x, pad_y]), 2)
