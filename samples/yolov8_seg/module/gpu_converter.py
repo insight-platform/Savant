@@ -5,7 +5,7 @@ import cupy as cp
 import cv2
 import numpy as np
 
-from savant.base.converter import ArrayModuleType, BaseComplexModelOutputConverter
+from savant.base.converter import BaseComplexModelOutputConverter, TensorFormat
 from savant.deepstream.nvinfer.model import NvInferInstanceSegmentation
 from savant.utils.nms import nms_gpu
 from savant.utils.opencv_cupy import cupy_to_opencv, opencv_to_cupy
@@ -19,7 +19,7 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
     :param top_k: leave no more than top K bboxes with maximum confidence
     """
 
-    output_array_module: ArrayModuleType = ArrayModuleType.CuPy
+    tensor_format: TensorFormat = TensorFormat.CuPy
 
     def __init__(
         self,
