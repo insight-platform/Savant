@@ -150,3 +150,4 @@ Note: `yolov8_seg` always has a queue length of 10.
 | [#456](https://github.com/insight-platform/Savant/issues/456) | 68.48 | 21.71     |           |
 | [#443](https://github.com/insight-platform/Savant/issues/443) | 71.28 | 21.95     |           |
 | [#352](https://github.com/insight-platform/Savant/issues/352) | 81.58 | 24.73     | 38.76     |
+| [#550](https://github.com/insight-platform/Savant/issues/550) | 90.87 | 23.99     | 42.39     |
