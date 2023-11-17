@@ -4,7 +4,11 @@
 
 A simple pipeline using a [YOLOv8 instance segmentation model](https://docs.ultralytics.com/tasks/segment/) to identify the people in a frame and to segment them from the rest of the frame.
 
-We created an ONNX version of the YOLOv8m-seg model using a script from the original repository (see [Export section](https://docs.ultralytics.com/tasks/segment/#export)). To process the model output, we wrote [converter](module/converter.py). The segmentation model is a complex model in Savant terms. The model produces objects defined by bounding boxes and corresponding masks. To render the bounding boxes and masks we used cv2.cuda.GpuMat, the implementation code is in the [overlay](module/overlay.py).
+We created an ONNX version of the YOLOv8m-seg model using a script from the original repository (see [Export section](https://docs.ultralytics.com/tasks/segment/#export)). 
+
+To process the model output, we wrote two converters. The default [converter](module/converter.py) processes the model output tensors on the host using `NumPy` and `Numba`. The [gpu_converter](module/gpu_converter.py) processes the model output tensors on the device (GPU) using `CuPy`. You can select one of them in the module [config](module/module.yml) or by setting the `MODEL_OUTPUT_CONVERTER` env variable. By default, the demo runs with `gpu_converter` on the dGPU and uses the default `converter` on Jetson. Using `gpu_converter` can double the performance in some cases, depending on the combination of GPU and CPU, and in any case redistribute the load to the GPU, freeing up CPU resources.
+
+The segmentation model is a complex model in Savant terms. The model produces objects defined by bounding boxes and corresponding masks. To render the bounding boxes and masks we used cv2.cuda.GpuMat, the implementation code is in the [overlay](module/overlay.py).
 
 Preview:
 

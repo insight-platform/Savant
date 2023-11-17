@@ -1,5 +1,6 @@
 """Base model output converters."""
 from abc import abstractmethod
+from enum import Enum
 from typing import Any, List, Optional, Tuple, Union
 
 import cupy as cp
@@ -9,12 +10,23 @@ from savant.base.model import AttributeModel, ComplexModel, ObjectModel
 from savant.base.pyfunc import BasePyFuncCallableImpl
 
 
+class ArrayModuleType(Enum):
+    """Enum of the array module to be used to represent the tensors."""
+
+    NumPy = 0
+    """NumPy."""
+
+    CuPy = 1
+    """Cupy."""
+
+
 class BaseOutputConverter(BasePyFuncCallableImpl):
     """Base model output converter."""
 
-    gpu: bool = False
-    """Set to True to get the ``output_layers'' tensors in the converter call 
-    on the GPU (cupy.ndarray), not the CPU (numpy.ndarray).
+    output_array_module: ArrayModuleType = ArrayModuleType.NumPy
+    """Set to ``CuPy`` to get the ``output_layers`` tensors in the converter call 
+    on the GPU as a ``cupy.ndarray``. Or set to ``NumPy`` to get tensors on the host 
+    as a ``numpy.ndarray``.
     """
 
     @abstractmethod

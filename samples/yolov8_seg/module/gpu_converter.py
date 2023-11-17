@@ -5,7 +5,7 @@ import cupy as cp
 import cv2
 import numpy as np
 
-from savant.base.converter import BaseComplexModelOutputConverter
+from savant.base.converter import ArrayModuleType, BaseComplexModelOutputConverter
 from savant.deepstream.nvinfer.model import NvInferInstanceSegmentation
 from savant.utils.nms import nms_gpu
 from savant.utils.opencv_cupy import cupy_to_opencv, opencv_to_cupy
@@ -15,11 +15,11 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
     """YOLOv8-seg output converter.
 
     :param confidence_threshold: confidence threshold (pre-cluster-threshold)
-    :param nms_iou_threshold: nms iou threshold
+    :param nms_iou_threshold: NMS IoU threshold
     :param top_k: leave no more than top K bboxes with maximum confidence
     """
 
-    gpu = True
+    output_array_module: ArrayModuleType = ArrayModuleType.CuPy
 
     def __init__(
         self,

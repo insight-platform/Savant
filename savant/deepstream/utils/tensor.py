@@ -6,18 +6,21 @@ import cupy as cp
 import numpy as np
 import pyds
 
+from savant.base.converter import ArrayModuleType
+
 
 def nvds_infer_tensor_meta_to_outputs(
     tensor_meta: pyds.NvDsInferTensorMeta,
     layer_names: List[str],
-    gpu: bool = False,
+    output_array_module: ArrayModuleType = ArrayModuleType.NumPy,
 ) -> List[Optional[Union[np.ndarray, cp.ndarray]]]:
     """Fetches output of specified layers from pyds.NvDsInferTensorMeta.
 
     :param tensor_meta: NvDsInferTensorMeta structure.
     :param layer_names: Names of layers to return, order is important.
-    :param gpu: Set to True to get the output device buffers (cupy.ndarray)
-        instead of host buffers (numpy.ndarray).
+    :param output_array_module: One of the NumPy and CuPy options.
+        Set to ``CuPy`` to get the output device buffers as ``cupy.ndarray``,
+        or set to ``NumPy`` to get the ``numpy.ndarray`` of host buffers.
     :return: List of specified layer data.
     """
     data_type_map = {
@@ -29,7 +32,7 @@ def nvds_infer_tensor_meta_to_outputs(
     layers = [None] * len(layer_names)
 
     out_buf_ptrs_dev_addr = None
-    if gpu:
+    if output_array_module == ArrayModuleType.CuPy:
         out_buf_ptrs_dev = ctypes.cast(
             pyds.get_ptr(tensor_meta.out_buf_ptrs_dev),
             ctypes.POINTER(ctypes.c_void_p),
@@ -48,7 +51,7 @@ def nvds_infer_tensor_meta_to_outputs(
                 f'data type {layer_info.dataType}.'
             )
 
-        if gpu:
+        if output_array_module == ArrayModuleType.CuPy:
             casted_dev = ctypes.cast(
                 ctypes.cast(
                     out_buf_ptrs_dev_addr, ctypes.POINTER(ctypes.c_void_p)

@@ -49,13 +49,13 @@ from savant.deepstream.utils import (
     nvds_attr_meta_iterator,
     nvds_clf_meta_iterator,
     nvds_frame_meta_iterator,
-    nvds_infer_tensor_meta_to_outputs,
     nvds_label_info_iterator,
     nvds_obj_meta_iterator,
     nvds_set_obj_selection_type,
     nvds_set_obj_uid,
     nvds_tensor_output_iterator,
 )
+from savant.deepstream.utils.tensor import nvds_infer_tensor_meta_to_outputs
 from savant.gstreamer import Gst  # noqa:F401
 from savant.gstreamer.buffer_processor import GstBufferProcessor
 from savant.gstreamer.codecs import Codec, CodecInfo
@@ -779,7 +779,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                         output_layers = nvds_infer_tensor_meta_to_outputs(
                             tensor_meta=tensor_meta,
                             layer_names=model.output.layer_names,
-                            gpu=model.output.converter.instance.gpu,
+                            output_array_module=model.output.converter.instance.output_array_module,
                         )
                         try:
                             outputs = model.output.converter(
