@@ -74,6 +74,7 @@ class YoloV8faceConverter(BaseComplexModelOutputConverter):
                 bboxes,
                 scores[:, 0],
                 self.nms_iou_threshold,
+                bboxes.shape[0],
             )
             bboxes = bboxes[keep]
             scores = scores[keep]

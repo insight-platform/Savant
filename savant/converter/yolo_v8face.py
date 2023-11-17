@@ -65,6 +65,7 @@ class YoloV8faceConverter(BaseComplexModelOutputConverter):
             selected_predictions[:, :4],
             selected_predictions[:, 4],
             self.nms_iou_threshold,
+            selected_predictions.shape[0],
         )
 
         selected_nms_predictions = selected_predictions[keep]
