@@ -136,8 +136,8 @@ class NvInferProcessor:
         if self._model.output.converter:
             self.postproc = self._process_custom_model_output
             self._tensor_meta_to_outputs = nvds_infer_tensor_meta_to_outputs
-            # TODO: next step
-            # if self._model.output.converter.tensor_format == TensorFormat.CuPy:
+            # TODO: next step PR #555
+            # if self._model.output.converter.instance.tensor_format == TensorFormat.CuPy:
             #     self._tensor_meta_to_outputs = nvds_infer_tensor_meta_to_outputs_cupy
 
         elif self._is_object_model:
