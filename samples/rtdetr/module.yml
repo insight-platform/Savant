@@ -1,0 +1,42 @@
+name: rtdetr_r50_demo
+
+parameters:
+  frame:
+    width: 1920
+    height: 1080
+  output_frame:
+    codec: ${oc.env:CODEC, 'h264'}
+  draw_func: {}
+  batch_size: 1
+
+  model_name: rtdetr_r50
+  model_ver: 5af9da1
+
+  model: ${parameters.model_name}_${parameters.model_ver}
+
+pipeline:
+
+  elements:
+    - element: nvinfer@detector
+      name: ${parameters.model_name}
+      model:
+        remote:
+          url: s3://savant-data/models/${parameters.model}/${parameters.model}.zip
+          checksum_url: s3://savant-data/models/${parameters.model}/${parameters.model}.md5
+          parameters:
+            endpoint: https://eu-central-1.linodeobjects.com
+        format: onnx
+
+        workspace_size: 6144
+        model_file: ${parameters.model_name}.onnx
+        label_file: labels.txt
+        custom_lib_path: /opt/savant/lib/libnvdsinfer_custom_impl_Yolo.so
+        parse_bbox_func_name: NvDsInferParseYolo
+        engine_create_func_name: NvDsInferYoloCudaEngineGet
+
+        input:
+          scale_factor: 0.0039215697906911373
+          maintain_aspect_ratio: False
+
+        output:
+          num_detected_classes: 80
