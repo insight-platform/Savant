@@ -84,7 +84,7 @@ class NvInferProcessor:
                 self._frame_rect[3] + frame_params.padding.top,
             )
 
-        # video pipeline (frame/source info, span etc.)
+        # video pipeline (frame/source info, telemetry span etc.)
         self._video_pipeline = video_pipeline
 
         self._element_name = element.name
@@ -92,9 +92,9 @@ class NvInferProcessor:
         self._model: Union[
             NvInferAttributeModel, NvInferComplexModel, NvInferDetector
         ] = element.model
+        self._is_attribute_model = isinstance(self._model, NvInferAttributeModel)
         self._is_complex_model = isinstance(self._model, NvInferComplexModel)
         self._is_object_model = isinstance(self._model, NvInferDetector)
-        self._is_attribute_model = isinstance(self._model, NvInferAttributeModel)
 
         self._model_uid = get_model_id(self._element_name)
 
@@ -116,13 +116,13 @@ class NvInferProcessor:
             pass
 
         # to finalize preproc in postproc
-        self.restore_object_meta = no_op
-        self.restore_frame = no_op
+        self._restore_object_meta = no_op
+        self._restore_frame = no_op
 
-        # setup pre- and post-processing
+        # setup pre- and post-processor
         if self._model.input.preprocess_object_meta:
             self.preproc = self._preprocess_object_meta
-            self.restore_object_meta = self._restore_object_meta
+            self._restore_object_meta = self._restore_object_meta_
 
         elif self._model.input.preprocess_object_image:
             self._objects_preprocessing.add_preprocessing_function(
@@ -130,43 +130,21 @@ class NvInferProcessor:
                 preprocessing_func=self._model.input.preprocess_object_image,
             )
             self.preproc = self._preprocess_object_image
-            self.restore_object_meta = self._restore_object_meta
-            self.restore_frame = self._restore_frame
+            self._restore_object_meta = self._restore_object_meta_
+            self._restore_frame = self._restore_frame_
 
         if self._model.output.converter:
             self.postproc = self._process_custom_model_output
+            self._tensor_meta_to_outputs = nvds_infer_tensor_meta_to_outputs
+            # TODO: next step
+            # if self._model.output.converter.tensor_format == TensorFormat.CuPy:
+            #     self._tensor_meta_to_outputs = nvds_infer_tensor_meta_to_outputs_cupy
+
         elif self._is_object_model:
             self.postproc = self._process_regular_detector_output
+
         elif self._is_attribute_model:
             self.postproc = self._process_regular_classifier_output
-
-    def _is_model_input_object(self, nvds_obj_meta: pyds.NvDsObjectMeta):
-        return (
-            nvds_obj_meta.unique_component_id == self._input_object_model_uid
-            and nvds_obj_meta.class_id == self._input_object_class_id
-        )
-
-    def _get_frame_source_id_and_idx(
-        self,
-        buffer: Gst.Buffer,
-        nvds_frame_meta: pyds.NvDsFrameMeta,
-    ) -> Tuple[Optional[str], Optional[int]]:
-        savant_batch_meta = gst_buffer_get_savant_batch_meta(buffer)
-        if savant_batch_meta is None:
-            return None, None
-
-        savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(nvds_frame_meta)
-        if savant_frame_meta is None:
-            return None, None
-
-        frame_idx = savant_frame_meta.idx
-        video_frame, _ = self._video_pipeline.get_batched_frame(
-            savant_batch_meta.idx,
-            frame_idx,
-        )
-        source_id = video_frame.source_id
-
-        return source_id, frame_idx
 
     def _preprocess_object_meta(self, buffer: Gst.Buffer):
         """Preprocesses input object metadata."""
@@ -182,7 +160,6 @@ class NvInferProcessor:
                     continue
                 # TODO: Unify and also switch to the box representation system
                 #  through the center point during meta preprocessing.
-
                 object_meta = _NvDsObjectMetaImpl.from_nv_ds_object_meta(
                     nvds_obj_meta, nvds_frame_meta
                 )
@@ -277,7 +254,7 @@ class NvInferProcessor:
                 rect_params.width = res_bbox.width
                 rect_params.height = res_bbox.height
 
-    def _restore_object_meta(self, nvds_obj_meta: pyds.NvDsObjectMeta):
+    def _restore_object_meta_(self, nvds_obj_meta: pyds.NvDsObjectMeta):
         if self._is_model_input_object(nvds_obj_meta):
             bbox_coords = nvds_obj_meta.detector_bbox_info.org_bbox_coords
             if nvds_obj_meta.tracker_bbox_info.org_bbox_coords.width > 0:
@@ -304,7 +281,7 @@ class NvInferProcessor:
             self._model.input.preprocess_object_image.dev_mode,
         )
 
-    def _restore_frame(self, buffer: Gst.Buffer):
+    def _restore_frame_(self, buffer: Gst.Buffer):
         self._objects_preprocessing.restore_frame(hash(buffer))
 
     def _process_custom_model_output(self, buffer: Gst.Buffer):
@@ -314,13 +291,11 @@ class NvInferProcessor:
             self._element_name,
             buffer.pts,
         )
-
         self._model: Union[NvInferAttributeModel, NvInferComplexModel]
-
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
             for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
-                self.restore_object_meta(nvds_obj_meta)
+                self._restore_object_meta(nvds_obj_meta)
                 if not self._is_model_input_object(nvds_obj_meta):
                     continue
 
@@ -335,7 +310,7 @@ class NvInferProcessor:
                         nvds_frame_meta.buf_pts,
                     )
                     # parse and post-process model output
-                    output_layers = nvds_infer_tensor_meta_to_outputs(
+                    output_layers = self._tensor_meta_to_outputs(
                         tensor_meta=tensor_meta,
                         layer_names=self._model.output.layer_names,
                     )
@@ -511,7 +486,7 @@ class NvInferProcessor:
                             values = [
                                 v
                                 for i, v in enumerate(values)
-                                if i in {i for i, o in selected_bboxes}
+                                if i in {i for i, _ in selected_bboxes}
                             ]
                         else:
                             selected_bboxes = [(0, nvds_obj_meta)]
@@ -528,7 +503,7 @@ class NvInferProcessor:
                                     value=value,
                                     confidence=confidence,
                                 )
-        self.restore_frame(buffer)
+        self._restore_frame(buffer)
 
     def _process_regular_detector_output(self, buffer: Gst.Buffer):
         """Processes output of nvinfer detector.
@@ -539,13 +514,11 @@ class NvInferProcessor:
             self._element_name,
             buffer.pts,
         )
-
         self._model: NvInferDetector
-
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
             for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
-                self.restore_object_meta(nvds_obj_meta)
+                self._restore_object_meta(nvds_obj_meta)
                 if nvds_obj_meta.unique_component_id != self._model_uid:
                     continue
 
@@ -576,7 +549,7 @@ class NvInferProcessor:
                         nvds_obj_meta.obj_label = build_model_object_key(
                             self._element_name, obj.label
                         )
-        self.restore_frame(buffer)
+        self._restore_frame(buffer)
 
     def _process_regular_classifier_output(self, buffer: Gst.Buffer):
         """Processes output of nvinfer classifier."""
@@ -585,13 +558,11 @@ class NvInferProcessor:
             self._element_name,
             buffer.pts,
         )
-
         self._model: NvInferAttributeModel
-
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
             for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
-                self.restore_object_meta(nvds_obj_meta)
+                self._restore_object_meta(nvds_obj_meta)
                 for nvds_clf_meta in nvds_clf_meta_iterator(nvds_obj_meta):
                     if nvds_clf_meta.unique_component_id != self._model_uid:
                         continue
@@ -608,8 +579,36 @@ class NvInferProcessor:
                             value=label_info.result_label,
                             confidence=label_info.result_prob,
                         )
-        self.restore_frame(buffer)
+        self._restore_frame(buffer)
 
     def _logger_trace(self, msg: str, *args, **kwargs):
         if self._logger.isEnabledFor(logging.TRACE):
             self._logger.trace(msg, args, **kwargs)
+
+    def _is_model_input_object(self, nvds_obj_meta: pyds.NvDsObjectMeta):
+        return (
+            nvds_obj_meta.unique_component_id == self._input_object_model_uid
+            and nvds_obj_meta.class_id == self._input_object_class_id
+        )
+
+    def _get_frame_source_id_and_idx(
+        self,
+        buffer: Gst.Buffer,
+        nvds_frame_meta: pyds.NvDsFrameMeta,
+    ) -> Tuple[Optional[str], Optional[int]]:
+        savant_batch_meta = gst_buffer_get_savant_batch_meta(buffer)
+        if savant_batch_meta is None:
+            return None, None
+
+        savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(nvds_frame_meta)
+        if savant_frame_meta is None:
+            return None, None
+
+        frame_idx = savant_frame_meta.idx
+        video_frame, _ = self._video_pipeline.get_batched_frame(
+            savant_batch_meta.idx,
+            frame_idx,
+        )
+        source_id = video_frame.source_id
+
+        return source_id, frame_idx
