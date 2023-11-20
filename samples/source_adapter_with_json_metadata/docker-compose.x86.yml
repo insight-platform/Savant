@@ -31,7 +31,7 @@ services:
     environment:
       - ZMQ_SRC_ENDPOINT=rep+bind:ipc:///tmp/zmq-sockets/input.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output.ipc
-      - FPS_PERIOD=1000
+      - METRICS_FRAME_PERIOD=1000
       - LOGLEVEL=INFO
     deploy:
       resources:

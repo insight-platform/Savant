@@ -35,7 +35,7 @@ services:
       - MODULE_STAGE=detector
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/detector-output.ipc
-      - FPS_PERIOD=1000
+      - METRICS_FRAME_PERIOD=1000
     deploy:
       resources:
         reservations:
@@ -81,7 +81,7 @@ services:
       - CODEC=h264
       - ZMQ_SRC_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/tracker-output.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
-      - FPS_PERIOD=1000
+      - METRICS_FRAME_PERIOD=1000
     deploy:
       resources:
         reservations:

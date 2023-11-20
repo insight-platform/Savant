@@ -139,6 +139,37 @@ class TracingParameters:
 
 
 @dataclass
+class MetricsParameters:
+    """Configure metrics.
+
+    Example:
+    .. code-block:: yaml
+
+        frame_period: 1000
+        time_period: 1000
+        history: 100
+        provider: Prometheus
+        provider_params:
+          endpoint: prometheus:9090
+    """
+
+    frame_period: Optional[int] = None
+    """Output stats after every N frames."""
+
+    time_period: Optional[int] = None
+    """Output stats after every N ms."""
+
+    history: int = 100
+    """How many last stats to keep in the memory."""
+
+    provider: Optional[str] = None
+    """Metrics provider name."""
+
+    provider_params: Optional[Dict[str, Any]] = None
+    """Parameters for metrics provider."""
+
+
+@dataclass
 class TelemetryParameters:
     """Configure telemetry.
 
@@ -153,11 +184,21 @@ class TelemetryParameters:
           provider_params:
             service_name: demo-pipeline
             endpoint: jaeger:6831
+        metrics:
+          frame_period: 1000
+          time_period: 1000
+          history: 100
+          provider: Prometheus
+          provider_params:
+            endpoint: prometheus:9090
 
     """
 
     tracing: TracingParameters = field(default_factory=TracingParameters)
     """Tracing configuration."""
+
+    metrics: MetricsParameters = field(default_factory=MetricsParameters)
+    """Metrics configuration."""
 
 
 @dataclass

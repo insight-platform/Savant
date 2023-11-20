@@ -9,24 +9,21 @@ from gi.repository import Gst
 
 from savant.config.schema import PipelineElement
 from savant.gstreamer.utils import gst_post_stream_failed_error
-from savant.utils.fps_meter import FPSMeter
 from savant.utils.logging import get_logger
 from savant.utils.sink_factories import SinkMessage
 
 
 class GstBufferProcessor(ABC):
-    def __init__(self, queue: Queue, fps_meter: FPSMeter):
+    def __init__(self, queue: Queue):
         """Buffer processor for GStreamer pipeline.
 
         :param queue: Queue for output data.
-        :param fps_meter: FPS meter.
         """
 
         self._logger = get_logger(
             f'{self.__class__.__module__}.{self.__class__.__name__}'
         )
         self._queue = queue
-        self._fps_meter = fps_meter
 
     # Buffer handlers
     @abstractmethod
@@ -81,9 +78,6 @@ class GstBufferProcessor(ABC):
         try:
             for sink_message in self.prepare_output(buffer, user_data):
                 self._queue.put(sink_message)
-                # measure and logging FPS
-                if self._fps_meter():
-                    self._logger.info(self._fps_meter.message)
         except Exception as exc:  # pylint: disable=broad-except
             self._report_error(
                 pad,

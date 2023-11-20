@@ -61,7 +61,6 @@ from savant.gstreamer import GLib, Gst  # noqa:F401
 from savant.gstreamer.pipeline import GstPipeline
 from savant.gstreamer.utils import on_pad_event, pad_to_source_id
 from savant.meta.constants import PRIMARY_OBJECT_KEY, UNTRACKED_OBJECT_ID
-from savant.utils.fps_meter import FPSMeter
 from savant.utils.platform import is_aarch64
 from savant.utils.sink_factories import SinkEndOfStream
 from savant.utils.source_info import Resolution, SourceInfo, SourceInfoRegistry
@@ -164,16 +163,11 @@ class NvDsPipeline(GstPipeline):
 
         super().__init__(name, pipeline_cfg, **kwargs)
 
-    def _build_buffer_processor(
-        self,
-        queue: Queue,
-        fps_meter: FPSMeter,
-    ) -> NvDsBufferProcessor:
+    def _build_buffer_processor(self, queue: Queue) -> NvDsBufferProcessor:
         """Create buffer processor."""
 
         return create_buffer_processor(
             queue=queue,
-            fps_meter=fps_meter,
             sources=self._sources,
             objects_preprocessing=self._objects_preprocessing,
             frame_params=self._frame_params,
@@ -225,6 +219,10 @@ class NvDsPipeline(GstPipeline):
     def before_shutdown(self):
         super().before_shutdown()
         self._disable_eos_suppression()
+
+    def on_shutdown(self):
+        self._video_pipeline.log_final_fps()
+        super().on_shutdown()
 
     def _on_shutdown_signal(self, element: Gst.Element):
         """Handle shutdown signal."""
@@ -1057,6 +1055,10 @@ def build_video_pipeline_conf(telemetry_params: TelemetryParameters):
     conf.append_frame_meta_to_otlp_span = (
         telemetry_params.tracing.append_frame_meta_to_span
     )
+    conf.frame_period = telemetry_params.metrics.frame_period
+    conf.timestamp_period = telemetry_params.metrics.time_period
+    conf.collection_history = telemetry_params.metrics.history
+
     return conf
 
 
