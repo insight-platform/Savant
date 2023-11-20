@@ -26,10 +26,10 @@ services:
       - ..:/opt/savant/samples
     command: samples/telemetry/module.yml
     environment:
-      - TELEMETRY_PROVIDER=jaeger
-      - TELEMETRY_PROVIDER_PARAMS={"endpoint":"jaeger:6831"}
-      - TELEMETRY_SAMPLING_PERIOD=100
-      - TELEMETRY_APPEND_FRAME_META_TO_SPAN=True
+      - TRACING_PROVIDER=jaeger
+      - TRACING_PROVIDER_PARAMS={"endpoint":"jaeger:6831"}
+      - TRACING_SAMPLING_PERIOD=100
+      - TRACING_APPEND_FRAME_META_TO_SPAN=True
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
       - FPS_PERIOD=1000

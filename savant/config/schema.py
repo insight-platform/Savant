@@ -106,8 +106,8 @@ class BufferQueuesParameters:
 
 
 @dataclass
-class TelemetryParameters:
-    """Configure telemetry.
+class TracingParameters:
+    """Configure tracing.
 
     Example:
     .. code-block:: yaml
@@ -132,10 +132,32 @@ class TelemetryParameters:
     """Name for root span."""
 
     provider: Optional[str] = None
-    """Telemetry provider name."""
+    """Tracing provider name."""
 
     provider_params: Optional[Dict[str, Any]] = None
-    """Parameters for telemetry provider."""
+    """Parameters for tracing provider."""
+
+
+@dataclass
+class TelemetryParameters:
+    """Configure telemetry.
+
+    Example:
+    .. code-block:: yaml
+
+        tracing:
+          sampling_period: 100
+          append_frame_meta_to_span: False
+          root_span_name: demo-pipeline-root
+          provider: jaeger
+          provider_params:
+            service_name: demo-pipeline
+            endpoint: jaeger:6831
+
+    """
+
+    tracing: TracingParameters = field(default_factory=TracingParameters)
+    """Tracing configuration."""
 
 
 @dataclass

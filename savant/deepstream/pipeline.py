@@ -55,7 +55,7 @@ from savant.deepstream.utils.pipeline import (
     add_queues_to_pipeline,
     build_pipeline_stages,
     get_pipeline_element_stages,
-    init_telemetry,
+    init_tracing,
 )
 from savant.gstreamer import GLib, Gst  # noqa:F401
 from savant.gstreamer.pipeline import GstPipeline
@@ -105,7 +105,7 @@ class NvDsPipeline(GstPipeline):
 
         self._internal_attrs = set()
         telemetry: TelemetryParameters = kwargs['telemetry']
-        init_telemetry(name, telemetry)
+        init_tracing(name, telemetry.tracing)
 
         output_frame = kwargs.get('output_frame')
         self._pass_through_mode = bool(output_frame) and output_frame['codec'] == 'copy'
@@ -136,8 +136,8 @@ class NvDsPipeline(GstPipeline):
 
         self._element_stages = get_pipeline_element_stages(pipeline_cfg)
         pipeline_stages = build_pipeline_stages(self._element_stages)
-        if telemetry.root_span_name is not None:
-            root_span_name = telemetry.root_span_name
+        if telemetry.tracing.root_span_name is not None:
+            root_span_name = telemetry.tracing.root_span_name
         else:
             root_span_name = name
 
@@ -146,7 +146,7 @@ class NvDsPipeline(GstPipeline):
             pipeline_stages,
             build_video_pipeline_conf(telemetry),
         )
-        self._video_pipeline.sampling_period = telemetry.sampling_period
+        self._video_pipeline.sampling_period = telemetry.tracing.sampling_period
 
         self._source_output = create_source_output(
             frame_params=self._frame_params,
@@ -1054,7 +1054,9 @@ class NvDsPipeline(GstPipeline):
 
 def build_video_pipeline_conf(telemetry_params: TelemetryParameters):
     conf = VideoPipelineConfiguration()
-    conf.append_frame_meta_to_otlp_span = telemetry_params.append_frame_meta_to_span
+    conf.append_frame_meta_to_otlp_span = (
+        telemetry_params.tracing.append_frame_meta_to_span
+    )
     return conf
 
 
