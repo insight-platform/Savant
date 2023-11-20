@@ -779,7 +779,6 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                         output_layers = nvds_infer_tensor_meta_to_outputs(
                             tensor_meta=tensor_meta,
                             layer_names=model.output.layer_names,
-                            tensor_format=model.output.converter.instance.tensor_format,
                         )
                         try:
                             outputs = model.output.converter(
