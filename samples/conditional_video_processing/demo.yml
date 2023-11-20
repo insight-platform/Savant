@@ -8,7 +8,7 @@ parameters:
     width: 1280
     height: 720
   output_frame:
-    codec: h264
+    codec: ${oc.env:CODEC, 'h264'}
     # Encode only frames with tag "encode"
     condition:
       tag: encode

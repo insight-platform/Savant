@@ -2,10 +2,17 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 
-import cv2
+from adapters.ds.sinks.always_on_rtsp.utils import Frame
 
 
 @dataclass
 class LastFrame:
     timestamp: datetime
-    frame: Optional[cv2.cuda.GpuMat] = None
+    width: int
+    height: int
+    content: Frame
+
+
+@dataclass
+class LastFrameRef:
+    frame: Optional[LastFrame] = None

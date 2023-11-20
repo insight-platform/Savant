@@ -9,15 +9,6 @@ Savant also translates its manifest to a GStreamer pipeline, but with custom Zer
 
 Those elements are defined in the module definition by default and usually are hidden from developers. However, the interested person may change the default source and sink to GStreamer elements like ``uridecodebin`` if the pipeline benefits from it.
 
-The developer may encounter such customizations in our performance-related module definitions like shown in the example below:
-
-.. literalinclude:: ../../../samples/opencv_cuda_bg_remover_mog2/demo_performance.yml
-  :language: YAML
-  :linenos:
-  :caption:
-  :emphasize-lines: 1,5
-  :lines: 31-34, 45-46
-
 Currently, the single source- and multiple sink declarations are supported.
 
 Adapters
@@ -805,7 +796,9 @@ Always-On RTSP Sink Adapter
 
 The Always-On RTSP Sink Adapter broadcasts the video stream as RTSP/LL-HLS/WebRTC. The adapter works in two modes: single-stream and multi-stream. In the single-stream mode, the adapter accepts only one input stream with source ID specified in ``SOURCE_ID``. In the multi-stream mode, the adapter accepts multiple input streams with source IDs specified in ``SOURCE_IDS``.
 
-This adapter uses DeepStream SDK and **always** performs hardware transcoding of the incoming stream to ensure continuous streaming even when its source stops operating. In this case, the adapter continues to stream a static image waiting for the source to resume sending data.
+This adapter **always** performs transcoding of the incoming stream to ensure continuous streaming even when its source stops operating. In this case, the adapter continues to stream a static image waiting for the source to resume sending data.
+
+When Nvidia Runtime is available this adapter uses DeepStream SDK and performs hardware transcoding and scaling of the incoming stream, otherwise it performs software transcoding and scaling. Software-based encoding/decoding must be used only when hardware-based encoding is not available (Jetson Orin Nano, A100, H100). If the hardware-based encoding is available, run the adapter with Nvidia runtime enabled to activate hardware-based decoding/encoding.
 
 The simplified design of the adapter is depicted in the following diagram:
 

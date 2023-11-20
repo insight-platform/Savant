@@ -48,6 +48,7 @@ def nvinfer_element_configurator(
     """Configure nvinfer element.
 
     :param element_config: Element configuration
+    :param module_config: Module configuration
     :return: Complete and validated element configuration
     """
 
@@ -428,7 +429,7 @@ def nvinfer_element_configurator(
                 logger.debug(
                     'Object id %s "%s" was registered.', obj.class_id, obj.label
                 )
-            except ValueError as exc:
+            except ValueError:
                 _, obj_id = get_object_id(element_config.name, obj.label)
                 logger.debug(
                     'Object label "%s" already registered for id %s. Merging id %s into id %s.',
@@ -481,9 +482,6 @@ def nvinfer_element_configurator(
             nvinfer_config['property']['network-type'] = NvInferModelType.DETECTOR.value
             # set NMS clustering (so far only this one is supported)
             nvinfer_config['property']['cluster-mode'] = 2
-
-    # TODO: Test carefully! (removed to avoid duplicate pyfunc init)
-    # element_config.model = OmegaConf.to_object(model_config)
 
     if module_config.parameters.dev_mode:
         if model_config.input.preprocess_object_meta:

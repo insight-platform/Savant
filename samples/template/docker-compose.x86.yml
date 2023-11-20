@@ -29,6 +29,13 @@ services:
       - --socket
       - pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
       - --sync
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     networks:
       - network
 

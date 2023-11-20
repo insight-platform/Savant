@@ -32,6 +32,15 @@ DeepStream utilities
 
     get_nvds_buf_surface
 
+.. currentmodule:: savant.deepstream.nvinfer.build_engine
+
+.. autosummary::
+    :toctree: generated
+    :nosignatures:
+    :template: autosummary/function.rst
+
+    build_engine
+
 OpenCV utilities
 --------------------
 

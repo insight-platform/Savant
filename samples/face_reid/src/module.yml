@@ -14,7 +14,7 @@ parameters:
       bottom: 0
 
   output_frame:
-    codec: h264
+    codec: ${oc.env:CODEC, 'h264'}
 
   face_tile_padding: 24
   face_width: 112
