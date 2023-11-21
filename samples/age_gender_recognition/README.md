@@ -28,7 +28,14 @@ Demonstrated adapters:
 
 **Note**: Ubuntu 22.04 runtime configuration [guide](../../docs/runtime-configuration.md) helps to configure the runtime to run Savant pipelines.
 
-Run the demo:
+## Build Engines
+
+The demo uses models that are compiled into TensorRT engines the first time the demo is run. This takes time. Optionally, you can prepare the engines before running the demo by using the command
+```bash
+./scripts/run_module.py --build-engines samples/age_gender_recognition/module.yml
+```
+
+## Run the Demo
 
 ```bash
 git clone https://github.com/insight-platform/Savant.git
@@ -49,7 +56,6 @@ git lfs pull
 # to get back to project root
 cd ../..
 ```
-
 
 ## Performance Measurement
 
