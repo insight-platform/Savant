@@ -28,6 +28,10 @@ services:
       - ..:/opt/savant/samples
     command: samples/peoplenet_detector/module.yml
     environment:
+      - METRICS_FRAME_PERIOD=100
+      - METRICS_TIME_PERIOD=1000
+      - METRICS_PROVIDER=prometheus
+      - METRICS_PROVIDER_PARAMS={"port":8000}
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
       - METRICS_FRAME_PERIOD=1000
@@ -64,6 +68,14 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
+
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
 
 volumes:
   zmq_sockets:
