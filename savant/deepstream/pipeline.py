@@ -61,6 +61,7 @@ from savant.gstreamer import GLib, Gst  # noqa:F401
 from savant.gstreamer.pipeline import GstPipeline
 from savant.gstreamer.utils import on_pad_event, pad_to_source_id
 from savant.meta.constants import PRIMARY_OBJECT_KEY, UNTRACKED_OBJECT_ID
+from savant.metrics import build_metrics_exporter
 from savant.utils.platform import is_aarch64
 from savant.utils.sink_factories import SinkEndOfStream
 from savant.utils.source_info import Resolution, SourceInfo, SourceInfoRegistry
@@ -146,6 +147,10 @@ class NvDsPipeline(GstPipeline):
             build_video_pipeline_conf(telemetry),
         )
         self._video_pipeline.sampling_period = telemetry.tracing.sampling_period
+        self._metrics_exporter = build_metrics_exporter(
+            self._video_pipeline,
+            telemetry.metrics,
+        )
 
         self._source_output = create_source_output(
             frame_params=self._frame_params,
@@ -216,12 +221,19 @@ class NvDsPipeline(GstPipeline):
 
         return gst_element
 
+    def on_startup(self):
+        if self._metrics_exporter is not None:
+            self._metrics_exporter.start()
+        super().on_startup()
+
     def before_shutdown(self):
         super().before_shutdown()
         self._disable_eos_suppression()
 
     def on_shutdown(self):
         self._video_pipeline.log_final_fps()
+        if self._metrics_exporter is not None:
+            self._metrics_exporter.stop()
         super().on_shutdown()
 
     def _on_shutdown_signal(self, element: Gst.Element):

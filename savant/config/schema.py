@@ -151,6 +151,7 @@ class MetricsParameters:
         provider: Prometheus
         provider_params:
           endpoint: prometheus:9090
+          export_interval: 1000
     """
 
     frame_period: Optional[int] = None
@@ -191,6 +192,7 @@ class TelemetryParameters:
           provider: Prometheus
           provider_params:
             endpoint: prometheus:9090
+            export_interval: 1000
 
     """
 
