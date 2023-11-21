@@ -19,6 +19,7 @@
 | [#443](https://github.com/insight-platform/Savant/issues/443)                   | 178.01 | 33.75     |           |
 | [#443](https://github.com/insight-platform/Savant/issues/443) (queue length 10) | 161.77 | 37.95     |           |
 | [#352](https://github.com/insight-platform/Savant/issues/352)                   | 369.37 | 48.13     | 72.04     |
+| [#550](https://github.com/insight-platform/Savant/issues/550)                   | 373.73 | 55.72     | 75.08     |
 
 ### conditional_video_processing
 
@@ -46,6 +47,7 @@
 | [#456](https://github.com/insight-platform/Savant/issues/456) | 127.23 | 28.71     |           |
 | [#443](https://github.com/insight-platform/Savant/issues/443) | 130.15 | 28.72     |           |
 | [#352](https://github.com/insight-platform/Savant/issues/352) | 225.87 | 36.45     | 50.87     |
+| [#550](https://github.com/insight-platform/Savant/issues/550) | 229.00 |           | 51.00     |
 
 ### intersection_traffic_meter (yolov8m)
 
@@ -54,6 +56,7 @@
 | [#356](https://github.com/insight-platform/Savant/issues/356) | 93.03  | 21.22     |           |
 | [#443](https://github.com/insight-platform/Savant/issues/443) | 94.56  | 21.56     |           |
 | [#352](https://github.com/insight-platform/Savant/issues/352) | 261.64 | 32.15     | 46.28     |
+| [#550](https://github.com/insight-platform/Savant/issues/550) | 264.89 |           | 50.99     |
 
 ### license_plate_recognition
 
@@ -62,6 +65,7 @@
 | [#455](https://github.com/insight-platform/Savant/issues/455) | 92.4   | 25.29     |           |
 | [#443](https://github.com/insight-platform/Savant/issues/443) | 92.73  | 25.32     |           |
 | [#352](https://github.com/insight-platform/Savant/issues/352) | 271.2  | 35.90     | 43.44     |
+| [#550](https://github.com/insight-platform/Savant/issues/550) | 272.29 |           | 42.3      |
 
 ### nvidia_car_classification
 
@@ -78,6 +82,7 @@
 | [#443](https://github.com/insight-platform/Savant/issues/443)                   | 151.47 | 42.00     |           |
 | [#443](https://github.com/insight-platform/Savant/issues/443) (queue length 10) | 149.89 | 41.79     |           |
 | [#352](https://github.com/insight-platform/Savant/issues/352)                   | 464.44 | 64.33     | 132.76    |
+| [#550](https://github.com/insight-platform/Savant/issues/550)                   | 520.50 |           | 139.74    |
 
 ### opencv_cuda_bg_remover_mog2
 
@@ -94,6 +99,7 @@
 | [#443](https://github.com/insight-platform/Savant/issues/443)                   | 610.06 | 94.00     |           |
 | [#443](https://github.com/insight-platform/Savant/issues/443) (queue length 10) | 618.57 | 95.59     |           |
 | [#352](https://github.com/insight-platform/Savant/issues/352)                   | 743.37 | 102.53    | 137.4     |
+| [#550](https://github.com/insight-platform/Savant/issues/550)                   | 758.15 |           | 133.19    |
 
 ### opencv_cuda_bg_remover_mog2 (multi-stream)
 
@@ -119,6 +125,7 @@
 | [#443](https://github.com/insight-platform/Savant/issues/443)                   | 124.87 | 29.13     |           |
 | [#443](https://github.com/insight-platform/Savant/issues/443) (queue length 10) | 110.64 | 26.73     |           |
 | [#352](https://github.com/insight-platform/Savant/issues/352)                   | 414.12 | 77.47     | 131.26    |
+| [#550](https://github.com/insight-platform/Savant/issues/550)                   | 414.18 |           | 130.09    |
 
 ### traffic_meter (yolov8m)
 
@@ -135,6 +142,7 @@
 | [#443](https://github.com/insight-platform/Savant/issues/443)                   | 134.26 | 23.98     |           |
 | [#443](https://github.com/insight-platform/Savant/issues/443) (queue length 10) | 123.88 | 19.33     |           |
 | [#352](https://github.com/insight-platform/Savant/issues/352)                   | 257.66 | 54.74     | 101.18    |
+| [#550](https://github.com/insight-platform/Savant/issues/550)                   | 258.90 |           | 103.24    |
 
 ### yolov8_seg
 
@@ -150,4 +158,4 @@ Note: `yolov8_seg` always has a queue length of 10.
 | [#456](https://github.com/insight-platform/Savant/issues/456) | 68.48 | 21.71     |           |
 | [#443](https://github.com/insight-platform/Savant/issues/443) | 71.28 | 21.95     |           |
 | [#352](https://github.com/insight-platform/Savant/issues/352) | 81.58 | 24.73     | 38.76     |
-| [#550](https://github.com/insight-platform/Savant/issues/550) | 90.87 | 23.99     | 42.39     |
+| [#550](https://github.com/insight-platform/Savant/issues/550) | 93.31 | 23.99     | 38.38     |

@@ -108,7 +108,7 @@ def main():
     parser.add_argument(
         'label', nargs='+', type=str, help='run label, eg. issue number "#123".'
     )
-    parser.add_argument('-n', '--num-runs', type=int, default=3, help='number of runs')
+    parser.add_argument('-n', '--num-runs', type=int, default=5, help='number of runs')
     parser.add_argument(
         '-p', '--path', type=Path, default=Path('samples'), help='path to sample(s)'
     )
