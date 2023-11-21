@@ -19,6 +19,14 @@ class PrometheusMetricsExporter(BaseMetricsExporter):
             _get_metric_namespace(FrameProcessingStatRecordType.Timestamp),
         ]
         labelnames = ['stage_name']
+        self._module_frame_counter: Dict[str, Counter] = {
+            ns: Counter('module_frame_counter', 'TODO', namespace=ns)
+            for ns in namespaces
+        }
+        self._module_object_counter: Dict[str, Counter] = {
+            ns: Counter('module_object_counter', 'TODO', namespace=ns)
+            for ns in namespaces
+        }
         self._queue_length: Dict[str, Gauge] = {
             ns: Gauge('queue_length', 'TODO', labelnames=labelnames, namespace=ns)
             for ns in namespaces
@@ -45,6 +53,10 @@ class PrometheusMetricsExporter(BaseMetricsExporter):
             namespace = _get_metric_namespace(record.record_type)
             if namespace is None:
                 continue
+            _update_counter(self._module_frame_counter[namespace], record.frame_no)
+            _update_counter(
+                self._module_object_counter[namespace], record.object_counter
+            )
             for stage in record.stage_stats:
                 self._queue_length[namespace].labels(stage.stage_name).set(
                     stage.queue_length
