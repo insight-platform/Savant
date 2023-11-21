@@ -59,47 +59,95 @@ class OpenCVGpuMatWrapper:
             "typestr": opencv_to_numpy_type(img.type()),
             "strides": (1, img.step, img.elemSize()),
         }
+
 def as_pytorch(
         img: Union[cv2.cuda.GpuMat, cp.ndarray, np.ndarray],
+        input_format: Optional[str] = None,
+        output_format: Optional[str] = None,
         device: Optional[str] = None
 ):
-    """Converts GPU image to PyTorch tensor."""
+    """Converts GPU image to PyTorch tensor.
+
+        img - is an image represented as OpenCV or CuPy array.
+        input_format - is a shape format of the input image
+            (channels_first` or `channels_last`). `channels_last` is used as default
+            for cupy arrays.
+        output_format - is a shape format of the output image.
+        `channels_first` or `channels_last`. If output_format is None the format is
+            channels_first
+        device - is a device ('cpu' or 'cuda') on which the PyTorch tensor
+            will be located.
+    """
     import torch
     if isinstance(img, cp.ndarray):
         if device is None:
             device = "cuda"
-        return torch.as_tensor(img, device=device)
+        torch_img = torch.as_tensor(img, device=device)
+        if input_format == "channels_last" and output_format == "channels_first":
+            torch_img = torch_img.permute(2, 0, 1)
+        elif input_format == "channels_first" and output_format == "channels_last":
+            torch_img = torch_img.permute(1, 2, 0)
+        return torch_img
     elif isinstance(img, cv2.cuda.GpuMat):
         if device is None:
             device = "cuda"
-        return torch.as_tensor(OpenCVGpuMatWrapper(img), device=device)
+        torch_img = torch.as_tensor(OpenCVGpuMatWrapper(img), device=device)
+        if output_format == "channels_first":
+            torch_img = torch_img.permute(2, 0, 1)
+        return torch_img
     elif isinstance(img, np.ndarray):
         if device is None:
             device = "cpu"
-        return torch.as_tensor(img, device=device)
+        torch_img = torch.as_tensor(img, device=device)
+        if output_format == "channels_first":
+            torch_img = torch_img.permute(2, 0, 1)
+        return torch_img
 
     raise TypeError(f"Unsupported type {type(img)} to convert into PyTorch tensor.")
 
 
-def as_opencv(img, device: Optional[str] = None ):
+def as_opencv(
+        img,
+        device: Optional[str] = None,
+        input_format: Optional[str] = None,
+):
     """Converts GPU image to OpenCV GPU image.
-    img - is a GPU image in PyTorch or CuPy format. The shape of the image is (C, H, W).
-    device - is a device ('cpu' or 'cuda') to convert the image.
-    If device is None, the image is converted to the same device as the input image.
+    img - is a GPU image represented as PyTorch tensor or CuPy array.
+        device - is a device ('cpu' or 'cuda') on which the opencv image will be located.
+        If device is None, the image is converted to the same device as the input image.
+    input_format - is a shape format of the input image. `channels_first` or
+        `channels_last`. If the input image is a PyTorch tensor,
+        the default format is 'channels_first'. If the input image
+        is a CuPy array, the format is 'channels_last'.
     """
-    import cupy as cp
     try:
         import torch
         torch_imported = True
     except ImportError:
         torch_imported = False
 
+    channel_index = None
+    height_index = None
+    width_index = None
+    if input_format == "channel_first":
+        channel_index = 0
+        height_index = 1
+        width_index = 2
+    elif input_format == "channel_last":
+        channel_index = 2
+        height_index = 0
+        width_index = 1
+
     if torch_imported and isinstance(img, torch.Tensor):
-        import torch
+        if channel_index is None:
+            channel_index = 0
+            height_index = 1
+            width_index = 2
+
         if img.dim() != 3:
             raise ValueError(f"Unsupported shape {img.shape} of PyTorch tensor. "
                              f"Only 3D tensors are supported to convert into image.")
-        if img.shape[0] > 4 or img.shape[0] == 2:
+        if img.shape[channel_index] > 4 or img.shape[channel_index] == 2:
             raise ValueError(
                 f"Unsupported number of channels {img.shape[0]} of PyTorch tensor. "
                 f"Only 1, 3, 4 channels image are supported.")
@@ -114,68 +162,66 @@ def as_opencv(img, device: Optional[str] = None ):
 
             np_type = numpy_type_to_opencv(
                 numpy_type=img.__cuda_array_interface__['typestr'],
-                channels=img.__cuda_array_interface__['shape'][0]
+                channels=img.__cuda_array_interface__['shape'][channel_index]
             )
-
-            stride = img.stride()
-            if stride[0] != 1 or not img.is_contiguous(memory_format=torch.channels_last):
-                img = img.unsqueeze(0).to(memory_format=torch.channels_last).squeeze(0)
 
             cuda_int = img.__cuda_array_interface__
-            pitch = cuda_int['shape'][0] * cuda_int['shape'][2]
-            return cv2.savant.createGpuMat(
-                cuda_int['shape'][1],
-                cuda_int['shape'][2],
+            if img.stride()[channel_index] != int(cuda_int["typestr"][-1]) or \
+                    not img.is_contiguous(memory_format=torch.channels_last):
+                if channel_index == 0:
+                    img = img.permute(1, 2, 0)
+                img = img.ravel()
+
+            return cv2.cuda.createGpuMatFromCudaMemory(
+                (cuda_int["shape"][width_index], cuda_int["shape"][height_index]),
                 np_type,
-                cuda_int['data'][0],
-                pitch,
+                img.__cuda_array_interface__['data'][0],
             )
+
         elif device.type == "cpu":
-            return img.cpu().numpy()
+            if channel_index == 2:
+                return img.cpu().numpy()
+            return img.permute(1, 2, 0).cpu().numpy()
         else:
             raise TypeError(f"Unsupported device {device} to convert into OpenCV GPU image.")
 
     elif isinstance(img, cp.ndarray):
+        if channel_index is None:
+            channel_index = 2
+            height_index = 0
+            width_index = 1
         if img.ndim != 3:
             raise ValueError(f"Unsupported shape {img.shape} of CuPy array. "
                              f"Only 3D arrays are supported to convert into image.")
-        if img.shape[0] > 4 or img.shape[0] == 2:
+        if img.shape[channel_index] > 4 or img.shape[channel_index] == 2:
             raise ValueError(
-                f"Unsupported number of channels {img.shape[0]} of CuPy array. "
+                f"Unsupported number of channels {img.shape[channel_index]} of CuPy array. "
                 f"Only 1, 3, 4 channels image are supported.")
 
         if device is None:
             device = 'cuda'
+
         if device == "cuda":
             np_type = numpy_type_to_opencv(
                 numpy_type=img.__cuda_array_interface__['typestr'],
-                channels=img.__cuda_array_interface__['shape'][0]
+                channels=img.__cuda_array_interface__['shape'][channel_index]
             )
-            if img.strides[0] == int(img.__cuda_array_interface__['typestr'][-1]):
-                return cv2.savant.createGpuMat(
-                    img.__cuda_array_interface__['shape'][1],
-                    img.__cuda_array_interface__['shape'][2],
-                    np_type,
-                    img.__cuda_array_interface__['data'][0],
-                    img.strides[1]
-                )
-            else:
-                tmp_tensor = torch.as_tensor(img, device=device)
-                tmp_tensor = tmp_tensor.unsqueeze(0).to(memory_format=torch.channels_last).squeeze(0)
-                cuda_int = tmp_tensor.__cuda_array_interface__
-                pitch = cuda_int['shape'][0] * cuda_int['shape'][2]
-                return cv2.savant.createGpuMat(
-                    cuda_int['shape'][1],
-                    cuda_int['shape'][2],
-                    np_type,
-                    cuda_int['data'][0],
-                    pitch,
-                )
-                # raise ValueError(f"Unsupported stride {img.strides[0]} of CuPy array in the first dimension."
-                #                  f"For the type `{img.dtype}` the stride should be equal `{img.__cuda_array_interface__['typestr'][-1]}`."
-                #                  f" Change the memory format to the channel last.")
+            cuda_int = img.__cuda_array_interface__
+            if img.strides[channel_index] != int(img.__cuda_array_interface__['typestr'][-1]):
+                if channel_index == 0:
+                    img = img.transpose(1, 2, 0)
+                img = img.ravel()
+
+            return cv2.cuda.createGpuMatFromCudaMemory(
+                (cuda_int["shape"][width_index], cuda_int["shape"][height_index]),
+                np_type,
+                img.__cuda_array_interface__['data'][0],
+            )
+
         elif device == "cpu":
-            return cp.asnumpy(img)
+            if channel_index == 2:
+                return img.get()
+            return cp.transpose(img, (1, 2, 0)).get()
         else:
             raise TypeError(f"Unsupported device {device} to convert into OpenCV GPU image.")
 
