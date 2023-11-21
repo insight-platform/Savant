@@ -50,15 +50,16 @@ def numpy_type_to_opencv(numpy_type, channels):
 
 
 class OpenCVGpuMatWrapper:
-    def __init__(self, img: cv2.cuda.GpuMat):
-        w, h = img.size()
+    def __init__(self, gpu_mat: cv2.cuda.GpuMat):
+        w, h = gpu_mat.size()
         self.__cuda_array_interface__ = {
             "version": 3,
-            "shape": (img.channels(), h, w),
-            "data": (img.cudaPtr(), False),
-            "typestr": opencv_to_numpy_type(img.type()),
-            "strides": (1, img.step, img.elemSize()),
+            "shape": (h, w, gpu_mat.channels()),
+            "data": (gpu_mat.cudaPtr(), False),
+            "typestr": opencv_to_numpy_type(gpu_mat.type()),
+            "strides": (gpu_mat.step, gpu_mat.elemSize(), gpu_mat.elemSize1()),
         }
+
 
 def as_pytorch(
         img: Union[cv2.cuda.GpuMat, cp.ndarray, np.ndarray],
@@ -70,11 +71,11 @@ def as_pytorch(
 
         img - is an image represented as OpenCV or CuPy array.
         input_format - is a shape format of the input image
-            (channels_first` or `channels_last`). `channels_last` is used as default
-            for cupy arrays.
-        output_format - is a shape format of the output image.
-        `channels_first` or `channels_last`. If output_format is None the format is
-            channels_first
+            (`channels_first` or `channels_last`). `channels_last` is used as default
+            for cupy arrays. Parameter is ignored for OpenCV images.
+        output_format - is a shape format of the output image
+        (`channels_first` or `channels_last`). If output_format is None the format is
+            the same as format of the input image.
         device - is a device ('cpu' or 'cuda') on which the PyTorch tensor
             will be located.
     """
@@ -92,7 +93,7 @@ def as_pytorch(
         if device is None:
             device = "cuda"
         torch_img = torch.as_tensor(OpenCVGpuMatWrapper(img), device=device)
-        if output_format == "channels_first":
+        if output_format == "channels_first" or output_format is None:
             torch_img = torch_img.permute(2, 0, 1)
         return torch_img
     elif isinstance(img, np.ndarray):
