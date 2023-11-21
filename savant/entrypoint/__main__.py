@@ -20,7 +20,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='python -m savant.entrypoint')
     parser.add_argument(
         '-e',
-        '--build-engines-only',
+        '--build-engines',
         action='store_true',
         help='builds module model\'s engines and exit',
     )
