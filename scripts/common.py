@@ -114,7 +114,6 @@ detach_option = click.option(
     is_flag=True,
     default=False,
     help='Run docker container in background and print container ID.',
-    show_default=True,
 )
 
 
