@@ -84,7 +84,7 @@ def as_pytorch(
         if device is None:
             device = "cuda"
         torch_img = torch.as_tensor(img, device=device)
-        if input_format == "channels_last" and output_format == "channels_first":
+        if input_format == "channels_last" and (output_format == "channels_first" or output_format is None):
             torch_img = torch_img.permute(2, 0, 1)
         elif input_format == "channels_first" and output_format == "channels_last":
             torch_img = torch_img.permute(1, 2, 0)
@@ -111,6 +111,7 @@ def as_opencv(
         img,
         device: Optional[str] = None,
         input_format: Optional[str] = None,
+        output_format: Optional[str] = None,
 ):
     """Converts GPU image to OpenCV GPU image.
     img - is a GPU image represented as PyTorch tensor or CuPy array.
@@ -229,17 +230,45 @@ def as_opencv(
     raise TypeError(f"Unsupported type {type(img)} to convert into OpenCV GPU image.")
 
 
-def as_cupy(img) -> cp.ndarray:
+def as_cupy(
+        img,
+        input_format: Optional[str] = None,
+        output_format: Optional[str] = None,
+) -> cp.ndarray:
     """Converts PyTorch or OpenCv image to CuPy GPU image.
-    img - is a GPU image in PyTorch or OpenCV format. The shape of the image is (C, H, W).
+
+    img - is a image in PyTorch or OpenCV format.
+    input_format - is a shape format of the input image
+        (`channels_first` or `channels_last`). `channels_last` is used as default
+        for cupy arrays. Parameter is ignored for OpenCV images.
+    output_format - is a shape format of the output image
+        (`channels_first` or `channels_last`). If output_format is None the format is
+        the same as format of the input image.
     """
     try:
         import torch
         torch_imported = True
     except ImportError:
         torch_imported = False
-    if isinstance(img, np.ndarray) or (torch_imported and isinstance(img, torch.Tensor)):
-        return cp.asarray(img)
+    if isinstance(img, np.ndarray):
+        cupy_image = cp.asarray(img)
+        if (input_format == "channels_last" or input_format is None) \
+                and output_format == "channels_first":
+            cupy_image = cp.transpose(cupy_image, (2, 0, 1))
+        elif input_format == "channels_first" and output_format == "channels_last":
+            cupy_image = cp.transpose(cupy_image, (1, 2, 0))
+        return cupy_image
+    elif torch_imported and isinstance(img, torch.Tensor):
+        cupy_image = cp.asarray(img)
+        if input_format == "channels_last" and output_format == "channels_first":
+            cupy_image = cp.transpose(cupy_image, (2, 0, 1))
+        elif input_format == "channels_first" \
+                and (output_format == "channels_last" or output_format is None):
+            cupy_image = cp.transpose(cupy_image, (1, 2, 0))
+        return cupy_image
     elif isinstance(img, cv2.cuda.GpuMat):
-        return cp.asarray(OpenCVGpuMatWrapper(img))
+        cupy_image = cp.asarray(OpenCVGpuMatWrapper(img))
+        if output_format == "channels_first":
+            cupy_image = cp.transpose(cupy_image, (2, 0, 1))
+        return cupy_image
     raise TypeError(f"Unsupported type {type(img)} to convert into CuPy GPU image.")
