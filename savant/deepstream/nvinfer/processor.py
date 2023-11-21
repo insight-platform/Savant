@@ -241,12 +241,13 @@ class NvInferProcessor:
                     else:
                         raise exc
 
-                self._logger_trace(
-                    'Preprocessing "%s" object bbox %s -> %s',
-                    user_object_meta.label,
-                    user_object_meta.bbox,
-                    res_bbox,
-                )
+                if self._logger.isEnabledFor(logging.TRACE):
+                    self._logger.trace(
+                        'Preprocessing "%s" object bbox %s -> %s',
+                        user_object_meta.label,
+                        user_object_meta.bbox,
+                        res_bbox,
+                    )
 
                 rect_params = nvds_obj_meta.rect_params
                 rect_params.left = res_bbox.left
@@ -303,12 +304,13 @@ class NvInferProcessor:
                 for tensor_meta in nvds_tensor_output_iterator(
                     parent_nvds_obj_meta, gie_uid=self._model_uid
                 ):
-                    self._logger_trace(
-                        'Converting "%s" element tensor output for frame '
-                        'with PTS %s.',
-                        self._element_name,
-                        nvds_frame_meta.buf_pts,
-                    )
+                    if self._logger.isEnabledFor(logging.TRACE):
+                        self._logger.trace(
+                            'Converting "%s" element tensor output for frame '
+                            'with PTS %s.',
+                            self._element_name,
+                            nvds_frame_meta.buf_pts,
+                        )
                     # parse and post-process model output
                     output_layers = self._tensor_meta_to_outputs(
                         tensor_meta=tensor_meta,
@@ -452,21 +454,23 @@ class NvInferProcessor:
                             if obj_cls_id is None:
                                 obj_cls_id = obj.class_id
                             else:
-                                self._logger_trace(
-                                    'Updating %s custom objs id %s -> %s, '
-                                    'label "%s".',
-                                    len(cls_bbox_tensor),
-                                    obj.class_id,
-                                    obj_cls_id,
-                                    obj_label,
-                                )
+                                if self._logger.isEnabledFor(logging.TRACE):
+                                    self._logger.trace(
+                                        'Updating %s custom objs id %s -> %s, '
+                                        'label "%s".',
+                                        len(cls_bbox_tensor),
+                                        obj.class_id,
+                                        obj_cls_id,
+                                        obj_label,
+                                    )
                             for bbox in cls_bbox_tensor:
-                                self._logger_trace(
-                                    'Adding obj %s into pyds meta for frame '
-                                    'with PTS %s.',
-                                    bbox[2:7],
-                                    nvds_frame_meta.buf_pts,
-                                )
+                                if self._logger.isEnabledFor(logging.TRACE):
+                                    self._logger.trace(
+                                        'Adding obj %s into pyds meta for frame '
+                                        'with PTS %s.',
+                                        bbox[2:7],
+                                        nvds_frame_meta.buf_pts,
+                                    )
                                 _nvds_obj_meta = nvds_add_obj_meta_to_frame(
                                     nvds_batch_meta,
                                     nvds_frame_meta,
@@ -528,12 +532,13 @@ class NvInferProcessor:
                             obj.class_id
                         )
                         if obj_cls_id is not None:
-                            self._logger_trace(
-                                'Updating regular obj id %s -> %s, label "%s".',
-                                obj.class_id,
-                                obj_cls_id,
-                                obj.label,
-                            )
+                            if self._logger.isEnabledFor(logging.TRACE):
+                                self._logger.trace(
+                                    'Updating regular obj id %s -> %s, label "%s".',
+                                    obj.class_id,
+                                    obj_cls_id,
+                                    obj.label,
+                                )
                             nvds_obj_meta.class_id = obj_cls_id
                         nvds_set_obj_selection_type(
                             obj_meta=nvds_obj_meta,
@@ -580,10 +585,6 @@ class NvInferProcessor:
                             confidence=label_info.result_prob,
                         )
         self._restore_frame(buffer)
-
-    def _logger_trace(self, msg: str, *args, **kwargs):
-        if self._logger.isEnabledFor(logging.TRACE):
-            self._logger.trace(msg, args, **kwargs)
 
     def _is_model_input_object(self, nvds_obj_meta: pyds.NvDsObjectMeta):
         return (
