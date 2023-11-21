@@ -18,7 +18,9 @@ NUMPY_TYPE_TO_OPENCV = {v: k for k, v in OPENCV_TYPE_TO_NUMPY.items()}
 
 
 def numpy_type_to_opencv(numpy_type, channels):
-    depth = NUMPY_TYPE_TO_OPENCV.get(numpy_type)
+    depth = NUMPY_TYPE_TO_OPENCV.get(numpy_type, None)
+    if depth is None:
+        raise TypeError(f"Unsupported type {numpy_type} to convert into OpenCV type.")
     return depth + ((channels - 1) << 3)
 
 

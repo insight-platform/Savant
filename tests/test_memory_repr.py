@@ -6,9 +6,9 @@ import cupy as cp
 from savant.utils.memory_repr import as_opencv, as_pytorch, as_cupy
 import cv2
 
-TORCH_TYPE = [torch.int8, torch.float32]
-NUMPY_TYPE = [np.int8, np.float32]
-CUPY_TYPE = [cp.int8, cp.float32]
+TORCH_TYPE = [torch.int8, torch.uint8, torch.float32]
+NUMPY_TYPE = [np.int8, np.uint8, np.float32]
+CUPY_TYPE = [cp.int8, cp.uint8, cp.float32]
 
 
 def get_opencv_image(input_device, input_type, channels=3):
