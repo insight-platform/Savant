@@ -9,7 +9,7 @@ Interpolation is useful in the following cases:
 * avoid duplication of the same value in several places, for example, in the case when objects of the same class are filtered at the output of the Detection Unit and also processed in the Python Function Unit;
 * use for the parameter a derivative of the value of another parameter if the values of these parameters are interrelated; for example, when the minimum allowed sizes for detected objects depend on the frame size.
 
-.. note:: Interpolation happens only **once**, when the module is being initialized. Even when the dynamic parameters are used, their values interpolated only **once**.
+.. note:: Interpolation happens only **once**, when the module is being initialized.
 
 OmegaConf value interpolation capabilities are described in OmegaConf `interpolation <https://omegaconf.readthedocs.io/en/2.3_branch/usage.html#variable-interpolation>`__ manual. Savant supports all features of OmegaConf, for example:
 
@@ -44,30 +44,6 @@ In Savant, there is a resolver used to retrieve variables from the system enviro
         height: ${oc.decode:${oc.env:FRAME_HEIGHT, 720}}
 
 In addition, Savant implements special resolvers.
-
-Initializer Resolver
---------------------
-
-The ``initializer`` resolver makes it easy to get parameter values from any supported source (system environment, Etcd, default). When using the ``initializer``, the resolution for value happens according to the priorities configured with the ``parameter_init_priority`` section. By default, the priorities are configured as follows:
-
-.. code-block:: yaml
-
-    # Etcd -> env -> default
-    #
-    parameter_init_priority:
-      # higher number means lower priority
-      environment: 20
-      etcd: 10
-      # default has the lowest priority
-
-To use the ``initializer`` resolver, you need to specify the type name of the resolver ``initializer``, the name of the parameter by which the value will be searched among the sources, and a default value. For example, using the ``initializer`` looks like this:
-
-.. code-block:: yaml
-
-    parameters:
-      fps_period: ${initializer:FPS_PERIOD, 10000}
-      # equivalent omega conf resolvers
-      # fps_period: ${oc.decode:${oc.env:FPS_PERIOD, 10000}}
 
 Calc Resolver
 -------------
