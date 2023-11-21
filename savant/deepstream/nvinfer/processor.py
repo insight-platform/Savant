@@ -42,13 +42,16 @@ from savant.deepstream.utils.object import (
     nvds_set_obj_selection_type,
     nvds_set_obj_uid,
 )
-from savant.deepstream.utils.tensor import nvds_infer_tensor_meta_to_outputs
+from savant.deepstream.utils.tensor import (
+    nvds_infer_tensor_meta_to_outputs,
+    nvds_infer_tensor_meta_to_outputs_cupy,
+)
 from savant.gstreamer import Gst  # noqa:F401
 from savant.meta.errors import UIDError
 from savant.meta.object import ObjectMeta
 from savant.meta.type import ObjectSelectionType
 from savant.utils.logging import get_logger
-
+from savant.base.converter import TensorFormat
 
 class NvInferProcessor:
     """NvInfer element processor.
@@ -136,9 +139,8 @@ class NvInferProcessor:
         if self._model.output.converter:
             self.postproc = self._process_custom_model_output
             self._tensor_meta_to_outputs = nvds_infer_tensor_meta_to_outputs
-            # TODO: next step PR #555
-            # if self._model.output.converter.instance.tensor_format == TensorFormat.CuPy:
-            #     self._tensor_meta_to_outputs = nvds_infer_tensor_meta_to_outputs_cupy
+            if self._model.output.converter.instance.tensor_format == TensorFormat.CuPy:
+                self._tensor_meta_to_outputs = nvds_infer_tensor_meta_to_outputs_cupy
 
         elif self._is_object_model:
             self.postproc = self._process_regular_detector_output
