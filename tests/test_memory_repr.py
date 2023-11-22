@@ -33,7 +33,7 @@ class TestToOpencv:
     @pytest.mark.parametrize("input_device", ['cuda', 'cpu'])
     @pytest.mark.parametrize("input_type", TORCH_TYPE)
     @pytest.mark.parametrize("target_device", ['cuda', 'cpu', None])
-    def test_pytorch_channel_first_memory(
+    def test_pytorch_channels_first_memory(
         self, input_device, input_type, target_device
     ):
         """Test for pytorch tensors with channels first memory format"""
@@ -53,7 +53,7 @@ class TestToOpencv:
         # shape - [height, width, channels]. memory_format=torch.channels_fisrt
         img_cl_shape_cf_memory = img_cf_shape_cf_memory.permute(1, 2, 0)
         img_opencv = as_opencv(
-            img_cl_shape_cf_memory, input_format='channel_last', device=target_device
+            img_cl_shape_cf_memory, input_format='channels_last', device=target_device
         )
         np.testing.assert_almost_equal(
             img_opencv if isinstance(img_opencv, np.ndarray) else img_opencv.download(),
@@ -73,14 +73,14 @@ class TestToOpencv:
         img_cf_shape_cl_memory = torch.as_tensor(img_np).to(input_device)
 
         img_opencv = as_opencv(
-            img_cf_shape_cl_memory, input_format='channel_last', device=target_device
+            img_cf_shape_cl_memory, input_format='channels_last', device=target_device
         )
         np.testing.assert_almost_equal(
             img_opencv if isinstance(img_opencv, np.ndarray) else img_opencv.download(),
             img_np,
         )
 
-        # shape - [channels, height, width]. memory_format=torch.channel_last
+        # shape - [channels, height, width]. memory_format=torch.channels_last
         img_cl_shape_cl_memory = img_cf_shape_cl_memory.permute(2, 0, 1)
         img_opencv = as_opencv(img_cl_shape_cl_memory, device=target_device)
         np.testing.assert_almost_equal(
@@ -114,7 +114,7 @@ class TestToOpencv:
         img_cf_shape_cf_memory = cupy.asarray(img_cf_shape_cf_memory)
 
         img_opencv = as_opencv(
-            img_cf_shape_cf_memory, input_format='channel_first', device=target_device
+            img_cf_shape_cf_memory, input_format='channels_first', device=target_device
         )
         np.testing.assert_almost_equal(
             img_opencv if isinstance(img_opencv, np.ndarray) else img_opencv.download(),
@@ -143,10 +143,10 @@ class TestToOpencv:
             img_np,
         )
 
-        # shape - [height, width, channels]. memory_format=torch.channel_last
+        # shape - [height, width, channels]. memory_format=torch.channels_last
         img_cf_shape_cl_memory = cp.transpose(img_cl_shape_cl_memory, axes=(2, 0, 1))
         img_opencv = as_opencv(
-            img_cf_shape_cl_memory, input_format='channel_first', device=target_device
+            img_cf_shape_cl_memory, input_format='channels_first', device=target_device
         )
         np.testing.assert_almost_equal(
             img_opencv if isinstance(img_opencv, np.ndarray) else img_opencv.download(),
