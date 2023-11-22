@@ -1,4 +1,4 @@
-Functions for converting image representation
+Conversions Between GPU Memory Formats
 ---------------------------------------------
 
 When working with images, there are many ways to represent them as arrays of points. Working with different models you may encounter representation of an image using OpenCV Mat class, PyTorch tensor or CuPy array.
