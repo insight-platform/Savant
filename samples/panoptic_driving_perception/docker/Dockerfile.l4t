@@ -1,0 +1,11 @@
+FROM savant-deepstream-l4t:latest
+
+RUN pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+
+ENV TORCH_HOME=/models/torch
+RUN export PYTHONPATH=/models/yolov7:$PYTHONPATH
+
+RUN pip3 install prefetch_generator matplotlib yacs
+
+# install all requirements is leading to reinstall openCV with CUDA support
+#RUN pip3 install -r https://raw.githubusercontent.com/hustvl/YOLOP/main/requirements.txt
