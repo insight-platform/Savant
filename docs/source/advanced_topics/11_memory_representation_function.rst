@@ -5,7 +5,7 @@ When working with images, there are many ways to represent them as arrays of poi
 
 The Savant framework aims to maximize GPU utilization without unnecessary data copying and conversion. To achieve this, Savant provides functions for converting between different image representations. Data exchange is performed with zero-copying between different views, except for some cases of conversion to GpuMat OpenCV.
 
-Conversion to pytorch tensor
+Conversion to PyTorch Tensor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: python
