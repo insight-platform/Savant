@@ -8,42 +8,59 @@ In the demo it is assumed that there is only one person in the picture and
 the IOU of the true box and from the Yolo detection model is calculated. 
 The IOU value is added as a tag to the frame metadata.
 
-Run the demo:
-
-Prerequisites:
+## Prerequisites
 
 ```bash
 git clone https://github.com/insight-platform/Savant.git
-cd Savant/samples/source_adapter_with_json_metadata
+cd Savant
 git lfs pull
+./utils/check-environment-compatible
 ```
 
-Download prepared data (run the command from the folder with the example):
+**Note**: Ubuntu 22.04 runtime configuration [guide](https://insight-platform.github.io/Savant/develop/getting_started/0_configure_prod_env.html) helps to configure the runtime to run Savant pipelines.
+
+## Build Engines
+
+The demo uses models that are compiled into TensorRT engines the first time the demo is run. This takes time. Optionally, you can prepare the engines before running the demo by using the command:
+
 ```bash
-mkdir -p ../../data 
-wget -P ../../data https://eu-central-1.linodeobjects.com/savant-data/demo/source_adapter_with_json_metadata.zip
-unzip ../../data/source_adapter_with_json_metadata.zip -d ../../data
-rm ../../data/source_adapter_with_json_metadata.zip
+# you are expected to be in Savant/ directory
+
+./scripts/run_module.py --build-engines samples/traffic_meter/module.yml
 ```
 
-Run the demo:
+## Download Data
+
 ```bash
+# you are expected to be in Savant/ directory
+
+mkdir -p data 
+wget -P data https://eu-central-1.linodeobjects.com/savant-data/demo/source_adapter_with_json_metadata.zip
+unzip data/source_adapter_with_json_metadata.zip -d data
+rm data/source_adapter_with_json_metadata.zip
+```
+
+## Run Demo
+
+```bash
+# you are expected to be in Savant/ directory
+
 # if x86
-../../utils/check-environment-compatible && docker compose -f docker-compose.x86.yml up
+docker compose -f samples/source_adapter_with_json_metadata/docker-compose.x86.yml up
 
 # if Jetson. The nvv4l2decoder has a bug in the nvv4l2decoder on 
 # the Jetson platform so the example currently does not work correctly on that platform.
 # https://github.com/insight-platform/Savant/issues/314
 
-# ../../utils/check-environment-compatible && docker compose -f docker-compose.l4t.yml up module image-json-sink
+# docker compose -f samples/source_adapter_with_json_metadata/docker-compose.l4t.yml up module image-json-sink
 
 # Ctrl+C to stop running the compose bundle
 ```
 
-Note: The source adapter runs on the images directory, so when it sends all the images it will terminate.
+**Note**: The source adapter runs on the images directory, so when it sends all the images it will terminate.
 The module and sink adapter run the whole time, so they should be stopped manually.
 
-Results will be saved in the `../../data/results` folder.
+Results will be saved in the `data/results` folder.
 
 You can use the convert_coco_to_savant.py script as a starting point to prepare 
 your input metadata. This script reads data from the COCO dataset annotations, 

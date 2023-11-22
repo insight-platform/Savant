@@ -53,6 +53,5 @@ services:
       - DIR_LOCATION=/results
     entrypoint: /opt/savant/adapters/python/sinks/image_files.py
 
-
 volumes:
   zmq_sockets:

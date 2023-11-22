@@ -1,8 +1,8 @@
 # Facial ReID
 
-**NB**: The demo uses **YOLOV5-Face** model which takes up to **30-40 minutes** to compile to TensorRT engine. The first launch takes an enormous time.
+**NB**: The demo uses **YOLOV8-Face** model which takes up to **30-40 minutes** to compile to TensorRT engine. The first launch takes an enormous time.
 
-The sample demonstrates how to use [Yolov5face](https://github.com/deepcam-cn/yolov5-face) face detector with landmarks and [Adaface](https://github.com/mk-minchul/AdaFace) face recognition model to build a facial ReID pipeline that can be utilized, for example, in doorbell security systems.
+The sample demonstrates how to use [YOLOV8-Face](https://github.com/akanametov/yolov8-face) face detector with landmarks and [Adaface](https://github.com/mk-minchul/AdaFace) face recognition model to build a facial ReID pipeline that can be utilized, for example, in doorbell security systems.
 
 Preview:
 
@@ -20,32 +20,42 @@ Note that the Index Builder pipeline processes all images in a single resolution
 
 Demo module loads previously generated gallery index file and cropped face images, runs face detection and recognition on a sample video stream, displaying face matches on a padding to the right of the main frame.
 
-## Run
-
-**Note**: Ubuntu 22.04 runtime configuration [guide](../../docs/runtime-configuration.md) helps to configure the runtime to run Savant pipelines.
-
-### Prerequisites
+## Prerequisites
 
 ```bash
 git clone https://github.com/insight-platform/Savant.git
-cd Savant/samples/face_reid
+cd Savant
 git lfs pull
-../../utils/check-environment-compatible
+./utils/check-environment-compatible
 ```
 
-### Index Builder
+**Note**: Ubuntu 22.04 runtime configuration [guide](https://insight-platform.github.io/Savant/develop/getting_started/0_configure_prod_env.html) helps to configure the runtime to run Savant pipelines.
+
+## Build Engines
+
+The demo uses models that are compiled into TensorRT engines the first time the demo is run. This takes time. Optionally, you can prepare the engines before running the demo by using the command:
+
+```bash
+# you are expected to be in Savant/ directory
+
+./scripts/run_module.py --build-engines samples/face_reid/src/module.yml
+```
+
+## Run Index Builder
 
 Note, there is a bug in the nvv4l2decoder on the Jetson platform so the example currently does not work correctly on that platform. See https://github.com/insight-platform/Savant/issues/314
 
 To build the face reid index, start the `index` docker compose profile and wait for the services to complete building the index.
 
 ```bash
+# you are expected to be in Savant/ directory
+
 # if x86
-docker compose -f docker-compose.x86.yml --profile index up
+docker compose -f samples/face_reid/docker-compose.x86.yml --profile index up
 
 # if Jetson
 # currently not supported
-docker compose -f docker-compose.l4t.yml --profile index up
+docker compose -f samples/face_reid/docker-compose.l4t.yml --profile index up
 ```
 
 First startup can take several minutes as the `index-builder-pipeline` needs to convert ONNX models into TRT format. Successful module start is indicated by a log messages like
@@ -61,29 +71,28 @@ The `index-builder-client` service runs the [index_builder_client.py](./src/inde
 
 After the services complete, the containers shut down automatically. Check that the `index_files` directory is created and `index.bin` file and `processed_gallery` image directory is written into it.
 
-### Demo
+## Run Demo
 
 ```bash
+# you are expected to be in Savant/ directory
+
 # if x86
-docker compose -f docker-compose.x86.yml --profile demo up
+docker compose -f samples/face_reid/docker-compose.x86.yml --profile demo up
 
 # if Jetson
-docker compose -f docker-compose.l4t.yml --profile demo up
+docker compose -f samples/face_reid/docker-compose.l4t.yml --profile demo up
 
 # open 'rtsp://127.0.0.1:554/stream' in your player
 # or visit 'http://127.0.0.1:888/stream/' (LL-HLS)
 
 # Ctrl+C to stop running the compose bundle
-
-# to get back to project root
-cd ../..
 ```
 
-## Performance measurement
+## Performance Measurement
 
 Run the Index Builder according to instructions [above](#index-builder).
 
-Download the video file to your local folder. For example, create a data folder and download the video into it (all commands must be executed from the root directory of the project Savant)
+Download the video file to the data folder. For example:
 
 ```bash
 # you are expected to be in Savant/ directory
@@ -97,3 +106,5 @@ Run the performance benchmark with the following command:
 ```bash
 ./samples/face_reid/run_perf.sh
 ```
+
+**Note**: Change the value of the `DATA_LOCATION` variable in the `run_perf.sh` script if you changed the video.
