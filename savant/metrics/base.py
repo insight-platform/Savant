@@ -56,27 +56,25 @@ class BaseMetricsExporter(ABC):
                 self._logger.error('Failed to export metrics: %s', e)
 
     def _export_last_records(self):
-        next_last_record = -1
-        records = {}
+        last_record_id = self._last_record_id
+        records = []
         record: FrameProcessingStatRecord
         for record in self._pipeline.get_stat_records(100):  # TODO: use last_record_id
             if record.id <= self._last_record_id:
                 continue
-            if records.setdefault(str(record.record_type), record).id < record.id:
-                records[str(record.record_type)] = record
-            next_last_record = max(next_last_record, record.id)
+            records.append(record)
+            last_record_id = max(last_record_id, record.id)
         if not records:
             self._logger.trace('No records to export')
             return
 
-        records = list(records.values())
         self._logger.debug(
             'Exporting %d records. Last record ID is %s.',
             len(records),
-            next_last_record,
+            last_record_id,
         )
         self.export(records)
-        self._last_record_id = next_last_record
+        self._last_record_id = last_record_id
 
     @abstractmethod
     def export(self, records: List[FrameProcessingStatRecord]):
