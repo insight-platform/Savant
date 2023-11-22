@@ -77,5 +77,17 @@ services:
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
 
+  grafana:
+    image: grafana/grafana-oss
+    volumes:
+      - ./grafana_datasources:/etc/grafana/provisioning/datasources/
+      - ./grafana_dashboards:/etc/grafana/provisioning/dashboards/
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_NAME=Main Org.
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+
 volumes:
   zmq_sockets:

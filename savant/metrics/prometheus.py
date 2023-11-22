@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from prometheus_client import Counter, Gauge, start_http_server
 from savant_rs.pipeline2 import (
@@ -14,65 +14,40 @@ class PrometheusMetricsExporter(BaseMetricsExporter):
     def __init__(self, pipeline: VideoPipeline, params: Dict[str, Any]):
         super().__init__(pipeline, params)
         self._port = params['port']
-        namespaces = [
-            _get_metric_namespace(FrameProcessingStatRecordType.Frame),
-            _get_metric_namespace(FrameProcessingStatRecordType.Timestamp),
-        ]
+        label_names = ['record_type']
+        stage_label_names = ['record_type', 'stage_name']
 
-        self._frame_counter: Dict[str, Counter] = {
-            ns: Counter(
-                'frame_counter',
-                'Number of frames passed through the module',
-                namespace=ns,
-            )
-            for ns in namespaces
-        }
-        self._object_counter: Dict[str, Counter] = {
-            ns: Counter(
-                'object_counter',
-                'Number of objects passed through the module',
-                namespace=ns,
-            )
-            for ns in namespaces
-        }
+        self._frame_counter = Counter(
+            'frame_counter',
+            'Number of frames passed through the module',
+            labelnames=label_names,
+        )
+        self._object_counter = Counter(
+            'object_counter',
+            'Number of objects passed through the module',
+            labelnames=label_names,
+        )
 
-        labelnames = ['stage_name']
-        self._stage_queue_length: Dict[str, Gauge] = {
-            ns: Gauge(
-                'stage_queue_length',
-                'Queue length in the stage',
-                labelnames=labelnames,
-                namespace=ns,
-            )
-            for ns in namespaces
-        }
-        self._stage_frame_counter: Dict[str, Counter] = {
-            ns: Counter(
-                'stage_frame_counter',
-                'Number of frames passed through the stage',
-                labelnames=labelnames,
-                namespace=ns,
-            )
-            for ns in namespaces
-        }
-        self._stage_object_counter: Dict[str, Counter] = {
-            ns: Counter(
-                'stage_object_counter',
-                'Number of objects passed through the stage',
-                labelnames=labelnames,
-                namespace=ns,
-            )
-            for ns in namespaces
-        }
-        self._stage_batch_counter: Dict[str, Counter] = {
-            ns: Counter(
-                'stage_batch_counter',
-                'Number of frame batches passed through the stage',
-                labelnames=labelnames,
-                namespace=ns,
-            )
-            for ns in namespaces
-        }
+        self._stage_queue_length = Gauge(
+            'stage_queue_length',
+            'Queue length in the stage',
+            labelnames=stage_label_names,
+        )
+        self._stage_frame_counter = Counter(
+            'stage_frame_counter',
+            'Number of frames passed through the stage',
+            labelnames=stage_label_names,
+        )
+        self._stage_object_counter = Counter(
+            'stage_object_counter',
+            'Number of objects passed through the stage',
+            labelnames=stage_label_names,
+        )
+        self._stage_batch_counter = Counter(
+            'stage_batch_counter',
+            'Number of frame batches passed through the stage',
+            labelnames=stage_label_names,
+        )
 
     def start(self):
         start_http_server(self._port)
@@ -100,32 +75,40 @@ class PrometheusMetricsExporter(BaseMetricsExporter):
         self._logger.debug(
             'Exporting record %s (type: %s)', record.id, record.record_type
         )
-        namespace = _get_metric_namespace(record.record_type)
-        _update_counter(self._frame_counter[namespace], record.frame_no)
-        _update_counter(self._object_counter[namespace], record.object_counter)
+        record_type_str = _record_type_to_string(record.record_type)
+        _update_counter(
+            self._frame_counter.labels(record_type_str),
+            record.frame_no,
+        )
+        _update_counter(
+            self._object_counter.labels(record_type_str),
+            record.object_counter,
+        )
         for stage in record.stage_stats:
-            self._stage_queue_length[namespace].labels(stage.stage_name).set(
+            self._stage_queue_length.labels(record_type_str, stage.stage_name).set(
                 stage.queue_length
             )
             _update_counter(
-                self._stage_frame_counter[namespace].labels(stage.stage_name),
+                self._stage_frame_counter.labels(record_type_str, stage.stage_name),
                 stage.frame_counter,
             )
             _update_counter(
-                self._stage_object_counter[namespace].labels(stage.stage_name),
+                self._stage_object_counter.labels(record_type_str, stage.stage_name),
                 stage.object_counter,
             )
             _update_counter(
-                self._stage_batch_counter[namespace].labels(stage.stage_name),
+                self._stage_batch_counter.labels(record_type_str, stage.stage_name),
                 stage.batch_counter,
             )
 
 
-def _get_metric_namespace(record_type: FrameProcessingStatRecordType) -> Optional[str]:
+def _record_type_to_string(record_type: FrameProcessingStatRecordType) -> str:
     if record_type == FrameProcessingStatRecordType.Frame:
-        return 'frame_based'
+        return 'frame'
     if record_type == FrameProcessingStatRecordType.Timestamp:
-        return 'time_based'
+        return 'timestamp'
+    if record_type == FrameProcessingStatRecordType.Initial:
+        return 'initial'
 
 
 def _update_counter(counter: Counter, value: int):
