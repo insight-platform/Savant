@@ -6,10 +6,10 @@ from typing import Any, Generator, List, Optional, Tuple, Union
 
 from gi.repository import Gst  # noqa:F401
 
-from savant.base.model import ComplexModel, ObjectModel
-from savant.config.schema import ElementGroup, ModelElement, Pipeline, PipelineElement
+from savant.config.schema import ElementGroup, Pipeline, PipelineElement
 from savant.gstreamer.buffer_processor import GstBufferProcessor
 from savant.gstreamer.element_factory import CreateElementException, GstElementFactory
+from savant.gstreamer.utils import add_buffer_probe
 from savant.utils.logging import get_logger
 from savant.utils.sink_factories import SinkMessage
 
@@ -57,19 +57,11 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
         self._logger.debug('Adding pipeline elements...')
         for i, item in enumerate(pipeline_cfg.elements):
             if isinstance(item, PipelineElement):
-                self.add_element(
-                    item,
-                    with_probes=isinstance(item, ModelElement),
-                    element_idx=i,
-                )
+                self.add_element(item, element_idx=i)
             elif isinstance(item, ElementGroup):
                 if self._is_group_enabled_check_log(item, i):
                     for j, element in enumerate(item.elements):
-                        self.add_element(
-                            element,
-                            with_probes=isinstance(element, ModelElement),
-                            element_idx=(i, j),
-                        )
+                        self.add_element(element, element_idx=(i, j))
 
         self._logger.debug('Adding sink...')
         self._add_sink()
@@ -85,7 +77,6 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
     def add_element(
         self,
         element: PipelineElement,
-        with_probes: bool = False,
         link: bool = True,
         element_idx: Optional[Union[int, Tuple[int, int]]] = None,
     ) -> Gst.Element:
@@ -95,19 +86,6 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
                 f'Duplicate element name {element} in the pipeline.'
             )
 
-        if isinstance(element, ModelElement):
-            self._logger.debug('Loading user code for element %s', element.name)
-            if element.model.input.preprocess_object_meta:
-                element.model.input.preprocess_object_meta.load_user_code()
-            if element.model.input.preprocess_object_image:
-                element.model.input.preprocess_object_image.load_user_code()
-            if element.model.output.converter:
-                element.model.output.converter.load_user_code()
-            if isinstance(element.model, (ObjectModel, ComplexModel)):
-                for obj in element.model.output.objects:
-                    if obj.selector:
-                        obj.selector.load_user_code()
-
         gst_element = self._element_factory.create(element)
         self._pipeline.add(gst_element)
         if link and self._last_element:
@@ -116,25 +94,8 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
             ), f'Unable to link {element.name} to {self._last_element.name}'
         self._last_element = gst_element
 
-        # set element name from GstElement
-        if element.name is None:
-            element.name = gst_element.name
-
         self._elements.append((element, gst_element))
         self._logger.debug('Added element %s: %s.', element.full_name, element)
-
-        if with_probes:
-            gst_element.get_static_pad('sink').add_probe(
-                Gst.PadProbeType.BUFFER,
-                self._buffer_processor.element_input_probe,
-                element,
-            )
-            gst_element.get_static_pad('src').add_probe(
-                Gst.PadProbeType.BUFFER,
-                self._buffer_processor.element_output_probe,
-                element,
-            )
-            self._logger.debug('Added in/out probes to element %s.', element.full_name)
 
         return gst_element
 
@@ -142,8 +103,8 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
         source.name = 'source'
         _source = self.add_element(source)
         # input processor (post-source)
-        _source.get_static_pad('src').add_probe(
-            Gst.PadProbeType.BUFFER, self._buffer_processor.input_probe
+        add_buffer_probe(
+            _source.get_static_pad('src'), self._buffer_processor.prepare_input
         )
         return _source
 
@@ -161,8 +122,10 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
         _sink = self.add_element(sink, link=link)
 
         # output processor (pre-sink)
-        _sink.get_static_pad('sink').add_probe(
-            Gst.PadProbeType.BUFFER, self._buffer_processor.output_probe, probe_data
+        add_buffer_probe(
+            _sink.get_static_pad('sink'),
+            self._buffer_processor.process_output,
+            probe_data,
         )
 
         return _sink

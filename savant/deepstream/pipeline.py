@@ -2,7 +2,6 @@
 import logging
 import time
 from collections import defaultdict
-from pathlib import Path
 from queue import Queue
 from threading import Lock, Thread
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -42,6 +41,7 @@ from savant.deepstream.metadata import (
     nvds_attr_meta_output_converter,
     nvds_obj_meta_output_converter,
 )
+from savant.deepstream.nvinfer.processor import NvInferProcessor
 from savant.deepstream.source_output import create_source_output
 from savant.deepstream.utils import (
     GST_NVEVENT_STREAM_EOS,
@@ -59,7 +59,7 @@ from savant.deepstream.utils.pipeline import (
 )
 from savant.gstreamer import GLib, Gst  # noqa:F401
 from savant.gstreamer.pipeline import GstPipeline
-from savant.gstreamer.utils import on_pad_event, pad_to_source_id
+from savant.gstreamer.utils import add_buffer_probe, on_pad_event, pad_to_source_id
 from savant.meta.constants import PRIMARY_OBJECT_KEY, UNTRACKED_OBJECT_ID
 from savant.metrics import build_metrics_exporter
 from savant.utils.platform import is_aarch64
@@ -93,9 +93,6 @@ class NvDsPipeline(GstPipeline):
         self._batched_push_timeout = kwargs.get('batched_push_timeout', 2000)
 
         self._max_parallel_streams = kwargs.get('max_parallel_streams', 64)
-
-        # model artifacts path
-        self._model_path = Path(kwargs['model_path'])
 
         self._source_adding_lock = Lock()
         self._sources = SourceInfoRegistry()
@@ -184,26 +181,31 @@ class NvDsPipeline(GstPipeline):
     def add_element(
         self,
         element: PipelineElement,
-        with_probes: bool = False,
         link: bool = True,
         element_idx: Optional[Union[int, Tuple[int, int]]] = None,
     ) -> Gst.Element:
+        gst_element = super().add_element(
+            element=element,
+            link=link,
+            element_idx=element_idx,
+        )
+
         if isinstance(element, ModelElement):
-            if element.model.input.preprocess_object_image:
-                self._objects_preprocessing.add_preprocessing_function(
-                    element_name=element.name,
-                    preprocessing_func=element.model.input.preprocess_object_image,
-                )
             if isinstance(element.model, (AttributeModel, ComplexModel)):
                 for attr in element.model.output.attributes:
                     if attr.internal:
                         self._internal_attrs.add((element.name, attr.name))
-        gst_element = super().add_element(
-            element=element,
-            with_probes=with_probes,
-            link=link,
-            element_idx=element_idx,
-        )
+            nvinfer = NvInferProcessor(
+                element,
+                self._objects_preprocessing,
+                self._frame_params,
+                self._video_pipeline,
+            )
+            if nvinfer.preproc is not None:
+                add_buffer_probe(gst_element.get_static_pad('sink'), nvinfer.preproc)
+            if nvinfer.postproc is not None:
+                add_buffer_probe(gst_element.get_static_pad('src'), nvinfer.postproc)
+
         if element_idx is not None:
             if isinstance(element, PyFuncElement):
                 gst_element.set_property('pipeline', self._video_pipeline)
@@ -886,10 +888,7 @@ class NvDsPipeline(GstPipeline):
             self._video_pipeline,
             'prepare-input',
         )
-        muxer_src_pad.add_probe(
-            Gst.PadProbeType.BUFFER,
-            self._buffer_processor.input_probe,
-        )
+        add_buffer_probe(muxer_src_pad, self._buffer_processor.prepare_input)
 
         return self._muxer
 

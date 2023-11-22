@@ -1,4 +1,5 @@
 """GStreamer utils."""
+import inspect
 from contextlib import contextmanager
 from types import FrameType
 from typing import Any, Callable, Dict, List, Optional
@@ -8,6 +9,9 @@ from savant_rs.utils import ByteBuffer
 from savant_rs.utils.serialization import Message, load_message_from_bytebuffer
 
 from savant.gstreamer.ffi import LIBGST, GstMapInfo
+from savant.utils.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 @contextmanager
@@ -278,3 +282,41 @@ def load_message_from_gst_buffer(buffer: Gst.Buffer) -> Message:
         return load_message_from_bytebuffer(ByteBuffer(frame_meta_mapinfo.data))
     finally:
         buffer.unmap(frame_meta_mapinfo)
+
+
+def add_buffer_probe(pad: Gst.Pad, callback: Callable, *data: Any):
+    """Adds buffer probe with specified callback and args to the element pad.
+
+    :param pad: Element pad (src/sink) to add probe to.
+    :param callback: User callback to call in the probe.
+    :param data: User data to pass to the user callback as args after the Gst.Buffer.
+    """
+    pad.add_probe(
+        Gst.PadProbeType.BUFFER,
+        _buffer_probe_callback,
+        callback,
+        *data,
+    )
+
+
+def _buffer_probe_callback(
+    pad: Gst.Pad,
+    info: Gst.PadProbeInfo,
+    callback: Callable,
+    *data: Any,
+):
+    """Buffer probe callback wrapper to handle exceptions."""
+    buffer = info.get_buffer()
+    try:
+        callback(buffer, *data)
+    except Exception as exc:  # pylint: disable=broad-except
+        error = f'Failed to call {callback} for buffer with PTS {buffer.pts}: {exc}.'
+        logger.exception(error)
+        gst_post_stream_failed_error(
+            gst_element=pad.get_parent_element(),
+            frame=inspect.currentframe(),
+            file_path=__file__,
+            text=error,
+        )
+
+    return Gst.PadProbeReturn.OK
