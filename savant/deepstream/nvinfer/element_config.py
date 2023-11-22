@@ -365,17 +365,6 @@ def nvinfer_element_configurator(
                     'and will be used instead of labels from "%s".',
                     label_file,
                 )
-            if model_config.output.num_detected_classes:
-                logger.warning(
-                    'Ignoring manually set value for '
-                    '(model_config.output.num_detected_classes) '
-                    'because output objects list (model.output.objects) is used.'
-                )
-            # ensure that the num_detected_classes does not conflict with
-            # the highest class id in the objects list
-            model_config.output.num_detected_classes = (
-                max(obj.class_id for obj in model_config.output.objects) + 1
-            )
 
         elif label_file:
             # try to load model object labels from file
