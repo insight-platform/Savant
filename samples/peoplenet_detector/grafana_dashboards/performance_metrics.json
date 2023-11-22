@@ -104,9 +104,9 @@
             "uid": "prometheus"
           },
           "editorMode": "builder",
-          "expr": "irate(frame_counter_total{instance=\"$instance\", record_type=\"$record_type\"}[$__interval])",
+          "expr": "irate(frame_counter_total{instance=~\"$instance\", record_type=~\"$record_type\"}[$__interval])",
           "instant": false,
-          "legendFormat": "fps",
+          "legendFormat": "{{instance}}",
           "range": true,
           "refId": "A"
         }
@@ -197,9 +197,9 @@
             "uid": "prometheus"
           },
           "editorMode": "builder",
-          "expr": "irate(object_counter_total{instance=\"$instance\", record_type=\"$record_type\"}[$__interval])",
+          "expr": "irate(object_counter_total{instance=~\"$instance\", record_type=~\"$record_type\"}[$__interval])",
           "instant": false,
-          "legendFormat": "ops",
+          "legendFormat": "{{instance}}",
           "range": true,
           "refId": "A"
         }
@@ -287,9 +287,9 @@
             "uid": "prometheus"
           },
           "editorMode": "builder",
-          "expr": "stage_queue_length{instance=\"$instance\", record_type=\"$record_type\"}",
+          "expr": "stage_queue_length{instance=~\"$instance\", record_type=~\"$record_type\"}",
           "instant": false,
-          "legendFormat": "{{stage_name}}",
+          "legendFormat": "{{instance}}/{{stage_name}}",
           "range": true,
           "refId": "A"
         }
@@ -321,8 +321,8 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 4,
-        "w": 5,
+        "h": 8,
+        "w": 6,
         "x": 12,
         "y": 8
       },
@@ -330,8 +330,8 @@
       "options": {
         "colorMode": "value",
         "graphMode": "none",
-        "justifyMode": "center",
-        "orientation": "auto",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -339,7 +339,7 @@
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "textMode": "value_and_name"
       },
       "pluginVersion": "10.0.3",
       "targets": [
@@ -349,8 +349,9 @@
             "uid": "prometheus"
           },
           "editorMode": "builder",
-          "expr": "object_counter_total{instance=\"$instance\", record_type=\"$record_type\"}",
+          "expr": "object_counter_total{instance=~\"$instance\", record_type=~\"$record_type\"}",
           "instant": false,
+          "legendFormat": "{{instance}}",
           "range": true,
           "refId": "A"
         }
@@ -382,17 +383,17 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 4,
-        "w": 5,
-        "x": 12,
-        "y": 12
+        "h": 8,
+        "w": 6,
+        "x": 18,
+        "y": 8
       },
-      "id": 4,
+      "id": 6,
       "options": {
         "colorMode": "value",
         "graphMode": "none",
-        "justifyMode": "center",
-        "orientation": "auto",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -400,7 +401,7 @@
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "textMode": "value_and_name"
       },
       "pluginVersion": "10.0.3",
       "targets": [
@@ -410,8 +411,9 @@
             "uid": "prometheus"
           },
           "editorMode": "builder",
-          "expr": "frame_counter_total{instance=\"$instance\", record_type=\"$record_type\"}",
+          "expr": "frame_counter_total{instance=~\"$instance\", record_type=~\"$record_type\"}",
           "instant": false,
+          "legendFormat": "{{instance}}",
           "range": true,
           "refId": "A"
         }
@@ -428,9 +430,13 @@
     "list": [
       {
         "current": {
-          "selected": false,
-          "text": "module:8000",
-          "value": "module:8000"
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
         },
         "datasource": {
           "type": "prometheus",
@@ -438,8 +444,8 @@
         },
         "definition": "label_values(instance)",
         "hide": 0,
-        "includeAll": false,
-        "multi": false,
+        "includeAll": true,
+        "multi": true,
         "name": "instance",
         "options": [],
         "query": {
@@ -449,12 +455,12 @@
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
-        "sort": 0,
+        "sort": 1,
         "type": "query"
       },
       {
         "current": {
-          "selected": false,
+          "selected": true,
           "text": "timestamp",
           "value": "timestamp"
         },
@@ -477,6 +483,17 @@
         "skipUrlSync": false,
         "sort": 0,
         "type": "query"
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "filters": [],
+        "hide": 0,
+        "name": "extra_labels",
+        "skipUrlSync": false,
+        "type": "adhoc"
       }
     ]
   },

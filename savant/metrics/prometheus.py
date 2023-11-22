@@ -16,7 +16,8 @@ class PrometheusMetricsExporter(BaseMetricsExporter):
     def __init__(self, pipeline: VideoPipeline, params: Dict[str, Any]):
         super().__init__(pipeline, params)
         self._port = params['port']
-        self._metrics_collector = ModuleMetricsCollector()
+        labels = params.get('labels') or {}
+        self._metrics_collector = ModuleMetricsCollector(labels)
         REGISTRY.register(self._metrics_collector)
 
     def start(self):
@@ -49,7 +50,12 @@ class PrometheusMetricsExporter(BaseMetricsExporter):
 
 
 class ModuleMetricsCollector(Collector):
-    def __init__(self):
+    def __init__(self, extra_labels: Dict[str, str]):
+        extra_labels = sorted(extra_labels.items())
+        extra_label_names = [name for name, _ in extra_labels]
+        self._label_names = ['record_type'] + extra_label_names
+        self._stage_label_names = ['record_type', 'stage_name'] + extra_label_names
+        self._extra_label_values = tuple(value for _, value in extra_labels)
         self._frame_counter: Dict[Tuple[str, ...], Tuple[int, float]] = {}
         self._object_counter: Dict[Tuple[str, ...], Tuple[int, float]] = {}
         self._stage_queue_length: Dict[Tuple[str, ...], Tuple[int, float]] = {}
@@ -71,63 +77,61 @@ class ModuleMetricsCollector(Collector):
             self._stage_batch_counter[stage_labels] = (stage.batch_counter, ts)
 
     def collect(self):
-        label_names = ['record_type']
-        stage_label_names = ['record_type', 'stage_name']
-        yield _build_metric(
+        yield self._build_metric(
             'frame_counter',
             'Number of frames passed through the module',
-            label_names,
+            self._label_names,
             self._frame_counter,
             CounterMetricFamily,
         )
-        yield _build_metric(
+        yield self._build_metric(
             'object_counter',
             'Number of objects passed through the module',
-            label_names,
+            self._label_names,
             self._object_counter,
             CounterMetricFamily,
         )
-        yield _build_metric(
+        yield self._build_metric(
             'stage_queue_length',
             'Queue length in the stage',
-            stage_label_names,
+            self._stage_label_names,
             self._stage_queue_length,
             GaugeMetricFamily,
         )
-        yield _build_metric(
+        yield self._build_metric(
             'stage_frame_counter',
             'Number of frames passed through the stage',
-            stage_label_names,
+            self._stage_label_names,
             self._stage_frame_counter,
             CounterMetricFamily,
         )
-        yield _build_metric(
+        yield self._build_metric(
             'stage_object_counter',
             'Number of objects passed through the stage',
-            stage_label_names,
+            self._stage_label_names,
             self._stage_object_counter,
             CounterMetricFamily,
         )
-        yield _build_metric(
+        yield self._build_metric(
             'stage_batch_counter',
             'Number of frame batches passed through the stage',
-            stage_label_names,
+            self._stage_label_names,
             self._stage_batch_counter,
             CounterMetricFamily,
         )
 
-
-def _build_metric(
-    name: str,
-    documentation: str,
-    labels: List[str],
-    values: Dict[Tuple[str, ...], Tuple[int, float]],
-    metric_class,
-):
-    counter = metric_class(name, documentation, labels=labels)
-    for labels, (value, ts) in values.items():
-        counter.add_metric(labels, value, timestamp=ts)
-    return counter
+    def _build_metric(
+        self,
+        name: str,
+        documentation: str,
+        label_names: List[str],
+        values: Dict[Tuple[str, ...], Tuple[int, float]],
+        metric_class,
+    ):
+        counter = metric_class(name, documentation, labels=label_names)
+        for labels, (value, ts) in values.items():
+            counter.add_metric(labels + self._extra_label_values, value, timestamp=ts)
+        return counter
 
 
 def _record_type_to_string(record_type: FrameProcessingStatRecordType) -> str:
