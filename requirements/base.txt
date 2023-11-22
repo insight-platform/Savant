@@ -1,4 +1,8 @@
 numpy~=1.22.4
+# cupy
+cupy-cuda12x; platform_machine=='x86_64'
+cupy-cuda11x; platform_machine=='aarch64'
+
 numba~=0.57
 scipy~=1.10
 
