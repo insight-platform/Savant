@@ -1067,7 +1067,11 @@ def build_video_pipeline_conf(telemetry_params: TelemetryParameters):
         telemetry_params.tracing.append_frame_meta_to_span
     )
     conf.frame_period = telemetry_params.metrics.frame_period
-    conf.timestamp_period = int(telemetry_params.metrics.time_period * 1000)
+    conf.timestamp_period = (
+        int(telemetry_params.metrics.time_period * 1000)
+        if telemetry_params.metrics.time_period is not None
+        else telemetry_params.metrics.time_period
+    )
     conf.collection_history = telemetry_params.metrics.history
 
     return conf
