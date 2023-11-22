@@ -1,7 +1,7 @@
-from typing import Union, Optional
+from typing import Optional, Union
 
-import cv2
 import cupy as cp
+import cv2
 import numpy as np
 
 OPENCV_TYPE_TO_NUMPY = {
@@ -105,17 +105,19 @@ def as_pytorch(
     raise TypeError(f'Unsupported type {type(img)} to convert into PyTorch tensor.')
 
 
-def as_opencv(img, device: Optional[str] = None, input_format: Optional[str] = None):
+def as_opencv(
+    img, input_format: Optional[str] = None, device: Optional[str] = None
+) -> Union[cv2.cuda.GpuMat, np.ndarray]:
     """Converts GPU image to OpenCV GPU image.
 
     :param img: is a GPU image represented as PyTorch tensor or CuPy array.
-    :param device: is a device ('cpu' or 'cuda') on which the opencv
-        image will be located. If device is None, the image is converted
-        to the same device as the input image.
     :param input_format: is a shape format of the input image. `channels_first` or
         `channels_last`. If the input image is a PyTorch tensor,
         the default format is 'channels_first'. If the input image
         is a CuPy array, the format is 'channels_last'.
+    :param device: is a device ('cpu' or 'cuda') on which the opencv
+        image will be located. If device is None, the image is converted
+        to the same device as the input image.
     """
     try:
         import torch
