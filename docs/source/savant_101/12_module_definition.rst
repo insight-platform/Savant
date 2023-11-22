@@ -54,7 +54,7 @@ The following parameters are defined for a Savant module by default:
 
 .. literalinclude:: ../../../savant/config/default.yml
   :language: YAML
-  :lines: 1-135
+  :lines: 1-151
 
 .. note::
 
@@ -170,6 +170,27 @@ Example:
           endpoint: jaeger:6831
 
 Read more on OpenTelemetry in :doc:`/advanced_topics/9_open_telemetry`.
+
+Metrics Collection Configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The ``telemetry.metrics`` section defines the metrics collection configuration. The ``port`` in ``telemetry.metrics.provider_params`` is required when ``telemetry.metrics.provider`` is set to ``'prometheus'``. ``labels`` in ``telemetry.metrics.provider_params`` defines extra labels added to the metrics. ``export_interval`` in ``telemetry.metrics.provider_params`` defines the interval between preparing metrics for collection by Prometheus.
+
+Example:
+
+.. code-block:: yaml
+
+    telemetry:
+      metrics:
+        frame_period: 1000
+        time_period: 1
+        history: 100
+        provider: prometheus
+        provider_params:
+          port: 8000
+          export_interval: 1
+          labels:
+            module_type: detector
 
 DevServer Configuration
 ^^^^^^^^^^^^^^^^^^^^^^^

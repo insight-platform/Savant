@@ -46,10 +46,12 @@ class PrometheusMetricsExporter(BaseMetricsExporter):
         self._logger.debug(
             'Exporting record %s (type: %s)', record.id, record.record_type
         )
-        self._metrics_collector.set_metrics(record)
+        self._metrics_collector.update_metrics(record)
 
 
 class ModuleMetricsCollector(Collector):
+    """Collector for module metrics with timestamps."""
+
     def __init__(self, extra_labels: Dict[str, str]):
         extra_labels = sorted(extra_labels.items())
         extra_label_names = [name for name, _ in extra_labels]
@@ -63,7 +65,9 @@ class ModuleMetricsCollector(Collector):
         self._stage_object_counter: Dict[Tuple[str, ...], Tuple[int, float]] = {}
         self._stage_batch_counter: Dict[Tuple[str, ...], Tuple[int, float]] = {}
 
-    def set_metrics(self, record: FrameProcessingStatRecord):
+    def update_metrics(self, record: FrameProcessingStatRecord):
+        """Update metrics values."""
+
         record_type_str = _record_type_to_string(record.record_type)
         ts = record.ts / 1000
         labels = (record_type_str,)
@@ -77,6 +81,8 @@ class ModuleMetricsCollector(Collector):
             self._stage_batch_counter[stage_labels] = (stage.batch_counter, ts)
 
     def collect(self):
+        """Build and collect all metrics."""
+
         yield self._build_metric(
             'frame_counter',
             'Number of frames passed through the module',
@@ -128,6 +134,8 @@ class ModuleMetricsCollector(Collector):
         values: Dict[Tuple[str, ...], Tuple[int, float]],
         metric_class,
     ):
+        """Build metric from values."""
+
         counter = metric_class(name, documentation, labels=label_names)
         for labels, (value, ts) in values.items():
             counter.add_metric(labels + self._extra_label_values, value, timestamp=ts)
@@ -135,6 +143,7 @@ class ModuleMetricsCollector(Collector):
 
 
 def _record_type_to_string(record_type: FrameProcessingStatRecordType) -> str:
+    # Cannot use dict since FrameProcessingStatRecordType is not hashable
     if record_type == FrameProcessingStatRecordType.Frame:
         return 'frame'
     if record_type == FrameProcessingStatRecordType.Timestamp:
