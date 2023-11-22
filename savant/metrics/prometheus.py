@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Tuple
 
 from prometheus_client import start_http_server
 from prometheus_client.metrics_core import CounterMetricFamily, GaugeMetricFamily
-from prometheus_client.registry import Collector, REGISTRY
+from prometheus_client.registry import REGISTRY, Collector
 from savant_rs.pipeline2 import (
     FrameProcessingStatRecord,
     FrameProcessingStatRecordType,

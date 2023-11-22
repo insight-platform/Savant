@@ -146,11 +146,11 @@ class MetricsParameters:
     .. code-block:: yaml
 
         frame_period: 1000
-        time_period: 1000
+        time_period: 1
         history: 100
-        provider: Prometheus
+        provider: prometheus
         provider_params:
-          endpoint: prometheus:9090
+          port: 8000
           export_interval: 1000
     """
 
@@ -158,7 +158,7 @@ class MetricsParameters:
     """Output stats after every N frames."""
 
     time_period: Optional[int] = None
-    """Output stats after every N ms."""
+    """Output stats after every N seconds."""
 
     history: int = 100
     """How many last stats to keep in the memory."""
@@ -187,12 +187,12 @@ class TelemetryParameters:
             endpoint: jaeger:6831
         metrics:
           frame_period: 1000
-          time_period: 1000
+          time_period: 1
           history: 100
-          provider: Prometheus
+          provider: prometheus
           provider_params:
-            endpoint: prometheus:9090
-            export_interval: 1000
+            port: 8000
+            export_interval: 1
 
     """
 

@@ -105,12 +105,12 @@ parameters:
   #       endpoint: jaeger:6831
   #   metrics:
   #     frame_period: 1000
-  #     time_period: 1000
+  #     time_period: 1
   #     history: 100
   #     provider: prometheus
   #     provider_params:
-  #       endpoint: prometheus:9090
-  #       export_interval: 1000
+  #       port: 8000
+  #       export_interval: 1
   telemetry:
     # Configure tracing
     tracing:
@@ -128,7 +128,7 @@ parameters:
     metrics:
       # Output stats after every N frames
       frame_period: ${oc.decode:${oc.env:METRICS_FRAME_PERIOD, 10000}}
-      # Output stats after every N ms
+      # Output stats after every N seconds
       time_period: ${oc.decode:${oc.env:METRICS_TIME_PERIOD, null}}
       # How many last stats to keep in the memory
       history: ${oc.decode:${oc.env:METRICS_HISTORY, 100}}

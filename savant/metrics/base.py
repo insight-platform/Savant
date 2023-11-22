@@ -7,7 +7,7 @@ from savant_rs.pipeline2 import FrameProcessingStatRecord, VideoPipeline
 
 from savant.utils.logging import get_logger
 
-DEFAULT_EXPORT_INTERVAL = 1000
+DEFAULT_EXPORT_INTERVAL = 1
 
 
 class BaseMetricsExporter(ABC):
@@ -24,9 +24,7 @@ class BaseMetricsExporter(ABC):
             f'{self.__class__.__module__}.{self.__class__.__name__}'
         )
         self._pipeline = pipeline
-        self._export_interval = (
-            params.get('export_interval', DEFAULT_EXPORT_INTERVAL) / 1000
-        )
+        self._export_interval = params.get('export_interval', DEFAULT_EXPORT_INTERVAL)
         self._is_running = False
         self._last_record_id = -1
 

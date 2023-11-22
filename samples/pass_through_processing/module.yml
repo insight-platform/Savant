@@ -24,7 +24,7 @@ parameters:
   #   metrics:
   #     # Output stats after every N frames
   #     frame_period: ${oc.decode:${oc.env:METRICS_FRAME_PERIOD, 10000}}
-  #     # Output stats after every N ms
+  #     # Output stats after every N seconds
   #     time_period: ${oc.decode:${oc.env:METRICS_TIME_PERIOD, null}}
   #     # How many last stats to keep in the memory
   #     history: ${oc.decode:${oc.env:METRICS_HISTORY, 100}}

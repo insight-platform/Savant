@@ -34,7 +34,7 @@ services:
     environment:
       - MODULE_STAGE=detector
       - METRICS_FRAME_PERIOD=100
-      - METRICS_TIME_PERIOD=1000
+      - METRICS_TIME_PERIOD=1
       - METRICS_PROVIDER=prometheus
       - METRICS_PROVIDER_PARAMS={"port":8000, "labels":{"module_stage":"detector"}}
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
@@ -53,7 +53,7 @@ services:
     environment:
       - MODULE_STAGE=tracker
       - METRICS_FRAME_PERIOD=100
-      - METRICS_TIME_PERIOD=1000
+      - METRICS_TIME_PERIOD=1
       - METRICS_PROVIDER=prometheus
       - METRICS_PROVIDER_PARAMS={"port":8000, "labels":{"module_stage":"tracker"}}
       - ZMQ_SRC_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/detector-output.ipc
@@ -72,7 +72,7 @@ services:
     environment:
       - MODULE_STAGE=draw-func
       - METRICS_FRAME_PERIOD=100
-      - METRICS_TIME_PERIOD=1000
+      - METRICS_TIME_PERIOD=1
       - METRICS_PROVIDER=prometheus
       - METRICS_PROVIDER_PARAMS={"port":8000, "labels":{"module_stage":"draw-func"}}
       # Use default draw_func (savant.deepstream.drawfunc.NvDsDrawFunc)
