@@ -210,6 +210,8 @@ class NvDsPipeline(GstPipeline):
             if isinstance(element, PyFuncElement):
                 gst_element.set_property('pipeline', self._video_pipeline)
                 gst_element.set_property('stream-pool-size', self._batch_size)
+                if self._metrics_exporter is not None:
+                    gst_element.set_property('metrics-exporter', self._metrics_exporter)
             # TODO: add stage names to element config?
             if isinstance(element_idx, int):
                 stage = self._element_stages[element_idx]

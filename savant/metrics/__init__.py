@@ -3,7 +3,7 @@ from typing import Optional
 from savant_rs.pipeline2 import VideoPipeline
 
 from savant.config.schema import MetricsParameters
-from savant.metrics.base import BaseMetricsExporter
+from savant.metrics.base import BaseMetricsExporter, Counter, Gauge
 from savant.metrics.prometheus import PrometheusMetricsExporter
 
 
@@ -20,3 +20,10 @@ def build_metrics_exporter(
         return PrometheusMetricsExporter(pipeline, params.provider_params)
 
     raise ValueError(f'Unknown metrics provider: {params.provider}')
+
+
+__all__ = [
+    'Counter',
+    'Gauge',
+    'build_metrics_exporter',
+]

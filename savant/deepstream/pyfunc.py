@@ -21,6 +21,7 @@ from savant.deepstream.utils import (
     nvds_frame_meta_iterator,
 )
 from savant.gstreamer import Gst  # noqa: F401
+from savant.metrics.base import BaseMetricsExporter, MetricsRegistry
 from savant.utils.source_info import SourceInfoRegistry
 
 
@@ -35,6 +36,8 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
         super().__init__(**kwargs)
         self._sources = SourceInfoRegistry()
         self._video_pipeline: Optional[VideoPipeline] = None
+        self._metrics_exporter: Optional[BaseMetricsExporter] = None
+        self._metrics_registry: Optional[MetricsRegistry] = None
         self._last_nvevent_seqnum: Dict[int, Dict[int, int]] = {
             event_type: {}
             for event_type in [
@@ -49,6 +52,8 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
     def on_start(self) -> bool:
         """Do on plugin start."""
         self._video_pipeline = self.gst_element.get_property('pipeline')
+        self._metrics_exporter = self.gst_element.get_property('metrics-exporter')
+        self._metrics_registry = MetricsRegistry(self._metrics_exporter)
         # the prop is set to pipeline batch size during init
         self._stream_pool_size = self.gst_element.get_property('stream-pool-size')
         return True
@@ -183,3 +188,9 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
         """Get last runtime metrics."""
 
         return self._video_pipeline.get_stat_records(n)
+
+    @property
+    def metrics(self):
+        """Get metrics registry."""
+
+        return self._metrics_registry
