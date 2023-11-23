@@ -151,7 +151,6 @@ class MetricsParameters:
         provider: prometheus
         provider_params:
           port: 8000
-          export_interval: 1000
     """
 
     frame_period: Optional[int] = None
@@ -192,7 +191,6 @@ class TelemetryParameters:
           provider: prometheus
           provider_params:
             port: 8000
-            export_interval: 1
 
     """
 

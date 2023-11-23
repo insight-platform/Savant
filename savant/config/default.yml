@@ -110,7 +110,6 @@ parameters:
   #     provider: prometheus
   #     provider_params:
   #       port: 8000
-  #       export_interval: 1
   telemetry:
     # Configure tracing
     tracing:
