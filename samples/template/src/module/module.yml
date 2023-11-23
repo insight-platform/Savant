@@ -9,12 +9,13 @@ parameters:
   shutdown_auth: "shutdown"
   # enable OpenTelemetry
   telemetry:
-    sampling_period: 100
-    root_span_name: pipeline
-    provider: jaeger
-    provider_params:
-      service_name: demo-pipeline
-      endpoint: jaeger:6831
+    tracing:
+      sampling_period: 100
+      root_span_name: pipeline
+      provider: jaeger
+      provider_params:
+        service_name: demo-pipeline
+        endpoint: jaeger:6831
 
   # pipeline processing frame parameters
   frame:
