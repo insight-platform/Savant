@@ -3,7 +3,7 @@ import time
 from savant_rs.primitives.geometry import BBox
 
 from savant.meta.object import ObjectMeta
-from savant.utils.memory_repr import as_opencv, as_pytorch
+from savant.utils.memory_repr_pytorch import pytorch_tensor_as_opencv_gpu_mat, opencv_gpu_mat_as_pytorch
 
 
 import cv2
@@ -60,7 +60,7 @@ class PyTorchInfer(NvDsPyFuncPlugin):
                         frame_mat, (640, 480), stream=artist.stream
                     )
 
-                    input_tensor = as_pytorch(input_image)[:3, :, :].float() / 255
+                    input_tensor = opencv_gpu_mat_as_pytorch(input_image)[:3, :, :].float() / 255
                     input_tensor = self.normalize(input_tensor).unsqueeze(0)
 
                     det_out, da_seg_out, ll_seg_out = self.model(input_tensor)
@@ -90,13 +90,13 @@ class PyTorchInfer(NvDsPyFuncPlugin):
 
                     alpha_comp(
                         frame_mat,
-                        overlay=as_opencv(mask_seg),
+                        overlay=pytorch_tensor_as_opencv_gpu_mat(mask_seg),
                         start=(0, 0),
                         stream=stream,
                     )
                     alpha_comp(
                         frame_mat,
-                        overlay=as_opencv(ll_mask),
+                        overlay=pytorch_tensor_as_opencv_gpu_mat(ll_mask),
                         start=(0, 0),
                         stream=stream,
                     )

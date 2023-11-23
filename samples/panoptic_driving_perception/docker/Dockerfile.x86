@@ -1,4 +1,4 @@
-FROM savant-deepstream:latest
+FROM ghcr.io/insight-platform/savant-deepstream:latest
 
 RUN pip3 install torch torchvision torchaudio
 

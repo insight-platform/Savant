@@ -1,4 +1,4 @@
-# Panoptic Driving Perception 
+# Panoptic Driving Perception by PyTorch inference
 
 The app shows how to use the torch hub and make inference in Savant using reference PyTorch model.
 Also, it shows how to use the conversion function to interact with image in GPU memory.

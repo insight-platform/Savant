@@ -79,6 +79,13 @@ Sample location: [super_resolution](./super_resolution)
 
 ![](super_resolution/assets/shuffle_dance_360p_1080p_small.webp)
 
+### Panoptic Driving Perception by PyTorch inference
+
+Sample location: [panoptic_driving_perception](./panoptic_driving_perception)
+
+![](panoptic_driving_perception/assets/panoptic_driving_perception_400.webp)
+
+
 ## Utility And Coding Examples
 
 ### OpenCV CUDA MOG2 Background Segmentation Demo

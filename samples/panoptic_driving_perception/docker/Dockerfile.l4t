@@ -1,4 +1,4 @@
-FROM savant-deepstream-l4t:latest
+FROM ghcr.io/insight-platform/savant-deepstream-l4t:latest
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
