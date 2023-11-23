@@ -17,12 +17,11 @@ from savant_rs.primitives import (
 )
 from savant_rs.utils import PropagatedContext
 
+from gst_plugins.python.pyfunc_common import handle_non_fatal_error, init_pyfunc
 from savant.api.constants import DEFAULT_FRAMERATE
 from savant.api.enums import ExternalFrameType
 from savant.api.parser import convert_ts
 from savant.base.pyfunc import PyFunc
-from gst_plugins.python.pyfunc_common import init_pyfunc, handle_fatal_error, handle_non_fatal_error
-
 from savant.gstreamer import GObject, Gst
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
 from savant.gstreamer.utils import (
@@ -263,8 +262,15 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             self.is_running = True
             self.expiration_thread.start()
 
-        if (old == Gst.State.NULL and new == Gst.State.READY):
-            self.ingress_pyfunc = init_pyfunc(self, self.logger, self.ingress_module, self.ingress_class_name, self.ingress_kwargs, self.ingress_dev_mode)
+        if old == Gst.State.NULL and new == Gst.State.READY:
+            self.ingress_pyfunc = init_pyfunc(
+                self,
+                self.logger,
+                self.ingress_module,
+                self.ingress_class_name,
+                self.ingress_kwargs,
+                self.ingress_dev_mode,
+            )
 
     def do_get_property(self, prop):
         """Get property callback."""
@@ -288,7 +294,6 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             return self.max_height
         if prop.name == 'pass-through-mode':
             return self.pass_through_mode
-
 
         if prop.name == 'ingress-module':
             return self.ingress_module
@@ -462,17 +467,23 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
                     video_frame.source_id,
                 )
                 return Gst.FlowReturn.OK
-            else:
-                self.logger.debug(
-                    'Frame %s from source %s passed ingress filter.',
-                    frame_pts,
-                    video_frame.source_id,
-                )
+
+            self.logger.debug(
+                'Frame %s from source %s passed ingress filter.',
+                frame_pts,
+                video_frame.source_id,
+            )
         except Exception as exc:
-            handle_non_fatal_error(self, self.logger, exc, f'Error in ingress pyfunc call {self.ingress_pyfunc}', self.ingress_dev_mode)
+            handle_non_fatal_error(
+                self,
+                self.logger,
+                exc,
+                f'Error in ingress filter call {self.ingress_pyfunc}',
+                self.ingress_dev_mode,
+            )
             if video_frame.content.is_none():
                 self.logger.debug(
-                    'Frame %s from source %s has not content, skipping it.',
+                    'Frame %s from source %s has no content, skipping it.',
                     frame_pts,
                     video_frame.source_id,
                 )

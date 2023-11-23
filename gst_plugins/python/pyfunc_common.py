@@ -1,15 +1,24 @@
-import json
 import inspect
+import json
+from logging import Logger
 from typing import Any, Optional
+
 from savant.base.pyfunc import PyFunc, PyFuncNoopCallException
 from savant.gstreamer import Gst
 from savant.gstreamer.utils import (
     gst_post_stream_failed_error,
     gst_post_stream_failed_warning,
 )
-from logging import Logger
 
-def init_pyfunc(gst_element: Gst.Element, logger: Logger, module: Optional[str], class_name: Optional[str], kwargs: Optional[str], dev_mode:bool=False) -> PyFunc:
+
+def init_pyfunc(
+    gst_element: Gst.Element,
+    logger: Logger,
+    module: Optional[str],
+    class_name: Optional[str],
+    kwargs: Optional[str],
+    dev_mode: bool = False,
+) -> PyFunc:
     # pylint: disable=broad-exception-caught
     if kwargs:
         try:
@@ -51,16 +60,24 @@ def init_pyfunc(gst_element: Gst.Element, logger: Logger, module: Optional[str],
         return handle_fatal_error(
             gst_element,
             logger,
-            exc, f'Failed to load user code for {pyfunc}.',
+            exc,
+            f'Failed to load user code for {pyfunc}.',
             dev_mode,
-            True, False
+            True,
+            False,
         )
 
     return pyfunc
 
 
 def handle_fatal_error(
-    gst_element: Gst.Element, logger:Logger, exc:BaseException, msg:str, dev_mode:bool, return_ok:Any=Gst.FlowReturn.OK, return_err:Any=Gst.FlowReturn.ERROR
+    gst_element: Gst.Element,
+    logger: Logger,
+    exc: BaseException,
+    msg: str,
+    dev_mode: bool,
+    return_ok: Any = Gst.FlowReturn.OK,
+    return_err: Any = Gst.FlowReturn.ERROR,
 ) -> Any:
     if dev_mode:
         if not isinstance(exc, PyFuncNoopCallException):
@@ -78,7 +95,11 @@ def handle_fatal_error(
 
 
 def handle_non_fatal_error(
-    gst_element: Gst.Element, logger:Logger, exc:BaseException, msg:str, dev_mode:bool,
+    gst_element: Gst.Element,
+    logger: Logger,
+    exc: BaseException,
+    msg: str,
+    dev_mode: bool,
 ):
     if dev_mode:
         if not isinstance(exc, PyFuncNoopCallException):

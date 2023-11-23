@@ -329,38 +329,41 @@ def get_element_name(element: Union[DictConfig, PipelineElement]) -> str:
 
 
 @dataclass
-class SourceElement(PipelineElement, PyFunc):
-    module: str = 'savant.base.ingress_filter'
-    """Module name to import."""
+class SourceElement(PipelineElement):
+    """A pipeline element that produces pipeline input."""
 
-    class_name: str = 'DefaultIngressFilter'
-    """Python class name to instantiate."""
+    ingress_frame_filter: PyFunc = PyFunc(
+        module='savant.base.frame_filter', class_name='DefaultIngressFilter'
+    )
+    """Frame filter for ingress frames."""
 
     def __post_init__(self):
         if self.element == 'zeromq_source_bin':
-            super().__post_init__()
             kwargs = {}
             if 'kwargs' in self.properties and self.properties['kwargs']:
                 kwargs = json.loads(self.properties['kwargs'])
-            if self.kwargs:
-                kwargs.update(self.kwargs)
+            if self.ingress_frame_filter.kwargs:
+                kwargs.update(self.ingress_frame_filter.kwargs)
 
             self.properties.update(
                 {
-                    'ingress-module': self.module,
-                    'ingress-class': self.class_name,
+                    'ingress-module': self.ingress_frame_filter.module,
+                    'ingress-class': self.ingress_frame_filter.class_name,
                     'ingress-kwargs': json.dumps(kwargs),
-                    'ingress-dev-mode': self.dev_mode,
+                    'ingress-dev-mode': self.ingress_frame_filter.dev_mode,
                 }
             )
 
-@dataclass
-class SinkElement(PipelineElement, PyFunc):
-    module: str = 'savant.base.egress_filter'
-    """Module name to import."""
 
-    class_name: str = 'DefaultEgressFilter'
-    """Python class name to instantiate."""
+@dataclass
+class SinkElement(PipelineElement):
+    """A pipeline element that produces pipeline output."""
+
+    egress_frame_filter: PyFunc = PyFunc(
+        module='savant.base.frame_filter', class_name='DefaultEgressFilter'
+    )
+    """Frame filter for egress frames."""
+
 
 @dataclass
 class PyFuncElement(PipelineElement, PyFunc):
@@ -396,8 +399,6 @@ class PyFuncElement(PipelineElement, PyFunc):
                 'dev-mode': self.dev_mode,
             }
         )
-
-
 
 
 @dataclass

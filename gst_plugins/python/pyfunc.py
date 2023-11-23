@@ -7,12 +7,14 @@ other tasks.
 from typing import Any, Optional
 
 from savant_rs.pipeline2 import VideoPipeline
-from gst_plugins.python.pyfunc_common import init_pyfunc, handle_fatal_error, handle_non_fatal_error
 
-from savant.base.pyfunc import  PyFunc, BasePyFuncPlugin
-
+from gst_plugins.python.pyfunc_common import (
+    handle_fatal_error,
+    handle_non_fatal_error,
+    init_pyfunc,
+)
+from savant.base.pyfunc import BasePyFuncPlugin, PyFunc
 from savant.gstreamer import GLib, GObject, Gst, GstBase  # noqa: F401
-
 from savant.utils.logging import LoggerMixin
 
 # RGBA format is required to access the frame (pyds.get_nvds_buf_surface)
@@ -148,20 +150,26 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
 
     def do_start(self):
         """Do on plugin start."""
-        self.pyfunc = init_pyfunc(self,self.logger,self.module, self.class_name, self.kwargs, self.dev_mode)
+        self.pyfunc = init_pyfunc(
+            self, self.logger, self.module, self.class_name, self.kwargs, self.dev_mode
+        )
 
         try:
             assert isinstance(
-            self.pyfunc.instance, BasePyFuncPlugin
+                self.pyfunc.instance, BasePyFuncPlugin
             ), f'"{self.pyfunc}" should be an instance of "BasePyFuncPlugin" subclass.'
             self.pyfunc.instance.gst_element = self
             return self.pyfunc.instance.on_start()
         except Exception as exc:
             return handle_fatal_error(
                 self,
-                self.logger, exc, f'Error in on_start() call for {self.pyfunc}', self.dev_mode,True, False
+                self.logger,
+                exc,
+                f'Error in on_start() call for {self.pyfunc}',
+                self.dev_mode,
+                True,
+                False,
             )
-
 
     def do_stop(self):
         """Do on plugin stop."""
