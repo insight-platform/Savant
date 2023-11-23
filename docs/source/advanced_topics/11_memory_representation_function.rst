@@ -1,11 +1,11 @@
-Functions for converting image representation
+Conversions Between GPU Memory Formats
 ---------------------------------------------
 
 When working with images, there are many ways to represent them as arrays of points. Working with different models you may encounter representation of an image using OpenCV Mat class, PyTorch tensor or CuPy array.
 
 The Savant framework aims to maximize GPU utilization without unnecessary data copying and conversion. To achieve this, Savant provides functions for converting between different image representations. Data exchange is performed with zero-copying between different views, except for some cases of conversion to GpuMat OpenCV.
 
-Conversion to pytorch tensor
+Conversion to PyTorch Tensor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: python
