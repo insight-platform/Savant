@@ -136,6 +136,7 @@ services:
 
   grafana:
     image: grafana/grafana-oss
+    restart: unless-stopped
     volumes:
       - ./grafana_datasources:/etc/grafana/provisioning/datasources/
       - ./grafana_dashboards:/etc/grafana/provisioning/dashboards/
