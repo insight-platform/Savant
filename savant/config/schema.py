@@ -106,8 +106,8 @@ class BufferQueuesParameters:
 
 
 @dataclass
-class TelemetryParameters:
-    """Configure telemetry.
+class TracingParameters:
+    """Configure tracing.
 
     Example:
     .. code-block:: yaml
@@ -132,10 +132,73 @@ class TelemetryParameters:
     """Name for root span."""
 
     provider: Optional[str] = None
-    """Telemetry provider name."""
+    """Tracing provider name."""
 
     provider_params: Optional[Dict[str, Any]] = None
-    """Parameters for telemetry provider."""
+    """Parameters for tracing provider."""
+
+
+@dataclass
+class MetricsParameters:
+    """Configure metrics.
+
+    Example:
+    .. code-block:: yaml
+
+        frame_period: 1000
+        time_period: 1
+        history: 100
+        provider: prometheus
+        provider_params:
+          port: 8000
+    """
+
+    frame_period: Optional[int] = None
+    """Output stats after every N frames."""
+
+    time_period: Optional[int] = None
+    """Output stats after every N seconds."""
+
+    history: int = 100
+    """How many last stats to keep in the memory."""
+
+    provider: Optional[str] = None
+    """Metrics provider name."""
+
+    provider_params: Optional[Dict[str, Any]] = None
+    """Parameters for metrics provider."""
+
+
+@dataclass
+class TelemetryParameters:
+    """Configure telemetry.
+
+    Example:
+    .. code-block:: yaml
+
+        tracing:
+          sampling_period: 100
+          append_frame_meta_to_span: False
+          root_span_name: demo-pipeline-root
+          provider: jaeger
+          provider_params:
+            service_name: demo-pipeline
+            endpoint: jaeger:6831
+        metrics:
+          frame_period: 1000
+          time_period: 1
+          history: 100
+          provider: prometheus
+          provider_params:
+            port: 8000
+
+    """
+
+    tracing: TracingParameters = field(default_factory=TracingParameters)
+    """Tracing configuration."""
+
+    metrics: MetricsParameters = field(default_factory=MetricsParameters)
+    """Metrics configuration."""
 
 
 @dataclass

@@ -29,7 +29,12 @@ def get_models_mount(
 
 
 @click.argument('module-config')
-@click.argument('module-args', nargs=-1)
+@click.option(
+    '--build-engines',
+    is_flag=True,
+    default=False,
+    help='Build module model\'s engines and exit.',
+)
 @click.option(
     '--in-endpoint',
     default='ipc:///tmp/zmq-sockets/input-video.ipc',
@@ -70,7 +75,7 @@ def get_models_mount(
 @detach_option
 def run_module(
     module_config: str,
-    module_args: list,
+    build_engines: bool,
     in_endpoint: str,
     in_type: str,
     in_bind: bool,
@@ -93,7 +98,7 @@ def run_module(
         '-e', f'MODEL_PATH={container_model_dir}',
         '-e', 'GST_DEBUG',
         '-e', 'LOGLEVEL',
-        '-e', 'FPS_PERIOD',
+        '-e', 'METRICS_FRAME_PERIOD',
         '-e', 'GST_DEBUG_COLOR_MODE=off',
         '-e', f'ZMQ_SRC_ENDPOINT={in_endpoint}',
         '-e', f'ZMQ_SRC_TYPE={in_type}',
@@ -134,10 +139,11 @@ def run_module(
 
     command.append(get_docker_runtime())
     command.append(docker_image)
-    # entrypoint arg
-    command.append(str(module_config_path))
-    if module_args:
-        command.extend(module_args)
+
+    # entrypoint args
+    if build_engines:
+        command += ['--build-engines']
+    command += [str(module_config_path)]
 
     run_command(command)
 

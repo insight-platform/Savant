@@ -2,7 +2,6 @@
 import logging
 import time
 from collections import defaultdict
-from pathlib import Path
 from queue import Queue
 from threading import Lock, Thread
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -42,6 +41,7 @@ from savant.deepstream.metadata import (
     nvds_attr_meta_output_converter,
     nvds_obj_meta_output_converter,
 )
+from savant.deepstream.nvinfer.processor import NvInferProcessor
 from savant.deepstream.source_output import create_source_output
 from savant.deepstream.utils import (
     GST_NVEVENT_STREAM_EOS,
@@ -55,13 +55,13 @@ from savant.deepstream.utils.pipeline import (
     add_queues_to_pipeline,
     build_pipeline_stages,
     get_pipeline_element_stages,
-    init_telemetry,
+    init_tracing,
 )
 from savant.gstreamer import GLib, Gst  # noqa:F401
 from savant.gstreamer.pipeline import GstPipeline
-from savant.gstreamer.utils import on_pad_event, pad_to_source_id
+from savant.gstreamer.utils import add_buffer_probe, on_pad_event, pad_to_source_id
 from savant.meta.constants import PRIMARY_OBJECT_KEY, UNTRACKED_OBJECT_ID
-from savant.utils.fps_meter import FPSMeter
+from savant.metrics import build_metrics_exporter
 from savant.utils.platform import is_aarch64
 from savant.utils.sink_factories import SinkEndOfStream
 from savant.utils.source_info import Resolution, SourceInfo, SourceInfoRegistry
@@ -94,9 +94,6 @@ class NvDsPipeline(GstPipeline):
 
         self._max_parallel_streams = kwargs.get('max_parallel_streams', 64)
 
-        # model artifacts path
-        self._model_path = Path(kwargs['model_path'])
-
         self._source_adding_lock = Lock()
         self._sources = SourceInfoRegistry()
 
@@ -105,7 +102,7 @@ class NvDsPipeline(GstPipeline):
 
         self._internal_attrs = set()
         telemetry: TelemetryParameters = kwargs['telemetry']
-        init_telemetry(name, telemetry)
+        init_tracing(name, telemetry.tracing)
 
         output_frame = kwargs.get('output_frame')
         self._pass_through_mode = bool(output_frame) and output_frame['codec'] == 'copy'
@@ -136,8 +133,8 @@ class NvDsPipeline(GstPipeline):
 
         self._element_stages = get_pipeline_element_stages(pipeline_cfg)
         pipeline_stages = build_pipeline_stages(self._element_stages)
-        if telemetry.root_span_name is not None:
-            root_span_name = telemetry.root_span_name
+        if telemetry.tracing.root_span_name is not None:
+            root_span_name = telemetry.tracing.root_span_name
         else:
             root_span_name = name
 
@@ -146,7 +143,11 @@ class NvDsPipeline(GstPipeline):
             pipeline_stages,
             build_video_pipeline_conf(telemetry),
         )
-        self._video_pipeline.sampling_period = telemetry.sampling_period
+        self._video_pipeline.sampling_period = telemetry.tracing.sampling_period
+        self._metrics_exporter = build_metrics_exporter(
+            self._video_pipeline,
+            telemetry.metrics,
+        )
 
         self._source_output = create_source_output(
             frame_params=self._frame_params,
@@ -164,16 +165,11 @@ class NvDsPipeline(GstPipeline):
 
         super().__init__(name, pipeline_cfg, **kwargs)
 
-    def _build_buffer_processor(
-        self,
-        queue: Queue,
-        fps_meter: FPSMeter,
-    ) -> NvDsBufferProcessor:
+    def _build_buffer_processor(self, queue: Queue) -> NvDsBufferProcessor:
         """Create buffer processor."""
 
         return create_buffer_processor(
             queue=queue,
-            fps_meter=fps_meter,
             sources=self._sources,
             objects_preprocessing=self._objects_preprocessing,
             frame_params=self._frame_params,
@@ -185,26 +181,31 @@ class NvDsPipeline(GstPipeline):
     def add_element(
         self,
         element: PipelineElement,
-        with_probes: bool = False,
         link: bool = True,
         element_idx: Optional[Union[int, Tuple[int, int]]] = None,
     ) -> Gst.Element:
+        gst_element = super().add_element(
+            element=element,
+            link=link,
+            element_idx=element_idx,
+        )
+
         if isinstance(element, ModelElement):
-            if element.model.input.preprocess_object_image:
-                self._objects_preprocessing.add_preprocessing_function(
-                    element_name=element.name,
-                    preprocessing_func=element.model.input.preprocess_object_image,
-                )
             if isinstance(element.model, (AttributeModel, ComplexModel)):
                 for attr in element.model.output.attributes:
                     if attr.internal:
                         self._internal_attrs.add((element.name, attr.name))
-        gst_element = super().add_element(
-            element=element,
-            with_probes=with_probes,
-            link=link,
-            element_idx=element_idx,
-        )
+            nvinfer = NvInferProcessor(
+                element,
+                self._objects_preprocessing,
+                self._frame_params,
+                self._video_pipeline,
+            )
+            if nvinfer.preproc is not None:
+                add_buffer_probe(gst_element.get_static_pad('sink'), nvinfer.preproc)
+            if nvinfer.postproc is not None:
+                add_buffer_probe(gst_element.get_static_pad('src'), nvinfer.postproc)
+
         if element_idx is not None:
             if isinstance(element, PyFuncElement):
                 gst_element.set_property('pipeline', self._video_pipeline)
@@ -222,9 +223,20 @@ class NvDsPipeline(GstPipeline):
 
         return gst_element
 
+    def on_startup(self):
+        if self._metrics_exporter is not None:
+            self._metrics_exporter.start()
+        super().on_startup()
+
     def before_shutdown(self):
         super().before_shutdown()
         self._disable_eos_suppression()
+
+    def on_shutdown(self):
+        self._video_pipeline.log_final_fps()
+        if self._metrics_exporter is not None:
+            self._metrics_exporter.stop()
+        super().on_shutdown()
 
     def _on_shutdown_signal(self, element: Gst.Element):
         """Handle shutdown signal."""
@@ -877,10 +889,7 @@ class NvDsPipeline(GstPipeline):
             self._video_pipeline,
             'prepare-input',
         )
-        muxer_src_pad.add_probe(
-            Gst.PadProbeType.BUFFER,
-            self._buffer_processor.input_probe,
-        )
+        add_buffer_probe(muxer_src_pad, self._buffer_processor.prepare_input)
 
         return self._muxer
 
@@ -1055,7 +1064,17 @@ class NvDsPipeline(GstPipeline):
 
 def build_video_pipeline_conf(telemetry_params: TelemetryParameters):
     conf = VideoPipelineConfiguration()
-    conf.append_frame_meta_to_otlp_span = telemetry_params.append_frame_meta_to_span
+    conf.append_frame_meta_to_otlp_span = (
+        telemetry_params.tracing.append_frame_meta_to_span
+    )
+    conf.frame_period = telemetry_params.metrics.frame_period
+    conf.timestamp_period = (
+        int(telemetry_params.metrics.time_period * 1000)
+        if telemetry_params.metrics.time_period is not None
+        else telemetry_params.metrics.time_period
+    )
+    conf.collection_history = telemetry_params.metrics.history
+
     return conf
 
 
