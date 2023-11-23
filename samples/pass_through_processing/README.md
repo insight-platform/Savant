@@ -6,6 +6,8 @@ A pipeline demonstrates how to pass frames from source to sink without content m
 - tracker;
 - draw-func.
 
+The modules performance is also stored in Prometheus and displayed on a Grafana dashboard.
+
 ![pass-through-demo.png](assets/pass-through-demo.png)
 
 Detector and tracker are running in pass-through mode (`codec: copy`). Draw-func encodes frames to H264.
@@ -45,5 +47,10 @@ docker compose -f samples/pass_through_processing/docker-compose.l4t.yml up
 # open 'rtsp://127.0.0.1:554/stream' in your player
 # or visit 'http://127.0.0.1:888/stream/' (LL-HLS)
 
+# for pre-configured Grafana dashboard visit
+# http://127.0.0.1:3000/d/a4c1f484-75c9-4375-a04d-ab5d50578239/module-performance-metrics?orgId=1&refresh=5s
+
 # Ctrl+C to stop running the compose bundle
 ```
+
+To create a custom Grafana dashboard, sign in with `admin\admin` credentials.

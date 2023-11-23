@@ -98,7 +98,7 @@ def run_module(
         '-e', f'MODEL_PATH={container_model_dir}',
         '-e', 'GST_DEBUG',
         '-e', 'LOGLEVEL',
-        '-e', 'FPS_PERIOD',
+        '-e', 'METRICS_FRAME_PERIOD',
         '-e', 'GST_DEBUG_COLOR_MODE=off',
         '-e', f'ZMQ_SRC_ENDPOINT={in_endpoint}',
         '-e', f'ZMQ_SRC_TYPE={in_type}',

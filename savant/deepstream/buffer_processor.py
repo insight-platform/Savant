@@ -43,7 +43,6 @@ from savant.gstreamer.buffer_processor import GstBufferProcessor
 from savant.gstreamer.codecs import Codec, CodecInfo
 from savant.meta.constants import PRIMARY_OBJECT_KEY, UNTRACKED_OBJECT_ID
 from savant.meta.type import ObjectSelectionType
-from savant.utils.fps_meter import FPSMeter
 from savant.utils.platform import is_aarch64
 from savant.utils.sink_factories import SinkVideoFrame
 from savant.utils.source_info import SourceInfo, SourceInfoRegistry
@@ -72,7 +71,6 @@ class NvDsBufferProcessor(GstBufferProcessor):
     def __init__(
         self,
         queue: Queue,
-        fps_meter: FPSMeter,
         sources: SourceInfoRegistry,
         objects_preprocessing: ObjectsPreprocessing,
         frame_params: FrameParameters,
@@ -82,7 +80,6 @@ class NvDsBufferProcessor(GstBufferProcessor):
         """Buffer processor for DeepStream pipeline.
 
         :param queue: Queue for output data.
-        :param fps_meter: FPS meter.
         :param sources: Source info registry.
         :param objects_preprocessing: Objects processing registry.
         :param frame_params: Processing frame parameters (after nvstreammux).
@@ -90,7 +87,7 @@ class NvDsBufferProcessor(GstBufferProcessor):
         :param pass_through_mode: Video pass through mode.
         """
 
-        super().__init__(queue, fps_meter)
+        super().__init__(queue)
         self._sources = sources
         self._objects_preprocessing = objects_preprocessing
         self._frame_params = frame_params
@@ -586,7 +583,6 @@ class NvDsEncodedBufferProcessor(NvDsBufferProcessor):
     def __init__(
         self,
         queue: Queue,
-        fps_meter: FPSMeter,
         sources: SourceInfoRegistry,
         objects_preprocessing: ObjectsPreprocessing,
         frame_params: FrameParameters,
@@ -596,7 +592,6 @@ class NvDsEncodedBufferProcessor(NvDsBufferProcessor):
         """Buffer processor for DeepStream pipeline.
 
         :param queue: Queue for output data.
-        :param fps_meter: FPS meter.
         :param sources: Source info registry.
         :param objects_preprocessing: Objects processing registry.
         :param frame_params: Processing frame parameters (after nvstreammux).
@@ -606,7 +601,6 @@ class NvDsEncodedBufferProcessor(NvDsBufferProcessor):
         self._codec = codec
         super().__init__(
             queue=queue,
-            fps_meter=fps_meter,
             sources=sources,
             objects_preprocessing=objects_preprocessing,
             frame_params=frame_params,
@@ -743,16 +737,12 @@ class NvDsJetsonH26XBufferProcessor(NvDsEncodedBufferProcessor):
             sink_message = self._build_sink_video_frame(output_frame, source_info)
             sink_message = self._delete_frame_from_pipeline(idx, sink_message)
             self._queue.put(sink_message)
-            # measure and logging FPS
-            if self._fps_meter():
-                self.logger.info(self._fps_meter.message)
 
 
 class NvDsRawBufferProcessor(NvDsBufferProcessor):
     def __init__(
         self,
         queue: Queue,
-        fps_meter: FPSMeter,
         sources: SourceInfoRegistry,
         objects_preprocessing: ObjectsPreprocessing,
         frame_params: FrameParameters,
@@ -763,7 +753,6 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
         """Buffer processor for DeepStream pipeline.
 
         :param queue: Queue for output data.
-        :param fps_meter: FPS meter.
         :param sources: Source info registry.
         :param objects_preprocessing: Objects processing registry.
         :param frame_params: Processing frame parameters (after nvstreammux).
@@ -776,7 +765,6 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
         self._codec = Codec.RAW_RGBA.value if output_frame else None
         super().__init__(
             queue=queue,
-            fps_meter=fps_meter,
             sources=sources,
             objects_preprocessing=objects_preprocessing,
             frame_params=frame_params,
@@ -840,7 +828,6 @@ def extract_frame_idx(buffer: Gst.Buffer) -> Optional[int]:
 
 def create_buffer_processor(
     queue: Queue,
-    fps_meter: FPSMeter,
     sources: SourceInfoRegistry,
     objects_preprocessing: ObjectsPreprocessing,
     frame_params: FrameParameters,
@@ -851,7 +838,6 @@ def create_buffer_processor(
     """Create buffer processor.
 
     :param queue: Queue for output data.
-    :param fps_meter: FPS meter.
     :param sources: Source info registry.
     :param objects_preprocessing: Objects processing registry.
     :param frame_params: Processing frame parameters (after nvstreammux).
@@ -867,7 +853,6 @@ def create_buffer_processor(
             buffer_processor_class = NvDsEncodedBufferProcessor
         return buffer_processor_class(
             queue=queue,
-            fps_meter=fps_meter,
             sources=sources,
             objects_preprocessing=objects_preprocessing,
             frame_params=frame_params,
@@ -877,7 +862,6 @@ def create_buffer_processor(
 
     return NvDsRawBufferProcessor(
         queue=queue,
-        fps_meter=fps_meter,
         sources=sources,
         objects_preprocessing=objects_preprocessing,
         frame_params=frame_params,

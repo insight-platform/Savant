@@ -17,6 +17,23 @@ parameters:
     label: person
   module_stage: ${oc.env:MODULE_STAGE, 'detector'}
 
+  # We use the default telemetry parameters from `savant/config/default.yml`,
+  # which can be configured with environment variables in Docker compose manifests.
+  #
+  # Optionally, you can override them here.
+  # telemetry:
+  #   metrics:
+  #     # Output stats after every N frames
+  #     frame_period: ${oc.decode:${oc.env:METRICS_FRAME_PERIOD, 10000}}
+  #     # Output stats after every N seconds
+  #     time_period: ${oc.decode:${oc.env:METRICS_TIME_PERIOD, null}}
+  #     # How many last stats to keep in the memory
+  #     history: ${oc.decode:${oc.env:METRICS_HISTORY, 100}}
+  #     # Metrics provider name
+  #     provider: ${oc.decode:${oc.env:METRICS_PROVIDER, null}}
+  #     # Parameters for metrics provider
+  #     provider_params: ${json:${oc.env:METRICS_PROVIDER_PARAMS, null}}
+
 # pipeline definition
 pipeline:
   # source definition is skipped, zeromq source is used by default to connect with source adapters

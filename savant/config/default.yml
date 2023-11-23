@@ -39,9 +39,6 @@ parameters:
     # Default is 8.
     # geometry_base: 8
 
-  # FPS measurement period
-  fps_period: ${oc.decode:${oc.env:FPS_PERIOD, 10000}}
-
   # pipeline output queue max size
   queue_maxsize: 100
 
@@ -98,24 +95,46 @@ parameters:
   # Configure telemetry
   # Example:
   # telemetry:
-  #   sampling_period: 100
-  #   append_frame_meta_to_span: False
-  #   root_span_name: demo-pipeline-root
-  #   provider: jaeger
-  #   provider_params:
-  #     service_name: demo-pipeline
-  #     endpoint: jaeger:6831
+  #   tracing:
+  #     sampling_period: 100
+  #     append_frame_meta_to_span: False
+  #     root_span_name: demo-pipeline-root
+  #     provider: jaeger
+  #     provider_params:
+  #       service_name: demo-pipeline
+  #       endpoint: jaeger:6831
+  #   metrics:
+  #     frame_period: 1000
+  #     time_period: 1
+  #     history: 100
+  #     provider: prometheus
+  #     provider_params:
+  #       port: 8000
   telemetry:
-    # Sampling period in frames
-    sampling_period: ${oc.decode:${oc.env:TELEMETRY_SAMPLING_PERIOD, 100}}
-    # Append frame metadata to telemetry span
-    append_frame_meta_to_span: ${oc.decode:${oc.env:TELEMETRY_APPEND_FRAME_META_TO_SPAN, False}}
-    # Name for root span
-    root_span_name: ${oc.decode:${oc.env:TELEMETRY_ROOT_SPAN_NAME, null}}
-    # Telemetry provider name
-    provider: ${oc.decode:${oc.env:TELEMETRY_PROVIDER, null}}
-    # Parameters for telemetry provider
-    provider_params: ${json:${oc.env:TELEMETRY_PROVIDER_PARAMS, null}}
+    # Configure tracing
+    tracing:
+      # Sampling period in frames
+      sampling_period: ${oc.decode:${oc.env:TRACING_SAMPLING_PERIOD, 100}}
+      # Append frame metadata to telemetry span
+      append_frame_meta_to_span: ${oc.decode:${oc.env:TRACING_APPEND_FRAME_META_TO_SPAN, False}}
+      # Name for root span
+      root_span_name: ${oc.decode:${oc.env:TRACING_ROOT_SPAN_NAME, null}}
+      # Tracing provider name
+      provider: ${oc.decode:${oc.env:TRACING_PROVIDER, null}}
+      # Parameters for tracing provider
+      provider_params: ${json:${oc.env:TRACING_PROVIDER_PARAMS, null}}
+    # Configure metrics
+    metrics:
+      # Output stats after every N frames
+      frame_period: ${oc.decode:${oc.env:METRICS_FRAME_PERIOD, 10000}}
+      # Output stats after every N seconds
+      time_period: ${oc.decode:${oc.env:METRICS_TIME_PERIOD, null}}
+      # How many last stats to keep in the memory
+      history: ${oc.decode:${oc.env:METRICS_HISTORY, 100}}
+      # Metrics provider name
+      provider: ${oc.decode:${oc.env:METRICS_PROVIDER, null}}
+      # Parameters for metrics provider
+      provider_params: ${json:${oc.env:METRICS_PROVIDER_PARAMS, null}}
 
   # Flag controls whether user python modules (pyfuncs and drawfuncs)
   # are monitored for changes during runtime
