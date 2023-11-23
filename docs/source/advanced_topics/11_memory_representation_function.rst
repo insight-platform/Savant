@@ -1,7 +1,7 @@
 Conversions Between GPU Memory Formats
 ---------------------------------------------
 
-When working with images, there are many ways to represent them as arrays of points. Working with different models you may encounter representation of an image using OpenCV Mat class, PyTorch tensor or CuPy array.
+When working with images, there are many ways to represent them as arrays of pixels. Working with different models you may encounter representation of an image using OpenCV Mat class, PyTorch tensor or CuPy array.
 
 The Savant framework aims to maximize GPU utilization without unnecessary data copying and conversion. To achieve this, Savant provides functions for converting between different image representations. Data exchange is performed with zero-copying between different views, except for some cases of conversion to GpuMat OpenCV.
 
@@ -10,76 +10,41 @@ Conversion to PyTorch Tensor
 
 .. code-block:: python
 
-    def as_pytorch(
-        img: Union[cv2.cuda.GpuMat, cp.ndarray, np.ndarray],
-        input_format: Optional[str] = None,
-        output_format: Optional[str] = None,
-        device: Optional[str] = None,
-    ):
+    def opencv_gpu_mat_as_pytorch(gpu_mat: cv2.cuda.GpuMat) -> torch.Tensor:
+            """Returns PyTorch tensor for specified OpenCV GpuMat."""
 
-This function allows you to convert an OpenCV or CuPy array into a PyTorch tensor.
-
-- **img** - image in OpenCV format (``cv2.cuda.GpuMat`` for GPU or ``numpy.ndarray`` for CPU) or CuPy array (``cupy.ndarray``).
-
-- **input_format** - input format of image shape. Can be one of the following values:
-
-    - ``channels_first`` - the image is represented as a array of shape (channels, height, width).
-    - ``channels_last`` - the image is represented as a array of shape (height, width, channels).
-    - ``None`` - the input format is determined automatically based on the type of input array. If the input array is a GpuMat or CuPy, then the format is channels_last.
-
-- **output_format** - Output format of image shape. Can be one of the following values:
-
-    - ``channels_first`` - The image is represented as a array of shape (channels, height, width).
-    - ``channels_last`` - The image is represented as a array of shape (height, width, channels).
-    - ``None`` - The output format will be channels_last, since pytorch uses tensors in this format.
-
-- **device** - Device on which the resulting tensor will be located. Can be one of the following values: ```cuda`` or ``cpu``. If the device is not specified, then the tensor will be located on the same device as the input array.
-
+This function allows you to convert an OpenCV GpuMat into a PyTorch tensor on GPU.
 
 Conversion to OpenCV
 ^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: python
 
-    def as_opencv(
-            img,
-            device: Optional[str] = None,
-            input_format: Optional[str] = None
-    ) -> Union[cv2.cuda.GpuMat, np.ndarray]:
+    def pytorch_tensor_as_opencv_gpu_mat(tensor: torch.Tensor) -> cv2.cuda_GpuMat:
+        """Returns OpenCV GpuMat for specified PyTorch tensor.
+        Supports 2 and 3 dims arrays in CHW format for shape and `channel_first`
+        memory format only.
+        """
 
-This function allows you to convert an image from PyTorch tensor or CuPy array to OpenCV format. The function always returns an OpenCV array in the `channels_last` format.
+This function allows you to convert an image from PyTorch tensor to OpenCV GpuMat. The input tensor must be on GPU and must have shape in CHW format. Also note that the function support only ``channel_first`` memory format.
 
-- **img** - image in PyTorch tensor format or CuPy array.
-- **input_format** - Input format of image shape. Can be one of the following values:
 
-    - ``channels_first`` - The image is represented as a array of shape (channels, height, width).
-    - ``channels_last`` - The image is represented as a array of shape (height, width, channels).
-    - ``None`` - The input format will be channels_first for pytorch, since pytorch uses tensors in this format, and channels_last for CuPy.
+.. code-block:: python
 
-- **device** - Device on which the resulting image will be located. Can be one of the following values: ``cuda`` or ``cpu``. If the device is not specified, then the image will be located on the same device as the input array.
+    def cupy_as_opencv_gpu_mat(arr: cp.ndarray) -> cv2.cuda.GpuMat:
+        """Returns OpenCV GpuMat for specified CuPy ndarray.
+        Supports 2 and 3 dims arrays in HWC format for shape and `channel_last`
+        memory format only. (OpenCV format).
+        """
+
+This function allows you to convert an image from CuPy array to OpenCV GpuMat. The input array have shape in HWC format. Also note that the function support only ``channel_last`` memory format.
 
 Conversion to CuPy
 ^^^^^^^^^^^^^^^^^^
 
 .. code-block:: python
 
-    def as_cupy(
-        img,
-        input_format: Optional[str] = None,
-        output_format: Optional[str] = None,
-    ) -> cp.ndarray:
+    def opencv_gpu_mat_as_cupy(gpu_mat: cv2.cuda.GpuMat) -> cp.ndarray:
+        """Returns CuPy ndarray for specified OpenCV GpuMat."""
 
-This function allows you to convert an image from PyTorch tensor or OpenCV array to CuPy format. The function always returns an CuPy array on the ``cuda`` device.
-
-- **img** - image in PyTorch tensor format or OpenCV array.
-- **input_format** - Input format of image shape. Can be one of the following values:
-
-    - ``channels_first`` - The image is represented as a array of shape (channels, height, width).
-    - ``channels_last`` - The image is represented as a array of shape (height, width, channels).
-    - ``None`` - The input format will be channels_first for pytorch, since pytorch uses tensors in this format, and channels_last for OpenCV.
-
-- **output_format** - Output format of image shape. Can be one of the following values:
-
-        - ``channels_first`` - The image is represented as a array of shape (channels, height, width).
-        - ``channels_last`` - The image is represented as a array of shape (height, width, channels).
-        - ``None`` - The output format will be channels_last.
+This function allows you to convert an image OpenCV GpuMat to CuPy array.

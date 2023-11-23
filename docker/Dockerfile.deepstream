@@ -248,12 +248,12 @@ ENTRYPOINT ["make"]
 CMD ["clean", "html"]
 
 
-# Savant test image
+# Savant test image only for x86
 FROM base AS tests
 COPY requirements/dev.txt requirements/dev.txt
 COPY tests /opt/savant/tests
 
 RUN python -m pip install --no-cache-dir -r requirements/dev.txt
-RUN pip3 install torch torchvision torchaudio
+RUN python -m pip install torch torchvision torchaudio
 
 ENTRYPOINT ["pytest", "-s", "/opt/savant/tests"]
