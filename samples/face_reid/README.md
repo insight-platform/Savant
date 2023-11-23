@@ -58,7 +58,7 @@ docker compose -f samples/face_reid/docker-compose.x86.yml --profile index up
 docker compose -f samples/face_reid/docker-compose.l4t.yml --profile index up
 ```
 
-First startup can take several minutes as the `index-builder-pipeline` needs to convert ONNX models into TRT format. Successful module start is indicated by a log messages like
+The first launch can take several minutes as the `index-builder-pipeline` needs to convert ONNX models into TRT format. Successful module start is indicated by a log messages like
 
 ```
 INFO ... > The pipeline is initialized and ready to process data. Initialization took ...
