@@ -83,5 +83,11 @@ pipeline:
               tracker-width: 960  # 640  # must be a multiple of 32
               tracker-height: 544  # 384
               display-tracking-id: 0
+          # pyfunc metrics example
+          - element: pyfunc
+            # specify the pyfunc's python module
+            module: samples.pass_through_processing.py_func_metrics_example
+            # specify the pyfunc's python class from the module
+            class_name: PyFuncMetricsExample
 
   # sink definition is skipped, zeromq sink is used by default to connect with sink adapters

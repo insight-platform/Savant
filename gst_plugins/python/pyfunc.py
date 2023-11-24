@@ -15,6 +15,7 @@ from savant.gstreamer.utils import (
     gst_post_stream_failed_error,
     gst_post_stream_failed_warning,
 )
+from savant.metrics.base import BaseMetricsExporter
 from savant.utils.logging import LoggerMixin
 
 # RGBA format is required to access the frame (pyds.get_nvds_buf_surface)
@@ -75,6 +76,12 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             'VideoPipeline object from savant-rs.',
             GObject.ParamFlags.READWRITE,
         ),
+        'metrics-exporter': (
+            object,
+            'Metrics exporter.',
+            'Metrics exporter.',
+            GObject.ParamFlags.READWRITE,
+        ),
         'stream-pool-size': (
             int,
             'Max stream pool size',
@@ -103,6 +110,7 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
         self.class_name: Optional[str] = None
         self.kwargs: Optional[str] = None
         self.video_pipeline: Optional[VideoPipeline] = None
+        self.metrics_exporter: Optional[BaseMetricsExporter] = None
         self.dev_mode: bool = False
         self.max_stream_pool_size: int = 1
         # pyfunc object
@@ -121,6 +129,8 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             return self.kwargs
         if prop.name == 'pipeline':
             return self.video_pipeline
+        if prop.name == 'metrics-exporter':
+            return self.metrics_exporter
         if prop.name == 'stream-pool-size':
             return self.max_stream_pool_size
         if prop.name == 'dev-mode':
@@ -141,6 +151,8 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             self.kwargs = value
         elif prop.name == 'pipeline':
             self.video_pipeline = value
+        elif prop.name == 'metrics-exporter':
+            self.metrics_exporter = value
         elif prop.name == 'stream-pool-size':
             self.max_stream_pool_size = value
         elif prop.name == 'dev-mode':
