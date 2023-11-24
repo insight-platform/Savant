@@ -17,9 +17,9 @@ from savant.utils.zeromq import (
     Defaults,
     SenderSocketTypes,
     create_ipc_socket_dirs,
+    ipc_socket_chmod,
     parse_zmq_socket_uri,
     receive_response,
-    set_ipc_socket_permissions,
 )
 
 logger = get_logger(__name__)
@@ -151,6 +151,8 @@ class ZeroMQSinkFactory(SinkFactory):
 
     def __init__(
         self,
+        sink_name: str,
+        egress_pyfunc: PyFunc,
         socket: str,
         socket_type: str = SenderSocketTypes.PUB.name,
         bind: bool = True,
@@ -159,7 +161,7 @@ class ZeroMQSinkFactory(SinkFactory):
         req_receive_retries: int = Defaults.REQ_RECEIVE_RETRIES,
         set_ipc_socket_permissions: bool = True,
     ):
-        super().__init__()
+        super().__init__(sink_name, egress_pyfunc)
         logger.debug(
             'Initializing ZMQ sink: socket %s, type %s, bind %s.',
             socket,
@@ -195,7 +197,7 @@ class ZeroMQSinkFactory(SinkFactory):
         else:
             output_zmq_socket.connect(self.socket)
         if self.set_ipc_socket_permissions and self.bind:
-            set_ipc_socket_permissions(self.socket)
+            ipc_socket_chmod(self.socket)
 
         def send_message(
             msg: SinkMessage,
