@@ -67,7 +67,13 @@ class SinkFactory(ABC):
         try:
             self.egress_pyfunc.load_user_code()
         except Exception as exc:
-            logger.warning('Error loading egress filter')
+            logger.warning(
+                'Error in sink "%s" loading egress filter %s: %s. '
+                'Using noop placeholder.',
+                self.name,
+                self.egress_pyfunc,
+                exc,
+            )
             self.egress_pyfunc = lambda x: True
 
     def video_frame_filt(self, video_frame: VideoFrame, frame_pts: int) -> bool:
@@ -76,7 +82,8 @@ class SinkFactory(ABC):
             ret = self.egress_pyfunc(video_frame)
         except Exception as exc:
             logger.warning(
-                'Frame of source "%s" with PTS %s got error in sink "%s" egress filter %s call: %s. Allowing frame to pass.',
+                'Frame of source "%s" with PTS %s got error in sink "%s" '
+                'egress filter %s call: %s. Allowing frame to pass.',
                 video_frame.source_id,
                 frame_pts,
                 self.name,
@@ -94,7 +101,8 @@ class SinkFactory(ABC):
             )
         else:
             logger.debug(
-                'Frame of source "%s" with PTS %s didnt pass "%s" sink egress filter, skipping it.',
+                'Frame of source "%s" with PTS %s didnt pass "%s" sink egress filter,'
+                'skipping it.',
                 video_frame.source_id,
                 frame_pts,
                 self.name,

@@ -348,7 +348,9 @@ def configure_pipeline(module_cfg: DictConfig) -> None:
         return
 
     logger.debug('Configure pipeline source...')
-    module_cfg.pipeline.source = configure_element(module_cfg.pipeline.source, module_cfg)
+    module_cfg.pipeline.source = configure_element(
+        module_cfg.pipeline.source, module_cfg
+    )
 
     logger.debug('Configure pipeline sink...')
     for pipeline_sink_idx, item in enumerate(module_cfg.pipeline.sink):

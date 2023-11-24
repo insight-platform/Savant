@@ -252,8 +252,10 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
         assert self.add_pad(self.sink_pad), 'Failed to add sink pad.'
 
     def do_state_changed(self, old: Gst.State, new: Gst.State, pending: Gst.State):
-        """Start an expiration thread if state changed from NULL."""
-        self.logger.info('state %s -> %s', old, new)
+        """Process state change.
+        Start an expiration thread if state changed from NULL.
+        Init ingress filter if changed NULL -> READY
+        """
         if (
             old == Gst.State.NULL
             and new != Gst.State.NULL
@@ -294,7 +296,6 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             return self.max_height
         if prop.name == 'pass-through-mode':
             return self.pass_through_mode
-
         if prop.name == 'ingress-module':
             return self.ingress_module
         if prop.name == 'ingress-class':
