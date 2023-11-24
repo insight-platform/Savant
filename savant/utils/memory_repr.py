@@ -56,14 +56,19 @@ def opencv_gpu_mat_as_cupy(gpu_mat: cv2.cuda.GpuMat) -> cp.ndarray:
 
 def cupy_as_opencv_gpu_mat(arr: cp.ndarray) -> cv2.cuda.GpuMat:
     """Returns OpenCV GpuMat for specified CuPy ndarray.
-    Supports 2 and 3 dims arrays in HWC format for shape and `channel_last`
-    memory format only. (OpenCV format).
+    Supports 2 and 3 dims arrays in HWC format. (OpenCV format).
     """
-    if arr.ndim not in (2, 3):
+    if arr.ndim == 2:
+        channels = 1
+        array_shape = arr.shape[::-1]
+    elif arr.ndim == 3:
+        channels = arr.shape[2]
+        array_shape = arr.shape[1::-1]
+        arr = arr.ravel()
+    else:
         raise ValueError('CuPy array must have 2 or 3 dimensions.')
-    channels = 1 if len(arr.shape) == 2 else arr.shape[2]
     return cv2.cuda.createGpuMatFromCudaMemory(
-        arr.__cuda_array_interface__['shape'][1::-1],
+        array_shape,
         _numpy_type_to_opencv_mat_type(arr.dtype.str, channels),
         arr.__cuda_array_interface__['data'][0],
     )

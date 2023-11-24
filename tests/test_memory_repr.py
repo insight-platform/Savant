@@ -11,61 +11,75 @@ NUMPY_TYPE = [np.int8, np.uint8, np.float32]
 CUPY_TYPE = [cp.int8, cp.uint8, cp.float32]
 
 
-def get_opencv_image(input_type, channels=3):
-
-    if channels == 3:
-        image_np = np.random.randint(0, 255, (10, 20, 3)).astype(input_type)
-    elif channels == 1:
-        image_np = np.random.randint(0, 255, (10, 20)).astype(input_type)
-    else:
-        raise ValueError(f"Unsupported number of channels {channels}")
-    image_opencv = cv2.cuda_GpuMat()
-    image_opencv.upload(image_np)
-    return image_opencv
-
-
 class TestAsOpenCV:
     @pytest.mark.parametrize("input_type", TORCH_TYPE)
-    def test_pytorch(
-        self, input_type
+    @pytest.mark.parametrize("channels", [1, 3, 4])
+    @pytest.mark.parametrize("memory_format", ['channels_first', 'channels_last'])
+    def test_pytorch_3d(
+        self, input_type, channels, memory_format
     ):
-        """Test for pytorch tensors with channels first memory format"""
-        pytorch_tensor = torch.randint(0, 255, size=(3, 10, 20), device='cuda').to(input_type)
+        """Test for pytorch 3d tensors emulate color image"""
+        if memory_format == 'channels_first':
+            # shape - [channels, height, width]
+            pytorch_tensor = torch.randint(0, 255, size=(channels, 10, 20), device='cuda').to(input_type)
+        elif memory_format == 'channels_last':
+            # shape - [height, width, channels]
+            pytorch_tensor = torch.randint(0, 255, size=(10, 20, channels), device='cuda').to(input_type).permute(2, 0, 1)
+        else:
+            raise ValueError(f"Unsupported memory format {memory_format}")
 
-        img_opencv = pytorch_tensor_as_opencv_gpu_mat(pytorch_tensor)
+        opencv_gpu_mat = pytorch_tensor_as_opencv_gpu_mat(pytorch_tensor)
         np.testing.assert_almost_equal(
-            img_opencv.download(),
-            pytorch_tensor.permute(1, 2, 0).cpu().numpy(),
+            opencv_gpu_mat.download(),
+            pytorch_tensor.squeeze(0).cpu().numpy() if channels == 1 else pytorch_tensor.permute(1, 2, 0).cpu().numpy()
         )
+
+        if memory_format == 'channels_first' and channels != 1:
+            assert opencv_gpu_mat.cudaPtr() != pytorch_tensor.data_ptr()
+        else:
+            assert opencv_gpu_mat.cudaPtr() == pytorch_tensor.data_ptr()
 
     @pytest.mark.parametrize("input_type", TORCH_TYPE)
-    def test_pytorch_grayscale(self, input_type):
-        """Test for pytorch tensors with grayscale image"""
+    def test_pytorch_2d(self, input_type):
+        """Test for pytorch tensors  with grayscale image"""
 
         # shape - [height, width]
-        img_pytorch = torch.randint(0, 255, (10, 20), device='cuda').to(input_type)
+        pytorch_tensor = torch.randint(0, 255, (10, 20), device='cuda').to(input_type)
 
-        img_opencv = pytorch_tensor_as_opencv_gpu_mat(img_pytorch)
+        opencv_gpu_mat = pytorch_tensor_as_opencv_gpu_mat(pytorch_tensor)
         np.testing.assert_almost_equal(
-            img_opencv.download(),
-            img_pytorch.cpu().numpy(),
+            opencv_gpu_mat.download(),
+            pytorch_tensor.cpu().numpy(),
         )
 
-    @pytest.mark.parametrize("input_type", CUPY_TYPE)
-    @pytest.mark.parametrize("target_device", ['cuda', 'cpu', None])
-    def test_cupy_first_channel_memory(self, input_type, target_device):
-        """Test for cupy tensors with channels first memory format"""
+        assert opencv_gpu_mat.cudaPtr() == pytorch_tensor.data_ptr()
 
-        cupy_array = cp.random.randint(0, 255, (10, 20, 3)).astype(input_type)
+    @pytest.mark.parametrize("input_type", CUPY_TYPE)
+    @pytest.mark.parametrize("channels", [1, 3, 4])
+    @pytest.mark.parametrize("memory_format", ['channels_first', 'channels_last'])
+    def test_cupy_3d(self, input_type, channels, memory_format):
+        """Test for cupy tensors"""
+
+        if memory_format == 'channels_last':
+            cupy_array = cp.random.randint(0, 255, (10, 20, channels)).astype(input_type)
+        elif memory_format == 'channels_first':
+            cupy_array = cp.random.randint(0, 255, (channels, 10, 20)).astype(input_type).transpose(1, 2, 0)
+        else:
+            raise ValueError(f"Unsupported memory format {memory_format}")
 
         opencv_mat = cupy_as_opencv_gpu_mat(cupy_array)
         np.testing.assert_almost_equal(
             opencv_mat.download(),
-            cupy_array.get(),
+            cupy_array.squeeze(2).get() if channels == 1 else cupy_array.get(),
         )
 
+        if memory_format == 'channels_first' and channels != 1:
+            assert opencv_mat.cudaPtr() != cupy_array.data.ptr
+        else:
+            assert opencv_mat.cudaPtr() == cupy_array.data.ptr
+
     @pytest.mark.parametrize("input_type", CUPY_TYPE)
-    def test_cupy_grayscale(self, input_type):
+    def test_cupy_2d(self, input_type):
         """Test for pytorch tensors with grayscale image"""
 
         cupy_array = cp.random.randint(0, 255, (10, 20)).astype(input_type)
@@ -76,19 +90,24 @@ class TestAsOpenCV:
             cupy_array.get(),
         )
 
+        assert opencv_gpu_mat.cudaPtr() == cupy_array.data.ptr
+
 
 class TestToTorch:
     @pytest.mark.parametrize("input_type", NUMPY_TYPE)
-    def test_opencv(self, input_type):
+    @pytest.mark.parametrize("channels", [1, 3, 4])
+    def test_opencv(self, input_type, channels):
         opencv_gpu_mat = cv2.cuda_GpuMat()
-        opencv_gpu_mat.upload(np.random.randint(0, 255, (10, 20, 3)).astype(input_type))
+        opencv_gpu_mat.upload(np.random.randint(0, 255, (10, 20, channels)).astype(input_type))
 
         torch_tensor = opencv_gpu_mat_as_pytorch(opencv_gpu_mat)
 
         np.testing.assert_almost_equal(
-            np.transpose(opencv_gpu_mat.download(), (2, 0, 1)),
+            opencv_gpu_mat.download() if channels == 1 else opencv_gpu_mat.download().transpose(2, 0, 1),
             torch_tensor.cpu().numpy()
         )
+
+        assert opencv_gpu_mat.cudaPtr() == torch_tensor.data_ptr()
 
     @pytest.mark.parametrize("input_type", NUMPY_TYPE)
     def test_opencv_grayscale(self, input_type):
@@ -102,12 +121,15 @@ class TestToTorch:
             torch_tensor.cpu().numpy(),
         )
 
+        assert opencv_gpu_mat.cudaPtr() == torch_tensor.data_ptr()
+
 
 class TestToCUPY:
     @pytest.mark.parametrize("input_type", NUMPY_TYPE)
-    def test_opencv(self, input_type):
+    @pytest.mark.parametrize("channels", [1, 3, 4])
+    def test_opencv(self, input_type, channels):
         opencv_gpu_mat = cv2.cuda_GpuMat()
-        opencv_gpu_mat.upload(np.random.randint(0, 255, (10, 20, 3)).astype(input_type))
+        opencv_gpu_mat.upload(np.random.randint(0, 255, (10, 20, channels)).astype(input_type))
 
         cupy_array = opencv_gpu_mat_as_cupy(opencv_gpu_mat)
 
@@ -115,6 +137,8 @@ class TestToCUPY:
             opencv_gpu_mat.download(),
             cupy_array.get(),
         )
+
+        assert opencv_gpu_mat.cudaPtr() == cupy_array.data.ptr
 
     @pytest.mark.parametrize("input_type", NUMPY_TYPE)
     def test_opencv_grayscale(self, input_type):
@@ -127,3 +151,5 @@ class TestToCUPY:
             opencv_gpu_mat.download(),
             cupy_array.get(),
         )
+
+        assert opencv_gpu_mat.cudaPtr() == cupy_array.data.ptr
