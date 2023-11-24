@@ -178,3 +178,8 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
             return True
         self._last_nvevent_seqnum[event.type][pad_idx] = event.get_seqnum()
         return False
+
+    def get_runtime_metrics(self, n: int):
+        """Get last runtime metrics."""
+
+        return self._video_pipeline.get_stat_records(n)

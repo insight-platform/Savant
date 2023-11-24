@@ -54,7 +54,7 @@ The following parameters are defined for a Savant module by default:
 
 .. literalinclude:: ../../../savant/config/default.yml
   :language: YAML
-  :lines: 1-132
+  :lines: 1-150
 
 .. note::
 
@@ -153,22 +153,43 @@ If the ``output_frame`` section is set, Savant adds encoded video streams to sin
 OpenTelemetry Configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The ``telemetry`` section defines the telemetry configuration. The ``endpoint`` in ``telemetry.provider_params`` is required when ``telemetry.provider`` is set to ``'jaeger'``.
+The ``telemetry.tracing`` section defines the telemetry configuration. The ``endpoint`` in ``telemetry.tracing.provider_params`` is required when ``telemetry.tracing.provider`` is set to ``'jaeger'``.
 
 Example:
 
 .. code-block:: yaml
 
     telemetry:
-      sampling_period: 100
-      append_frame_meta_to_span: false
-      root_span_name: demo-pipeline-root
-      provider: jaeger
-      provider_params:
-        service_name: demo-pipeline
-        endpoint: jaeger:6831
+      tracing:
+        sampling_period: 100
+        append_frame_meta_to_span: false
+        root_span_name: demo-pipeline-root
+        provider: jaeger
+        provider_params:
+          service_name: demo-pipeline
+          endpoint: jaeger:6831
 
 Read more on OpenTelemetry in :doc:`/advanced_topics/9_open_telemetry`.
+
+Metrics Collection Configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The ``telemetry.metrics`` section defines the metrics collection configuration. The ``port`` in ``telemetry.metrics.provider_params`` is required when ``telemetry.metrics.provider`` is set to ``'prometheus'``. ``labels`` in ``telemetry.metrics.provider_params`` defines extra labels added to the metrics.
+
+Example:
+
+.. code-block:: yaml
+
+    telemetry:
+      metrics:
+        frame_period: 1000
+        time_period: 1
+        history: 100
+        provider: prometheus
+        provider_params:
+          port: 8000
+          labels:
+            module_type: detector
 
 DevServer Configuration
 ^^^^^^^^^^^^^^^^^^^^^^^

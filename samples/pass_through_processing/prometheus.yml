@@ -1,0 +1,9 @@
+global:
+  scrape_interval: 5s
+scrape_configs:
+  - job_name: "module"
+    static_configs:
+      - targets:
+          - "module-detector:8000"
+          - "module-tracker:8000"
+          - "module-draw-func:8000"

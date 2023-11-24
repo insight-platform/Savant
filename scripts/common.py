@@ -14,7 +14,8 @@ from savant.utils.platform import is_aarch64
 from savant.utils.re_patterns import socket_uri_pattern
 from savant.utils.version import version
 
-SAVANT_VERSION = 'latest'  # use version.SAVANT or 'latest'
+# use version.SAVANT or 'latest'
+SAVANT_VERSION = 'latest'
 DEEPSTREAM_VERSION = version.DEEPSTREAM
 
 # docker registry to use with scripts, set to "None" to use local images
@@ -126,7 +127,6 @@ detach_option = click.option(
     is_flag=True,
     default=False,
     help='Run docker container in background and print container ID.',
-    show_default=True,
 )
 
 

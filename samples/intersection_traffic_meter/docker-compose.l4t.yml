@@ -32,7 +32,7 @@ services:
       - DOWNLOAD_PATH=/cache/downloads/intersection_traffic_meter
       - ZMQ_SRC_ENDPOINT=router+bind:ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
-      - FPS_PERIOD=1000
+      - METRICS_FRAME_PERIOD=1000
       - CODEC=raw-rgba
     runtime: nvidia
 

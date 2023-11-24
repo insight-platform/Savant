@@ -36,7 +36,10 @@ services:
       - DOWNLOAD_PATH=/cache/downloads/peoplenet_detector
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/detector-output.ipc
-      - FPS_PERIOD=1000
+      - METRICS_FRAME_PERIOD=100
+      - METRICS_TIME_PERIOD=1
+      - METRICS_PROVIDER=prometheus
+      - METRICS_PROVIDER_PARAMS={"port":8000, "labels":{"module_stage":"detector"}}
     runtime: nvidia
 
   module-tracker:
@@ -51,6 +54,10 @@ services:
       - MODULE_STAGE=tracker
       - MODEL_PATH=/cache/models/peoplenet_detector
       - DOWNLOAD_PATH=/cache/downloads/peoplenet_detector
+      - METRICS_FRAME_PERIOD=100
+      - METRICS_TIME_PERIOD=1
+      - METRICS_PROVIDER=prometheus
+      - METRICS_PROVIDER_PARAMS={"port":8000, "labels":{"module_stage":"tracker"}}
       - ZMQ_SRC_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/detector-output.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/tracker-output.ipc
     runtime: nvidia
@@ -65,6 +72,10 @@ services:
     command: samples/pass_through_processing/module.yml
     environment:
       - MODULE_STAGE=draw-func
+      - METRICS_FRAME_PERIOD=100
+      - METRICS_TIME_PERIOD=1
+      - METRICS_PROVIDER=prometheus
+      - METRICS_PROVIDER_PARAMS={"port":8000, "labels":{"module_stage":"draw-func"}}
       # Use default draw_func (savant.deepstream.drawfunc.NvDsDrawFunc)
       - DRAW_FUNC={}
       - CODEC=raw-rgba
@@ -72,7 +83,6 @@ services:
       - DOWNLOAD_PATH=/cache/downloads/peoplenet_detector
       - ZMQ_SRC_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/tracker-output.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
-      - FPS_PERIOD=1000
     runtime: nvidia
 
   always-on-sink:
@@ -93,6 +103,27 @@ services:
       - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x720.jpeg
       - DEV_MODE=True
     command: python -m adapters.ds.sinks.always_on_rtsp
+
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana-oss
+    restart: unless-stopped
+    volumes:
+      - ./grafana_datasources:/etc/grafana/provisioning/datasources/
+      - ./grafana_dashboards:/etc/grafana/provisioning/dashboards/
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_NAME=Main Org.
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
 
 volumes:
   zmq_sockets:

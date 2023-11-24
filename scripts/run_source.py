@@ -26,7 +26,6 @@ sync_option = click.option(
     is_flag=True,
     default=False,
     help='Send frames from source synchronously (i.e. at the source file rate).',
-    show_default=True,
 )
 
 
@@ -127,7 +126,6 @@ def files_source(
     default=False,
     is_flag=True,
     help='Sort files by modification time.',
-    show_default=True,
 )
 @click.option(
     '--read-metadata',
@@ -135,7 +133,6 @@ def files_source(
     is_flag=True,
     help='Attempt to read the metadata of objects from the JSON file that has the identical name '
     'as the source file with `json` extension, and then send it to the module.',
-    show_default=True,
 )
 @click.option(
     '--eos-on-file-end',
@@ -192,21 +189,18 @@ def videos_source(
     is_flag=True,
     help='Attempt to read the metadata of objects from the JSON file that has the identical name '
     'as the source file with `json` extension, and then send it to the module.',
-    show_default=True,
 )
 @click.option(
     '--eos-on-loop-end',
     default=False,
     is_flag=True,
     help='Send EOS on a loop end.',
-    show_default=True,
 )
 @click.option(
     '--measure-fps-per-loop',
     default=False,
     is_flag=True,
     help='Measure FPS per loop. FPS meter will dump statistics at the end of each loop.',
-    show_default=True,
 )
 @click.option(
     '--download-path',
@@ -219,7 +213,6 @@ def videos_source(
     default=False,
     is_flag=True,
     help='Mount path to download files from remote storage to the container.',
-    show_default=True,
 )
 @click.option(
     '--loss-rate',
@@ -292,7 +285,6 @@ def video_loop_source(
     is_flag=True,
     help='Attempt to read the metadata of objects from the JSON file that has the identical name '
     'as the source file with `json` extension, and then send it to the module.',
-    show_default=True,
 )
 @click.option(
     '--download-path',
@@ -305,7 +297,6 @@ def video_loop_source(
     default=False,
     is_flag=True,
     help='Mount path to download files from remote storage to the container.',
-    show_default=True,
 )
 @click.option('--source-id-pattern', help='Pattern for source ID.')
 @click.option(
@@ -404,7 +395,6 @@ def multi_stream_source(
     default=False,
     is_flag=True,
     help='Sort files by modification time.',
-    show_default=True,
 )
 @click.option(
     '--read-metadata',
@@ -412,7 +402,6 @@ def multi_stream_source(
     is_flag=True,
     help='Attempt to read the metadata of objects from the JSON file that has the identical name '
     'as the source file with `json` extension, and then send it to the module.',
-    show_default=True,
 )
 @click.option(
     '--eos-on-file-end',
@@ -615,13 +604,13 @@ def usb_cam_source(
     help='Additional configuration parameters as a space separated list of feature assignations',
 )
 @click.option(
-    '--host-network', default=False, is_flag=True, help='Use the host network'
+    '--host-network', default=False, is_flag=True, help='Use the host network.'
 )
 @click.option(
     '--encode',
     default=False,
     is_flag=True,
-    help='Encode the video stream with H264',
+    help='Encode the video stream with H264.',
 )
 @click.option(
     '--encode-bitrate',

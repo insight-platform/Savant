@@ -13,7 +13,7 @@ services:
       - DOWNLOAD_PATH=/cache/downloads/traffic_meter
       - ZMQ_SRC_ENDPOINT=sub+bind:tcp://0.0.0.0:3331
       - ZMQ_SINK_ENDPOINT=pub+bind:tcp://0.0.0.0:3332
-      - FPS_PERIOD=1000
+      - METRICS_FRAME_PERIOD=1000
       - DETECTOR=${DETECTOR}
       - MODULE_NAME=traffic_meter-${DETECTOR}
     ports:

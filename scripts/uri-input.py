@@ -67,7 +67,6 @@ def validate_source_id(ctx, param, value):
     is_flag=True,
     default=False,
     help='Send frames from source synchronously (i.e. at the source file rate).',
-    show_default=True,
 )
 @click.option(
     '--fps-output',

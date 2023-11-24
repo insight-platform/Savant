@@ -32,7 +32,7 @@ services:
       - DOWNLOAD_PATH=/cache/downloads/traffic_meter
       - ZMQ_SRC_ENDPOINT=rep+bind:ipc:///tmp/zmq-sockets/input.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output.ipc
-      - FPS_PERIOD=1000
+      - METRICS_FRAME_PERIOD=1000
     runtime: nvidia
 
   image-json-sink:
@@ -46,7 +46,6 @@ services:
       - CHUNK_SIZE=1000
       - DIR_LOCATION=/results
     entrypoint: /opt/savant/adapters/python/sinks/image_files.py
-
 
 volumes:
   zmq_sockets:

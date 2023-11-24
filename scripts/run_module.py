@@ -17,6 +17,12 @@ from common import (
 
 @click.argument('module-config')
 @click.option(
+    '--build-engines',
+    is_flag=True,
+    default=False,
+    help='Build module model\'s engines and exit.',
+)
+@click.option(
     '--in-endpoint',
     default='ipc:///tmp/zmq-sockets/input-video.ipc',
     help='Input ZeroMQ socket endpoint',
@@ -57,6 +63,7 @@ from common import (
 @detach_option
 def run_module(
     module_config: str,
+    build_engines: bool,
     in_endpoint: str,
     in_type: str,
     in_bind: bool,
@@ -93,7 +100,7 @@ def run_module(
         '-e', 'NUMBA_CACHE_DIR=/cache/numba',
         '-e', 'GST_DEBUG',
         '-e', 'LOGLEVEL',
-        '-e', 'FPS_PERIOD',
+        '-e', 'METRICS_FRAME_PERIOD',
         '-e', 'GST_DEBUG_COLOR_MODE=off',
         '-e', f'ZMQ_SRC_ENDPOINT={in_endpoint}',
         '-e', f'ZMQ_SRC_TYPE={in_type}',
@@ -120,8 +127,11 @@ def run_module(
 
     command.append(get_docker_runtime(gpus))
     command.append(docker_image)
-    # entrypoint arg
-    command.append(str(module_config_path))
+
+    # entrypoint args
+    if build_engines:
+        command += ['--build-engines']
+    command += [str(module_config_path)]
 
     run_command(command)
 
