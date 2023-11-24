@@ -1,6 +1,5 @@
 import cv2
 import torch
-import cupy as cp
 
 from savant.utils.memory_repr import OpenCVGpuMatCudaArrayInterface, \
     _numpy_type_to_opencv_mat_type

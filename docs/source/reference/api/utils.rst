@@ -20,6 +20,21 @@ General utilities
     artist.Artist
     logging.LoggerMixin
 
+GPU Memory Formats
+------------------
+
+.. currentmodule:: savant.utils
+
+.. autosummary::
+    :toctree: generated
+    :nosignatures:
+    :template: autosummary/function.rst
+
+    memory_repr.opencv_gpu_mat_as_cupy
+    memory_repr_pytorch.opencv_gpu_mat_as_pytorch
+    memory_repr.cupy_as_opencv_gpu_mat
+    memory_repr_pytorch.pytorch_tensor_as_opencv_gpu_mat
+
 DeepStream utilities
 --------------------
 
