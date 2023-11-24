@@ -10,7 +10,7 @@ class PyFuncMetricsExample(NvDsPyFuncPlugin):
 
     Metrics values example:
 
-    ..code-block:: text
+    .. code-block:: text
 
         # HELP frames_per_source_total Number of processed frames per source
         # TYPE frames_per_source_total counter

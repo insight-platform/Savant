@@ -190,7 +190,21 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
         return self._video_pipeline.get_stat_records(n)
 
     @property
-    def metrics(self):
-        """Get metrics registry."""
+    def metrics(self) -> MetricsRegistry:
+        """Get metrics registry.
+
+        Usage example:
+
+        .. code-block:: python
+
+            from savant.metrics import Counter
+            self.metrics['frames_per_source'] = Counter(
+                name='frames_per_source',
+                description='Number of processed frames per source',
+                labelnames=('source_id',),
+            )
+            ...
+            self.metrics['frames_per_source'].inc(labels=('camera-1',))
+        """
 
         return self._metrics_registry

@@ -9,7 +9,8 @@ from savant_rs.pipeline2 import (
     VideoPipeline,
 )
 
-from savant.metrics.base import BaseMetricsExporter, Counter, Gauge, Metric
+from savant.metrics.base import BaseMetricsExporter
+from savant.metrics.metric import Counter, Gauge, Metric
 from savant.utils.logging import get_logger
 
 logger = get_logger(__name__)

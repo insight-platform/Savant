@@ -3,7 +3,8 @@ from typing import Optional
 from savant_rs.pipeline2 import VideoPipeline
 
 from savant.config.schema import MetricsParameters
-from savant.metrics.base import BaseMetricsExporter, Counter, Gauge
+from savant.metrics.base import BaseMetricsExporter
+from savant.metrics.metric import Counter, Gauge
 from savant.metrics.prometheus import PrometheusMetricsExporter
 
 
