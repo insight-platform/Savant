@@ -3,9 +3,8 @@ import inspect
 import itertools
 import time
 from dataclasses import dataclass
-from fractions import Fraction
 from threading import Lock, Thread
-from typing import Dict, NamedTuple, Optional
+from typing import Dict, Optional
 
 from savant_rs.pipeline2 import VideoPipeline
 from savant_rs.primitives import (
@@ -18,12 +17,12 @@ from savant_rs.primitives import (
 from savant_rs.utils import PropagatedContext
 
 from gst_plugins.python.pyfunc_common import handle_non_fatal_error, init_pyfunc
-from savant.api.constants import DEFAULT_FRAMERATE
+from gst_plugins.python.savant_rs_video_demux_common import FrameParams, build_caps
 from savant.api.enums import ExternalFrameType
 from savant.api.parser import convert_ts
 from savant.base.pyfunc import PyFunc
 from savant.gstreamer import GObject, Gst
-from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
+from savant.gstreamer.codecs import Codec
 from savant.gstreamer.utils import (
     gst_post_stream_demux_error,
     load_message_from_gst_buffer,
@@ -148,24 +147,6 @@ SAVANT_RS_VIDEO_DEMUX_PROPERTIES = {
         GObject.ParamFlags.READWRITE,
     ),
 }
-
-
-class FrameParams(NamedTuple):
-    """Frame parameters."""
-
-    codec: Codec
-    width: str
-    height: str
-    framerate: str
-
-    @staticmethod
-    def from_video_frame(frame: VideoFrame):
-        return FrameParams(
-            codec=CODEC_BY_NAME[frame.codec],
-            width=frame.width,
-            height=frame.height,
-            framerate=frame.framerate,
-        )
 
 
 @dataclass
@@ -813,21 +794,6 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
                     )
                 )
             gst_buffer_add_savant_frame_meta(frame_buf, idx)
-
-
-def build_caps(params: FrameParams) -> Gst.Caps:
-    """Caps factory."""
-    try:
-        framerate = Fraction(params.framerate)
-    except (ZeroDivisionError, ValueError):
-        framerate = Fraction(DEFAULT_FRAMERATE)
-    framerate = Gst.Fraction(framerate.numerator, framerate.denominator)
-    caps = Gst.Caps.from_string(params.codec.value.caps_with_params)
-    caps.set_value('width', params.width)
-    caps.set_value('height', params.height)
-    caps.set_value('framerate', framerate)
-
-    return caps
 
 
 # register plugin
