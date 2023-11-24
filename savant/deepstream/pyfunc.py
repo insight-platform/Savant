@@ -21,7 +21,8 @@ from savant.deepstream.utils import (
     nvds_frame_meta_iterator,
 )
 from savant.gstreamer import Gst  # noqa: F401
-from savant.metrics.base import BaseMetricsExporter, MetricsRegistry
+from savant.metrics.base import BaseMetricsExporter
+from savant.metrics.registry import MetricsRegistry
 from savant.utils.source_info import SourceInfoRegistry
 
 
