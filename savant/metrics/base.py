@@ -133,11 +133,12 @@ class MetricsRegistry:
         if key in self._metrics:
             raise KeyError(f'Key {key!r} already exists')
         if self._exporter is not None:
+            self._exporter.register_metric(value)
+        else:
             logger.warning(
                 'Metric exporter not configured. Ignoring metric %s.',
                 value.name,
             )
-            self._exporter.register_metric(value)
         self._metrics[key] = value
 
     def __getitem__(self, key):

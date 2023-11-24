@@ -173,13 +173,10 @@ class ModuleMetricsCollector(Collector):
                   timestamp-based records.
         """
 
-        last_record_id = self._last_record_id
         frame_based_record = None
         timestamp_based_record = None
 
-        for record in self._pipeline.get_stat_records(100):  # TODO: use last_record_id
-            if record.id <= self._last_record_id:
-                continue
+        for record in self._pipeline.get_stat_records_newer_than(self._last_record_id):
             if record.record_type == FrameProcessingStatRecordType.Frame:
                 if frame_based_record is None or frame_based_record.id < record.id:
                     frame_based_record = record
@@ -189,8 +186,7 @@ class ModuleMetricsCollector(Collector):
                     or timestamp_based_record.id < record.id
                 ):
                     timestamp_based_record = record
-            last_record_id = max(last_record_id, record.id)
-        self._last_record_id = last_record_id
+            self._last_record_id = max(self._last_record_id, record.id)
         records = []
         if frame_based_record is not None:
             records.append(frame_based_record)

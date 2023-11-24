@@ -50,6 +50,9 @@ docker compose -f samples/pass_through_processing/docker-compose.l4t.yml up
 # for pre-configured Grafana dashboard visit
 # http://127.0.0.1:3000/d/a4c1f484-75c9-4375-a04d-ab5d50578239/module-performance-metrics?orgId=1&refresh=5s
 
+# for the tracker metrics visit
+# http://127.0.0.1:8000/metrics
+
 # Ctrl+C to stop running the compose bundle
 ```
 
