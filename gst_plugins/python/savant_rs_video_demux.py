@@ -265,14 +265,22 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             self.expiration_thread.start()
 
         if old == Gst.State.NULL and new == Gst.State.READY:
-            self.ingress_pyfunc = init_pyfunc(
-                self,
-                self.logger,
-                self.ingress_module,
-                self.ingress_class_name,
-                self.ingress_kwargs,
-                self.ingress_dev_mode,
-            )
+            if self.ingress_module and self.ingress_class_name:
+                self.ingress_pyfunc = init_pyfunc(
+                    self,
+                    self.logger,
+                    self.ingress_module,
+                    self.ingress_class_name,
+                    self.ingress_kwargs,
+                    self.ingress_dev_mode,
+                )
+            else:
+                # for AO RTSP
+                self.logger.debug(
+                    'Ingress filter is not set, '
+                    'using default check for video frame content.'
+                )
+                self.ingress_pyfunc = lambda x: not x.content.is_none()
 
     def do_get_property(self, prop):
         """Get property callback."""

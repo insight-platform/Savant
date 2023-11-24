@@ -150,6 +150,18 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
 
     def do_start(self):
         """Do on plugin start."""
+
+        if not self.module or not self.class_name:
+            return handle_fatal_error(
+                self,
+                self.logger,
+                None,
+                'Module and class name should be specified.',
+                self.dev_mode,
+                True,
+                False,
+            )
+
         self.pyfunc = init_pyfunc(
             self, self.logger, self.module, self.class_name, self.kwargs, self.dev_mode
         )

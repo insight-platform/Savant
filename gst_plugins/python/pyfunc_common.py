@@ -14,8 +14,8 @@ from savant.gstreamer.utils import (
 def init_pyfunc(
     gst_element: Gst.Element,
     logger: Logger,
-    module: Optional[str],
-    class_name: Optional[str],
+    module: str,
+    class_name: str,
     kwargs: Optional[str],
     dev_mode: bool = False,
 ) -> PyFunc:

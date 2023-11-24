@@ -96,8 +96,6 @@ def build_input_pipeline(
     savant_rs_video_demux_properties = {
         'max-width': config.max_allowed_resolution[0],
         'max-height': config.max_allowed_resolution[1],
-        'ingress-module': 'savant.base.frame_filter',
-        'ingress-class': 'DefaultIngressFilter',
     }
     if config.pipeline_stage_name is not None:
         savant_rs_video_demux_properties[
