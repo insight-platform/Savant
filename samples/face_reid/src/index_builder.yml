@@ -86,3 +86,8 @@ pipeline:
             class_name: TensorToVectorConverter
           attributes:
             - name: feature
+
+    # Log index building stats at the module shutdown
+    - element: pyfunc
+      module: savant.utils.stat_logger
+      class_name: StatLogger
