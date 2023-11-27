@@ -3,7 +3,7 @@ Conversions Between GPU Memory Formats
 
 When working with images, there are many ways to represent them as arrays of pixels. Working with different models you may encounter representation of an image using OpenCV GpuMat class, PyTorch tensor or CuPy array.
 
-The Savant framework aims to maximize GPU utilization without unnecessary data copying and conversion. To achieve this, Savant provides functions for converting between different image representations. Data exchange is performed with zero-copying between different views, except for some cases of conversion to GpuMat OpenCV.
+The Savant framework aims to use GPU efficiently without excessive data transfers. To achieve this, Savant provides functions for converting between different image representations. Data exchange is performed with zero-copying between different views, except for some cases of conversion to GpuMat OpenCV.
 
 Conversion to OpenCV
 ^^^^^^^^^^^^^^^^^^^^
@@ -12,17 +12,26 @@ Conversion to OpenCV
 
 .. py:currentmodule:: savant.utils.memory_repr_pytorch
 
-:py:func:`pytorch_tensor_as_opencv_gpu_mat <pytorch_tensor_as_opencv_gpu_mat>` - the function allows you to convert a PyTorch tensor into an OpenCV GpuMat on GPU. The input tensor must be on GPU and must have shape in CHW format.
+:py:func:`pytorch_tensor_as_opencv_gpu_mat <pytorch_tensor_as_opencv_gpu_mat>` - the function allows you to convert a PyTorch tensor into an OpenCV GpuMat on GPU. The input tensor must be on GPU and must have shape in HWC format.
 
 .. code-block:: python
 
     import torch
-    import cv2
     from savant.utils.memory_repr_pytorch import pytorch_tensor_as_opencv_gpu_mat
 
-    pytorch_tensor = torch.randint(0, 255, size=(channels, 10, 20), device='cuda').to(torch.uint8).cuda()
+    pytorch_tensor = torch.randint(0, 255, size=(10, 20, 3), device='cuda').to(torch.uint8).cuda()
     opencv_gpu_mat = pytorch_tensor_as_opencv_gpu_mat(torch_tensor)
 
+If you face the exception ``ValueError: PyTorch tensor is not contiguous and cannot be converted to OpenCV GpuMat.`` when using the function, you must convert the tensor to contiguous in memory tensor. You can do this by using the method `contiguous <https://pytorch.org/docs/stable/generated/torch.Tensor.contiguous.html>`__.
+
+.. code-block:: python
+
+    import torch
+    from savant.utils.memory_repr_pytorch import pytorch_tensor_as_opencv_gpu_mat
+
+    pytorch_tensor = torch.randint(0, 255, size=(3, 10, 20), device='cuda').to(torch.uint8).permute(1, 2, 0)
+    pytorch_tensor = pytorch_tensor.contiguous()
+    opencv_gpu_mat = pytorch_tensor_as_opencv_gpu_mat(pytorch_tensor)
 
 **From CuPy array**
 
@@ -34,10 +43,20 @@ Conversion to OpenCV
 .. code-block:: python
 
     import cupy as cp
-    import cv2
     from savant.utils.memory_repr import cupy_as_opencv_gpu_mat
 
     cupy_array = cp.random.randint(0, 255, (10, 20, 3)).astype(cp.uint8)
+    opencv_gpu_mat = cupy_as_opencv_gpu_mat(cupy_array)
+
+If you face the exception ``ValueError: CuPy array is not contiguous and cannot be converted to OpenCV GpuMat.`` when using the function, you must convert the array to contiguous in memory array. You can do this by using the function `ascontiguousarray <https://docs.cupy.dev/en/stable/reference/generated/cupy.ascontiguousarray.html>`__.
+
+.. code-block:: python
+
+    import cupy as cp
+    from savant.utils.memory_repr import cupy_as_opencv_gpu_mat
+
+    cupy_array = cp.transpose(cp.random.randint(0, 255, (3, 10, 20)).astype(cp.uint8), (1, 2, 0))
+    cupy_array=cp.ascontiguousarray(cupy_array)
     opencv_gpu_mat = cupy_as_opencv_gpu_mat(cupy_array)
 
 
@@ -57,7 +76,7 @@ Conversion to PyTorch Tensor
     from savant.utils.memory_repr_pytorch import opencv_gpu_mat_as_pytorch
 
     opencv_gpu_mat = cv2.cuda_GpuMat()
-    opencv_gpu_mat.upload(np.random.randint(0, 255, (10, 20, channels)).astype(input_type))
+    opencv_gpu_mat.upload(np.random.randint(0, 255, (10, 20, 3)).astype(input_type))
 
     torch_tensor = opencv_gpu_mat_as_pytorch(opencv_gpu_mat)
 
@@ -108,3 +127,5 @@ Conversion from PyTorch tensor to CuPy is performed by using standard CuPy funct
 
     torch_tensor = torch.randint(0, 255, size=(3, 10, 20), device='cuda').to(torch.uint8).cuda()
     cupy_array = cp.asarray(torch_tensor)
+
+
