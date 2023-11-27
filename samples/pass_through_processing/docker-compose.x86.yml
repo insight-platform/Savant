@@ -50,6 +50,8 @@ services:
   module-tracker:
     image: ghcr.io/insight-platform/savant-deepstream:latest
     restart: unless-stopped
+    ports:
+      - "8000:8000"
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../models/peoplenet_detector:/models

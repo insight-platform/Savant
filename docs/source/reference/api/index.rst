@@ -18,4 +18,5 @@ API Reference
    param_storage
    utils
    libs
+   metrics
    client
