@@ -76,7 +76,7 @@ class SinkFactory(ABC):
             )
             self.egress_pyfunc = lambda x: True
 
-    def video_frame_filt(self, video_frame: VideoFrame, frame_pts: int) -> bool:
+    def video_frame_filter(self, video_frame: VideoFrame, frame_pts: int) -> bool:
         """Wrapper for egress frame filter."""
         try:
             ret = self.egress_pyfunc(video_frame)
@@ -208,7 +208,7 @@ class ZeroMQSinkFactory(SinkFactory):
 
             if isinstance(msg, SinkVideoFrame):
                 frame_pts = convert_ts(msg.video_frame.pts, msg.video_frame.time_base)
-                if self.video_frame_filt(msg.video_frame, frame_pts):
+                if self.video_frame_filter(msg.video_frame, frame_pts):
                     logger.debug(
                         'Sending frame of source "%s" with PTS %s to ZeroMQ sink.',
                         msg.source_id,
@@ -284,7 +284,7 @@ class ConsoleSinkFactory(SinkFactory):
 
             if isinstance(msg, SinkVideoFrame):
                 frame_pts = convert_ts(msg.video_frame.pts, msg.video_frame.time_base)
-                if self.video_frame_filt(msg.video_frame, frame_pts):
+                if self.video_frame_filter(msg.video_frame, frame_pts):
                     message = f'Frame shape(WxH): {msg.video_frame.width}x{msg.video_frame.height}'
                     if msg.video_frame.codec is not None:
                         message += f', codec: {msg.video_frame.codec}'
@@ -341,7 +341,7 @@ class FileSinkFactory(SinkFactory):
         ):
             if isinstance(msg, SinkVideoFrame):
                 frame_pts = convert_ts(msg.video_frame.pts, msg.video_frame.time_base)
-                if self.video_frame_filt(msg.video_frame, frame_pts):
+                if self.video_frame_filter(msg.video_frame, frame_pts):
                     self._json_writer.write(msg.video_frame.json)
 
         return send_message
