@@ -169,7 +169,7 @@ class BaseZeroMQSource(ABC):
             self.receiver.setsockopt(zmq.SUBSCRIBE, self.topic_prefix)
         self.receiver.setsockopt(zmq.RCVTIMEO, self.receive_timeout)
         if self.set_ipc_socket_permissions and self.bind:
-            set_ipc_socket_permissions(self.socket)
+            ipc_socket_chmod(self.socket)
         self.is_alive = True
 
     @abstractmethod
@@ -483,7 +483,7 @@ async def async_receive_response(sender: zmq.asyncio.Socket, retries: int):
                 raise
 
 
-def set_ipc_socket_permissions(socket: str, permission: int = 0o777):
+def ipc_socket_chmod(socket: str, permission: int = 0o777):
     """Set permissions for IPC socket.
 
     Needed to make socket available for non-root users.

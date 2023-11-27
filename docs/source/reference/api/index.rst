@@ -13,6 +13,7 @@ API Reference
    input_preproc
    converter
    selector
+   frame_filter
    remote_file
    param_storage
    utils

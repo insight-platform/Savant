@@ -535,7 +535,7 @@ class NvDsBufferProcessor(GstBufferProcessor):
         self,
         frame_idx: int,
         sink_video_frame: SinkVideoFrame,
-    ):
+    ) -> SinkVideoFrame:
         spans = self._video_pipeline.delete(frame_idx)
         span_context = spans[frame_idx].propagate()
         return sink_video_frame._replace(span_context=span_context)

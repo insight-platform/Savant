@@ -8,16 +8,18 @@ from savant_rs.utils import PropagatedContext
 from savant_rs.utils.serialization import Message, save_message_to_bytes
 
 from savant.api.enums import ExternalFrameType
-from savant.config.schema import PipelineElement
+from savant.api.parser import convert_ts
+from savant.base.pyfunc import PyFunc
+from savant.config.schema import SinkElement
 from savant.utils.logging import get_logger
 from savant.utils.registry import Registry
 from savant.utils.zeromq import (
     Defaults,
     SenderSocketTypes,
     create_ipc_socket_dirs,
+    ipc_socket_chmod,
     parse_zmq_socket_uri,
     receive_response,
-    set_ipc_socket_permissions,
 )
 
 logger = get_logger(__name__)
@@ -58,6 +60,54 @@ SinkCallable = Callable[[SinkMessage, Dict[str, Any]], None]
 
 class SinkFactory(ABC):
     """SinkFactory interface."""
+
+    def __init__(self, sink_name: str, egress_pyfunc: PyFunc) -> None:
+        self.name = sink_name
+        self.egress_pyfunc = egress_pyfunc
+        try:
+            self.egress_pyfunc.load_user_code()
+        except Exception as exc:
+            logger.warning(
+                'Error in sink "%s" loading egress filter %s: %s. '
+                'Using noop placeholder.',
+                self.name,
+                self.egress_pyfunc,
+                exc,
+            )
+            self.egress_pyfunc = lambda x: True
+
+    def video_frame_filter(self, video_frame: VideoFrame, frame_pts: int) -> bool:
+        """Wrapper for egress frame filter."""
+        try:
+            ret = self.egress_pyfunc(video_frame)
+        except Exception as exc:
+            logger.warning(
+                'Frame of source "%s" with PTS %s got error in sink "%s" '
+                'egress filter %s call: %s. Allowing frame to pass.',
+                video_frame.source_id,
+                frame_pts,
+                self.name,
+                self.egress_pyfunc,
+                exc,
+            )
+            return True
+
+        if ret:
+            logger.debug(
+                'Frame of source "%s" with PTS %s passed "%s" sink egress filter.',
+                video_frame.source_id,
+                frame_pts,
+                self.name,
+            )
+        else:
+            logger.debug(
+                'Frame of source "%s" with PTS %s didnt pass "%s" sink egress filter,'
+                'skipping it.',
+                video_frame.source_id,
+                frame_pts,
+                self.name,
+            )
+        return ret
 
     @abstractmethod
     def get_sink(self) -> SinkCallable:
@@ -101,6 +151,8 @@ class ZeroMQSinkFactory(SinkFactory):
 
     def __init__(
         self,
+        sink_name: str,
+        egress_pyfunc: PyFunc,
         socket: str,
         socket_type: str = SenderSocketTypes.PUB.name,
         bind: bool = True,
@@ -109,6 +161,7 @@ class ZeroMQSinkFactory(SinkFactory):
         req_receive_retries: int = Defaults.REQ_RECEIVE_RETRIES,
         set_ipc_socket_permissions: bool = True,
     ):
+        super().__init__(sink_name, egress_pyfunc)
         logger.debug(
             'Initializing ZMQ sink: socket %s, type %s, bind %s.',
             socket,
@@ -144,7 +197,7 @@ class ZeroMQSinkFactory(SinkFactory):
         else:
             output_zmq_socket.connect(self.socket)
         if self.set_ipc_socket_permissions and self.bind:
-            set_ipc_socket_permissions(self.socket)
+            ipc_socket_chmod(self.socket)
 
         def send_message(
             msg: SinkMessage,
@@ -152,43 +205,48 @@ class ZeroMQSinkFactory(SinkFactory):
         ):
             zmq_topic = f'{msg.source_id}/'.encode()
             zmq_message = [zmq_topic]
+
             if isinstance(msg, SinkVideoFrame):
-                logger.debug(
-                    'Sending frame of source %s with PTS %s to ZeroMQ sink',
-                    msg.source_id,
-                    msg.video_frame.pts,
-                )
-
-                if msg.frame:
+                frame_pts = convert_ts(msg.video_frame.pts, msg.video_frame.time_base)
+                if self.video_frame_filter(msg.video_frame, frame_pts):
                     logger.debug(
-                        'Size of frame of source %r with PTS %s is %s bytes',
+                        'Sending frame of source "%s" with PTS %s to ZeroMQ sink.',
                         msg.source_id,
-                        msg.video_frame.pts,
-                        len(msg.frame),
+                        frame_pts,
                     )
-                    msg.video_frame.content = VideoFrameContent.external(
-                        ExternalFrameType.ZEROMQ.value, None
-                    )
-                else:
-                    logger.debug(
-                        'Frame of source %r with PTS %s is empty',
-                        msg.source_id,
-                        msg.video_frame.pts,
-                    )
-                    msg.video_frame.content = VideoFrameContent.none()
 
-                message = Message.video_frame(msg.video_frame)
-                if msg.span_context is not None:
-                    message.span_context = msg.span_context
-                zmq_message.append(save_message_to_bytes(message))
-                if msg.frame:
-                    zmq_message.append(msg.frame)
+                    if msg.frame:
+                        logger.debug(
+                            'Size of frame of source "%s" with PTS %s is %s bytes.',
+                            msg.source_id,
+                            frame_pts,
+                            len(msg.frame),
+                        )
+                        msg.video_frame.content = VideoFrameContent.external(
+                            ExternalFrameType.ZEROMQ.value, None
+                        )
+                    else:
+                        logger.debug(
+                            'Frame of source "%s" with PTS %s is empty.',
+                            msg.source_id,
+                            frame_pts,
+                        )
+                        msg.video_frame.content = VideoFrameContent.none()
+
+                    message = Message.video_frame(msg.video_frame)
+                    if msg.span_context is not None:
+                        message.span_context = msg.span_context
+                    zmq_message.append(save_message_to_bytes(message))
+                    if msg.frame:
+                        zmq_message.append(msg.frame)
             elif isinstance(msg, SinkEndOfStream):
-                logger.debug('Sending EOS of source %s to ZeroMQ sink', msg.source_id)
+                logger.debug(
+                    'Sending EOS of source "%s" to ZeroMQ sink.', msg.source_id
+                )
                 message = Message.end_of_stream(msg.eos)
                 zmq_message.append(save_message_to_bytes(message))
             else:
-                logger.warning('Unknown message type %s', type(msg))
+                logger.warning('Unknown message type %s.', type(msg))
                 return
             output_zmq_socket.send_multipart(zmq_message)
             if self.wait_response:
@@ -204,7 +262,8 @@ class ZeroMQSinkFactory(SinkFactory):
 class ConsoleSinkFactory(SinkFactory):
     """Just output messages to STDOUT."""
 
-    def __init__(self, json_mode=False):
+    def __init__(self, sink_name: str, egress_pyfunc: PyFunc, json_mode: bool = False):
+        super().__init__(sink_name, egress_pyfunc)
         self.json_mode = json_mode
 
     def get_sink(self) -> SinkCallable:
@@ -222,14 +281,17 @@ class ConsoleSinkFactory(SinkFactory):
             msg: SinkMessage,
             **kwargs,
         ):
+
             if isinstance(msg, SinkVideoFrame):
-                message = f'Frame shape(WxH): {msg.video_frame.width}x{msg.video_frame.height}'
-                if msg.video_frame.codec is not None:
-                    message += f', codec: {msg.video_frame.codec}'
-                if msg.frame is not None:
-                    message += f', size (bytes): {len(msg.frame)}'
-                message += f'.\nMeta: {format_meta(msg.video_frame)}.\n'
-                print(message)
+                frame_pts = convert_ts(msg.video_frame.pts, msg.video_frame.time_base)
+                if self.video_frame_filter(msg.video_frame, frame_pts):
+                    message = f'Frame shape(WxH): {msg.video_frame.width}x{msg.video_frame.height}'
+                    if msg.video_frame.codec is not None:
+                        message += f', codec: {msg.video_frame.codec}'
+                    if msg.frame is not None:
+                        message += f', size (bytes): {len(msg.frame)}'
+                    message += f'.\nMeta: {format_meta(msg.video_frame)}.\n'
+                    print(message)
 
             elif isinstance(msg, SinkEndOfStream):
                 message = f'End of stream {msg.source_id}.\n'
@@ -268,7 +330,8 @@ class FileSinkFactory(SinkFactory):
     :param file_path: path to output file.
     """
 
-    def __init__(self, file_path: str):
+    def __init__(self, sink_name: str, egress_pyfunc: PyFunc, file_path: str):
+        super().__init__(sink_name, egress_pyfunc)
         self._json_writer = JsonWriter(file_path)
 
     def get_sink(self) -> SinkCallable:
@@ -276,9 +339,10 @@ class FileSinkFactory(SinkFactory):
             msg: SinkMessage,
             **kwargs,
         ):
-            if not isinstance(msg, SinkVideoFrame):
-                return
-            self._json_writer.write(msg.video_frame.json)
+            if isinstance(msg, SinkVideoFrame):
+                frame_pts = convert_ts(msg.video_frame.pts, msg.video_frame.time_base)
+                if self.video_frame_filter(msg.video_frame, frame_pts):
+                    self._json_writer.write(msg.video_frame.json)
 
         return send_message
 
@@ -301,14 +365,18 @@ class DevNullSinkFactory(SinkFactory):
         return send_message
 
 
-def sink_factory(sink: Union[PipelineElement, List[PipelineElement]]) -> SinkCallable:
+def sink_factory(sink: Union[SinkElement, List[SinkElement]]) -> SinkCallable:
     """Init sink from config."""
-    if isinstance(sink, PipelineElement):
-        return SINK_REGISTRY.get(sink.element.lower())(**sink.properties).get_sink()
+    if isinstance(sink, SinkElement):
+        return SINK_REGISTRY.get(sink.element.lower())(
+            sink.full_name, sink.egress_frame_filter, **sink.properties
+        ).get_sink()
 
     sink_factories = []
     for _sink in sink:
         sink_factories.append(
-            SINK_REGISTRY.get(_sink.element.lower())(**_sink.properties)
+            SINK_REGISTRY.get(_sink.element.lower())(
+                _sink.full_name, _sink.egress_frame_filter, **_sink.properties
+            )
         )
     return MultiSinkFactory(*sink_factories).get_sink()
