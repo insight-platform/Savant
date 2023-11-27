@@ -20,6 +20,7 @@ from gst_plugins.python.pyfunc_common import handle_non_fatal_error, init_pyfunc
 from gst_plugins.python.savant_rs_video_demux_common import FrameParams, build_caps
 from savant.api.enums import ExternalFrameType
 from savant.api.parser import convert_ts
+from savant.base.frame_filter import DefaultIngressFilter
 from savant.base.pyfunc import PyFunc
 from savant.gstreamer import GObject, Gst
 from savant.gstreamer.codecs import Codec
@@ -117,30 +118,31 @@ SAVANT_RS_VIDEO_DEMUX_PROPERTIES = {
     ),
     'ingress-module': (
         str,
-        'Python module',
-        'Python module name to import or module path.',
+        'Ingress filter python module.',
+        'Name or path of the python module where '
+        'the ingress filter class code is located.',
         None,
         GObject.ParamFlags.READWRITE,
     ),
     'ingress-class': (
         str,
-        'Python class name',
-        'Python class name to instantiate.',
+        'Ingress filter python class name.',
+        'Name of the python class that implements ingress filter.',
         None,
         GObject.ParamFlags.READWRITE,
     ),
     'ingress-kwargs': (
         str,
-        'Keyword arguments for class initialization',
-        'Keyword argument for Python class initialization.',
+        'Ingress filter init kwargs.',
+        'Keyword arguments for ingress filter initialization.',
         None,
         GObject.ParamFlags.READWRITE,
     ),
     'ingress-dev-mode': (
         bool,
-        'Dev mode flag',
+        'Ingress filter dev mode flag.',
         (
-            'Whether to monitor source file changes at runtime'
+            'Whether to monitor the ingress filter source file changes at runtime'
             ' and reload the pyfunc objects when necessary.'
         ),
         False,
@@ -257,11 +259,8 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
                 )
             else:
                 # for AO RTSP
-                self.logger.debug(
-                    'Ingress filter is not set, '
-                    'using default check for video frame content.'
-                )
-                self.ingress_pyfunc = lambda x: not x.content.is_none()
+                self.logger.debug('Ingress filter is not set, using default one.')
+                self.ingress_pyfunc = DefaultIngressFilter()
 
     def do_get_property(self, prop):
         """Get property callback."""
