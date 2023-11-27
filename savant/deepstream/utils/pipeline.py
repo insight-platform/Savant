@@ -13,7 +13,7 @@ from savant.config.schema import (
     TracingParameters,
 )
 from savant.metrics.base import BaseMetricsExporter
-from savant.metrics.prometheus import PrometheusMetricsExporter
+from savant.metrics.prometheus import ModuleMetricsCollector, PrometheusMetricsExporter
 from savant.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -182,6 +182,12 @@ def build_metrics_exporter(
         return None
 
     if params.provider == 'prometheus':
-        return PrometheusMetricsExporter(pipeline, params.provider_params)
+        return PrometheusMetricsExporter(
+            params.provider_params,
+            ModuleMetricsCollector(
+                pipeline,
+                params.provider_params.get('labels') or {},
+            ),
+        )
 
     raise ValueError(f'Unknown metrics provider: {params.provider}')
