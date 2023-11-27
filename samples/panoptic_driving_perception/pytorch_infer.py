@@ -82,11 +82,9 @@ class PyTorchInfer(NvDsPyFuncPlugin):
                         self.road_mask_color,
                         self.bg_color,
                     )
-                    mask_seg = mask_seg.permute((2, 0, 1))
                     ll_mask = torch.where(
                         ll_seg_mask.bool()[..., None], self.line_mask_color, self.bg_color
                     )
-                    ll_mask = ll_mask.permute((2, 0, 1))
 
                     alpha_comp(
                         frame_mat,

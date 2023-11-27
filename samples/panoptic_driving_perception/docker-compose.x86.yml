@@ -25,7 +25,7 @@ services:
       dockerfile: docker/Dockerfile.x86
     restart: unless-stopped
     volumes:
-      - /tmp/zmq-sockets:/tmp/zmq-sockets
+      - zmq_sockets:/tmp/zmq-sockets
       - ../../models/panoptic_driving_perception:/models
       - ../../downloads/panoptic_driving_perception:/downloads
       - .:/opt/savant/samples/panoptic_driving_perception
