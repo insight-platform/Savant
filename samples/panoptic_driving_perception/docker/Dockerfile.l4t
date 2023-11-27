@@ -2,12 +2,17 @@ FROM ghcr.io/insight-platform/savant-deepstream-l4t:latest
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-                  libopenblas-dev \
-                  libopenmpi-dev \
+            libopenblas-dev \
+            libopenmpi-dev \
             openmpi-bin \
             openmpi-common \
-                  gfortran \
-                  libomp-dev \
+            gfortran \
+            libomp-dev \
+            libjpeg-dev \
+            zlib1g-dev libpython3-dev \
+            libopenblas-dev libavcodec-dev \
+            libavformat-dev \
+            libswscale-dev \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
@@ -19,8 +24,6 @@ RUN cd /opt && \
     wget --quiet --show-progress --progress=bar:force:noscroll --no-check-certificate ${PYTORCH_URL} -O ${PYTORCH_WHL} && \
     pip3 install --verbose ${PYTORCH_WHL}
 
-RUN python3 -c 'import torch; print(f"PyTorch version: {torch.__version__}"); print(f"CUDA available:  {torch.cuda.is_available()}"); print(f"cuDNN version:   {torch.backends.cudnn.version()}"); print(torch.__config__.show());'
-
 # patch for https://github.com/pytorch/pytorch/issues/45323
 RUN PYTHON_ROOT=`pip3 show torch | grep Location: | cut -d' ' -f2` && \
     TORCH_CMAKE_CONFIG=$PYTHON_ROOT/torch/share/cmake/Torch/TorchConfig.cmake && \
@@ -30,6 +33,10 @@ RUN PYTHON_ROOT=`pip3 show torch | grep Location: | cut -d' ' -f2` && \
 # PyTorch C++ extensions frequently use ninja parallel builds
 RUN pip3 install --no-cache-dir scikit-build && \
     pip3 install --no-cache-dir ninja
+
+RUN git clone --branch v0.16.1  https://github.com/pytorch/vision torchvision \
+    && cd torchvision &&  export BUILD_VERSION=0.16.1 \
+    && python3 setup.py install --user # see below for version of torchvision to download
 
 ENV TORCH_HOME=/models/torch
 RUN export PYTHONPATH=/models/yolov7:$PYTHONPATH
