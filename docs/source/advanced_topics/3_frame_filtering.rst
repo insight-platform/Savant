@@ -22,6 +22,10 @@ To define an ingress filtering function, add an ``ingress_frame_filter`` node to
         module: path.to.module
         class_name: IngressFilter
 
+.. note::
+
+    Ingress filter can only be configured for ``zeromq_source_bin`` source.
+
 Likewise for egress filtering, add an ``egress_frame_filter`` node to the :py:class:`~savant.config.schema.SinkElement` definition.
 
 .. code-block:: yaml

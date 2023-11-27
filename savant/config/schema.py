@@ -6,6 +6,9 @@ from typing import Any, Dict, List, Optional, Union
 from omegaconf import MISSING, DictConfig, OmegaConf
 
 from savant.base.pyfunc import PyFunc
+from savant.utils.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -332,13 +335,21 @@ def get_element_name(element: Union[DictConfig, PipelineElement]) -> str:
 class SourceElement(PipelineElement):
     """A pipeline element that produces pipeline input."""
 
-    ingress_frame_filter: PyFunc = PyFunc(
-        module='savant.base.frame_filter', class_name='DefaultIngressFilter'
-    )
-    """Frame filter for ingress frames."""
+    ingress_frame_filter: Optional[PyFunc] = None
+    """Frame filter for ingress frames.
+
+    .. note::
+
+        Ingress filter can only be configured for ``zeromq_source_bin`` source.
+    """
 
     def __post_init__(self):
         if self.element == 'zeromq_source_bin':
+            if self.ingress_frame_filter is None:
+                self.ingress_frame_filter = PyFunc(
+                    module='savant.base.frame_filter',
+                    class_name='DefaultIngressFilter',
+                )
             kwargs = {}
             if 'kwargs' in self.properties and self.properties['kwargs']:
                 kwargs = json.loads(self.properties['kwargs'])
@@ -352,6 +363,12 @@ class SourceElement(PipelineElement):
                     'ingress-kwargs': json.dumps(kwargs),
                     'ingress-dev-mode': self.ingress_frame_filter.dev_mode,
                 }
+            )
+        elif self.ingress_frame_filter:
+            logger.warning(
+                'Ingress filter is not supported for "%s", '
+                'no filtering will be performed.',
+                self.element,
             )
 
 
