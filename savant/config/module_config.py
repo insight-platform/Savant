@@ -352,12 +352,12 @@ def configure_pipeline(module_cfg: DictConfig) -> None:
         module_cfg.pipeline.source, module_cfg
     )
 
-    logger.debug('Configure pipeline sink...')
+    logger.debug('Configuring pipeline sink...')
     for pipeline_sink_idx, item in enumerate(module_cfg.pipeline.sink):
         item_cfg = configure_element(item, module_cfg)
         module_cfg.pipeline.sink[pipeline_sink_idx] = item_cfg
 
-    logger.debug('Configure pipeline elements...')
+    logger.debug('Configuring pipeline elements...')
     if 'elements' not in module_cfg.pipeline or module_cfg.pipeline.elements is None:
         module_cfg.pipeline.elements = []
         return
@@ -460,7 +460,7 @@ class ModuleConfig(metaclass=SingletonMeta):
         :return: Module configuration, structured
         """
         module_cfg = OmegaConf.load(config)
-        logger.info('Configure module "%s"...', module_cfg.name)
+        logger.info('Configuring module "%s"...', module_cfg.name)
         module_cfg = merge_configs([module_cfg], self._default_cfg)
 
         module_cfg = OmegaConf.unsafe_merge(OmegaConf.structured(Module), module_cfg)
@@ -468,10 +468,10 @@ class ModuleConfig(metaclass=SingletonMeta):
         init_param_storage(module_cfg)
         OmegaConf.resolve(module_cfg)  # to resolve parameters for pipeline elements
 
-        logger.debug('Configure module parameters...')
+        logger.debug('Configuring module parameters...')
         configure_module_parameters(module_cfg)
 
-        logger.debug('Configure pipeline...')
+        logger.debug('Configuring pipeline...')
         configure_pipeline(module_cfg)
 
         self._config = OmegaConf.to_object(module_cfg)
