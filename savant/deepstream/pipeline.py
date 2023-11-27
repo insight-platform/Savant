@@ -53,6 +53,7 @@ from savant.deepstream.utils import (
 )
 from savant.deepstream.utils.pipeline import (
     add_queues_to_pipeline,
+    build_metrics_exporter,
     build_pipeline_stages,
     get_pipeline_element_stages,
     init_tracing,
@@ -61,7 +62,6 @@ from savant.gstreamer import GLib, Gst  # noqa:F401
 from savant.gstreamer.pipeline import GstPipeline
 from savant.gstreamer.utils import add_buffer_probe, on_pad_event, pad_to_source_id
 from savant.meta.constants import PRIMARY_OBJECT_KEY, UNTRACKED_OBJECT_ID
-from savant.metrics import build_metrics_exporter
 from savant.utils.platform import is_aarch64
 from savant.utils.sink_factories import SinkEndOfStream
 from savant.utils.source_info import Resolution, SourceInfo, SourceInfoRegistry
