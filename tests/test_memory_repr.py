@@ -21,22 +21,23 @@ class TestAsOpenCV:
         """Test for pytorch 3d tensors emulate color image"""
         if memory_format == 'channels_first':
             # shape - [channels, height, width]
-            pytorch_tensor = torch.randint(0, 255, size=(channels, 10, 20), device='cuda').to(input_type)
+            pytorch_tensor = torch.randint(0, 255, size=(channels, 10, 20), device='cuda').to(input_type).permute(1, 2, 0)
         elif memory_format == 'channels_last':
             # shape - [height, width, channels]
-            pytorch_tensor = torch.randint(0, 255, size=(10, 20, channels), device='cuda').to(input_type).permute(2, 0, 1)
+            pytorch_tensor = torch.randint(0, 255, size=(10, 20, channels), device='cuda').to(input_type)
         else:
             raise ValueError(f"Unsupported memory format {memory_format}")
 
-        opencv_gpu_mat = pytorch_tensor_as_opencv_gpu_mat(pytorch_tensor)
-        np.testing.assert_almost_equal(
-            opencv_gpu_mat.download(),
-            pytorch_tensor.squeeze(0).cpu().numpy() if channels == 1 else pytorch_tensor.permute(1, 2, 0).cpu().numpy()
-        )
-
         if memory_format == 'channels_first' and channels != 1:
-            assert opencv_gpu_mat.cudaPtr() != pytorch_tensor.data_ptr()
+            with pytest.raises(ValueError, match='is not contiguous and cannot be converted to OpenCV GpuMat'):
+                opencv_gpu_mat = pytorch_tensor_as_opencv_gpu_mat(pytorch_tensor.permute(1, 2, 0))
         else:
+            opencv_gpu_mat = pytorch_tensor_as_opencv_gpu_mat(pytorch_tensor)
+            np.testing.assert_almost_equal(
+                opencv_gpu_mat.download(),
+                pytorch_tensor.squeeze(2).cpu().numpy() if channels == 1
+                    else pytorch_tensor.cpu().numpy()
+            )
             assert opencv_gpu_mat.cudaPtr() == pytorch_tensor.data_ptr()
 
     @pytest.mark.parametrize("input_type", TORCH_TYPE)
@@ -66,16 +67,15 @@ class TestAsOpenCV:
             cupy_array = cp.random.randint(0, 255, (channels, 10, 20)).astype(input_type).transpose(1, 2, 0)
         else:
             raise ValueError(f"Unsupported memory format {memory_format}")
-
-        opencv_mat = cupy_as_opencv_gpu_mat(cupy_array)
-        np.testing.assert_almost_equal(
-            opencv_mat.download(),
-            cupy_array.squeeze(2).get() if channels == 1 else cupy_array.get(),
-        )
-
         if memory_format == 'channels_first' and channels != 1:
-            assert opencv_mat.cudaPtr() != cupy_array.data.ptr
+            with pytest.raises(ValueError, match='is not contiguous and cannot be converted to OpenCV GpuMat'):
+                opencv_mat = cupy_as_opencv_gpu_mat(np.transpose(cupy_array, (1, 2, 0)))
         else:
+            opencv_mat = cupy_as_opencv_gpu_mat(cupy_array)
+            np.testing.assert_almost_equal(
+                opencv_mat.download(),
+                cupy_array.squeeze(2).get() if channels == 1 else cupy_array.get(),
+            )
             assert opencv_mat.cudaPtr() == cupy_array.data.ptr
 
     @pytest.mark.parametrize("input_type", CUPY_TYPE)

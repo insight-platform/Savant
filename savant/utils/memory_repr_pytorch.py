@@ -21,15 +21,16 @@ def opencv_gpu_mat_as_pytorch(gpu_mat: cv2.cuda.GpuMat) -> torch.Tensor:
 
 def pytorch_tensor_as_opencv_gpu_mat(tensor: torch.Tensor) -> cv2.cuda_GpuMat:
     """Returns OpenCV GpuMat for specified PyTorch tensor.
-    Supports 2 and 3 dims arrays in CHW format. (PyTorch format).
+    Supports 2 and 3 dims arrays in HWС format. (PyTorch format).
     """
     if tensor.dim() == 2:
         channels = 1
         tensor_shape = tensor.shape[::-1]
     elif tensor.dim() == 3:
-        channels = tensor.shape[0]
-        tensor_shape = tensor.shape[3:0:-1]
-        tensor = tensor.permute(1, 2, 0).ravel()
+        if tensor.shape[2] != 1 and tensor.stride()[2] != 1:
+            raise ValueError('PyTorch tensor is not contiguous and cannot be converted to OpenCV GpuMat.')
+        channels = tensor.shape[2]
+        tensor_shape = tensor.shape[1::-1]
     else:
         raise ValueError('PyTorch tensor must have 2 or 3 dimensions.')
     return cv2.cuda.createGpuMatFromCudaMemory(

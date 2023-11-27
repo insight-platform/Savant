@@ -62,9 +62,11 @@ def cupy_as_opencv_gpu_mat(arr: cp.ndarray) -> cv2.cuda.GpuMat:
         channels = 1
         array_shape = arr.shape[::-1]
     elif arr.ndim == 3:
+        if arr.shape[2] != 1 and arr.strides[2] != int(arr.dtype.str[-1]):
+            raise ValueError(
+                'CuPy array is not contiguous and cannot be converted to OpenCV GpuMat.')
         channels = arr.shape[2]
         array_shape = arr.shape[1::-1]
-        arr = arr.ravel()
     else:
         raise ValueError('CuPy array must have 2 or 3 dimensions.')
     return cv2.cuda.createGpuMatFromCudaMemory(
