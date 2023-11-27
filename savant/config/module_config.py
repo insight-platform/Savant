@@ -347,7 +347,7 @@ def configure_pipeline(module_cfg: DictConfig) -> None:
         module_cfg.pipeline = OmegaConf.structured(Pipeline)
         return
 
-    logger.debug('Configure pipeline source...')
+    logger.debug('Configuring pipeline source...')
     module_cfg.pipeline.source = configure_element(
         module_cfg.pipeline.source, module_cfg
     )
