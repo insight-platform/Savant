@@ -21,6 +21,8 @@ from savant.deepstream.utils import (
     nvds_frame_meta_iterator,
 )
 from savant.gstreamer import Gst  # noqa: F401
+from savant.metrics.base import BaseMetricsExporter
+from savant.metrics.registry import MetricsRegistry
 from savant.utils.source_info import SourceInfoRegistry
 
 
@@ -35,6 +37,8 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
         super().__init__(**kwargs)
         self._sources = SourceInfoRegistry()
         self._video_pipeline: Optional[VideoPipeline] = None
+        self._metrics_exporter: Optional[BaseMetricsExporter] = None
+        self._metrics_registry: Optional[MetricsRegistry] = None
         self._last_nvevent_seqnum: Dict[int, Dict[int, int]] = {
             event_type: {}
             for event_type in [
@@ -49,6 +53,8 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
     def on_start(self) -> bool:
         """Do on plugin start."""
         self._video_pipeline = self.gst_element.get_property('pipeline')
+        self._metrics_exporter = self.gst_element.get_property('metrics-exporter')
+        self._metrics_registry = MetricsRegistry(self._metrics_exporter)
         # the prop is set to pipeline batch size during init
         self._stream_pool_size = self.gst_element.get_property('stream-pool-size')
         return True
@@ -178,3 +184,28 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
             return True
         self._last_nvevent_seqnum[event.type][pad_idx] = event.get_seqnum()
         return False
+
+    def get_runtime_metrics(self, n: int):
+        """Get last runtime metrics."""
+
+        return self._video_pipeline.get_stat_records(n)
+
+    @property
+    def metrics(self) -> MetricsRegistry:
+        """Get metrics registry.
+
+        Usage example:
+
+        .. code-block:: python
+
+            from savant.metrics import Counter
+            self.metrics['frames_per_source'] = Counter(
+                name='frames_per_source',
+                description='Number of processed frames per source',
+                labelnames=('source_id',),
+            )
+            ...
+            self.metrics['frames_per_source'].inc(labels=('camera-1',))
+        """
+
+        return self._metrics_registry

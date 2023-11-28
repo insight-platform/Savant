@@ -272,7 +272,7 @@ class NvInferConfig:
         # setup class-attrs for object model (detector)
         # set a high confidence threshold initially for all classes
         # to filter out only the desired classes
-        config['class-attrs-all'] = {'pre-cluster-threshold': 1.1}
+        config['class-attrs-all'] = {'pre-cluster-threshold': 1e10}
         # replace class-attrs parameters with selector kwargs
         for obj in model_config.output.objects:
             class_attrs = {}

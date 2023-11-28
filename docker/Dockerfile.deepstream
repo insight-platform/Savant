@@ -246,3 +246,14 @@ WORKDIR $PROJECT_PATH/docs
 
 ENTRYPOINT ["make"]
 CMD ["clean", "html"]
+
+
+# Savant test image, x86 only
+FROM base AS tests
+COPY requirements/dev.txt requirements/dev.txt
+COPY tests /opt/savant/tests
+
+RUN python -m pip install --no-cache-dir -r requirements/dev.txt
+RUN python -m pip install torch torchvision torchaudio
+
+ENTRYPOINT ["pytest", "-s", "/opt/savant/tests"]

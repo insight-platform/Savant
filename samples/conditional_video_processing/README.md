@@ -6,52 +6,54 @@ Preview:
 
 ![](assets/conditional-video-processing.webp)
 
-Run the demo:
+## Prerequisites
 
 ```bash
 git clone https://github.com/insight-platform/Savant.git
-cd Savant/samples/conditional_video_processing
+cd Savant
 git lfs pull
+./utils/check-environment-compatible
+```
+
+**Note**: Ubuntu 22.04 runtime configuration [guide](https://insight-platform.github.io/Savant/develop/getting_started/0_configure_prod_env.html) helps to configure the runtime to run Savant pipelines.
+
+## Build Engines
+
+The demo uses models that are compiled into TensorRT engines the first time the demo is run. This takes time. Optionally, you can prepare the engines before running the demo by using the command:
+
+```bash
+# you are expected to be in Savant/ directory
+
+./scripts/run_module.py --build-engines samples/peoplenet_detector/module.yml
+```
+
+## Run Demo
+
+```bash
+# you are expected to be in Savant/ directory
 
 # if x86
-../../utils/check-environment-compatible && docker compose -f docker-compose.x86.yml up
+docker compose -f samples/conditional_video_processing/docker-compose.x86.yml up
 
 # if Jetson
-../../utils/check-environment-compatible && docker compose -f docker-compose.l4t.yml up
+docker compose -f samples/conditional_video_processing/docker-compose.l4t.yml up
 
 # open 'rtsp://127.0.0.1:554/stream' in your player
 # or visit 'http://127.0.0.1:888/stream/' (LL-HLS)
 
 # Ctrl+C to stop running the compose bundle
-
-# to get back to project root
-cd ../..
 ```
 
-## Source processing control
+## Source Processing Control
 
 By default, the pipeline processes any source. Etcd is used to control the processing. By changing the value of the key `savant/sources/{source-id}` in Etcd you can enable or disable processing of the corresponding source.
 
 To enable/disable source processing it is convenient to use the script:
-```bash
-./source-switch.sh on
-# or
-./source-switch.sh off
-```
-
-## Performance Measurement
-
-Download the video file to your local folder. For example, create a data folder and download the video into it (all commands must be executed from the root directory of the project Savant)
 
 ```bash
 # you are expected to be in Savant/ directory
 
-mkdir -p data && curl -o data/conditional_video_processing.mp4 \
-   https://eu-central-1.linodeobjects.com/savant-data/demo/conditional_video_processing.mp4
-```
-
-Now you are ready to run the performance benchmark with the following command:
-
-```bash
-./samples/conditional_video_processing/run_perf.sh
+./samples/conditional_video_processing/source-switch.sh on
+# or
+./samples/conditional_video_processing/source-switch.sh off
 ```

@@ -1,11 +1,9 @@
 """Buffer processor for DeepStream pipeline."""
-import logging
 from collections import deque
 from heapq import heappop, heappush
 from queue import Queue
-from typing import Deque, Dict, Iterator, List, NamedTuple, Optional, Tuple, Union
+from typing import Deque, Dict, Iterator, List, NamedTuple, Optional, Tuple
 
-import numpy as np
 import pyds
 from pygstsavantframemeta import (
     gst_buffer_get_savant_batch_meta,
@@ -23,7 +21,6 @@ from savant_rs.primitives.geometry import BBox, RBBox
 from savant_rs.utils import VideoObjectBBoxTransformation
 from savant_rs.utils.symbol_mapper import (
     build_model_object_key,
-    get_model_id,
     get_object_id,
     parse_compound_key,
 )
@@ -31,40 +28,21 @@ from savant_rs.video_object_query import MatchQuery
 
 from savant.api.parser import parse_attribute_value
 from savant.base.input_preproc import ObjectsPreprocessing
-from savant.base.model import ComplexModel, ObjectModel
-from savant.base.pyfunc import PyFuncNoopCallException
-from savant.config.schema import FrameParameters, ModelElement, PipelineElement
-from savant.deepstream.meta.object import _NvDsObjectMetaImpl
-from savant.deepstream.nvinfer.element_config import MERGED_CLASSES
-from savant.deepstream.nvinfer.model import NvInferAttributeModel, NvInferDetector
+from savant.config.schema import FrameParameters
 from savant.deepstream.source_output import (
     SourceOutput,
     SourceOutputEncoded,
     SourceOutputWithFrame,
 )
-from savant.deepstream.utils import (
-    get_nvds_buf_surface,
-    nvds_add_attr_meta_to_obj,
-    nvds_add_obj_meta_to_frame,
-    nvds_attr_meta_iterator,
-    nvds_clf_meta_iterator,
-    nvds_frame_meta_iterator,
-    nvds_infer_tensor_meta_to_outputs,
-    nvds_label_info_iterator,
-    nvds_obj_meta_iterator,
-    nvds_set_obj_selection_type,
-    nvds_set_obj_uid,
-    nvds_tensor_output_iterator,
-)
+from savant.deepstream.utils.attribute import nvds_add_attr_meta_to_obj
+from savant.deepstream.utils.iterator import nvds_frame_meta_iterator
+from savant.deepstream.utils.object import nvds_add_obj_meta_to_frame
+from savant.deepstream.utils.surface import get_nvds_buf_surface
 from savant.gstreamer import Gst  # noqa:F401
 from savant.gstreamer.buffer_processor import GstBufferProcessor
 from savant.gstreamer.codecs import Codec, CodecInfo
 from savant.meta.constants import PRIMARY_OBJECT_KEY, UNTRACKED_OBJECT_ID
-from savant.meta.errors import UIDError
-from savant.meta.object import ObjectMeta
 from savant.meta.type import ObjectSelectionType
-from savant.utils.fps_meter import FPSMeter
-from savant.utils.logging import LoggerMixin
 from savant.utils.platform import is_aarch64
 from savant.utils.sink_factories import SinkVideoFrame
 from savant.utils.source_info import SourceInfo, SourceInfoRegistry
@@ -87,11 +65,12 @@ class _PendingFrame(NamedTuple):
     frame: SinkVideoFrame
 
 
-class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
+class NvDsBufferProcessor(GstBufferProcessor):
+    """Buffer processor for Nvidia DeepStream pipeline."""
+
     def __init__(
         self,
         queue: Queue,
-        fps_meter: FPSMeter,
         sources: SourceInfoRegistry,
         objects_preprocessing: ObjectsPreprocessing,
         frame_params: FrameParameters,
@@ -101,7 +80,6 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
         """Buffer processor for DeepStream pipeline.
 
         :param queue: Queue for output data.
-        :param fps_meter: FPS meter.
         :param sources: Source info registry.
         :param objects_preprocessing: Objects processing registry.
         :param frame_params: Processing frame parameters (after nvstreammux).
@@ -109,7 +87,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
         :param pass_through_mode: Video pass through mode.
         """
 
-        super().__init__(queue, fps_meter)
+        super().__init__(queue)
         self._sources = sources
         self._objects_preprocessing = objects_preprocessing
         self._frame_params = frame_params
@@ -334,7 +312,8 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
 
         if source_info.add_scale_transformation:
             self.logger.debug(
-                'Adding scale transformation for frame of source %s with IDX %s and PTS %s.',
+                'Adding scale transformation for frame of source %s '
+                'with IDX %s and PTS %s.',
                 video_frame.source_id,
                 frame_idx,
                 video_frame.pts,
@@ -343,7 +322,8 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
 
         if self._padding_transformation is not None:
             self.logger.debug(
-                'Adding padding transformation for frame of source %s with IDX %s and PTS %s.',
+                'Adding padding transformation for frame of source %s '
+                'with IDX %s and PTS %s.',
                 video_frame.source_id,
                 frame_idx,
                 video_frame.pts,
@@ -384,7 +364,8 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
     ):
         """Fix the order of the frames if needed.
 
-        It is needed when pass-through mode is enabled and the source stream contains B-frames.
+        It is needed when pass-through mode is enabled and
+        the source stream contains B-frames.
         """
 
         if not self._pass_through_mode:
@@ -454,7 +435,8 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                 yield frame_id, sink_video_frame
             else:
                 self.logger.trace(
-                    'Storing frame of source %s with IDX %s, PTS %s and DTS %s in a buffer.',
+                    'Storing frame of source %s with IDX %s, '
+                    'PTS %s and DTS %s in a buffer.',
                     source_id,
                     frame_id,
                     sink_video_frame.video_frame.pts,
@@ -482,7 +464,8 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
         while pending_frames and pending_frames[0].previous_frame_id == last_frame_id:
             pending_frame = heappop(pending_frames)
             self.logger.trace(
-                'Pushing frame of source %s with IDX %s, PTS %s and DTS %s. %s pending frames left.',
+                'Pushing frame of source %s with IDX %s, PTS %s and DTS %s. '
+                '%s pending frames left.',
                 source_id,
                 pending_frame.frame_id,
                 pending_frame.frame.video_frame.pts,
@@ -518,7 +501,8 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                     content = video_frame.content.get_data_as_bytes()
                     self.logger.debug(
                         'Pass-through mode is enabled. '
-                        'Sending frame with IDX %s to sink without any changes. %s bytes.',
+                        'Sending frame with IDX %s to sink without any changes. '
+                        '%s bytes.',
                         output_frame.idx,
                         len(content),
                     )
@@ -526,7 +510,8 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
                 else:
                     self.logger.debug(
                         'Pass-through mode is enabled. '
-                        'Sending frame with IDX %s to sink without any changes. No content.',
+                        'Sending frame with IDX %s to sink without any changes. '
+                        'No content.',
                         output_frame.idx,
                     )
                     content = None
@@ -550,7 +535,7 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
         self,
         frame_idx: int,
         sink_video_frame: SinkVideoFrame,
-    ):
+    ) -> SinkVideoFrame:
         spans = self._video_pipeline.delete(frame_idx)
         span_context = spans[frame_idx].propagate()
         return sink_video_frame._replace(span_context=span_context)
@@ -586,474 +571,6 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
             )
             self._queue.put(sink_message)
 
-    def prepare_element_input(self, element: PipelineElement, buffer: Gst.Buffer):
-        """Model input preprocessing.
-
-        :param element: element that this probe was added to.
-        :param buffer: gstreamer buffer that is being processed.
-        """
-        if not isinstance(element, ModelElement):
-            return
-
-        model = element.model
-        if (
-            not model.input.preprocess_object_meta
-            and not model.input.preprocess_object_image
-        ):
-            return
-        self.logger.debug(
-            'Preparing "%s" element input for buffer with PTS %s.',
-            element.name,
-            buffer.pts,
-        )
-        if model.input.preprocess_object_meta:
-            nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
-            for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
-                self.logger.debug(
-                    'Preprocessing "%s" element object meta for frame with PTS %s.',
-                    element.name,
-                    nvds_frame_meta.buf_pts,
-                )
-                for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
-                    if not self._is_model_input_object(element, nvds_obj_meta):
-                        continue
-                    # TODO: Unify and also switch to the box representation system
-                    #  through the center point during meta preprocessing.
-
-                    object_meta = _NvDsObjectMetaImpl.from_nv_ds_object_meta(
-                        nvds_obj_meta, nvds_frame_meta
-                    )
-                    if not isinstance(object_meta.bbox, BBox):
-                        raise NotImplementedError(
-                            'Preprocessing only supports objects represented '
-                            'by regular (axis-aligned) boxes.'
-                        )
-
-                    user_parent_object_meta = None
-                    if object_meta.parent:
-                        parent_object_meta = object_meta.parent
-
-                        if not isinstance(parent_object_meta.bbox, BBox):
-                            raise NotImplementedError(
-                                'Preprocessing only supports objects whose parents are '
-                                'represented by regular (axis-aligned) boxes.'
-                            )
-
-                        if parent_object_meta.parent:
-                            self.logger.warning(
-                                'Preprocessing only supports 1 level of hierarchy.'
-                            )
-
-                        user_parent_object_meta = ObjectMeta(
-                            parent_object_meta.element_name,
-                            parent_object_meta.label,
-                            parent_object_meta.bbox.copy(),
-                            parent_object_meta.confidence,
-                            parent_object_meta.track_id,
-                            attributes=nvds_attr_meta_iterator(
-                                nvds_frame_meta,
-                                parent_object_meta.ds_object_meta,
-                            ),
-                        )
-
-                    else:
-                        source_id, frame_idx = self._get_frame_source_id_and_idx(
-                            buffer,
-                            nvds_frame_meta,
-                        )
-                        self.logger.warning(
-                            'The object (%s.%s, bbox %s) of a frame %s/%s with IDX %s '
-                            'is an orphan (no parent object is assigned). '
-                            'It is a non-typical case: the object should either '
-                            'have the frame or an ROI object as a parent.',
-                            object_meta.element_name,
-                            object_meta.label,
-                            object_meta.bbox.as_ltrb_int(),
-                            source_id,
-                            nvds_frame_meta.buf_pts,
-                            frame_idx,
-                        )
-
-                    user_object_meta = ObjectMeta(
-                        object_meta.element_name,
-                        object_meta.label,
-                        object_meta.bbox.copy(),
-                        object_meta.confidence,
-                        object_meta.track_id,
-                        user_parent_object_meta,
-                        attributes=nvds_attr_meta_iterator(
-                            frame_meta=nvds_frame_meta,
-                            obj_meta=object_meta.ds_object_meta,
-                        ),
-                    )
-
-                    try:
-                        res_bbox = model.input.preprocess_object_meta(
-                            object_meta=user_object_meta
-                        )
-                    except Exception as exc:
-                        if model.input.preprocess_object_meta.dev_mode:
-                            if not isinstance(exc, PyFuncNoopCallException):
-                                self.logger.exception(
-                                    'Error calling preprocess input object meta.'
-                                )
-                            res_bbox = user_object_meta.bbox
-                        else:
-                            raise exc
-
-                    if self.logger.isEnabledFor(logging.TRACE):
-                        self.logger.trace(
-                            'Preprocessing "%s" object bbox %s -> %s',
-                            user_object_meta.label,
-                            user_object_meta.bbox,
-                            res_bbox,
-                        )
-                    rect_params = nvds_obj_meta.rect_params
-                    rect_params.left = res_bbox.left
-                    rect_params.top = res_bbox.top
-                    rect_params.width = res_bbox.width
-                    rect_params.height = res_bbox.height
-
-        elif model.input.preprocess_object_image:
-            self.logger.debug('Preprocessing "%s" element object image.', element.name)
-            model_name, label = parse_compound_key(model.input.object)
-            model_uid, class_id = get_object_id(model_name, label)
-            self._objects_preprocessing.preprocessing(
-                element.name,
-                hash(buffer),
-                model_uid,
-                class_id,
-                model.input.preprocess_object_image.output_image,
-                model.input.preprocess_object_image.dev_mode,
-            )
-
-    def prepare_element_output(self, element: PipelineElement, buffer: Gst.Buffer):
-        """Model output postprocessing.
-
-        :param element: element that this probe was added to.
-        :param buffer: gstreamer buffer that is being processed.
-        """
-        if not isinstance(element, ModelElement):
-            return
-        self.logger.debug(
-            'Preparing "%s" element output for buffer with PTS %s.',
-            element.name,
-            buffer.pts,
-        )
-        frame_left = 0.0
-        frame_top = 0.0
-        frame_right = self._frame_params.width - 1.0
-        frame_bottom = self._frame_params.height - 1.0
-        if self._frame_params.padding:
-            frame_left += self._frame_params.padding.left
-            frame_top += self._frame_params.padding.top
-            frame_right += self._frame_params.padding.left
-            frame_bottom += self._frame_params.padding.top
-
-        model_uid = get_model_id(element.name)
-        model: Union[
-            NvInferDetector,
-            NvInferAttributeModel,
-        ] = element.model
-        is_complex_model = isinstance(model, ComplexModel)
-        is_object_model = isinstance(model, ObjectModel)
-
-        nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
-        for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
-            for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
-                # convert custom model output and save meta
-                if model.output.converter:
-                    if not self._is_model_input_object(element, nvds_obj_meta):
-                        continue
-                    parent_nvds_obj_meta = nvds_obj_meta
-                    for tensor_meta in nvds_tensor_output_iterator(
-                        parent_nvds_obj_meta, gie_uid=model_uid
-                    ):
-                        if self.logger.isEnabledFor(logging.TRACE):
-                            self.logger.trace(
-                                'Converting "%s" element tensor output for frame with PTS %s.',
-                                element.name,
-                                nvds_frame_meta.buf_pts,
-                            )
-                        # parse and post-process model output
-                        output_layers = nvds_infer_tensor_meta_to_outputs(
-                            tensor_meta=tensor_meta,
-                            layer_names=model.output.layer_names,
-                        )
-                        try:
-                            outputs = model.output.converter(
-                                *output_layers,
-                                model=model,
-                                roi=(
-                                    parent_nvds_obj_meta.rect_params.left,
-                                    parent_nvds_obj_meta.rect_params.top,
-                                    parent_nvds_obj_meta.rect_params.width,
-                                    parent_nvds_obj_meta.rect_params.height,
-                                ),
-                            )
-                        except Exception as exc:
-                            if model.output.converter.dev_mode:
-                                if not isinstance(exc, PyFuncNoopCallException):
-                                    self.logger.exception('Error calling converter')
-                                # provide some placeholders so that the pipeline processing can continue
-                                if is_complex_model:
-                                    outputs = np.zeros((0, 6)), np.zeros((0, 1))
-                                elif is_object_model:
-                                    outputs = np.zeros((0, 6))
-                                else:
-                                    outputs = np.zeros((0, 1))
-                            else:
-                                raise exc
-                        # for object/complex models output - `bbox_tensor` and
-                        # `selected_bboxes` - indices of selected bboxes and meta
-                        # for attribute/complex models output - `values`
-                        bbox_tensor: Optional[np.ndarray] = None
-                        selected_bboxes: Optional[List] = None
-                        values: Optional[List] = None
-                        # complex model
-                        if is_complex_model:
-                            # output converter returns tensor and attribute values
-                            bbox_tensor, values = outputs
-                            assert bbox_tensor.shape[0] == len(
-                                values
-                            ), 'Number of detected boxes and attributes do not match.'
-
-                        # object model
-                        elif is_object_model:
-                            # output converter returns tensor with
-                            # (class_id, confidence, xc, yc, width, height, [angle]),
-                            # coordinates in roi scale (parent object scale)
-                            bbox_tensor = outputs
-
-                        # attribute model
-                        else:
-                            # output converter returns attribute values
-                            values = outputs
-
-                        if bbox_tensor is not None and bbox_tensor.shape[0] > 0:
-                            # object or complex model with non empty output
-                            if bbox_tensor.shape[1] == 6:  # no angle
-                                selection_type = ObjectSelectionType.REGULAR_BBOX
-                                # xc -> left, yc -> top
-                                bbox_tensor[:, 2] -= bbox_tensor[:, 4] / 2
-                                bbox_tensor[:, 3] -= bbox_tensor[:, 5] / 2
-
-                                # clip
-                                # width to right, height to bottom
-                                bbox_tensor[:, 4] += bbox_tensor[:, 2]
-                                bbox_tensor[:, 5] += bbox_tensor[:, 3]
-                                # clip
-                                bbox_tensor[:, 2][
-                                    bbox_tensor[:, 2] < frame_left
-                                ] = frame_left
-                                bbox_tensor[:, 3][
-                                    bbox_tensor[:, 3] < frame_top
-                                ] = frame_top
-                                bbox_tensor[:, 4][
-                                    bbox_tensor[:, 4] > frame_right
-                                ] = frame_right
-                                bbox_tensor[:, 5][
-                                    bbox_tensor[:, 5] > frame_bottom
-                                ] = frame_bottom
-
-                                # right to width, bottom to height
-                                bbox_tensor[:, 4] -= bbox_tensor[:, 2]
-                                bbox_tensor[:, 5] -= bbox_tensor[:, 3]
-
-                                # left -> xc , top-> yc
-                                bbox_tensor[:, 2] += bbox_tensor[:, 4] / 2
-                                bbox_tensor[:, 3] += bbox_tensor[:, 5] / 2
-
-                                # add 0 angle
-                                bbox_tensor = np.concatenate(
-                                    [
-                                        bbox_tensor,
-                                        np.zeros(
-                                            (bbox_tensor.shape[0], 1), dtype=np.float32
-                                        ),
-                                    ],
-                                    axis=1,
-                                )
-                            else:
-                                selection_type = ObjectSelectionType.ROTATED_BBOX
-
-                            # add index column to further filter attribute values
-                            bbox_tensor = np.concatenate(
-                                [
-                                    bbox_tensor,
-                                    np.arange(
-                                        bbox_tensor.shape[0], dtype=np.float32
-                                    ).reshape(-1, 1),
-                                ],
-                                axis=1,
-                            )
-
-                            selected_bboxes = []
-                            for obj in model.output.objects:
-                                cls_bbox_tensor = bbox_tensor[
-                                    bbox_tensor[:, 0] == obj.class_id
-                                ]
-                                if cls_bbox_tensor.shape[0] == 0:
-                                    continue
-                                if obj.selector:
-                                    try:
-                                        cls_bbox_tensor = obj.selector(cls_bbox_tensor)
-                                    except Exception as exc:
-                                        if obj.selector.dev_mode:
-                                            if not isinstance(
-                                                exc, PyFuncNoopCallException
-                                            ):
-                                                self.logger.exception(
-                                                    'Error calling selector.'
-                                                )
-                                            cls_bbox_tensor = np.zeros((0, 8))
-                                        else:
-                                            raise exc
-
-                                obj_label = build_model_object_key(
-                                    element.name, obj.label
-                                )
-                                obj_cls_id = MERGED_CLASSES[element.name].get(
-                                    obj.class_id
-                                )
-                                if obj_cls_id is None:
-                                    obj_cls_id = obj.class_id
-                                elif self.logger.isEnabledFor(logging.TRACE):
-                                    self.logger.trace(
-                                        'Updating %s custom objs id %s -> %s, label "%s".',
-                                        len(cls_bbox_tensor),
-                                        obj.class_id,
-                                        obj_cls_id,
-                                        obj_label,
-                                    )
-                                for bbox in cls_bbox_tensor:
-                                    # add NvDsObjectMeta
-                                    if self.logger.isEnabledFor(logging.TRACE):
-                                        self.logger.trace(
-                                            'Adding obj %s into pyds meta for frame with PTS %s.',
-                                            bbox[2:7],
-                                            nvds_frame_meta.buf_pts,
-                                        )
-                                    _nvds_obj_meta = nvds_add_obj_meta_to_frame(
-                                        nvds_batch_meta,
-                                        nvds_frame_meta,
-                                        selection_type,
-                                        obj_cls_id,
-                                        model_uid,
-                                        bbox[2:7],
-                                        bbox[1],
-                                        obj_label,
-                                        parent=parent_nvds_obj_meta,
-                                    )
-                                    selected_bboxes.append(
-                                        (int(bbox[7]), _nvds_obj_meta)
-                                    )
-
-                        if values:
-                            # attribute or complex model
-                            if is_complex_model:
-                                values = [
-                                    v
-                                    for i, v in enumerate(values)
-                                    if i in {i for i, o in selected_bboxes}
-                                ]
-                            else:
-                                selected_bboxes = [(0, nvds_obj_meta)]
-                                values = [values]
-                            for (_, _nvds_obj_meta), _values in zip(
-                                selected_bboxes, values
-                            ):
-                                for attr_name, value, confidence in _values:
-                                    nvds_add_attr_meta_to_obj(
-                                        frame_meta=nvds_frame_meta,
-                                        obj_meta=_nvds_obj_meta,
-                                        element_name=element.name,
-                                        name=attr_name,
-                                        value=value,
-                                        confidence=confidence,
-                                    )
-
-                # regular object model (detector)
-                # correct nvds_obj_meta.obj_label
-                elif is_object_model:
-                    if nvds_obj_meta.unique_component_id == model_uid:
-                        for obj in model.output.objects:
-                            if nvds_obj_meta.class_id == obj.class_id:
-                                obj_cls_id = MERGED_CLASSES[element.name].get(
-                                    obj.class_id
-                                )
-                                if obj_cls_id is not None:
-                                    if self.logger.isEnabledFor(logging.TRACE):
-                                        self.logger.trace(
-                                            'Updating regular obj id %s -> %s, label "%s".',
-                                            obj.class_id,
-                                            obj_cls_id,
-                                            obj.label,
-                                        )
-                                    nvds_obj_meta.class_id = obj_cls_id
-                                nvds_set_obj_selection_type(
-                                    obj_meta=nvds_obj_meta,
-                                    selection_type=ObjectSelectionType.REGULAR_BBOX,
-                                )
-                                try:
-                                    nvds_set_obj_uid(
-                                        frame_meta=nvds_frame_meta,
-                                        obj_meta=nvds_obj_meta,
-                                    )
-                                except UIDError:
-                                    pass
-                                nvds_obj_meta.obj_label = build_model_object_key(
-                                    element.name, obj.label
-                                )
-                                break
-
-                # regular attribute model (classifier)
-                # convert nvds_clf_meta to attr_meta
-                else:
-                    for nvds_clf_meta in nvds_clf_meta_iterator(nvds_obj_meta):
-                        if nvds_clf_meta.unique_component_id != model_uid:
-                            continue
-                        for attr, label_info in zip(
-                            model.output.attributes,
-                            nvds_label_info_iterator(nvds_clf_meta),
-                        ):
-                            nvds_add_attr_meta_to_obj(
-                                frame_meta=nvds_frame_meta,
-                                obj_meta=nvds_obj_meta,
-                                element_name=element.name,
-                                name=attr.name,
-                                value=label_info.result_label,
-                                confidence=label_info.result_prob,
-                            )
-
-                # restore nvds_obj_meta.rect_params if there was preprocessing
-                if (
-                    model.input.preprocess_object_meta
-                    or model.input.preprocess_object_image
-                ) and self._is_model_input_object(element, nvds_obj_meta):
-                    bbox_coords = nvds_obj_meta.detector_bbox_info.org_bbox_coords
-                    if nvds_obj_meta.tracker_bbox_info.org_bbox_coords.width > 0:
-                        bbox_coords = nvds_obj_meta.tracker_bbox_info.org_bbox_coords
-                    rect_params = nvds_obj_meta.rect_params
-                    rect_params.left = bbox_coords.left
-                    rect_params.top = bbox_coords.top
-                    rect_params.width = bbox_coords.width
-                    rect_params.height = bbox_coords.height
-
-        # restore frame
-        if model.input.preprocess_object_image:
-            self._objects_preprocessing.restore_frame(hash(buffer))
-
-    def _is_model_input_object(
-        self, element: ModelElement, nvds_obj_meta: pyds.NvDsObjectMeta
-    ):
-        model_name, label = parse_compound_key(element.model.input.object)
-        model_uid, class_id = get_object_id(model_name, label)
-        return (
-            nvds_obj_meta.unique_component_id == model_uid
-            and nvds_obj_meta.class_id == class_id
-        )
-
     def _iterate_output_frames(
         self,
         buffer: Gst.Buffer,
@@ -1061,34 +578,11 @@ class NvDsBufferProcessor(GstBufferProcessor, LoggerMixin):
     ) -> Iterator[_OutputFrame]:
         """Iterate output frames."""
 
-    def _get_frame_source_id_and_idx(
-        self,
-        buffer: Gst.Buffer,
-        nvds_frame_meta: pyds.NvDsFrameMeta,
-    ) -> Tuple[Optional[str], Optional[int]]:
-        savant_batch_meta = gst_buffer_get_savant_batch_meta(buffer)
-        if savant_batch_meta is None:
-            return None, None
-
-        savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(nvds_frame_meta)
-        if savant_frame_meta is None:
-            return None, None
-
-        frame_idx = savant_frame_meta.idx
-        video_frame, _ = self._video_pipeline.get_batched_frame(
-            savant_batch_meta.idx,
-            frame_idx,
-        )
-        source_id = video_frame.source_id
-
-        return source_id, frame_idx
-
 
 class NvDsEncodedBufferProcessor(NvDsBufferProcessor):
     def __init__(
         self,
         queue: Queue,
-        fps_meter: FPSMeter,
         sources: SourceInfoRegistry,
         objects_preprocessing: ObjectsPreprocessing,
         frame_params: FrameParameters,
@@ -1098,7 +592,6 @@ class NvDsEncodedBufferProcessor(NvDsBufferProcessor):
         """Buffer processor for DeepStream pipeline.
 
         :param queue: Queue for output data.
-        :param fps_meter: FPS meter.
         :param sources: Source info registry.
         :param objects_preprocessing: Objects processing registry.
         :param frame_params: Processing frame parameters (after nvstreammux).
@@ -1108,7 +601,6 @@ class NvDsEncodedBufferProcessor(NvDsBufferProcessor):
         self._codec = codec
         super().__init__(
             queue=queue,
-            fps_meter=fps_meter,
             sources=sources,
             objects_preprocessing=objects_preprocessing,
             frame_params=frame_params,
@@ -1245,16 +737,12 @@ class NvDsJetsonH26XBufferProcessor(NvDsEncodedBufferProcessor):
             sink_message = self._build_sink_video_frame(output_frame, source_info)
             sink_message = self._delete_frame_from_pipeline(idx, sink_message)
             self._queue.put(sink_message)
-            # measure and logging FPS
-            if self._fps_meter():
-                self.logger.info(self._fps_meter.message)
 
 
 class NvDsRawBufferProcessor(NvDsBufferProcessor):
     def __init__(
         self,
         queue: Queue,
-        fps_meter: FPSMeter,
         sources: SourceInfoRegistry,
         objects_preprocessing: ObjectsPreprocessing,
         frame_params: FrameParameters,
@@ -1265,7 +753,6 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
         """Buffer processor for DeepStream pipeline.
 
         :param queue: Queue for output data.
-        :param fps_meter: FPS meter.
         :param sources: Source info registry.
         :param objects_preprocessing: Objects processing registry.
         :param frame_params: Processing frame parameters (after nvstreammux).
@@ -1278,7 +765,6 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
         self._codec = Codec.RAW_RGBA.value if output_frame else None
         super().__init__(
             queue=queue,
-            fps_meter=fps_meter,
             sources=sources,
             objects_preprocessing=objects_preprocessing,
             frame_params=frame_params,
@@ -1342,7 +828,6 @@ def extract_frame_idx(buffer: Gst.Buffer) -> Optional[int]:
 
 def create_buffer_processor(
     queue: Queue,
-    fps_meter: FPSMeter,
     sources: SourceInfoRegistry,
     objects_preprocessing: ObjectsPreprocessing,
     frame_params: FrameParameters,
@@ -1353,7 +838,6 @@ def create_buffer_processor(
     """Create buffer processor.
 
     :param queue: Queue for output data.
-    :param fps_meter: FPS meter.
     :param sources: Source info registry.
     :param objects_preprocessing: Objects processing registry.
     :param frame_params: Processing frame parameters (after nvstreammux).
@@ -1369,7 +853,6 @@ def create_buffer_processor(
             buffer_processor_class = NvDsEncodedBufferProcessor
         return buffer_processor_class(
             queue=queue,
-            fps_meter=fps_meter,
             sources=sources,
             objects_preprocessing=objects_preprocessing,
             frame_params=frame_params,
@@ -1379,7 +862,6 @@ def create_buffer_processor(
 
     return NvDsRawBufferProcessor(
         queue=queue,
-        fps_meter=fps_meter,
         sources=sources,
         objects_preprocessing=objects_preprocessing,
         frame_params=frame_params,

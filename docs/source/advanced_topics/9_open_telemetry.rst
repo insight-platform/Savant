@@ -41,7 +41,7 @@ Trace propagation is a mechanism of passing traces between distributed, decouple
 OpenTelemetry Configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Use ``params.telemetry`` to configure OpenTelemetry for the module.
+Use ``params.telemetry.tracing`` to configure OpenTelemetry for the module.
 
 .. code-block:: yaml
 
@@ -52,12 +52,13 @@ Use ``params.telemetry`` to configure OpenTelemetry for the module.
 
       # enable OpenTelemetry
       telemetry:
-        sampling_period: 100
-        root_span_name: pipeline
-        provider: jaeger
-        provider_params:
-          service_name: demo-pipeline
-          endpoint: jaeger:6831
+        tracing:
+          sampling_period: 100
+          root_span_name: pipeline
+          provider: jaeger
+          provider_params:
+            service_name: demo-pipeline
+            endpoint: jaeger:6831
 
 .. note::
 

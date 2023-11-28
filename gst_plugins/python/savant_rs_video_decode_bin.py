@@ -26,6 +26,10 @@ NESTED_DEMUX_PROPERTIES = {
         'max-parallel-streams',
         'shutdown-auth',
         'pass-through-mode',
+        'ingress-module',
+        'ingress-class',
+        'ingress-kwargs',
+        'ingress-dev-mode',
     ]
 }
 SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES = {

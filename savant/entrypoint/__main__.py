@@ -20,7 +20,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='python -m savant.entrypoint')
     parser.add_argument(
         '-e',
-        '--build-engines-only',
+        '--build-engines',
         action='store_true',
         help='builds module model\'s engines and exit',
     )
@@ -37,7 +37,7 @@ if __name__ == '__main__':
         parser.print_help()
         exit(0)
 
-    if args.build_engines_only:
+    if args.build_engines:
         build_module_engines(args.config)
     else:
         main(args.config)
