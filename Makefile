@@ -60,6 +60,15 @@ build-docs:
 		-f docker/$(DOCKER_FILE) \
 		-t savant-docs:$(SAVANT_VERSION) .
 
+build-tests:
+	docker buildx build \
+		--target tests \
+		--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
+		--build-arg USER_UID=`id -u` \
+		--build-arg USER_GID=`id -g` \
+		-f docker/$(DOCKER_FILE) \
+		-t savant-tests:$(SAVANT_VERSION) .
+
 build-opencv: opencv-build-amd64 opencv-build-arm64 opencv-cp-amd64 opencv-cp-arm64
 
 opencv-build-amd64:
@@ -95,6 +104,14 @@ run-docs:
 		-v `pwd`/samples:$(PROJECT_PATH)/samples \
 		--name savant-docs \
 		savant-docs:$(SAVANT_VERSION)
+
+run-tests:
+		docker run -it --rm \
+		-v `pwd`/savant:$(PROJECT_PATH)/savant \
+		-v `pwd`/tests:$(PROJECT_PATH)/tests \
+		--gpus=all \
+		--name savant-tests \
+		savant-tests:$(SAVANT_VERSION)
 
 run-dev:
 	xhost +local:docker
@@ -134,7 +151,7 @@ check-unify:
 check: check-black check-unify check-isort
 
 run-unify:
-	unify --in-place --recursive savant adapters gst_plugins samples scripts
+	unify --in-place --recursive savant adapters gst_plugins samples scripts tests
 
 run-black:
 	black .

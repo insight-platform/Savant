@@ -1,16 +1,19 @@
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 from savant_rs import init_jaeger_tracer, init_noop_tracer
-from savant_rs.pipeline2 import VideoPipelineStagePayloadType
+from savant_rs.pipeline2 import VideoPipeline, VideoPipelineStagePayloadType
 
 from savant.config.schema import (
     BufferQueuesParameters,
     ElementGroup,
+    MetricsParameters,
     Pipeline,
     PipelineElement,
     PyFuncElement,
     TracingParameters,
 )
+from savant.metrics.base import BaseMetricsExporter
+from savant.metrics.prometheus import PrometheusMetricsExporter
 from savant.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -167,3 +170,18 @@ def init_tracing(module_name: str, tracing: TracingParameters):
     else:
         logger.info('No tracing provider specified. Using noop tracer.')
         init_noop_tracer()
+
+
+def build_metrics_exporter(
+    pipeline: VideoPipeline,
+    params: MetricsParameters,
+) -> Optional[BaseMetricsExporter]:
+    """Build metrics exporter."""
+
+    if params.provider is None:
+        return None
+
+    if params.provider == 'prometheus':
+        return PrometheusMetricsExporter(pipeline, params.provider_params)
+
+    raise ValueError(f'Unknown metrics provider: {params.provider}')
