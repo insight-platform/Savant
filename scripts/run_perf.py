@@ -81,7 +81,7 @@ def process_logs_file(logs_file_path: Path, stats_vars: List[str]) -> Dict[str, 
     # average
     if len(fps_list) > 1:
         num_frames = sum([num for num, _ in fps_list])
-        duration = sum({num / fps for num, fps in fps_list})
+        duration = sum([num / fps for num, fps in fps_list])
         fps_list = [(num_frames, num_frames / duration)]
     if fps_list:
         stats['fps'] = {'avg': fps_list[0][1]}
@@ -185,7 +185,7 @@ def main():
         # increase time to collect batch
         '.parameters.batched_push_timeout=40000',
         # correct metrics.frame_period
-        f'.parameters.metrics.frame_period={METRICS_FRAME_PERIOD}',
+        f'.parameters.telemetry.metrics.frame_period={METRICS_FRAME_PERIOD}',
     ]
     if args.stats:
         run_args += [
