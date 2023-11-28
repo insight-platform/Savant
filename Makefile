@@ -148,7 +148,7 @@ check-unify:
 check: check-black check-unify check-isort
 
 run-unify:
-	unify --in-place --recursive savant adapters gst_plugins samples scripts
+	unify --in-place --recursive savant adapters gst_plugins samples scripts tests
 
 run-black:
 	black .
