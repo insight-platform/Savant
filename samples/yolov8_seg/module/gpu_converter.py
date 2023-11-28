@@ -7,8 +7,11 @@ import numpy as np
 
 from savant.base.converter import BaseComplexModelOutputConverter, TensorFormat
 from savant.deepstream.nvinfer.model import NvInferInstanceSegmentation
+from savant.utils.memory_repr import (
+    cupy_array_as_opencv_gpu_mat,
+    opencv_gpu_mat_as_cupy_array,
+)
 from savant.utils.nms import nms_gpu
-from savant.utils.memory_repr import cupy_as_opencv_gpu_mat, opencv_gpu_mat_as_cupy
 
 
 class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
@@ -84,14 +87,14 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
 
         mask_list = []
         for i in range(masks.shape[0]):
-            gpu_mat = cupy_as_opencv_gpu_mat(masks[i])
+            gpu_mat = cupy_array_as_opencv_gpu_mat(masks[i])
             resized_gpu_mat = cv2.cuda.resize(
                 src=gpu_mat,
                 dsize=(mask_width, mask_height),
                 interpolation=cv2.INTER_LINEAR,
                 # stream=cp.cuda.Stream(),  # doesn't work
             )
-            mask = opencv_gpu_mat_as_cupy(resized_gpu_mat)
+            mask = opencv_gpu_mat_as_cupy_array(resized_gpu_mat)
 
             mask = mask > 0.5
 

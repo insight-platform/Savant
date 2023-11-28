@@ -16,6 +16,7 @@ from savant_rs.utils.symbol_mapper import (
     parse_compound_key,
 )
 
+from savant.base.converter import TensorFormat
 from savant.base.input_preproc import ObjectsPreprocessing
 from savant.base.pyfunc import PyFuncNoopCallException
 from savant.config.schema import FrameParameters, ModelElement
@@ -51,7 +52,7 @@ from savant.meta.errors import UIDError
 from savant.meta.object import ObjectMeta
 from savant.meta.type import ObjectSelectionType
 from savant.utils.logging import get_logger
-from savant.base.converter import TensorFormat
+
 
 class NvInferProcessor:
     """NvInfer element processor.
