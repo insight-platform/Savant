@@ -18,7 +18,6 @@ __pycache__/
 build/
 develop-eggs/
 dist/
-downloads/
 eggs/
 .eggs/
 lib/
@@ -60,8 +59,8 @@ generated
 # cached models, downloads, etc.
 cache
 
-# data
+# data (sample video)
 data
 
-# logs
+# logs (perf measurement)
 logs

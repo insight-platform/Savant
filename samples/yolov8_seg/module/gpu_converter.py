@@ -92,7 +92,8 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
                 src=gpu_mat,
                 dsize=(mask_width, mask_height),
                 interpolation=cv2.INTER_LINEAR,
-                # stream=cp.cuda.Stream(),  # doesn't work
+                # TODO: it should work, but it doesn't, investigate
+                # stream=cp.cuda.Stream(),
             )
             mask = opencv_gpu_mat_as_cupy_array(resized_gpu_mat)
 
@@ -157,7 +158,7 @@ def _postproc(
         confidences = confidences[nms_mask]
         masks = masks[nms_mask]
 
-    # select top k (no nms applied)
+    # select top k (makes sense if nms is not applied, nms selects top k too)
     if bboxes.shape[0] > top_k:
         top_k_mask = cp.argpartition(confidences, -top_k)[-top_k:]
         bboxes = bboxes[top_k_mask]
