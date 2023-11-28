@@ -140,3 +140,9 @@ Sample location: [kafka_redis_adapter](./kafka_redis_adapter)
 A sample demonstrating the use of pass-through mode in Savant.
 
 Sample location: [pass_through_processing](./pass_through_processing)
+
+### RT-DETR R50 Demo
+
+A sample demonstrating the use of RT-DETR model in Savant.
+
+Sample location: [rtdetr](./rtdetr/)
