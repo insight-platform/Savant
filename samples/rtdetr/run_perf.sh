@@ -10,7 +10,9 @@ MODULE_CONFIG=samples/rtdetr/module.yml
 DATA_LOCATION=data/leeds_1080p.mp4
 
 if [ "$(uname -m)" = "aarch64" ]; then
-  docker compose -f samples/rtdetr/docker-compose.l4t.yml build module
+  # docker compose -f samples/rtdetr/docker-compose.l4t.yml build module
+  echo "L4T benchmark is not implemented"
+  exit 1
 else
   docker compose -f samples/rtdetr/docker-compose.x86.yml build module
 fi
