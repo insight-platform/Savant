@@ -141,9 +141,16 @@ def build_common_envs(
     fps_period_frames: Optional[int],
     fps_period_seconds: Optional[float],
     fps_output: str,
+    zmq_endpoint: str,
+    zmq_type: Optional[str],
+    zmq_bind: Optional[bool],
 ):
     """Generate env var run options."""
-    envs = []
+    envs = build_zmq_endpoint_envs(
+        zmq_endpoint=zmq_endpoint,
+        zmq_type=zmq_type,
+        zmq_bind=zmq_bind,
+    )
     if source_id:
         envs.append(f'SOURCE_ID={source_id}')
     if fps_period_frames:
@@ -155,11 +162,23 @@ def build_common_envs(
     return envs
 
 
-def build_docker_run_command(
-    container_name: str,
+def build_zmq_endpoint_envs(
     zmq_endpoint: str,
     zmq_type: Optional[str],
     zmq_bind: Optional[bool],
+):
+    """Generate env var options for zmq endpoint."""
+    envs = [f'ZMQ_ENDPOINT={zmq_endpoint}']
+    if zmq_type is not None:
+        envs.append(f'ZMQ_TYPE={zmq_type}')
+    if zmq_bind is not None:
+        envs.append(f'ZMQ_BIND={zmq_bind}')
+    return envs
+
+
+def build_docker_run_command(
+    container_name: str,
+    zmq_endpoints: List[str],
     entrypoint: str,
     docker_image: str,
     detach: bool = False,
@@ -175,12 +194,9 @@ def build_docker_run_command(
     """Build docker run command for an adapter container.
 
     :param container_name: run container with this name
-    :param zmq_endpoint: add ``ZMQ_ENDPOINT`` env var to container
-        that will specify zmq socket endpoint, eg.
+    :param zmq_endpoints: list of zmq socket endpoints, eg.
         ``ipc:///tmp/zmq-sockets/input-video.ipc``  or
         ``tcp://0.0.0.0:5000``
-    :param zmq_type: add ``ZMQ_TYPE`` env var to container
-    :param zmq_bind: add ``ZMQ_BIND`` env var to container
     :param entrypoint: add ``--entrypoint`` parameter
     :param docker_image: docker image to run
     :param detach: run docker container in background
@@ -193,6 +209,7 @@ def build_docker_run_command(
     :param args: add command line arguments to the entrypoint
     :param ports: add ``-p`` parameters
     """
+
     gst_debug = os.environ.get('GST_DEBUG', '2')
     # fmt: off
     command = [
@@ -202,18 +219,13 @@ def build_docker_run_command(
         '-e', f'GST_DEBUG={gst_debug}',
         '-e', 'LOGLEVEL',
         '-e', f'SYNC_OUTPUT={sync}',
-        '-e', f'ZMQ_ENDPOINT={zmq_endpoint}',
     ]
     # fmt: on
-    if zmq_type is not None:
-        command += ['-e', f'ZMQ_TYPE={zmq_type}']
-    if zmq_bind is not None:
-        command += ['-e', f'ZMQ_BIND={zmq_bind}']
 
     if detach:
         command += ['--detach']
 
-    command += get_tcp_parameters((zmq_endpoint,))
+    command += get_tcp_parameters(zmq_endpoints)
 
     command += ['--entrypoint', entrypoint]
 
@@ -223,7 +235,7 @@ def build_docker_run_command(
 
     if volumes is None:
         volumes = []
-    volumes += get_ipc_mounts((zmq_endpoint,))
+    volumes += get_ipc_mounts(zmq_endpoints)
     for volume in volumes:
         command += ['-v', volume]
 

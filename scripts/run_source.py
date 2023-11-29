@@ -96,23 +96,25 @@ def files_source(
     container_name = f'source-{file_type}-files'
     if source_id is not None:
         container_name = f'{container_name}-{source_id}'
+    envs = (
+        build_common_envs(
+            source_id=source_id,
+            fps_period_frames=fps_period_frames,
+            fps_period_seconds=fps_period_seconds,
+            fps_output=fps_output,
+            zmq_endpoint=out_endpoint,
+            zmq_type=out_type,
+            zmq_bind=out_bind,
+        )
+        + [f'LOCATION={location}', f'FILE_TYPE={file_type}']
+        + envs
+    )
     cmd = build_docker_run_command(
         container_name,
-        zmq_endpoint=out_endpoint,
-        zmq_type=out_type,
-        zmq_bind=out_bind,
+        zmq_endpoints=[out_endpoint],
         sync=sync,
         entrypoint=entrypoint,
-        envs=(
-            build_common_envs(
-                source_id=source_id,
-                fps_period_frames=fps_period_frames,
-                fps_period_seconds=fps_period_seconds,
-                fps_output=fps_output,
-            )
-            + [f'LOCATION={location}', f'FILE_TYPE={file_type}']
-            + envs
-        ),
+        envs=envs,
         volumes=volumes,
         docker_image=docker_image,
         detach=detach,
@@ -508,6 +510,9 @@ def rtsp_source(
         fps_period_frames=fps_period_frames,
         fps_period_seconds=fps_period_seconds,
         fps_output=fps_output,
+        zmq_endpoint=out_endpoint,
+        zmq_type=out_type,
+        zmq_bind=out_bind,
     ) + [
         f'RTSP_URI={rtsp_uri}',
         f'RTSP_TRANSPORT={rtsp_transport}',
@@ -519,9 +524,7 @@ def rtsp_source(
 
     cmd = build_docker_run_command(
         f'source-rtsp-{source_id}',
-        zmq_endpoint=out_endpoint,
-        zmq_type=out_type,
-        zmq_bind=out_bind,
+        zmq_endpoints=[out_endpoint],
         sync=sync,
         entrypoint='/opt/savant/adapters/gst/sources/rtsp.sh',
         envs=envs,
@@ -557,21 +560,20 @@ def usb_cam_source(
     Default DEVICE: /dev/video0.
     """
 
-    cmd = build_docker_run_command(
-        f'source-usb-{source_id}',
+    envs = build_common_envs(
+        source_id=source_id,
+        fps_period_frames=fps_period_frames,
+        fps_period_seconds=fps_period_seconds,
+        fps_output=fps_output,
         zmq_endpoint=out_endpoint,
         zmq_type=out_type,
         zmq_bind=out_bind,
+    ) + [f'DEVICE={device}', f'FRAMERATE={framerate}']
+    cmd = build_docker_run_command(
+        f'source-usb-{source_id}',
+        zmq_endpoints=[out_endpoint],
         entrypoint='/opt/savant/adapters/gst/sources/usb_cam.sh',
-        envs=(
-            build_common_envs(
-                source_id=source_id,
-                fps_period_frames=fps_period_frames,
-                fps_period_seconds=fps_period_seconds,
-                fps_output=fps_output,
-            )
-            + [f'DEVICE={device}', f'FRAMERATE={framerate}']
-        ),
+        envs=envs,
         devices=[device],
         docker_image=docker_image,
     )
@@ -689,6 +691,9 @@ def gige_cam_source(
         fps_period_frames=fps_period_frames,
         fps_period_seconds=fps_period_seconds,
         fps_output=fps_output,
+        zmq_endpoint=out_endpoint,
+        zmq_type=out_type,
+        zmq_bind=out_bind,
     )
 
     envs_dict = {
@@ -718,9 +723,7 @@ def gige_cam_source(
 
     cmd = build_docker_run_command(
         f'source-gige-{source_id}',
-        zmq_endpoint=out_endpoint,
-        zmq_type=out_type,
-        zmq_bind=out_bind,
+        zmq_endpoints=[out_endpoint],
         entrypoint='/opt/savant/adapters/gst/sources/gige_cam.sh',
         envs=envs,
         docker_image=docker_image,
@@ -789,6 +792,9 @@ def ffmpeg_source(
         fps_period_frames=fps_period_frames,
         fps_period_seconds=fps_period_seconds,
         fps_output=fps_output,
+        zmq_endpoint=out_endpoint,
+        zmq_type=out_type,
+        zmq_bind=out_bind,
     ) + [
         f'URI={uri}',
         f'BUFFER_LEN={buffer_len}',
@@ -802,9 +808,7 @@ def ffmpeg_source(
 
     cmd = build_docker_run_command(
         f'source-rtsp-{source_id}',
-        zmq_endpoint=out_endpoint,
-        zmq_type=out_type,
-        zmq_bind=out_bind,
+        zmq_endpoints=[out_endpoint],
         sync=sync,
         entrypoint='/opt/savant/adapters/gst/sources/ffmpeg.sh',
         envs=envs,
@@ -937,6 +941,9 @@ def kafka_redis_source(
         fps_period_frames=fps_period_frames,
         fps_period_seconds=fps_period_seconds,
         fps_output=fps_output,
+        zmq_endpoint=out_endpoint,
+        zmq_type=None,
+        zmq_bind=None,
     ) + [
         f'KAFKA_BROKERS={brokers}',
         f'KAFKA_TOPIC={topic}',
@@ -954,9 +961,7 @@ def kafka_redis_source(
     ]
     cmd = build_docker_run_command(
         f'source-kafka-redis-{uuid.uuid4().hex}',
-        zmq_endpoint=out_endpoint,
-        zmq_type=None,
-        zmq_bind=None,
+        zmq_endpoints=[out_endpoint],
         entrypoint='python',
         args=['-m', 'adapters.python.sources.kafka_redis'],
         envs=envs,
