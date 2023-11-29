@@ -1,20 +1,51 @@
 """Base model output converters."""
 from abc import abstractmethod
-from typing import Any, List, Optional, Tuple
+from enum import Enum
+from typing import Any, List, Optional, Tuple, Union
 
+import cupy as cp
 import numpy as np
 
 from savant.base.model import AttributeModel, ComplexModel, ObjectModel
 from savant.base.pyfunc import BasePyFuncCallableImpl
 
 
-class BaseObjectModelOutputConverter(BasePyFuncCallableImpl):
+class TensorFormat(Enum):
+    """Enum of the array module to be used to represent the tensors."""
+
+    NumPy = 0
+    """NumPy."""
+
+    CuPy = 1
+    """Cupy."""
+
+
+class BaseOutputConverter(BasePyFuncCallableImpl):
+    """Base model output converter."""
+
+    tensor_format: TensorFormat = TensorFormat.NumPy
+    """Set to ``CuPy`` to get the ``output_layers`` tensors in the converter call 
+    on the GPU as a ``cupy.ndarray``. Or set to ``NumPy`` to get tensors on the host 
+    as a ``numpy.ndarray``.
+    """
+
+    @abstractmethod
+    def __call__(
+        self,
+        *output_layers: Union[np.ndarray, cp.ndarray],
+        model: ObjectModel,
+        roi: Tuple[float, float, float, float],
+    ) -> Any:
+        """Converts raw model output tensors to a model specific representation."""
+
+
+class BaseObjectModelOutputConverter(BaseOutputConverter):
     """Base object model output converter."""
 
     @abstractmethod
     def __call__(
         self,
-        *output_layers: np.ndarray,
+        *output_layers: Union[np.ndarray, cp.ndarray],
         model: ObjectModel,
         roi: Tuple[float, float, float, float],
     ) -> np.ndarray:
@@ -33,13 +64,13 @@ class BaseObjectModelOutputConverter(BasePyFuncCallableImpl):
         """
 
 
-class BaseAttributeModelOutputConverter(BasePyFuncCallableImpl):
+class BaseAttributeModelOutputConverter(BaseOutputConverter):
     """Base attribute model output converter."""
 
     @abstractmethod
     def __call__(
         self,
-        *output_layers: np.ndarray,
+        *output_layers: Union[np.ndarray, cp.ndarray],
         model: AttributeModel,
         roi: Tuple[float, float, float, float],
     ) -> List[Tuple[str, Any, Optional[float]]]:
@@ -63,13 +94,13 @@ class BaseAttributeModelOutputConverter(BasePyFuncCallableImpl):
         """
 
 
-class BaseComplexModelOutputConverter(BasePyFuncCallableImpl):
+class BaseComplexModelOutputConverter(BaseOutputConverter):
     """Base complex model output converter."""
 
     @abstractmethod
     def __call__(
         self,
-        *output_layers: np.ndarray,
+        *output_layers: Union[np.ndarray, cp.ndarray],
         model: ComplexModel,
         roi: Tuple[float, float, float, float],
     ) -> Tuple[np.ndarray, List[List[Tuple[str, Any, float]]]]:

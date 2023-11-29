@@ -41,13 +41,25 @@ def docker_image_option(default_docker_image_name: str, tag: Optional[str] = Non
         '-i',
         '--docker-image',
         default=default_docker_image,
-        help=f'Name of docker image.',
+        help='Name of docker image.',
         show_default=True,
     )
 
 
-def get_docker_runtime() -> str:
-    return '--runtime=nvidia' if is_aarch64() else '--gpus=all'
+gpus_option = click.option(
+    '--gpus',
+    default=None,
+    help='Expose GPUs for use or set NVIDIA capabilities.',
+    show_default=True,
+)
+
+
+def get_docker_runtime(value: Optional[str] = None) -> str:
+    if is_aarch64():
+        return '--runtime=nvidia'
+    if value is not None:
+        return f'--gpus={value}'
+    return '--gpus=all'
 
 
 def adapter_docker_image_option(default_suffix: str):
