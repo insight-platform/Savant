@@ -6,6 +6,8 @@ from savant.utils.logging import get_logger
 
 
 class BaseThreadWorker(ABC):
+    """Base wrapper for a thread."""
+
     thread: Thread
 
     def __init__(
@@ -25,6 +27,8 @@ class BaseThreadWorker(ABC):
         self.daemon = daemon
 
     def start(self):
+        """Start the thread."""
+
         self.is_running = True
         self.thread = Thread(
             name=self.thread_name,
@@ -34,13 +38,16 @@ class BaseThreadWorker(ABC):
         self.thread.start()
 
     def stop(self):
+        """Set the thread to stop."""
         self.is_running = False
 
     def join(self, timeout=None):
+        """Join the thread."""
         self.thread.join(timeout)
 
     @abstractmethod
     def workload(self):
+        """The workload of the thread."""
         pass
 
     def set_error(self, error: str):

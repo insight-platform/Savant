@@ -41,16 +41,16 @@ def build_common_bridge_envs(
 @cli.command('buffer')
 @common_options
 @click.option(
-    '--queue-capacity',
+    '--buffer-len',
     default=1000,
     help='Maximum amount of messages in the buffer.',
     show_default=True,
 )
 @click.option(
-    '--mount-queue-path',
+    '--mount-buffer-path',
     default=False,
     is_flag=True,
-    help='Mount queue path to the container.',
+    help='Mount buffer path to the container.',
 )
 @click.option(
     '--interval',
@@ -61,7 +61,7 @@ def build_common_bridge_envs(
 @click.option(
     '--stats-log-interval',
     default=60,
-    help='Interval between logging stats, in seconds.',
+    help='Interval between logging buffer statistics, in seconds.',
     show_default=True,
 )
 @click.option(
@@ -92,12 +92,12 @@ def build_common_bridge_envs(
     show_default=True,
 )
 @adapter_docker_image_option('py')
-@click.argument('queue_path', required=True)
+@click.argument('buffer_path', required=True)
 def buffer_bridge(
     in_endpoint: str,
     out_endpoint: str,
-    queue_capacity: int,
-    mount_queue_path: bool,
+    buffer_len: int,
+    mount_buffer_path: bool,
     interval: float,
     stats_log_interval: int,
     metrics_frame_period: int,
@@ -106,10 +106,17 @@ def buffer_bridge(
     metrics_provider: Optional[str],
     metrics_provider_params: str,
     docker_image: str,
-    queue_path: str,
+    buffer_path: str,
 ):
-    if mount_queue_path:
-        volumes = [f'{queue_path}:{queue_path}']
+    """Buffers messages from a source to BUFFER_PATH and sends them to a module.
+
+    When the module is not able to accept the message, the adapter buffers it
+    until the module is ready to accept it. When the buffer is full, the adapter
+    drops the incoming message.
+    """
+
+    if mount_buffer_path:
+        volumes = [f'{buffer_path}:{buffer_path}']
     else:
         volumes = []
 
@@ -117,8 +124,8 @@ def buffer_bridge(
         in_endpoint=in_endpoint,
         out_endpoint=out_endpoint,
     ) + [
-        f'QUEUE_CAPACITY={queue_capacity}',
-        f'QUEUE_PATH={queue_path}',
+        f'BUFFER_LEN={buffer_len}',
+        f'BUFFER_PATH={buffer_path}',
         f'INTERVAL={interval}',
         f'STATS_LOG_INTERVAL={stats_log_interval}',
         f'METRICS_FRAME_PERIOD={metrics_frame_period}',

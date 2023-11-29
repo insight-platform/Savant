@@ -33,6 +33,8 @@ logger = get_logger(LOGGER_NAME)
 
 
 class MetricsConfig:
+    """Metrics configuration for the adapter."""
+
     def __init__(self):
         self.frame_period = opt_config('METRICS_FRAME_PERIOD', 1000, int)
         self.time_period = opt_config('METRICS_TIME_PERIOD', convert=float)
@@ -44,17 +46,21 @@ class MetricsConfig:
 
 
 class Config:
+    """Configuration for the adapter."""
+
     def __init__(self):
         self.zmq_src_endpoint = os.environ['ZMQ_SRC_ENDPOINT']
         self.zmq_sink_endpoint = os.environ['ZMQ_SINK_ENDPOINT']
-        self.queue_path = os.environ['QUEUE_PATH']
-        self.queue_capacity = opt_config('QUEUE_CAPACITY', 1000, int)
+        self.buffer_path = os.environ['BUFFER_PATH']
+        self.buffer_len = opt_config('BUFFER_LEN', 1000, int)
         self.interval = opt_config('INTERVAL', 1, float)
         self.stats_log_interval = opt_config('STATS_LOG_INTERVAL', 60, int)
         self.metrics = MetricsConfig()
 
 
 class Ingress(BaseThreadWorker):
+    """Receives messages from the source ZeroMQ socket and pushes them to the buffer."""
+
     def __init__(self, queue: PersistentQueueWithCapacity, config: Config):
         super().__init__(
             thread_name='Ingress',
@@ -83,6 +89,8 @@ class Ingress(BaseThreadWorker):
         self.logger.info('Ingress was stopped')
 
     def handle_next_message(self, message_parts: List[bytes]):
+        """Handle the next message from the source ZeroMQ socket."""
+
         self._received_messages += 1
         while len(message_parts) < QUEUE_ITEM_SIZE:
             message_parts.append(b'')
@@ -97,42 +105,57 @@ class Ingress(BaseThreadWorker):
             self._dropped_messages += 1
 
     def push(self, message_parts: List[bytes]) -> bool:
+        """Push the message to the buffer.
+
+        When the buffer is full, drop the message.
+        """
+
         try:
             self._queue.push(message_parts)
         except RuntimeError:
-            self.logger.debug('Queue is full, dropping the message')
+            self.logger.debug('Buffer is full, dropping the message')
             return False
-        self.logger.debug('Pushed message to the queue')
+        self.logger.debug('Pushed message to the buffer')
         return True
 
     def force_push(self, message_parts: List[bytes]) -> bool:
+        """Forcefully push the message to the buffer.
+
+        When the buffer is full, wait until it is not full and then push the message.
+        """
+
         while True:
             try:
                 self._queue.push(message_parts)
                 break
             except RuntimeError:
                 self.logger.debug(
-                    'Queue is full, retrying in %s seconds', self._interval
+                    'Buffer is full, retrying in %s seconds', self._interval
                 )
                 time.sleep(self._interval)
 
-        self.logger.debug('Pushed message to the queue')
+        self.logger.debug('Pushed message to the buffer')
         return True
 
     @property
     def received_messages(self) -> int:
+        """Number of messages received from the source ZeroMQ socket."""
         return self._received_messages
 
     @property
     def pushed_messages(self) -> int:
+        """Number of messages pushed to the buffer."""
         return self._pushed_messages
 
     @property
     def dropped_messages(self) -> int:
+        """Number of messages dropped by the adapter."""
         return self._dropped_messages
 
 
 class Egress(BaseThreadWorker):
+    """Polls messages from the buffer and sends them to the sink ZeroMQ socket."""
+
     def __init__(
         self,
         queue: PersistentQueueWithCapacity,
@@ -188,8 +211,13 @@ class Egress(BaseThreadWorker):
         self.logger.info('Egress was stopped')
 
     def pop_next_message(self) -> Optional[List[bytes]]:
+        """Pop the next message from the buffer.
+
+        When the buffer is empty, wait until it is not empty and then pop the message.
+        """
+
         if self._queue.len() < QUEUE_ITEM_SIZE:
-            self.logger.debug('Queue is empty, waiting for %s seconds', self._interval)
+            self.logger.debug('Buffer is empty, waiting for %s seconds', self._interval)
             time.sleep(self._interval)
             return None
 
@@ -204,37 +232,55 @@ class Egress(BaseThreadWorker):
 
     @property
     def sent_messages(self) -> int:
+        """Number of messages sent to the sink ZeroMQ socket."""
         return self._sent_messages
 
 
-class MetricsAggregator:
+class StatsAggregator:
+    """Aggregates statistics from the adapter threads."""
+
     def __init__(
-        self, queue: PersistentQueueWithCapacity, ingress: Ingress, egress: Egress
+        self,
+        queue: PersistentQueueWithCapacity,
+        ingress: Ingress,
+        egress: Egress,
     ):
         self._queue = queue
         self._ingress = ingress
         self._egress = egress
 
-    def get_metrics(self):
+    def get_stats(self):
+        """Get statistics from the adapter threads.
+
+        The following statistics are returned:
+        - received_messages: number of messages received from the source ZeroMQ socket;
+        - pushed_messages: number of messages pushed to the buffer;
+        - dropped_messages: number of messages dropped by the adapter;
+        - sent_messages: number of messages sent to the sink ZeroMQ socket;
+        - buffer_size: number of messages in the buffer.
+        """
+
         received_messages = self._ingress.received_messages
         pushed_messages = self._ingress.pushed_messages
         dropped_messages = self._ingress.dropped_messages
         sent_messages = self._egress.sent_messages
-        queue_size = self._queue.len() // QUEUE_ITEM_SIZE
+        buffer_size = self._queue.len() // QUEUE_ITEM_SIZE
 
         return {
             'received_messages': received_messages,
             'pushed_messages': pushed_messages,
             'dropped_messages': dropped_messages,
             'sent_messages': sent_messages,
-            'queue_size': queue_size,
+            'buffer_size': buffer_size,
         }
 
 
 class StatsLogger(BaseThreadWorker):
+    """Logs stats."""
+
     def __init__(
         self,
-        metrics_aggregator: MetricsAggregator,
+        stats_aggregator: StatsAggregator,
         config: Config,
     ):
         super().__init__(
@@ -242,7 +288,7 @@ class StatsLogger(BaseThreadWorker):
             logger_name=f'{LOGGER_NAME}.{self.__class__.__name__}',
             daemon=True,
         )
-        self._metrics_aggregator = metrics_aggregator
+        self._stats_aggregator = stats_aggregator
         self._interval = config.stats_log_interval
 
     def workload(self):
@@ -253,21 +299,25 @@ class StatsLogger(BaseThreadWorker):
         self.logger.info('StatsLogger was stopped')
 
     def log_stats(self):
-        metrics = self._metrics_aggregator.get_metrics()
+        """Log stats from the adapter threads."""
+
+        stats = self._stats_aggregator.get_stats()
         self.logger.info(
-            'Received %s, pushed %s, dropped %s, sent %s, queue size %s',
-            metrics['received_messages'],
-            metrics['pushed_messages'],
-            metrics['dropped_messages'],
-            metrics['sent_messages'],
-            metrics['queue_size'],
+            'Received %s, pushed %s, dropped %s, sent %s, buffer size %s',
+            stats['received_messages'],
+            stats['pushed_messages'],
+            stats['dropped_messages'],
+            stats['sent_messages'],
+            stats['buffer_size'],
         )
 
 
 class AdapterMetricsCollector(BaseMetricsCollector):
+    """Adapter metrics collector for Prometheus."""
+
     def __init__(
         self,
-        metrics_aggregator: MetricsAggregator,
+        metrics_aggregator: StatsAggregator,
         extra_labels: Dict[str, str],
     ):
         super().__init__(extra_labels)
@@ -276,22 +326,24 @@ class AdapterMetricsCollector(BaseMetricsCollector):
             Counter('received_messages', 'Number of messages received by the adapter')
         )
         self.register_metric(
-            Counter('pushed_messages', 'Number of messages pushed to the queue')
+            Counter('pushed_messages', 'Number of messages pushed to the buffer')
         )
         self.register_metric(
-            Counter('dropped_messages', 'Number of messages dropped by the queue')
+            Counter('dropped_messages', 'Number of messages dropped by the buffer')
         )
         self.register_metric(
             Counter('sent_messages', 'Number of messages sent by the adapter')
         )
-        self.register_metric(Gauge('queue_size', 'Number of messages in the queue'))
+        self.register_metric(Gauge('buffer_size', 'Number of messages in the buffer'))
 
     def update_all_metrics(self):
-        for k, v in self._metrics_aggregator.get_metrics().items():
+        for k, v in self._metrics_aggregator.get_stats().items():
             self._metrics[k].set(v)
 
 
 def build_video_pipeline(config: Config):
+    """Build a video pipeline to count passed frames."""
+
     conf = VideoPipelineConfiguration()
     conf.frame_period = (
         config.metrics.frame_period if config.metrics.frame_period else None
@@ -315,22 +367,22 @@ def main():
     config = Config()
     logger.info('Starting the adapter')
     queue = PersistentQueueWithCapacity(
-        config.queue_path,
-        config.queue_capacity * QUEUE_ITEM_SIZE,
+        config.buffer_path,
+        config.buffer_len * QUEUE_ITEM_SIZE,
     )
     # VideoPipeline is used to count passed frames
     pipeline = build_video_pipeline(config)
     ingress = Ingress(queue, config)
     egress = Egress(queue, pipeline, config)
-    metrics_aggregator = MetricsAggregator(queue, ingress, egress)
-    stats_logger = StatsLogger(metrics_aggregator, config)
+    stats_aggregator = StatsAggregator(queue, ingress, egress)
+    stats_logger = StatsLogger(stats_aggregator, config)
     if config.metrics.provider is None:
         metrics_exporter = None
     elif config.metrics.provider == 'prometheus':
         metrics_exporter = PrometheusMetricsExporter(
             config.metrics.provider_params,
             AdapterMetricsCollector(
-                metrics_aggregator,
+                stats_aggregator,
                 config.metrics.provider_params.get('labels') or {},
             ),
         )

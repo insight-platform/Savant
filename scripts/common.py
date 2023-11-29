@@ -209,7 +209,6 @@ def build_docker_run_command(
     :param args: add command line arguments to the entrypoint
     :param ports: add ``-p`` parameters
     """
-
     gst_debug = os.environ.get('GST_DEBUG', '2')
     # fmt: off
     command = [
