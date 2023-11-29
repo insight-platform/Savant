@@ -12,8 +12,10 @@ Makefile
 **/*.egg-info/
 **/build/
 **/cmake-build-debug/
-downloads/
-models/
+cache/
 var/
 data/
 logs/
+.venv/
+env/
+venv/

@@ -73,6 +73,7 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
             class_ids = class_ids[conf_mask]
             confidences = confidences[conf_mask]
 
+        # TODO: Replace with NMS+topK?
         # select top k
         if len(confidences) > self.top_k:
             top_k_mask = np.argpartition(confidences, -self.top_k)[-self.top_k :]

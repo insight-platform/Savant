@@ -1,22 +1,28 @@
 """YOLOv8-seg postprocessing (converter)."""
 from typing import Any, List, Tuple
 
+import cupy as cp
 import cv2
-import numba as nb
 import numpy as np
 
-from savant.base.converter import BaseComplexModelOutputConverter
+from savant.base.converter import BaseComplexModelOutputConverter, TensorFormat
 from savant.deepstream.nvinfer.model import NvInferInstanceSegmentation
-from savant.utils.nms import nms_cpu
+from savant.utils.memory_repr import (
+    cupy_array_as_opencv_gpu_mat,
+    opencv_gpu_mat_as_cupy_array,
+)
+from savant.utils.nms import nms_gpu
 
 
 class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
     """YOLOv8-seg output converter.
 
     :param confidence_threshold: confidence threshold (pre-cluster-threshold)
-    :param nms_iou_threshold: nms iou threshold
+    :param nms_iou_threshold: NMS IoU threshold
     :param top_k: leave no more than top K bboxes with maximum confidence
     """
+
+    tensor_format: TensorFormat = TensorFormat.CuPy
 
     def __init__(
         self,
@@ -31,7 +37,7 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
 
     def __call__(
         self,
-        *output_layers: np.ndarray,
+        *output_layers: cp.ndarray,
         model: NvInferInstanceSegmentation,
         roi: Tuple[float, float, float, float],
     ) -> Tuple[np.ndarray, List[List[Tuple[str, Any, float]]]]:
@@ -56,7 +62,7 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
         )
 
         if tensors.shape[0] == 0:
-            return tensors, []
+            return tensors.get(), []
 
         roi_left, roi_top, roi_width, roi_height = roi
 
@@ -75,76 +81,65 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
         tensors[:, 2] += roi_left
         tensors[:, 3] += roi_top
 
-        # scale masks (transpose to use cv2.resize)
-        masks = masks.transpose((1, 2, 0))
+        # scale masks & prepare mask list
         mask_width = int(ratio_x * model.input.width)
         mask_height = int(ratio_y * model.input.height)
-        masks = cv2.resize(masks, (mask_width, mask_height), cv2.INTER_LINEAR)
-        masks = (
-            masks.transpose((2, 0, 1)) if len(masks.shape) == 3 else masks[None, ...]
-        )
 
-        masks = masks > 0.5
+        mask_list = []
+        for i in range(masks.shape[0]):
+            gpu_mat = cupy_array_as_opencv_gpu_mat(masks[i])
+            resized_gpu_mat = cv2.cuda.resize(
+                src=gpu_mat,
+                dsize=(mask_width, mask_height),
+                interpolation=cv2.INTER_LINEAR,
+                # TODO: it should work, but it doesn't, investigate
+                # stream=cp.cuda.Stream(),
+            )
+            mask = opencv_gpu_mat_as_cupy_array(resized_gpu_mat)
 
-        mask_list = [
-            [
-                (
-                    model.output.attributes[0].name,
-                    masks[
-                        i,
-                        max(0, int(tensors[i, 3] - tensors[i, 5] / 2)) : min(
-                            mask_height, int(tensors[i, 3] + tensors[i, 5] / 2)
-                        ),
-                        max(0, int(tensors[i, 2] - tensors[i, 4] / 2)) : min(
-                            mask_width, int(tensors[i, 2] + tensors[i, 4] / 2)
-                        ),
-                    ],
-                    1.0,
-                )
-            ]
-            for i in range(len(masks))
-        ]
+            mask = mask > 0.5
 
-        return tensors, mask_list
+            mask_list.append(
+                [
+                    (
+                        model.output.attributes[0].name,
+                        mask[
+                            max(0, int(tensors[i, 3] - tensors[i, 5] / 2)) : min(
+                                mask_height, int(tensors[i, 3] + tensors[i, 5] / 2)
+                            ),
+                            max(0, int(tensors[i, 2] - tensors[i, 4] / 2)) : min(
+                                mask_width, int(tensors[i, 2] + tensors[i, 4] / 2)
+                            ),
+                        ].get(),
+                        1.0,
+                    )
+                ]
+            )
 
-
-@nb.njit('Tuple((u2[:], f4[:]))(f4[:, :])', nogil=True)
-def _parse_scores(scores: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-    class_ids = np.empty(scores.shape[0], dtype=np.uint16)
-    confidences = np.empty(scores.shape[0], dtype=scores.dtype)
-    for i in range(scores.shape[0]):
-        class_ids[i] = scores[i, :].argmax()
-        confidences[i] = scores[i, class_ids[i]]
-    return class_ids, confidences
+        return tensors.get(), mask_list
 
 
-@nb.njit('f4[:, ::1](f4[:, :])', nogil=True)
-def sigmoid(a: np.ndarray) -> np.ndarray:
-    ones = np.ones(a.shape, dtype=np.float32)
-    return np.divide(ones, (ones + np.exp(-a)))
+@cp.fuse()
+def sigmoid(a: cp.ndarray) -> cp.ndarray:
+    return cp.divide(1.0, (1.0 + cp.exp(-a)))
 
 
-@nb.njit(
-    'Tuple((f4[:, ::1], f4[:, :, ::1]))(f4[:, ::1], f4[:, :, ::1], u2, f4, f4, u2)',
-    nogil=True,
-)
 def _postproc(
-    output: np.ndarray,
-    protos: np.ndarray,
+    output: cp.ndarray,
+    protos: cp.ndarray,
     num_detected_classes: int,
     nms_iou_threshold: float,
     confidence_threshold: float,
     top_k: int,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> Tuple[cp.ndarray, cp.ndarray]:
     # bbox postprocessing
     # shape(4 + num_classes + num_masks, num_boxes) => shape(num_boxes, ...)
     output = output.transpose(-1, -2)
 
     bboxes = output[:, :4]  # xc, yc, width, height
     scores = output[:, 4 : 4 + num_detected_classes]
-    # class_ids = np.argmax(scores, axis=-1)
-    # confidences = np.max(scores, axis=-1)
-    class_ids, confidences = _parse_scores(scores)
+    class_ids = cp.argmax(scores, axis=-1)
+    confidences = cp.max(scores, axis=-1)
     masks = output[:, 4 + num_detected_classes :]
 
     # filter by confidence
@@ -157,31 +152,31 @@ def _postproc(
 
     # nms, class agnostic (all classes are treated as one)
     if nms_iou_threshold and bboxes.shape[0] > 0:
-        nms_mask = nms_cpu(bboxes, confidences, nms_iou_threshold, top_k)
+        nms_mask = nms_gpu(bboxes, confidences, nms_iou_threshold, top_k)
         bboxes = bboxes[nms_mask]
         class_ids = class_ids[nms_mask]
         confidences = confidences[nms_mask]
         masks = masks[nms_mask]
 
-    # select top k (no nms applied)
+    # select top k (makes sense if nms is not applied, nms selects top k too)
     if bboxes.shape[0] > top_k:
-        top_k_mask = np.argpartition(confidences, -top_k)[-top_k:]
+        top_k_mask = cp.argpartition(confidences, -top_k)[-top_k:]
         bboxes = bboxes[top_k_mask]
         class_ids = class_ids[top_k_mask]
         confidences = confidences[top_k_mask]
         masks = masks[top_k_mask]
 
     if bboxes.shape[0] == 0:
-        return np.empty((0, 0), dtype=np.float32), np.empty((0, 0, 0), dtype=np.float32)
+        return cp.empty((0, 0), dtype=cp.float32), cp.empty((0, 0, 0), dtype=cp.float32)
 
-    tensors = np.empty((bboxes.shape[0], 6), dtype=np.float32)
+    tensors = cp.empty((bboxes.shape[0], 6), dtype=cp.float32)
     tensors[:, 0] = class_ids
     tensors[:, 1] = confidences
     tensors[:, 2:] = bboxes
 
     # proto masks postprocessing
     mask_dim, mask_height, mask_width = protos.shape
-    masks = sigmoid(np.ascontiguousarray(masks) @ protos.reshape(mask_dim, -1))
+    masks = sigmoid(cp.ascontiguousarray(masks) @ protos.reshape(mask_dim, -1))
     masks = masks.reshape(-1, mask_height, mask_width)
 
     return tensors, masks
