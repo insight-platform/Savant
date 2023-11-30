@@ -53,9 +53,21 @@ def build_common_bridge_envs(
     help='Mount buffer path to the container.',
 )
 @click.option(
-    '--interval',
-    default=0.1,
-    help='Interval between pushing/polling messages to the buffer, in seconds.',
+    '--idle-pushing-period',
+    default=0.005,
+    help=(
+        'Interval between pushing non-frame messages messages to the buffer '
+        'when the buffer is full, in seconds.'
+    ),
+    show_default=True,
+)
+@click.option(
+    '--idle-polling-period',
+    default=0.005,
+    help=(
+        'Interval between polling messages from the buffer '
+        'when the buffer is empty, in seconds.'
+    ),
     show_default=True,
 )
 @click.option(
@@ -98,7 +110,8 @@ def buffer_bridge(
     out_endpoint: str,
     buffer_len: int,
     mount_buffer_path: bool,
-    interval: float,
+    idle_pushing_period: float,
+    idle_polling_period: float,
     stats_log_interval: int,
     metrics_frame_period: int,
     metrics_time_period: Optional[float],
@@ -126,7 +139,8 @@ def buffer_bridge(
     ) + [
         f'BUFFER_LEN={buffer_len}',
         f'BUFFER_PATH={buffer_path}',
-        f'INTERVAL={interval}',
+        f'IDLE_PUSHING_PERIOD={idle_pushing_period}',
+        f'IDLE_POLLING_PERIOD={idle_polling_period}',
         f'STATS_LOG_INTERVAL={stats_log_interval}',
         f'METRICS_FRAME_PERIOD={metrics_frame_period}',
         f'METRICS_HISTORY={metrics_history}',

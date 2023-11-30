@@ -53,7 +53,8 @@ class Config:
         self.zmq_sink_endpoint = os.environ['ZMQ_SINK_ENDPOINT']
         self.buffer_path = os.environ['BUFFER_PATH']
         self.buffer_len = opt_config('BUFFER_LEN', 1000, int)
-        self.interval = opt_config('INTERVAL', 0.1, float)
+        self.idle_pushing_period = opt_config('IDLE_PUSHING_PERIOD', 0.005, float)
+        self.idle_polling_period = opt_config('IDLE_POLLING_PERIOD', 0.005, float)
         self.stats_log_interval = opt_config('STATS_LOG_INTERVAL', 60, int)
         self.metrics = MetricsConfig()
 
@@ -68,7 +69,7 @@ class Ingress(BaseThreadWorker):
             daemon=True,
         )
         self._queue = queue
-        self._interval = config.interval
+        self._idle_pushing_period = config.idle_pushing_period
         self._received_messages = 0
         self._pushed_messages = 0
         self._dropped_messages = 0
@@ -81,6 +82,7 @@ class Ingress(BaseThreadWorker):
             try:
                 message_parts = self._zmq_source.next_message_without_routing_id()
                 if message_parts is not None:
+                    self.logger.debug('Received message from the source ZeroMQ socket')
                     self.handle_next_message(message_parts)
             except Exception as e:
                 self.logger.error('Failed to poll message: %s', e)
@@ -129,10 +131,11 @@ class Ingress(BaseThreadWorker):
                 self._queue.push(message_parts)
                 break
             except RuntimeError:
-                self.logger.debug(
-                    'Buffer is full, retrying in %s seconds', self._interval
+                self.logger.trace(
+                    'Buffer is full, retrying in %s seconds',
+                    self._idle_pushing_period,
                 )
-                time.sleep(self._interval)
+                time.sleep(self._idle_pushing_period)
 
         self.logger.debug('Pushed message to the buffer')
         return True
@@ -168,7 +171,7 @@ class Egress(BaseThreadWorker):
             daemon=True,
         )
         self._queue = queue
-        self._interval = config.interval
+        self._idle_polling_period = config.idle_polling_period
         self._sent_messages = 0
         self._pipeline = pipeline
         self._video_frame = VideoFrame(
@@ -203,6 +206,7 @@ class Egress(BaseThreadWorker):
             try:
                 message_parts = self.pop_next_message()
                 if message_parts is not None:
+                    self.logger.debug('Sending message to the sink ZeroMQ socket')
                     self._sender.send_multipart(message_parts)
             except Exception as e:
                 self.logger.error('Failed to poll message: %s', e)
@@ -217,8 +221,11 @@ class Egress(BaseThreadWorker):
         """
 
         if self._queue.len() < QUEUE_ITEM_SIZE:
-            self.logger.debug('Buffer is empty, waiting for %s seconds', self._interval)
-            time.sleep(self._interval)
+            self.logger.trace(
+                'Buffer is empty, waiting for %s seconds',
+                self._idle_polling_period,
+            )
+            time.sleep(self._idle_polling_period)
             return None
 
         message_parts = self._queue.pop(QUEUE_ITEM_SIZE)

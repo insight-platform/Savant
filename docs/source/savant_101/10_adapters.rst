@@ -942,7 +942,8 @@ The Buffer Bridge Adapter buffers messages from a source and sends them to a mod
 
 - ``BUFFER_PATH`` (**required**): a path to a buffer;
 - ``BUFFER_LEN``: a maximum amount of messages in the buffer; default is ``1000``;
-- ``INTERVAL``:  an interval between pushing/polling messages to the buffer, in seconds; default is ``0.1``;
+- ``IDLE_PUSHING_PERIOD``: an interval between pushing non-frame messages messages to the buffer when the buffer is full, in seconds; default is ``0.005``;
+- ``IDLE_POLLING_PERIOD``: an interval between polling messages from the buffer when the buffer is empty, in seconds; default is ``0.005``;
 - ``STATS_LOG_INTERVAL``: an interval between logging buffer statistics, in seconds; default is ``60``;
 - ``METRICS_FRAME_PERIOD``: output FPS stats after every N frames; default is ``1000``;
 - ``METRICS_TIME_PERIOD``: output FPS stats after every N seconds;
@@ -960,7 +961,8 @@ Running the adapter with Docker:
         -e ZMQ_SRC_ENDPOINT=dealer+bind:ipc:///tmp/zmq-sockets/buffered-video.ipc \
         -e BUFFER_PATH=/tmp/savant/buffer \
         -e BUFFER_LEN=1000 \
-        -e INTERVAL=1 \
+        -e IDLE_PUSHING_PERIOD=0.005 \
+        -e IDLE_POLLING_PERIOD=0.005 \
         -e STATS_LOG_INTERVAL=60 \
         -e METRICS_FRAME_PERIOD=1000 \
         -e METRICS_TIME_PERIOD=10 \
