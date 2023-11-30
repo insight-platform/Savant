@@ -144,6 +144,7 @@ Wait, you may be confused about the performance and Python in the same context. 
 - Rust Core Library (Savant-RS) with Python bindings;
 - Custom C/C++ GStreamer plugins;
 - OpenCV CUDA (C/C++/Python bindings);
+- CuPy (Python bindings to CUDA);
 - Python NumPy;
 - Python Numba (native, nogil);
 - Python box moving code.
