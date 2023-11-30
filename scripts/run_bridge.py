@@ -53,12 +53,18 @@ def build_common_bridge_envs(
     help='Mount buffer path to the container.',
 )
 @click.option(
-    '--idle-pushing-period',
-    default=0.005,
+    '--buffer-service-messages',
+    default=100,
     help=(
-        'Interval between pushing non-frame messages messages to the buffer '
-        'when the buffer is full, in seconds.'
+        'Buffer length for service messages (eg. EndOfStream, Shutdown). Used '
+        'when the main part of the buffer is full (--buffer-len).'
     ),
+    show_default=True,
+)
+@click.option(
+    '--buffer-threshold-percentage',
+    default=80,
+    help='Threshold to mark the buffer not full.',
     show_default=True,
 )
 @click.option(
@@ -110,7 +116,8 @@ def buffer_bridge(
     out_endpoint: str,
     buffer_len: int,
     mount_buffer_path: bool,
-    idle_pushing_period: float,
+    buffer_service_messages: int,
+    buffer_threshold_percentage: int,
     idle_polling_period: float,
     stats_log_interval: int,
     metrics_frame_period: int,
@@ -139,7 +146,8 @@ def buffer_bridge(
     ) + [
         f'BUFFER_LEN={buffer_len}',
         f'BUFFER_PATH={buffer_path}',
-        f'IDLE_PUSHING_PERIOD={idle_pushing_period}',
+        f'BUFFER_SERVICE_MESSAGES={buffer_service_messages}',
+        f'BUFFER_THRESHOLD_PERCENTAGE={buffer_threshold_percentage}',
         f'IDLE_POLLING_PERIOD={idle_polling_period}',
         f'STATS_LOG_INTERVAL={stats_log_interval}',
         f'METRICS_FRAME_PERIOD={metrics_frame_period}',

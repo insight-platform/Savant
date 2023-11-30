@@ -45,15 +45,33 @@ class MetricsConfig:
         )
 
 
+class BufferConfig:
+    """Buffer configuration for the adapter."""
+
+    def __init__(self):
+        self.path = os.environ['BUFFER_PATH']
+        len_items = opt_config('BUFFER_LEN', 1000, int)
+        assert len_items > 0, 'BUFFER_LEN must be positive'
+        self.len = len_items * QUEUE_ITEM_SIZE
+
+        service_messages_items = opt_config('BUFFER_SERVICE_MESSAGES', 100, int)
+        assert service_messages_items > 0, 'BUFFER_SERVICE_MESSAGES must be positive'
+        self.service_messages = service_messages_items * QUEUE_ITEM_SIZE
+
+        threshold_percentage = opt_config('BUFFER_THRESHOLD_PERCENTAGE', 80, int)
+        assert (
+            0 <= threshold_percentage <= 100
+        ), 'BUFFER_THRESHOLD_PERCENTAGE must be in [0, 100] range'
+        self.threshold = int(len_items * threshold_percentage / 100) * QUEUE_ITEM_SIZE
+
+
 class Config:
     """Configuration for the adapter."""
 
     def __init__(self):
         self.zmq_src_endpoint = os.environ['ZMQ_SRC_ENDPOINT']
         self.zmq_sink_endpoint = os.environ['ZMQ_SINK_ENDPOINT']
-        self.buffer_path = os.environ['BUFFER_PATH']
-        self.buffer_len = opt_config('BUFFER_LEN', 1000, int)
-        self.idle_pushing_period = opt_config('IDLE_PUSHING_PERIOD', 0.005, float)
+        self.buffer = BufferConfig()
         self.idle_polling_period = opt_config('IDLE_POLLING_PERIOD', 0.005, float)
         self.stats_log_interval = opt_config('STATS_LOG_INTERVAL', 60, int)
         self.metrics = MetricsConfig()
@@ -69,7 +87,8 @@ class Ingress(BaseThreadWorker):
             daemon=True,
         )
         self._queue = queue
-        self._idle_pushing_period = config.idle_pushing_period
+        self._config = config
+        self._buffer_is_full = False
         self._received_messages = 0
         self._pushed_messages = 0
         self._dropped_messages = 0
@@ -98,44 +117,44 @@ class Ingress(BaseThreadWorker):
             message_parts.append(b'')
         message: Message = load_message_from_bytes(message_parts[1])
         if message.is_video_frame():
-            pushed = self.push(message_parts)
+            pushed = self.push_frame(message_parts)
         else:
-            pushed = self.force_push(message_parts)
+            pushed = self.push_service_message(message_parts)
         if pushed:
             self._pushed_messages += 1
         else:
             self._dropped_messages += 1
 
-    def push(self, message_parts: List[bytes]) -> bool:
-        """Push the message to the buffer.
+    def push_frame(self, message_parts: List[bytes]) -> bool:
+        """Push frame to the buffer."""
 
-        When the buffer is full, drop the message.
-        """
+        buffer_size = self._queue.len()
+        if self._buffer_is_full:
+            if buffer_size >= self._config.buffer.threshold:
+                self.logger.debug('Buffer is full, dropping the frame')
+                return False
+
+            self._buffer_is_full = False
+
+        elif buffer_size + QUEUE_ITEM_SIZE >= self._config.buffer.len:
+            self._buffer_is_full = True
+            self.logger.debug('Buffer is full, dropping the frame')
+            return False
+
+        self._queue.push(message_parts)
+        self.logger.debug('Pushed frame to the buffer')
+        return True
+
+    def push_service_message(self, message_parts: List[bytes]) -> bool:
+        """Push service message to the buffer."""
 
         try:
             self._queue.push(message_parts)
-        except RuntimeError:
+        except Exception as e:
+            if e.args[0] != 'Failed to push item: Queue is full':
+                raise
             self.logger.debug('Buffer is full, dropping the message')
             return False
-        self.logger.debug('Pushed message to the buffer')
-        return True
-
-    def force_push(self, message_parts: List[bytes]) -> bool:
-        """Forcefully push the message to the buffer.
-
-        When the buffer is full, wait until it is not full and then push the message.
-        """
-
-        while True:
-            try:
-                self._queue.push(message_parts)
-                break
-            except RuntimeError:
-                self.logger.trace(
-                    'Buffer is full, retrying in %s seconds',
-                    self._idle_pushing_period,
-                )
-                time.sleep(self._idle_pushing_period)
 
         self.logger.debug('Pushed message to the buffer')
         return True
@@ -374,8 +393,8 @@ def main():
     config = Config()
     logger.info('Starting the adapter')
     queue = PersistentQueueWithCapacity(
-        config.buffer_path,
-        config.buffer_len * QUEUE_ITEM_SIZE,
+        config.buffer.path,
+        config.buffer.len + config.buffer.service_messages,
     )
     # VideoPipeline is used to count passed frames
     pipeline = build_video_pipeline(config)
