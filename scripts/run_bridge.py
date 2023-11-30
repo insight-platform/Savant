@@ -54,7 +54,7 @@ def build_common_bridge_envs(
 )
 @click.option(
     '--interval',
-    default=1.0,
+    default=0.1,
     help='Interval between pushing/polling messages to the buffer, in seconds.',
     show_default=True,
 )

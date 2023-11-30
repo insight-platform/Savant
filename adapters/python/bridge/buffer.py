@@ -53,7 +53,7 @@ class Config:
         self.zmq_sink_endpoint = os.environ['ZMQ_SINK_ENDPOINT']
         self.buffer_path = os.environ['BUFFER_PATH']
         self.buffer_len = opt_config('BUFFER_LEN', 1000, int)
-        self.interval = opt_config('INTERVAL', 1, float)
+        self.interval = opt_config('INTERVAL', 0.1, float)
         self.stats_log_interval = opt_config('STATS_LOG_INTERVAL', 60, int)
         self.metrics = MetricsConfig()
 

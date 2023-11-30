@@ -942,7 +942,7 @@ The Buffer Bridge Adapter buffers messages from a source and sends them to a mod
 
 - ``BUFFER_PATH`` (**required**): a path to a buffer;
 - ``BUFFER_LEN``: a maximum amount of messages in the buffer; default is ``1000``;
-- ``INTERVAL``:  an interval between pushing/polling messages to the buffer, in seconds; default is ``1``;
+- ``INTERVAL``:  an interval between pushing/polling messages to the buffer, in seconds; default is ``0.1``;
 - ``STATS_LOG_INTERVAL``: an interval between logging buffer statistics, in seconds; default is ``60``;
 - ``METRICS_FRAME_PERIOD``: output FPS stats after every N frames; default is ``1000``;
 - ``METRICS_TIME_PERIOD``: output FPS stats after every N seconds;
