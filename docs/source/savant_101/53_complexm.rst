@@ -85,3 +85,7 @@ The converter must be implemented by specifying :py:class:`~savant.deepstream.nv
 The model used in the example has three outputs. Two are related to detections, and the third returns the coordinates of the facial keypoints for the detected face. The converter processes the first two outputs with the names ``bboxes`` and ``scores`` to obtain the boxes, while the third output with the name ``landmarks`` returns the keypoints, which are returned as attributes for each detected object. Note that the number of boxes and the length of the attribute list for each box must match.
 
 The ``detector_decoder`` is a separate function specifically written to process the outputs of the RetinaNet model and is not provided here, as it does not affect the overall understanding of the principles of writing converters.
+
+.. note::
+
+     The converter can access data with CPU-based tools (NumPy) or in GPU with CuPy. Typically, NumPy-based processing is a default choice; however, if you have a lot of data to process, you may consider using CuPy to speed up the processing.

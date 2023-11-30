@@ -75,3 +75,7 @@ In this case, there is no third value (for classification models, this would be 
                 (model.output.attributes[0].name, output_layers[0].tolist(), None),
                 (model.output.attributes[1].name, output_layers[1].item(), None),
             ]
+
+.. note::
+
+    The converter can access data with CPU-based tools (NumPy) or in GPU with CuPy. Typically, NumPy-based processing is a default choice; however, if you have a lot of data to process, you may consider using CuPy to speed up the processing.
