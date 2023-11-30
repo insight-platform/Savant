@@ -119,13 +119,16 @@ run-dev:
 		--net=host --privileged \
 		-e DISPLAY=$(DISPLAY) \
 		-e XAUTHORITY=/tmp/.docker.xauth \
+		-e MODEL_PATH=/cache/models \
+		-e DOWNLOAD_PATH=/cache/downloads \
+		-e CUPY_CACHE_DIR=/cache/cupy \
+		-e NUMBA_CACHE_DIR=/cache/numba \
 		-e ZMQ_SRC_ENDPOINT=router+bind:ipc:///tmp/zmq-sockets/input-video.ipc \
 		-e ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc \
 		-v /tmp/.X11-unix:/tmp/.X11-unix \
 		-v /tmp/.docker.xauth:/tmp/.docker.xauth \
 		-v `pwd`/data:/data \
-		-v `pwd`/downloads:/downloads \
-		-v `pwd`/models:/models \
+		-v `pwd`/cache:/cache \
 		-v `pwd`/gst_plugins:$(PROJECT_PATH)/gst_plugins \
 		-v `pwd`/samples:$(PROJECT_PATH)/samples \
 		-v `pwd`/savant:$(PROJECT_PATH)/savant \

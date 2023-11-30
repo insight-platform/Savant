@@ -27,12 +27,13 @@ services:
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
-      - ../../models/peoplenet_detector:/models
-      - ../../downloads/peoplenet_detector:/downloads
+      - ../../cache:/cache
       - ..:/opt/savant/samples
     command: samples/pass_through_processing/module.yml
     environment:
       - MODULE_STAGE=detector
+      - MODEL_PATH=/cache/models/peoplenet_detector
+      - DOWNLOAD_PATH=/cache/downloads/peoplenet_detector
       - METRICS_FRAME_PERIOD=100
       - METRICS_TIME_PERIOD=1
       - METRICS_PROVIDER=prometheus
@@ -54,12 +55,13 @@ services:
       - "8000:8000"
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
-      - ../../models/peoplenet_detector:/models
-      - ../../downloads/peoplenet_detector:/downloads
+      - ../../cache:/cache
       - ..:/opt/savant/samples
     command: samples/pass_through_processing/module.yml
     environment:
       - MODULE_STAGE=tracker
+      - MODEL_PATH=/cache/models/peoplenet_detector
+      - DOWNLOAD_PATH=/cache/downloads/peoplenet_detector
       - METRICS_FRAME_PERIOD=100
       - METRICS_TIME_PERIOD=1
       - METRICS_PROVIDER=prometheus
@@ -79,8 +81,7 @@ services:
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
-      - ../../models/peoplenet_detector:/models
-      - ../../downloads/peoplenet_detector:/downloads
+      - ../../cache:/cache
       - ..:/opt/savant/samples
     command: samples/pass_through_processing/module.yml
     environment:
@@ -92,6 +93,8 @@ services:
       # Use default draw_func (savant.deepstream.drawfunc.NvDsDrawFunc)
       - DRAW_FUNC={}
       - CODEC=h264
+      - MODEL_PATH=/cache/models/peoplenet_detector
+      - DOWNLOAD_PATH=/cache/downloads/peoplenet_detector
       - ZMQ_SRC_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/tracker-output.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
     deploy:

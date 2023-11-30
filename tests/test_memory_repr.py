@@ -94,7 +94,9 @@ class TestAsOpenCV:
                 AssertionError,
                 match='Array must be in C-contiguous layout.',
             ):
-                opencv_mat = cupy_array_as_opencv_gpu_mat(np.transpose(cupy_array, (1, 2, 0)))
+                opencv_mat = cupy_array_as_opencv_gpu_mat(
+                    np.transpose(cupy_array, (1, 2, 0))
+                )
         else:
             opencv_mat = cupy_array_as_opencv_gpu_mat(cupy_array)
             np.testing.assert_almost_equal(
@@ -130,9 +132,7 @@ class TestToTorch:
         torch_tensor = opencv_gpu_mat_as_pytorch_tensor(opencv_gpu_mat)
 
         np.testing.assert_almost_equal(
-            opencv_gpu_mat.download()
-            if channels == 1
-            else opencv_gpu_mat.download(),
+            opencv_gpu_mat.download() if channels == 1 else opencv_gpu_mat.download(),
             torch_tensor.cpu().numpy(),
         )
 

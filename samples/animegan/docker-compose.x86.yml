@@ -22,11 +22,12 @@ services:
     image: ghcr.io/insight-platform/savant-deepstream:latest
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
-      - ../../models/animegan:/models
-      - ../../downloads/animegan:/downloads
+      - ../../cache:/cache
       - ..:/opt/savant/samples
     command: samples/animegan/module.yml
     environment:
+      - MODEL_PATH=/cache/models/animegan
+      - DOWNLOAD_PATH=/cache/downloads/animegan
       - ZMQ_SRC_ENDPOINT=router+bind:ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
       - METRICS_FRAME_PERIOD=1000

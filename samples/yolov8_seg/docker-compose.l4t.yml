@@ -23,11 +23,14 @@ services:
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
-      - ../../models/yolov8_seg:/models
-      - ../../downloads/yolov8_seg:/downloads
+      - ../../cache:/cache
       - ..:/opt/savant/samples
     command: samples/yolov8_seg/module/module.yml
     environment:
+      - MODEL_PATH=/cache/models/yolov8_seg
+      - DOWNLOAD_PATH=/cache/downloads/yolov8_seg
+      - CUPY_CACHE_DIR=/cache/cupy
+      - NUMBA_CACHE_DIR=/cache/numba
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
       - METRICS_FRAME_PERIOD=1000

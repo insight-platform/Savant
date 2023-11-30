@@ -44,4 +44,3 @@ from .object import (
     nvds_upd_obj_bbox,
 )
 from .surface import get_nvds_buf_surface
-from .tensor import nvds_infer_tensor_meta_to_outputs

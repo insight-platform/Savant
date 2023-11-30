@@ -85,7 +85,7 @@ pipeline:
     - element: nvtracker
       properties:
         ll-lib-file: /opt/nvidia/deepstream/deepstream/lib/libnvds_nvmultiobjecttracker.so
-        ll-config-file: ${oc.env:PROJECT_PATH}/samples/traffic_meter/config_tracker_NvDCF_perf.yml
+        ll-config-file: ${oc.env:PROJECT_PATH}/samples/assets/tracker/config_tracker_NvDCF_perf.yml
         tracker-width: 960  # 640  # must be a multiple of 32
         tracker-height: 544  # 384
         display-tracking-id: 0

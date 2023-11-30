@@ -141,8 +141,8 @@ A sample demonstrating the use of pass-through mode in Savant.
 
 Sample location: [pass_through_processing](./pass_through_processing)
 
-### Buffer Adapter Demo
+### RT-DETR R50 Demo
 
-A sample demonstrating the use of Buffer Adapter in Savant.
+A sample demonstrating the use of RT-DETR model in Savant.
 
-Sample location: [buffer_adapter](./buffer_adapter)
+Sample location: [rtdetr](./rtdetr/)

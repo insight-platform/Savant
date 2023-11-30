@@ -23,11 +23,12 @@ services:
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
-      - ../../models/keypoint_detection:/models
-      - ../../downloads/keypoint_detection:/downloads
+      - ../../cache:/cache
       - .:/opt/savant/samples/keypoint_detection
     command: samples/keypoint_detection/module.yml
     environment:
+      - MODEL_PATH=/cache/models/keypoint_detection
+      - DOWNLOAD_PATH=/cache/downloads/keypoint_detection
       - ZMQ_SRC_ENDPOINT=router+bind:ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
       - METRICS_FRAME_PERIOD=1000

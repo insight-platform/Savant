@@ -5,11 +5,12 @@ services:
       context: .
       dockerfile: docker/Dockerfile.x86
     volumes:
-      - ../../models/traffic_meter:/models
-      - ../../downloads/traffic_meter:/downloads
+      - ../../cache:/cache
       - .:/opt/savant/samples/traffic_meter
     command: samples/traffic_meter/module.yml
     environment:
+      - MODEL_PATH=/cache/models/traffic_meter
+      - DOWNLOAD_PATH=/cache/downloads/traffic_meter
       - ZMQ_SRC_ENDPOINT=sub+bind:tcp://0.0.0.0:3331
       - ZMQ_SINK_ENDPOINT=pub+bind:tcp://0.0.0.0:3332
       - METRICS_FRAME_PERIOD=1000
@@ -29,6 +30,7 @@ services:
     image: graphiteapp/graphite-statsd
     volumes:
       - ./graphite-storage:/opt/graphite/storage
+
   grafana:
     image: grafana/grafana-oss
     volumes:

@@ -40,10 +40,10 @@ Configuration properties copied from [dstest2_tracker_config.txt](https://github
 ```yaml
     - element: nvtracker
       properties:
+        ll-lib-file: /opt/nvidia/deepstream/deepstream/lib/libnvds_nvmultiobjecttracker.so
+        ll-config-file: ${oc.env:PROJECT_PATH}/samples/assets/tracker/config_tracker_NvDCF_perf.yml
         tracker-width: 640
         tracker-height: 384
-        ll-lib-file: /opt/nvidia/deepstream/deepstream/lib/libnvds_nvmultiobjecttracker.so
-        ll-config-file: ${oc.env:PROJECT_PATH}/samples/nvidia_car_classification/config_tracker_NvDCF_perf.yml
 ```
 
 #### Classifiers

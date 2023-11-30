@@ -62,8 +62,9 @@ class YoloV5faceConverter(BaseComplexModelOutputConverter):
                 selected_preds[:, :4],
                 selected_preds[:, 4],
                 self.nms_iou_threshold,
+                selected_preds.shape[0],
             )
-            selected_nms_prediction = selected_preds[keep == 1]
+            selected_nms_prediction = selected_preds[keep]
             xywh = selected_nms_prediction[:, :4]
             conf = selected_nms_prediction[:, 4:5]
             class_num = np.zeros_like(conf, dtype=np.float32)

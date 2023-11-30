@@ -141,11 +141,12 @@ pipeline:
     # nvtracker element from Deepstream, provides tracking
     - element: nvtracker
       properties:
-        tracker-width: 640
-        tracker-height: 384
         ll-lib-file: /opt/nvidia/deepstream/deepstream/lib/libnvds_nvmultiobjecttracker.so
         # specify tracking config file
-        ll-config-file: ${oc.env:PROJECT_PATH}/samples/peoplenet_detector/config_tracker_NvSORT.yml
+        ll-config-file: ${oc.env:PROJECT_PATH}/samples/assets/tracker/config_tracker_NvSORT.yml
+        tracker-width: 640
+        tracker-height: 384
+        display-tracking-id: 0
 
     # analytics element realized in custom pyfunc
     - element: pyfunc
