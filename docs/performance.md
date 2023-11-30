@@ -127,6 +127,12 @@
 | [#352](https://github.com/insight-platform/Savant/issues/352)                   | 414.61 | 77.47?    | 117.53    |
 | [#550](https://github.com/insight-platform/Savant/issues/550)                   | 416.32 |           | 117.34    |
 
+### rtdetr
+
+| Savant ver.                                                   | A4000  | Xavier NX | Orin Nano |
+|---------------------------------------------------------------|--------|-----------|-----------|
+| [#558](https://github.com/insight-platform/Savant/issues/558) | 137.41 |           |           |
+
 ### traffic_meter (yolov8m)
 
 | Savant ver.                                                                     | A4000  | Xavier NX | Orin Nano |
