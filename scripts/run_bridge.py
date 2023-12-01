@@ -33,8 +33,8 @@ def build_common_bridge_envs(
 ):
     """Generate env var run options."""
     return [
-        f'IN_ENDPOINT={in_endpoint}',
-        f'OUT_ENDPOINT={out_endpoint}',
+        f'ZMQ_SRC_ENDPOINT={in_endpoint}',
+        f'ZMQ_SINK_ENDPOINT={out_endpoint}',
     ]
 
 
