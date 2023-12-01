@@ -875,6 +875,8 @@ The Kafka-Redis Sink Adapter sends video stream metadata to Kafka and frame cont
 
 - ``KAFKA_BROKERS`` (**required**): a comma-separated list of Kafka brokers;
 - ``KAFKA_TOPIC`` (**required**): a Kafka topic to put messages to;
+- ``KAFKA_FLUSH_INTERVAL``: a flush interval in seconds for Kafka producer; default is ``1``;
+- ``KAFKA_FLUSH_TIMEOUT``: a flush timeout in seconds for Kafka producer; default is ``10``;
 - ``KAFKA_CREATE_TOPIC``: a flag indicating whether to create a Kafka topic if it does not exist; default is ``False``;
 - ``KAFKA_CREATE_TOPIC_NUM_PARTITIONS``: a number of partitions for a Kafka topic to create; default is ``1``;
 - ``KAFKA_CREATE_TOPIC_REPLICATION_FACTOR``: a replication factor for a Kafka topic to create; default is ``1``;

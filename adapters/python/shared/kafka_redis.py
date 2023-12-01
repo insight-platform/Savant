@@ -167,7 +167,7 @@ class BaseKafkaRedisAdapter(ABC):
         """
 
         admin_client = AdminClient({'bootstrap.servers': self._config.kafka.brokers})
-        cluster_meta: ClusterMetadata = admin_client.list_topics()
+        cluster_meta: ClusterMetadata = admin_client.list_topics(timeout=timeout)
         if self._config.kafka.topic in cluster_meta.topics:
             return True
 
@@ -192,7 +192,7 @@ class BaseKafkaRedisAdapter(ABC):
             ]
         )
         for _ in range(timeout):
-            cluster_meta = admin_client.list_topics()
+            cluster_meta = admin_client.list_topics(timeout=timeout)
             if self._config.kafka.topic in cluster_meta.topics:
                 return True
             time.sleep(1)

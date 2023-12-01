@@ -1,9 +1,10 @@
 import asyncio
 import os
+import time
 from asyncio import Queue
 from typing import Tuple
 
-from confluent_kafka import Producer
+from confluent_kafka import KafkaError, Producer
 from redis.asyncio import Redis
 from savant_rs.primitives import (
     VideoFrame,
@@ -27,6 +28,11 @@ from savant.client.runner.sink import SinkResult
 
 class KafkaConfig(BaseKafkaConfig):
     """Kafka configuration for kafka-redis sink adapter."""
+
+    def __init__(self):
+        super().__init__()
+        self.flush_interval = opt_config('KAFKA_FLUSH_INTERVAL', 1, float)
+        self.flush_timeout = opt_config('KAFKA_FLUSH_TIMEOUT', 10, float)
 
 
 class RedisConfig:
@@ -65,7 +71,8 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
 
     def __init__(self, config: Config):
         super().__init__(config)
-        self._producer = build_producer(config.kafka)
+        self._last_flush_ts = 0
+        self._producer = self.build_producer()
         if config.redis is not None:
             self._logger.info(
                 'Redis is configured at %s:%s/%s. Frame content will be stored to Redis.',
@@ -97,20 +104,38 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
     async def on_start(self):
         pass
 
+    async def flush_producer(self, loop: asyncio.AbstractEventLoop):
+        self._logger.debug('Flushing pending producer messages')
+        try:
+            loop.run_in_executor(
+                None,
+                self._producer.flush,
+                self._config.kafka.flush_timeout,
+            )
+            self._last_flush_ts = time.time()
+        except Exception as e:
+            self.set_error(f'Failed to flush producer: {e}')
+
     async def on_stop(self):
-        self._logger.info('Flushing pending producer messages')
-        self._producer.flush(timeout=5)
+        await self.flush_producer(asyncio.get_running_loop())
 
     async def poller(self):
         """Poll messages from ZeroMQ socket and put them to the poller queue."""
 
         self._logger.info('Starting poller')
+        loop = asyncio.get_running_loop()
+        self._last_flush_ts = time.time()
         while self._is_running:
             try:
                 async for result in self._sink:
                     if not self._is_running:
                         break
                     await self._poller_queue.put(result)
+                    if (
+                        time.time() - self._last_flush_ts
+                        > self._config.kafka.flush_interval
+                    ):
+                        await self.flush_producer(loop)
             except Exception as e:
                 self._is_running = False
                 self.set_error(f'Failed to poll message: {e}')
@@ -301,10 +326,21 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
         self._logger.trace('Value: %s.', value)
         self._producer.produce(self._config.kafka.topic, key=key, value=value)
 
+    def on_producer_error(self, error: KafkaError):
+        """Handle producer error."""
 
-def build_producer(config: KafkaConfig) -> Producer:
-    """Build Kafka producer."""
-    return Producer({'bootstrap.servers': config.brokers})
+        self.set_error(f'Failed to produce message: {error}')
+        self._is_running = False
+
+    def build_producer(self) -> Producer:
+        """Build Kafka producer."""
+
+        return Producer(
+            {
+                'bootstrap.servers': self._config.kafka.brokers,
+                'error_cb': self.on_producer_error,
+            }
+        )
 
 
 if __name__ == '__main__':
