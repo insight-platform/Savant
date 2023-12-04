@@ -94,6 +94,14 @@ class NvDsPipeline(GstPipeline):
 
         self._max_parallel_streams = kwargs.get('max_parallel_streams', 64)
 
+        self._egress_queue_length = kwargs.get('egress_queue_length')
+        self._egress_queue_byte_size = kwargs.get('egress_queue_byte_size')
+        self._egress_queue_properties = {
+            'max-size-buffers': self._egress_queue_length,
+            'max-size-bytes': self._egress_queue_byte_size,
+            'max-size-time': 0,
+        }
+
         self._source_adding_lock = Lock()
         self._sources = SourceInfoRegistry()
 
@@ -153,6 +161,7 @@ class NvDsPipeline(GstPipeline):
             frame_params=self._frame_params,
             output_frame=output_frame,
             video_pipeline=self._video_pipeline,
+            queue_properties=self._egress_queue_properties,
         )
 
         # nvjpegdec decoder is selected in decodebin according to the rank, but
@@ -634,7 +643,10 @@ class NvDsPipeline(GstPipeline):
         )
 
         self._check_pipeline_is_running()
-        output_queue = self.add_element(PipelineElement('queue'), link=False)
+        output_queue = self.add_element(
+            PipelineElement('queue', properties=self._egress_queue_properties),
+            link=False,
+        )
         output_queue.sync_state_with_parent()
         source_info.after_demuxer.append(output_queue)
         output_queue_sink_pad: Gst.Pad = output_queue.get_static_pad('sink')

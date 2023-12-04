@@ -28,11 +28,16 @@ from savant.utils.source_info import SourceInfo
 class SourceOutput(ABC):
     """Adds an output elements to a DeepStream pipeline."""
 
-    def __init__(self, video_pipeline: VideoPipeline):
+    def __init__(
+        self,
+        video_pipeline: VideoPipeline,
+        queue_properties: Dict[str, int],
+    ):
         self._logger = get_logger(
             f'{self.__class__.__module__}.{self.__class__.__name__}'
         )
         self._video_pipeline = video_pipeline
+        self._queue_properties = queue_properties
 
     @abstractmethod
     def add_output(
@@ -58,9 +63,10 @@ class SourceOutputOnlyMeta(SourceOutput):
     def __init__(
         self,
         video_pipeline: VideoPipeline,
+        queue_properties: Dict[str, int],
         condition: Optional[FrameProcessingCondition] = None,
     ):
-        super().__init__(video_pipeline)
+        super().__init__(video_pipeline, queue_properties)
         self._condition = condition
 
     def add_output(
@@ -114,8 +120,9 @@ class SourceOutputWithFrame(SourceOutput):
         frame_params: FrameParameters,
         condition: FrameProcessingCondition,
         video_pipeline: VideoPipeline,
+        queue_properties: Dict[str, int],
     ):
-        super().__init__(video_pipeline)
+        super().__init__(video_pipeline, queue_properties)
         self._frame_params = frame_params
         self._condition = condition
 
@@ -329,11 +336,17 @@ class SourceOutputRawRgba(SourceOutputWithFrame):
     Output contains raw-rgba frames along with metadata.
     """
 
-    def __init__(self, frame_params: FrameParameters, video_pipeline: VideoPipeline):
+    def __init__(
+        self,
+        frame_params: FrameParameters,
+        video_pipeline: VideoPipeline,
+        queue_properties: Dict[str, int],
+    ):
         super().__init__(
             frame_params,
             condition=FrameProcessingCondition(),
             video_pipeline=video_pipeline,
+            queue_properties=queue_properties,
         )
 
     def _add_transform_elems(self, pipeline: GstPipeline, source_info: SourceInfo):
@@ -364,6 +377,7 @@ class SourceOutputEncoded(SourceOutputWithFrame):
         frame_params: FrameParameters,
         condition: FrameProcessingCondition,
         video_pipeline: VideoPipeline,
+        queue_properties: Dict[str, int],
     ):
         """
         :param codec: Codec for output frames.
@@ -373,6 +387,7 @@ class SourceOutputEncoded(SourceOutputWithFrame):
             frame_params=frame_params,
             condition=condition,
             video_pipeline=video_pipeline,
+            queue_properties=queue_properties,
         )
         self._codec = codec
         self._output_frame = output_frame
@@ -463,21 +478,30 @@ def create_source_output(
     frame_params: FrameParameters,
     output_frame: Optional[Dict[str, Any]],
     video_pipeline: VideoPipeline,
+    queue_properties: Dict[str, int],
 ) -> SourceOutput:
     """Create an instance of SourceOutput class based on the output_frame config."""
 
     if not output_frame:
-        return SourceOutputOnlyMeta(video_pipeline=video_pipeline)
+        return SourceOutputOnlyMeta(
+            video_pipeline=video_pipeline,
+            queue_properties=queue_properties,
+        )
 
     condition = FrameProcessingCondition(**(output_frame.get('condition') or {}))
     if output_frame['codec'] == 'copy':
-        return SourceOutputOnlyMeta(video_pipeline=video_pipeline, condition=condition)
+        return SourceOutputOnlyMeta(
+            video_pipeline=video_pipeline,
+            condition=condition,
+            queue_properties=queue_properties,
+        )
 
     codec = CODEC_BY_NAME[output_frame['codec']]
     if codec == Codec.RAW_RGBA:
         return SourceOutputRawRgba(
             frame_params=frame_params,
             video_pipeline=video_pipeline,
+            queue_properties=queue_properties,
         )
 
     condition = FrameProcessingCondition(**(output_frame.get('condition') or {}))
@@ -488,6 +512,7 @@ def create_source_output(
             frame_params=frame_params,
             condition=condition,
             video_pipeline=video_pipeline,
+            queue_properties=queue_properties,
         )
 
     return SourceOutputEncoded(
@@ -496,4 +521,5 @@ def create_source_output(
         frame_params=frame_params,
         condition=condition,
         video_pipeline=video_pipeline,
+        queue_properties=queue_properties,
     )

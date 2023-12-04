@@ -17,7 +17,7 @@ Default module configuration file already defines the :py:attr:`~savant.config.s
 
 .. literalinclude:: ../../../savant/config/default.yml
   :language: YAML
-  :lines: 152-
+  :lines: 158-
 
 It is possible to redefine them, but the encouraged operation mode assumes the use of ZeroMQ source and sink.
 

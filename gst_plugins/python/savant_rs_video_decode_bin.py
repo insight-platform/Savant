@@ -16,6 +16,10 @@ from savant.utils.platform import is_aarch64
 
 OUT_CAPS = Gst.Caps.from_string('video/x-raw(memory:NVMM);video/x-raw')
 DEFAULT_PASS_EOS = True
+# Default values of "queue" element
+DEFAULT_DECODER_QUEUE_LENGTH = 200
+DEFAULT_DECODER_QUEUE_SIZE = 10485760
+
 NESTED_DEMUX_PROPERTIES = {
     k: v
     for k, v in SAVANT_RS_VIDEO_DEMUX_PROPERTIES.items()
@@ -66,6 +70,24 @@ SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES = {
         'Name of the pipeline stage for decoder.',
         'Name of the pipeline stage for decoder.',
         None,
+        GObject.ParamFlags.READWRITE,
+    ),
+    'decoder-queue-length': (
+        int,
+        'Length of the queue before decoder in frames.',
+        'Length of the queue before decoder in frames (0 - no limit).',
+        0,
+        GObject.G_MAXINT,
+        DEFAULT_DECODER_QUEUE_LENGTH,
+        GObject.ParamFlags.READWRITE,
+    ),
+    'decoder-queue-byte-size': (
+        int,
+        'Size of the queue before decoder in bytes.',
+        'Size of the queue before decoder in bytes (0 - no limit).',
+        0,
+        GObject.G_MAXINT,
+        DEFAULT_DECODER_QUEUE_SIZE,
         GObject.ParamFlags.READWRITE,
     ),
     **NESTED_DEMUX_PROPERTIES,
@@ -134,6 +156,8 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
         self._pass_eos = DEFAULT_PASS_EOS
         self._video_pipeline: Optional[VideoPipeline] = None
         self._pipeline_decoder_stage_name: Optional[str] = None
+        self._decoder_queue_length = DEFAULT_DECODER_QUEUE_LENGTH
+        self._decoder_queue_byte_size = DEFAULT_DECODER_QUEUE_SIZE
 
         self._demuxer: Gst.Element = Gst.ElementFactory.make('savant_rs_video_demux')
         self._demuxer.set_property('eos-on-timestamps-reset', True)
@@ -168,6 +192,10 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
             return self._demuxer.get_property('pipeline-stage-name')
         if prop.name == 'pipeline-decoder-stage-name':
             return self._pipeline_decoder_stage_name
+        if prop.name == 'decoder-queue-length':
+            return self._decoder_queue_length
+        if prop.name == 'decoder-queue-byte-size':
+            return self._decoder_queue_byte_size
         if prop.name in NESTED_DEMUX_PROPERTIES:
             return self._demuxer.get_property(prop.name)
         raise AttributeError(f'Unknown property {prop.name}')
@@ -193,6 +221,10 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
             self._demuxer.set_property('pipeline-stage-name', value)
         elif prop.name == 'pipeline-decoder-stage-name':
             self._pipeline_decoder_stage_name = value
+        elif prop.name == 'decoder-queue-length':
+            self._decoder_queue_length = value
+        elif prop.name == 'decoder-queue-byte-size':
+            self._decoder_queue_byte_size = value
         elif prop.name in NESTED_DEMUX_PROPERTIES:
             self._demuxer.set_property(prop.name, value)
         else:
@@ -390,6 +422,9 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
         )
 
         in_queue: Gst.Element = decoder.get_by_name(queue_name)
+        in_queue.set_property('max-size-buffers', self._decoder_queue_length)
+        in_queue.set_property('max-size-bytes', self._decoder_queue_byte_size)
+        in_queue.set_property('max-size-time', 0)
         decodebin: Gst.Element = decoder.get_by_name(decodebin_name)
 
         # https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_FAQ.html#on-jetson-platform-i-get-same-output-when-multiple-jpeg-images-are-fed-to-nvv4l2decoder-using-multifilesrc-plugin-why-is-that
