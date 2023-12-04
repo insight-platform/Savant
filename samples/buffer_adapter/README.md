@@ -15,16 +15,6 @@ git lfs pull
 
 **Note**: Ubuntu 22.04 runtime configuration [guide](https://insight-platform.github.io/Savant/develop/getting_started/0_configure_prod_env.html) helps to configure the runtime to run Savant pipelines.
 
-## Build Engines
-
-The demo uses models that are compiled into TensorRT engines the first time the demo is run. This takes time. Optionally, you can prepare the engines before running the demo by using the command:
-
-```bash
-# you are expected to be in Savant/ directory
-
-./scripts/run_module.py --build-engines samples/peoplenet_detector/module.yml
-```
-
 ## Run Demo
 
 ```bash

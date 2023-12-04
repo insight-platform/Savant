@@ -23,7 +23,7 @@ Adapters transfer video streams and metadata over network or locally. We impleme
 Savant Adapter Protocol
 -----------------------
 
-Savant uses a protocol based on `ZeroMQ <https://zeromq.org/>`__ and `Savant-RS <https://insight-platform.github.io/savant-rs/>`__ for communication between adapters and modules. It can be used to connect an adapter with other adapter, an adapter with a module, a module with a module, etc. The protocol is universal for source-, sink- and bridge adapters.
+Savant uses a protocol based on `ZeroMQ <https://zeromq.org/>`__ and `Savant-RS <https://insight-platform.github.io/savant-rs/>`__ for communication between adapters and modules. It can be used to connect an adapter with other adapter, an adapter with a module, a module with a module, etc. The protocol is universal for source, sink and bridge adapters.
 
 With the protocol, one may build oriented graphs representing data sources, sinks, and modules, arranging them within a single host or in a distributed environment like ``K8s``.
 
@@ -970,7 +970,7 @@ Running the adapter with Docker:
         -e METRICS_TIME_PERIOD=10 \
         -e METRICS_HISTORY=100 \
         -e METRICS_PROVIDER=prometheus \
-        -e 'METRICS_PROVIDER_PARAMS={"port": 8000, "labels":{"adapter":"buffer"}}' \
+        -e METRICS_PROVIDER_PARAMS='{"port": 8000, "labels":{"adapter":"buffer"}}' \
         -v /tmp/zmq-sockets:/tmp/zmq-sockets \
         -v /tmp/savant/buffer:/tmp/savant/buffer \
         ghcr.io/insight-platform/savant-adapters-py:latest \

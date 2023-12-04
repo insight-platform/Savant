@@ -10,6 +10,9 @@ from savant.gstreamer import Gst
 class LagGenerator(NvDsPyFuncPlugin):
     """Simulates load spikes by lagging frames for a random amount of time.
 
+    :param frame_processing_time: Time to process a frame in seconds.
+        Needed to limit module performance when no lag is emulated,
+        so the buffer eventually would be full.
     :param min_lag: Minimum lag time in seconds.
     :param max_lag: Maximum lag time in seconds.
     :param lag_frames_interval: Lagged frames sequence length.
@@ -18,12 +21,14 @@ class LagGenerator(NvDsPyFuncPlugin):
 
     def __init__(
         self,
+        frame_processing_time: float = 0.01,
         min_lag: float = 0.06,
         max_lag: float = 0.1,
         lag_frames_interval: int = 500,
         pass_frames_interval: int = 500,
         **kwargs,
     ):
+        self.frame_processing_time = frame_processing_time
         self.min_lag = min_lag
         self.max_lag = max_lag
         self.lag_frames_interval = lag_frames_interval
@@ -39,7 +44,7 @@ class LagGenerator(NvDsPyFuncPlugin):
             frame_meta.pts,
             lag,
         )
-        time.sleep(lag)
+        time.sleep(lag + self.frame_processing_time)
 
     def create_lag_generator(self) -> Iterator[float]:
         """Generates lag values for frames."""

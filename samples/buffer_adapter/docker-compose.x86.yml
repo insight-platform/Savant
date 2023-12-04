@@ -46,8 +46,6 @@ services:
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
-      - ../../models/peoplenet_detector:/models
-      - ../../downloads/peoplenet_detector:/downloads
       - ..:/opt/savant/samples
     command: samples/buffer_adapter/demo.yml
     environment:
