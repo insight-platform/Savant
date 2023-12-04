@@ -31,6 +31,10 @@ It is important to note that when ``element.model.output.converter`` is specifie
 
 If the converter is not specified, the model will be configured as a regular ``nvinfer`` classifier. In this case, the optional configuration parameters for the attributes listed above (except ``threshold``) are not used, and custom parsing of classifier results must be done with Deepstream functionality by defining the ``element.model.custom_lib_path`` and ``element.model.parse_classifier_func_name`` parameters in the configuration. If a custom function is not specified, Deepstream uses the default ``softmax`` layer function to parse the classification results.
 
+.. note::
+
+     The converter can access data with CPU-based tools (NumPy) or in GPU with CuPy. Typically, NumPy-based processing is a default choice; however, if you have a lot of data to process, you may consider using CuPy to speed up the processing.
+
 In addition, for regular Deepstream classifiers, it is impossible to set a minimum confidence threshold for each attribute individually, so the first specified threshold value will be applied to every attribute.
 
 .. code-block:: yaml

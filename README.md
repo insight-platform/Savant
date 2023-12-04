@@ -108,7 +108,7 @@ The framework supports running the pipelines on both Nvidia's edge devices (Jets
 
 ### ❤️ Cloud-Ready
 
-Savant pipelines run in Docker containers. We provide images for x86+dGPU and Jetson hardware.
+Savant pipelines run in Docker containers. We provide images for x86+dGPU and Jetson hardware. Integrated OpenTelemetry and Prometheus support enable monitoring and tracing of the pipelines.
 
 ### ⚡ Low Latency and High Capacity Processing
 
@@ -125,6 +125,10 @@ The framework universally uses a common protocol for both video and metadata del
 ### ⏱ OpenTelemetry Support
 
 In Savant, you can precisely instrument pipelines with OpenTelemetry: a unified monitoring solution. You can use sampled or complete traces to balance the performance and precision. The traces can span from edge to core to business logic through network and storage because their propagation is supported by the Savant protocol.
+
+### 📊 Prometheus Support
+
+Savant pipelines can be instrumented with Prometheus: a popular monitoring solution. Prometheus is a great choice for monitoring the pipeline's performance and resource utilization.
 
 ### 🧰 Client SDK
 
@@ -177,6 +181,12 @@ Advanced ML pipelines may require information from the external environment for 
 ### 🖼 OpenCV CUDA Support
 
 Savant supports custom OpenCV CUDA bindings enabling operations on DeepStream's in-GPU frames with a broad range of OpenCV CUDA functions: the feature helps in implementing highly efficient video transformations, including but not limited to blurring, cropping, clipping, applying banners and graphical elements over the frame, and others. The feature is available from Python.
+
+### 🔢 CuPy Support For Post-Processing
+
+Savant supports CuPy: a NumPy-like library for GPU-accelerated computing. It enables the developer to implement custom post-processing functions in Python, executed in GPU RAM, avoiding data transfers between CPU and GPU RAM. The feature allows for accessing model output tensors directly from GPU RAM, which helps implement heavy-weight custom post-processing functions.
+
+The integration also provides a conversion for in-GPU data between CuPy, OpenCV, and PyTorch in-GPU formats.
 
 ### ↻ Rotated Detection Models Support
 
