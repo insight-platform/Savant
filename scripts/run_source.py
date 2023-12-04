@@ -80,7 +80,7 @@ def files_source(
     extra_volumes: List[str] = None,
     detach: bool = False,
 ):
-    """Read picture or video files from LOCATION.
+    """Read image or video files from LOCATION.
     LOCATION can be single file, directory or HTTP URL.
     """
     if location.startswith('http://') or location.startswith('https://'):
@@ -383,11 +383,11 @@ def multi_stream_source(
     )
 
 
-@cli.command('pictures')
+@cli.command('images')
 @click.option(
     '--framerate',
     default='30/1',
-    help='Frame rate of the pictures.',
+    help='Frame rate of the images.',
     show_default=True,
 )
 @click.option(
@@ -413,7 +413,7 @@ def multi_stream_source(
 @sync_option
 @adapter_docker_image_option('gstreamer')
 @click.argument('location', required=True)
-def pictures_source(
+def images_source(
     source_id: str,
     out_endpoint: str,
     out_type: str,
@@ -429,7 +429,7 @@ def pictures_source(
     read_metadata: bool,
     eos_on_file_end: bool,
 ):
-    """Read picture files from LOCATION.
+    """Read image files from LOCATION.
     LOCATION can be single file, directory or HTTP URL.
     """
 
@@ -444,7 +444,7 @@ def pictures_source(
         fps_period_seconds=fps_period_seconds,
         fps_output=fps_output,
         location=location,
-        file_type='picture',
+        file_type='image',
         envs=[
             f'FRAMERATE={framerate}',
             f'SORT_BY_TIME={sort_by_time}',
