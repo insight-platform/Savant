@@ -6,7 +6,7 @@ from savant.base.selector import BaseSelector
 from savant.utils.nms import nms_cpu
 
 
-@nb.njit('f4[:, :](f4[:, :], u2, u2, u2, u2)', nogil=True)
+@nb.njit('f4[:, :](f4[:, :], u2, u2, u2, u2)', nogil=True, cache=True)
 def min_max_bbox_size_selector(
     bbox_tensor: np.ndarray,
     min_width: int = 0,
@@ -86,7 +86,7 @@ class MinMaxSizeBBoxSelector(BaseSelector):
         )
 
 
-@nb.njit('f4[:, :](f4[:, :], f4, f4, u2, u2, u2, u2)', nogil=True)
+@nb.njit('f4[:, :](f4[:, :], f4, f4, u2, u2, u2, u2)', nogil=True, cache=True)
 def default_selector(
     bbox_tensor: np.ndarray,
     confidence_threshold: float = 0.0,

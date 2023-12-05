@@ -6,7 +6,7 @@ import numpy as np
 __all__ = ['nms_cpu', 'nms_gpu']
 
 
-@nb.njit('u4[:](f4[:, :], f4[:], f4, u2)', nogil=True)
+@nb.njit('u4[:](f4[:, :], f4[:], f4, u2)', nogil=True, cache=True)
 def nms_cpu(
     bboxes: np.ndarray, confidences: np.ndarray, threshold: float, top_k: int = 300
 ) -> np.ndarray:
@@ -172,7 +172,7 @@ def _call_nms_kernel(bboxes: cp.ndarray, threshold: float) -> cp.ndarray:
     return _nms_gpu_post(mask.get(), n_bbox, threads_per_block, col_blocks)
 
 
-@nb.njit('u4[:](u8[:], u2, u2, u2)', nogil=True)
+@nb.njit('u4[:](u8[:], u2, u2, u2)', nogil=True, cache=True)
 def _nms_gpu_post(
     mask: np.ndarray, n_bbox: int, threads_per_block: int, col_blocks: int
 ) -> np.ndarray:
