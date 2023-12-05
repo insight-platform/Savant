@@ -30,9 +30,9 @@ GPU Memory Formats
     :nosignatures:
     :template: autosummary/function.rst
 
-    memory_repr.opencv_gpu_mat_as_cupy
-    memory_repr_pytorch.opencv_gpu_mat_as_pytorch
-    memory_repr.cupy_as_opencv_gpu_mat
+    memory_repr.opencv_gpu_mat_as_cupy_array
+    memory_repr_pytorch.opencv_gpu_mat_as_pytorch_tensor
+    memory_repr.cupy_array_as_opencv_gpu_mat
     memory_repr_pytorch.pytorch_tensor_as_opencv_gpu_mat
 
 DeepStream utilities

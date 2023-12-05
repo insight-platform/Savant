@@ -4,26 +4,42 @@ A pipeline demonstrates how Kafka-Redis adapters works in Savant. In the demo vi
 
 ![kafka-redis-adapter-demo.png](assets/kafka-redis-adapter-demo.png)
 
-Run the demo:
+## Prerequisites
 
 ```bash
 git clone https://github.com/insight-platform/Savant.git
-cd Savant/samples/kafka_redis_adapter
+cd Savant
 git lfs pull
+./utils/check-environment-compatible
+```
+
+**Note**: Ubuntu 22.04 runtime configuration [guide](https://insight-platform.github.io/Savant/develop/getting_started/0_configure_prod_env.html) helps to configure the runtime to run Savant pipelines.
+
+## Build Engines
+
+The demo uses models that are compiled into TensorRT engines the first time the demo is run. This takes time. Optionally, you can prepare the engines before running the demo by using the command:
+
+```bash
+# you are expected to be in Savant/ directory
+
+./scripts/run_module.py --build-engines samples/peoplenet_detector/module.yml
+```
+
+## Run Demo
+
+```bash
+# you are expected to be in Savant/ directory
 
 # if x86
-../../utils/check-environment-compatible && docker compose -f docker-compose.x86.yml up
+docker compose -f samples/kafka_redis_adapter/docker-compose.x86.yml up
 
 # if Jetson
-../../utils/check-environment-compatible && docker compose -f docker-compose.l4t.yml up
+docker compose -f samples/kafka_redis_adapter/docker-compose.l4t.yml up
 
 # open 'rtsp://127.0.0.1:554/stream' in your player
 # or visit 'http://127.0.0.1:888/stream/' (LL-HLS)
 
 # Ctrl+C to stop running the compose bundle
-
-# to get back to project root
-cd ../..
 ```
 
 [docker-compose-no-keydb.x86.yml](docker-compose-no-keydb.x86.yml) and [docker-compose-no-keydb.l4t.yml](docker-compose-no-keydb.l4t.yml) contain the sample without using KeyDB. The frame content is stored internally in the video frame.

@@ -113,6 +113,10 @@ Example:
 
 The converter implementation can be found in the class :py:class:`~savant.converter.yolo_x.TensorToBBoxConverter`.
 
+.. note::
+
+     The converter can access data with CPU-based tools (NumPy) or in GPU with CuPy. Typically, NumPy-based processing is a default choice; however, if you have a lot of data to process, you may consider using CuPy to speed up the processing.
+
 An example of the converter for YOLOv4 listed below. The YOLOv4 model has two output layers: the first represents box definition (incl. ``class_id``), the last is for confidence. When you are writing the converter you must return objects relative to the ROI of the parent object.
 
 .. code-block:: python

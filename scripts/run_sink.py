@@ -74,7 +74,6 @@ skip_frames_without_objects_option = click.option(
     is_flag=True,
     default=False,
     help='Skip frames without detected objects.',
-    show_default=True,
 )
 
 
@@ -101,7 +100,6 @@ def chunk_size_option(default=10000):
     is_flag=True,
     default=False,
     help='Show frames on sink synchronously (i.e. at the source file rate).',
-    show_default=True,
 )
 @common_options
 @source_id_option(required=False)
@@ -381,14 +379,12 @@ def video_files_sink(
         'Show frames on sink synchronously (i.e. at the source file rate). '
         'Note: inbound stream is not stable with this flag, try to avoid it.'
     ),
-    show_default=True,
 )
 @click.option(
     '--dev-mode',
     default=False,
     is_flag=True,
     help='Use embedded MediaMTX to publish RTSP stream.',
-    show_default=True,
 )
 @click.option(
     '--publish-ports',
@@ -399,14 +395,12 @@ def video_files_sink(
         'Published ports: 554 (RTSP), 1935 (RTMP), 888 (HLS), 8889 (WebRTC). '
         'Ignored when --dev-mode is not set.'
     ),
-    show_default=True,
 )
 @click.option(
     '--cpu',
     default=False,
     is_flag=True,
     help='Use CPU for transcoding and scaling.',
-    show_default=True,
 )
 @fps_meter_options
 @common_options

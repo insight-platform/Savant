@@ -1,40 +1,25 @@
 import cv2
 import torch
 
-from savant.utils.memory_repr import OpenCVGpuMatCudaArrayInterface, \
-    _numpy_type_to_opencv_mat_type
+from savant.utils.memory_repr import (
+    OpenCVGpuMatCudaArrayInterface,
+    cuda_array_as_opencv_gpu_mat,
+)
 
 
-__all__ = [
-    'opencv_gpu_mat_as_pytorch',
-    'pytorch_tensor_as_opencv_gpu_mat',
-]
-
-
-def opencv_gpu_mat_as_pytorch(gpu_mat: cv2.cuda.GpuMat) -> torch.Tensor:
-    """Returns PyTorch tensor in CHW format for specified OpenCV GpuMat."""
-    torch_tensor = torch.as_tensor(OpenCVGpuMatCudaArrayInterface(gpu_mat), device='cuda')
-    if torch_tensor.dim() == 2:
-        return torch_tensor
-    return torch_tensor.permute(2, 0, 1)
+def opencv_gpu_mat_as_pytorch_tensor(gpu_mat: cv2.cuda.GpuMat) -> torch.Tensor:
+    """Returns PyTorch tensor in HWC format for the given OpenCV GpuMat (zero-copy)."""
+    return torch.as_tensor(OpenCVGpuMatCudaArrayInterface(gpu_mat), device='cuda')
 
 
 def pytorch_tensor_as_opencv_gpu_mat(tensor: torch.Tensor) -> cv2.cuda_GpuMat:
-    """Returns OpenCV GpuMat for specified PyTorch tensor.
-    Supports 2 and 3 dims arrays in HWС format. (PyTorch format).
+    """Returns OpenCV GpuMat for the given PyTorch tensor (zero-copy).
+    The tensor must have 2 or 3 dims in HWC format and C-contiguous layout.
+
+    Use `Tensor.size()` and `Tensor.is_contiguous()` to check if a tensor
+    has supported shape format and is contiguous in memory.
+
+    Use `Tensor.transpose()` and `Tensor.contiguous()` to transform a tensor
+    if necessary (creates a copy of the tensor).
     """
-    if tensor.dim() == 2:
-        channels = 1
-        tensor_shape = tensor.shape[::-1]
-    elif tensor.dim() == 3:
-        if tensor.shape[2] != 1 and tensor.stride()[2] != 1:
-            raise ValueError('PyTorch tensor is not contiguous and cannot be converted to OpenCV GpuMat.')
-        channels = tensor.shape[2]
-        tensor_shape = tensor.shape[1::-1]
-    else:
-        raise ValueError('PyTorch tensor must have 2 or 3 dimensions.')
-    return cv2.cuda.createGpuMatFromCudaMemory(
-        tensor_shape,
-        _numpy_type_to_opencv_mat_type(tensor.__cuda_array_interface__['typestr'], channels),
-        tensor.__cuda_array_interface__['data'][0],
-    )
+    return cuda_array_as_opencv_gpu_mat(tensor)

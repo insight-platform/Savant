@@ -1,16 +1,19 @@
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 from savant_rs import init_jaeger_tracer, init_noop_tracer
-from savant_rs.pipeline2 import VideoPipelineStagePayloadType
+from savant_rs.pipeline2 import VideoPipeline, VideoPipelineStagePayloadType
 
 from savant.config.schema import (
     BufferQueuesParameters,
     ElementGroup,
+    MetricsParameters,
     Pipeline,
     PipelineElement,
     PyFuncElement,
-    TelemetryParameters,
+    TracingParameters,
 )
+from savant.metrics.base import BaseMetricsExporter
+from savant.metrics.prometheus import PrometheusMetricsExporter
 from savant.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -142,11 +145,11 @@ def build_pipeline_stages(element_stages: List[Union[str, List[str]]]):
     return pipeline_stages
 
 
-def init_telemetry(module_name: str, telemetry: TelemetryParameters):
-    """Initialize telemetry provider."""
+def init_tracing(module_name: str, tracing: TracingParameters):
+    """Initialize tracing provider."""
 
-    provider_params = telemetry.provider_params or {}
-    if telemetry.provider == 'jaeger':
+    provider_params = tracing.provider_params or {}
+    if tracing.provider == 'jaeger':
         service_name = provider_params.get('service_name', module_name)
         try:
             endpoint = provider_params['endpoint']
@@ -161,9 +164,24 @@ def init_telemetry(module_name: str, telemetry: TelemetryParameters):
         )
         init_jaeger_tracer(service_name, endpoint)
 
-    elif telemetry.provider is not None:
-        raise ValueError(f'Unknown telemetry provider: {telemetry.provider}')
+    elif tracing.provider is not None:
+        raise ValueError(f'Unknown tracing provider: {tracing.provider}')
 
     else:
-        logger.info('No telemetry provider specified. Using noop tracer.')
+        logger.info('No tracing provider specified. Using noop tracer.')
         init_noop_tracer()
+
+
+def build_metrics_exporter(
+    pipeline: VideoPipeline,
+    params: MetricsParameters,
+) -> Optional[BaseMetricsExporter]:
+    """Build metrics exporter."""
+
+    if params.provider is None:
+        return None
+
+    if params.provider == 'prometheus':
+        return PrometheusMetricsExporter(pipeline, params.provider_params)
+
+    raise ValueError(f'Unknown metrics provider: {params.provider}')

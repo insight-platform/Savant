@@ -25,5 +25,10 @@ for file in "${array[@]}"; do
     git add $file
 done
 
+SED_PYTHON="/^SAVANT_VERSION/s/'latest'/version.SAVANT/"
+FILE_PYTHON="scripts/common.py"
+sed -i -r $SED_PYTHON $FILE_PYTHON
+git add $FILE_PYTHON
+
 # commit the changes
 git commit -m "Prepare release $SAVANT_VER"

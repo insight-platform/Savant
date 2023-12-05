@@ -1,5 +1,5 @@
 # module name, required
-name: pass-through-processing-${oc.env:MODULE_STAGE}
+name: pass-through-processing-${oc.env:MODULE_STAGE, 'detector'}
 
 # base module parameters
 parameters:
@@ -15,6 +15,24 @@ parameters:
   detected_object:
     id: 0
     label: person
+  module_stage: ${oc.env:MODULE_STAGE, 'detector'}
+
+  # We use the default telemetry parameters from `savant/config/default.yml`,
+  # which can be configured with environment variables in Docker compose manifests.
+  #
+  # Optionally, you can override them here.
+  # telemetry:
+  #   metrics:
+  #     # Output stats after every N frames
+  #     frame_period: ${oc.decode:${oc.env:METRICS_FRAME_PERIOD, 10000}}
+  #     # Output stats after every N seconds
+  #     time_period: ${oc.decode:${oc.env:METRICS_TIME_PERIOD, null}}
+  #     # How many last stats to keep in the memory
+  #     history: ${oc.decode:${oc.env:METRICS_HISTORY, 100}}
+  #     # Metrics provider name
+  #     provider: ${oc.decode:${oc.env:METRICS_PROVIDER, null}}
+  #     # Parameters for metrics provider
+  #     provider_params: ${json:${oc.env:METRICS_PROVIDER_PARAMS, null}}
 
 # pipeline definition
 pipeline:
@@ -25,7 +43,7 @@ pipeline:
     - group:
         # enabled if env var MODULE_STAGE==detector
         init_condition:
-          expr: ${oc.env:MODULE_STAGE}
+          expr: ${parameters.module_stage}
           value: detector
         elements:
           - element: nvinfer@detector
@@ -54,7 +72,7 @@ pipeline:
     - group:
         # enabled if env var MODULE_STAGE==tracker
         init_condition:
-          expr: ${oc.env:MODULE_STAGE}
+          expr: ${parameters.module_stage}
           value: tracker
         elements:
           # regular nvtracker definition
@@ -65,5 +83,11 @@ pipeline:
               tracker-width: 960  # 640  # must be a multiple of 32
               tracker-height: 544  # 384
               display-tracking-id: 0
+          # pyfunc metrics example
+          - element: pyfunc
+            # specify the pyfunc's python module
+            module: samples.pass_through_processing.py_func_metrics_example
+            # specify the pyfunc's python class from the module
+            class_name: PyFuncMetricsExample
 
   # sink definition is skipped, zeromq sink is used by default to connect with sink adapters

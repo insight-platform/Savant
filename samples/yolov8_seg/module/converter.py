@@ -7,7 +7,7 @@ import numpy as np
 
 from savant.base.converter import BaseComplexModelOutputConverter
 from savant.deepstream.nvinfer.model import NvInferInstanceSegmentation
-from savant.selector.detector import nms_cpu
+from savant.utils.nms import nms_cpu
 
 
 class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
@@ -45,6 +45,7 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
         :return: a combination of :py:class:`.BaseObjectModelOutputConverter` and
             corresponding segmentation masks
         """
+
         tensors, masks = _postproc(
             output=output_layers[0],
             protos=output_layers[1],
@@ -154,21 +155,21 @@ def _postproc(
         confidences = confidences[conf_mask]
         masks = masks[conf_mask]
 
-    # select top k
+    # nms, class agnostic (all classes are treated as one)
+    if nms_iou_threshold and bboxes.shape[0] > 0:
+        nms_mask = nms_cpu(bboxes, confidences, nms_iou_threshold, top_k)
+        bboxes = bboxes[nms_mask]
+        class_ids = class_ids[nms_mask]
+        confidences = confidences[nms_mask]
+        masks = masks[nms_mask]
+
+    # select top k (no nms applied)
     if bboxes.shape[0] > top_k:
         top_k_mask = np.argpartition(confidences, -top_k)[-top_k:]
         bboxes = bboxes[top_k_mask]
         class_ids = class_ids[top_k_mask]
         confidences = confidences[top_k_mask]
         masks = masks[top_k_mask]
-
-    # nms, class agnostic (all classes are treated as one)
-    if nms_iou_threshold and bboxes.shape[0] > 0:
-        nms_mask = nms_cpu(bboxes, confidences, nms_iou_threshold) == 1
-        bboxes = bboxes[nms_mask]
-        class_ids = class_ids[nms_mask]
-        confidences = confidences[nms_mask]
-        masks = masks[nms_mask]
 
     if bboxes.shape[0] == 0:
         return np.empty((0, 0), dtype=np.float32), np.empty((0, 0, 0), dtype=np.float32)

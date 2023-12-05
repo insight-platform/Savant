@@ -24,14 +24,15 @@ services:
       dockerfile: docker/Dockerfile.l4t
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
-      - ../../models/traffic_meter:/models
-      - ../../downloads/traffic_meter:/downloads
-      - .:/opt/savant/samples/traffic_meter
+      - ../../cache:/cache
+      - ..:/opt/savant/samples
     command: samples/traffic_meter/module.yml
     environment:
+      - MODEL_PATH=/cache/models/traffic_meter
+      - DOWNLOAD_PATH=/cache/downloads/traffic_meter
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
-      - FPS_PERIOD=1000
+      - METRICS_FRAME_PERIOD=1000
       - DETECTOR=${DETECTOR}
       - MODULE_NAME=traffic_meter-${DETECTOR}
       - CODEC=raw-rgba

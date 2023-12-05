@@ -149,7 +149,7 @@ class PyFunc:
         self._callable = None
         self._load_complete: bool = False
 
-    def load_user_code(self):
+    def load_user_code(self) -> Optional[bool]:
         """Load (or reload) the user module/class specified in the PyFunc fields.
         It's necessary to call this at least once before starting the pipeline.
         """
@@ -278,16 +278,17 @@ class PyFunc:
             )
             load_ok = self.load_user_code()
             if load_ok:
-                try:
-                    self._instance.on_start()
-                except Exception as exc:
-                    logger.exception('Error calling on_start()')
-                else:
-                    logger.info(
-                        'The module "%s.%s" reloading complete: OK',
-                        self.module,
-                        self.class_name,
-                    )
+                logger.info(
+                    'The module "%s.%s" reloading complete: OK',
+                    self.module,
+                    self.class_name,
+                )
+                if hasattr(self._instance, 'on_start'):
+                    # only plugins have on_start, callables don't
+                    try:
+                        self._instance.on_start()
+                    except Exception as exc:
+                        logger.exception('Error calling on_start()')
             else:
                 logger.info(
                     'The module "%s.%s" reloading finished: Fail',

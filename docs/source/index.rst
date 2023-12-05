@@ -64,6 +64,11 @@ The framework universally uses a common protocol for both video and metadata del
 
 In Savant, you can precisely instrument pipelines with OpenTelemetry: a unified monitoring solution. You can use sampled or complete traces to balance the performance and precision. The traces can span from edge to core to business logic through network and storage because their propagation is supported by the Savant protocol.
 
+📊 Prometheus Support
+^^^^^^^^^^^^^^^^^^^^^
+
+Savant pipelines can be instrumented with Prometheus: a popular monitoring solution. Prometheus is a great choice for monitoring the pipeline's performance and resource utilization.
+
 🧰 Client SDK
 ^^^^^^^^^^^^^
 
@@ -97,6 +102,13 @@ Advanced ML pipelines may require information from the external environment for 
 ^^^^^^^^^^^^^^^^^^^^^^
 
 Savant supports custom OpenCV CUDA bindings enabling operations on DeepStream's in-GPU frames with a broad range of OpenCV CUDA functions: the feature helps in implementing highly efficient video transformations, including but not limited to blurring, cropping, clipping, applying banners and graphical elements over the frame, and others. The feature is available from Python.
+
+🔢 CuPy Support For Post-Processing
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Savant supports CuPy: a NumPy-like library for GPU-accelerated computing. It enables the developer to implement custom post-processing functions in Python, executed in GPU RAM, avoiding data transfers between CPU and GPU RAM. The feature allows for accessing model output tensors directly from GPU RAM, which helps implement heavy-weight custom post-processing functions.
+
+The integration also provides a conversion for in-GPU data between CuPy, OpenCV, and PyTorch in-GPU formats.
 
 ↻ Rotated Detection Models Support
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -168,6 +180,7 @@ Savant supports processing parallelization; it helps to utilize the available re
    advanced_topics/1_custom_tracking
    advanced_topics/2_element_group
    advanced_topics/3_custom_roi
+   advanced_topics/3_frame_filtering
    advanced_topics/3_skipping_frames
    advanced_topics/3_hybrid_pipelines
    advanced_topics/4_etcd

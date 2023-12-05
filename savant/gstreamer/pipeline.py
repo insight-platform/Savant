@@ -10,7 +10,6 @@ from savant.config.schema import ElementGroup, Pipeline, PipelineElement
 from savant.gstreamer.buffer_processor import GstBufferProcessor
 from savant.gstreamer.element_factory import CreateElementException, GstElementFactory
 from savant.gstreamer.utils import add_buffer_probe
-from savant.utils.fps_meter import FPSMeter
 from savant.utils.logging import get_logger
 from savant.utils.sink_factories import SinkMessage
 
@@ -22,7 +21,6 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
     :param name: Pipeline name.
     :param pipeline_cfg: Pipeline config.
     :key queue_maxsize: Output queue size.
-    :key fps_period: FPS measurement period, in frames.
     """
 
     # pipeline element factory
@@ -39,13 +37,8 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
         # output messages queue
         self._queue = Queue(maxsize=kwargs['queue_maxsize'])
 
-        # init FPS meter
-        self._fps_meter = FPSMeter(period_frames=kwargs['fps_period'])
-
         # create buffer processor
-        self._buffer_processor = self._build_buffer_processor(
-            self._queue, self._fps_meter
-        )
+        self._buffer_processor = self._build_buffer_processor(self._queue)
 
         # init pipeline
         self._pipeline: Gst.Pipeline = Gst.Pipeline(name)
@@ -140,8 +133,6 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
     def on_startup(self):
         """Callback called after pipeline is set to PLAYING."""
         self._is_running = True
-        # start fps meter
-        self._fps_meter.start()
 
     def before_shutdown(self):
         """Callback called before pipeline is set to NULL."""
@@ -149,10 +140,6 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
 
     def on_shutdown(self):
         """Callback called after pipeline is set to NULL."""
-        self._log_fps()
-
-    def _log_fps(self):
-        self._logger.info(self._fps_meter.message)
 
     @property
     def elements(self) -> List[Tuple[PipelineElement, Gst.Element]]:
@@ -198,13 +185,9 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
             except EmptyException:
                 pass
 
-    def _build_buffer_processor(
-        self,
-        queue: Queue,
-        fps_meter: FPSMeter,
-    ) -> GstBufferProcessor:
+    def _build_buffer_processor(self, queue: Queue) -> GstBufferProcessor:
         """Create buffer processor."""
-        return GstBufferProcessor(queue, fps_meter)
+        return GstBufferProcessor(queue)
 
     def _is_group_enabled_check_log(self, group: ElementGroup, group_idx: int) -> bool:
         is_enabled = group.init_condition.is_enabled

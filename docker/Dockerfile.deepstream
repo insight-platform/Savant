@@ -14,7 +14,7 @@ RUN python -m pip install --no-cache-dir --upgrade pip
 # Savant python package builder
 FROM base_builder as savant_build
 
-RUN apt-get install --no-install-recommends -y python3.8-venv
+RUN apt update && apt install --no-install-recommends -y python3.8-venv
 
 RUN python3 -m pip install setuptools wheel build
 
@@ -57,8 +57,8 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
       rm /etc/ld.so.conf.d/nvidia-tegra.conf; \
       mkdir -p /opt/nvidia/l4t-packages/; \
       touch /opt/nvidia/l4t-packages/.nv-l4t-disable-boot-fw-update-in-preinstall; \
-      apt-get update; \
-      apt-get install -y nvidia-l4t-multimedia; \
+      apt update; \
+      apt install -y nvidia-l4t-multimedia; \
     fi
 
 WORKDIR /libs/savanboost
@@ -82,18 +82,18 @@ ARG TARGETARCH
 ARG DEEPSTREAM_VERSION
 
 # remove nvidia repos (sometimes break down)
-#RUN rm -r /etc/apt/sources.list.d/* && apt-get clean
+#RUN rm -r /etc/apt/sources.list.d/* && apt clean
 
 # install base packages
-RUN apt-get update \
-    && apt-get install --no-install-recommends -y \
+RUN apt update \
+    && apt install --no-install-recommends -y \
         python3-pip \
         python3-dev \
         libcairo2-dev \
         libgirepository1.0-dev \
         python3-gst-1.0 \
         gstreamer1.0-python3-plugin-loader \
-    && apt-get install --reinstall -y \
+    && apt install --reinstall -y \
         gstreamer1.0-plugins-ugly \
         libavutil56 \
         libavformat58 \
@@ -104,8 +104,8 @@ RUN apt-get update \
         libx265-179 \
         libmpg123-0 \
         libx264-155 \
-    && apt-get autoremove -y \
-    && apt-get clean \
+    && apt autoremove -y \
+    && apt clean \
     && rm -rf /var/lib/apt/lists/*
 
 ARG PROJECT_PATH=/opt/savant
@@ -198,11 +198,11 @@ FROM base AS adapters
 
 HEALTHCHECK NONE
 
-RUN apt-get update \
-    && apt-get install -y \
+RUN apt update \
+    && apt install -y \
         gstreamer1.0-libav \
-    && apt-get autoremove -y \
-    && apt-get clean \
+    && apt autoremove -y \
+    && apt clean \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=mediamtx /mediamtx/mediamtx mediamtx/mediamtx
@@ -248,7 +248,7 @@ ENTRYPOINT ["make"]
 CMD ["clean", "html"]
 
 
-# Savant test image only for x86
+# Savant test image, x86 only
 FROM base AS tests
 COPY requirements/dev.txt requirements/dev.txt
 COPY tests /opt/savant/tests

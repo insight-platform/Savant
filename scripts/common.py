@@ -14,7 +14,8 @@ from savant.utils.platform import is_aarch64
 from savant.utils.re_patterns import socket_uri_pattern
 from savant.utils.version import version
 
-SAVANT_VERSION = 'latest'  # use version.SAVANT or 'latest'
+# use version.SAVANT or 'latest'
+SAVANT_VERSION = 'latest'
 DEEPSTREAM_VERSION = version.DEEPSTREAM
 
 # docker registry to use with scripts, set to "None" to use local images
@@ -40,13 +41,25 @@ def docker_image_option(default_docker_image_name: str, tag: Optional[str] = Non
         '-i',
         '--docker-image',
         default=default_docker_image,
-        help=f'Name of docker image.',
+        help='Name of docker image.',
         show_default=True,
     )
 
 
-def get_docker_runtime() -> str:
-    return '--runtime=nvidia' if is_aarch64() else '--gpus=all'
+gpus_option = click.option(
+    '--gpus',
+    default=None,
+    help='Expose GPUs for use or set NVIDIA capabilities.',
+    show_default=True,
+)
+
+
+def get_docker_runtime(value: Optional[str] = None) -> str:
+    if is_aarch64():
+        return '--runtime=nvidia'
+    if value is not None:
+        return f'--gpus={value}'
+    return '--gpus=all'
 
 
 def adapter_docker_image_option(default_suffix: str):
@@ -114,7 +127,6 @@ detach_option = click.option(
     is_flag=True,
     default=False,
     help='Run docker container in background and print container ID.',
-    show_default=True,
 )
 
 

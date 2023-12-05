@@ -128,8 +128,9 @@ def default_selector(
             selected_bbox_tensor[:, 2:6],
             selected_bbox_tensor[:, 1],
             nms_iou_threshold,
+            selected_bbox_tensor.shape[0],  # should specify default with numba.njit
         )
-        selected_bbox_tensor = selected_bbox_tensor[keep == 1]
+        selected_bbox_tensor = selected_bbox_tensor[keep]
 
     return selected_bbox_tensor
 

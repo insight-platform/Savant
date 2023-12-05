@@ -22,6 +22,8 @@ Main module configuration entities
     Module
     Pipeline
     PipelineElement
+    SourceElement
+    SinkElement
     PyFuncElement
     ModelElement
     ElementGroup

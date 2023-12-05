@@ -23,14 +23,15 @@ services:
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
-      - ../../models/nvidia_car_classification:/models
-      - ../../downloads/nvidia_car_classification:/downloads
-      - .:/opt/savant/samples/nvidia_car_classification
+      - ../../cache:/cache
+      - ..:/opt/savant/samples
     command: samples/nvidia_car_classification/module.yml
     environment:
+      - MODEL_PATH=/cache/models/nvidia_car_classification
+      - DOWNLOAD_PATH=/cache/downloads/nvidia_car_classification
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
-      - FPS_PERIOD=1000
+      - METRICS_FRAME_PERIOD=1000
     deploy:
       resources:
         reservations:

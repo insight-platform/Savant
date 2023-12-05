@@ -21,20 +21,37 @@ Demonstrated adapters:
 - Video loop adapter;
 - Always-ON RTSP sink adapter;
 
-**Note**: Ubuntu 22.04 runtime configuration [guide](../../docs/runtime-configuration.md) helps to configure the runtime to run Savant pipelines.
-
-Run the demo:
+## Prerequisites
 
 ```bash
 git clone https://github.com/insight-platform/Savant.git
-cd Savant/samples/intersection_traffic_meter
+cd Savant
 git lfs pull
+./utils/check-environment-compatible
+```
+
+**Note**: Ubuntu 22.04 runtime configuration [guide](https://insight-platform.github.io/Savant/develop/getting_started/0_configure_prod_env.html) helps to configure the runtime to run Savant pipelines.
+
+## Build Engines
+
+The demo uses models that are compiled into TensorRT engines the first time the demo is run. This takes time. Optionally, you can prepare the engines before running the demo by using the command:
+
+```bash
+# you are expected to be in Savant/ directory
+
+./samples/intersection_traffic_meter/build_engines.sh
+```
+
+## Run Demo
+
+```bash
+# you are expected to be in Savant/ directory
 
 # if x86
-../../utils/check-environment-compatible && docker compose -f docker-compose.x86.yml up
+docker compose -f samples/intersection_traffic_meter/docker-compose.x86.yml up
 
 # if Jetson
-../../utils/check-environment-compatible && docker compose -f docker-compose.l4t.yml up
+docker compose -f samples/intersection_traffic_meter/docker-compose.l4t.yml up
 
 # open 'rtsp://127.0.0.1:554/stream' in your player
 # or visit 'http://127.0.0.1:888/stream/' (LL-HLS)
@@ -43,20 +60,17 @@ git lfs pull
 # http://127.0.0.1:3000/d/WM6WimE4z/crossings?orgId=1&refresh=5s
 
 # Ctrl+C to stop running the compose bundle
-
-# to get back to project root
-cd ../..
 ```
 
 To create a custom Grafana dashboard, sign in with `admin\admin` credentials.
 
-## Detector model
+## Detector Model
 
 This demo uses [DeepStream-Yolo](https://github.com/marcoslucianops/DeepStream-Yolo/) to process YOLO models and allows you to use any YOLO model that DeepStream-Yolo supports. The demo uses an already prepared `yolov8m`. If you are going to use any other model (e.g. custom yolov8m), follow the DeepStream-Yolo export instructions. For example, YOLOv8 instructions are [here](https://github.com/marcoslucianops/DeepStream-Yolo/blob/master/docs/YOLOv8.md).
 
 ## Performance Measurement
 
-Download the video file to your local folder. For example, create a data folder and download the video into it (all commands must be executed from the root directory of the project Savant)
+Download the video file to the data folder. For example:
 
 ```bash
 # you are expected to be in Savant/ directory
@@ -70,3 +84,5 @@ Now you are ready to run the performance benchmark with the following command:
 ```bash
 ./samples/intersection_traffic_meter/run_perf.sh
 ```
+
+**Note**: Change the value of the `DATA_LOCATION` variable in the `run_perf.sh` script if you changed the video.

@@ -15,6 +15,8 @@ from savant.config.schema import (
     Pipeline,
     PipelineElement,
     PyFuncElement,
+    SinkElement,
+    SourceElement,
     TelemetryParameters,
     get_element_name,
 )
@@ -23,6 +25,7 @@ from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
 from savant.parameter_storage import init_param_storage
 from savant.utils.logging import get_logger
 from savant.utils.singleton import SingletonMeta
+from savant.utils.sink_factories import SINK_REGISTRY
 
 logger = get_logger(__name__)
 
@@ -43,6 +46,36 @@ def pyfunc_element_configurator(
             element_config.name,
         )
         element_config.dev_mode = True
+    return element_config
+
+
+def source_element_configurator(
+    element_config: DictConfig, module_config: DictConfig
+) -> DictConfig:
+    """Additional configuration steps for SourceElements."""
+    # if dev mode is enabled in the module parameters
+    # set dev mode for the ingress filter function
+    if module_config.parameters.dev_mode:
+        logger.debug(
+            'Setting dev mode for ingress filter of SourceElement named "%s" to True.',
+            element_config.name,
+        )
+        element_config.ingress_frame_filter.dev_mode = True
+    return element_config
+
+
+def sink_element_configurator(
+    element_config: DictConfig, module_config: DictConfig
+) -> DictConfig:
+    """Additional configuration steps for SinkElements."""
+    # if dev mode is enabled in the module parameters
+    # set dev mode for the egress filter function
+    if module_config.parameters.dev_mode:
+        logger.debug(
+            'Setting dev mode for egress filter of SinkElement named "%s" to True.',
+            element_config.name,
+        )
+        element_config.egress_frame_filter.dev_mode = True
     return element_config
 
 
@@ -135,6 +168,12 @@ def get_schema_configurator(
 
     if element == 'nvinfer':
         return ModelElement, nvinfer_element_configurator
+
+    if element == 'zeromq_source_bin':
+        return SourceElement, source_element_configurator
+
+    if element in SINK_REGISTRY:
+        return SinkElement, sink_element_configurator
 
     return PipelineElement, None
 
@@ -257,6 +296,7 @@ def configure_element(
         if elem_ver:
             element_config.version = elem_ver
 
+        logger.info('Getting schema/configurator for %s', element)
         element_schema, configurator = get_schema_configurator(element)
 
         element_config = OmegaConf.unsafe_merge(element_schema, element_config)
@@ -298,7 +338,7 @@ def merge_configs(
     return OmegaConf.unsafe_merge(default_cfg, user_cfg)
 
 
-def configure_pipeline_elements(module_cfg: DictConfig) -> None:
+def configure_pipeline(module_cfg: DictConfig) -> None:
     """Convert pipeline elements to proper types.
 
     :param module_cfg: module config
@@ -307,12 +347,21 @@ def configure_pipeline_elements(module_cfg: DictConfig) -> None:
         module_cfg.pipeline = OmegaConf.structured(Pipeline)
         return
 
+    logger.debug('Configuring pipeline source...')
+    module_cfg.pipeline.source = configure_element(
+        module_cfg.pipeline.source, module_cfg
+    )
+
+    logger.debug('Configuring pipeline sink...')
+    for pipeline_sink_idx, item in enumerate(module_cfg.pipeline.sink):
+        item_cfg = configure_element(item, module_cfg)
+        module_cfg.pipeline.sink[pipeline_sink_idx] = item_cfg
+
+    logger.debug('Configuring pipeline elements...')
     if 'elements' not in module_cfg.pipeline or module_cfg.pipeline.elements is None:
         module_cfg.pipeline.elements = []
         return
-
     group_schema = OmegaConf.structured(ElementGroup)
-
     for pipeline_el_idx, item in enumerate(module_cfg.pipeline.elements):
         if 'element' in item:
             item_cfg = configure_element(item, module_cfg)
@@ -411,7 +460,7 @@ class ModuleConfig(metaclass=SingletonMeta):
         :return: Module configuration, structured
         """
         module_cfg = OmegaConf.load(config)
-        logger.info('Configure module "%s"...', module_cfg.name)
+        logger.info('Configuring module "%s"...', module_cfg.name)
         module_cfg = merge_configs([module_cfg], self._default_cfg)
 
         module_cfg = OmegaConf.unsafe_merge(OmegaConf.structured(Module), module_cfg)
@@ -419,11 +468,11 @@ class ModuleConfig(metaclass=SingletonMeta):
         init_param_storage(module_cfg)
         OmegaConf.resolve(module_cfg)  # to resolve parameters for pipeline elements
 
-        logger.debug('Configure module parameters...')
+        logger.debug('Configuring module parameters...')
         configure_module_parameters(module_cfg)
 
-        logger.debug('Configure pipeline elements...')
-        configure_pipeline_elements(module_cfg)
+        logger.debug('Configuring pipeline...')
+        configure_pipeline(module_cfg)
 
         self._config = OmegaConf.to_object(module_cfg)
 
