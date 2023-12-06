@@ -1,0 +1,43 @@
+# module name, required
+name: buffer_adapter_demo
+
+# base module parameters
+parameters:
+  # pipeline processing frame parameters
+  frame:
+    width: 1280
+    height: 720
+  output_frame:
+    # "copy" codec means the pipeline works in pass-through mode
+    codec: ${oc.env:CODEC, 'copy'}
+  batch_size: 1
+
+# pipeline definition
+pipeline:
+  # source definition is skipped, zeromq source is used by default to connect with source adapters
+
+  # define pipeline's main elements
+  elements:
+    # emulate lag in the pipeline
+    - element: pyfunc
+      # specify the pyfunc's python module
+      module: samples.buffer_adapter.lag_generator
+      # specify the pyfunc's python class from the module
+      class_name: LagGenerator
+      # pyfunc's class init keyword arguments
+      # will be available as pyfunc object's attributes
+      kwargs:
+        # Time to process a frame in seconds.
+        # Needed to limit module performance when no lag is emulated,
+        # so the buffer eventually would be full
+        frame_processing_time: 0.005
+        # minimal lag in seconds
+        min_lag: 0.06
+        # maximal lag in seconds
+        max_lag: 0.1
+        # lagged frames sequence length
+        lag_frames_interval: 500
+        # non-lagged frames sequence length
+        pass_frames_interval: 500
+
+  # sink definition is skipped, zeromq sink is used by default to connect with sink adapters
