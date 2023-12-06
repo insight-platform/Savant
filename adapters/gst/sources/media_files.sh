@@ -31,7 +31,7 @@ if [[ -n "${RECEIVE_TIMEOUT_MSECS}" ]]; then
 else
     RECEIVE_TIMEOUT="receive-timeout=5000"
 fi
-if [[ "${FILE_TYPE}" == "picture" ]]; then
+if [[ "${FILE_TYPE}" == "image" ]]; then
     MEASURE_PER_FILE=false
     EOS_ON_FILE_END="${EOS_ON_FILE_END:="false"}"
 else

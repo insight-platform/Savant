@@ -268,7 +268,7 @@ The images are served from:
 
 **Parameters**:
 
-- ``FILE_TYPE``: a flag specifying that the adapter is used for images; it must always be set to ``picture``;
+- ``FILE_TYPE``: a flag specifying that the adapter is used for images; it must always be set to ``image``;
 - ``LOCATION``: a filesystem location (path or directory) or HTTP URL from where images are served;
 - ``FRAMERATE``: a desired framerate for the output video stream generated from image files (the parameter is used only if ``SYNC_OUTPUT=True``);
 - ``SYNC_OUTPUT``: a flag indicating that images are delivered into a module as a video stream; otherwise, the files are sent as fast as the module is capable processing them; default is ``False``;
@@ -280,9 +280,9 @@ Running the adapter with Docker:
 
 .. code-block:: bash
 
-    docker run --rm -it --name source-pictures-files-test \
+    docker run --rm -it --name images-source \
         --entrypoint /opt/savant/adapters/gst/sources/media_files.sh \
-        -e FILE_TYPE=picture \
+        -e FILE_TYPE=image \
         -e ZMQ_ENDPOINT=dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc \
         -e SOURCE_ID=test \
         -e LOCATION=/path/to/images \
@@ -295,7 +295,7 @@ Running with the helper script:
 
 .. code-block:: bash
 
-    ./scripts/run_source.py pictures --source-id=test /path/to/images
+    ./scripts/run_source.py images --source-id=test /path/to/images
 
 Video File Source Adapter
 ^^^^^^^^^^^^^^^^^^^^^^^^^
