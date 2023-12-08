@@ -20,5 +20,6 @@ COPY requirements/savant-rs.txt $PROJECT_PATH/adapters/requirements-savant-rs.tx
 RUN pip install --no-cache-dir -r $PROJECT_PATH/adapters/requirements-savant-rs.txt
 
 COPY savant $PROJECT_PATH/savant
+COPY adapters/shared $PROJECT_PATH/adapters/shared
 COPY adapters/python $PROJECT_PATH/adapters/python
 ENV LOGLEVEL=info

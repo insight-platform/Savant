@@ -1,14 +1,13 @@
 import time
-from threading import Thread
-from typing import Callable, List, Optional
+from typing import Callable, List
 
 from adapters.ds.sinks.always_on_rtsp.config import Config
 from adapters.ds.sinks.always_on_rtsp.last_frame import LastFrameRef
+from adapters.shared.thread import BaseThreadWorker
 from savant.config.schema import PipelineElement
 from savant.gstreamer import Gst
 from savant.gstreamer.element_factory import GstElementFactory
 from savant.gstreamer.runner import GstPipelineRunner
-from savant.utils.logging import get_logger
 
 LOGGER_NAME = 'adapters.ao_sink.pipeline'
 
@@ -28,7 +27,7 @@ def add_elements(
     return gst_elements
 
 
-class PipelineThread:
+class PipelineThread(BaseThreadWorker):
     def __init__(
         self,
         build_pipeline: Callable[
@@ -39,26 +38,14 @@ class PipelineThread:
         last_frame: LastFrameRef,
         factory: GstElementFactory,
     ):
+        super().__init__(
+            thread_name=thread_name,
+            logger_name=f'{LOGGER_NAME}.{self.__class__.__name__}',
+        )
         self.build_pipeline = build_pipeline
-        self.thread_name = thread_name
         self.config = config
         self.last_frame = last_frame
         self.factory = factory
-
-        self.is_running = False
-        self.thread: Optional[Thread] = None
-        self.logger = get_logger(f'{LOGGER_NAME}.{self.__class__.__name__}')
-
-    def start(self):
-        self.is_running = True
-        self.thread = Thread(name=self.thread_name, target=self.workload)
-        self.thread.start()
-
-    def stop(self):
-        self.is_running = False
-
-    def join(self):
-        self.thread.join()
 
     def workload(self):
         pipeline = self.build_pipeline(self.config, self.last_frame, self.factory)

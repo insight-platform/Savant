@@ -99,8 +99,8 @@ def run_source(
 
     \b
     URI can be:
-    - path to a single file (video or picture);
-    - HTTP(S) URL to a single file (video or picture);
+    - path to a single file (video or image);
+    - HTTP(S) URL to a single file (video or image);
     - path to video device (e.g. /dev/video0);
     - RTSP URL.
 

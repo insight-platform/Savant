@@ -101,6 +101,7 @@ COPY savant savant
 COPY gst_plugins gst_plugins
 
 # copy necessary gst plugins and set plugin path correctly
+COPY adapters/shared adapters/shared
 COPY adapters/python adapters/python
 COPY adapters/gst adapters/gst
 COPY gst_plugins/python/zeromq_src.py adapters/gst/gst_plugins/python/

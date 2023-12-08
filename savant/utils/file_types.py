@@ -6,7 +6,7 @@ from typing import List, Optional, Tuple
 
 class FileType(Enum):
     VIDEO = 'video'
-    PICTURE = 'picture'
+    IMAGE = 'image'
 
     @staticmethod
     def from_mime_type(mime_type: Optional[str]) -> Optional['FileType']:
@@ -15,7 +15,7 @@ class FileType(Enum):
         if mime_type.startswith('video/'):
             return FileType.VIDEO
         if mime_type.startswith('image/'):
-            return FileType.PICTURE
+            return FileType.IMAGE
 
 
 def parse_mime_types(files: List[Path]) -> List[Tuple[Path, str]]:
