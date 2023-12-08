@@ -30,6 +30,12 @@ cd Savant/samples/panoptic_driving_perception
 ../../utils/check-environment-compatible && docker compose -f docker-compose.x86.yml up
 
 # if Jetson
+# Prepare docker image with torchvision
+docker buildx build --target builder -f ./docker/Dockerfile.l4t -t savant_torch_build .
+docker run -it --rm -v `pwd`/torchvision:/torchvision --entrypoint /bin/bash savant_torch_build /opt/torchvision/build_torchvision.sh
+docker buildx build --target savant_torch -f ./docker/Dockerfile.l4t -t panoptic_driving_perception-module .
+
+# Run the demo
 ../../utils/check-environment-compatible && docker compose -f docker-compose.l4t.yml up
 
 # open 'rtsp://127.0.0.1:554/stream' in your player
