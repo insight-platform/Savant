@@ -1,13 +1,11 @@
 """Custom PyFunc implementation inference PyTorch model."""
-import time
 from savant_rs.primitives.geometry import BBox
 
 from savant.meta.object import ObjectMeta
-from savant.utils.memory_repr_pytorch import pytorch_tensor_as_opencv_gpu_mat, opencv_gpu_mat_as_pytorch
+from savant.utils.memory_repr_pytorch import pytorch_tensor_as_opencv_gpu_mat, opencv_gpu_mat_as_pytorch_tensor
 
 
 import cv2
-import numpy as np
 import torch
 import torchvision
 import torchvision.transforms as transforms
@@ -60,9 +58,9 @@ class PyTorchInfer(NvDsPyFuncPlugin):
                         frame_mat, (640, 480), stream=artist.stream
                     )
 
-                    input_tensor = opencv_gpu_mat_as_pytorch(input_image)[:3, :, :].float() / 255
+                    input_tensor = opencv_gpu_mat_as_pytorch_tensor(input_image).permute(2, 0, 1)
+                    input_tensor = input_tensor[:3, :, :].float() / 255
                     input_tensor = self.normalize(input_tensor).unsqueeze(0)
-
                     det_out, da_seg_out, ll_seg_out = self.model(input_tensor)
                     da_seg_out = da_seg_out.detach()
                     ll_seg_out = ll_seg_out.detach()
