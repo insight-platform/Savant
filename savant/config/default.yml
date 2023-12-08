@@ -43,9 +43,9 @@ parameters:
   queue_maxsize: 100
 
   # Configuration of the queues in GStreamer pipeline after demuxer.
-  # Length of the egress queue in frames (0 - no limit).
+  # Length of the egress queue in frames (0 - no limit, default 200).
   egress_queue_length: ${oc.decode:${oc.env:EGRESS_QUEUE_LENGTH, null}}
-  # Size of the egress queue in bytes (0 - no limit).
+  # Size of the egress queue in bytes (0 - no limit, default 10485760).
   egress_queue_byte_size: ${oc.decode:${oc.env:EGRESS_QUEUE_BYTE_SIZE, null}}
 
   # TODO: create class for output_frame
@@ -171,13 +171,13 @@ pipeline:
       source_timeout: ${oc.decode:${oc.env:SOURCE_TIMEOUT, 10}}
       # Interval between source eviction checks (in seconds).
       source_eviction_interval: ${oc.decode:${oc.env:SOURCE_EVICTION_INTERVAL, 1}}
-      # Length of the ingress queue in frames (0 - no limit).
+      # Length of the ingress queue in frames (0 - no limit, default 200).
       ingress_queue_length: ${oc.decode:${oc.env:INGRESS_QUEUE_LENGTH, null}}
-      # Size of the ingress queue in bytes (0 - no limit).
+      # Size of the ingress queue in bytes (0 - no limit, default 10485760).
       ingress_queue_byte_size: ${oc.decode:${oc.env:INGRESS_QUEUE_BYTE_SIZE, null}}
-      # Length of the queue before decoder in frames (0 - no limit).
+      # Length of the queue before decoder in frames (0 - no limit, default 200).
       decoder_queue_length: ${oc.decode:${oc.env:DECODER_QUEUE_LENGTH, null}}
-      # Size of the queue before decoder in bytes (0 - no limit).
+      # Size of the queue before decoder in bytes (0 - no limit, default 10485760).
       decoder_queue_byte_size: ${oc.decode:${oc.env:DECODER_QUEUE_BYTE_SIZE, null}}
 
 # elements:
