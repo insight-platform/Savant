@@ -2,7 +2,10 @@
 from savant_rs.primitives.geometry import BBox
 
 from savant.meta.object import ObjectMeta
-from savant.utils.memory_repr_pytorch import pytorch_tensor_as_opencv_gpu_mat, opencv_gpu_mat_as_pytorch_tensor
+from savant.utils.memory_repr_pytorch import (
+    pytorch_tensor_as_opencv_gpu_mat,
+    opencv_gpu_mat_as_pytorch_tensor,
+)
 
 
 import cv2
@@ -20,7 +23,9 @@ from savant.utils.artist import Artist
 class PyTorchInfer(NvDsPyFuncPlugin):
     """Custom frame processor."""
 
-    def __init__(self, conf_threshold, iou_threshold, road_mask_color, line_mask_color, **kwargs):
+    def __init__(
+        self, conf_threshold, iou_threshold, road_mask_color, line_mask_color, **kwargs
+    ):
         super().__init__(**kwargs)
         import sys
 
@@ -40,7 +45,6 @@ class PyTorchInfer(NvDsPyFuncPlugin):
         )
         self.conf_threshold = conf_threshold
         self.iou_threshold = iou_threshold
-        pass
 
     def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
         """Process frame.
@@ -50,54 +54,53 @@ class PyTorchInfer(NvDsPyFuncPlugin):
         """
         stream = self.get_cuda_stream(frame_meta)
         with nvds_to_gpu_mat(buffer, frame_meta.frame_meta) as frame_mat:
-            with Artist(frame_mat, stream) as artist:
-                with torch.no_grad():
-                    w, h = frame_mat.size()
-                    input_image = cv2.cuda.GpuMat()
-                    input_image = cv2.cuda.resize(
-                        frame_mat, (640, 480), stream=artist.stream
-                    )
+            with torch.no_grad():
+                w, h = frame_mat.size()
+                input_image = cv2.cuda.GpuMat()
+                input_image = cv2.cuda.resize(frame_mat, (640, 480), stream=stream)
 
-                    input_tensor = opencv_gpu_mat_as_pytorch_tensor(input_image).permute(2, 0, 1)
-                    input_tensor = input_tensor[:3, :, :].float() / 255
-                    input_tensor = self.normalize(input_tensor).unsqueeze(0)
-                    det_out, da_seg_out, ll_seg_out = self.model(input_tensor)
-                    da_seg_out = da_seg_out.detach()
-                    ll_seg_out = ll_seg_out.detach()
+                input_tensor = opencv_gpu_mat_as_pytorch_tensor(input_image).permute(
+                    2, 0, 1
+                )
+                input_tensor = input_tensor[:3, :, :].float() / 255
+                input_tensor = self.normalize(input_tensor).unsqueeze(0)
+                det_out, da_seg_out, ll_seg_out = self.model(input_tensor)
+                da_seg_out = da_seg_out.detach()
+                ll_seg_out = ll_seg_out.detach()
 
-                    self.postprocess_bbox(det_out, frame_meta, input_tensor, h, w)
+                self.postprocess_bbox(det_out, frame_meta, input_tensor, h, w)
 
-                    da_seg_mask = torch.nn.functional.interpolate(
-                        da_seg_out, size=(h, w), mode='bilinear'
-                    )
-                    ll_seg_mask = torch.nn.functional.interpolate(
-                        ll_seg_out, size=(h, w), mode='bilinear'
-                    )
-                    da_seg_mask = torch.max(da_seg_mask, 1)[1].squeeze(0)
-                    ll_seg_mask = torch.max(ll_seg_mask, 1)[1].squeeze(0)
-                    mask_seg = torch.where(
-                        da_seg_mask.bool()[..., None],
-                        self.road_mask_color,
-                        self.bg_color,
-                    )
-                    ll_mask = torch.where(
-                        ll_seg_mask.bool()[..., None], self.line_mask_color, self.bg_color
-                    )
+                da_seg_mask = torch.nn.functional.interpolate(
+                    da_seg_out, size=(h, w), mode='bilinear'
+                )
+                ll_seg_mask = torch.nn.functional.interpolate(
+                    ll_seg_out, size=(h, w), mode='bilinear'
+                )
+                da_seg_mask = torch.max(da_seg_mask, 1)[1].squeeze(0)
+                ll_seg_mask = torch.max(ll_seg_mask, 1)[1].squeeze(0)
+                mask_seg = torch.where(
+                    da_seg_mask.bool()[..., None],
+                    self.road_mask_color,
+                    self.bg_color,
+                )
+                ll_mask = torch.where(
+                    ll_seg_mask.bool()[..., None], self.line_mask_color, self.bg_color
+                )
 
-                    alpha_comp(
-                        frame_mat,
-                        overlay=pytorch_tensor_as_opencv_gpu_mat(mask_seg),
-                        start=(0, 0),
-                        stream=stream,
-                    )
-                    alpha_comp(
-                        frame_mat,
-                        overlay=pytorch_tensor_as_opencv_gpu_mat(ll_mask),
-                        start=(0, 0),
-                        stream=stream,
-                    )
+                alpha_comp(
+                    frame_mat,
+                    overlay=pytorch_tensor_as_opencv_gpu_mat(mask_seg),
+                    start=(0, 0),
+                    stream=stream,
+                )
+                alpha_comp(
+                    frame_mat,
+                    overlay=pytorch_tensor_as_opencv_gpu_mat(ll_mask),
+                    start=(0, 0),
+                    stream=stream,
+                )
 
-    def postprocess_bbox(self, det_out, frame_meta, input_tensor_my, h, w):
+    def postprocess_bbox(self, det_out, frame_meta, input_tensor, h, w):
         inf_out = det_out[0].squeeze(0)
         x = inf_out[inf_out[:, 4] > self.conf_threshold, :]
         x[:, 5:] *= x[:, 4:5]  # conf = obj_conf * cls_conf
@@ -105,7 +108,7 @@ class PyTorchInfer(NvDsPyFuncPlugin):
         i = torchvision.ops.nms(box, x[:, 4], self.iou_threshold)
         output = x[i]
         output[:, :4] = scale_coords(
-            input_tensor_my.shape[2:], output[:, :4], (h, w)
+            input_tensor.shape[2:], output[:, :4], (h, w)
         ).round()
         for obj_meta_tensor in output:
             bbox = BBox(
@@ -159,6 +162,3 @@ def scale_coords(img1_shape, coords, img0_shape):
 
     clip_coords(coords, img0_shape)
     return coords
-
-
-

@@ -1,8 +1,6 @@
 # Panoptic Driving Perception by PyTorch inference
 
-The app shows how to use the torch hub and make inference in Savant using reference PyTorch model.
-Also, it shows how to use the conversion function to interact with image in GPU memory.
-The [YOLOP](https://github.com/hustvl/YOLOP) model is used for object detection and semantic segmentation.
+The app shows how to use the torch hub and make PyTorch inference in Savant using reference PyTorch model. Also, it shows how to interact with image in GPU memory. The [YOLOP](https://github.com/hustvl/YOLOP) model is used for object detection and semantic segmentation.
 
 Preview:
 
@@ -24,7 +22,9 @@ Run the demo:
 
 ```bash
 git clone https://github.com/insight-platform/Savant.git
-cd Savant/samples/panoptic_driving_perception
+cd Savant
+git lfs pull
+cd samples/panoptic_driving_perception
 
 # if x86
 ../../utils/check-environment-compatible && docker compose -f docker-compose.x86.yml up
@@ -32,7 +32,7 @@ cd Savant/samples/panoptic_driving_perception
 # if Jetson
 # Prepare docker image with torchvision
 docker buildx build --target builder -f ./docker/Dockerfile.l4t -t savant_torch_build .
-docker run -it --rm --runtime nvidia -v `pwd`/torchvision:/torchvision --entrypoint /bin/bash savant_torch_build /opt/torchvision/build_torchvision.sh
+docker run -it --rm --runtime nvidia -e MAX_JOBS=1 -v `pwd`/torchvision:/torchvision --entrypoint /bin/bash savant_torch_build /opt/torchvision/build_torchvision.sh
 docker buildx build --target savant_torch -f ./docker/Dockerfile.l4t -t panoptic_driving_perception-module .
 
 # Run the demo

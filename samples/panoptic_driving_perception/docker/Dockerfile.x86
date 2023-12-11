@@ -2,8 +2,8 @@ FROM ghcr.io/insight-platform/savant-deepstream:latest
 
 RUN pip3 install torch torchvision torchaudio
 
-ENV TORCH_HOME=/models/torch
-RUN export PYTHONPATH=/models/yolov7:$PYTHONPATH
+ENV TORCH_HOME=/cache/models/torch_hub
+RUN export PYTHONPATH=/cache/models/torch_hub:$PYTHONPATH
 
 RUN pip3 install prefetch_generator matplotlib yacs
 

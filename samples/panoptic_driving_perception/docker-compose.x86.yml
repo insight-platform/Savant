@@ -26,11 +26,12 @@ services:
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
-      - ../../models/panoptic_driving_perception:/models
-      - ../../downloads/panoptic_driving_perception:/downloads
+      - ../../cache:/cache
       - .:/opt/savant/samples/panoptic_driving_perception
     command: samples/panoptic_driving_perception/module.yml
     environment:
+      - MODEL_PATH=/cache/models/panoptic_driving_perception
+      - DOWNLOAD_PATH=/cache/downloads/panoptic_driving_perception
       - ZMQ_SRC_ENDPOINT=router+bind:ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
       - FPS_PERIOD=1000

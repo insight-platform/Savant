@@ -84,11 +84,10 @@ COPY ./torchvision/torchvision*.whl /opt
 
 RUN pip3 install --no-cache-dir --verbose /opt/torchvision*.whl && rm /opt/torchvision*.whl
 
-ENV TORCH_HOME=/models/torch
+ENV TORCH_HOME=/cache/models/torch_hub
+RUN export PYTHONPATH=/cache/models/torch_hub:$PYTHONPATH
 
-RUN export PYTHONPATH=/models/yolov7:$PYTHONPATH
-
-# install all requirements is leading to reinstall openCV with CUDA support
+# install all requirements from repository is leading to reinstall openCV without CUDA support
 #RUN pip3 install -r https://raw.githubusercontent.com/hustvl/YOLOP/main/requirements.txt
 RUN pip3 install prefetch_generator matplotlib yacs
 
