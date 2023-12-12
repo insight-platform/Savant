@@ -14,7 +14,7 @@ Preview:
 
 Tested on platforms:
 
-- Xavier NX, Xavier AGX;
+- Xavier NX, Orin Nano;
 - Nvidia Turing, Ampere.
 
 Demonstrated operational modes:
@@ -22,6 +22,7 @@ Demonstrated operational modes:
 - real-time processing: RTSP streams (multiple sources at once);
 
 Demonstrated adapters:
+
 - Video loop adapter;
 - Always-ON RTSP sink adapter;
 
