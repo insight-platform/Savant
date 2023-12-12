@@ -1,0 +1,71 @@
+name: fisheye_line_crossing
+parameters:
+  frame:
+    width: 1024
+    height: 1024
+  output_frame:
+    codec: ${oc.env:CODEC, 'h264'}
+
+  draw_func:
+    module: samples.fisheye_line_crossing.overlay
+    class_name: Overlay
+    kwargs:
+      config_path: ${oc.env:PROJECT_PATH}/samples/fisheye_line_crossing/polygon_config.yml
+
+  batch_size: 1
+
+  detected_object_label: person
+
+  send_stats: True
+
+pipeline:
+  elements:
+    # detector
+    - element: nvinfer@detector
+      name: yolov7_obb
+      model:
+        format: onnx
+        model_file: yolo7_obb_dynbatch_no_nms.onnx
+        batch_size: ${parameters.batch_size}
+        workspace_size: 6144
+        input:
+          shape: [3,640,640]
+          scale_factor: 0.0039215697906911373
+          maintain_aspect_ratio: True
+        output:
+          num_detected_classes: 1
+          layer_names: [ 'output' ]
+          converter:
+            module: samples.fisheye_line_crossing.converter
+            class_name: TensorToBBoxConverter
+            kwargs:
+              confidence_threshold: 0.5
+              nms_iou_threshold: 0.5
+              top_k: 300
+          objects:
+            - class_id: 0
+              label: ${parameters.detected_object_label}
+              selector:
+                module: savant.selector.detector
+                class_name: BBoxSelector
+                kwargs:
+                  confidence_threshold: 0.5
+
+    # pyfunc that applies tracking algorithm
+    # in this case, using Similari tracking library
+    - element: pyfunc
+      module: samples.fisheye_line_crossing.similari_tracker
+      class_name: Tracker
+      kwargs:
+        iou_threshold: 0.2
+        min_hits: 3
+        max_age: 15
+        add_idle: False
+
+    - element: pyfunc
+      module: samples.fisheye_line_crossing.line_crossing
+      class_name: LineCrossing
+      kwargs:
+        config_path: ${oc.env:PROJECT_PATH}/samples/fisheye_line_crossing/polygon_config.yml
+        stale_track_del_period: 5000
+        send_stats: ${parameters.send_stats}
