@@ -206,7 +206,13 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             return self.pyfunc.instance.on_stop()
         except Exception as exc:
             return handle_fatal_error(
-                exc, f'Error in do_stop() call for {self.pyfunc}', True, False
+                self,
+                self.logger,
+                exc,
+                f'Error in do_stop() call for {self.pyfunc}',
+                self.dev_mode,
+                True,
+                False,
             )
 
     def do_sink_event(self, event: Gst.Event) -> bool:
@@ -216,7 +222,11 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             self.pyfunc.instance.on_event(event)
         except Exception as exc:
             handle_non_fatal_error(
-                exc, f'Error in do_sink_event() call for {self.pyfunc}.'
+                self,
+                self.logger,
+                exc,
+                f'Error in do_sink_event() call for {self.pyfunc}.',
+                self.dev_mode,
             )
         return self.srcpad.push_event(event)
 
@@ -227,7 +237,13 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             self.pyfunc.instance.process_buffer(buffer)
         except Exception as exc:
             return handle_fatal_error(
-                exc, f'Error in process_buffer() call for {self.pyfunc}.'
+                self,
+                self.logger,
+                exc,
+                f'Error in process_buffer() call for {self.pyfunc}.',
+                self.dev_mode,
+                True,
+                False,
             )
 
         return Gst.FlowReturn.OK
