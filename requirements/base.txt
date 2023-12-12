@@ -29,5 +29,3 @@ tqdm~=4.64
 python-magic~=0.4.27
 
 prometheus-client~=0.19.0
-
-similari-trackers-rs~=0.26.5
