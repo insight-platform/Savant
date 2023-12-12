@@ -24,8 +24,13 @@ pipeline:
     - element: nvinfer@detector
       name: yolov7_obb
       model:
+        remote:
+          url: s3://savant-data/models/yolov7_obb/yolov7_obb.zip
+          checksum_url: s3://savant-data/models/yolov7_obb/yolov7_obb.md5
+          parameters:
+            endpoint: https://eu-central-1.linodeobjects.com
         format: onnx
-        model_file: yolo7_obb_dynbatch_no_nms.onnx
+        model_file: yolov7_obb.onnx
         batch_size: ${parameters.batch_size}
         workspace_size: 6144
         input:
