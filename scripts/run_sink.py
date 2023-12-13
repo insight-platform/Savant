@@ -545,6 +545,20 @@ def always_on_rtsp_sink(
     help='Kafka topic to put messages to.',
 )
 @click.option(
+    '--flush-interval',
+    type=click.FLOAT,
+    default=1,
+    help='Flush interval in seconds.',
+    show_default=True,
+)
+@click.option(
+    '--flush-timeout',
+    type=click.FLOAT,
+    default=10,
+    help='Flush timeout in seconds.',
+    show_default=True,
+)
+@click.option(
     '--create-topic',
     is_flag=True,
     default=False,
@@ -621,6 +635,8 @@ def kafka_redis_sink(
     fps_output: Optional[str],
     brokers: str,
     topic: str,
+    flush_interval: float,
+    flush_timeout: float,
     create_topic: bool,
     create_topic_num_partitions: int,
     create_topic_replication_factor: int,
@@ -648,6 +664,8 @@ def kafka_redis_sink(
     ) + [
         f'KAFKA_BROKERS={brokers}',
         f'KAFKA_TOPIC={topic}',
+        f'KAFKA_FLUSH_INTERVAL={flush_interval}',
+        f'KAFKA_FLUSH_TIMEOUT={flush_timeout}',
         f'KAFKA_CREATE_TOPIC={create_topic}',
         f'KAFKA_CREATE_TOPIC_NUM_PARTITIONS={create_topic_num_partitions}',
         f'KAFKA_CREATE_TOPIC_REPLICATION_FACTOR={create_topic_replication_factor}',

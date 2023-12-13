@@ -3,7 +3,7 @@ import os
 from asyncio import Queue
 from typing import AsyncIterator, Dict, Optional, Tuple, Union
 
-from confluent_kafka import Consumer, TopicPartition
+from confluent_kafka import Consumer, KafkaError, TopicPartition
 from redis.asyncio import Redis
 from savant_rs.primitives import EndOfStream, VideoFrame, VideoFrameContent
 from savant_rs.utils.serialization import Message, load_message_from_bytes
@@ -67,7 +67,7 @@ class KafkaRedisSource(BaseKafkaRedisAdapter):
             .with_telemetry_disabled()
             .build_async()
         )
-        self._consumer = build_consumer(config.kafka)
+        self._consumer = self.build_consumer()
         self._frame_clients: Dict[str, Redis] = {}
 
     async def on_start(self):
@@ -261,22 +261,28 @@ class KafkaRedisSource(BaseKafkaRedisAdapter):
 
         return content
 
+    def on_consumer_error(self, error: KafkaError):
+        """Handle consumer error."""
 
-def build_consumer(config: KafkaConfig) -> Consumer:
-    """Build Kafka consumer."""
+        self.set_error(f'Failed to consume message: {error}')
+        self._is_running = False
 
-    return Consumer(
-        {
-            'bootstrap.servers': config.brokers,
-            'group.id': config.group_id,
-            'auto.offset.reset': config.auto_offset_reset,
-            'auto.commit.interval.ms': config.auto_commit_interval_ms,
-            'enable.auto.commit': True,
-            'enable.auto.offset.store': False,
-            'partition.assignment.strategy': config.partition_assignment_strategy,
-            'max.poll.interval.ms': config.max_poll_interval_ms,
-        }
-    )
+    def build_consumer(self) -> Consumer:
+        """Build Kafka consumer."""
+
+        return Consumer(
+            {
+                'bootstrap.servers': self._config.kafka.brokers,
+                'group.id': self._config.kafka.group_id,
+                'auto.offset.reset': self._config.kafka.auto_offset_reset,
+                'auto.commit.interval.ms': self._config.kafka.auto_commit_interval_ms,
+                'enable.auto.commit': True,
+                'enable.auto.offset.store': False,
+                'partition.assignment.strategy': self._config.kafka.partition_assignment_strategy,
+                'max.poll.interval.ms': self._config.kafka.max_poll_interval_ms,
+                'error_cb': self.on_consumer_error,
+            }
+        )
 
 
 if __name__ == '__main__':
