@@ -28,16 +28,11 @@ from savant.utils.source_info import SourceInfo
 class SourceOutput(ABC):
     """Adds an output elements to a DeepStream pipeline."""
 
-    def __init__(
-        self,
-        video_pipeline: VideoPipeline,
-        queue_properties: Dict[str, int],
-    ):
+    def __init__(self, video_pipeline: VideoPipeline):
         self._logger = get_logger(
             f'{self.__class__.__module__}.{self.__class__.__name__}'
         )
         self._video_pipeline = video_pipeline
-        self._queue_properties = queue_properties
 
     @abstractmethod
     def add_output(
@@ -63,10 +58,9 @@ class SourceOutputOnlyMeta(SourceOutput):
     def __init__(
         self,
         video_pipeline: VideoPipeline,
-        queue_properties: Dict[str, int],
         condition: Optional[FrameProcessingCondition] = None,
     ):
-        super().__init__(video_pipeline, queue_properties)
+        super().__init__(video_pipeline)
         self._condition = condition
 
     def add_output(
@@ -122,9 +116,10 @@ class SourceOutputWithFrame(SourceOutput):
         video_pipeline: VideoPipeline,
         queue_properties: Dict[str, int],
     ):
-        super().__init__(video_pipeline, queue_properties)
+        super().__init__(video_pipeline)
         self._frame_params = frame_params
         self._condition = condition
+        self._queue_properties = queue_properties
 
     def add_output(
         self,
@@ -247,7 +242,9 @@ class SourceOutputWithFrame(SourceOutput):
         )
         src_pad_not_tagged = frame_tag_filter.get_static_pad('src_not_tagged')
 
-        queue_tagged = pipeline.add_element(PipelineElement('queue'), link=False)
+        queue_tagged = pipeline.add_element(
+            PipelineElement('queue', properties=self._queue_properties), link=False
+        )
         self._logger.debug(
             'Added queue for tagged video frames (source_id=%s)',
             source_info.source_id,
@@ -288,7 +285,7 @@ class SourceOutputWithFrame(SourceOutput):
             'queue-not-tagged',
         )
         queue_not_tagged = pipeline.add_element(
-            PipelineElement('queue'),
+            PipelineElement('queue', properties=self._queue_properties),
             link=False,
         )
         queue_not_tagged_src_pad: Gst.Pad = queue_not_tagged.get_static_pad('src')
@@ -483,17 +480,13 @@ def create_source_output(
     """Create an instance of SourceOutput class based on the output_frame config."""
 
     if not output_frame:
-        return SourceOutputOnlyMeta(
-            video_pipeline=video_pipeline,
-            queue_properties=queue_properties,
-        )
+        return SourceOutputOnlyMeta(video_pipeline=video_pipeline)
 
     condition = FrameProcessingCondition(**(output_frame.get('condition') or {}))
     if output_frame['codec'] == 'copy':
         return SourceOutputOnlyMeta(
             video_pipeline=video_pipeline,
             condition=condition,
-            queue_properties=queue_properties,
         )
 
     codec = CODEC_BY_NAME[output_frame['codec']]
