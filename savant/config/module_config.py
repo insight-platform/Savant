@@ -55,7 +55,8 @@ def source_element_configurator(
     """Additional configuration steps for SourceElements."""
     # if dev mode is enabled in the module parameters
     # set dev mode for the ingress filter function
-    if module_config.parameters.dev_mode:
+    if (element_config.ingress_frame_filter is not None
+        and module_config.parameters.dev_mode):
         logger.debug(
             'Setting dev mode for ingress filter of SourceElement named "%s" to True.',
             element_config.name,
