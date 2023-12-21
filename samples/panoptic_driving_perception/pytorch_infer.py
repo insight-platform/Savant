@@ -7,7 +7,6 @@ from savant.utils.memory_repr_pytorch import (
     opencv_gpu_mat_as_pytorch_tensor,
 )
 
-
 import cv2
 import torch
 import torchvision
@@ -17,7 +16,6 @@ from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.deepstream.opencv_utils import alpha_comp, nvds_to_gpu_mat
 from savant.deepstream.pyfunc import NvDsPyFuncPlugin
 from savant.gstreamer import Gst
-from savant.utils.artist import Artist
 
 
 class PyTorchInfer(NvDsPyFuncPlugin):
@@ -27,11 +25,9 @@ class PyTorchInfer(NvDsPyFuncPlugin):
         self, conf_threshold, iou_threshold, road_mask_color, line_mask_color, **kwargs
     ):
         super().__init__(**kwargs)
-        import sys
 
-        print(sys.path)
         self.model = torch.hub.load('hustvl/yolop', 'yolop', pretrained=True)
-        self.model.cuda()
+        self.model.cuda().half()
         self.model.eval()
         self.road_mask_color = torch.tensor(
             [road_mask_color], dtype=torch.uint8, device='cuda'
@@ -54,7 +50,7 @@ class PyTorchInfer(NvDsPyFuncPlugin):
         """
         stream = self.get_cuda_stream(frame_meta)
         with nvds_to_gpu_mat(buffer, frame_meta.frame_meta) as frame_mat:
-            with torch.no_grad():
+            with torch.inference_mode():
                 w, h = frame_mat.size()
                 input_image = cv2.cuda.GpuMat()
                 input_image = cv2.cuda.resize(frame_mat, (640, 480), stream=stream)
@@ -62,11 +58,9 @@ class PyTorchInfer(NvDsPyFuncPlugin):
                 input_tensor = opencv_gpu_mat_as_pytorch_tensor(input_image).permute(
                     2, 0, 1
                 )
-                input_tensor = input_tensor[:3, :, :].float() / 255
+                input_tensor = input_tensor[:3, :, :].half() / 255
                 input_tensor = self.normalize(input_tensor).unsqueeze(0)
                 det_out, da_seg_out, ll_seg_out = self.model(input_tensor)
-                da_seg_out = da_seg_out.detach()
-                ll_seg_out = ll_seg_out.detach()
 
                 self.postprocess_bbox(det_out, frame_meta, input_tensor, h, w)
 
@@ -124,10 +118,6 @@ class PyTorchInfer(NvDsPyFuncPlugin):
                 confidence=float(obj_meta_tensor[4]),
             )
             frame_meta.add_obj_meta(obj_meta)
-
-    def on_source_eos(self, source_id: str):
-        """On source EOS event callback."""
-        self.logger.debug('Got GST_NVEVENT_STREAM_EOS for source %s.', source_id)
 
 
 def xywh2xyxy(x):

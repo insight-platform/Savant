@@ -90,4 +90,3 @@ RUN export PYTHONPATH=/cache/models/torch_hub:$PYTHONPATH
 # install all requirements from repository is leading to reinstall openCV without CUDA support
 #RUN pip3 install -r https://raw.githubusercontent.com/hustvl/YOLOP/main/requirements.txt
 RUN pip3 install prefetch_generator matplotlib yacs
-
