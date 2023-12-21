@@ -5,7 +5,7 @@ TorchHub
 
 The `official documentation <https://pytorch.org/docs/stable/hub.html#loading-models-from-hub>`__  describes how to load the model and perform the inference.
 
-Using Savant you can easily make an inference on a frame or for an object of interest (`example <https://github.com/insight-platform/Savant/tree/develop/samples/panoptic_driving_perception>`__. Also using the conversion function (:ref:`advanced_topics/11_memory_representation_function:Conversions Between GPU Memory Formats`), you can get the image as a pytorch tensor on GPU and perform the necessary preprocessing. This will avoid copying data to the host memory and back to the GPU.
+With Savant it is easy to run Pytorch inference on a frame or for an object of interest. Look at the `panoptic_driving_perception <https://github.com/insight-platform/Savant/tree/develop/samples/panoptic_driving_perception>`__ sample to learn how. Note how OpenCV GPUMat <-> Pytorch GPU tensor conversion function (:ref:`advanced_topics/11_memory_representation_function:Conversions Between GPU Memory Formats`) makes it possible to get the image as a Pytorch GPU tensor and perform the necessary preprocessing exactly as in a strictly Pytorch pipeline, while avoiding copying data to the host memory and back to the GPU.
 
 .. note::
     Be careful when installing dependencies necessary for the model to work, because explicitly or implicitly a version of OpenCV without CUDA support may be installed in the Savant docker container. This will cause errors and make it impossible to run the code.
