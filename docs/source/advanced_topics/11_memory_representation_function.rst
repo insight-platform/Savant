@@ -1,5 +1,5 @@
 Conversions Between GPU Memory Formats
----------------------------------------------
+--------------------------------------
 
 When working with images, there are many ways to represent them as arrays of pixels. Working with different models you may encounter representation of an image using OpenCV GpuMat class, PyTorch tensor or CuPy array.
 
