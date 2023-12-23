@@ -108,7 +108,7 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
         return tensors, mask_list
 
 
-@nb.njit('Tuple((u2[:], f4[:]))(f4[:, :])', nogil=True)
+@nb.njit('Tuple((u2[:], f4[:]))(f4[:, :])', nogil=True, cache=True)
 def _parse_scores(scores: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     class_ids = np.empty(scores.shape[0], dtype=np.uint16)
     confidences = np.empty(scores.shape[0], dtype=scores.dtype)
@@ -118,7 +118,7 @@ def _parse_scores(scores: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     return class_ids, confidences
 
 
-@nb.njit('f4[:, ::1](f4[:, :])', nogil=True)
+@nb.njit('f4[:, ::1](f4[:, :])', nogil=True, cache=True)
 def sigmoid(a: np.ndarray) -> np.ndarray:
     ones = np.ones(a.shape, dtype=np.float32)
     return np.divide(ones, (ones + np.exp(-a)))
@@ -127,6 +127,7 @@ def sigmoid(a: np.ndarray) -> np.ndarray:
 @nb.njit(
     'Tuple((f4[:, ::1], f4[:, :, ::1]))(f4[:, ::1], f4[:, :, ::1], u2, f4, f4, u2)',
     nogil=True,
+    cache=True,
 )
 def _postproc(
     output: np.ndarray,

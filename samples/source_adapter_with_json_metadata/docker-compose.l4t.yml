@@ -11,7 +11,7 @@ services:
       - ZMQ_ENDPOINT=req+connect:ipc:///tmp/zmq-sockets/input.ipc
       - SOURCE_ID=coco-images
       - LOCATION=/data
-      - FILE_TYPE=picture
+      - FILE_TYPE=image
     entrypoint: /opt/savant/adapters/gst/sources/media_files.sh
     depends_on:
       module:

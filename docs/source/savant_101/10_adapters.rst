@@ -14,7 +14,7 @@ Currently, the single source- and multiple sink declarations are supported.
 Adapters
 ========
 
-The adapters are standalone programs executed in separate Docker containers. They communicate with modules via `ZeroMQ <https://zeromq.org/>`__: source adapters ingest data, and sink adapters consume data from modules.
+The adapters are standalone programs executed in separate Docker containers. They communicate with modules via `ZeroMQ <https://zeromq.org/>`__: source adapters ingest data, sink adapters consume data from modules and bridge adapters consume data from other sources and ingest it.
 
 The decoupled nature of adapters guarantees high reliability because errors happening outside of the pipeline don't propagate to the module. Thus, adapters deliver two main functions: abstracting the module from data sources and destinations and providing a foundation for fault-tolerant operations.
 
@@ -23,7 +23,7 @@ Adapters transfer video streams and metadata over network or locally. We impleme
 Savant Adapter Protocol
 -----------------------
 
-Savant uses a protocol based on `ZeroMQ <https://zeromq.org/>`__ and `Savant-RS <https://insight-platform.github.io/savant-rs/>`__ for communication between adapters and modules. It can be used to connect an adapter with other adapter, an adapter with a module, a module with a module, etc. The protocol is universal for source- and sink adapters.
+Savant uses a protocol based on `ZeroMQ <https://zeromq.org/>`__ and `Savant-RS <https://insight-platform.github.io/savant-rs/>`__ for communication between adapters and modules. It can be used to connect an adapter with other adapter, an adapter with a module, a module with a module, etc. The protocol is universal for source, sink and bridge adapters.
 
 With the protocol, one may build oriented graphs representing data sources, sinks, and modules, arranging them within a single host or in a distributed environment like ``K8s``.
 
@@ -268,7 +268,7 @@ The images are served from:
 
 **Parameters**:
 
-- ``FILE_TYPE``: a flag specifying that the adapter is used for images; it must always be set to ``picture``;
+- ``FILE_TYPE``: a flag specifying that the adapter is used for images; it must always be set to ``image``;
 - ``LOCATION``: a filesystem location (path or directory) or HTTP URL from where images are served;
 - ``FRAMERATE``: a desired framerate for the output video stream generated from image files (the parameter is used only if ``SYNC_OUTPUT=True``);
 - ``SYNC_OUTPUT``: a flag indicating that images are delivered into a module as a video stream; otherwise, the files are sent as fast as the module is capable processing them; default is ``False``;
@@ -280,9 +280,9 @@ Running the adapter with Docker:
 
 .. code-block:: bash
 
-    docker run --rm -it --name source-pictures-files-test \
+    docker run --rm -it --name images-source \
         --entrypoint /opt/savant/adapters/gst/sources/media_files.sh \
-        -e FILE_TYPE=picture \
+        -e FILE_TYPE=image \
         -e ZMQ_ENDPOINT=dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc \
         -e SOURCE_ID=test \
         -e LOCATION=/path/to/images \
@@ -295,7 +295,7 @@ Running with the helper script:
 
 .. code-block:: bash
 
-    ./scripts/run_source.py pictures --source-id=test /path/to/images
+    ./scripts/run_source.py images --source-id=test /path/to/images
 
 Video File Source Adapter
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -875,6 +875,8 @@ The Kafka-Redis Sink Adapter sends video stream metadata to Kafka and frame cont
 
 - ``KAFKA_BROKERS`` (**required**): a comma-separated list of Kafka brokers;
 - ``KAFKA_TOPIC`` (**required**): a Kafka topic to put messages to;
+- ``KAFKA_FLUSH_INTERVAL``: a flush interval in seconds for Kafka producer; default is ``1``;
+- ``KAFKA_FLUSH_TIMEOUT``: a flush timeout in seconds for Kafka producer; default is ``10``;
 - ``KAFKA_CREATE_TOPIC``: a flag indicating whether to create a Kafka topic if it does not exist; default is ``False``;
 - ``KAFKA_CREATE_TOPIC_NUM_PARTITIONS``: a number of partitions for a Kafka topic to create; default is ``1``;
 - ``KAFKA_CREATE_TOPIC_REPLICATION_FACTOR``: a replication factor for a Kafka topic to create; default is ``1``;
@@ -914,3 +916,70 @@ Running the adapter with the helper script:
 .. code-block:: bash
 
     ./scripts/run_sink.py kafka-redis --brokers=kafka:9092 --topic=kafka-redis-adapter-demo --redis-host=redis
+
+Bridge Adapters
+---------------
+
+Bridge adapters deliver data from other elements of the pipeline (e.g. a source adapter) to a module. Bridge adapters accept data from one ZeroMQ socket and send it to another ZeroMQ socket.
+
+Currently, the following bridge adapters are available:
+
+- Buffer adapter.
+
+Bridge adapters accept the following common parameters:
+
+- ``ZMQ_SINK_ENDPOINT``: a ZeroMQ socket for data input matching the one specified in module's output;  the endpoint coding scheme is ``<socket_type>+(bind|connect):<endpoint>``;
+- ``ZMQ_SRC_ENDPOINT``: adapter's socket where it sends media stream; it must form a valid ZeroMQ pair with module's input socket; the endpoint coding scheme is ``<socket_type>+(bind|connect):<endpoint>``;
+
+Buffer Bridge Adapter
+^^^^^^^^^^^^^^^^^^^^^
+
+The Buffer Bridge Adapter buffers messages from a source and sends them to a module. When the module is not able to accept the message, the adapter buffers it until the module is ready to accept it. When the buffer is full, the adapter drops the incoming message.
+
+.. note::
+
+    The endpoint in ``ZMQ_SRC_ENDPOINT`` can only be ``DEALER``.
+
+**Parameters**:
+
+- ``BUFFER_PATH`` (**required**): a path to a buffer;
+- ``BUFFER_LEN``: a maximum amount of messages in the buffer; default is ``1000``;
+- ``BUFFER_SERVICE_MESSAGES``: a buffer length for service messages (eg. EndOfStream, Shutdown); used when the main part of the buffer is full (``BUFFER_LEN``); default is ``100``;
+- ``BUFFER_THRESHOLD_PERCENTAGE``: a threshold to mark the buffer not full; default is ``80``;
+- ``IDLE_POLLING_PERIOD``: an interval between polling messages from the buffer when the buffer is empty, in seconds; default is ``0.005``;
+- ``STATS_LOG_INTERVAL``: an interval between logging buffer statistics, in seconds; default is ``60``;
+- ``METRICS_FRAME_PERIOD``: output FPS stats after every N frames; default is ``1000``;
+- ``METRICS_TIME_PERIOD``: output FPS stats after every N seconds;
+- ``METRICS_HISTORY``: how many last FPS stats to keep in the memory; default is ``100``;
+- ``METRICS_PROVIDER``: a metrics provider name; only ``prometheus`` is supported;
+- ``METRICS_PROVIDER_PARAMS``: a json dict of metrics provider parameters; default is ``{}``. The ``port`` in ``METRICS_PROVIDER_PARAMS`` is required when ``METRICS_PROVIDER`` is set to ``'prometheus'``. ``labels`` in ``METRICS_PROVIDER_PARAMS`` defines extra labels added to the metrics.
+
+Running the adapter with Docker:
+
+.. code-block:: bash
+
+    docker run --rm -it --name bridge-buffer-test \
+        --entrypoint python \
+        -e ZMQ_SINK_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc \
+        -e ZMQ_SRC_ENDPOINT=dealer+bind:ipc:///tmp/zmq-sockets/buffered-video.ipc \
+        -e BUFFER_PATH=/tmp/savant/buffer \
+        -e BUFFER_LEN=1000 \
+        -e BUFFER_SERVICE_MESSAGES=100 \
+        -e BUFFER_THRESHOLD_PERCENTAGE=80 \
+        -e IDLE_POLLING_PERIOD=0.005 \
+        -e STATS_LOG_INTERVAL=60 \
+        -e METRICS_FRAME_PERIOD=1000 \
+        -e METRICS_TIME_PERIOD=10 \
+        -e METRICS_HISTORY=100 \
+        -e METRICS_PROVIDER=prometheus \
+        -e METRICS_PROVIDER_PARAMS='{"port": 8000, "labels":{"adapter":"buffer"}}' \
+        -v /tmp/zmq-sockets:/tmp/zmq-sockets \
+        -v /tmp/savant/buffer:/tmp/savant/buffer \
+        ghcr.io/insight-platform/savant-adapters-py:latest \
+        -m adapters.python.bridges.buffer
+
+Running the adapter with the helper script:
+
+.. code-block:: bash
+
+    ./scripts/run_bridge.py buffer --mount-buffer-path /tmp/savant/buffer

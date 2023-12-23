@@ -15,7 +15,7 @@ from savant.utils.logging import LoggerMixin
 
 MIME_TYPE_REGEX = {
     FileType.VIDEO: re.compile(r'video/.*'),
-    FileType.PICTURE: re.compile(r'image/(jpeg|png)'),
+    FileType.IMAGE: re.compile(r'image/(jpeg|png)'),
 }
 
 SIZE_MB = 2**20
@@ -42,7 +42,7 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
         'file-type': (
             GObject.TYPE_STRING,
             'File type',
-            'Type of media files to read ("video" or "picture")',
+            'Type of media files to read ("video" or "image")',
             None,
             GObject.ParamFlags.READWRITE,
         ),
@@ -57,7 +57,7 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
         'framerate': (
             str,
             'Framerate',
-            'Framerate for pictures. Used only when file-type=picture.',
+            'Framerate for images. Used only when file-type=image.',
             DEFAULT_FRAMERATE,
             GObject.ParamFlags.READWRITE,
         ),
@@ -139,7 +139,7 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
         if self.current_state == Gst.State.NULL and state != Gst.State.NULL:
             self.validate_properties()
 
-            if self.file_type == FileType.PICTURE:
+            if self.file_type == FileType.IMAGE:
                 self.src_pad.add_probe(Gst.PadProbeType.BUFFER, self.set_frame_duration)
 
             # TODO: check file type for HTTP location
@@ -342,7 +342,7 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
         filtered_caps = Gst.Caps.from_string(codec.value.caps_with_params)
         self.capsfilter.set_property('caps', filtered_caps)
         modified_caps = Gst.Caps.from_string(filtered_caps[0].get_name())
-        if self.file_type == FileType.PICTURE:
+        if self.file_type == FileType.IMAGE:
             # jpegparse allows only framerate=1/1
             # pngparse doesn't set framerate
             modified_caps.set_value(

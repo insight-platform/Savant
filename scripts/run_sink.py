@@ -9,6 +9,7 @@ from common import (
     adapter_docker_image_option,
     build_common_envs,
     build_docker_run_command,
+    build_zmq_endpoint_envs,
     fps_meter_options,
     run_command,
     source_id_option,
@@ -59,9 +60,16 @@ def source_id_prefix_option(func):
 def build_common_sink_envs(
     source_id: Optional[str],
     source_id_prefix: Optional[str],
+    zmq_endpoint: str,
+    zmq_type: Optional[str],
+    zmq_bind: Optional[bool],
 ):
     """Generate env var run options."""
-    envs = []
+    envs = build_zmq_endpoint_envs(
+        zmq_endpoint=zmq_endpoint,
+        zmq_type=zmq_type,
+        zmq_bind=zmq_bind,
+    )
     if source_id:
         envs.append(f'SOURCE_ID={source_id}')
     if source_id_prefix:
@@ -136,6 +144,9 @@ def display_sink(
     envs = build_common_sink_envs(
         source_id=source_id,
         source_id_prefix=source_id_prefix,
+        zmq_endpoint=in_endpoint,
+        zmq_type=in_type,
+        zmq_bind=in_bind,
     ) + [
         'DISPLAY',
         f'XAUTHORITY={xauth}',
@@ -144,9 +155,7 @@ def display_sink(
 
     cmd = build_docker_run_command(
         'sink-display',
-        zmq_endpoint=in_endpoint,
-        zmq_type=in_type,
-        zmq_bind=in_bind,
+        zmq_endpoints=[in_endpoint],
         sync=sync,
         entrypoint='/opt/savant/adapters/ds/sinks/display.sh',
         envs=envs,
@@ -189,6 +198,9 @@ def meta_json_sink(
     envs = build_common_sink_envs(
         source_id=source_id,
         source_id_prefix=source_id_prefix,
+        zmq_endpoint=in_endpoint,
+        zmq_type=in_type,
+        zmq_bind=in_bind,
     ) + [
         f'LOCATION={location}',
         f'SKIP_FRAMES_WITHOUT_OBJECTS={skip_frames_without_objects}',
@@ -197,9 +209,7 @@ def meta_json_sink(
 
     cmd = build_docker_run_command(
         f'sink-meta-json-{uuid.uuid4().hex}',
-        zmq_endpoint=in_endpoint,
-        zmq_type=in_type,
-        zmq_bind=in_bind,
+        zmq_endpoints=[in_endpoint],
         entrypoint='/opt/savant/adapters/python/sinks/metadata_json.py',
         envs=envs,
         volumes=[f'{target_dir}:{target_dir}'],
@@ -238,6 +248,9 @@ def image_files_sink(
     envs = build_common_sink_envs(
         source_id=source_id,
         source_id_prefix=source_id_prefix,
+        zmq_endpoint=in_endpoint,
+        zmq_type=in_type,
+        zmq_bind=in_bind,
     ) + [
         f'DIR_LOCATION={location}',
         f'SKIP_FRAMES_WITHOUT_OBJECTS={skip_frames_without_objects}',
@@ -246,9 +259,7 @@ def image_files_sink(
 
     cmd = build_docker_run_command(
         f'sink-image-files-{uuid.uuid4().hex}',
-        zmq_endpoint=in_endpoint,
-        zmq_type=in_type,
-        zmq_bind=in_bind,
+        zmq_endpoints=[in_endpoint],
         entrypoint='/opt/savant/adapters/python/sinks/image_files.py',
         envs=envs,
         volumes=[f'{target_dir}:{target_dir}'],
@@ -281,6 +292,9 @@ def video_files_sink(
     envs = build_common_sink_envs(
         source_id=source_id,
         source_id_prefix=source_id_prefix,
+        zmq_endpoint=in_endpoint,
+        zmq_type=in_type,
+        zmq_bind=in_bind,
     ) + [
         f'DIR_LOCATION={location}',
         f'CHUNK_SIZE={chunk_size}',
@@ -288,9 +302,7 @@ def video_files_sink(
 
     cmd = build_docker_run_command(
         f'sink-video-files-{uuid.uuid4().hex}',
-        zmq_endpoint=in_endpoint,
-        zmq_type=in_type,
-        zmq_bind=in_bind,
+        zmq_endpoints=[in_endpoint],
         entrypoint='/opt/savant/adapters/gst/sinks/video_files.sh',
         envs=envs,
         volumes=[f'{location}:{location}'],
@@ -471,6 +483,9 @@ def always_on_rtsp_sink(
         fps_period_frames=fps_period_frames,
         fps_period_seconds=fps_period_seconds,
         fps_output=fps_output,
+        zmq_endpoint=in_endpoint,
+        zmq_type=in_type,
+        zmq_bind=in_bind,
     ) + [
         f'STUB_FILE_LOCATION={stub_file_location}',
         f'MAX_DELAY_MS={max_delay_ms}',
@@ -498,9 +513,7 @@ def always_on_rtsp_sink(
 
     cmd = build_docker_run_command(
         f'sink-always-on-rtsp-{uuid.uuid4().hex}',
-        zmq_endpoint=in_endpoint,
-        zmq_type=in_type,
-        zmq_bind=in_bind,
+        zmq_endpoints=[in_endpoint],
         sync=sync,
         entrypoint='python',
         args=['-m', 'adapters.ds.sinks.always_on_rtsp'],
@@ -530,6 +543,20 @@ def always_on_rtsp_sink(
     '--topic',
     required=True,
     help='Kafka topic to put messages to.',
+)
+@click.option(
+    '--flush-interval',
+    type=click.FLOAT,
+    default=1,
+    help='Flush interval in seconds.',
+    show_default=True,
+)
+@click.option(
+    '--flush-timeout',
+    type=click.FLOAT,
+    default=10,
+    help='Flush timeout in seconds.',
+    show_default=True,
 )
 @click.option(
     '--create-topic',
@@ -608,6 +635,8 @@ def kafka_redis_sink(
     fps_output: Optional[str],
     brokers: str,
     topic: str,
+    flush_interval: float,
+    flush_timeout: float,
     create_topic: bool,
     create_topic_num_partitions: int,
     create_topic_replication_factor: int,
@@ -629,9 +658,14 @@ def kafka_redis_sink(
         fps_period_frames=fps_period_frames,
         fps_period_seconds=fps_period_seconds,
         fps_output=fps_output,
+        zmq_endpoint=in_endpoint,
+        zmq_type=None,
+        zmq_bind=None,
     ) + [
         f'KAFKA_BROKERS={brokers}',
         f'KAFKA_TOPIC={topic}',
+        f'KAFKA_FLUSH_INTERVAL={flush_interval}',
+        f'KAFKA_FLUSH_TIMEOUT={flush_timeout}',
         f'KAFKA_CREATE_TOPIC={create_topic}',
         f'KAFKA_CREATE_TOPIC_NUM_PARTITIONS={create_topic_num_partitions}',
         f'KAFKA_CREATE_TOPIC_REPLICATION_FACTOR={create_topic_replication_factor}',
@@ -645,9 +679,7 @@ def kafka_redis_sink(
     ]
     cmd = build_docker_run_command(
         f'sink-kafka-redis-{uuid.uuid4().hex}',
-        zmq_endpoint=in_endpoint,
-        zmq_type=None,
-        zmq_bind=None,
+        zmq_endpoints=[in_endpoint],
         entrypoint='python',
         args=['-m', 'adapters.python.sinks.kafka_redis'],
         envs=envs,

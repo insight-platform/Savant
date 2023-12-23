@@ -111,7 +111,9 @@ RUN apt update \
 ARG PROJECT_PATH=/opt/savant
 ENV PYTHONUNBUFFERED=1 \
     PROJECT_PATH=$PROJECT_PATH \
-    PYTHONPATH=$PROJECT_PATH
+    PYTHONPATH=$PROJECT_PATH \
+    NUMBA_CACHE_DIR=/cache/numba \
+    CUPY_CACHE_DIR=/cache/cupy
 WORKDIR $PROJECT_PATH
 
 # add deepstream libs to path, so that ctypes can load them
@@ -206,6 +208,7 @@ RUN apt update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=mediamtx /mediamtx/mediamtx mediamtx/mediamtx
+COPY adapters/shared adapters/shared
 COPY adapters/ds adapters/ds
 # To avoid ImportError when Nvidia runtime is not available
 RUN rm gst_plugins/python/frame_tag_filter.py
