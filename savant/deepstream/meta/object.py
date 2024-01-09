@@ -20,6 +20,8 @@ from savant.deepstream.utils import (
     nvds_get_obj_draw_label,
     nvds_get_obj_uid,
     nvds_init_obj_draw_label,
+    nvds_remove_obj_attr_meta_list,
+    nvds_replace_obj_attr_meta_list,
     nvds_set_obj_bbox,
     nvds_set_obj_draw_label,
     nvds_set_obj_uid,
@@ -127,7 +129,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         return nvds_get_obj_attr_meta(
             frame_meta=self._frame_meta,
             obj_meta=self.ds_object_meta,
-            model_name=element_name,
+            element_name=element_name,
             attr_name=attr_name,
         )
 
@@ -143,7 +145,37 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         return nvds_get_obj_attr_meta_list(
             frame_meta=self._frame_meta,
             obj_meta=self.ds_object_meta,
-            model_name=element_name,
+            element_name=element_name,
+            attr_name=attr_name,
+        )
+
+    def replace_attr_meta_list(
+        self, element_name: str, attr_name: str, value: List[AttributeMeta]
+    ):
+        """Replaces the object's specified attributes with a new list.
+
+        :param element_name: Attribute model name.
+        :param attr_name: Attribute name.
+        :param value: List of AttributeMeta.
+        """
+        nvds_replace_obj_attr_meta_list(
+            frame_meta=self._frame_meta,
+            obj_meta=self.ds_object_meta,
+            element_name=element_name,
+            attr_name=attr_name,
+            value=value,
+        )
+
+    def remove_attr_meta_list(self, element_name: str, attr_name: str):
+        """Removes the object's specified attributes.
+
+        :param element_name: Attribute model name.
+        :param attr_name: Attribute name.
+        """
+        nvds_remove_obj_attr_meta_list(
+            frame_meta=self._frame_meta,
+            obj_meta=self.ds_object_meta,
+            element_name=element_name,
             attr_name=attr_name,
         )
 
@@ -153,6 +185,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         name: str,
         value: Any,
         confidence: float = 1.0,
+        replace: bool = False,
     ):
         """Adds specified object attribute to object meta.
 
@@ -160,6 +193,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         :param name: attribute name.
         :param value: attribute value.
         :param confidence: attribute confidence.
+        :param replace: replace attribute if it already exists.
         """
         nvds_add_attr_meta_to_obj(
             frame_meta=self._frame_meta,
@@ -168,6 +202,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
             name=name,
             value=value,
             confidence=confidence,
+            replace=replace,
         )
 
     @property
