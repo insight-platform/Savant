@@ -425,7 +425,11 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
         in_queue.set_property('max-size-buffers', self._decoder_queue_length)
         in_queue.set_property('max-size-bytes', self._decoder_queue_byte_size)
         in_queue.set_property('max-size-time', 0)
+
         decodebin: Gst.Element = decoder.get_by_name(decodebin_name)
+        decodebin.set_property('max-size-buffers', self._decoder_queue_length)
+        decodebin.set_property('max-size-bytes', self._decoder_queue_byte_size)
+        decodebin.set_property('max-size-time', 0)
 
         # https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_FAQ.html#on-jetson-platform-i-get-same-output-when-multiple-jpeg-images-are-fed-to-nvv4l2decoder-using-multifilesrc-plugin-why-is-that
         if branch.codec == Codec.JPEG and is_aarch64():
