@@ -114,10 +114,12 @@ class SourceOutputWithFrame(SourceOutput):
         frame_params: FrameParameters,
         condition: FrameProcessingCondition,
         video_pipeline: VideoPipeline,
+        queue_properties: Dict[str, int],
     ):
         super().__init__(video_pipeline)
         self._frame_params = frame_params
         self._condition = condition
+        self._queue_properties = queue_properties
 
     def add_output(
         self,
@@ -240,7 +242,9 @@ class SourceOutputWithFrame(SourceOutput):
         )
         src_pad_not_tagged = frame_tag_filter.get_static_pad('src_not_tagged')
 
-        queue_tagged = pipeline.add_element(PipelineElement('queue'), link=False)
+        queue_tagged = pipeline.add_element(
+            PipelineElement('queue', properties=self._queue_properties), link=False
+        )
         self._logger.debug(
             'Added queue for tagged video frames (source_id=%s)',
             source_info.source_id,
@@ -281,7 +285,7 @@ class SourceOutputWithFrame(SourceOutput):
             'queue-not-tagged',
         )
         queue_not_tagged = pipeline.add_element(
-            PipelineElement('queue'),
+            PipelineElement('queue', properties=self._queue_properties),
             link=False,
         )
         queue_not_tagged_src_pad: Gst.Pad = queue_not_tagged.get_static_pad('src')
@@ -329,11 +333,17 @@ class SourceOutputRawRgba(SourceOutputWithFrame):
     Output contains raw-rgba frames along with metadata.
     """
 
-    def __init__(self, frame_params: FrameParameters, video_pipeline: VideoPipeline):
+    def __init__(
+        self,
+        frame_params: FrameParameters,
+        video_pipeline: VideoPipeline,
+        queue_properties: Dict[str, int],
+    ):
         super().__init__(
             frame_params,
             condition=FrameProcessingCondition(),
             video_pipeline=video_pipeline,
+            queue_properties=queue_properties,
         )
 
     def _add_transform_elems(self, pipeline: GstPipeline, source_info: SourceInfo):
@@ -364,6 +374,7 @@ class SourceOutputEncoded(SourceOutputWithFrame):
         frame_params: FrameParameters,
         condition: FrameProcessingCondition,
         video_pipeline: VideoPipeline,
+        queue_properties: Dict[str, int],
     ):
         """
         :param codec: Codec for output frames.
@@ -373,6 +384,7 @@ class SourceOutputEncoded(SourceOutputWithFrame):
             frame_params=frame_params,
             condition=condition,
             video_pipeline=video_pipeline,
+            queue_properties=queue_properties,
         )
         self._codec = codec
         self._output_frame = output_frame
@@ -463,6 +475,7 @@ def create_source_output(
     frame_params: FrameParameters,
     output_frame: Optional[Dict[str, Any]],
     video_pipeline: VideoPipeline,
+    queue_properties: Dict[str, int],
 ) -> SourceOutput:
     """Create an instance of SourceOutput class based on the output_frame config."""
 
@@ -471,13 +484,17 @@ def create_source_output(
 
     condition = FrameProcessingCondition(**(output_frame.get('condition') or {}))
     if output_frame['codec'] == 'copy':
-        return SourceOutputOnlyMeta(video_pipeline=video_pipeline, condition=condition)
+        return SourceOutputOnlyMeta(
+            video_pipeline=video_pipeline,
+            condition=condition,
+        )
 
     codec = CODEC_BY_NAME[output_frame['codec']]
     if codec == Codec.RAW_RGBA:
         return SourceOutputRawRgba(
             frame_params=frame_params,
             video_pipeline=video_pipeline,
+            queue_properties=queue_properties,
         )
 
     condition = FrameProcessingCondition(**(output_frame.get('condition') or {}))
@@ -488,6 +505,7 @@ def create_source_output(
             frame_params=frame_params,
             condition=condition,
             video_pipeline=video_pipeline,
+            queue_properties=queue_properties,
         )
 
     return SourceOutputEncoded(
@@ -496,4 +514,5 @@ def create_source_output(
         frame_params=frame_params,
         condition=condition,
         video_pipeline=video_pipeline,
+        queue_properties=queue_properties,
     )
