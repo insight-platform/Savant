@@ -182,6 +182,10 @@ Advanced ML pipelines may require information from the external environment for 
 
 Savant supports custom OpenCV CUDA bindings enabling operations on DeepStream's in-GPU frames with a broad range of OpenCV CUDA functions: the feature helps in implementing highly efficient video transformations, including but not limited to blurring, cropping, clipping, applying banners and graphical elements over the frame, and others. The feature is available from Python.
 
+### 🔦 PyTorch Support
+
+Savant supports PyTorch, one of the most popular ML frameworks. It enables the developer to use ready-to-use PyTorch models from PyTorchHub, a large number of code samples, and reliable extensions. The integration is highly efficient: it allows running inference on GPU-allocated images and processing the results in GPU RAM, avoiding data transfers between CPU and GPU RAM.
+
 ### 🔢 CuPy Support For Post-Processing
 
 Savant supports CuPy: a NumPy-like library for GPU-accelerated computing. It enables the developer to implement custom post-processing functions in Python, executed in GPU RAM, avoiding data transfers between CPU and GPU RAM. The feature allows for accessing model output tensors directly from GPU RAM, which helps implement heavy-weight custom post-processing functions.

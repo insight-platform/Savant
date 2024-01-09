@@ -1,0 +1,31 @@
+name: ${oc.env:MODULE_NAME, 'panoptic_driving_perception'}
+
+parameters:
+  output_frame:
+    codec: h264
+
+  frame:
+    width: ${oc.decode:${oc.env:FRAME_WIDTH, 1920}}
+    height: ${oc.decode:${oc.env:FRAME_HEIGHT, 1080}}
+
+  draw_func:
+    rendered_objects:
+      yolop:
+        car:
+          bbox:
+            border_color: '00FF00FF'  # Green
+            background_color: '00000000'  # transparent
+            thickness: 1
+
+  batch_size: 1
+
+pipeline:
+  elements:
+    - element: pyfunc
+      module: samples.panoptic_driving_perception.pytorch_infer
+      class_name: PyTorchInfer
+      kwargs:
+        conf_threshold: 0.25
+        iou_threshold: 0.45
+        road_mask_color: [0, 255, 0, 64]
+        line_mask_color: [255, 0, 0, 128]
