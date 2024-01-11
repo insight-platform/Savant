@@ -12,7 +12,8 @@ from adapters.python.sinks.chunk_writer import ChunkWriter, CompositeChunkWriter
 from adapters.python.sinks.metadata_json import (
     MetadataJsonWriter,
     Patterns,
-    frame_has_objects,
+    get_tag_location,
+    get_location,
 )
 from savant.api.enums import ExternalFrameType
 from savant.utils.logging import get_logger, init_logging
@@ -102,7 +103,9 @@ class ImageFilesSink:
             return False
         writer = self.writers.get(video_frame.source_id)
         if writer is None:
-            base_location = os.path.join(self.location, video_frame.source_id)
+            tag_location = get_tag_location(video_frame)
+            file_location = get_location(self.location, video_frame.source_id, tag_location)
+            base_location = os.path.join(self.location, file_location)
             if self.chunk_size > 0:
                 json_filename_pattern = f'{Patterns.CHUNK_IDX}.json'
             else:

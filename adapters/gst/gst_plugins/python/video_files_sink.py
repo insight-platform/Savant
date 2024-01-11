@@ -4,7 +4,12 @@ from typing import Dict, Optional, Union
 from savant_rs.primitives import EndOfStream, VideoFrame
 
 from adapters.python.sinks.chunk_writer import ChunkWriter, CompositeChunkWriter
-from adapters.python.sinks.metadata_json import MetadataJsonWriter, Patterns
+from adapters.python.sinks.metadata_json import (
+    MetadataJsonWriter,
+    Patterns,
+    get_tag_location,
+    get_location,
+)
 from gst_plugins.python.savant_rs_video_demux_common import FrameParams, build_caps
 from savant.api.enums import ExternalFrameType
 from savant.api.parser import convert_ts
@@ -313,7 +318,9 @@ class VideoFilesSink(LoggerMixin, Gst.Bin):
 
         writer = self.writers.get(frame.source_id)
         if writer is None:
-            base_location = os.path.join(self.location, frame.source_id)
+            tag_location = get_tag_location(frame)
+            file_location = get_location(self.location, frame.source_id, tag_location)
+            base_location = os.path.join(self.location, file_location)
             if self.chunk_size > 0:
                 json_filename_pattern = f'{Patterns.CHUNK_IDX}.json'
             else:

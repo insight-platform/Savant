@@ -126,7 +126,7 @@ class MetadataJsonSink:
             return False
 
         src_file_location = get_tag_location(frame) or ''
-        location = self.get_location(frame.source_id, src_file_location)
+        location = get_location(self.location, frame.source_id, src_file_location)
         writer = self.writers.get(location)
         last_writer = self.last_writer_per_source.get(frame.source_id)
         if writer is None:
@@ -148,20 +148,19 @@ class MetadataJsonSink:
         writer.flush()
         return result
 
-    def get_location(
-        self,
-        source_id: str,
-        src_file_location: str,
-    ):
-        location = self.location.replace(Patterns.SOURCE_ID, source_id)
-        src_filename = os.path.splitext(os.path.basename(src_file_location))[0]
-        location = location.replace(Patterns.SRC_FILENAME, src_filename)
-        return location
-
 
 def frame_has_objects(frame: VideoFrame):
     return bool(frame.access_objects(MatchQuery.idle()))
 
+def get_location(
+    location: str,
+    source_id: str,
+    src_file_location: str,
+):
+    location = location.replace(Patterns.SOURCE_ID, source_id)
+    src_filename = os.path.splitext(os.path.basename(src_file_location))[0]
+    location = location.replace(Patterns.SRC_FILENAME, src_filename)
+    return location
 
 def get_tag_location(frame: VideoFrame):
     attr: Optional[Attribute] = frame.get_attribute(DEFAULT_NAMESPACE, 'location')
