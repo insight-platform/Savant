@@ -3,7 +3,9 @@ from .attribute import (
     nvds_attr_meta_iterator,
     nvds_get_obj_attr_meta,
     nvds_get_obj_attr_meta_list,
+    nvds_remove_obj_attr_meta_list,
     nvds_remove_obj_attrs,
+    nvds_replace_obj_attr_meta_list,
 )
 from .event import (
     GST_NVEVENT_INFER_INTERVAL_UPDATE,
