@@ -1,0 +1,32 @@
+name: test
+
+parameters:
+  batch_size: 1
+
+pipeline:
+  source:
+    element: videotestsrc
+    properties:
+      num-buffers: 100
+      caps: video/x-raw, framerate=(fraction)200/1, width=1280, height=720
+
+  elements:
+    - element: pyfunc
+      name: pyfunc1
+      module: samples.test.pyfunc
+      class_name: PyFunc
+
+    - element: queue_log
+#      properties:
+#        leaky: upstream
+#        max-size-buffers: 10
+#        max-size-bytes: 0
+#        max-size-time: 0
+
+    - element: pyfunc
+      name: pyfunc2
+      module: samples.test.pyfunc
+      class_name: PyFunc
+      kwargs:
+        sleep: 0.001  # seconds
+        random: 100  # sleep x random[1..random]
