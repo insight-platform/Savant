@@ -1,6 +1,7 @@
 """Sink factories."""
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, NamedTuple, Optional, Union
+from dataclasses import dataclass, replace
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import zmq
 from savant_rs.primitives import EndOfStream, VideoFrame, VideoFrameContent
@@ -25,6 +26,7 @@ from savant.utils.zeromq import (
 logger = get_logger(__name__)
 
 
+@dataclass(frozen=True)
 class SinkMessage:
     """Sink message."""
 
@@ -32,8 +34,12 @@ class SinkMessage:
     def source_id(self) -> str:
         pass
 
+    def _replace(self, **kwargs):
+        return replace(self, **kwargs)
 
-class SinkVideoFrame(SinkMessage, NamedTuple):
+
+@dataclass(frozen=True)
+class SinkVideoFrame(SinkMessage):
     """Message for VideoFrame message schema."""
 
     video_frame: VideoFrame
@@ -45,7 +51,8 @@ class SinkVideoFrame(SinkMessage, NamedTuple):
         return self.video_frame.source_id
 
 
-class SinkEndOfStream(SinkMessage, NamedTuple):
+@dataclass(frozen=True)
+class SinkEndOfStream(SinkMessage):
     """Message for EndOfStream message schema."""
 
     eos: EndOfStream
