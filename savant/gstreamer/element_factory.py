@@ -1,6 +1,6 @@
 """GStreamer pipeline elements factory."""
 
-from typing import Any, Union
+from typing import Union
 
 from gi.repository import Gst  # noqa:F401
 
@@ -22,9 +22,6 @@ class GstElementFactory:
         :raises CreateElementException: Unknown element.
         :return: Gst.Element.
         """
-        if element.element == 'queue_log':
-            return self.create_queue_log(element)
-
         if element.element == 'capsfilter':
             return self.create_caps_filter(element)
 
@@ -40,39 +37,6 @@ class GstElementFactory:
         raise CreateElementException(
             f'Undefined element {type(element)} {element} to create.'
         )
-
-    @staticmethod
-    def create_queue_log(element: PipelineElement) -> Gst.Element:
-        """Creates Gst.Element.
-
-        :param element: PipelineElement to create.
-        :raises CreateElementException: Unable to create element.
-        :return: Created Gst.Element
-        """
-        element.element = 'queue'
-        gst_element = GstElementFactory.create_element(element)
-        src_pad: Gst.Pad = gst_element.get_static_pad('src')
-
-        def probe_callback(
-            pad: Gst.Pad,
-            info: Gst.PadProbeInfo,
-            *data: Any,
-        ):
-            """Buffer probe callback wrapper to handle exceptions."""
-            print(
-                'queue current level'
-                f' buffers={pad.parent.get_property("current-level-buffers")}'
-                f' bytes={pad.parent.get_property("current-level-bytes")}'
-                f' time={pad.parent.get_property("current-level-time")}'
-            )
-            return Gst.PadProbeReturn.OK
-
-        src_pad.add_probe(
-            Gst.PadProbeType.BUFFER,
-            probe_callback,
-        )
-
-        return gst_element
 
     @staticmethod
     def create_element(element: PipelineElement) -> Gst.Element:
