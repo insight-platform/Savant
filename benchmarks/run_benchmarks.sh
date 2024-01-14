@@ -9,9 +9,9 @@ else
 fi
 
 if [[ "$(uname -m)" == "aarch64" ]]; then
-    DOCKER_IMAGE="savant-deepstream-l4t:0.2.0-6.2-base"
+    DOCKER_IMAGE="ghcr.io/insight-platform/savant-deepstream-l4t:latest"
 else
-    DOCKER_IMAGE="savant-deepstream:0.2.0-6.2-base"
+    DOCKER_IMAGE="ghcr.io/insight-platform/savant-deepstream:latest"
 fi
 
 GPU_BENCHMARK_NAMES=(
