@@ -48,6 +48,12 @@ parameters:
   # Size of the egress queue in bytes (0 - no limit, default 10485760).
   egress_queue_byte_size: ${oc.decode:${oc.env:EGRESS_QUEUE_BYTE_SIZE, null}}
 
+  # Buffer pool size configuration in DeepStream pipeline.
+  # Per stream buffer pool size (nvvideoconvert, output-buffers).
+  stream_buffer_pool_size: ${oc.decode:${oc.env:STREAM_BUFFER_POOL_SIZE, null}}
+  # Muxer buffer pool size (nvstreammux, buffer-pool-size).
+  muxer_buffer_pool_size: ${oc.decode:${oc.env:MUXER_BUFFER_POOL_SIZE, null}}
+
   # TODO: create class for output_frame
   # parameters of a frame to include in module output
   # leave empty to include only metadata (no frames)

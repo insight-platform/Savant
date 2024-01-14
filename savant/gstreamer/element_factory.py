@@ -106,11 +106,26 @@ class GstElementFactory:
         :param element: Element to create.
         :return: Created Gst.Element
         """
+
+        caps_filter = None
+        if 'caps' in element.properties:
+            caps_filter = GstElementFactory.create_caps_filter(
+                PipelineElement(
+                    'capsfilter',
+                    properties={'caps': element.properties['caps']},
+                )
+            )
+            del element.properties['caps']
+
         src_element = GstElementFactory.create_element(element)
 
         src_decodebin = Gst.Bin.new(element.name)
 
         Gst.Bin.add(src_decodebin, src_element)
+
+        if caps_filter:
+            Gst.Bin.add(src_decodebin, caps_filter)
+            src_element.link(caps_filter)
 
         decodebin = GstElementFactory.create_element(PipelineElement('decodebin'))
 
@@ -132,6 +147,9 @@ class GstElementFactory:
 
         Gst.Bin.add(src_decodebin, decodebin)
 
-        src_element.link(decodebin)
+        if caps_filter:
+            caps_filter.link(decodebin)
+        else:
+            src_element.link(decodebin)
 
         return src_decodebin
