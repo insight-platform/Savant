@@ -876,7 +876,6 @@ class NvDsPipeline(GstPipeline):
             # Allowed range for batch-size: 1 - 1024
             'batch-size': self._batch_size,
             # Allowed range for buffer-pool-size: 4 - 1024
-            'buffer-pool-size': max(4, self._batch_size),
             'batched-push-timeout': self._batched_push_timeout,
             'live-source': live_source,  # True for RTSP or USB camera
             # TODO: remove when the bug with odd will be fixed
@@ -886,7 +885,9 @@ class NvDsPipeline(GstPipeline):
         }
 
         if self._muxer_buffer_pool_size is not None:
-            frame_processing_params['buffer-pool-size'] = self._muxer_buffer_pool_size
+            frame_processing_params['buffer-pool-size'] = max(
+                4, self._muxer_buffer_pool_size
+            )
 
         if not is_aarch64():
             frame_processing_params['nvbuf-memory-type'] = int(
