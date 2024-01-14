@@ -89,6 +89,9 @@ class NvDsPipeline(GstPipeline):
         self._frame_params: FrameParameters = kwargs['frame']
 
         self._batch_size = kwargs['batch_size']
+        self._stream_buffer_pool_size = kwargs.get('stream_buffer_pool_size')
+        self._muxer_buffer_pool_size = kwargs.get('muxer_buffer_pool_size')
+
         # Timeout in microseconds
         self._batched_push_timeout = kwargs.get('batched_push_timeout', 2000)
 
@@ -515,6 +518,8 @@ class NvDsPipeline(GstPipeline):
         add_pad_probe_to_move_frame(new_pad, self._video_pipeline, 'source-convert')
 
         nv_video_converter_props = {}
+        if self._stream_buffer_pool_size is not None:
+            nv_video_converter_props['output-buffers'] = self._stream_buffer_pool_size
         if is_aarch64() and new_pad_caps.get_structure(0).get_value('format') == 'RGB':
             #   https://forums.developer.nvidia.com/t/buffer-transform-failed-for-nvvideoconvert-for-num-input-channels-num-output-channels-on-jetson/237578
             #   https://forums.developer.nvidia.com/t/nvvideoconvert-buffer-transform-failed-on-jetson/261370
@@ -865,11 +870,11 @@ class NvDsPipeline(GstPipeline):
         :param live_source: Whether source is live or not.
         """
 
-        frame_processing_parameters = {
+        frame_processing_params = {
             'width': self._frame_params.total_width,
             'height': self._frame_params.total_height,
-            'batch-size': self._batch_size,
             # Allowed range for batch-size: 1 - 1024
+            'batch-size': self._batch_size,
             # Allowed range for buffer-pool-size: 4 - 1024
             'buffer-pool-size': max(4, self._batch_size),
             'batched-push-timeout': self._batched_push_timeout,
@@ -879,8 +884,12 @@ class NvDsPipeline(GstPipeline):
             'interpolation-method': 6,
             'drop-pipeline-eos': self._suppress_eos,
         }
+
+        if self._muxer_buffer_pool_size is not None:
+            frame_processing_params['buffer-pool-size'] = self._muxer_buffer_pool_size
+
         if not is_aarch64():
-            frame_processing_parameters['nvbuf-memory-type'] = int(
+            frame_processing_params['nvbuf-memory-type'] = int(
                 pyds.NVBUF_MEM_CUDA_UNIFIED
             )
 
@@ -888,12 +897,12 @@ class NvDsPipeline(GstPipeline):
             PipelineElement(
                 element='nvstreammux',
                 name='muxer',
-                properties=frame_processing_parameters,
+                properties=frame_processing_params,
             ),
             link=False,
         )
         self._logger.info(
-            'Pipeline frame processing parameters: %s.', frame_processing_parameters
+            'Pipeline frame processing parameters: %s.', frame_processing_params
         )
         # input processor (post-muxer)
         muxer_src_pad: Gst.Pad = self._muxer.get_static_pad('src')

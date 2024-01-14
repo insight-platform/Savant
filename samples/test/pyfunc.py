@@ -1,8 +1,8 @@
 """
 gst-launch-1.0 videotestsrc num-buffers=100 ! nvvideoconvert ! pyfunc module=samples.test.pyfunc class=PyFunc ! queue leaky=upstream max-size-buffers=2 max-size-bytes=0 max-size-time=0 ! pyfunc module=samples.test.pyfunc class=PyFunc ! fpsdisplaysink video-sink=fakesink sync=0 -v
 """
-import time
 import random
+import time
 
 from savant.base.pyfunc import BasePyFuncPlugin
 from savant.gstreamer import Gst  # noqa: F401

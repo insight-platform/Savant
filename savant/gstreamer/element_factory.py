@@ -54,15 +54,15 @@ class GstElementFactory:
         src_pad: Gst.Pad = gst_element.get_static_pad('src')
 
         def probe_callback(
-                pad: Gst.Pad,
-                info: Gst.PadProbeInfo,
-                *data: Any,
+            pad: Gst.Pad,
+            info: Gst.PadProbeInfo,
+            *data: Any,
         ):
             """Buffer probe callback wrapper to handle exceptions."""
             print(
                 'queue current level'
-                f' buffers={pad.parent.get_property("current-level-buffers")}' 
-                f' bytes={pad.parent.get_property("current-level-bytes")}' 
+                f' buffers={pad.parent.get_property("current-level-buffers")}'
+                f' bytes={pad.parent.get_property("current-level-bytes")}'
                 f' time={pad.parent.get_property("current-level-time")}'
             )
             return Gst.PadProbeReturn.OK
