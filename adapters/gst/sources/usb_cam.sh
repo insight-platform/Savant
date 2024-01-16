@@ -36,8 +36,8 @@ gst-launch-1.0 --eos-on-shutdown \
     autovideoconvert ! \
     'video/x-raw,format=RGBA' ! \
     fps_meter "${FPS_PERIOD}" output="${FPS_OUTPUT}" ! \
-    savant_rs_serializer source-id="${SOURCE_ID}" ! \
-    zeromq_sink socket="${ZMQ_ENDPOINT}" socket-type="${ZMQ_SOCKET_TYPE}" bind="${ZMQ_SOCKET_BIND}" sync="${SYNC_OUTPUT}" \
+    zeromq_sink source-id="${SOURCE_ID}" socket="${ZMQ_ENDPOINT}" socket-type="${ZMQ_SOCKET_TYPE}" \
+    bind="${ZMQ_SOCKET_BIND}" sync="${SYNC_OUTPUT}" \
     &
 
 child_pid="$!"

@@ -43,9 +43,8 @@ PIPELINE=(
     queue-len="${BUFFER_LEN}" loglevel="${FFMPEG_LOGLEVEL}" !
     savant_parse_bin !
     fps_meter "${FPS_PERIOD}" output="${FPS_OUTPUT}" !
-    savant_rs_serializer source-id="${SOURCE_ID}" !
-    zeromq_sink socket="${ZMQ_ENDPOINT}" socket-type="${ZMQ_SOCKET_TYPE}" bind="${ZMQ_SOCKET_BIND}"
-    sync="${SYNC_OUTPUT}" ts-offset="${SYNC_DELAY}"
+    zeromq_sink source-id="${SOURCE_ID}" socket="${ZMQ_ENDPOINT}" socket-type="${ZMQ_SOCKET_TYPE}"
+    bind="${ZMQ_SOCKET_BIND}" sync="${SYNC_OUTPUT}" ts-offset="${SYNC_DELAY}"
 )
 
 gst-launch-1.0 --eos-on-shutdown "${PIPELINE[@]}" &

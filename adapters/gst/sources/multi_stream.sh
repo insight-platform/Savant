@@ -71,8 +71,8 @@ fi
 PIPELINE+=(
     fps_meter "${FPS_PERIOD}" output="${FPS_OUTPUT}" !
     adjust_timestamps !
-    savant_rs_serializer "${SAVANT_RS_SERIALIZER_OPTS[@]}" !
-    zeromq_sink socket="${ZMQ_ENDPOINT}" socket-type="${ZMQ_SOCKET_TYPE}" bind="${ZMQ_SOCKET_BIND}" sync="${SYNC_OUTPUT}" "${SENDER_RECEIVE_TIMEOUT}"
+    zeromq_sink "${SAVANT_RS_SERIALIZER_OPTS[@]}" socket="${ZMQ_ENDPOINT}" socket-type="${ZMQ_SOCKET_TYPE}"
+    bind="${ZMQ_SOCKET_BIND}" sync="${SYNC_OUTPUT}" "${SENDER_RECEIVE_TIMEOUT}"
 )
 
 handler() {
