@@ -131,6 +131,7 @@ class NvDsPipeline(GstPipeline):
                 {
                     'max-parallel-streams': self._max_parallel_streams,
                     'pipeline-source-stage-name': 'source',
+                    'pipeline-demux-stage-name': 'source-demuxer',
                     'pipeline-decoder-stage-name': 'decode',
                 }
             )

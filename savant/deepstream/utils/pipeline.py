@@ -113,6 +113,7 @@ def get_pipeline_element_stages(
 def build_pipeline_stages(element_stages: List[Union[str, List[str]]]):
     pipeline_stages = [
         ('source', VideoPipelineStagePayloadType.Frame),
+        ('source-demuxer', VideoPipelineStagePayloadType.Frame),
         ('decode', VideoPipelineStagePayloadType.Frame),
         ('source-convert', VideoPipelineStagePayloadType.Frame),
         ('source-capsfilter', VideoPipelineStagePayloadType.Frame),
