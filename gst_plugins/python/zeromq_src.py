@@ -12,7 +12,7 @@ from savant_rs.primitives import (
     VideoFrameTransformation,
 )
 from savant_rs.utils import PropagatedContext
-from savant_rs.utils.serialization import Message, load_message_from_bytes
+from savant_rs.utils.serialization import Message
 
 from gst_plugins.python.pyfunc_common import handle_non_fatal_error, init_pyfunc
 from gst_plugins.python.zeromq_properties import ZEROMQ_PROPERTIES, socket_type_property
@@ -33,7 +33,6 @@ from savant.utils.zeromq import (
     ReceiverSocketTypes,
     ZeroMQSource,
     ZMQException,
-    build_topic_prefix,
 )
 
 HandlerResult = Optional[Tuple[Gst.FlowReturn, Optional[Gst.Buffer]]]
@@ -291,7 +290,6 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
             required_property('socket', self.socket)
             required_property('pipeline', self.video_pipeline)
             required_property('pipeline-stage-name', self.pipeline_stage_name)
-            topic_prefix = build_topic_prefix(self.source_id, self.source_id_prefix)
 
             if self.ingress_module and self.ingress_class_name:
                 self.ingress_pyfunc = init_pyfunc(
@@ -313,7 +311,8 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
                 bind=self.bind,
                 receive_timeout=self.receive_timeout,
                 receive_hwm=self.receive_hwm,
-                topic_prefix=topic_prefix,
+                source_id=self.source_id,
+                source_id_prefix=self.source_id_prefix,
             )
         except Exception as exc:
             error = f'Failed to start ZeroMQ source with socket {self.socket}: {exc}.'
@@ -348,7 +347,7 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
 
         self.logger.debug('Creating next buffer')
 
-        if not self.source.is_alive:
+        if not self.source.is_started:
             if not self.start_zero_mq_source():
                 return Gst.FlowReturn.ERROR
 
@@ -366,21 +365,22 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
         zmq_message = self.source.next_message()
         if zmq_message is None:
             return
-        self.logger.debug('Received message of sizes %s', [len(x) for x in zmq_message])
-        message = load_message_from_bytes(zmq_message[0])
-        if len(zmq_message) < 2:
-            external_content = None
-        elif len(zmq_message) == 2:
-            external_content = zmq_message[1]
+        self.logger.debug('Received message from topic %s.', zmq_message.topic)
+        if zmq_message.data_len() == 0:
+            external_content = b''
+        elif zmq_message.data_len() == 1:
+            external_content = zmq_message.data(0)
         else:
-            external_content = b''.join(zmq_message[1:])
+            external_content = b''.join(
+                zmq_message.data(i) for i in range(zmq_message.data_len())
+            )
 
-        return self.handle_message(message, external_content)
+        return self.handle_message(zmq_message.message, external_content)
 
     def handle_message(
         self,
         message: Message,
-        external_content: Optional[bytes],
+        external_content: bytes,
     ) -> HandlerResult:
         message.validate_seq_id()
         if message.is_video_frame():
@@ -399,7 +399,7 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
         self,
         video_frame: VideoFrame,
         span_context: PropagatedContext,
-        external_content: Optional[bytes],
+        external_content: bytes,
     ) -> HandlerResult:
         """Handle VideoFrame message."""
 
@@ -472,6 +472,14 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
             )
             return Gst.FlowReturn.ERROR, None
 
+        if frame_buf is None:
+            self.logger.debug(
+                'Frame %s from source %s has no content, skipping it.',
+                frame_pts,
+                video_frame.source_id,
+            )
+            return
+
         frame_idx = self.add_frame_to_pipeline(video_frame, span_context)
         if self.pass_through_mode and not video_frame.content.is_internal():
             self.logger.debug(
@@ -495,8 +503,11 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
     def build_frame_buffer(
         self,
         video_frame: VideoFrame,
-        external_content: Optional[bytes],
-    ) -> Gst.Buffer:
+        external_content: bytes,
+    ) -> Optional[Gst.Buffer]:
+        if video_frame.content.is_none():
+            return None
+
         if video_frame.content.is_internal():
             return Gst.Buffer.new_wrapped(video_frame.content.get_data_as_bytes())
 
@@ -505,10 +516,7 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
             raise ValueError(f'Unsupported frame type "{frame_type.value}".')
 
         if not external_content:
-            raise ValueError(
-                f'Frame with PTS {video_frame.pts} from source '
-                f'{video_frame.source_id} has no external content.'
-            )
+            return None
 
         return Gst.Buffer.new_wrapped(external_content)
 

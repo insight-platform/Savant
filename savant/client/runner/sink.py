@@ -1,10 +1,11 @@
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import Optional
 
 from savant_rs.primitives import EndOfStream, VideoFrame, VideoFrameContent
-from savant_rs.utils.serialization import Message, load_message_from_bytes
+from savant_rs.utils.serialization import Message
+from savant_rs.zmq import ReaderResultMessage
 
 from savant.client.log_provider import LogProvider
 from savant.client.runner import LogResult
@@ -65,8 +66,8 @@ class BaseSinkRunner(ABC):
     def _receive_next_message(self) -> Optional[SinkResult]:
         pass
 
-    def _handle_message(self, message_parts: List[bytes]):
-        message: Message = load_message_from_bytes(message_parts[0])
+    def _handle_message(self, zmq_message: ReaderResultMessage):
+        message: Message = zmq_message.message
         message.validate_seq_id()
         trace_id: Optional[str] = message.span_context.as_dict().get('uber-trace-id')
         if trace_id is not None:
@@ -78,9 +79,10 @@ class BaseSinkRunner(ABC):
                 video_frame.source_id,
                 video_frame.pts,
             )
-            if len(message_parts) > 1:
-                content = message_parts[1]
-            else:
+            content = b''.join(
+                zmq_message.data(i) for i in range(zmq_message.data_len())
+            )
+            if not content:
                 content = None
                 if video_frame.content.is_internal():
                     content = video_frame.content.get_data_as_bytes()
@@ -143,9 +145,9 @@ class SinkRunner(BaseSinkRunner):
         return self
 
     def _receive_next_message(self) -> Optional[SinkResult]:
-        message_parts = self._source.next_message()
-        if message_parts is not None:
-            return self._handle_message(message_parts)
+        message = self._source.next_message()
+        if message is not None:
+            return self._handle_message(message)
 
 
 class AsyncSinkRunner(BaseSinkRunner):
@@ -186,6 +188,6 @@ class AsyncSinkRunner(BaseSinkRunner):
         return self
 
     async def _receive_next_message(self) -> Optional[SinkResult]:
-        message_parts = await self._source.next_message()
-        if message_parts is not None:
-            return self._handle_message(message_parts)
+        message = await self._source.next_message()
+        if message is not None:
+            return self._handle_message(message)

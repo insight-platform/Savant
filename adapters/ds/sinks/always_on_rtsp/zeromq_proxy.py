@@ -1,6 +1,6 @@
 from typing import Optional
 
-import zmq
+from savant_rs.zmq import BlockingWriter, WriterConfigBuilder
 
 from savant.utils.zeromq import Defaults, SenderSocketTypes, ZeroMQSource
 
@@ -22,19 +22,19 @@ class ZeroMqProxy:
             socket_type=input_socket_type,
             bind=input_bind,
         )
-        self.output_socket = output_socket
-        self.sender: Optional[zmq.Socket] = None
-        self.output_zmq_context: Optional[zmq.Context] = None
+        writer_config_builder = WriterConfigBuilder(output_socket)
+        writer_config_builder.with_socket_type(SenderSocketTypes.PUB.value)
+        writer_config_builder.with_bind(True)
+        writer_config_builder.with_send_hwm(Defaults.SEND_HWM)
+        self.writer_config = writer_config_builder.build()
+        self.sender: Optional[BlockingWriter] = None
 
     def start(self):
-        self.output_zmq_context = zmq.Context()
-        self.sender = self.output_zmq_context.socket(SenderSocketTypes.PUB.value)
-        self.sender.setsockopt(zmq.SNDHWM, Defaults.SEND_HWM)
-        self.sender.bind(self.output_socket)
+        self.sender = BlockingWriter(self.writer_config)
         self.source.start()
 
     def run(self):
         while True:
-            message = self.source.next_message_without_routing_id()
+            message = self.source.next_message()
             if message is not None:
-                self.sender.send_multipart(message)
+                self.sender.send_message(message.topic, message.message)

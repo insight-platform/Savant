@@ -3,9 +3,8 @@ import inspect
 import json
 from fractions import Fraction
 from pathlib import Path
-from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import Any, Dict, List, NamedTuple, Optional
 
-import zmq
 from savant_rs.primitives import (
     Attribute,
     AttributeValue,
@@ -15,7 +14,13 @@ from savant_rs.primitives import (
     VideoFrameContent,
     VideoFrameTransformation,
 )
-from savant_rs.utils.serialization import Message, save_message_to_bytes
+from savant_rs.utils.serialization import Message
+from savant_rs.zmq import (
+    BlockingWriter,
+    WriterConfigBuilder,
+    WriterResultAck,
+    WriterResultSuccess,
+)
 from splitstream import splitfile
 
 from gst_plugins.python.zeromq_properties import ZEROMQ_PROPERTIES, socket_type_property
@@ -27,16 +32,10 @@ from savant.gstreamer.codecs import CODEC_BY_CAPS_NAME, Codec
 from savant.gstreamer.utils import (
     gst_post_library_settings_error,
     gst_post_stream_failed_error,
+    required_property,
 )
 from savant.utils.logging import LoggerMixin
-from savant.utils.zeromq import (
-    END_OF_STREAM_MESSAGE,
-    Defaults,
-    SenderSocketTypes,
-    ZMQException,
-    parse_zmq_socket_uri,
-    receive_response,
-)
+from savant.utils.zeromq import Defaults, SenderSocketTypes, get_zmq_socket_uri_options
 
 EMBEDDED_FRAME_TYPE = 'embedded'
 DEFAULT_SOURCE_ID_PATTERN = 'source-%d'
@@ -98,22 +97,13 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
             Defaults.SENDER_RECEIVE_TIMEOUT,
             GObject.ParamFlags.READWRITE,
         ),
-        'req-receive-retries': (
+        'receive-retries': (
             int,
-            'Retries to receive confirmation message from REQ socket',
-            'Retries to receive confirmation message from REQ socket',
+            'Retries to receive confirmation message',
+            'Retries to receive confirmation message',
             1,
             GObject.G_MAXINT,
-            Defaults.REQ_RECEIVE_RETRIES,
-            GObject.ParamFlags.READWRITE,
-        ),
-        'eos-confirmation-retries': (
-            int,
-            'Retries to receive EOS confirmation message',
-            'Retries to receive EOS confirmation message',
-            1,
-            GObject.G_MAXINT,
-            Defaults.EOS_CONFIRMATION_RETRIES,
+            Defaults.RECEIVE_RETRIES,
             GObject.ParamFlags.READWRITE,
         ),
         'source-id': (
@@ -213,7 +203,7 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
 
         # properties
         self.socket: str = None
-        self.socket_type: Union[str, SenderSocketTypes] = SenderSocketTypes.DEALER
+        self.socket_type: str = SenderSocketTypes.DEALER.name
         self.bind: bool = True
         self.source_id: Optional[str] = None
         self.eos_on_file_end: bool = True
@@ -223,6 +213,7 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
         self.source_id_pattern: str = DEFAULT_SOURCE_ID_PATTERN
         self.number_of_streams: int = 1
         self.shutdown_auth: Optional[str] = None
+        self.send_hwm = Defaults.SEND_HWM
 
         # will be set after caps negotiation
         self.frame_params: Optional[FrameParams] = None
@@ -233,18 +224,14 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
         self.new_loop: bool = False
         self.default_framerate: str = DEFAULT_FRAMERATE
 
-        self.source_ids_and_topics: List[Tuple[str, bytes]] = []
+        self.source_ids: List[str] = []
         self.stream_in_progress = False
         self.read_metadata: bool = False
         self.json_metadata = None
         self.frame_num = 0
-        self.zmq_context: zmq.Context = None
-        self.sender: zmq.Socket = None
-        self.wait_response = False
-        self.send_hwm = Defaults.SEND_HWM
+        self.writer: BlockingWriter = None
         self.receive_timeout = Defaults.SENDER_RECEIVE_TIMEOUT
-        self.req_receive_retries = Defaults.REQ_RECEIVE_RETRIES
-        self.eos_confirmation_retries = Defaults.EOS_CONFIRMATION_RETRIES
+        self.receive_retries = Defaults.RECEIVE_RETRIES
         self.set_sync(False)
 
     def do_get_property(self, prop):
@@ -253,24 +240,20 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
         :param prop: structure that encapsulates
             the metadata required to specify parameters
         """
+
         if prop.name == 'socket':
             return self.socket
         if prop.name == 'socket-type':
-            return (
-                self.socket_type.name
-                if isinstance(self.socket_type, SenderSocketTypes)
-                else self.socket_type
-            )
+            return self.socket_type
         if prop.name == 'bind':
             return self.bind
         if prop.name == 'send-hwm':
             return self.send_hwm
         if prop.name == 'receive-timeout':
             return self.receive_timeout
-        if prop.name == 'req-receive-retries':
-            return self.req_receive_retries
-        if prop.name == 'eos-confirmation-retries':
-            return self.eos_confirmation_retries
+        if prop.name == 'receive-retries':
+            return self.receive_retries
+
         if prop.name == 'source-id':
             return self.source_id
         if prop.name == 'location':
@@ -293,6 +276,7 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
             return self.number_of_streams
         if prop.name == 'shutdown-auth':
             return self.shutdown_auth
+
         raise AttributeError(f'Unknown property {prop.name}.')
 
     def do_set_property(self, prop, value):
@@ -302,6 +286,7 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
             the metadata required to specify parameters
         :param value: new value for param, type dependents on param
         """
+
         self.logger.debug('Setting property "%s" to "%s".', prop.name, value)
         if prop.name == 'socket':
             self.socket = value
@@ -313,10 +298,9 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
             self.send_hwm = value
         elif prop.name == 'receive-timeout':
             self.receive_timeout = value
-        elif prop.name == 'req-receive-retries':
-            self.req_receive_retries = value
-        elif prop.name == 'eos-confirmation-retries':
-            self.eos_confirmation_retries = value
+        elif prop.name == 'receive-retries':
+            self.receive_retries = value
+
         elif prop.name == 'source-id':
             self.source_id = value
         elif prop.name == 'location':
@@ -346,62 +330,62 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
         else:
             raise AttributeError(f'Unknown property {prop.name}.')
 
-    def do_start(self):
-        """Start source."""
+    def get_source_ids(self) -> Optional[List[str]]:
         if self.enable_multistream:
             if self.source_id_pattern is None:
                 self.logger.error(
                     'Source ID pattern is required when enable-multistream=true.'
                 )
-                return False
+                return None
             try:
                 source_ids = [
                     self.source_id_pattern % i for i in range(self.number_of_streams)
                 ]
             except TypeError as e:
                 self.logger.error('Invalid source ID pattern: %s', e)
-                return False
+                return None
             if len(source_ids) != len(set(source_ids)):
                 self.logger.error(
                     'Duplicate source IDs. Check source-id-pattern property.'
                 )
-                return False
+                return None
 
-        else:
-            if self.source_id is None:
-                self.logger.error(
-                    'Source ID is required when enable-multistream=false.'
-                )
-                return False
-            source_ids = [self.source_id]
+            return source_ids
 
-        self.source_ids_and_topics = [
-            (source_id, f'{source_id}/'.encode()) for source_id in source_ids
-        ]
+        if self.source_id is None:
+            self.logger.error('Source ID is required when enable-multistream=false.')
+            return None
+        return [self.source_id]
+
+    def do_start(self):
+        """Start sink."""
+
+        self.source_ids = self.get_source_ids()
+        if self.source_ids is None:
+            return False
 
         try:
-            self.socket_type, self.bind, self.socket = parse_zmq_socket_uri(
-                uri=self.socket,
-                socket_type_name=self.socket_type,
-                socket_type_enum=SenderSocketTypes,
-                bind=self.bind,
-            )
-        except ZMQException:
-            self.logger.exception('Element start error.')
+            required_property('socket', self.socket)
+            config_builder = WriterConfigBuilder(self.socket)
+            if not get_zmq_socket_uri_options(self.socket):
+                config_builder.with_socket_type(
+                    SenderSocketTypes[self.socket_type].value
+                )
+                config_builder.with_bind(self.bind)
+            config_builder.with_send_hwm(self.send_hwm)
+            config_builder.with_receive_timeout(self.receive_timeout)
+            config_builder.with_receive_retries(self.receive_retries)
+            self.writer = BlockingWriter(config_builder.build())
+            self.writer.start()
+
+        except Exception as exc:
+            error = f'Failed to start ZeroMQ sink with socket {self.socket}: {exc}.'
+            self.logger.exception(error, exc_info=True)
             frame = inspect.currentframe()
-            gst_post_library_settings_error(self, frame, __file__)
+            gst_post_library_settings_error(self, frame, __file__, error)
             # prevents pipeline from starting
             return False
 
-        self.wait_response = self.socket_type == SenderSocketTypes.REQ
-        self.zmq_context = zmq.Context()
-        self.sender = self.zmq_context.socket(self.socket_type.value)
-        self.sender.setsockopt(zmq.SNDHWM, self.send_hwm)
-        self.sender.setsockopt(zmq.RCVTIMEO, self.receive_timeout)
-        if self.bind:
-            self.sender.bind(self.socket)
-        else:
-            self.sender.connect(self.socket)
         return True
 
     def do_set_caps(self, caps: Gst.Caps):
@@ -459,8 +443,8 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
         self.new_loop = False
 
         content = buffer.extract_dup(0, buffer.get_size())
-        frame = self.build_video_frame(
-            source_id=self.source_ids_and_topics[0][0],
+        base_frame = self.build_video_frame(
+            source_id=self.source_ids[0][0],
             pts=buffer.pts,
             dts=buffer.dts if buffer.dts != Gst.CLOCK_TIME_NONE else None,
             duration=(
@@ -469,10 +453,11 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
             keyframe=not buffer.has_flags(Gst.BufferFlags.DELTA_UNIT),
         )
 
-        for i, (source_id, zmq_topic) in enumerate(self.source_ids_and_topics):
+        for source_id in self.source_ids:
+            frame = base_frame.copy()
             frame.source_id = source_id
             if not self.send_message_to_zmq(
-                zmq_topic, Message.video_frame(frame), content
+                source_id, Message.video_frame(frame), content
             ):
                 return Gst.FlowReturn.ERROR
 
@@ -484,39 +469,33 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
         if self.shutdown_auth is not None:
             self.logger.info('Sending serialized Shutdown message')
             self.send_message_to_zmq(
-                self.source_ids_and_topics[0][1],
+                self.source_ids[0],
                 Message.shutdown(Shutdown(self.shutdown_auth)),
             )
 
-        if self.socket_type == SenderSocketTypes.DEALER:
-            self.logger.info('Sending End-of-Stream message to socket %s', self.socket)
-            self.sender.send_multipart([END_OF_STREAM_MESSAGE])
-            self.logger.info(
-                'Waiting for End-of-Stream message confirmation from socket %s',
-                self.socket,
+        self.logger.info('Sending End-of-Stream message to socket %s', self.socket)
+        try:
+            send_result = self.writer.send_eos(self.source_ids[0])
+            if isinstance(send_result, (WriterResultAck, WriterResultSuccess)):
+                error = None
+            else:
+                error = f'Failed to send message to ZeroMQ: {send_result}'
+        except Exception as exc:
+            error = f'Failed to send message to ZeroMQ: {exc}'
+        if error:
+            self.logger.error(error)
+            frame = inspect.currentframe()
+            gst_post_stream_failed_error(
+                gst_element=self,
+                frame=frame,
+                file_path=__file__,
+                text=error,
             )
-            try:
-                self.sender.recv()
-            except zmq.Again:
-                error = (
-                    f'Timeout exceeded when receiving End-of-Stream message '
-                    f'confirmation from socket {self.socket}'
-                )
-                self.logger.error(error)
-                frame = inspect.currentframe()
-                gst_post_stream_failed_error(
-                    gst_element=self,
-                    frame=frame,
-                    file_path=__file__,
-                    text=error,
-                )
-                return False
+            return False
 
-        self.logger.info('Closing ZeroMQ socket')
-        self.sender.close()
-        self.logger.info('Terminating ZeroMQ context.')
-        self.zmq_context.term()
-        self.logger.info('ZeroMQ context terminated')
+        self.logger.info('Terminating ZeroMQ writer.')
+        self.writer.shutdown()
+        self.logger.info('ZeroMQ writer terminated')
         return True
 
     def do_event(self, event: Gst.Event):
@@ -602,7 +581,7 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
 
     def send_eos(self):
         self.logger.info('Sending serialized EOS message')
-        for source_id, zmq_topic in self.source_ids_and_topics:
+        for source_id, zmq_topic in self.source_ids:
             self.send_message_to_zmq(
                 zmq_topic,
                 Message.end_of_stream(EndOfStream(source_id)),
@@ -611,37 +590,27 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
 
     def send_message_to_zmq(
         self,
-        topic: bytes,
+        source_id: str,
         message: Message,
-        content: Optional[bytes] = None,
+        content: bytes = b'',
     ) -> bool:
-        zmq_message = [topic, save_message_to_bytes(message)]
-        if content is not None:
-            zmq_message.append(content)
-        self.sender.send_multipart(zmq_message)
-        if self.wait_response:
-            try:
-                resp = receive_response(self.sender, self.req_receive_retries)
-            except zmq.Again:
-                error = (
-                    f"The REP socket hasn't responded in a configured timeframe "
-                    f'{self.receive_timeout * self.req_receive_retries} ms.'
-                )
-                self.logger.error(error)
-                frame = inspect.currentframe()
-                gst_post_stream_failed_error(
-                    gst_element=self,
-                    frame=frame,
-                    file_path=__file__,
-                    text=error,
-                )
-                return False
+        try:
+            send_result = self.writer.send_message(source_id, message, content)
+            if isinstance(send_result, (WriterResultAck, WriterResultSuccess)):
+                return True
+            error = f'Failed to send message to ZeroMQ: {send_result}'
+        except Exception as exc:
+            error = f'Failed to send message to ZeroMQ: {exc}'
 
-            self.logger.debug(
-                'Received %s bytes from socket %s.', len(resp), self.socket
-            )
-
-        return True
+        self.logger.error(error)
+        frame = inspect.currentframe()
+        gst_post_stream_failed_error(
+            gst_element=self,
+            frame=frame,
+            file_path=__file__,
+            text=error,
+        )
+        return False
 
 
 # register plugin

@@ -16,7 +16,7 @@ from adapters.python.sinks.metadata_json import (
 )
 from savant.api.enums import ExternalFrameType
 from savant.utils.logging import get_logger, init_logging
-from savant.utils.zeromq import ZeroMQSource, build_topic_prefix
+from savant.utils.zeromq import ZeroMQSource
 
 LOGGER_NAME = 'adapters.image_files_sink'
 DEFAULT_CHUNK_SIZE = 10000
@@ -146,10 +146,8 @@ def main():
         'SKIP_FRAMES_WITHOUT_OBJECTS', False, strtobool
     )
     chunk_size = opt_config('CHUNK_SIZE', DEFAULT_CHUNK_SIZE, int)
-    topic_prefix = build_topic_prefix(
-        source_id=opt_config('SOURCE_ID'),
-        source_id_prefix=opt_config('SOURCE_ID_PREFIX'),
-    )
+    source_id = opt_config('SOURCE_ID')
+    source_id_prefix = opt_config('SOURCE_ID_PREFIX')
 
     # possible exceptions will cause app to crash and log error by default
     # no need to handle exceptions here
@@ -157,7 +155,8 @@ def main():
         zmq_endpoint,
         zmq_socket_type,
         zmq_bind,
-        topic_prefix=topic_prefix,
+        source_id=source_id,
+        source_id_prefix=source_id_prefix,
     )
 
     image_sink = ImageFilesSink(dir_location, chunk_size, skip_frames_without_objects)
@@ -165,7 +164,7 @@ def main():
 
     try:
         source.start()
-        for message_bin, *data in source:
+        for zmq_message in source:
             message = load_message_from_bytes(message_bin)
             message.validate_seq_id()
             image_sink.write(message, data)

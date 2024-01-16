@@ -2,9 +2,8 @@ import json
 import os
 import signal
 import time
-from typing import Dict, List, Optional
+from typing import Dict, Optional, Tuple
 
-import zmq
 from rocksq.blocking import PersistentQueueWithCapacity
 from savant_rs.pipeline2 import (
     VideoPipeline,
@@ -12,19 +11,19 @@ from savant_rs.pipeline2 import (
     VideoPipelineStagePayloadType,
 )
 from savant_rs.primitives import VideoFrame, VideoFrameContent
-from savant_rs.utils.serialization import Message, load_message_from_bytes
+from savant_rs.utils.serialization import (
+    Message,
+    load_message_from_bytes,
+    save_message_to_bytes,
+)
+from savant_rs.zmq import BlockingWriter, ReaderResultMessage, WriterConfigBuilder
 
 from adapters.python.shared.config import opt_config
 from adapters.shared.thread import BaseThreadWorker
 from savant.metrics import Counter, Gauge
 from savant.metrics.prometheus import BaseMetricsCollector, PrometheusMetricsExporter
 from savant.utils.logging import get_logger, init_logging
-from savant.utils.zeromq import (
-    Defaults,
-    SenderSocketTypes,
-    ZeroMQSource,
-    parse_zmq_socket_uri,
-)
+from savant.utils.zeromq import ZeroMQSource, get_zmq_socket_uri_options
 
 LOGGER_NAME = 'adapters.buffer'
 # For each message we need 3 slots: source ID, metadata, frame content
@@ -99,33 +98,31 @@ class Ingress(BaseThreadWorker):
         self._zmq_source.start()
         while self.is_running:
             try:
-                message_parts = self._zmq_source.next_message_without_routing_id()
-                if message_parts is not None:
+                zmq_message = self._zmq_source.next_message()
+                if zmq_message is not None:
                     self.logger.debug('Received message from the source ZeroMQ socket')
-                    self.handle_next_message(message_parts)
+                    self.handle_next_message(zmq_message)
             except Exception as e:
                 self.logger.error('Failed to poll message: %s', e)
                 self.is_running = False
                 break
+        self._zmq_source.terminate()
         self.logger.info('Ingress was stopped')
 
-    def handle_next_message(self, message_parts: List[bytes]):
+    def handle_next_message(self, message: ReaderResultMessage):
         """Handle the next message from the source ZeroMQ socket."""
 
         self._received_messages += 1
-        while len(message_parts) < QUEUE_ITEM_SIZE:
-            message_parts.append(b'')
-        message: Message = load_message_from_bytes(message_parts[1])
-        if message.is_video_frame():
-            pushed = self.push_frame(message_parts)
+        if message.message.is_video_frame():
+            pushed = self.push_frame(message)
         else:
-            pushed = self.push_service_message(message_parts)
+            pushed = self.push_service_message(message)
         if pushed:
             self._pushed_messages += 1
         else:
             self._dropped_messages += 1
 
-    def push_frame(self, message_parts: List[bytes]) -> bool:
+    def push_frame(self, message: ReaderResultMessage) -> bool:
         """Push frame to the buffer."""
 
         buffer_size = self._queue.len()
@@ -141,15 +138,15 @@ class Ingress(BaseThreadWorker):
             self.logger.debug('Buffer is full, dropping the frame')
             return False
 
-        self._queue.push(message_parts)
+        self._push_message(message)
         self.logger.debug('Pushed frame to the buffer')
         return True
 
-    def push_service_message(self, message_parts: List[bytes]) -> bool:
+    def push_service_message(self, message: ReaderResultMessage) -> bool:
         """Push service message to the buffer."""
 
         try:
-            self._queue.push(message_parts)
+            self._push_message(message)
         except Exception as e:
             if e.args[0] != 'Failed to push item: Queue is full':
                 raise
@@ -158,6 +155,14 @@ class Ingress(BaseThreadWorker):
 
         self.logger.debug('Pushed message to the buffer')
         return True
+
+    def _push_message(self, message: ReaderResultMessage):
+        message_parts = [
+            bytes(message.topic),
+            save_message_to_bytes(message.message),
+            b''.join(message.data(i) for i in range(message.data_len())),
+        ]
+        self._queue.push(message_parts)
 
     @property
     def received_messages(self) -> int:
@@ -201,39 +206,32 @@ class Egress(BaseThreadWorker):
             content=VideoFrameContent.none(),
         )
 
-        self._socket_type, self._bind, self._socket = parse_zmq_socket_uri(
-            uri=config.zmq_sink_endpoint,
-            socket_type_enum=SenderSocketTypes,
-            socket_type_name=None,
-            bind=None,
-        )
-        assert (
-            self._socket_type == SenderSocketTypes.DEALER
+        socket_options = get_zmq_socket_uri_options(config.zmq_sink_endpoint)
+        assert socket_options is not None, 'Socket type must be specified for URI'
+        assert socket_options.startswith(
+            'dealer+'
         ), 'Only DEALER socket type is supported for Egress'
-        self._zmq_context = zmq.Context()
-        self._sender: zmq.Socket = self._zmq_context.socket(self._socket_type.value)
-        self._sender.setsockopt(zmq.SNDHWM, Defaults.SEND_HWM)
-        self._sender.setsockopt(zmq.RCVTIMEO, Defaults.SENDER_RECEIVE_TIMEOUT)
-        if self._bind:
-            self._sender.bind(self._socket)
-        else:
-            self._sender.connect(self._socket)
+
+        config_builder = WriterConfigBuilder(config.zmq_sink_endpoint)
+        self._writer = BlockingWriter(config_builder.build())
 
     def workload(self):
         self.logger.info('Starting Egress')
+        self._writer.start()
         while self.is_running:
             try:
-                message_parts = self.pop_next_message()
-                if message_parts is not None:
+                message = self.pop_next_message()
+                if message is not None:
                     self.logger.debug('Sending message to the sink ZeroMQ socket')
-                    self._sender.send_multipart(message_parts)
+                    self._writer.send_message(*message)
             except Exception as e:
-                self.logger.error('Failed to poll message: %s', e)
+                self.logger.error('Failed to send message: %s', e)
                 self.is_running = False
                 break
+        self._writer.shutdown()
         self.logger.info('Egress was stopped')
 
-    def pop_next_message(self) -> Optional[List[bytes]]:
+    def pop_next_message(self) -> Optional[Tuple[str, Message, bytes]]:
         """Pop the next message from the buffer.
 
         When the buffer is empty, wait until it is not empty and then pop the message.
@@ -247,14 +245,15 @@ class Egress(BaseThreadWorker):
             time.sleep(self._idle_polling_period)
             return None
 
-        message_parts = self._queue.pop(QUEUE_ITEM_SIZE)
-        if not message_parts[-1]:
-            message_parts.pop()
+        topic, message, data = self._queue.pop(QUEUE_ITEM_SIZE)
+        topic = topic.decode()
+        message = load_message_from_bytes(message)
+
         self._sent_messages += 1
         frame_id = self._pipeline.add_frame('fps-meter', self._video_frame)
         self._pipeline.delete(frame_id)
 
-        return message_parts
+        return topic, message, data
 
     @property
     def sent_messages(self) -> int:
