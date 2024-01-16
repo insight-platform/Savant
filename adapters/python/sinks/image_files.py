@@ -143,6 +143,14 @@ def main():
 
     dir_location = os.environ['DIR_LOCATION']
     zmq_endpoint = os.environ['ZMQ_ENDPOINT']
+
+    if Patterns.SOURCE_ID not in dir_location:
+        if Patterns.SRC_FILENAME in dir_location:
+            raise RuntimeError(f"{Patterns.SOURCE_ID} is required when "
+                               f"{Patterns.SRC_FILENAME} is present.")
+        else:
+            dir_location = os.path.join(dir_location, Patterns.SOURCE_ID)
+
     zmq_socket_type = opt_config('ZMQ_TYPE', 'SUB')
     zmq_bind = opt_config('ZMQ_BIND', False, strtobool)
     skip_frames_without_objects = opt_config(

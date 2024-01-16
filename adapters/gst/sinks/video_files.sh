@@ -10,6 +10,22 @@ required_env() {
 required_env DIR_LOCATION
 required_env ZMQ_ENDPOINT
 
+SOURCE_ID_PTRN="%source_id"
+SRC_FILENAME_PTRN="%src_filename"
+
+if [[ $DIR_LOCATION != *"$SOURCE_ID_PTRN"* ]]; then
+    if [[  $DIR_LOCATION == *"$SRC_FILENAME_PTRN"* ]]; then
+        echo "'$SOURCE_ID_PTRN' is required when '$SRC_FILENAME_PTRN' is present."
+        exit 1
+    else
+        if [[ $DIR_LOCATION == */ ]]; then
+            DIR_LOCATION+="$SOURCE_ID_PTRN"
+        else
+            DIR_LOCATION+="/$SOURCE_ID_PTRN"
+        fi
+    fi
+fi
+
 ZMQ_SOCKET_TYPE="${ZMQ_TYPE:="SUB"}"
 ZMQ_SOCKET_BIND="${ZMQ_BIND:="false"}"
 ZEROMQ_SRC_ARGS=(
