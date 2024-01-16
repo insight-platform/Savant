@@ -66,7 +66,7 @@ def nvds_obj_meta_output_converter(
         namespace=model_name,
         label=label,
         detection_box=bbox,
-        attributes={},
+        attributes=[],
         confidence=confidence,
     )
     if nvds_obj_meta.object_id != UNTRACKED_OBJECT_ID:

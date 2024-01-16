@@ -1,5 +1,6 @@
 from typing import Tuple, Union
 
+from savant_rs.match_query import MatchQuery
 from savant_rs.primitives import (
     Attribute,
     AttributeValue,
@@ -9,7 +10,6 @@ from savant_rs.primitives import (
     VideoObject,
 )
 from savant_rs.primitives.geometry import BBox, RBBox
-from savant_rs.video_object_query import MatchQuery
 
 from savant.api.constants import DEFAULT_TIME_BASE
 from savant.meta.constants import UNTRACKED_OBJECT_ID

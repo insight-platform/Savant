@@ -98,7 +98,7 @@ def build_video_object(obj_id: int, obj: Dict[str, Any]):
     if attributes is not None:
         attributes = build_object_attributes(attributes)
     else:
-        attributes = {}
+        attributes = []
     bbox = build_bbox(obj['bbox'])
     video_object = VideoObject(
         id=obj_id,
@@ -126,8 +126,8 @@ def build_bbox(bbox: Dict[str, Any]):
 
 
 def build_object_attributes(attributes: List[Dict[str, Any]]):
-    return {
-        (attr['element_name'], attr['name']): Attribute(
+    return [
+        Attribute(
             namespace=attr['element_name'],
             name=attr['name'],
             values=[
@@ -135,7 +135,7 @@ def build_object_attributes(attributes: List[Dict[str, Any]]):
             ],
         )
         for attr in attributes
-    }
+    ]
 
 
 def build_attribute_value(value: Any, confidence: Optional[float] = None):

@@ -10,6 +10,7 @@ from pygstsavantframemeta import (
     gst_buffer_get_savant_frame_meta,
     nvds_frame_meta_get_nvds_savant_frame_meta,
 )
+from savant_rs.match_query import MatchQuery
 from savant_rs.pipeline2 import VideoPipeline
 from savant_rs.primitives import (
     VideoFrame,
@@ -24,7 +25,6 @@ from savant_rs.utils.symbol_mapper import (
     get_object_id,
     parse_compound_key,
 )
-from savant_rs.video_object_query import MatchQuery
 
 from savant.api.parser import parse_attribute_value
 from savant.base.input_preproc import ObjectsPreprocessing
