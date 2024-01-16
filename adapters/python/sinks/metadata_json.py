@@ -72,12 +72,7 @@ class MetadataJsonWriter(ChunkWriter):
         self.file.close()
 
     def _open(self):
-        if self.chunk_size > 0:
-            self.location = self.pattern.replace(
-                Patterns.CHUNK_IDX, f'{self.chunk_idx:04}'
-            )
-        else:
-            self.location = self.pattern
+        self.location = self.pattern.replace(Patterns.CHUNK_IDX, f'{self.chunk_idx:04}')
         self.lines = 0
         self.logger.info('Opening file %s', self.location)
         os.makedirs(os.path.dirname(self.location), exist_ok=True)

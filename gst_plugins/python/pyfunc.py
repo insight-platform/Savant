@@ -15,10 +15,6 @@ from gst_plugins.python.pyfunc_common import (
 )
 from savant.base.pyfunc import BasePyFuncPlugin, PyFunc
 from savant.gstreamer import GLib, GObject, Gst, GstBase  # noqa: F401
-from savant.gstreamer.utils import (
-    gst_post_stream_failed_error,
-    gst_post_stream_failed_warning,
-)
 from savant.metrics.base import BaseMetricsExporter
 from savant.utils.logging import LoggerMixin
 
