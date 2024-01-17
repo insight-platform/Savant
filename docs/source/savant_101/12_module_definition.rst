@@ -117,6 +117,8 @@ The ``buffer_queues`` parameter is used to enable Python parallelization and enh
 
 Read about the parameter in :doc:`/recipes/1_python_multithreading`.
 
+.. _deepstream_buffering_configuration:
+
 Nvidia Stream Muxer and Converter Configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
