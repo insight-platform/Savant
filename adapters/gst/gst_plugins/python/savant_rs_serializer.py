@@ -348,7 +348,7 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
                     self.location.parent / f'{self.location.stem}.json'
                 )
                 self.frame_num = 0
-                self.send_end_message()
+                self.send_eos_message()
         self.last_location = self.location
         self.last_frame_params = self.frame_params
         self.new_loop = False
@@ -397,7 +397,8 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
     def do_sink_event(self, event: Gst.Event):
         if event.type == Gst.EventType.EOS:
             self.logger.info('Got End-Of-Stream event')
-            self.send_end_message()
+            self.send_eos_message()
+            self.send_shutdown_message()
 
         elif event.type == Gst.EventType.TAG:
             tag_list: Gst.TagList = event.parse_tag()
@@ -432,7 +433,7 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
                 self.logger.warning('JSON file `%s` not found', location.absolute())
         return json_metadata
 
-    def send_end_message(self):
+    def send_eos_message(self):
         self.logger.info('Sending serialized EOS message')
         for source_id, zmq_topic in self.source_ids_and_topics:
             message = Message.end_of_stream(EndOfStream(source_id))
@@ -440,6 +441,8 @@ class SavantRsSerializer(LoggerMixin, GstBase.BaseTransform):
             out_buf = gst_buffer_from_list([zmq_topic, data])
             self.srcpad.push(out_buf)
         self.stream_in_progress = False
+
+    def send_shutdown_message(self):
         if self.shutdown_auth is not None:
             self.logger.info('Sending serialized Shutdown message')
             message = Message.shutdown(Shutdown(self.shutdown_auth))
