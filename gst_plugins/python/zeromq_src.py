@@ -559,13 +559,9 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
 
         self.logger.info('Received EOS from source %s.', eos.source_id)
         savant_eos_event = build_savant_eos_event(eos.source_id)
-        result = self.srcpad.push_event(savant_eos_event)
-        if result != Gst.FlowReturn.OK:
-            self.logger.error(
-                'Failed to push savant-eos event to the pipeline (%s)',
-                result,
-            )
-            return result, None
+        if not self.srcpad.push_event(savant_eos_event):
+            self.logger.error('Failed to push savant-eos event to the pipeline')
+            return Gst.FlowReturn.ERROR, None
 
     def handle_shutdown(self, shutdown: Shutdown) -> HandlerResult:
         """Handle Shutdown message."""

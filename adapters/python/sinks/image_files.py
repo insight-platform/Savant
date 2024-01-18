@@ -26,7 +26,7 @@ class ImageFilesWriter(ChunkWriter):
     def __init__(self, base_location: str, chunk_size: int):
         self.base_location = base_location
         self.chunk_location = None
-        super().__init__(chunk_size)
+        super().__init__(chunk_size, logger_prefix=LOGGER_NAME)
 
     def _write_video_frame(
         self,
@@ -85,7 +85,7 @@ class ImageFilesSink:
         chunk_size: int,
         skip_frames_without_objects: bool = False,
     ):
-        self.logger = get_logger(f'adapters.{self.__class__.__name__}')
+        self.logger = get_logger(f'{LOGGER_NAME}.{self.__class__.__name__}')
         self.location = location
         self.chunk_size = chunk_size
         self.skip_frames_without_objects = skip_frames_without_objects

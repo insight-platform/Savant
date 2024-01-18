@@ -35,7 +35,7 @@ class Patterns:
 class MetadataJsonWriter(ChunkWriter):
     def __init__(self, pattern: str, chunk_size: int):
         self.pattern = pattern
-        super().__init__(chunk_size)
+        super().__init__(chunk_size, logger_prefix=LOGGER_NAME)
 
     def _write_video_frame(
         self,
@@ -93,7 +93,7 @@ class MetadataJsonSink:
         skip_frames_without_objects: bool = True,
         chunk_size: int = 0,
     ):
-        self.logger = get_logger(f'adapters.{self.__class__.__name__}')
+        self.logger = get_logger(f'{LOGGER_NAME}.{self.__class__.__name__}')
         self.skip_frames_without_objects = skip_frames_without_objects
         self.chunk_size = chunk_size
         self.writers: Dict[str, MetadataJsonWriter] = {}

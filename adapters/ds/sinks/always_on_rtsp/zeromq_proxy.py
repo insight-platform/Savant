@@ -2,12 +2,12 @@ from typing import Optional
 
 from savant_rs.zmq import BlockingWriter, WriterConfigBuilder
 
-from savant.utils.zeromq import Defaults, SenderSocketTypes, ZeroMQSource
+from savant.utils.zeromq import ZeroMQSource
 
 
 class ZeroMqProxy:
     """A proxy that receives messages from a ZeroMQ socket and forwards them
-    to another PUB ZeroMQ socket. Needed for multi-stream Always-On-RTSP sink.
+    to another ZeroMQ socket. Needed for multi-stream Always-On-RTSP sink.
     """
 
     def __init__(
@@ -23,18 +23,20 @@ class ZeroMqProxy:
             bind=input_bind,
         )
         writer_config_builder = WriterConfigBuilder(output_socket)
-        writer_config_builder.with_socket_type(SenderSocketTypes.PUB.value)
-        writer_config_builder.with_bind(True)
-        writer_config_builder.with_send_hwm(Defaults.SEND_HWM)
         self.writer_config = writer_config_builder.build()
         self.sender: Optional[BlockingWriter] = None
 
     def start(self):
         self.sender = BlockingWriter(self.writer_config)
+        self.sender.start()
         self.source.start()
 
     def run(self):
         while True:
             message = self.source.next_message()
             if message is not None:
-                self.sender.send_message(message.topic, message.message)
+                self.sender.send_message(
+                    bytes(message.topic).decode(),
+                    message.message,
+                    message.content,
+                )
