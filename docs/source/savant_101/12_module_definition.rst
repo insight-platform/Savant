@@ -117,6 +117,49 @@ The ``buffer_queues`` parameter is used to enable Python parallelization and enh
 
 Read about the parameter in :doc:`/recipes/1_python_multithreading`.
 
+.. _deepstream_buffering_configuration:
+
+Nvidia Stream Muxer and Converter Configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Nvidia Stream Muxer** allocates a fixed number of buffers for batches. By default, it is equal to ``4``. Sometimes it is not enough when developer uses queues in the pipeline. Before the pipeline does not release an allocated buffer, which means that no one pipeline element works with it, stream muxer is not able to process the incoming data. Thus, the pipeline can idle. To avoid that you can use the parameter to extend the number of such buffers.
+
+.. code-block:: yaml
+
+    parameters:
+      muxer_buffer_pool_size: 16
+
+
+You specify the number in batches.
+
+**Nvidia Stream Converter** also allocates a fixed number of buffers for frames. By default, it is equal to ``4``. These frames are consumed by **Nvidia Stream Muxer**. To guarantee that the muxer can fill its buffers, the converter must provide enough of them.
+
+In short, the following constraint must be satisfied:
+
+.. code-block::
+
+    Number_Of_Streams x Converter_Allocated_Buffers >= Batch_size x Muxer_Allocated_Buffers
+
+    E.g.,
+
+    4 streams x 8 converter buffers >= 4 frames per batch * 8 muxer buffers
+                                 32 >= 32
+
+
+To configure the parameter, use:
+
+.. code-block:: yaml
+
+    parameters:
+      stream_buffer_pool_size: 32
+
+
+You specify the number in frames.
+
+.. note::
+
+    Remember, that buffers occupy GPU RAM, so plan them carefully.
+
 Log Level
 ^^^^^^^^^
 

@@ -47,3 +47,21 @@ docker buildx build --target savant_torch -f ./docker/Dockerfile.l4t -t panoptic
 cd ../..
 ```
 
+## Performance Measurement
+
+Download the video file to the data folder. For example:
+
+```bash
+# you are expected to be in Savant/ directory
+
+mkdir -p data && curl -o data/panoptic_driving_perception.mp4 \
+   https://eu-central-1.linodeobjects.com/savant-data/demo/panoptic_driving_perception.mp4
+```
+
+Now you are ready to run the performance benchmark with the following command:
+
+```bash
+./samples/panoptic_driving_perception/run_perf.sh
+```
+
+**Note**: Change the value of the `DATA_LOCATION` variable in the `run_perf.sh` script if you changed the video.
