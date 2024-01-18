@@ -16,14 +16,19 @@ from savant_rs.utils.serialization import (
     load_message_from_bytes,
     save_message_to_bytes,
 )
-from savant_rs.zmq import BlockingWriter, ReaderResultMessage, WriterConfigBuilder
+from savant_rs.zmq import (
+    BlockingWriter,
+    ReaderResultMessage,
+    WriterConfigBuilder,
+    WriterSocketType,
+)
 
 from adapters.python.shared.config import opt_config
 from adapters.shared.thread import BaseThreadWorker
 from savant.metrics import Counter, Gauge
 from savant.metrics.prometheus import BaseMetricsCollector, PrometheusMetricsExporter
 from savant.utils.logging import get_logger, init_logging
-from savant.utils.zeromq import ZeroMQSource, get_zmq_socket_uri_options
+from savant.utils.zeromq import ZeroMQSource
 
 LOGGER_NAME = 'adapters.buffer'
 # For each message we need 3 slots: source ID, metadata, frame content
@@ -206,14 +211,13 @@ class Egress(BaseThreadWorker):
             content=VideoFrameContent.none(),
         )
 
-        socket_options = get_zmq_socket_uri_options(config.zmq_sink_endpoint)
-        assert socket_options is not None, 'Socket type must be specified for URI'
-        assert socket_options.startswith(
-            'dealer+'
+        config_builder = WriterConfigBuilder(config.zmq_sink_endpoint)
+        config = config_builder.build()
+        assert (
+            config.socket_type == WriterSocketType.Dealer
         ), 'Only DEALER socket type is supported for Egress'
 
-        config_builder = WriterConfigBuilder(config.zmq_sink_endpoint)
-        self._writer = BlockingWriter(config_builder.build())
+        self._writer = BlockingWriter(config)
 
     def workload(self):
         self.logger.info('Starting Egress')

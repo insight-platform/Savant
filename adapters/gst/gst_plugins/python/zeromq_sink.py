@@ -581,9 +581,9 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
 
     def send_eos(self):
         self.logger.info('Sending serialized EOS message')
-        for source_id, zmq_topic in self.source_ids:
+        for source_id in self.source_ids:
             self.send_message_to_zmq(
-                zmq_topic,
+                source_id,
                 Message.end_of_stream(EndOfStream(source_id)),
             )
         self.stream_in_progress = False

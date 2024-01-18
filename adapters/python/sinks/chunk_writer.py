@@ -1,5 +1,5 @@
 import math
-from typing import List
+from typing import List, Optional
 
 from savant_rs.primitives import EndOfStream, VideoFrame
 
@@ -23,7 +23,7 @@ class ChunkWriter:
     def write_video_frame(
         self,
         frame: VideoFrame,
-        data,
+        content: Optional[bytes],
         can_start_new_chunk: bool,
     ) -> bool:
         if can_start_new_chunk and 0 < self.chunk_size <= self.frames_in_chunk:
@@ -31,7 +31,7 @@ class ChunkWriter:
         if not self.opened:
             self.open()
         frame_num = self.frames_in_chunk
-        result = self._write_video_frame(frame, data, frame_num)
+        result = self._write_video_frame(frame, content, frame_num)
         self.frames_in_chunk += 1
         return result
 
@@ -70,7 +70,12 @@ class ChunkWriter:
     def _flush(self):
         pass
 
-    def _write_video_frame(self, frame: VideoFrame, data, frame_num: int) -> bool:
+    def _write_video_frame(
+        self,
+        frame: VideoFrame,
+        content: Optional[bytes],
+        frame_num: int,
+    ) -> bool:
         pass
 
     def _write_eos(self, eos: EndOfStream) -> bool:
@@ -94,9 +99,14 @@ class CompositeChunkWriter(ChunkWriter):
         for writer in self.writers:
             writer.flush()
 
-    def _write_video_frame(self, frame: VideoFrame, data, frame_num: int) -> bool:
+    def _write_video_frame(
+        self,
+        frame: VideoFrame,
+        content: Optional[bytes],
+        frame_num: int,
+    ) -> bool:
         for writer in self.writers:
-            if not writer._write_video_frame(frame, data, frame_num):
+            if not writer._write_video_frame(frame, content, frame_num):
                 return False
         return True
 

@@ -2,9 +2,10 @@
 
 import json
 import os
+import signal
 import traceback
 from distutils.util import strtobool
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 
 from savant_rs.match_query import MatchQuery
 from savant_rs.primitives import (
@@ -14,7 +15,7 @@ from savant_rs.primitives import (
     EndOfStream,
     VideoFrame,
 )
-from savant_rs.utils.serialization import Message
+from savant_rs.zmq import ReaderResultMessage
 
 from adapters.python.shared.config import opt_config
 from adapters.python.sinks.chunk_writer import ChunkWriter
@@ -37,7 +38,12 @@ class MetadataJsonWriter(ChunkWriter):
         self.pattern = pattern
         super().__init__(chunk_size)
 
-    def _write_video_frame(self, frame: VideoFrame, data: Any, frame_num: int) -> bool:
+    def _write_video_frame(
+        self,
+        frame: VideoFrame,
+        content: Optional[bytes],
+        frame_num: int,
+    ) -> bool:
         metadata = parse_video_frame(frame)
         metadata['schema'] = 'VideoFrame'
         return self._write_meta_to_file(metadata, frame_num)
@@ -104,7 +110,9 @@ class MetadataJsonSink:
         for file_writer in self.writers.values():
             file_writer.close()
 
-    def write(self, message: Message):
+    def write(self, zmq_message: ReaderResultMessage):
+        message = zmq_message.message
+        message.validate_seq_id()
         if message.is_video_frame():
             return self._write_video_frame(message.as_video_frame())
         elif message.is_end_of_stream():
@@ -170,7 +178,11 @@ def get_tag_location(frame: VideoFrame):
 
 def main():
     init_logging()
+    # To gracefully shutdown the adapter on SIGTERM (raise KeyboardInterrupt)
+    signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
+
     logger = get_logger(LOGGER_NAME)
+
     location = os.environ['LOCATION']
     zmq_endpoint = os.environ['ZMQ_ENDPOINT']
     zmq_socket_type = opt_config('ZMQ_TYPE', 'SUB')
@@ -198,12 +210,11 @@ def main():
     try:
         source.start()
         for zmq_message in source:
-            message: Message = zmq_message.message
-            message.validate_seq_id()
-            sink.write(message)
+            sink.write(zmq_message)
     except KeyboardInterrupt:
         logger.info('Interrupted')
     finally:
+        source.terminate()
         sink.terminate()
 
 

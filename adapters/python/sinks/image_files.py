@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 import os
+import signal
 import traceback
 from distutils.util import strtobool
-from typing import Dict, List
+from typing import Dict, Optional
 
 from savant_rs.primitives import EndOfStream, VideoFrame
-from savant_rs.utils.serialization import Message, load_message_from_bytes
+from savant_rs.zmq import ReaderResultMessage
 
 from adapters.python.shared.config import opt_config
 from adapters.python.sinks.chunk_writer import ChunkWriter, CompositeChunkWriter
@@ -28,16 +29,22 @@ class ImageFilesWriter(ChunkWriter):
         self.chunk_location = None
         super().__init__(chunk_size)
 
-    def _write_video_frame(self, frame: VideoFrame, data, frame_num: int) -> bool:
+    def _write_video_frame(
+        self,
+        frame: VideoFrame,
+        content: Optional[bytes],
+        frame_num: int,
+    ) -> bool:
         if frame.content.is_external():
             frame_type = ExternalFrameType(frame.content.get_method())
             if frame_type != ExternalFrameType.ZEROMQ:
                 self.logger.error('Unsupported frame type "%s".', frame_type.value)
                 return False
-            if len(data) != 1:
-                self.logger.error('Data has %s parts, expected 1.', len(data))
+            if not content:
+                self.logger.error(
+                    'Frame %s/%s has no content data', frame.source_id, frame.pts
+                )
                 return False
-            content = data[0]
         elif frame.content.is_internal():
             content = frame.content.get_data_as_bytes()
         else:
@@ -85,14 +92,19 @@ class ImageFilesSink:
         self.skip_frames_without_objects = skip_frames_without_objects
         self.writers: Dict[str, ChunkWriter] = {}
 
-    def write(self, message: Message, data: List[bytes]):
+    def write(self, zmq_message: ReaderResultMessage):
+        message = zmq_message.message
+        message.validate_seq_id()
         if message.is_video_frame():
-            return self._write_video_frame(message.as_video_frame(), data)
+            content = b''.join(
+                zmq_message.data(i) for i in range(zmq_message.data_len())
+            )
+            return self._write_video_frame(message.as_video_frame(), content)
         elif message.is_end_of_stream():
             return self._write_eos(message.as_end_of_stream())
         self.logger.debug('Unsupported message type for message %r', message)
 
-    def _write_video_frame(self, video_frame: VideoFrame, data: List[bytes]) -> bool:
+    def _write_video_frame(self, video_frame: VideoFrame, content: bytes) -> bool:
         if self.skip_frames_without_objects and not frame_has_objects(video_frame):
             self.logger.debug(
                 'Frame %s from source %s does not have objects. Skipping it.',
@@ -118,7 +130,7 @@ class ImageFilesSink:
                 self.chunk_size,
             )
             self.writers[video_frame.source_id] = writer
-        return writer.write_video_frame(video_frame, data, video_frame.keyframe)
+        return writer.write_video_frame(video_frame, content, video_frame.keyframe)
 
     def _write_eos(self, eos: EndOfStream):
         self.logger.info('Received EOS from source %s.', eos.source_id)
@@ -136,6 +148,9 @@ class ImageFilesSink:
 
 def main():
     init_logging()
+    # To gracefully shutdown the adapter on SIGTERM (raise KeyboardInterrupt)
+    signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
+
     logger = get_logger(LOGGER_NAME)
 
     dir_location = os.environ['DIR_LOCATION']
@@ -165,12 +180,11 @@ def main():
     try:
         source.start()
         for zmq_message in source:
-            message = load_message_from_bytes(message_bin)
-            message.validate_seq_id()
-            image_sink.write(message, data)
+            image_sink.write(zmq_message)
     except KeyboardInterrupt:
         logger.info('Interrupted')
     finally:
+        source.terminate()
         image_sink.terminate()
 
 

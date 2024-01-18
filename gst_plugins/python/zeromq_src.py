@@ -28,12 +28,7 @@ from savant.gstreamer.utils import (
     required_property,
 )
 from savant.utils.logging import LoggerMixin
-from savant.utils.zeromq import (
-    Defaults,
-    ReceiverSocketTypes,
-    ZeroMQSource,
-    ZMQException,
-)
+from savant.utils.zeromq import Defaults, ReceiverSocketTypes, ZeroMQSource
 
 HandlerResult = Optional[Tuple[Gst.FlowReturn, Optional[Gst.Buffer]]]
 
@@ -327,8 +322,8 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
     def start_zero_mq_source(self):
         try:
             self.source.start()
-        except ZMQException:
-            error = f'Failed to start ZeroMQ source with socket {self.socket}.'
+        except Exception as exc:
+            error = f'Failed to start ZeroMQ source with socket {self.socket}: {exc}.'
             self.logger.exception(error, exc_info=True)
             frame = inspect.currentframe()
             gst_post_stream_failed_error(
