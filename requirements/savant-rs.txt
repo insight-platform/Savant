@@ -1,1 +1,1 @@
-savant-rs==0.2.1
+savant-rs==0.2.5
