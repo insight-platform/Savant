@@ -1,0 +1,247 @@
+# The id of the video source
+lab1:
+  # The points define a polygon in the frame that delimits the intersection
+  points:
+    - [445, 335]
+    - [600, 205]
+    - [850, 340]
+    - [950, 450]
+    - [900, 535]
+    - [805, 580]
+    - [715, 705]
+    - [605, 875]
+    - [245, 720]
+    - [340, 505]
+
+  # Edges list contain the string tags for the polygon edges.
+  # The 1st list element is the edge between the 1st and the 2nd points from the list above,
+  # the 2nd is the edge between the 2nd and 3rd points and so on.
+  # If the edge tag is null, then it is disabled:
+  # the edge is not drawn on the frame and the crossings are not checked for it.
+  edges:
+    - up_left
+    - null
+    - top
+    - null
+    - middle_top
+    - null
+    - middle_bottom
+    - null
+    - bottom_left
+    - null
+
+'0':
+  points:
+    - [445, 335]
+    - [600, 205]
+    - [850, 340]
+    - [950, 450]
+    - [900, 535]
+    - [805, 580]
+    - [715, 705]
+    - [605, 875]
+    - [245, 720]
+    - [340, 505]
+  edges:
+    - up_left
+    - null
+    - top
+    - null
+    - middle_top
+    - null
+    - middle_bottom
+    - null
+    - bottom_left
+    - null
+
+'source-0':
+  points:
+    - [445, 335]
+    - [600, 205]
+    - [850, 340]
+    - [950, 450]
+    - [900, 535]
+    - [805, 580]
+    - [715, 705]
+    - [605, 875]
+    - [245, 720]
+    - [340, 505]
+  edges:
+    - up_left
+    - null
+    - top
+    - null
+    - middle_top
+    - null
+    - middle_bottom
+    - null
+    - bottom_left
+    - null
+
+'source-1':
+  points:
+    - [445, 335]
+    - [600, 205]
+    - [850, 340]
+    - [950, 450]
+    - [900, 535]
+    - [805, 580]
+    - [715, 705]
+    - [605, 875]
+    - [245, 720]
+    - [340, 505]
+  edges:
+    - up_left
+    - null
+    - top
+    - null
+    - middle_top
+    - null
+    - middle_bottom
+    - null
+    - bottom_left
+    - null
+
+'source-2':
+  points:
+    - [445, 335]
+    - [600, 205]
+    - [850, 340]
+    - [950, 450]
+    - [900, 535]
+    - [805, 580]
+    - [715, 705]
+    - [605, 875]
+    - [245, 720]
+    - [340, 505]
+  edges:
+    - up_left
+    - null
+    - top
+    - null
+    - middle_top
+    - null
+    - middle_bottom
+    - null
+    - bottom_left
+    - null
+
+'source-3':
+  points:
+    - [445, 335]
+    - [600, 205]
+    - [850, 340]
+    - [950, 450]
+    - [900, 535]
+    - [805, 580]
+    - [715, 705]
+    - [605, 875]
+    - [245, 720]
+    - [340, 505]
+  edges:
+    - up_left
+    - null
+    - top
+    - null
+    - middle_top
+    - null
+    - middle_bottom
+    - null
+    - bottom_left
+    - null
+
+'source-4':
+  points:
+    - [445, 335]
+    - [600, 205]
+    - [850, 340]
+    - [950, 450]
+    - [900, 535]
+    - [805, 580]
+    - [715, 705]
+    - [605, 875]
+    - [245, 720]
+    - [340, 505]
+  edges:
+    - up_left
+    - null
+    - top
+    - null
+    - middle_top
+    - null
+    - middle_bottom
+    - null
+    - bottom_left
+    - null
+
+'source-5':
+  points:
+    - [445, 335]
+    - [600, 205]
+    - [850, 340]
+    - [950, 450]
+    - [900, 535]
+    - [805, 580]
+    - [715, 705]
+    - [605, 875]
+    - [245, 720]
+    - [340, 505]
+  edges:
+    - up_left
+    - null
+    - top
+    - null
+    - middle_top
+    - null
+    - middle_bottom
+    - null
+    - bottom_left
+    - null
+
+'source-6':
+  points:
+    - [445, 335]
+    - [600, 205]
+    - [850, 340]
+    - [950, 450]
+    - [900, 535]
+    - [805, 580]
+    - [715, 705]
+    - [605, 875]
+    - [245, 720]
+    - [340, 505]
+  edges:
+    - up_left
+    - null
+    - top
+    - null
+    - middle_top
+    - null
+    - middle_bottom
+    - null
+    - bottom_left
+    - null
+
+'source-7':
+  points:
+    - [445, 335]
+    - [600, 205]
+    - [850, 340]
+    - [950, 450]
+    - [900, 535]
+    - [805, 580]
+    - [715, 705]
+    - [605, 875]
+    - [245, 720]
+    - [340, 505]
+  edges:
+    - up_left
+    - null
+    - top
+    - null
+    - middle_top
+    - null
+    - middle_bottom
+    - null
+    - bottom_left
+    - null
