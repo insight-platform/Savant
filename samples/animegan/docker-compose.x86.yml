@@ -48,7 +48,7 @@ services:
       - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
       - DIR_LOCATION=/data
       - SKIP_FRAMES_WITHOUT_OBJECTS=False
-    entrypoint: /opt/savant/adapters/gst/sinks/video_files.sh
+    entrypoint: /opt/savant/adapters/gst/sinks/video_files.py
 
 volumes:
   zmq_sockets:

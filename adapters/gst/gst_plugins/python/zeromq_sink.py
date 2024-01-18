@@ -441,6 +441,7 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
         self.last_location = self.location
         self.last_frame_params = self.frame_params
         self.new_loop = False
+        self.stream_in_progress = True
 
         content = buffer.extract_dup(0, buffer.get_size())
         base_frame = self.build_video_frame(

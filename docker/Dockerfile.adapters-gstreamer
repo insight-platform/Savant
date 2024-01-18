@@ -104,7 +104,6 @@ COPY gst_plugins gst_plugins
 COPY adapters/shared adapters/shared
 COPY adapters/python adapters/python
 COPY adapters/gst adapters/gst
-COPY gst_plugins/python/zeromq_src.py adapters/gst/gst_plugins/python/
 COPY gst_plugins/python/logger.py adapters/gst/gst_plugins/python/
 ENV GST_PLUGIN_PATH=$PROJECT_PATH/adapters/gst/gst_plugins \
     LOGLEVEL=info

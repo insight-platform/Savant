@@ -303,7 +303,7 @@ def video_files_sink(
     cmd = build_docker_run_command(
         f'sink-video-files-{uuid.uuid4().hex}',
         zmq_endpoints=[in_endpoint],
-        entrypoint='/opt/savant/adapters/gst/sinks/video_files.sh',
+        entrypoint='/opt/savant/adapters/gst/sinks/video_files.py',
         envs=envs,
         volumes=[f'{location}:{location}'],
         docker_image=docker_image,

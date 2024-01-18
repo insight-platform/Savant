@@ -741,7 +741,7 @@ Running the adapter with Docker:
 .. code-block:: bash
 
     docker run --rm -it --name sink-meta-json \
-        --entrypoint /opt/savant/adapters/gst/sinks/video_files.sh \
+        --entrypoint /opt/savant/adapters/gst/sinks/video_files.py \
         -e ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc \
         -e DIR_LOCATION=/path/to/output/%source_id-%src_filename \
         -e SKIP_FRAMES_WITHOUT_OBJECTS=False \
