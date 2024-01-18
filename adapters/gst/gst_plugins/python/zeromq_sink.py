@@ -473,26 +473,6 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
                 Message.shutdown(Shutdown(self.shutdown_auth)),
             )
 
-        self.logger.info('Sending End-of-Stream message to socket %s', self.socket)
-        try:
-            send_result = self.writer.send_eos(self.source_ids[0])
-            if isinstance(send_result, (WriterResultAck, WriterResultSuccess)):
-                error = None
-            else:
-                error = f'Failed to send message to ZeroMQ: {send_result}'
-        except Exception as exc:
-            error = f'Failed to send message to ZeroMQ: {exc}'
-        if error:
-            self.logger.error(error)
-            frame = inspect.currentframe()
-            gst_post_stream_failed_error(
-                gst_element=self,
-                frame=frame,
-                file_path=__file__,
-                text=error,
-            )
-            return False
-
         self.logger.info('Terminating ZeroMQ writer.')
         self.writer.shutdown()
         self.logger.info('ZeroMQ writer terminated')

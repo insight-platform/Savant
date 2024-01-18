@@ -12,7 +12,6 @@ from savant_rs.primitives import (
     VideoFrameTransformation,
 )
 from savant_rs.utils import PropagatedContext
-from savant_rs.utils.serialization import Message
 
 from gst_plugins.python.pyfunc_common import handle_non_fatal_error, init_pyfunc
 from gst_plugins.python.zeromq_properties import ZEROMQ_PROPERTIES, socket_type_property
@@ -28,7 +27,12 @@ from savant.gstreamer.utils import (
     required_property,
 )
 from savant.utils.logging import LoggerMixin
-from savant.utils.zeromq import Defaults, ReceiverSocketTypes, ZeroMQSource
+from savant.utils.zeromq import (
+    Defaults,
+    ReceiverSocketTypes,
+    ZeroMQMessage,
+    ZeroMQSource,
+)
 
 HandlerResult = Optional[Tuple[Gst.FlowReturn, Optional[Gst.Buffer]]]
 
@@ -361,28 +365,17 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
         if zmq_message is None:
             return
         self.logger.debug('Received message from topic %s.', zmq_message.topic)
-        if zmq_message.data_len() == 0:
-            external_content = b''
-        elif zmq_message.data_len() == 1:
-            external_content = zmq_message.data(0)
-        else:
-            external_content = b''.join(
-                zmq_message.data(i) for i in range(zmq_message.data_len())
-            )
 
-        return self.handle_message(zmq_message.message, external_content)
+        return self.handle_message(zmq_message)
 
-    def handle_message(
-        self,
-        message: Message,
-        external_content: bytes,
-    ) -> HandlerResult:
+    def handle_message(self, zmq_message: ZeroMQMessage) -> HandlerResult:
+        message = zmq_message.message
         message.validate_seq_id()
         if message.is_video_frame():
             return self.handle_video_frame(
                 message.as_video_frame(),
                 message.span_context,
-                external_content,
+                zmq_message.content,
             )
         if message.is_end_of_stream():
             return self.handle_eos(message.as_end_of_stream())

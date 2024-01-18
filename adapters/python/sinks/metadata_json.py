@@ -15,14 +15,13 @@ from savant_rs.primitives import (
     EndOfStream,
     VideoFrame,
 )
-from savant_rs.zmq import ReaderResultMessage
 
 from adapters.python.shared.config import opt_config
 from adapters.python.sinks.chunk_writer import ChunkWriter
 from savant.api.constants import DEFAULT_NAMESPACE
 from savant.api.parser import parse_video_frame
 from savant.utils.logging import get_logger, init_logging
-from savant.utils.zeromq import ZeroMQSource
+from savant.utils.zeromq import ZeroMQMessage, ZeroMQSource
 
 LOGGER_NAME = 'adapters.metadata_json_sink'
 
@@ -110,7 +109,7 @@ class MetadataJsonSink:
         for file_writer in self.writers.values():
             file_writer.close()
 
-    def write(self, zmq_message: ReaderResultMessage):
+    def write(self, zmq_message: ZeroMQMessage):
         message = zmq_message.message
         message.validate_seq_id()
         if message.is_video_frame():

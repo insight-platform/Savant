@@ -16,19 +16,14 @@ from savant_rs.utils.serialization import (
     load_message_from_bytes,
     save_message_to_bytes,
 )
-from savant_rs.zmq import (
-    BlockingWriter,
-    ReaderResultMessage,
-    WriterConfigBuilder,
-    WriterSocketType,
-)
+from savant_rs.zmq import BlockingWriter, WriterConfigBuilder, WriterSocketType
 
 from adapters.python.shared.config import opt_config
 from adapters.shared.thread import BaseThreadWorker
 from savant.metrics import Counter, Gauge
 from savant.metrics.prometheus import BaseMetricsCollector, PrometheusMetricsExporter
 from savant.utils.logging import get_logger, init_logging
-from savant.utils.zeromq import ZeroMQSource
+from savant.utils.zeromq import ZeroMQMessage, ZeroMQSource
 
 LOGGER_NAME = 'adapters.buffer'
 # For each message we need 3 slots: source ID, metadata, frame content
@@ -114,7 +109,7 @@ class Ingress(BaseThreadWorker):
         self._zmq_source.terminate()
         self.logger.info('Ingress was stopped')
 
-    def handle_next_message(self, message: ReaderResultMessage):
+    def handle_next_message(self, message: ZeroMQMessage):
         """Handle the next message from the source ZeroMQ socket."""
 
         self._received_messages += 1
@@ -127,7 +122,7 @@ class Ingress(BaseThreadWorker):
         else:
             self._dropped_messages += 1
 
-    def push_frame(self, message: ReaderResultMessage) -> bool:
+    def push_frame(self, message: ZeroMQMessage) -> bool:
         """Push frame to the buffer."""
 
         buffer_size = self._queue.len()
@@ -147,7 +142,7 @@ class Ingress(BaseThreadWorker):
         self.logger.debug('Pushed frame to the buffer')
         return True
 
-    def push_service_message(self, message: ReaderResultMessage) -> bool:
+    def push_service_message(self, message: ZeroMQMessage) -> bool:
         """Push service message to the buffer."""
 
         try:
@@ -161,11 +156,11 @@ class Ingress(BaseThreadWorker):
         self.logger.debug('Pushed message to the buffer')
         return True
 
-    def _push_message(self, message: ReaderResultMessage):
+    def _push_message(self, message: ZeroMQMessage):
         message_parts = [
             bytes(message.topic),
             save_message_to_bytes(message.message),
-            b''.join(message.data(i) for i in range(message.data_len())),
+            message.content,
         ]
         self._queue.push(message_parts)
 

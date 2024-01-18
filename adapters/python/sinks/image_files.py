@@ -6,7 +6,6 @@ from distutils.util import strtobool
 from typing import Dict, Optional
 
 from savant_rs.primitives import EndOfStream, VideoFrame
-from savant_rs.zmq import ReaderResultMessage
 
 from adapters.python.shared.config import opt_config
 from adapters.python.sinks.chunk_writer import ChunkWriter, CompositeChunkWriter
@@ -17,7 +16,7 @@ from adapters.python.sinks.metadata_json import (
 )
 from savant.api.enums import ExternalFrameType
 from savant.utils.logging import get_logger, init_logging
-from savant.utils.zeromq import ZeroMQSource
+from savant.utils.zeromq import ZeroMQMessage, ZeroMQSource
 
 LOGGER_NAME = 'adapters.image_files_sink'
 DEFAULT_CHUNK_SIZE = 10000
@@ -92,14 +91,14 @@ class ImageFilesSink:
         self.skip_frames_without_objects = skip_frames_without_objects
         self.writers: Dict[str, ChunkWriter] = {}
 
-    def write(self, zmq_message: ReaderResultMessage):
+    def write(self, zmq_message: ZeroMQMessage):
         message = zmq_message.message
         message.validate_seq_id()
         if message.is_video_frame():
-            content = b''.join(
-                zmq_message.data(i) for i in range(zmq_message.data_len())
+            return self._write_video_frame(
+                message.as_video_frame(),
+                zmq_message.content,
             )
-            return self._write_video_frame(message.as_video_frame(), content)
         elif message.is_end_of_stream():
             return self._write_eos(message.as_end_of_stream())
         self.logger.debug('Unsupported message type for message %r', message)
