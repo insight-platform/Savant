@@ -41,6 +41,19 @@ fi
 SORT_BY_TIME="${SORT_BY_TIME:="false"}"
 READ_METADATA="${READ_METADATA:="false"}"
 
+SAVANT_RS_SERIALIZER_OPTS=(
+    source-id="${SOURCE_ID}"
+    read-metadata="${READ_METADATA}"
+    eos-on-file-end="${EOS_ON_FILE_END}"
+    eos-on-frame-params-change=true
+)
+if [[ -n "${SHUTDOWN_AUTH}" ]]; then
+    SAVANT_RS_SERIALIZER_OPTS+=(
+        shutdown-auth="${SHUTDOWN_AUTH}"
+    )
+fi
+
+
 handler() {
     kill -s SIGINT "${child_pid}"
     wait "${child_pid}"
@@ -51,8 +64,7 @@ gst-launch-1.0 --eos-on-shutdown \
     media_files_src_bin location="${LOCATION}" file-type="${FILE_TYPE}" framerate="${FRAMERATE}" sort-by-time="${SORT_BY_TIME}" ! \
     fps_meter "${FPS_PERIOD}" output="${FPS_OUTPUT}" measure-per-file="${MEASURE_PER_FILE}" ! \
     adjust_timestamps ! \
-    savant_rs_serializer source-id="${SOURCE_ID}" eos-on-file-end="${EOS_ON_FILE_END}" \
-    eos-on-frame-params-change=true read-metadata="${READ_METADATA}" ! \
+    savant_rs_serializer "${SAVANT_RS_SERIALIZER_OPTS[@]}" ! \
     zeromq_sink socket="${ZMQ_ENDPOINT}" socket-type="${ZMQ_SOCKET_TYPE}" bind="${ZMQ_SOCKET_BIND}" sync="${SYNC_OUTPUT}" "${RECEIVE_TIMEOUT}" \
     &
 
