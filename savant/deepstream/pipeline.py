@@ -24,12 +24,12 @@ from savant.base.input_preproc import ObjectsPreprocessing
 from savant.base.model import AttributeModel, ComplexModel
 from savant.config.schema import (
     BufferQueuesParameters,
+    ColorFormat,
     DrawFunc,
     FrameParameters,
     ModelElement,
     Pipeline,
     PipelineElement,
-    ColorFormat,
     PyFuncElement,
     TelemetryParameters,
 )

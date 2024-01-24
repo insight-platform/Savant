@@ -247,7 +247,7 @@ def configure_module_parameters(module_cfg: DictConfig) -> None:
                 cfg[node],
             )
 
-    # support frame format in lower case (e.g. rgba => RGBA)
+    # support frame color format in lower case (e.g. rgba => RGBA)
     if (
         'frame' in module_cfg.parameters
         and 'color_format' in module_cfg.parameters['frame']

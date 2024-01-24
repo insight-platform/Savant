@@ -38,7 +38,7 @@ parameters:
     # Base value for frame parameters. All frame parameters must be divisible by this value.
     # Default is 8.
     # geometry_base: 8
-    # Frame pixel format. Default is "RGBA".
+    # Frame color format. Default is "RGBA".
     # color_format: rgba
 
   # pipeline output queue max size
