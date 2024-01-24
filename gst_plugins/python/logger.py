@@ -1,3 +1,4 @@
+from savant.deepstream.utils.event import gst_event_type_to_str
 from savant.gstreamer import GObject, Gst, GstBase
 from savant.utils.logging import LoggerMixin
 
@@ -101,6 +102,11 @@ class Logger(LoggerMixin, GstBase.BaseTransform):
         else:
             raise AttributeError(f'Unknown property {prop.name}.')
 
+    def do_set_caps(self, incaps: Gst.Caps, outcaps: Gst.Caps):
+        """Parse frame resolution from caps."""
+        self.logger.info('Set caps: %s.', incaps)
+        return True
+
     def do_transform_ip(self, buffer: Gst.Buffer):
         if self._buffer:
             log_line = 'Got buffer. PTS: %s. DTS: %s. Duration: %s. Size: %s.'
@@ -163,7 +169,7 @@ def _parse_event(event: Gst.Event):
     elif event.type == Gst.EventType.LATENCY:
         value = event.parse_latency()
 
-    message = f'Type: {event.type.value_name}'
+    message = f'Type: {gst_event_type_to_str(event.type)}'
     if value is not None:
         message += f'. Value: {value}'
     struct = event.get_structure()
