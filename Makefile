@@ -148,6 +148,9 @@ check-unify:
 	unify --check-only --recursive savant | grep -- '--- before' | sed 's#--- before/##'
 	unify --check-only --recursive savant > /dev/null
 
+check-isort:
+	isort savant adapters gst_plugins samples scripts -c
+
 check: check-black check-unify check-isort
 
 run-unify:
@@ -156,10 +159,7 @@ run-unify:
 run-black:
 	black .
 
-reformat: run-unify run-black run-isort
-
-check-isort:
-	isort savant adapters gst_plugins samples scripts -c
-
 run-isort:
 	isort savant adapters gst_plugins samples scripts
+
+reformat: run-unify run-black run-isort

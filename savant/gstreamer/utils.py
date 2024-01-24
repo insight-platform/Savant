@@ -307,6 +307,7 @@ def _buffer_probe_callback(
 ):
     """Buffer probe callback wrapper to handle exceptions."""
     buffer = info.get_buffer()
+    # caps = pad.get_current_caps()
     try:
         callback(buffer, *data)
     except Exception as exc:  # pylint: disable=broad-except
