@@ -12,22 +12,24 @@ from savant_rs.utils.symbol_mapper import (
 )
 
 from savant.deepstream.meta.constants import MAX_LABEL_SIZE
-from savant.deepstream.utils import (
+from savant.deepstream.utils.attribute import (
     nvds_add_attr_meta_to_obj,
     nvds_get_obj_attr_meta,
     nvds_get_obj_attr_meta_list,
-    nvds_get_obj_bbox,
-    nvds_get_obj_draw_label,
     nvds_get_obj_uid,
-    nvds_init_obj_draw_label,
     nvds_remove_obj_attr_meta_list,
     nvds_replace_obj_attr_meta_list,
+)
+from savant.deepstream.utils.object import (
+    nvds_get_obj_bbox,
+    nvds_get_obj_draw_label,
+    nvds_init_obj_draw_label,
+    nvds_is_empty_object_meta,
     nvds_set_obj_bbox,
     nvds_set_obj_draw_label,
     nvds_set_obj_uid,
     nvds_upd_obj_bbox,
 )
-from savant.deepstream.utils.object import nvds_is_empty_object_meta
 from savant.meta.attribute import AttributeMeta
 from savant.meta.constants import DEFAULT_CONFIDENCE, UNTRACKED_OBJECT_ID
 from savant.meta.errors import MetaValueError

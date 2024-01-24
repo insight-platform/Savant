@@ -17,7 +17,8 @@ from savant.deepstream.opencv_utils import (
     draw_rect,
     nvds_to_gpu_mat,
 )
-from savant.deepstream.utils import get_nvds_buf_surface, nvds_frame_meta_iterator
+from savant.deepstream.utils.iterator import nvds_frame_meta_iterator
+from savant.deepstream.utils.surface import get_nvds_buf_surface
 
 sys.path.append('../../')
 

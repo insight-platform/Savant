@@ -59,39 +59,10 @@ def gst_event_type_to_str(event_type: int) -> str:
     return str(event_type)
 
 
-libnvdsgst_helper = ctypes.CDLL('libnvdsgst_helper.so')
-
-# gst_nvevent_parse_pad_added
-libnvdsgst_helper.gst_nvevent_parse_pad_added.argtypes = (
-    ctypes.c_void_p,
-    ctypes.POINTER(ctypes.c_uint),
-)
-libnvdsgst_helper.gst_nvevent_parse_pad_added.restype = None
-
-# gst_nvevent_parse_pad_deleted
-libnvdsgst_helper.gst_nvevent_parse_pad_deleted.argtypes = (
-    ctypes.c_void_p,
-    ctypes.POINTER(ctypes.c_uint),
-)
-libnvdsgst_helper.gst_nvevent_parse_pad_deleted.restype = None
-
-# gst_nvevent_parse_stream_eos
-libnvdsgst_helper.gst_nvevent_parse_stream_eos.argtypes = (
-    ctypes.c_void_p,
-    ctypes.POINTER(ctypes.c_uint),
-)
-libnvdsgst_helper.gst_nvevent_parse_stream_eos.restype = None
-
-# gst_nvevent_parse_stream_start
-libnvdsgst_helper.gst_nvevent_parse_stream_start.argtypes = (
-    ctypes.c_void_p,
-    ctypes.POINTER(ctypes.c_uint),
-)
-libnvdsgst_helper.gst_nvevent_parse_stream_start.restype = None
-
-
 def gst_nvevent_parse_pad_added(event: Gst.Event) -> int:
     """Extracts source-id (pad index) from GST_NVEVENT_PAD_ADDED event."""
+    from .nvdsgst_helper import libnvdsgst_helper
+
     source_id = ctypes.c_uint()
     libnvdsgst_helper.gst_nvevent_parse_pad_added(hash(event), ctypes.byref(source_id))
     return source_id.value
@@ -99,6 +70,8 @@ def gst_nvevent_parse_pad_added(event: Gst.Event) -> int:
 
 def gst_nvevent_parse_pad_deleted(event: Gst.Event) -> int:
     """Extracts source-id (pad index) from GST_NVEVENT_PAD_DELETED event."""
+    from .nvdsgst_helper import libnvdsgst_helper
+
     source_id = ctypes.c_uint()
     libnvdsgst_helper.gst_nvevent_parse_pad_deleted(
         hash(event), ctypes.byref(source_id)
@@ -108,6 +81,8 @@ def gst_nvevent_parse_pad_deleted(event: Gst.Event) -> int:
 
 def gst_nvevent_parse_stream_eos(event: Gst.Event) -> int:
     """Extracts source-id (pad index) from GST_NVEVENT_STREAM_EOS event."""
+    from .nvdsgst_helper import libnvdsgst_helper
+
     source_id = ctypes.c_uint()
     libnvdsgst_helper.gst_nvevent_parse_stream_eos(hash(event), ctypes.byref(source_id))
     return source_id.value
@@ -115,6 +90,8 @@ def gst_nvevent_parse_stream_eos(event: Gst.Event) -> int:
 
 def gst_nvevent_parse_stream_start(event: Gst.Event) -> int:
     """Extracts source-id (pad index) from GST_NVEVENT_STREAM_START event."""
+    from .nvdsgst_helper import libnvdsgst_helper
+
     source_id = ctypes.c_uint()
     libnvdsgst_helper.gst_nvevent_parse_stream_start(
         hash(event), ctypes.byref(source_id)

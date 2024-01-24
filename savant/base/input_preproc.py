@@ -10,7 +10,10 @@ from savant.base.model import OutputImage
 from savant.base.pyfunc import BasePyFuncCallableImpl, PyFuncNoopCallException
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
 from savant.deepstream.opencv_utils import nvds_to_gpu_mat
-from savant.deepstream.utils import nvds_frame_meta_iterator, nvds_obj_meta_iterator
+from savant.deepstream.utils.iterator import (
+    nvds_frame_meta_iterator,
+    nvds_obj_meta_iterator,
+)
 from savant.gstreamer import Gst
 from savant.meta.object import ObjectMeta
 from savant.utils.image import GPUImage
