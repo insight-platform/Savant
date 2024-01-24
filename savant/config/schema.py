@@ -1,6 +1,7 @@
 """Module and pipeline elements configuration templates."""
 import json
 from dataclasses import asdict, dataclass, field
+from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
 from omegaconf import MISSING, DictConfig, OmegaConf
@@ -34,6 +35,19 @@ class FramePadding:
         return bool(self.left or self.top or self.right or self.bottom)
 
 
+class PixelFormat(Enum):
+    """Enum for pixel color format of the video frame."""
+
+    RGBA = 0
+    """RGBA."""
+
+    NV12 = 1
+    """NV12."""
+
+    I420 = 2
+    """I420."""
+
+
 @dataclass
 class FrameParameters:
     """Pipeline processing frame parameters"""
@@ -49,6 +63,9 @@ class FrameParameters:
 
     geometry_base: int = 8
     """Base value for frame parameters. All frame parameters must be divisible by this value."""
+
+    pixel_format: PixelFormat = PixelFormat.RGBA
+    """Frame pixel format."""
 
     @property
     def total_width(self) -> int:

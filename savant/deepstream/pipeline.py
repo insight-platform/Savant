@@ -29,6 +29,7 @@ from savant.config.schema import (
     ModelElement,
     Pipeline,
     PipelineElement,
+    PixelFormat,
     PyFuncElement,
     TelemetryParameters,
 )
@@ -207,6 +208,14 @@ class NvDsPipeline(GstPipeline):
                 for attr in element.model.output.attributes:
                     if attr.internal:
                         self._internal_attrs.add((element.name, attr.name))
+            if self._frame_params.pixel_format != PixelFormat.RGBA:
+                if element.model.input.preprocess_object_image:
+                    raise ValueError(
+                        'Model input object preprocessing requires RGBA format. '
+                        'Set module parameter `frame.pixel_format` to `RGBA` '
+                        'to use this type of preprocessing.'
+                    )
+
             nvinfer = NvInferProcessor(
                 element,
                 self._objects_preprocessing,
@@ -568,13 +577,17 @@ class NvDsPipeline(GstPipeline):
         # TODO: send EOS to video_converter on unlink if source didn't
         assert new_pad.link(video_converter_sink) == Gst.PadLinkReturn.OK
 
+        if self._frame_params.pixel_format is None:
+            return nv_video_converter.get_static_pad('src')
+
         self._check_pipeline_is_running()
         capsfilter = self._element_factory.create(
             PipelineElement(
                 'capsfilter',
                 properties={
                     'caps': (
-                        'video/x-raw(memory:NVMM), format=RGBA, '
+                        'video/x-raw(memory:NVMM), '
+                        f'format={self._frame_params.pixel_format.name}, '
                         f'width={self._frame_params.total_width}, '
                         f'height={self._frame_params.total_height}'
                     ),

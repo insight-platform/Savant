@@ -247,6 +247,14 @@ def configure_module_parameters(module_cfg: DictConfig) -> None:
                 cfg[node],
             )
 
+    # support frame format in lower case (e.g. rgba => RGBA)
+    if (
+        'frame' in module_cfg.parameters
+        and 'pixel_format' in module_cfg.parameters['frame']
+    ):
+        module_cfg.parameters['frame']['pixel_format'] = module_cfg.parameters['frame'][
+            'pixel_format'
+        ].upper()
     apply_schema(
         module_cfg.parameters,
         'frame',
