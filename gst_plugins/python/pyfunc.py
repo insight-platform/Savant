@@ -21,7 +21,7 @@ from savant.utils.logging import LoggerMixin
 # RGBA format is required to access the frame (pyds.get_nvds_buf_surface)
 CAPS = Gst.Caps.from_string(
     'video/x-raw(memory:NVMM), '
-    'format={RGBA}, '
+    # 'format={RGBA}, '
     f'width={Gst.IntRange(range(1, GLib.MAXINT))}, '
     f'height={Gst.IntRange(range(1, GLib.MAXINT))}, '
     f'framerate={Gst.FractionRange(Gst.Fraction(0, 1), Gst.Fraction(GLib.MAXINT, 1))}'

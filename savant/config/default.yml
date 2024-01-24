@@ -39,7 +39,7 @@ parameters:
     # Default is 8.
     # geometry_base: 8
     # Frame pixel format. Default is "RGBA".
-    # pixel_format: rgba
+    # color_format: rgba
 
   # pipeline output queue max size
   queue_maxsize: 100

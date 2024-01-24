@@ -37,7 +37,17 @@ def nvds_to_gpu_mat(
     if nvds_frame_meta is not None:
         batch_id = nvds_frame_meta.batch_id
     assert batch_id is not None
-    py_ds_cuda_memory = PyDSCudaMemory(hash(buffer), batch_id)
+    try:
+        py_ds_cuda_memory = PyDSCudaMemory(hash(buffer), batch_id)
+    except RuntimeError as exc:
+        # catch `DSCudaMemory: Currently we only support RGBA color format.`
+        if 'RGBA' in str(exc):
+            raise RuntimeError(
+                'Only RGBA format is supported. '
+                'Set the module parameter `frame.color_format` to `RGBA` '
+                'to use `nvds_to_gpu_mat`.'
+            ) from None
+        raise exc
     try:
         cuda_ptr = py_ds_cuda_memory.GetMapCudaPtr()
         yield cv2.savant.createGpuMat(

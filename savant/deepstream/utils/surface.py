@@ -38,6 +38,16 @@ def get_nvds_buf_surface(
     """
 
     try:
-        yield pyds.get_nvds_buf_surface(hash(buffer), nvds_frame_meta.batch_id)
+        np_frame = pyds.get_nvds_buf_surface(hash(buffer), nvds_frame_meta.batch_id)
+        yield np_frame
+    except RuntimeError as exc:
+        # catch `get_nvds_buf_Surface: Currently we only support RGBA color Format`
+        if 'RGBA' in str(exc):
+            raise RuntimeError(
+                'Only RGBA format is supported. '
+                'Set the module parameter `frame.color_format` to `RGBA` '
+                'to use `get_nvds_buf_surface`.'
+            ) from None
+        raise exc
     finally:
         pyds.unmap_nvds_buf_surface(hash(buffer), nvds_frame_meta.batch_id)

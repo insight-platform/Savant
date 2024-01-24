@@ -11,6 +11,11 @@ namespace pysavantboost {
         gst_buffer_map(buffer, &map_info, GST_MAP_READ);
         auto *nv_buf_surface = (NvBufSurface *) (map_info.data);
         gst_buffer_unmap(buffer, &map_info);
+        if (nv_buf_surface->surfaceList->colorFormat != NVBUF_COLOR_FORMAT_RGBA) {
+            throw std::runtime_error(
+                "DSCudaMemory: Currently we only support RGBA color format."
+            );
+        }
         ds_cuda_memory = new DSCudaMemory(nv_buf_surface, batch_id);
     }
 

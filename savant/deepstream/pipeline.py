@@ -29,7 +29,7 @@ from savant.config.schema import (
     ModelElement,
     Pipeline,
     PipelineElement,
-    PixelFormat,
+    ColorFormat,
     PyFuncElement,
     TelemetryParameters,
 )
@@ -86,7 +86,7 @@ class NvDsPipeline(GstPipeline):
         pipeline_cfg: Pipeline,
         **kwargs,
     ):
-        # pipeline internal processing frame size
+        # pipeline internal processing frame params
         self._frame_params: FrameParameters = kwargs['frame']
 
         self._batch_size = kwargs['batch_size']
@@ -120,6 +120,12 @@ class NvDsPipeline(GstPipeline):
         self._pass_through_mode = bool(output_frame) and output_frame['codec'] == 'copy'
         draw_func: Optional[DrawFunc] = kwargs.get('draw_func')
         if draw_func is not None and output_frame:
+            if self._frame_params.color_format != ColorFormat.RGBA:
+                raise ValueError(
+                    'Only RGBA format is supported. '
+                    'Set the module parameter `frame.color_format` to `RGBA` '
+                    'to use `draw_func`.'
+                )
             pipeline_cfg.elements.append(draw_func)
 
         self._demuxer_src_pads: List[Gst.Pad] = []
@@ -208,12 +214,12 @@ class NvDsPipeline(GstPipeline):
                 for attr in element.model.output.attributes:
                     if attr.internal:
                         self._internal_attrs.add((element.name, attr.name))
-            if self._frame_params.pixel_format != PixelFormat.RGBA:
+            if self._frame_params.color_format != ColorFormat.RGBA:
                 if element.model.input.preprocess_object_image:
                     raise ValueError(
-                        'Model input object preprocessing requires RGBA format. '
-                        'Set module parameter `frame.pixel_format` to `RGBA` '
-                        'to use this type of preprocessing.'
+                        'Only RGBA format is supported. '
+                        'Set the module parameter `frame.color_format` to `RGBA` '
+                        'to use input object preprocessing.'
                     )
 
             nvinfer = NvInferProcessor(
@@ -577,7 +583,7 @@ class NvDsPipeline(GstPipeline):
         # TODO: send EOS to video_converter on unlink if source didn't
         assert new_pad.link(video_converter_sink) == Gst.PadLinkReturn.OK
 
-        if self._frame_params.pixel_format is None:
+        if self._frame_params.color_format is None:
             return nv_video_converter.get_static_pad('src')
 
         self._check_pipeline_is_running()
@@ -587,7 +593,7 @@ class NvDsPipeline(GstPipeline):
                 properties={
                     'caps': (
                         'video/x-raw(memory:NVMM), '
-                        f'format={self._frame_params.pixel_format.name}, '
+                        f'format={self._frame_params.color_format.name}, '
                         f'width={self._frame_params.total_width}, '
                         f'height={self._frame_params.total_height}'
                     ),

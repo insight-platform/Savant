@@ -35,7 +35,7 @@ class FramePadding:
         return bool(self.left or self.top or self.right or self.bottom)
 
 
-class PixelFormat(Enum):
+class ColorFormat(Enum):
     """Enum for pixel color format of the video frame."""
 
     RGBA = 0
@@ -64,8 +64,8 @@ class FrameParameters:
     geometry_base: int = 8
     """Base value for frame parameters. All frame parameters must be divisible by this value."""
 
-    pixel_format: PixelFormat = PixelFormat.RGBA
-    """Frame pixel format."""
+    color_format: Optional[ColorFormat] = ColorFormat.RGBA
+    """Frame color format."""
 
     @property
     def total_width(self) -> int:
