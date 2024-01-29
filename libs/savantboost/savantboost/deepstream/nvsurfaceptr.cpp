@@ -10,7 +10,7 @@ GST_DEBUG_CATEGORY_STATIC (gst_dsclcprepro_debug);
     cudaError_t e=cudaGetLastError(); \
     if (e!=cudaSuccess) { \
         GST_ERROR("Cuda failure %s:%d: '%s'\n",__FILE__,__LINE__,cudaGetErrorString(e)); \
-        exit(0); \
+        exit(11); \
     } \
 }
 
