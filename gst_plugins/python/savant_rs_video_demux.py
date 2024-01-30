@@ -34,6 +34,34 @@ DEFAULT_SOURCE_TIMEOUT = 60
 DEFAULT_SOURCE_EVICTION_INTERVAL = 15
 OUT_CAPS = Gst.Caps.from_string(';'.join(x.value.caps_with_params for x in Codec))
 
+
+class EvictedSrcPad (Gst.Pad, LoggerMixin):
+    name = 'EvictedSrcPad'
+
+    def __init__(self):
+        super().__init__()
+        self.logger.debug("EvictedSrcPad initialized")
+
+    def push(self, buf):
+        self.logger.warn("EvictedSrcPad.push called")
+        return Gst.FlowReturn.OK
+
+    def set_active(self, active):
+        self.logger.warn("EvictedSrcPad.set_active called")
+        return active
+
+    def create_stream_id(self, _):
+        self.logger.warn("EvictedSrcPad.create_stream_id called")
+        return 0
+
+    def push_event(self, event):
+        self.logger.warn(f"EvictedSrcPad.push_event called with event {event}")
+        return True
+
+    def get_name(self):
+        return self.name
+
+
 SAVANT_RS_VIDEO_DEMUX_PROPERTIES = {
     'source-timeout': (
         int,
@@ -753,7 +781,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
                 self.video_pipeline.clear_source_ordering(source_info.source_id)
             except ValueError:
                 pass
-        source_info.src_pad = None
+        source_info.src_pad = EvictedSrcPad()
 
     def eviction_job(self):
         """Eviction job."""
