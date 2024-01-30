@@ -19,7 +19,7 @@ That is what vanilla DeepStream is about. Imagine a developer adjusting a detect
 
 When we started Savant, we had incapable, inefficient tooling as DeepStream has. But in Savant 0.2.5, we made many improvements to give developers efficient tooling, disrupting the annoying "change, build, run, read logs" cycle. We want Savant developers to have tooling enabling building integration tests and discovering problems in seconds, not minutes.
 
-To help develop modules efficiently Savant provides provides two features and one auxiliary technology:
+To help develop modules efficiently Savant provides two features and one auxiliary technology:
 
 - **Client SDK**: a Python programmatic API allowing developers to send media and meta to Savant and receive the results right from Python programs without threads, complex logic, etc;
 
