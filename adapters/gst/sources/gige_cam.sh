@@ -84,6 +84,10 @@ if [[ "${ENCODE,,}" == "true" ]]; then
 fi
 if [[ "${USE_ABSOLUTE_TIMESTAMPS,,}" == "true" ]]; then
     TS_OFFSET="$(date +%s%N)"
+    if [[ "${ENCODE,,}" == "true" ]]; then
+        # x265enc adds offset to timestamps to avoid negative timestamps
+        TS_OFFSET="$((TS_OFFSET - 3600000000000000))"
+    fi
     PIPELINE+=(
         shift_timestamps offset="${TS_OFFSET}" !
     )
