@@ -14,16 +14,18 @@ RUN python -m pip install --no-cache-dir --upgrade pip
 # Savant python package builder
 FROM base_builder as savant_build
 
-RUN apt update && apt install --no-install-recommends -y python3.8-venv
+RUN apt-get update && \
+    apt-get install --no-install-recommends -y \
+      python3.8-venv
 
-RUN python3 -m pip install setuptools wheel build
+RUN python -m pip install --no-cache-dir setuptools wheel build
 
 WORKDIR /tmp/build
 COPY pyproject.toml README.md LICENSE ./
 COPY requirements/base.txt requirements/base.txt
 COPY requirements/savant-rs.txt requirements/savant-rs.txt
 COPY savant savant
-RUN python3 -m build --wheel
+RUN python -m build --wheel
 
 
 # Savant GStreamer/DeepStream meta package builder
@@ -57,13 +59,13 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
       rm /etc/ld.so.conf.d/nvidia-tegra.conf; \
       mkdir -p /opt/nvidia/l4t-packages/; \
       touch /opt/nvidia/l4t-packages/.nv-l4t-disable-boot-fw-update-in-preinstall; \
-      apt update; \
-      apt install -y nvidia-l4t-multimedia; \
+      apt-get update; \
+      apt-get install --no-install-recommends -y nvidia-l4t-multimedia; \
     fi
 
 WORKDIR /libs/savanboost
 COPY libs/savantboost/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN python -m pip install --no-cache-dir -r requirements.txt
 
 COPY libs/savantboost .
 RUN python setup.py bdist_wheel -- -DCMAKE_BUILD_TYPE:STRING=Release  && rm -rf _skbuild
@@ -82,31 +84,32 @@ ARG TARGETARCH
 ARG DEEPSTREAM_VERSION
 
 # remove nvidia repos (sometimes break down)
-#RUN rm -r /etc/apt/sources.list.d/* && apt clean
+#RUN rm -r /etc/apt/sources.list.d/* && apt-get clean
 
 # install base packages
-RUN apt update \
-    && apt install --no-install-recommends -y \
-        python3-pip \
-        python3-dev \
-        libcairo2-dev \
-        libgirepository1.0-dev \
-        python3-gst-1.0 \
-        gstreamer1.0-python3-plugin-loader \
-    && apt install --reinstall -y \
-        gstreamer1.0-plugins-ugly \
-        libavutil56 \
-        libavformat58 \
-        libavfilter7 \
-        libavdevice58 \
-        libavcodec58 \
-        libvpx6 \
-        libx265-179 \
-        libmpg123-0 \
-        libx264-155 \
-    && apt autoremove -y \
-    && apt clean \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && \
+    apt-get install --no-install-recommends -y \
+      python3-pip \
+      python3-dev \
+      libcairo2-dev \
+      libswscale-dev \
+      libgirepository1.0-dev \
+      python3-gst-1.0 \
+      gstreamer1.0-python3-plugin-loader && \
+    apt-get install --reinstall -y \
+      gstreamer1.0-plugins-ugly \
+      libavutil56 \
+      libavformat58 \
+      libavfilter7 \
+      libavdevice58 \
+      libavcodec58 \
+      libvpx6 \
+      libx265-179 \
+      libmpg123-0 \
+      libx264-155 && \
+    apt-get autoremove -y && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 ARG PROJECT_PATH=/opt/savant
 ENV PYTHONUNBUFFERED=1 \
@@ -128,9 +131,9 @@ RUN python -m pip install --no-cache-dir --upgrade pip
 ARG OPENCV_VERSION=4.8.0
 RUN wget -qO- \
     "https://eu-central-1.linodeobjects.com/savant-data/opencv-packages/opencv-${OPENCV_VERSION}-${TARGETARCH}-ds${DEEPSTREAM_VERSION}.tar.gz" \
-    | tar xz \
-    && dpkg -i OpenCV* \
-    && rm OpenCV*
+    | tar xz && \
+    dpkg -i OpenCV* && \
+    rm OpenCV*
 
 COPY requirements/base.txt requirements/base.txt
 RUN python -m pip install --no-cache-dir -r requirements/base.txt
@@ -156,8 +159,8 @@ RUN python -m pip install --no-cache-dir /libs/savant/dist/*.whl
 #ARG YQ_VERSION=4.35.2
 #ARG YQ_BINARY=yq_linux_${TARGETARCH}
 #RUN wget https://github.com/mikefarah/yq/releases/download/v${YQ_VERSION}/${YQ_BINARY}.tar.gz -O - \
-#    | tar xz \
-#    && mv ${YQ_BINARY} /usr/bin/yq
+#    | tar xz && \
+#    mv ${YQ_BINARY} /usr/bin/yq
 
 # add framework content
 COPY LICENSE .
@@ -200,12 +203,12 @@ FROM base AS adapters
 
 HEALTHCHECK NONE
 
-RUN apt update \
-    && apt install -y \
-        gstreamer1.0-libav \
-    && apt autoremove -y \
-    && apt clean \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && \
+    apt-get install --no-install-recommends -y \
+      gstreamer1.0-libav && \
+    apt-get autoremove -y && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY --from=mediamtx /mediamtx/mediamtx mediamtx/mediamtx
 COPY adapters/shared adapters/shared
@@ -222,25 +225,26 @@ FROM base AS docs
 
 HEALTHCHECK NONE
 
-RUN apt update && apt install --no-install-recommends -y \
-    graphviz && \
-    apt autoremove -y && \
-    apt clean && \
+RUN apt-get update && \
+    apt-get install --no-install-recommends -y \
+      graphviz && \
+    apt-get autoremove -y && \
+    apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 COPY samples samples
 
 COPY docs/requirements.txt requirements.txt
-RUN python -m pip install --no-cache-dir -r requirements.txt \
-    && rm requirements.txt
+RUN python -m pip install --no-cache-dir -r requirements.txt && \
+    rm requirements.txt
 
 ARG USERNAME=container_user
 # UID should be set to the same value as host OS UID
 ARG USER_UID=1001
 ARG USER_GID=$USER_UID
 # Create the user
-RUN groupadd --gid $USER_GID $USERNAME \
-	&& useradd --uid $USER_UID --gid $USER_GID -m $USERNAME
+RUN groupadd --gid $USER_GID $USERNAME && \
+	useradd --uid $USER_UID --gid $USER_GID -m $USERNAME
 
 RUN chown -R $USER_UID:$USER_GID $PROJECT_PATH
 USER $USERNAME
@@ -257,6 +261,6 @@ COPY requirements/dev.txt requirements/dev.txt
 COPY tests /opt/savant/tests
 
 RUN python -m pip install --no-cache-dir -r requirements/dev.txt
-RUN python -m pip install torch torchvision torchaudio
+RUN python -m pip install --no-cache-dir torch torchvision torchaudio
 
 ENTRYPOINT ["pytest", "-s", "/opt/savant/tests"]

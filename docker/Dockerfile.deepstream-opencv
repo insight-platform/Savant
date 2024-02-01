@@ -20,6 +20,10 @@ WORKDIR /opencv/build
 
 RUN python3 -m pip install --no-cache-dir 'numpy~=1.22.4'
 
+# add ffmpeg/gstreamer libs
+RUN /opt/nvidia/deepstream/deepstream/user_additional_install.sh
+RUN apt-get install -y libswscale-dev
+
 COPY libs/opencv/savant /opencv/opencv_contrib/modules/savant
 RUN --mount=type=cache,target=/tmp/opencv-cache \
     cmake \
@@ -36,8 +40,8 @@ RUN --mount=type=cache,target=/tmp/opencv-cache \
         -D BUILD_PERF_TESTS=OFF \
         -D BUILD_SHARED_LIBS=ON \
         -D WITH_CUDA=ON \
-        -D WITH_FFMPEG=OFF \
-        -D WITH_GSTREAMER=OFF \
+        -D WITH_FFMPEG=ON \
+        -D WITH_GSTREAMER=ON \
         -D BUILD_opencv_python3=ON \
         -D OPENCV_PYTHON_INSTALL_PATH=lib/python3.8/dist-packages \
         -D OPENCV_FORCE_PYTHON_LIBS=ON \
