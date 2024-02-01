@@ -30,12 +30,7 @@ else
 fi
 BUFFER_LEN="${BUFFER_LEN:="50"}"
 FFMPEG_LOGLEVEL="${FFMPEG_LOGLEVEL:="info"}"
-
-handler() {
-    kill -s SIGINT "${child_pid}"
-    wait "${child_pid}"
-}
-trap handler SIGINT SIGTERM
+USE_ABSOLUTE_TIMESTAMPS="${USE_ABSOLUTE_TIMESTAMPS:="false"}"
 
 FFMPEG_SRC=(ffmpeg_src uri="${URI}" queue-len="${BUFFER_LEN}" loglevel="${FFMPEG_LOGLEVEL}")
 if [[ -n "${FFMPEG_PARAMS}" ]]; then
@@ -44,11 +39,26 @@ fi
 PIPELINE=(
     "${FFMPEG_SRC[@]}" !
     savant_parse_bin !
+)
+if [[ "${USE_ABSOLUTE_TIMESTAMPS,,}" == "true" ]]; then
+    TS_OFFSET="$(date +%s%N)"
+    PIPELINE+=(
+        shift_timestamps offset="${TS_OFFSET}" !
+    )
+    SYNC_DELAY="$((SYNC_DELAY - TS_OFFSET))"
+fi
+PIPELINE+=(
     fps_meter "${FPS_PERIOD}" output="${FPS_OUTPUT}" !
     savant_rs_serializer source-id="${SOURCE_ID}" !
     zeromq_sink socket="${ZMQ_ENDPOINT}" socket-type="${ZMQ_SOCKET_TYPE}" bind="${ZMQ_SOCKET_BIND}"
     sync="${SYNC_OUTPUT}" ts-offset="${SYNC_DELAY}"
 )
+
+handler() {
+    kill -s SIGINT "${child_pid}"
+    wait "${child_pid}"
+}
+trap handler SIGINT SIGTERM
 
 gst-launch-1.0 --eos-on-shutdown "${PIPELINE[@]}" &
 

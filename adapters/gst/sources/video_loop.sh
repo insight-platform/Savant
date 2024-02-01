@@ -28,19 +28,33 @@ fi
 MEASURE_FPS_PER_LOOP="${MEASURE_FPS_PER_LOOP:="false"}"
 EOS_ON_LOOP_END="${EOS_ON_LOOP_END:="false"}"
 READ_METADATA="${READ_METADATA:="false"}"
+USE_ABSOLUTE_TIMESTAMPS="${USE_ABSOLUTE_TIMESTAMPS:="false"}"
+SINK_PROPERTIES=(
+    socket="${ZMQ_ENDPOINT}"
+    socket-type="${ZMQ_SOCKET_TYPE}"
+    bind="${ZMQ_SOCKET_BIND}"
+    sync="${SYNC_OUTPUT}"
+)
 
 PIPELINE=(
     media_files_src_bin location="${LOCATION}" file-type=video loop-file=true download-path="${DOWNLOAD_PATH}" !
     fps_meter "${FPS_PERIOD}" output="${FPS_OUTPUT}" measure-per-loop="${MEASURE_FPS_PER_LOOP}" !
     adjust_timestamps !
 )
+if [[ "${USE_ABSOLUTE_TIMESTAMPS,,}" == "true" ]]; then
+    TS_OFFSET="$(date +%s%N)"
+    PIPELINE+=(
+        shift_timestamps offset="${TS_OFFSET}" !
+    )
+    SINK_PROPERTIES+=(ts-offset="-${TS_OFFSET}")
+fi
 if [[ -n "${LOSS_RATE}" ]]; then
     PIPELINE+=(identity drop-probability="${LOSS_RATE}" !)
 fi
 PIPELINE+=(
     savant_rs_serializer source-id="${SOURCE_ID}" eos-on-loop-end="${EOS_ON_LOOP_END}"
     read-metadata="${READ_METADATA}" !
-    zeromq_sink socket="${ZMQ_ENDPOINT}" socket-type="${ZMQ_SOCKET_TYPE}" bind="${ZMQ_SOCKET_BIND}" sync="${SYNC_OUTPUT}"
+    zeromq_sink "${SINK_PROPERTIES[@]}"
 )
 
 handler() {

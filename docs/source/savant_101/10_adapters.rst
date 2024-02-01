@@ -246,7 +246,8 @@ Most source adapters accept the following common parameters:
 - ``ZMQ_BIND``; a socket mode (the ``bind`` mode is when the parameter is set to ``True``); default is ``False``; **warning**: this parameter is deprecated, consider encoding the type in ``ZMQ_ENDPOINT``;
 - ``FPS_PERIOD_FRAMES``; a number of frames between FPS reports; FPS reporting helps to estimate the performance of the pipeline components deployed; default is ``1000``;
 - ``FPS_PERIOD_SECONDS``; a number of seconds between FPS reports; default is ``None`` which means that FPS reporting uses ``FPS_PERIOD_FRAMES``;
-- ``FPS_OUTPUT``; a path to the file for FPS reports; default is ``stdout``.
+- ``FPS_OUTPUT``; a path to the file for FPS reports; default is ``stdout``;
+- ``USE_ABSOLUTE_TIMESTAMPS``; when ``True`` the adapter puts absolute timestamps into the frames, i.e. the timestamps of the frames start from the time of adapter launch; default is ``False``.
 
 Image File Source Adapter
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -605,7 +606,7 @@ The Kafka-Redis Source Adapter takes video stream metadata from Kafka and fetche
 - ``QUEUE_SIZE``: a maximum amount of messages in the queue; default is ``50``.
 
 .. note::
-    The adapter doesn't have ``SOURCE_ID``, ``ZMQ_TYPE``, ``ZMQ_BIND`` parameters.
+    The adapter doesn't have ``SOURCE_ID``, ``ZMQ_TYPE``, ``ZMQ_BIND``, ``USE_ABSOLUTE_TIMESTAMPS`` parameters.
 
 Running the adapter with Docker:
 
