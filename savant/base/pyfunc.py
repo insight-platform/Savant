@@ -7,9 +7,10 @@ from importlib import util as importlib_util
 from importlib.machinery import ModuleSpec
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional, List
 
 from savant.gstreamer import Gst  # noqa: F401
+from savant.gstreamer.utils import get_elements
 from savant.utils.inotify_manager import INotifyManager
 from savant.utils.logging import get_logger
 
@@ -70,6 +71,34 @@ class BasePyFuncPlugin(BasePyFuncImpl):
         :param buffer: Gstreamer buffer.
         """
 
+    def get_queues(self) -> List[Gst.Element]:
+        """Get upstream queues.
+
+        Can be used to check the current queue length for bandwidth management.
+
+        E.g.:
+        ```
+        for queue in self.get_queues():
+            queue_length = queue.get_property('current-level-buffers')
+            if queue_length > 10:
+                self.logger.warning('Queue %s is full!', queue.get_name())
+        ```
+        """
+        if self.gst_element is not None:
+            gst_pipeline = self.gst_element.get_parent()
+            return get_elements(
+                gst_pipeline,
+                factory='queue',
+                before_element=self.gst_element,
+            )
+        return []
+
+    def get_queue(self, name: str) -> Optional[Gst.Element]:
+        """Get upstream queue by name."""
+        for queue in self.get_queues():
+            if queue.get_name() == name:
+                return queue
+        return None
 
 class BasePyFuncCallableImpl(BasePyFuncImpl):
     """Base class for a PyFunc implementation as a callable.
