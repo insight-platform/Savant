@@ -128,7 +128,7 @@ class Ingress(BaseThreadWorker):
     def push_frame(self, message_parts: List[bytes]) -> bool:
         """Push frame to the buffer."""
 
-        buffer_size = self._queue.len()
+        buffer_size = self._queue.len
         if self._buffer_is_full:
             if buffer_size >= self._config.buffer.threshold:
                 self.logger.debug('Buffer is full, dropping the frame')
@@ -239,7 +239,7 @@ class Egress(BaseThreadWorker):
         When the buffer is empty, wait until it is not empty and then pop the message.
         """
 
-        if self._queue.len() < QUEUE_ITEM_SIZE:
+        if self._queue.len < QUEUE_ITEM_SIZE:
             self.logger.trace(
                 'Buffer is empty, waiting for %s seconds',
                 self._idle_polling_period,
@@ -290,7 +290,8 @@ class StatsAggregator:
         pushed_messages = self._ingress.pushed_messages
         dropped_messages = self._ingress.dropped_messages
         sent_messages = self._egress.sent_messages
-        buffer_size = self._queue.len() // QUEUE_ITEM_SIZE
+        buffer_size = self._queue.len // QUEUE_ITEM_SIZE
+        payload_size = self._queue.payload_size
 
         return {
             'received_messages': received_messages,
@@ -298,6 +299,7 @@ class StatsAggregator:
             'dropped_messages': dropped_messages,
             'sent_messages': sent_messages,
             'buffer_size': buffer_size,
+            'payload_size': payload_size,
         }
 
 
@@ -329,12 +331,13 @@ class StatsLogger(BaseThreadWorker):
 
         stats = self._stats_aggregator.get_stats()
         self.logger.info(
-            'Received %s, pushed %s, dropped %s, sent %s, buffer size %s',
+            'Received %s, pushed %s, dropped %s, sent %s, buffer size %s, payload size %s',
             stats['received_messages'],
             stats['pushed_messages'],
             stats['dropped_messages'],
             stats['sent_messages'],
             stats['buffer_size'],
+            stats['payload_size'],
         )
 
 
@@ -361,6 +364,9 @@ class AdapterMetricsCollector(BaseMetricsCollector):
             Counter('sent_messages', 'Number of messages sent by the adapter')
         )
         self.register_metric(Gauge('buffer_size', 'Number of messages in the buffer'))
+        self.register_metric(
+            Gauge('payload_size', 'Size of the queue in bytes (only payload)')
+        )
 
     def update_all_metrics(self):
         for k, v in self._metrics_aggregator.get_stats().items():
