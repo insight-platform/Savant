@@ -162,8 +162,7 @@ def _parse_event(event: Gst.Event):
         )
     elif event.type == Gst.EventType.LATENCY:
         value = event.parse_latency()
-
-    message = f'Type: {event.type.value_name}'
+    message = f'Type: {event.type}'
     if value is not None:
         message += f'. Value: {value}'
     struct = event.get_structure()
