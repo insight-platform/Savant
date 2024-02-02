@@ -394,6 +394,36 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             'is' if video_frame.keyframe else 'is not',
         )
 
+        try:
+            if not self.ingress_pyfunc(video_frame):
+                self.logger.debug(
+                    'Frame %s from source %s didnt pass ingress filter, skipping it.',
+                    frame_pts,
+                    video_frame.source_id,
+                )
+                return Gst.FlowReturn.OK
+
+            self.logger.debug(
+                'Frame %s from source %s passed ingress filter.',
+                frame_pts,
+                video_frame.source_id,
+            )
+        except Exception as exc:
+            handle_non_fatal_error(
+                self,
+                self.logger,
+                exc,
+                f'Error in ingress filter call {self.ingress_pyfunc}',
+                self.ingress_dev_mode,
+            )
+            if video_frame.content.is_none():
+                self.logger.debug(
+                    'Frame %s from source %s has no content, skipping it.',
+                    frame_pts,
+                    video_frame.source_id,
+                )
+                return Gst.FlowReturn.OK
+
         with self.source_lock:
             source_info: SourceInfo = self.sources.get(video_frame.source_id)
             if source_info is None:
@@ -434,8 +464,10 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             self.update_frame_params(source_info, frame_params)
         if source_info.src_pad is not None:
             self.check_timestamps(source_info, frame_pts, frame_dts)
-        source_info.last_pts = frame_pts
-        source_info.last_dts = frame_dts
+        if frame_pts != Gst.CLOCK_TIME_NONE:
+            source_info.last_pts = frame_pts
+        if frame_dts != Gst.CLOCK_TIME_NONE:
+            source_info.last_dts = frame_dts
         if source_info.src_pad is None:
             if video_frame.keyframe:
                 self.add_source(video_frame.source_id, source_info)
@@ -443,36 +475,6 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
                 self.logger.warning(
                     'Frame %s from source %s is not a keyframe, skipping it. '
                     'Stream should start with a keyframe.',
-                    frame_pts,
-                    video_frame.source_id,
-                )
-                return Gst.FlowReturn.OK
-
-        try:
-            if not self.ingress_pyfunc(video_frame):
-                self.logger.debug(
-                    'Frame %s from source %s didnt pass ingress filter, skipping it.',
-                    frame_pts,
-                    video_frame.source_id,
-                )
-                return Gst.FlowReturn.OK
-
-            self.logger.debug(
-                'Frame %s from source %s passed ingress filter.',
-                frame_pts,
-                video_frame.source_id,
-            )
-        except Exception as exc:
-            handle_non_fatal_error(
-                self,
-                self.logger,
-                exc,
-                f'Error in ingress filter call {self.ingress_pyfunc}',
-                self.ingress_dev_mode,
-            )
-            if video_frame.content.is_none():
-                self.logger.debug(
-                    'Frame %s from source %s has no content, skipping it.',
                     frame_pts,
                     video_frame.source_id,
                 )
