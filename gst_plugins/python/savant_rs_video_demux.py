@@ -2,8 +2,9 @@
 import inspect
 import itertools
 import time
-from dataclasses import dataclass
-from threading import Lock, Thread
+from contextlib import contextmanager
+from dataclasses import dataclass, field
+from threading import Event, Lock, Thread
 from typing import Dict, NamedTuple, Optional, Union
 
 from savant_rs.pipeline2 import VideoPipeline
@@ -161,6 +162,14 @@ class SourceInfo:
     timestamp: float = 0
     last_pts: int = 0
     last_dts: int = 0
+    locked: Event = field(default_factory=Event)
+
+    @contextmanager
+    def lock(self):
+        self.locked.set()
+        yield
+        self.timestamp = time.time()
+        self.locked.clear()
 
 
 class FrameInfo(NamedTuple):
@@ -418,51 +427,59 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             return Gst.FlowReturn.OK
 
         with self.source_lock:
-            source_info = self._get_source_info(frame_info)
-            if not isinstance(source_info, SourceInfo):
-                return source_info
+            res = self._get_source_info(frame_info)
+            if not isinstance(res, SourceInfo):
+                return res
+            source_info = res
+            source_info.locked.set()
+            source_info.timestamp = time.time()
 
-        if source_info.src_pad is not None and source_info.params != frame_info.params:
-            if self.is_greater_than_max_resolution(frame_info.params):
-                self.send_eos(source_info)
-            self.update_frame_params(source_info, frame_info)
-        if source_info.src_pad is not None:
-            self.check_timestamps(source_info, frame_info)
-        if frame_info.pts != Gst.CLOCK_TIME_NONE:
-            source_info.last_pts = frame_info.pts
-        if frame_info.dts != Gst.CLOCK_TIME_NONE:
-            source_info.last_dts = frame_info.dts
-        if source_info.src_pad is None:
-            if video_frame.keyframe:
-                self.add_source(video_frame.source_id, source_info)
-            else:
-                self.logger.warning(
-                    'Frame %s from source %s is not a keyframe, skipping it. '
-                    'Stream should start with a keyframe.',
-                    frame_info.pts,
-                    video_frame.source_id,
+        with source_info.lock():
+            if (
+                source_info.src_pad is not None
+                and source_info.params != frame_info.params
+            ):
+                if self.is_greater_than_max_resolution(frame_info.params):
+                    self.send_eos(source_info)
+                self.update_frame_params(source_info, frame_info)
+            if source_info.src_pad is not None:
+                self.check_timestamps(source_info, frame_info)
+            if frame_info.pts != Gst.CLOCK_TIME_NONE:
+                source_info.last_pts = frame_info.pts
+            if frame_info.dts != Gst.CLOCK_TIME_NONE:
+                source_info.last_dts = frame_info.dts
+            if source_info.src_pad is None:
+                if video_frame.keyframe:
+                    self.add_source(video_frame.source_id, source_info)
+                else:
+                    self.logger.warning(
+                        'Frame %s from source %s is not a keyframe, skipping it. '
+                        'Stream should start with a keyframe.',
+                        frame_info.pts,
+                        video_frame.source_id,
+                    )
+                    return Gst.FlowReturn.OK
+
+            try:
+                frame_buf = self._build_frame_buffer(video_frame, buffer)
+            except ValueError as e:
+                self.is_running = False
+                error = (
+                    f'Failed to build buffer for video frame {frame_info.pts} '
+                    f'from source {video_frame.source_id}: {e}'
                 )
-                return Gst.FlowReturn.OK
+                self.logger.error(error)
+                frame = inspect.currentframe()
+                gst_post_stream_demux_error(
+                    gst_element=self,
+                    frame=frame,
+                    file_path=__file__,
+                    text=error,
+                )
+                return Gst.FlowReturn.ERROR
 
-        try:
-            frame_buf = self._build_frame_buffer(video_frame, buffer)
-        except ValueError as e:
-            self.is_running = False
-            error = (
-                f'Failed to build buffer for video frame {frame_info.pts} '
-                f'from source {video_frame.source_id}: {e}'
-            )
-            self.logger.error(error)
-            frame = inspect.currentframe()
-            gst_post_stream_demux_error(
-                gst_element=self,
-                frame=frame,
-                file_path=__file__,
-                text=error,
-            )
-            return Gst.FlowReturn.ERROR
+            result = self._push_frame(source_info, frame_info, frame_buf, span_context)
 
-        result = self._push_frame(source_info, frame_info, frame_buf, span_context)
         self.logger.debug(
             'Frame from source %s with PTS %s was processed.',
             video_frame.source_id,
@@ -545,7 +562,6 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
                 frame_info.video_frame.source_id, frame_info.params
             )
             self.sources[frame_info.video_frame.source_id] = source_info
-        source_info.timestamp = time.time()
 
         return source_info
 
@@ -648,11 +664,13 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             source_info: SourceInfo = self.sources.get(eos.source_id)
             if source_info is None:
                 return Gst.FlowReturn.OK
-            source_info.timestamp = time.time()
+            source_info.locked.set()
 
-        if source_info.src_pad is not None:
-            self.send_eos(source_info)
-        del self.sources[eos.source_id]
+        with source_info.lock():
+            if source_info.src_pad is not None:
+                self.send_eos(source_info)
+            with self.source_lock:
+                del self.sources[eos.source_id]
 
         return Gst.FlowReturn.OK
 
@@ -819,20 +837,20 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
         with self.source_lock:
             if not self.is_running:
                 return
-            now = time.time()
-            limit = now - self.source_timeout
-            earliest_ts = now
             for source_id, source_info in list(self.sources.items()):
-                if source_info.timestamp < limit:
+                if (
+                    not source_info.locked.is_set()
+                    and source_info.timestamp < time.time() - self.source_timeout
+                ):
                     self.logger.debug('Source %s has expired', source_id)
                     if source_info.src_pad is not None:
                         self.send_eos(source_info)
                     del self.sources[source_id]
-                else:
-                    earliest_ts = min(earliest_ts, source_info.timestamp)
-        wait = max(earliest_ts - limit, self.source_eviction_interval)
-        self.logger.debug('Waiting %s seconds for the next eviction loop', wait)
-        time.sleep(wait)
+        self.logger.debug(
+            'Waiting %s seconds for the next eviction loop',
+            self.source_eviction_interval,
+        )
+        time.sleep(self.source_eviction_interval)
 
     def add_frame_meta(self, idx: int, frame_buf: Gst.Buffer, video_frame: VideoFrame):
         """Store metadata of a frame."""
