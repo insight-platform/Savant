@@ -7,9 +7,10 @@ from importlib import util as importlib_util
 from importlib.machinery import ModuleSpec
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, Dict, Optional, List
+from typing import Any, Callable, Dict, List, Optional
 
 from savant.gstreamer import Gst  # noqa: F401
+from savant.gstreamer.element.queue import GstQueue
 from savant.gstreamer.utils import get_elements
 from savant.utils.inotify_manager import INotifyManager
 from savant.utils.logging import get_logger
@@ -71,34 +72,60 @@ class BasePyFuncPlugin(BasePyFuncImpl):
         :param buffer: Gstreamer buffer.
         """
 
-    def get_queues(self) -> List[Gst.Element]:
-        """Get upstream queues.
+    def get_queues(self) -> List[GstQueue]:
+        """Get all pipeline queues."""
+        if self.gst_element is not None:
+            gst_pipeline = self.gst_element.get_parent()
+            return [
+                GstQueue(elem) for elem in get_elements(gst_pipeline, factory='queue')
+            ]
+        return []
 
-        Can be used to check the current queue length for bandwidth management.
+    def get_upstream_queue(self) -> Optional[GstQueue]:
+        """Get upstream queue, the last queue before the pyfunc.
 
-        E.g.:
-        ```
-        for queue in self.get_queues():
-            queue_length = queue.get_property('current-level-buffers')
-            if queue_length > 10:
-                self.logger.warning('Queue %s is full!', queue.get_name())
-        ```
+        Can be used to check the current queue size for bandwidth management.
+
+        .. code-block:: python
+
+            queue = self.get_upstream_queue()
+            ...
+            if queue.full():
+                ...
+
         """
         if self.gst_element is not None:
             gst_pipeline = self.gst_element.get_parent()
-            return get_elements(
-                gst_pipeline,
-                factory='queue',
-                before_element=self.gst_element,
+            elements = get_elements(
+                gst_pipeline, before_element=self.gst_element, factory='queue'
             )
-        return []
-
-    def get_queue(self, name: str) -> Optional[Gst.Element]:
-        """Get upstream queue by name."""
-        for queue in self.get_queues():
-            if queue.get_name() == name:
-                return queue
+            if elements:
+                return GstQueue(elements[-1])
         return None
+
+    def get_queue(self, name: str) -> Optional[GstQueue]:
+        """Get pipeline queue by name.
+
+        .. code-block:: yaml
+
+            pipeline:
+              elements:
+                - element: queue
+                  name: my_queue
+                ...
+
+        .. code-block:: python
+
+            queue = self.get_queue('my_queue')
+
+        """
+        if self.gst_element is not None:
+            gst_pipeline = self.gst_element.get_parent()
+            elem = gst_pipeline.get_by_name(name)
+            if elem and elem.get_factory().get_name() == 'queue':
+                return GstQueue(elem)
+        return None
+
 
 class BasePyFuncCallableImpl(BasePyFuncImpl):
     """Base class for a PyFunc implementation as a callable.
