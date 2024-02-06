@@ -59,6 +59,18 @@ if [[ -n "${SHUTDOWN_AUTH}" ]]; then
     )
 fi
 
+
+USE_ABSOLUTE_TIMESTAMPS="${USE_ABSOLUTE_TIMESTAMPS:="false"}"
+SINK_PROPERTIES=(
+    socket="${ZMQ_ENDPOINT}"
+    socket-type="${ZMQ_SOCKET_TYPE}"
+    bind="${ZMQ_SOCKET_BIND}"
+    sync="${SYNC_OUTPUT}"
+)
+if [[ -n "${RECEIVE_TIMEOUT}" ]]; then
+    SINK_PROPERTIES+=("receive-timeout=${RECEIVE_TIMEOUT}")
+fi
+
 PIPELINE=(
     media_files_src_bin "${MEDIA_FILES_SRC_BIN_OPTS[@]}" !
 )
@@ -71,8 +83,17 @@ fi
 PIPELINE+=(
     fps_meter "${FPS_PERIOD}" output="${FPS_OUTPUT}" !
     adjust_timestamps !
+)
+if [[ "${USE_ABSOLUTE_TIMESTAMPS,,}" == "true" ]]; then
+    TS_OFFSET="$(date +%s%N)"
+    PIPELINE+=(
+        shift_timestamps offset="${TS_OFFSET}" !
+    )
+    SINK_PROPERTIES+=(ts-offset="-${TS_OFFSET}")
+fi
+PIPELINE+=(
     savant_rs_serializer "${SAVANT_RS_SERIALIZER_OPTS[@]}" !
-    zeromq_sink socket="${ZMQ_ENDPOINT}" socket-type="${ZMQ_SOCKET_TYPE}" bind="${ZMQ_SOCKET_BIND}" sync="${SYNC_OUTPUT}" "${SENDER_RECEIVE_TIMEOUT}"
+    zeromq_sink "${SINK_PROPERTIES[@]}"
 )
 
 handler() {

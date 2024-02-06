@@ -1,0 +1,207 @@
+import sys
+from collections import defaultdict
+from itertools import permutations
+
+import yaml
+from savant_rs.primitives.geometry import Point, PolygonalArea
+
+try:
+    from statsd import StatsClient
+except ImportError:
+    StatsClient = None
+    print('Stats client is not installed. Sending stats is disabled.')
+
+
+from savant.deepstream.meta.frame import NvDsFrameMeta
+from savant.deepstream.pyfunc import NvDsPyFuncPlugin
+from savant.gstreamer import Gst
+from savant.parameter_storage import param_storage
+
+OBJ_LABEL = param_storage()['detected_object_label']
+
+from .utils import Point, TwoLinesCrossingTracker
+
+
+class ConditionalDetectorSkip(NvDsPyFuncPlugin):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        with open(self.config_path, 'r', encoding='utf8') as stream:
+            self.line_config = yaml.safe_load(stream)
+
+    def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
+        primary_meta_object = None
+        for obj_meta in frame_meta.objects:
+            if obj_meta.is_primary:
+                primary_meta_object = obj_meta
+                break
+
+        # if the boundary lines are not configured for this source
+        # then disable detector inference entirely by removing the primary object
+        # Note:
+        # In order to enable use cases such as conditional inference skip
+        # or user-defined ROI, Savant configures all Deepstream models to run
+        # in 'secondary' mode and inserts a primary 'frame' object into the DS meta
+        if (
+            primary_meta_object is not None
+            and frame_meta.source_id not in self.line_config
+        ):
+            frame_meta.remove_obj_meta(primary_meta_object)
+
+
+class LineCrossing(NvDsPyFuncPlugin):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        with open(self.config_path, 'r', encoding='utf8') as stream:
+            self.line_config = yaml.safe_load(stream)
+
+        self.intersections = {}
+        for source_id, poly_cfg in self.line_config.items():
+            points = [Point(*coords) for coords in poly_cfg['points']]
+
+            points_permutations = permutations(points)
+            config_order = next(points_permutations)
+            polygon = PolygonalArea(config_order, poly_cfg['edges'])
+            if polygon.is_self_intersecting():
+                # try to find a permutation of points that does not produce a self-intersecting polygon
+                self.logger.warn(
+                    'Polygon config for the "%s" source id produced a self-intersecting polygon.'
+                    ' Trying to find a valid permutation...',
+                    source_id,
+                )
+                while True:
+                    try:
+                        points_perm = next(points_permutations)
+                        polygon = PolygonalArea(points_perm, poly_cfg['edges'])
+                        if not polygon.is_self_intersecting():
+                            self.logger.info(
+                                'Found a valid points permutation "%s" for the "%s" source id.',
+                                points_perm,
+                                source_id,
+                            )
+                            break
+                    except StopIteration:
+                        self.logger.error(
+                            'Polygon config for the "%s" source id produced a self-intersecting polygon.'
+                            ' Please correct coordinates "%s" in the config file and restart the pipeline.',
+                            source_id,
+                            poly_cfg,
+                        )
+                        sys.exit(1)
+
+            self.intersections[source_id] = polygon
+
+        self.lc_trackers = {}
+        self.track_last_frame_num = defaultdict(lambda: defaultdict(int))
+        self.crossing_counts = defaultdict(lambda: defaultdict(int))
+        self.cross_events = defaultdict(lambda: defaultdict(list))
+
+        # metrics namescheme
+        # savant.module.fisheye_line_crossing.source_id.obj_class_label.crossing_label
+        if self.send_stats:
+            if StatsClient is None:
+                self.logger.error(
+                    'Stats client is not installed. Please install statsd to enable sending stats.'
+                )
+                self.send_stats = False
+            else:
+                self.stats_client = StatsClient(
+                    'graphite', 8125, prefix='savant.module.fisheye_line_crossing'
+                )
+
+    def on_source_eos(self, source_id: str):
+        """On source EOS event callback."""
+        if source_id in self.lc_trackers:
+            del self.lc_trackers[source_id]
+        if source_id in self.track_last_frame_num:
+            del self.track_last_frame_num[source_id]
+        if source_id in self.cross_events:
+            del self.cross_events[source_id]
+        if source_id in self.crossing_counts:
+            del self.crossing_counts[source_id]
+
+    def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
+        """Process frame metadata.
+
+        :param buffer: Gstreamer buffer with this frame's data.
+        :param frame_meta: This frame's metadata.
+        """
+        # the primary meta object may be missed in the first several frames
+        # due to nvtracker deleting all unconfirmed tracks
+        primary_meta_object = None
+        for obj_meta in frame_meta.objects:
+            if obj_meta.is_primary:
+                primary_meta_object = obj_meta
+                break
+
+        if (
+            primary_meta_object is not None
+            and frame_meta.source_id in self.intersections
+        ):
+            if frame_meta.source_id not in self.lc_trackers:
+                self.lc_trackers[frame_meta.source_id] = TwoLinesCrossingTracker(
+                    self.intersections[frame_meta.source_id]
+                )
+            lc_tracker = self.lc_trackers[frame_meta.source_id]
+
+            obj_metas = []
+            for obj_meta in frame_meta.objects:
+                if obj_meta.label == OBJ_LABEL:
+                    lc_tracker.add_track_point(
+                        obj_meta.track_id,
+                        Point(
+                            obj_meta.bbox.xc,
+                            obj_meta.bbox.yc,
+                        ),
+                    )
+                    self.track_last_frame_num[frame_meta.source_id][
+                        obj_meta.track_id
+                    ] = frame_meta.frame_num
+                    obj_metas.append(obj_meta)
+
+            track_lines_crossings = lc_tracker.check_tracks(
+                [obj_meta.track_id for obj_meta in obj_metas]
+            )
+
+            for obj_meta, cross_result in zip(obj_metas, track_lines_crossings):
+                obj_events = self.cross_events[frame_meta.source_id][obj_meta.track_id]
+
+                if cross_result:
+                    for edge_tag in cross_result:
+                        self.crossing_counts[frame_meta.source_id][edge_tag] += 1
+                        obj_events.append((edge_tag, frame_meta.pts))
+                        if self.send_stats:
+                            # send to graphite
+                            target = '.'.join(
+                                (
+                                    frame_meta.source_id,
+                                    OBJ_LABEL,
+                                    edge_tag,
+                                )
+                            )
+                            self.logger.debug('Incrementing metric %s', target)
+                            self.stats_client.incr(target)
+
+            for obj_meta in frame_meta.objects:
+                obj_events = self.cross_events[frame_meta.source_id][obj_meta.track_id]
+                for edge_tag, frame_pts in obj_events:
+                    obj_meta.add_attr_meta('lc_tracker', edge_tag, frame_pts)
+
+            for edge_tag, crossings_n in self.crossing_counts[
+                frame_meta.source_id
+            ].items():
+                primary_meta_object.add_attr_meta('analytics', edge_tag, crossings_n)
+
+        # periodically remove stale tracks
+        if not (frame_meta.frame_num % self.stale_track_del_period):
+            last_frames = self.track_last_frame_num[frame_meta.source_id]
+
+            to_delete = [
+                track_id
+                for track_id, last_frame in last_frames.items()
+                if frame_meta.frame_num - last_frame > self.stale_track_del_period
+            ]
+            if to_delete:
+                for track_id in to_delete:
+                    lc_tracker = self.lc_trackers[frame_meta.source_id]
+                    del last_frames[track_id]
+                    lc_tracker.remove_track(track_id)

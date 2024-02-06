@@ -1,21 +1,19 @@
 """Custom PyFunc implementation inference PyTorch model."""
-from savant_rs.primitives.geometry import BBox
-
-from savant.meta.object import ObjectMeta
-from savant.utils.memory_repr_pytorch import (
-    pytorch_tensor_as_opencv_gpu_mat,
-    opencv_gpu_mat_as_pytorch_tensor,
-)
-
 import cv2
 import torch
 import torchvision
 import torchvision.transforms as transforms
+from savant_rs.primitives.geometry import BBox
 
 from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.deepstream.opencv_utils import alpha_comp, nvds_to_gpu_mat
 from savant.deepstream.pyfunc import NvDsPyFuncPlugin
 from savant.gstreamer import Gst
+from savant.meta.object import ObjectMeta
+from savant.utils.memory_repr_pytorch import (
+    opencv_gpu_mat_as_pytorch_tensor,
+    pytorch_tensor_as_opencv_gpu_mat,
+)
 
 
 class PyTorchInfer(NvDsPyFuncPlugin):

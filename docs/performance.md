@@ -58,6 +58,12 @@
 | [#352](https://github.com/insight-platform/Savant/issues/352) | 264.02 | 32.15?    | 41.14     |
 | [#550](https://github.com/insight-platform/Savant/issues/550) | 268.50 |           | 41.11     |
 
+### fisheye line crossing
+
+| Savant ver.                                                   | A4000 | Xavier NX | Orin Nano |
+|---------------------------------------------------------------|-------|-----------|-----------|
+| [#193](https://github.com/insight-platform/Savant/issues/193) | 86.6  | 23.9      | 33.7      |
+
 ### license_plate_recognition
 
 | Savant ver.                                                   | A4000  | Xavier NX | Orin Nano |

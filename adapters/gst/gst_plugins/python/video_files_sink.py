@@ -96,10 +96,7 @@ class VideoFilesWriter(ChunkWriter):
 
         filesink: Gst.Element = sink.get_by_name(filesink_name)
         os.makedirs(self.base_location, exist_ok=True)
-        if self.chunk_size > 0:
-            dst_location = os.path.join(self.base_location, f'{self.chunk_idx:04}.mov')
-        else:
-            dst_location = os.path.join(self.base_location, f'video.mov')
+        dst_location = os.path.join(self.base_location, f'{self.chunk_idx:04}.mov')
         self.logger.info(
             'Writing video from source %s to file %s', self.source_id, dst_location
         )
@@ -314,10 +311,7 @@ class VideoFilesSink(LoggerMixin, Gst.Bin):
         writer = self.writers.get(frame.source_id)
         if writer is None:
             base_location = os.path.join(self.location, frame.source_id)
-            if self.chunk_size > 0:
-                json_filename_pattern = f'{Patterns.CHUNK_IDX}.json'
-            else:
-                json_filename_pattern = 'meta.json'
+            json_filename_pattern = f'{Patterns.CHUNK_IDX}.json'
             video_writer = VideoFilesWriter(
                 base_location,
                 frame.source_id,
