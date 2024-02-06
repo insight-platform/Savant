@@ -12,7 +12,6 @@ class GstQueue(GstElement):
 
         :return: Current level buffers.
         """
-        return 10
         return self.gst_element.get_property('current-level-buffers')
 
     @property
