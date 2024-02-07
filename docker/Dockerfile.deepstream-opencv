@@ -22,7 +22,12 @@ RUN python3 -m pip install --no-cache-dir 'numpy~=1.22.4'
 
 # add ffmpeg/gstreamer libs
 RUN /opt/nvidia/deepstream/deepstream/user_additional_install.sh
-RUN apt-get install -y libswscale-dev
+RUN apt-get install -y \
+      libavcodec-dev \
+      libavformat-dev \
+      libavutil-dev \
+      libswscale-dev \
+      libavresample-dev
 
 COPY libs/opencv/savant /opencv/opencv_contrib/modules/savant
 RUN --mount=type=cache,target=/tmp/opencv-cache \
