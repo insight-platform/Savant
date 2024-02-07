@@ -1,19 +1,19 @@
 version: "3.3"
 services:
 
-  source:
+  video-source:
     image: ghcr.io/insight-platform/savant-adapters-gstreamer:0.2.7
-    entrypoint: /opt/savant/adapters/gst/sources/multi_stream.sh
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
-      - ../../data/:/data
+      - ???:/data
     environment:
-      - LOCATION=/data/${INPUT_FILENAME}
-      - SHUTDOWN_AUTH=shutdown
+      - FILE_TYPE=video
+      - SOURCE_ID=video
+      - SYNC_OUTPUT=False
       - ZMQ_ENDPOINT=dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc
-      - SOURCE_ID_PATTERN=animegan_result_%d
-      - NUMBER_OF_STREAMS=1
-      - RECEIVE_TIMEOUT=50000
+      - LOCATION=???
+      - SHUTDOWN=???
+    entrypoint: /opt/savant/adapters/gst/sources/media_files.sh
     depends_on:
       module:
         condition: service_healthy
@@ -23,14 +23,13 @@ services:
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../cache:/cache
-      - ..:/opt/savant/samples
-    command: samples/animegan/module.yml
+      - ..:/opt/savant/samples???
+    command: samples/number_rec/module.yml
     environment:
-      - MODEL_PATH=/cache/models/animegan
-      - DOWNLOAD_PATH=/cache/downloads/animegan
+      - MODEL_PATH=/cache/models/number_rec
+      - DOWNLOAD_PATH=/cache/downloads/number_rec
       - ZMQ_SRC_ENDPOINT=router+bind:ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
-      - METRICS_FRAME_PERIOD=1000
     deploy:
       resources:
         reservations:
