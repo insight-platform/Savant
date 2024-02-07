@@ -2,7 +2,6 @@
 import logging
 import sys
 from collections import defaultdict
-from importlib import reload
 from importlib.machinery import ModuleSpec
 from types import ModuleType
 from typing import Dict, Optional
@@ -12,8 +11,6 @@ from inotify_simple import INotify, flags
 from savant.utils.logging import get_logger
 from savant.utils.singleton import SingletonMeta
 from importlib import util as importlib_util
-
-logger = get_logger(__name__)
 
 
 def import_module(spec: ModuleSpec) -> ModuleType:
@@ -32,7 +29,7 @@ class ModulesCache(metaclass=SingletonMeta):
     """
 
     def __init__(self) -> None:
-        self.logger = get_logger(__name__)
+        self.logger = get_logger(self.__class__.__name__)
         self.inotify = INotify()
         self.watch_flags = flags.MODIFY
 
@@ -47,18 +44,20 @@ class ModulesCache(metaclass=SingletonMeta):
         :param module_spec: user module specification.
         :return: module instance.
         """
-        module_file = module_spec.origin
+        if module_spec is None:
+            self.logger.warning(
+                'No module specification, importing and caching is impossible.'
+            )
+            return None
+        if module_spec.has_location:
+            module_file = module_spec.origin
+        else:
+            self.logger.warning(
+                'Module spec with undetermined location, caching is impossible.'
+            )
+            return None
         if module_file not in self._cache_module:
-            logger.debug(f'{module_file} is not cached, importing.')
-            if module_spec is None:
-                logger.warning('No module spec, caching is impossible.')
-                return None
-            elif not module_spec.has_location:
-                logger.warning(
-                    'Module spec with undetermined location, '
-                    'caching and reloading is impossible'
-                )
-                return None
+            self.logger.debug(f'{module_file} is not cached, importing.')
             self._cache_module[module_file] = import_module(module_spec)
             self.add_watch(module_file)
         elif self._is_file_changed(module_file):
@@ -97,7 +96,7 @@ class ModulesCache(metaclass=SingletonMeta):
                 module_file = self.watch_to_module_file[event.wd]
                 self.logger.debug('%s: save True reply.', module_file)
                 self.changed_modules[module_file] = True
-        logger.debug(
+        self.logger.debug(
             '%s is changed: %s', module_file, self.changed_modules[module_file]
         )
         return self.changed_modules[module_file]
