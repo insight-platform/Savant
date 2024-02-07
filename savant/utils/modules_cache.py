@@ -27,7 +27,7 @@ def import_module(spec: ModuleSpec) -> ModuleType:
 
 
 class ModulesCache(metaclass=SingletonMeta):
-    """Singleton facilitates caching and reloading of user update
+    """Singleton facilitates caching and reloading of user updates
     PyFunc modules in dev mode.
     """
 
@@ -36,8 +36,6 @@ class ModulesCache(metaclass=SingletonMeta):
         self.inotify = INotify()
         self.watch_flags = flags.MODIFY
 
-        self.file_to_watch = {}
-        self.watch_to_file = {}
         self.module_file_to_watch = {}
         self.watch_to_module_file: Dict[str, str] = {}
         self.changed_modules = defaultdict(bool)
