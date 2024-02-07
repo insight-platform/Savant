@@ -2,7 +2,7 @@
 import logging
 import sys
 from collections import defaultdict
-from importlib import reload
+from importlib import util as importlib_util
 from importlib.machinery import ModuleSpec
 from types import ModuleType
 from typing import Dict, Optional
@@ -11,7 +11,6 @@ from inotify_simple import INotify, flags
 
 from savant.utils.logging import get_logger
 from savant.utils.singleton import SingletonMeta
-from importlib import util as importlib_util
 
 logger = get_logger(__name__)
 

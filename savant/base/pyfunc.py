@@ -10,8 +10,8 @@ from typing import Any, Callable, Dict, List, Optional
 from savant.gstreamer import Gst  # noqa: F401
 from savant.gstreamer.element.queue import GstQueue
 from savant.gstreamer.utils import get_elements
-from savant.utils.modules_cache import ModulesCache, import_module
 from savant.utils.logging import get_logger
+from savant.utils.modules_cache import ModulesCache, import_module
 
 logger = get_logger(__name__)
 
