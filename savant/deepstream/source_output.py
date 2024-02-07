@@ -16,7 +16,7 @@ from savant.config.schema import (
     FrameProcessingCondition,
     PipelineElement,
 )
-from savant.deepstream.utils import nvds_frame_meta_iterator
+from savant.deepstream.utils.iterator import nvds_frame_meta_iterator
 from savant.gstreamer import Gst  # noqa:F401
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec, CodecInfo
 from savant.gstreamer.pipeline import GstPipeline

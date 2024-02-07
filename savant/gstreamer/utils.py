@@ -320,3 +320,39 @@ def _buffer_probe_callback(
         )
 
     return Gst.PadProbeReturn.OK
+
+
+def get_elements(
+    gst_bin: Gst.Bin,
+    factory: Optional[str] = None,
+    before_element: Optional[Gst.Element] = None,
+    after_element: Optional[Gst.Element] = None,
+) -> List[Gst.Element]:
+    """Get Bin/Pipeline elements in order (source -> elem1 -> elem2 -> ... -> sink).
+
+    :param gst_bin: Gst.Bin or Gst.Pipeline object.
+    :param factory: Optional factory name to filter elements.
+    :param before_element: Optional element to get elements before.
+    :param after_element: Optional element to get elements after.
+    :return: List of elements in order.
+    """
+    elements = []
+    element_iter = gst_bin.iterate_sorted()
+    while True:
+        ret, element = element_iter.next()
+        if ret != Gst.IteratorResult(1):  # GST_ITERATOR_OK
+            break
+        elements.append(element)
+    elements.reverse()
+    try:
+        if before_element:
+            elements = elements[: elements.index(before_element)]
+        if after_element:
+            elements = elements[elements.index(after_element) + 1 :]
+    except ValueError:
+        pass
+    if factory:
+        elements = [
+            elem for elem in elements if elem.get_factory().get_name() == factory
+        ]
+    return elements
