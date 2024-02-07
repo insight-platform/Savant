@@ -12,9 +12,7 @@
   },
   "workspaceMount": "source=${localWorkspaceFolder}/savant,target=/usr/local/lib/python3.8/dist-packages/savant,type=bind",
   "workspaceFolder": "/usr/local/lib/python3.8/dist-packages/savant",
-  "runArgs": [
-    "--gpus=all"
-  ],
+  "runArgs": [ "--gpus=all" ],
   "containerEnv": {
     "LOGLEVEL": "DEBUG",
     "MODEL_PATH": "/cache/models",
