@@ -11,7 +11,7 @@ from savant_rs.pipeline2 import VideoPipeline
 
 from gst_plugins.python.frame_tag_filter_common import build_stream_part_event
 from savant.deepstream.meta.frame import NvDsFrameMeta
-from savant.deepstream.utils import nvds_frame_meta_iterator
+from savant.deepstream.utils.iterator import nvds_frame_meta_iterator
 from savant.gstreamer import GObject, Gst
 from savant.gstreamer.utils import (
     RequiredPropertyError,
