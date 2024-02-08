@@ -219,7 +219,7 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
         )
 
         self.logger.debug('Set state of %s to READY', branch.sink.get_name())
-        branch.sink.set_state(Gst.State.READY)
+        branch.sink.set_state(Gst.State.PLAYING)
         self.logger.debug('Sync state of %s with parent', branch.sink.get_name())
         branch.sink.sync_state_with_parent()
 
