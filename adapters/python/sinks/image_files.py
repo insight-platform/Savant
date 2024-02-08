@@ -12,7 +12,8 @@ from adapters.python.sinks.chunk_writer import ChunkWriter, CompositeChunkWriter
 from adapters.python.sinks.metadata_json import (
     MetadataJsonWriter,
     Patterns,
-    frame_has_objects,
+    get_tag_location,
+    get_location,
 )
 from savant.api.enums import ExternalFrameType
 from savant.utils.logging import get_logger, init_logging
@@ -102,7 +103,9 @@ class ImageFilesSink:
             return False
         writer = self.writers.get(video_frame.source_id)
         if writer is None:
-            base_location = os.path.join(self.location, video_frame.source_id)
+            tag_location = get_tag_location(video_frame)
+            file_location = get_location(self.location, video_frame.source_id, tag_location)
+            base_location = os.path.join(self.location, file_location)
             if self.chunk_size > 0:
                 json_filename_pattern = f'{Patterns.CHUNK_IDX}.json'
             else:
@@ -140,6 +143,14 @@ def main():
 
     dir_location = os.environ['DIR_LOCATION']
     zmq_endpoint = os.environ['ZMQ_ENDPOINT']
+
+    if Patterns.SOURCE_ID not in dir_location:
+        if Patterns.SRC_FILENAME in dir_location:
+            raise RuntimeError(f"{Patterns.SOURCE_ID} is required when "
+                               f"{Patterns.SRC_FILENAME} is present.")
+        else:
+            dir_location = os.path.join(dir_location, Patterns.SOURCE_ID)
+
     zmq_socket_type = opt_config('ZMQ_TYPE', 'SUB')
     zmq_bind = opt_config('ZMQ_BIND', False, strtobool)
     skip_frames_without_objects = opt_config(
