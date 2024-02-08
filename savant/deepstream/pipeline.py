@@ -187,7 +187,6 @@ class NvDsPipeline(GstPipeline):
         return create_buffer_processor(
             queue=queue,
             sources=self._sources,
-            objects_preprocessing=self._objects_preprocessing,
             frame_params=self._frame_params,
             source_output=self._source_output,
             video_pipeline=self._video_pipeline,
