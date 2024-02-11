@@ -10,7 +10,7 @@
 
 gboolean gst_savant_batch_meta_init(GstMeta *meta, gpointer params,
                                     GstBuffer *buffer) {
-    GST_LOG_OBJECT(buffer, "Initialize meta");
+    GST_LOG("Initialize GstSavantBatchMeta for buffer %p", buffer);
     GstSavantBatchMeta *emeta = (GstSavantBatchMeta *)meta;
     emeta->idx = 0;
     return TRUE;
@@ -21,8 +21,8 @@ gboolean gst_savant_batch_meta_transform(GstBuffer *dest, GstMeta *meta,
                                          gpointer data) {
     GstSavantBatchMeta *dmeta, *smeta;
     smeta = (GstSavantBatchMeta *)meta;
-    GST_DEBUG_OBJECT(buffer, "Transform meta with IDX %d to buffer %p",
-                     smeta->idx, dest);
+    GST_DEBUG("Transform GstSavantBatchMeta with IDX %d from buffer %p to buffer %p",
+              smeta->idx, buffer, dest);
     dmeta = (GstSavantBatchMeta *)gst_buffer_add_savant_batch_meta(dest,
                                                                    smeta->idx);
     if (!dmeta)
@@ -31,7 +31,7 @@ gboolean gst_savant_batch_meta_transform(GstBuffer *dest, GstMeta *meta,
 }
 
 GType gst_savant_batch_meta_api_get_type(void) {
-    GST_TRACE("Get meta API type");
+    GST_TRACE("Get GstSavantBatchMeta API type");
     static GType type = 0;
     static const gchar *tags[] = {NULL};
 
@@ -43,7 +43,7 @@ GType gst_savant_batch_meta_api_get_type(void) {
 }
 
 const GstMetaInfo *gst_savant_batch_meta_get_info(void) {
-    GST_TRACE("Get meta info");
+    GST_TRACE("Get GstSavantBatchMeta info");
     static const GstMetaInfo *savant_batch_meta_info = NULL;
 
     if (g_once_init_enter((GstMetaInfo **)&savant_batch_meta_info)) {
@@ -59,13 +59,14 @@ const GstMetaInfo *gst_savant_batch_meta_get_info(void) {
 }
 
 GstSavantBatchMeta *gst_buffer_get_savant_batch_meta(GstBuffer *buffer) {
-    GST_DEBUG_OBJECT(buffer, "Get savant batch meta");
+    GST_DEBUG("Get GstSavantBatchMeta for buffer %p", buffer);
     GstSavantBatchMeta *meta = (GstSavantBatchMeta *)gst_buffer_get_meta(
         buffer, GST_SAVANT_BATCH_META_API_TYPE);
     if (meta) {
-        GST_DEBUG_OBJECT(buffer, "Batch IDX is %d", meta->idx);
+        GST_DEBUG("GstSavantBatchMeta with IDX %d found for buffer %p",
+                  meta->idx, buffer);
     } else {
-        GST_DEBUG_OBJECT(buffer, "Savant batch meta not found");
+        GST_DEBUG("GstSavantBatchMeta not found for buffer %p", buffer);
     }
 
     return meta;
@@ -73,25 +74,23 @@ GstSavantBatchMeta *gst_buffer_get_savant_batch_meta(GstBuffer *buffer) {
 
 GstSavantBatchMeta *gst_buffer_add_savant_batch_meta(GstBuffer *buffer,
                                                      guint32 idx) {
-    GST_DEBUG_OBJECT(buffer, "Adding savant batch meta with IDX %d", idx);
+    GST_DEBUG("Adding GstSavantBatchMeta with IDX %d to buffer %p", idx, buffer);
     GstSavantBatchMeta *meta;
     if (!gst_buffer_is_writable(buffer)) {
-        GST_WARNING_OBJECT(buffer,
-                           "Failed to add savant batch meta with IDX %d: "
-                           "buffer is not writable",
-                           idx);
+        GST_WARNING("Failed to add GstSavantBatchMeta with IDX %d to buffer %p: "
+                    "buffer is not writable",
+                    idx, buffer);
         return NULL;
     }
     meta = (GstSavantBatchMeta *)gst_buffer_add_meta(
         buffer, gst_savant_batch_meta_get_info(), NULL);
     if (!meta) {
-        GST_WARNING_OBJECT(buffer,
-                           "Failed to add savant batch meta with IDX %d", idx);
+        GST_WARNING("Failed to add GstSavantBatchMeta with IDX %d to buffer %p",
+                    idx, buffer);
         return NULL;
     }
     meta->idx = idx;
-    GST_INFO_OBJECT(buffer, "Added savant batch meta with IDX %d", idx);
+    GST_INFO("Added GstSavantBatchMeta with IDX %d to buffer %p", idx, buffer);
 
     return meta;
 }
-
