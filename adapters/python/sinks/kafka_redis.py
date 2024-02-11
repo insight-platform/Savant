@@ -13,7 +13,6 @@ from savant_rs.primitives import (
 )
 from savant_rs.utils.serialization import Message, save_message_to_bytes
 
-from adapters.python.shared.config import opt_config
 from adapters.python.shared.kafka_redis import (
     STOP,
     BaseConfig,
@@ -24,6 +23,7 @@ from adapters.python.shared.kafka_redis import (
 from savant.api.enums import ExternalFrameType
 from savant.client import SinkBuilder
 from savant.client.runner.sink import SinkResult
+from savant.utils.config import opt_config, strtobool
 
 
 class KafkaConfig(BaseKafkaConfig):
@@ -54,7 +54,7 @@ class Config(BaseConfig):
     def __init__(self):
         super().__init__()
         self.zmq_endpoint = os.environ['ZMQ_ENDPOINT']
-        self.deduplicate = opt_config('DEDUPLICATE', False, bool)
+        self.deduplicate = opt_config('DEDUPLICATE', False, strtobool)
         self.kafka = KafkaConfig()
         try:
             self.redis = RedisConfig()

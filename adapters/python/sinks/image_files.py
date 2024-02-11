@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 import os
 import traceback
-from distutils.util import strtobool
 from typing import Dict, List
 
 from savant_rs.primitives import EndOfStream, VideoFrame
 from savant_rs.utils.serialization import Message, load_message_from_bytes
 
-from adapters.python.shared.config import opt_config
 from adapters.python.sinks.chunk_writer import ChunkWriter, CompositeChunkWriter
 from adapters.python.sinks.metadata_json import (
     MetadataJsonWriter,
@@ -15,6 +13,7 @@ from adapters.python.sinks.metadata_json import (
     frame_has_objects,
 )
 from savant.api.enums import ExternalFrameType
+from savant.utils.config import opt_config, strtobool
 from savant.utils.logging import get_logger, init_logging
 from savant.utils.zeromq import ZeroMQSource, build_topic_prefix
 

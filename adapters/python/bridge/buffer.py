@@ -14,10 +14,10 @@ from savant_rs.pipeline2 import (
 from savant_rs.primitives import VideoFrame, VideoFrameContent
 from savant_rs.utils.serialization import Message, load_message_from_bytes
 
-from adapters.python.shared.config import opt_config
 from adapters.shared.thread import BaseThreadWorker
 from savant.metrics import Counter, Gauge
 from savant.metrics.prometheus import BaseMetricsCollector, PrometheusMetricsExporter
+from savant.utils.config import opt_config
 from savant.utils.logging import get_logger, init_logging
 from savant.utils.zeromq import (
     Defaults,
