@@ -31,7 +31,7 @@ RUN cd $NVDSINFER_PATH && \
     patch nvdsinfer_model_builder.cpp < nvdsinfer_model_builder.patch && \
     make
 
-FROM ghcr.io/insight-platform/savant-deepstream:latest
+FROM ghcr.io/insight-platform/savant-deepstream:0.2.8-6.3
 
 ARG DS_YOLO_PATH
 ARG DS_LPR_APP_PATH
