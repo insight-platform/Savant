@@ -31,8 +31,7 @@ RUN apt-get install -y \
       libavcodec-dev \
       libavformat-dev \
       libavutil-dev \
-      libswscale-dev \
-      libavresample-dev
+      libswscale-dev
 
 COPY libs/opencv/savant /opencv/opencv_contrib/modules/savant
 RUN --mount=type=cache,target=/tmp/opencv-cache \
