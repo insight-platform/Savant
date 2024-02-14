@@ -55,7 +55,7 @@ class PipelineThread(BaseThreadWorker):
             pipeline.get_name(),
         )
         with GstPipelineRunner(pipeline) as runner:
-            while self.is_running and runner._is_running:
+            while self.is_running and runner.is_running:
                 time.sleep(1)
         self.logger.info(
             'Source %s. Pipeline %s is stopped',

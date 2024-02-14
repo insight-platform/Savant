@@ -125,19 +125,6 @@ class AlwaysOnRtspFrameSink(LoggerMixin, GstBase.BaseSink):
             content=content,
         )
 
-    def _create_np_array(self, buffer: Gst.Buffer):
-        """Create numpy array from Gst.Buffer."""
-
-        map_info: Gst.MapInfo
-        is_mapped, map_info = buffer.map(Gst.MapFlags.READ)
-        assert is_mapped, 'Failed to map buffer'
-        np_arr = np.ndarray(
-            shape=(self._height, self._width, 4), dtype=np.uint8, buffer=map_info.data
-        ).copy()
-        buffer.unmap(map_info)
-
-        return np_arr
-
 
 # register plugin
 GObject.type_register(AlwaysOnRtspFrameSink)
