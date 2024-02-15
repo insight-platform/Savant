@@ -404,7 +404,7 @@ Running the adapter with Docker:
 
 .. code-block:: bash
 
-    docker run --rm -it --name source-video-files-test \
+    docker run --rm -it --name source-rtsp-test \
         --entrypoint /opt/savant/adapters/gst/sources/rtsp.sh \
         -e ZMQ_ENDPOINT=dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc \
         -e SOURCE_ID=test \
@@ -432,13 +432,14 @@ Running the adapter with Docker:
 
 .. code-block:: bash
 
-    docker run --rm -it --name source-video-files-test \
-    --entrypoint /opt/savant/adapters/gst/sources/rtsp.sh \
+    docker run --rm -it --name source-usb-test \
+    --entrypoint /opt/savant/adapters/gst/sources/usb_cam.sh \
     -e ZMQ_ENDPOINT=dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc \
     -e SOURCE_ID=test \
     -e DEVICE=/dev/video0 \
     -e FRAMERATE=30/1 \
     -v /tmp/zmq-sockets:/tmp/zmq-sockets \
+    --device /dev/video5:/dev/video0
     ghcr.io/insight-platform/savant-adapters-gstreamer:latest
 
 Running with the helper script:
@@ -481,7 +482,7 @@ Running the adapter with Docker:
 
 .. code-block:: bash
 
-    docker run --rm -it --name source-video-files-test \
+    docker run --rm -it --name source-gige-test \
         --entrypoint /opt/savant/adapters/gst/sources/gige_cam.sh \
         -e ZMQ_ENDPOINT=dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc \
         -e SOURCE_ID=test \
