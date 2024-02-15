@@ -2,19 +2,19 @@ version: "3.3"
 services:
 
   gige-camera-raw:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:latest
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:0.2.9
     restart: unless-stopped
     entrypoint: arv-fake-gv-camera-0.8
     command: [ "-i", "eth0", "-s", "Camera-Raw" ]
 
   gige-camera-encoded:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:latest
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:0.2.9
     restart: unless-stopped
     entrypoint: arv-fake-gv-camera-0.8
     command: [ "-i", "eth0", "-s", "Camera-Encoded" ]
 
   gige-source-raw:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:latest
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:0.2.9
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -27,7 +27,7 @@ services:
     entrypoint: /opt/savant/adapters/gst/sources/gige_cam.sh
 
   gige-source-encoded:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:latest
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:0.2.9
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -40,7 +40,7 @@ services:
     entrypoint: /opt/savant/adapters/gst/sources/gige_cam.sh
 
   always-on-sink:
-    image: ghcr.io/insight-platform/savant-adapters-deepstream-l4t:latest
+    image: ghcr.io/insight-platform/savant-adapters-deepstream-l4t:0.2.9-6.3
     restart: unless-stopped
     ports:
       - "554:554"    # RTSP
