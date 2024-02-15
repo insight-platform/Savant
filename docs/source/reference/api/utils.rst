@@ -38,7 +38,7 @@ GPU Memory Formats
 DeepStream utilities
 --------------------
 
-.. currentmodule:: savant.deepstream.utils
+.. currentmodule:: savant.deepstream.utils.surface
 
 .. autosummary::
     :toctree: generated

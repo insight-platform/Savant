@@ -83,6 +83,7 @@ class BaseObjectMetaImpl(ABC):
         :param replace: Replace attribute if it already exists.
         """
 
+
 class ObjectMeta:
     """The ObjectMeta describes the object that was detected or created on the
     frame.
@@ -203,7 +204,11 @@ class ObjectMeta:
         """
         if self.object_meta_impl:
             self.object_meta_impl.add_attr_meta(
-                element_name=element_name, name=name, value=value, confidence=confidence, replace=replace
+                element_name=element_name,
+                name=name,
+                value=value,
+                confidence=confidence,
+                replace=replace,
             )
         else:
             if not (element_name, name) in self._attributes:
