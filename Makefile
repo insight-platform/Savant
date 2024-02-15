@@ -131,6 +131,7 @@ run-dev:
 		-v /tmp/.docker.xauth:/tmp/.docker.xauth \
 		-v `pwd`/data:/data \
 		-v `pwd`/cache:/cache \
+		-v `pwd`/adapters:$(PROJECT_PATH)/adapters \
 		-v `pwd`/gst_plugins:$(PROJECT_PATH)/gst_plugins \
 		-v `pwd`/samples:$(PROJECT_PATH)/samples \
 		-v `pwd`/savant:$(PROJECT_PATH)/savant \
