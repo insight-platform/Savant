@@ -207,7 +207,7 @@ class SourceRunner:
             video_frame, content = source
             logger.debug('Sending video frame from source %s.', video_frame.source_id)
         frame_id = self._pipeline.add_frame(self._pipeline_stage_name, video_frame)
-        message = Message.video_frame(video_frame)
+        message = video_frame.to_message()
         if self._telemetry_enabled:
             span: TelemetrySpan = self._pipeline.delete(frame_id)[frame_id]
             message.span_context = span.propagate()
@@ -231,7 +231,7 @@ class SourceRunner:
 
     def _prepare_eos(self, source_id: str):
         logger.debug('Sending EOS for source %s.', source_id)
-        message = Message.end_of_stream(EndOfStream(source_id))
+        message = EndOfStream(source_id).to_message()
 
         return (
             source_id,
@@ -247,7 +247,7 @@ class SourceRunner:
 
     def _prepare_shutdown(self, source_id: str, auth: str):
         logger.debug('Sending Shutdown message for source %s.', source_id)
-        message = Message.shutdown(Shutdown(auth))
+        message = Shutdown(auth).to_message()
 
         return (
             source_id,

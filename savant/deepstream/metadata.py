@@ -64,6 +64,12 @@ def nvds_obj_meta_output_converter(
 
     object_id = nvds_get_obj_uid(nvds_frame_meta, nvds_obj_meta)
 
+    if nvds_obj_meta.object_id == UNTRACKED_OBJECT_ID:
+        track_id = None
+        track_box = None
+    else:
+        track_id = nvds_obj_meta.object_id
+        track_box = bbox
     video_object = VideoObject(
         id=object_id,
         namespace=model_name,
@@ -71,9 +77,9 @@ def nvds_obj_meta_output_converter(
         detection_box=bbox,
         attributes=[],
         confidence=confidence,
+        track_id=track_id,
+        track_box=track_box,
     )
-    if nvds_obj_meta.object_id != UNTRACKED_OBJECT_ID:
-        video_object.set_track_info(nvds_obj_meta.object_id, bbox)
 
     parent_id = None
     if (
@@ -89,10 +95,14 @@ def nvds_obj_meta_output_converter(
     return video_object, parent_id
 
 
-def nvds_attr_meta_output_converter(attr_meta: AttributeMeta) -> Attribute:
+def nvds_attr_meta_output_converter(
+    attr_meta: AttributeMeta,
+    is_persistent: bool,
+) -> Attribute:
     """Convert attribute meta to savant-rs format.
 
     :param attr_meta: Attribute meta.
+    :param is_persistent: Whether attribute is persistent.
     :return: Attribute meta in savant-rs format.
     """
     value = build_attribute_value(attr_meta.value, attr_meta.confidence)
@@ -100,4 +110,5 @@ def nvds_attr_meta_output_converter(attr_meta: AttributeMeta) -> Attribute:
         namespace=attr_meta.element_name,
         name=attr_meta.name,
         values=[value],
+        is_persistent=is_persistent,
     )

@@ -4,7 +4,6 @@ from typing import Any, Callable, Dict, List, NamedTuple, Optional, Union
 
 from savant_rs.primitives import EndOfStream, VideoFrame, VideoFrameContent
 from savant_rs.utils import PropagatedContext
-from savant_rs.utils.serialization import Message
 from savant_rs.zmq import (
     BlockingWriter,
     WriterConfigBuilder,
@@ -228,7 +227,7 @@ class ZeroMQSinkFactory(SinkFactory):
                         )
                         msg.video_frame.content = VideoFrameContent.none()
 
-                    message = Message.video_frame(msg.video_frame)
+                    message = msg.video_frame.to_message()
                     if msg.span_context is not None:
                         message.span_context = msg.span_context
                     send_result = writer.send_message(
@@ -238,7 +237,7 @@ class ZeroMQSinkFactory(SinkFactory):
                 logger.debug(
                     'Sending EOS of source "%s" to ZeroMQ sink.', msg.source_id
                 )
-                message = Message.end_of_stream(msg.eos)
+                message = msg.eos.to_message()
                 send_result = writer.send_message(msg.source_id, message, b'')
             else:
                 logger.warning('Unknown message type %s.', type(msg))

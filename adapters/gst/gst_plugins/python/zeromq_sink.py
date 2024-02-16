@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Any, Dict, List, NamedTuple, Optional
 
 from savant_rs.primitives import (
-    Attribute,
     AttributeValue,
     EndOfStream,
     Shutdown,
@@ -457,9 +456,7 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
         for source_id in self.source_ids:
             frame = base_frame.copy()
             frame.source_id = source_id
-            if not self.send_message_to_zmq(
-                source_id, Message.video_frame(frame), content
-            ):
+            if not self.send_message_to_zmq(source_id, frame.to_message(), content):
                 return Gst.FlowReturn.ERROR
 
         return Gst.FlowReturn.OK
@@ -471,7 +468,7 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
             self.logger.info('Sending serialized Shutdown message')
             self.send_message_to_zmq(
                 self.source_ids[0],
-                Message.shutdown(Shutdown(self.shutdown_auth)),
+                Shutdown(self.shutdown_auth).to_message(),
             )
 
         self.logger.info('Terminating ZeroMQ writer.')
@@ -532,12 +529,10 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
         if objects:
             add_objects_to_video_frame(video_frame, objects)
         if self.location:
-            video_frame.set_attribute(
-                Attribute(
-                    namespace=DEFAULT_NAMESPACE,
-                    name='location',
-                    values=[AttributeValue.string(str(self.location))],
-                )
+            video_frame.set_persistent_attribute(
+                namespace=DEFAULT_NAMESPACE,
+                name='location',
+                values=[AttributeValue.string(str(self.location))],
             )
 
         return video_frame
@@ -565,7 +560,7 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
         for source_id in self.source_ids:
             self.send_message_to_zmq(
                 source_id,
-                Message.end_of_stream(EndOfStream(source_id)),
+                EndOfStream(source_id).to_message(),
             )
         self.stream_in_progress = False
 

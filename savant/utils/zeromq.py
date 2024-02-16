@@ -4,14 +4,12 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import List, NamedTuple, Optional, Union
 
-from savant_rs.primitives import EndOfStream
 from savant_rs.utils.serialization import Message
 from savant_rs.zmq import (
     BlockingReader,
     NonBlockingReader,
     ReaderConfig,
     ReaderConfigBuilder,
-    ReaderResultEndOfStream,
     ReaderResultMessage,
     ReaderResultPrefixMismatch,
     ReaderResultTimeout,
@@ -90,7 +88,10 @@ class BaseZeroMQSource(ABC):
         )
 
         config_builder = ReaderConfigBuilder(socket)
-        if not get_zmq_socket_uri_options(socket):
+        socket_options = get_zmq_socket_uri_options(socket)
+        if socket_options:
+            bind = 'bind' in socket_options
+        else:
             config_builder.with_socket_type(ReceiverSocketTypes[socket_type].value)
             config_builder.with_bind(bind)
         if source_id:
@@ -101,7 +102,9 @@ class BaseZeroMQSource(ABC):
             )
         config_builder.with_receive_hwm(receive_hwm)
         config_builder.with_receive_timeout(receive_timeout)
-        config_builder.with_fix_ipc_permissions(set_ipc_socket_permissions)
+        if bind:
+            # IPC permissions can only be set for bind sockets.
+            config_builder.with_fix_ipc_permissions(set_ipc_socket_permissions)
 
         self.reader = self._create_zmq_reader(config_builder.build())
 
@@ -130,11 +133,6 @@ class BaseZeroMQSource(ABC):
                 result.topic,
                 result.message,
                 b''.join(result.data(i) for i in range(result.data_len())),
-            )
-        elif isinstance(result, ReaderResultEndOfStream):
-            return ZeroMQMessage(
-                result.topic,
-                Message.end_of_stream(EndOfStream(bytes(result.topic).decode())),
             )
         elif isinstance(result, ReaderResultTimeout):
             logger.debug('Timeout exceeded when receiving the next frame')

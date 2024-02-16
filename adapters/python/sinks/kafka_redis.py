@@ -11,7 +11,7 @@ from savant_rs.primitives import (
     VideoFrameContent,
     VideoFrameTranscodingMethod,
 )
-from savant_rs.utils.serialization import Message, save_message_to_bytes
+from savant_rs.utils.serialization import save_message_to_bytes
 
 from adapters.python.shared.config import opt_config
 from adapters.python.shared.kafka_redis import (
@@ -216,13 +216,13 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
                 frame_meta.content = await self.store_frame_content(
                     frame_meta, result.frame_content
                 )
-            message = Message.video_frame(frame_meta)
+            message = frame_meta.to_message()
             self.count_frame()
 
         else:
             source_id = result.eos.source_id
             self._logger.debug('Received EOS for source %s', source_id)
-            message = Message.end_of_stream(result.eos)
+            message = result.eos.to_message()
 
         return message, source_id
 

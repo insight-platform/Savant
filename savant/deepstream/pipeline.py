@@ -824,11 +824,13 @@ class NvDsPipeline(GstPipeline):
             for attr_meta in nvds_attr_meta_iterator(
                 frame_meta=nvds_frame_meta, obj_meta=nvds_obj_meta
             ):
-                if (
+                is_persistent = (
                     attr_meta.element_name,
                     attr_meta.name,
-                ) not in self._internal_attrs:
-                    obj_meta.set_attribute(nvds_attr_meta_output_converter(attr_meta))
+                ) not in self._internal_attrs
+                obj_meta.set_attribute(
+                    nvds_attr_meta_output_converter(attr_meta, is_persistent)
+                )
             nvds_remove_obj_attrs(nvds_frame_meta, nvds_obj_meta)
 
             # skip empty primary object that equals to frame
