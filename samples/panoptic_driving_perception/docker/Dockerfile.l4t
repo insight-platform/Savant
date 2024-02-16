@@ -17,12 +17,11 @@ RUN apt-get update && \
             gfortran \
             libomp-dev \
             libjpeg-dev \
-            zlib1g-dev libpython3-dev \
-            libopenblas-dev libavcodec-dev \
+            zlib1g-dev \
+            libpython3-dev \
+            libavcodec-dev \
             libavformat-dev \
             libswscale-dev \
-            libjpeg-dev \
-		    zlib1g-dev \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
@@ -61,8 +60,9 @@ RUN apt-get update && \
             gfortran \
             libomp-dev \
             libjpeg-dev \
-            zlib1g-dev libpython3-dev \
-            libopenblas-dev libavcodec-dev \
+            zlib1g-dev \
+            libpython3-dev \
+            libavcodec-dev \
             libavformat-dev \
             libswscale-dev \
     && rm -rf /var/lib/apt/lists/* \

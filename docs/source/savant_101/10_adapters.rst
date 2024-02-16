@@ -246,7 +246,8 @@ Most source adapters accept the following common parameters:
 - ``ZMQ_BIND``; a socket mode (the ``bind`` mode is when the parameter is set to ``True``); default is ``False``; **warning**: this parameter is deprecated, consider encoding the type in ``ZMQ_ENDPOINT``;
 - ``FPS_PERIOD_FRAMES``; a number of frames between FPS reports; FPS reporting helps to estimate the performance of the pipeline components deployed; default is ``1000``;
 - ``FPS_PERIOD_SECONDS``; a number of seconds between FPS reports; default is ``None`` which means that FPS reporting uses ``FPS_PERIOD_FRAMES``;
-- ``FPS_OUTPUT``; a path to the file for FPS reports; default is ``stdout``.
+- ``FPS_OUTPUT``; a path to the file for FPS reports; default is ``stdout``;
+- ``USE_ABSOLUTE_TIMESTAMPS``; when ``True`` the adapter puts absolute timestamps into the frames, i.e. the timestamps of the frames start from the time of adapter launch; default is ``False``.
 
 Image File Source Adapter
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -403,7 +404,7 @@ Running the adapter with Docker:
 
 .. code-block:: bash
 
-    docker run --rm -it --name source-video-files-test \
+    docker run --rm -it --name source-rtsp-test \
         --entrypoint /opt/savant/adapters/gst/sources/rtsp.sh \
         -e ZMQ_ENDPOINT=dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc \
         -e SOURCE_ID=test \
@@ -431,13 +432,14 @@ Running the adapter with Docker:
 
 .. code-block:: bash
 
-    docker run --rm -it --name source-video-files-test \
-    --entrypoint /opt/savant/adapters/gst/sources/rtsp.sh \
+    docker run --rm -it --name source-usb-test \
+    --entrypoint /opt/savant/adapters/gst/sources/usb_cam.sh \
     -e ZMQ_ENDPOINT=dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc \
     -e SOURCE_ID=test \
     -e DEVICE=/dev/video0 \
     -e FRAMERATE=30/1 \
     -v /tmp/zmq-sockets:/tmp/zmq-sockets \
+    --device /dev/video5:/dev/video0
     ghcr.io/insight-platform/savant-adapters-gstreamer:latest
 
 Running with the helper script:
@@ -480,7 +482,7 @@ Running the adapter with Docker:
 
 .. code-block:: bash
 
-    docker run --rm -it --name source-video-files-test \
+    docker run --rm -it --name source-gige-test \
         --entrypoint /opt/savant/adapters/gst/sources/gige_cam.sh \
         -e ZMQ_ENDPOINT=dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc \
         -e SOURCE_ID=test \
@@ -605,7 +607,7 @@ The Kafka-Redis Source Adapter takes video stream metadata from Kafka and fetche
 - ``QUEUE_SIZE``: a maximum amount of messages in the queue; default is ``50``.
 
 .. note::
-    The adapter doesn't have ``SOURCE_ID``, ``ZMQ_TYPE``, ``ZMQ_BIND`` parameters.
+    The adapter doesn't have ``SOURCE_ID``, ``ZMQ_TYPE``, ``ZMQ_BIND``, ``USE_ABSOLUTE_TIMESTAMPS`` parameters.
 
 Running the adapter with Docker:
 

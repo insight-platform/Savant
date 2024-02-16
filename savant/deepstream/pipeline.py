@@ -43,13 +43,17 @@ from savant.deepstream.metadata import (
 )
 from savant.deepstream.nvinfer.processor import NvInferProcessor
 from savant.deepstream.source_output import create_source_output
-from savant.deepstream.utils import (
+from savant.deepstream.utils.attribute import (
+    nvds_attr_meta_iterator,
+    nvds_remove_obj_attrs,
+)
+from savant.deepstream.utils.event import (
     GST_NVEVENT_STREAM_EOS,
     gst_nvevent_parse_stream_eos,
-    nvds_attr_meta_iterator,
+)
+from savant.deepstream.utils.iterator import (
     nvds_frame_meta_iterator,
     nvds_obj_meta_iterator,
-    nvds_remove_obj_attrs,
 )
 from savant.deepstream.utils.pipeline import (
     add_queues_to_pipeline,
@@ -85,7 +89,7 @@ class NvDsPipeline(GstPipeline):
         pipeline_cfg: Pipeline,
         **kwargs,
     ):
-        # pipeline internal processing frame size
+        # pipeline internal processing frame params
         self._frame_params: FrameParameters = kwargs['frame']
 
         self._batch_size = kwargs['batch_size']

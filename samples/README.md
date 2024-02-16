@@ -37,6 +37,12 @@ Sample location: [intersection_traffic_meter](./intersection_traffic_meter)
 
 ![](intersection_traffic_meter/assets/intersection-traffic-meter-loop-400.webp)
 
+## Fisheye Line Crossing
+
+Sample location [fisheye_line_crossing](./fisheye_line_crossing/)
+
+![](fisheye_line_crossing/assets/fisheye-line-crossing-loop-400.webp)
+
 ### Area Object Counting
 
 Sample location: [area_object_counting](./area_object_counting/)

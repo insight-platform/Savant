@@ -51,7 +51,10 @@ How To Enable Multithreading in Savant
 
 .. note::
 
-    As for ``0.2.5`` Savant doesn't enable mandatory multithreading for a pipeline, you need to do it by yourself. In the future, this behavior may change if we find that most pipelines benefit from multithreading.
+    As for ``0.2.7`` Savant doesn't enable mandatory multithreading for a pipeline, you need to do it by yourself. In the future, this behavior may change if we find that most pipelines benefit from multithreading.
+
+    Depending on pipeline topology, certain Python functions can run in separate threads but it is not guaranteed. To ensure that every ``pyfunc`` executes in a separate thread you need to activate the discussed functionality with configuring ``buffer_queues`` as discussed in the following sections.
+
 
 Python multithreading can be enabled by placing GStreamer ``queue`` elements before ``pyfunc`` and ``draw_func`` elements. So you need to enable those queues in YAML:
 
@@ -69,6 +72,7 @@ Python multithreading can be enabled by placing GStreamer ``queue`` elements bef
         length: 1        # keep in mind that every buffered frame occupies GPU
         byte_size: 0     # we don't recommend setting byte_size to specific values other than 0
 
-.. warning::
 
-    You may want setting ``length`` to a larger number to endure traffic bursts, but remember that every buffer has an associated raw frame in GPU, so, e.g. two ``pyfuncs``, one ``draw_func`` with ``length`` set to ``10`` and 16 of 720p sources processed may result in ``3 x 10 x 16 x 1280 x 720 x 4 (RGBA)`` which is almost ``1.7`` GB of GPU RAM.
+By activating ``buffer_queues`` you unlock the threading and deploy the GStreamer queue before every ``pyfunc``, but you also must ensure that the pipeline has enough frames prepared for processing. Without that, queues do not unlock their potential because DeepStream does not ingest enough frames into the pipeline.
+
+There are two configuration variables allowing configuring the number of frames prepared by DeepStream for processing and they limit the maximum number of elements enqueued in the queues. They are ``muxer_buffer_pool_size`` and ``stream_buffer_pool_size`` and discussed in the :any:`Nvidia Stream Muxer and Converter Configuration <deepstream_buffering_configuration>`.

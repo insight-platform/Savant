@@ -1,17 +1,17 @@
 """PyFunc definitions."""
-import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from importlib import reload
 from importlib import util as importlib_util
 from importlib.machinery import ModuleSpec
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from savant.gstreamer import Gst  # noqa: F401
-from savant.utils.inotify_manager import INotifyManager
+from savant.gstreamer.element.queue import GstQueue
+from savant.gstreamer.utils import get_elements
 from savant.utils.logging import get_logger
+from savant.utils.modules_cache import ModulesCache, import_module
 
 logger = get_logger(__name__)
 
@@ -69,6 +69,60 @@ class BasePyFuncPlugin(BasePyFuncImpl):
 
         :param buffer: Gstreamer buffer.
         """
+
+    def get_queues(self) -> List[GstQueue]:
+        """Get all pipeline queues."""
+        if self.gst_element is not None:
+            gst_pipeline = self.gst_element.get_parent()
+            return [
+                GstQueue(elem) for elem in get_elements(gst_pipeline, factory='queue')
+            ]
+        return []
+
+    def get_upstream_queue(self) -> Optional[GstQueue]:
+        """Get upstream queue, the last queue before the pyfunc.
+
+        Can be used to check the current queue size for bandwidth management.
+
+        .. code-block:: python
+
+            queue = self.get_upstream_queue()
+            ...
+            if queue.full():
+                ...
+
+        """
+        if self.gst_element is not None:
+            gst_pipeline = self.gst_element.get_parent()
+            elements = get_elements(
+                gst_pipeline, before_element=self.gst_element, factory='queue'
+            )
+            if elements:
+                return GstQueue(elements[-1])
+        return None
+
+    def get_queue(self, name: str) -> Optional[GstQueue]:
+        """Get pipeline queue by name.
+
+        .. code-block:: yaml
+
+            pipeline:
+              elements:
+                - element: queue
+                  name: my_queue
+                ...
+
+        .. code-block:: python
+
+            queue = self.get_queue('my_queue')
+
+        """
+        if self.gst_element is not None:
+            gst_pipeline = self.gst_element.get_parent()
+            elem = gst_pipeline.get_by_name(name)
+            if elem and elem.get_factory().get_name() == 'queue':
+                return GstQueue(elem)
+        return None
 
 
 class BasePyFuncCallableImpl(BasePyFuncImpl):
@@ -172,45 +226,11 @@ class PyFunc:
                 load_ok = False
             else:
                 raise exc
-
-        # try to set source file watch
-        if self.dev_mode:
-            if spec is None:
-                logger.debug('No module spec, setting watch is impossible.')
-            elif not spec.has_location:
-                logger.debug(
-                    'Module spec with undetermined location, setting watch is impossible.'
-                )
-            else:
-                logger.debug('Setting watch for pyfunc module source.')
-                INotifyManager().add_watch(spec.origin, id(self))
-
         # try to instantiate module
-        module_instance = None
         if self.dev_mode:
-            # if dev mode, it is possible to
-            # leave module instance as None
-            # need to reload instead of load
-            if spec is None:
-                logger.debug('No module spec, skip getting module instance.')
-            elif self._module_instance:
-                logger.debug('Module was previously loaded, doing reload.')
-                try:
-                    module_instance = reload_module(self._module_instance)
-                except Exception as exc:
-                    logger.exception('Error while reloading module instance.')
-                    load_ok = False
-                else:
-                    # if no error, also cache new instance
-                    self._module_instance = module_instance
-            else:
-                try:
-                    module_instance = pyfunc_module_factory(spec)
-                except Exception as exc:
-                    logger.exception('Error while getting module instance.')
-                    load_ok = False
+            module_instance = ModulesCache().get_module_instance(spec)
         else:
-            module_instance = pyfunc_module_factory(spec)
+            module_instance = import_module(spec)
 
         # try to instantiate class
         pyfunc_impl_instance = None
@@ -238,12 +258,14 @@ class PyFunc:
         self._instance = pyfunc_impl_instance
         self._callable = callable_factory(self._instance)
 
-        if self.dev_mode and not self._load_complete:
-            # if the module was loaded once
-            # next attempts should be to reload a cached ModuleType instance
+        if self.dev_mode:
+            logger.debug(
+                'Dev mode is enabled, module of pyfunc `%s` is `%s`',
+                self._instance.__class__.__name__,
+                module_instance.__spec__.origin,
+            )
             self._module_instance = module_instance
 
-        self._load_complete = True
         logger.debug(
             'Loading user code complete, pyfunc module %s, class %s, id %s',
             self.module,
@@ -269,8 +291,7 @@ class PyFunc:
 
     def check_reload(self):
         """Checks if reload is needed and reloads in case it is."""
-
-        if INotifyManager().is_changed(id(self)):
+        if ModulesCache().is_changed(self._module_instance):
             logger.info(
                 'Dev mode is enabled and changes in "%s.%s" are detected; reloading.',
                 self.module,
@@ -303,26 +324,6 @@ class PyFunc:
             )
 
 
-def reload_module(module: ModuleType) -> ModuleType:
-    """Reload a previously loaded module.
-
-    .. note::
-
-        When a module is reloaded, its dictionary (containing the module's global variables) is retained.
-        Redefinitions of names will override the old definitions, so this is generally not a problem.
-        If the new version of a module does not define a name that was defined by the old version, the old definition remains.
-
-        https://docs.python.org/3/library/importlib.html#importlib.reload
-
-        This is the reason for clearing module's attributes before reloading.
-
-    """
-    for attr in dir(module):
-        if attr not in ('__name__', '__file__'):
-            delattr(module, attr)
-    return reload(module)
-
-
 def pyfunc_module_spec_factory(pyfunc: PyFunc) -> ModuleSpec:
     """Get a module spec for the module specified in the pyfunc."""
     if not getattr(pyfunc, 'module', None):
@@ -344,16 +345,6 @@ def pyfunc_module_spec_factory(pyfunc: PyFunc) -> ModuleSpec:
             pyfunc,
         )
     return spec
-
-
-def pyfunc_module_factory(spec: ModuleSpec) -> ModuleType:
-    """Instantiate a module from module spec."""
-    module_instance = importlib_util.module_from_spec(spec)
-    spec.loader.exec_module(module_instance)
-    # reloading requires module being put into the modules dict
-    # only do so after the loader.exec_module call as it can fail
-    sys.modules[spec.name] = module_instance
-    return module_instance
 
 
 def pyfunc_impl_factory(pyfunc: PyFunc, module_instance: ModuleType) -> BasePyFuncImpl:

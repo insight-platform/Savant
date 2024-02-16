@@ -52,6 +52,15 @@ if [[ -n "${GAIN}" ]]; then ADDITIONAL_ARAVISSRC_ARGS+=("gain=${GAIN}"); fi
 if [[ -n "${GAIN_AUTO}" ]]; then ADDITIONAL_ARAVISSRC_ARGS+=("gain-auto=${GAIN_AUTO}"); fi
 if [[ -n "${FEATURES}" ]]; then ADDITIONAL_ARAVISSRC_ARGS+=("features=${FEATURES}"); fi
 
+USE_ABSOLUTE_TIMESTAMPS="${USE_ABSOLUTE_TIMESTAMPS:="false"}"
+SINK_PROPERTIES=(
+    source-id="${SOURCE_ID}"
+    socket="${ZMQ_ENDPOINT}"
+    socket-type="${ZMQ_SOCKET_TYPE}"
+    bind="${ZMQ_SOCKET_BIND}"
+    sync="${SYNC_OUTPUT}"
+)
+
 PIPELINE=(
     aravissrc camera-name="${CAMERA_NAME}" "${ADDITIONAL_ARAVISSRC_ARGS[@]}" !
     capsfilter caps="${INPUT_CAPS}" !
@@ -74,11 +83,21 @@ if [[ "${ENCODE,,}" == "true" ]]; then
         'video/x-h265,stream-format=byte-stream,alignment=au' !
     )
 fi
+if [[ "${USE_ABSOLUTE_TIMESTAMPS,,}" == "true" ]]; then
+    TS_OFFSET="$(date +%s%N)"
+    if [[ "${ENCODE,,}" == "true" ]]; then
+        # x265enc adds offset to timestamps to avoid negative timestamps
+        TS_OFFSET="$((TS_OFFSET - 3600000000000000))"
+    fi
+    PIPELINE+=(
+        shift_timestamps offset="${TS_OFFSET}" !
+    )
+    SINK_PROPERTIES+=(ts-offset="-${TS_OFFSET}")
+fi
 PIPELINE+=(
     queue max-size-buffers=1 !
     fps_meter "${FPS_PERIOD}" output="${FPS_OUTPUT}" !
-    zeromq_sink source-id="${SOURCE_ID}" socket="${ZMQ_ENDPOINT}" socket-type="${ZMQ_SOCKET_TYPE}"
-    bind="${ZMQ_SOCKET_BIND}" sync="${SYNC_OUTPUT}"
+    zeromq_sink "${SINK_PROPERTIES[@]}"
 )
 
 handler() {

@@ -26,11 +26,6 @@ elif [[ -n "${FPS_PERIOD_FRAMES}" ]]; then
 else
     FPS_PERIOD="period-frames=1000"
 fi
-if [[ -n "${RECEIVE_TIMEOUT_MSECS}" ]]; then
-    RECEIVE_TIMEOUT="receive-timeout=${RECEIVE_TIMEOUT_MSECS}"
-else
-    RECEIVE_TIMEOUT="receive-timeout=5000"
-fi
 if [[ "${FILE_TYPE}" == "image" ]]; then
     MEASURE_PER_FILE=false
     EOS_ON_FILE_END="${EOS_ON_FILE_END:="false"}"
@@ -41,20 +36,52 @@ fi
 SORT_BY_TIME="${SORT_BY_TIME:="false"}"
 READ_METADATA="${READ_METADATA:="false"}"
 
+if [[ -n "${SHUTDOWN_AUTH}" ]]; then
+    SAVANT_RS_SERIALIZER_OPTS+=(
+        shutdown-auth="${SHUTDOWN_AUTH}"
+    )
+fi
+
+USE_ABSOLUTE_TIMESTAMPS="${USE_ABSOLUTE_TIMESTAMPS:="false"}"
+SINK_PROPERTIES=(
+    read-metadata="${READ_METADATA}"
+    eos-on-file-end="${EOS_ON_FILE_END}"
+    eos-on-frame-params-change=true
+    source-id="${SOURCE_ID}"
+    socket="${ZMQ_ENDPOINT}"
+    socket-type="${ZMQ_SOCKET_TYPE}"
+    bind="${ZMQ_SOCKET_BIND}"
+    sync="${SYNC_OUTPUT}"
+)
+if [[ -n "${RECEIVE_TIMEOUT_MSECS}" ]]; then
+    SINK_PROPERTIES+=("receive-timeout=${RECEIVE_TIMEOUT_MSECS}")
+else
+    SINK_PROPERTIES+=("receive-timeout=5000")
+fi
+
+PIPELINE=(
+    media_files_src_bin location="${LOCATION}" file-type="${FILE_TYPE}" framerate="${FRAMERATE}" sort-by-time="${SORT_BY_TIME}" !
+    fps_meter "${FPS_PERIOD}" output="${FPS_OUTPUT}" measure-per-file="${MEASURE_PER_FILE}" !
+    adjust_timestamps !
+)
+if [[ "${USE_ABSOLUTE_TIMESTAMPS,,}" == "true" ]]; then
+    TS_OFFSET="$(date +%s%N)"
+    PIPELINE+=(
+        shift_timestamps offset="${TS_OFFSET}" !
+    )
+    SINK_PROPERTIES+=(ts-offset="-${TS_OFFSET}")
+fi
+PIPELINE+=(
+    zeromq_sink "${SINK_PROPERTIES[@]}"
+)
+
 handler() {
     kill -s SIGINT "${child_pid}"
     wait "${child_pid}"
 }
 trap handler SIGINT SIGTERM
 
-gst-launch-1.0 --eos-on-shutdown \
-    media_files_src_bin location="${LOCATION}" file-type="${FILE_TYPE}" framerate="${FRAMERATE}" sort-by-time="${SORT_BY_TIME}" ! \
-    fps_meter "${FPS_PERIOD}" output="${FPS_OUTPUT}" measure-per-file="${MEASURE_PER_FILE}" ! \
-    adjust_timestamps ! \
-    zeromq_sink source-id="${SOURCE_ID}" eos-on-file-end="${EOS_ON_FILE_END}" eos-on-frame-params-change=true \
-    read-metadata="${READ_METADATA}" socket="${ZMQ_ENDPOINT}" socket-type="${ZMQ_SOCKET_TYPE}" \
-    bind="${ZMQ_SOCKET_BIND}" sync="${SYNC_OUTPUT}" "${RECEIVE_TIMEOUT}" \
-    &
+gst-launch-1.0 --eos-on-shutdown "${PIPELINE[@]}" &
 
 child_pid="$!"
 wait "${child_pid}"

@@ -12,22 +12,24 @@ from savant_rs.utils.symbol_mapper import (
 )
 
 from savant.deepstream.meta.constants import MAX_LABEL_SIZE
-from savant.deepstream.utils import (
+from savant.deepstream.utils.attribute import (
     nvds_add_attr_meta_to_obj,
     nvds_get_obj_attr_meta,
     nvds_get_obj_attr_meta_list,
+    nvds_remove_obj_attr_meta_list,
+    nvds_replace_obj_attr_meta_list,
+)
+from savant.deepstream.utils.object import (
     nvds_get_obj_bbox,
     nvds_get_obj_draw_label,
     nvds_get_obj_uid,
     nvds_init_obj_draw_label,
-    nvds_remove_obj_attr_meta_list,
-    nvds_replace_obj_attr_meta_list,
+    nvds_is_empty_object_meta,
     nvds_set_obj_bbox,
     nvds_set_obj_draw_label,
     nvds_set_obj_uid,
     nvds_upd_obj_bbox,
 )
-from savant.deepstream.utils.object import nvds_is_empty_object_meta
 from savant.meta.attribute import AttributeMeta
 from savant.meta.constants import DEFAULT_CONFIDENCE, UNTRACKED_OBJECT_ID
 from savant.meta.errors import MetaValueError
@@ -117,26 +119,10 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         """Returns uid of the object."""
         return nvds_get_obj_uid(self._frame_meta, self.ds_object_meta)
 
-    def get_attr_meta(
-        self, element_name: str, attr_name: str
-    ) -> Optional[AttributeMeta]:
-        """Returns the specified attribute of the object.
-
-        :param element_name: Attribute model name.
-        :param attr_name: Attribute name.
-        :return: AttributeMeta or None if the object has no such attribute.
-        """
-        return nvds_get_obj_attr_meta(
-            frame_meta=self._frame_meta,
-            obj_meta=self.ds_object_meta,
-            element_name=element_name,
-            attr_name=attr_name,
-        )
-
     def get_attr_meta_list(
         self, element_name: str, attr_name: str
     ) -> Optional[List[AttributeMeta]]:
-        """Returns a list of the object's specified attributes.
+        """Returns attributes (multi-label case).
 
         :param element_name: Attribute model name.
         :param attr_name: Attribute name.
@@ -149,10 +135,26 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
             attr_name=attr_name,
         )
 
+    def get_attr_meta(
+        self, element_name: str, attr_name: str
+    ) -> Optional[AttributeMeta]:
+        """Returns attribute.
+
+        :param element_name: Attribute model name.
+        :param attr_name: Attribute name.
+        :return: AttributeMeta or None if the object has no such attribute.
+        """
+        return nvds_get_obj_attr_meta(
+            frame_meta=self._frame_meta,
+            obj_meta=self.ds_object_meta,
+            element_name=element_name,
+            attr_name=attr_name,
+        )
+
     def replace_attr_meta_list(
         self, element_name: str, attr_name: str, value: List[AttributeMeta]
     ):
-        """Replaces the object's specified attributes with a new list.
+        """Replaces attributes with a new list.
 
         :param element_name: Attribute model name.
         :param attr_name: Attribute name.
@@ -167,7 +169,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         )
 
     def remove_attr_meta_list(self, element_name: str, attr_name: str):
-        """Removes the object's specified attributes.
+        """Removes attributes.
 
         :param element_name: Attribute model name.
         :param attr_name: Attribute name.
@@ -187,13 +189,13 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         confidence: float = 1.0,
         replace: bool = False,
     ):
-        """Adds specified object attribute to object meta.
+        """Adds attribute to the object.
 
-        :param element_name: attribute model name.
-        :param name: attribute name.
-        :param value: attribute value.
-        :param confidence: attribute confidence.
-        :param replace: replace attribute if it already exists.
+        :param element_name: Attribute model name.
+        :param name: Attribute name.
+        :param value: Attribute value.
+        :param confidence: Attribute confidence.
+        :param replace: Replace attribute if it already exists.
         """
         nvds_add_attr_meta_to_obj(
             frame_meta=self._frame_meta,

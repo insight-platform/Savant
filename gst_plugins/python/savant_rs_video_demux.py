@@ -1,12 +1,14 @@
 """SavantRsVideoDemux element."""
 import inspect
 import time
-from dataclasses import dataclass
-from threading import Lock, Thread
-from typing import Dict, Optional
+from contextlib import contextmanager
+from dataclasses import dataclass, field
+from threading import Event, Lock, Thread
+from typing import Dict, NamedTuple, Optional, Union
 
 from pygstsavantframemeta import gst_buffer_get_savant_frame_meta
 from savant_rs.pipeline2 import VideoPipeline
+from savant_rs.primitives import VideoFrame
 
 from gst_plugins.python.savant_rs_video_demux_common import FrameParams, build_caps
 from savant.gstreamer import GObject, Gst
@@ -87,6 +89,29 @@ class SourceInfo:
     timestamp: float = 0
     last_pts: int = 0
     last_dts: int = 0
+    locked: Event = field(default_factory=Event)
+
+    @contextmanager
+    def lock(self):
+        self.locked.set()
+        yield
+        self.timestamp = time.time()
+        self.locked.clear()
+
+
+class FrameInfo(NamedTuple):
+    idx: int
+    params: FrameParams
+    video_frame: VideoFrame
+
+    @staticmethod
+    def build(idx: int, video_frame: VideoFrame) -> 'FrameInfo':
+        params = FrameParams.from_video_frame(video_frame)
+        return FrameInfo(
+            idx=idx,
+            params=params,
+            video_frame=video_frame,
+        )
 
 
 class SavantRsVideoDemux(LoggerMixin, Gst.Element):
@@ -232,92 +257,123 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             )
             return Gst.FlowReturn.OK
 
-        frame_idx = savant_frame_meta.idx
-        video_frame, _ = self.video_pipeline.get_independent_frame(frame_idx)
-        self.video_pipeline.move_as_is(self.pipeline_stage_name, [frame_idx])
-        frame_params = FrameParams.from_video_frame(video_frame)
+        video_frame, _ = self.video_pipeline.get_independent_frame(
+            savant_frame_meta.idx
+        )
         self.logger.debug(
-            'Handling frame with PTS %s from source %s; frame %s a keyframe',
+            'Handling frame %s/%s from source %s; frame %s a keyframe',
             buffer.pts,
+            buffer.dts,
             video_frame.source_id,
             'is' if video_frame.keyframe else 'is not',
+        )
+        self.video_pipeline.move_as_is(
+            self.pipeline_stage_name, [savant_frame_meta.idx]
         )
         if not self.is_running:
             self.logger.info(
                 'Demuxer is not running. Skipping buffer with timestamp %s.',
                 buffer.pts,
             )
-            self.video_pipeline.delete(frame_idx)
+            self.video_pipeline.delete(savant_frame_meta.idx)
             return Gst.FlowReturn.OK
 
+        frame_info = FrameInfo.build(savant_frame_meta.idx, video_frame)
+
         with self.source_lock:
-            source_info: SourceInfo = self.sources.get(video_frame.source_id)
-            if source_info is None:
-                if (
-                    self.max_parallel_streams
-                    and len(self.sources) >= self.max_parallel_streams
-                ):
-                    self.is_running = False
-                    error = (
-                        f'Failed to add source {video_frame.source_id!r}: reached maximum '
-                        f'number of streams: {self.max_parallel_streams}.'
-                    )
-                    self.logger.error(error)
-                    frame = inspect.currentframe()
-                    gst_post_stream_demux_error(
-                        gst_element=self,
-                        frame=frame,
-                        file_path=__file__,
-                        text=error,
-                    )
-                    self.video_pipeline.delete(frame_idx)
-                    return Gst.FlowReturn.ERROR
-                if not video_frame.keyframe:
+            res = self._get_source_info(frame_info, buffer)
+            if not isinstance(res, SourceInfo):
+                self.video_pipeline.delete(frame_info.idx)
+                return res
+            source_info = res
+            source_info.locked.set()
+            source_info.timestamp = time.time()
+
+        with source_info.lock():
+            if (
+                source_info.src_pad is not None
+                and source_info.params != frame_info.params
+            ):
+                self.update_frame_params(source_info, frame_info.params)
+            if source_info.src_pad is not None:
+                self.check_timestamps(source_info, buffer)
+            if buffer.pts != Gst.CLOCK_TIME_NONE:
+                source_info.last_pts = buffer.pts
+            if buffer.dts != Gst.CLOCK_TIME_NONE:
+                source_info.last_dts = buffer.dts
+            if source_info.src_pad is None:
+                if video_frame.keyframe:
+                    self.add_source(video_frame.source_id, source_info)
+                else:
                     self.logger.warning(
                         'Frame %s from source %s is not a keyframe, skipping it. '
                         'Stream should start with a keyframe.',
                         buffer.pts,
                         video_frame.source_id,
                     )
-                    self.video_pipeline.delete(frame_idx)
+                    self.video_pipeline.delete(savant_frame_meta.idx)
                     return Gst.FlowReturn.OK
-                source_info = SourceInfo(video_frame.source_id, frame_params)
-                self.sources[video_frame.source_id] = source_info
-            source_info.timestamp = time.time()
-        if source_info.src_pad is not None and source_info.params != frame_params:
-            self.update_frame_params(source_info, frame_params)
-        if source_info.src_pad is not None:
-            self.check_timestamps(source_info, buffer)
-        source_info.last_pts = buffer.pts
-        source_info.last_dts = buffer.dts
-        if source_info.src_pad is None:
-            if video_frame.keyframe:
-                self.add_source(video_frame.source_id, source_info)
-            else:
+
+            self.logger.debug(
+                'Pushing frame with IDX %s and PTS %s from source %s',
+                frame_info.idx,
+                buffer.pts,
+                video_frame.source_id,
+            )
+            result: Gst.FlowReturn = source_info.src_pad.push(buffer)
+
+        if result != Gst.FlowReturn.OK:
+            self.video_pipeline.delete(savant_frame_meta.idx)
+        self.logger.debug(
+            'Frame with PTS %s from source %s has been processed (%s).',
+            buffer.pts,
+            video_frame.source_id,
+            result,
+        )
+
+        return result
+
+    def _get_source_info(
+        self,
+        frame_info: FrameInfo,
+        buffer: Gst.Buffer,
+    ) -> Union[SourceInfo, Gst.FlowReturn]:
+        source_info: SourceInfo = self.sources.get(frame_info.video_frame.source_id)
+        if source_info is None:
+            if (
+                self.max_parallel_streams
+                and len(self.sources) >= self.max_parallel_streams
+            ):
+                self.is_running = False
+                error = (
+                    f'Failed to add source {frame_info.video_frame.source_id!r}: reached maximum '
+                    f'number of streams: {self.max_parallel_streams}.'
+                )
+                self.logger.error(error)
+                frame = inspect.currentframe()
+                gst_post_stream_demux_error(
+                    gst_element=self,
+                    frame=frame,
+                    file_path=__file__,
+                    text=error,
+                )
+                return Gst.FlowReturn.ERROR
+
+            if not frame_info.video_frame.keyframe:
                 self.logger.warning(
                     'Frame %s from source %s is not a keyframe, skipping it. '
                     'Stream should start with a keyframe.',
                     buffer.pts,
-                    video_frame.source_id,
+                    frame_info.video_frame.source_id,
                 )
-                self.video_pipeline.delete(frame_idx)
                 return Gst.FlowReturn.OK
 
-        self.logger.debug(
-            'Pushing frame with IDX %s and PTS %s from source %s',
-            frame_idx,
-            buffer.pts,
-            video_frame.source_id,
-        )
-        result: Gst.FlowReturn = source_info.src_pad.push(buffer)
+            source_info = SourceInfo(
+                frame_info.video_frame.source_id, frame_info.params
+            )
+            self.sources[frame_info.video_frame.source_id] = source_info
 
-        self.logger.debug(
-            'Frame with PTS %s from source %s has been processed.',
-            buffer.pts,
-            video_frame.source_id,
-        )
-
-        return result
+        return source_info
 
     def on_savant_eos_event(
         self,
@@ -338,9 +394,11 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
                 return Gst.PadProbeReturn.DROP
             source_info.timestamp = time.time()
 
-        if source_info.src_pad is not None:
-            self.send_eos(source_info)
-        del self.sources[source_id]
+        with source_info.lock():
+            if source_info.src_pad is not None:
+                self.send_eos(source_info)
+            with self.source_lock:
+                del self.sources[source_id]
 
         return Gst.PadProbeReturn.DROP
 
@@ -476,20 +534,20 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
         with self.source_lock:
             if not self.is_running:
                 return
-            now = time.time()
-            limit = now - self.source_timeout
-            earliest_ts = now
             for source_id, source_info in list(self.sources.items()):
-                if source_info.timestamp < limit:
+                if (
+                    not source_info.locked.is_set()
+                    and source_info.timestamp < time.time() - self.source_timeout
+                ):
                     self.logger.debug('Source %s has expired', source_id)
                     if source_info.src_pad is not None:
                         self.send_eos(source_info)
                     del self.sources[source_id]
-                else:
-                    earliest_ts = min(earliest_ts, source_info.timestamp)
-        wait = max(earliest_ts - limit, self.source_eviction_interval)
-        self.logger.debug('Waiting %s seconds for the next eviction loop', wait)
-        time.sleep(wait)
+        self.logger.debug(
+            'Waiting %s seconds for the next eviction loop',
+            self.source_eviction_interval,
+        )
+        time.sleep(self.source_eviction_interval)
 
 
 # register plugin

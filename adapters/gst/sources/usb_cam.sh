@@ -24,21 +24,40 @@ else
     FPS_PERIOD="period-frames=1000"
 fi
 
+USE_ABSOLUTE_TIMESTAMPS="${USE_ABSOLUTE_TIMESTAMPS:="false"}"
+SINK_PROPERTIES=(
+    source-id="${SOURCE_ID}"
+    socket="${ZMQ_ENDPOINT}"
+    socket-type="${ZMQ_SOCKET_TYPE}"
+    bind="${ZMQ_SOCKET_BIND}"
+    sync="${SYNC_OUTPUT}"
+)
+PIPELINE=(
+    v4l2src device="${DEVICE}" !
+    "video/x-raw,framerate=${FRAMERATE}" !
+    autovideoconvert !
+    'video/x-raw,format=RGBA' !
+)
+if [[ "${USE_ABSOLUTE_TIMESTAMPS,,}" == "true" ]]; then
+    TS_OFFSET="$(date +%s%N)"
+    PIPELINE+=(
+        shift_timestamps offset="${TS_OFFSET}" !
+    )
+    SINK_PROPERTIES+=(ts-offset="-${TS_OFFSET}")
+fi
+PIPELINE+=(
+    fps_meter "${FPS_PERIOD}" output="${FPS_OUTPUT}" !
+    savant_rs_serializer source-id="${SOURCE_ID}" !
+    zeromq_sink "${SINK_PROPERTIES[@]}"
+)
+
 handler() {
     kill -s SIGINT "${child_pid}"
     wait "${child_pid}"
 }
 trap handler SIGINT SIGTERM
 
-gst-launch-1.0 --eos-on-shutdown \
-    v4l2src device="${DEVICE}" ! \
-    "video/x-raw,framerate=${FRAMERATE}" ! \
-    autovideoconvert ! \
-    'video/x-raw,format=RGBA' ! \
-    fps_meter "${FPS_PERIOD}" output="${FPS_OUTPUT}" ! \
-    zeromq_sink source-id="${SOURCE_ID}" socket="${ZMQ_ENDPOINT}" socket-type="${ZMQ_SOCKET_TYPE}" \
-    bind="${ZMQ_SOCKET_BIND}" sync="${SYNC_OUTPUT}" \
-    &
+gst-launch-1.0 --eos-on-shutdown "${PIPELINE[@]}" &
 
 child_pid="$!"
 wait "${child_pid}"

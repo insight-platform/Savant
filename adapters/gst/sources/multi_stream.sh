@@ -42,12 +42,6 @@ if [[ -n "${DOWNLOAD_PATH}" ]]; then
     )
 fi
 
-SAVANT_RS_SERIALIZER_OPTS=(
-    source-id="${SOURCE_ID}"
-    read-metadata="${READ_METADATA}"
-    enable-multistream=true
-    number-of-streams="${NUMBER_OF_STREAMS}"
-)
 if [[ -n "${SOURCE_ID_PATTERN}" ]]; then
     SAVANT_RS_SERIALIZER_OPTS+=(
         source-id-pattern="${SOURCE_ID_PATTERN}"
@@ -57,6 +51,22 @@ if [[ -n "${SHUTDOWN_AUTH}" ]]; then
     SAVANT_RS_SERIALIZER_OPTS+=(
         shutdown-auth="${SHUTDOWN_AUTH}"
     )
+fi
+
+
+USE_ABSOLUTE_TIMESTAMPS="${USE_ABSOLUTE_TIMESTAMPS:="false"}"
+SINK_PROPERTIES=(
+    source-id="${SOURCE_ID}"
+    read-metadata="${READ_METADATA}"
+    enable-multistream=true
+    number-of-streams="${NUMBER_OF_STREAMS}"
+    socket="${ZMQ_ENDPOINT}"
+    socket-type="${ZMQ_SOCKET_TYPE}"
+    bind="${ZMQ_SOCKET_BIND}"
+    sync="${SYNC_OUTPUT}"
+)
+if [[ -n "${RECEIVE_TIMEOUT}" ]]; then
+    SINK_PROPERTIES+=("receive-timeout=${RECEIVE_TIMEOUT}")
 fi
 
 PIPELINE=(
@@ -71,8 +81,16 @@ fi
 PIPELINE+=(
     fps_meter "${FPS_PERIOD}" output="${FPS_OUTPUT}" !
     adjust_timestamps !
-    zeromq_sink "${SAVANT_RS_SERIALIZER_OPTS[@]}" socket="${ZMQ_ENDPOINT}" socket-type="${ZMQ_SOCKET_TYPE}"
-    bind="${ZMQ_SOCKET_BIND}" sync="${SYNC_OUTPUT}" "${SENDER_RECEIVE_TIMEOUT}"
+)
+if [[ "${USE_ABSOLUTE_TIMESTAMPS,,}" == "true" ]]; then
+    TS_OFFSET="$(date +%s%N)"
+    PIPELINE+=(
+        shift_timestamps offset="${TS_OFFSET}" !
+    )
+    SINK_PROPERTIES+=(ts-offset="-${TS_OFFSET}")
+fi
+PIPELINE+=(
+    zeromq_sink "${SINK_PROPERTIES[@]}"
 )
 
 handler() {

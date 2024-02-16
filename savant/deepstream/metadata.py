@@ -9,8 +9,11 @@ from savant_rs.utils.symbol_mapper import parse_compound_key
 
 from savant.api.builder import build_attribute_value
 from savant.config.schema import FrameParameters
-from savant.deepstream.utils import nvds_get_obj_bbox
-from savant.deepstream.utils.object import nvds_get_obj_uid, nvds_is_empty_object_meta
+from savant.deepstream.utils.object import (
+    nvds_get_obj_bbox,
+    nvds_get_obj_uid,
+    nvds_is_empty_object_meta,
+)
 from savant.meta.attribute import AttributeMeta
 from savant.meta.constants import PRIMARY_OBJECT_KEY, UNTRACKED_OBJECT_ID
 from savant.utils.logging import get_logger
