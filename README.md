@@ -72,8 +72,7 @@ sudo docker compose -f docker-compose.x86.yml up
 
 # Example Result
 
-<video width="520" height="440" controls>
-  <source src="sample.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
+https://github.com/antidianuj/Savant/assets/47445756/3dff2000-343a-45dd-855f-3db2be1b9947
+
+
 
