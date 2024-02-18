@@ -43,24 +43,26 @@ class Overlay(NvDsDrawFunc):
             str(sprites_path / 'logo_insight.png'),
             self.logo_height,
         )
-        self.green_man = Animation(
-            str(sprites_path / 'green_man'),
-            10,
+
+        # Load images
+        self.green_image=load_sprite(
+            str(sprites_path / 'green.png'),
             self.sprite_height,
         )
-        self.blue_man = Animation(
-            str(sprites_path / 'blue_man'),
-            10,
+        self.blue_image=load_sprite(
+            str(sprites_path / 'blue.png'),
             self.sprite_height,
         )
 
+
+
         narrow_sep_w = 15
-        sep_w = 60
+        sep_w = 20
         text_w = cv2.getTextSize(
             '99', self.font_face, self.font_scale, self.counters_font_thickness
         )[0][0]
         logo_w = self.logo.size()[0]
-        sprite_w = self.green_man.width
+        sprite_w = 120
 
         cum_left = 0
         self.logo_pos = cum_left, (self.overlay_height - self.logo_height) // 2
@@ -148,9 +150,13 @@ class Overlay(NvDsDrawFunc):
             bg_color=(0, 0, 0),
             padding=0,
         )
-        artist.add_graphic(self.logo, self.logo_pos)
-        artist.add_graphic(self.green_man.get_frame(pts), self.green_sprite_tl)
-        artist.add_graphic(self.blue_man.get_frame(pts), self.blue_sprite_tl)
+  
+        # artist.add_graphic(self.green_man.get_frame(pts), self.green_sprite_tl)
+        # artist.add_graphic(self.blue_man.get_frame(pts), self.blue_sprite_tl)
+        artist.add_graphic(self.green_image, self.green_sprite_tl)
+        artist.add_graphic(self.blue_image, self.blue_sprite_tl)
+
+
         artist.add_text(
             f'{n_persons_w_face}',
             self.green_text_tl[0],

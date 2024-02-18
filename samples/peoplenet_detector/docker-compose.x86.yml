@@ -6,9 +6,9 @@ services:
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
-      - /tmp/video-loop-source-downloads:/tmp/video-loop-source-downloads
+      - ./data/ref_vid.mp4:/tmp/video-loop-source-downloads/ref_vid.mp4   # change 'ref_vid.mp4' to the name of the video file you want to use
     environment:
-      - LOCATION=https://eu-central-1.linodeobjects.com/savant-data/demo/Free_City_Street_Footage.mp4
+      - LOCATION=///tmp/video-loop-source-downloads/ref_vid.mp4    # change 'ref_vid.mp4' to the name of the video file you want to use
       - DOWNLOAD_PATH=/tmp/video-loop-source-downloads
       - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
       - SOURCE_ID=city-traffic
@@ -63,6 +63,7 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
+
 
 volumes:
   zmq_sockets:

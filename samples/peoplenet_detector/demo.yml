@@ -19,7 +19,7 @@ parameters:
   output_frame:
     # Frame is output without any encoding
     # this is to circumvent 3 hardware decoding processes limit on NVIDIA consumer hardware
-    codec: raw-rgba
+    codec: ${oc.env:CODEC, 'raw-rgba'}
   # PyFunc for drawing on frames
   draw_func:
     # specify the drawfunc's python module
@@ -79,6 +79,7 @@ pipeline:
         # model file name, without location
         model_file: resnet34_peoplenet_pruned.etlt  # v2.0 Accuracy: 84.3 Size 20.9 MB
 
+
         # configuration of input data and custom preprocessing methods
         input:
           # model input layer name
@@ -121,7 +122,7 @@ pipeline:
         ll-lib-file: /opt/nvidia/deepstream/deepstream/lib/libnvds_nvmultiobjecttracker.so
         # specify tracking config file
         ll-config-file: ${oc.env:PROJECT_PATH}/samples/peoplenet_detector/config_tracker_NvSORT.yml
-        enable_batch_process: 1
+        enable_batch_process: 0
     
     # analytics element realized in custom pyfunc
     - element: pyfunc
