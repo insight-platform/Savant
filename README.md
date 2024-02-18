@@ -4,6 +4,16 @@ Savant is framework build over Nvidia's DeepStream that provides a flexible solu
 
 This particular fork of Savant implements peeople detection and tracking using input video file.
 
+Following is the objective of this forked project:
+
+1. This project detects people with faces.
+ 
+2. If a face is shown, then it blurs it.
+ 
+3. Counts the number of people with shown faces in the frame, as well as the people whose face is not visible, and plots the numbers on the top of frame.
+
+4. Assigns unique IDs to people and tracks them, which good chance of resiliance of occlusion.
+
 # Specifications
 Platform: Linux (Ubuntu 22)
 
