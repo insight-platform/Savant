@@ -6,13 +6,12 @@ This particular fork of Savant implements peeople detection and tracking using i
 
 Following is the objective of this forked project:
 
-1. This project detects people with faces.
- 
+1. This project detects people with faces using PeopleNet.
 2. If a face is shown, then it blurs it.
- 
 3. Counts the number of people with shown faces in the frame, as well as the people whose face is not visible, and plots the numbers on the top of frame.
-
-4. Assigns unique IDs to people and tracks them, which good chance of resiliance of occlusion.
+4. Assigns unique IDs to people.
+5. Draw box with green color (representing their face is not visible) and blue color (reprsenting their face is visible) with labels as tracker IDs.
+6.  NvDeepSORT tracks them, which good chance of resiliance of occlusion.
 
 # Specifications
 Platform: Linux (Ubuntu 22)
