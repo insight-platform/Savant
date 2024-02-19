@@ -90,13 +90,13 @@ def parse_video_objects(frame: VideoFrame):
         child = objects[obj_id]
         child['parent_model_name'] = parent.namespace
         child['parent_label'] = parent.label
-        child['parent_object_id'] = parent.get_track_id()
+        child['parent_object_id'] = parent.track_id
 
     return list(objects.values())
 
 
 def parse_video_object(obj: VideoObject):
-    track_id = obj.get_track_id()
+    track_id = obj.track_id
     if track_id is None:
         track_id = UNTRACKED_OBJECT_ID
 

@@ -77,7 +77,7 @@ def add_objects_to_video_frame(
     for obj_id, obj in enumerate(objects):
         video_object = build_video_object(obj_id, obj)
         frame.add_object(video_object, IdCollisionResolutionPolicy.Error)
-        track_id = video_object.get_track_id()
+        track_id = video_object.track_id
         if track_id is not None:
             parents[(video_object.namespace, video_object.label, track_id)] = obj_id
 

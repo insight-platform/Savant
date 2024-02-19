@@ -226,7 +226,7 @@ class NvDsBufferProcessor(GstBufferProcessor):
                 bbox.left += self._frame_params.padding.left
                 bbox.top += self._frame_params.padding.top
 
-            track_id = obj_meta.get_track_id()
+            track_id = obj_meta.track_id
             if track_id is None:
                 track_id = UNTRACKED_OBJECT_ID
             # create nvds obj meta
@@ -498,7 +498,7 @@ class NvDsBufferProcessor(GstBufferProcessor):
         with video_frame_span.nested_span('prepare_output'):
             if self._pass_through_mode:
                 if video_frame.content.is_internal():
-                    content = video_frame.content.get_data_as_bytes()
+                    content = video_frame.content.get_data()
                     self.logger.debug(
                         'Pass-through mode is enabled. '
                         'Sending frame with IDX %s to sink without any changes. '
