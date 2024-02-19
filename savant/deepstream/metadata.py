@@ -97,7 +97,7 @@ def nvds_obj_meta_output_converter(
 
 def nvds_attr_meta_output_converter(
     attr_meta: AttributeMeta,
-    is_persistent: bool,
+    is_persistent: bool = True,
 ) -> Attribute:
     """Convert attribute meta to savant-rs format.
 
