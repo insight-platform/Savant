@@ -26,12 +26,6 @@ fi
 READ_METADATA="${READ_METADATA:="false"}"
 NUMBER_OF_STREAMS="${NUMBER_OF_STREAMS:=1}"
 
-if [[ -n "${RECEIVE_TIMEOUT}" ]]; then
-    SENDER_RECEIVE_TIMEOUT="receive-timeout=${RECEIVE_TIMEOUT}"
-else
-    SENDER_RECEIVE_TIMEOUT=
-fi
-
 MEDIA_FILES_SRC_BIN_OPTS=(
     location="${LOCATION}"
     file-type=video

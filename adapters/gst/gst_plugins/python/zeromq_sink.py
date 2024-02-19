@@ -374,6 +374,8 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
             config_builder.with_send_hwm(self.send_hwm)
             config_builder.with_receive_timeout(self.receive_timeout)
             config_builder.with_receive_retries(self.receive_retries)
+            config_builder.with_send_timeout(self.receive_timeout)
+            config_builder.with_send_retries(self.receive_retries)
             self.writer = BlockingWriter(config_builder.build())
             self.writer.start()
 
