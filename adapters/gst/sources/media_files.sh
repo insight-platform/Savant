@@ -36,18 +36,12 @@ fi
 SORT_BY_TIME="${SORT_BY_TIME:="false"}"
 READ_METADATA="${READ_METADATA:="false"}"
 
-if [[ -n "${SHUTDOWN_AUTH}" ]]; then
-    SAVANT_RS_SERIALIZER_OPTS+=(
-        shutdown-auth="${SHUTDOWN_AUTH}"
-    )
-fi
-
 USE_ABSOLUTE_TIMESTAMPS="${USE_ABSOLUTE_TIMESTAMPS:="false"}"
 SINK_PROPERTIES=(
+    source-id="${SOURCE_ID}"
     read-metadata="${READ_METADATA}"
     eos-on-file-end="${EOS_ON_FILE_END}"
     eos-on-frame-params-change=true
-    source-id="${SOURCE_ID}"
     socket="${ZMQ_ENDPOINT}"
     socket-type="${ZMQ_SOCKET_TYPE}"
     bind="${ZMQ_SOCKET_BIND}"
@@ -57,6 +51,11 @@ if [[ -n "${RECEIVE_TIMEOUT_MSECS}" ]]; then
     SINK_PROPERTIES+=("receive-timeout=${RECEIVE_TIMEOUT_MSECS}")
 else
     SINK_PROPERTIES+=("receive-timeout=5000")
+fi
+if [[ -n "${SHUTDOWN_AUTH}" ]]; then
+    SINK_PROPERTIES+=(
+        shutdown-auth="${SHUTDOWN_AUTH}"
+    )
 fi
 
 PIPELINE=(

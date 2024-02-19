@@ -32,6 +32,14 @@ RTSP_TRANSPORT="${RTSP_TRANSPORT:="tcp"}"
 BUFFER_LEN="${BUFFER_LEN:="50"}"
 FFMPEG_LOGLEVEL="${FFMPEG_LOGLEVEL:="info"}"
 USE_ABSOLUTE_TIMESTAMPS="${USE_ABSOLUTE_TIMESTAMPS:="false"}"
+SINK_PROPERTIES=(
+    source-id="${SOURCE_ID}"
+    socket="${ZMQ_ENDPOINT}"
+    socket-type="${ZMQ_SOCKET_TYPE}"
+    bind="${ZMQ_SOCKET_BIND}"
+    sync="${SYNC_OUTPUT}"
+    ts-offset="${SYNC_DELAY}"
+)
 
 PIPELINE=(
     ffmpeg_src uri="${RTSP_URI}" params="rtsp_transport=${RTSP_TRANSPORT}"
@@ -47,8 +55,7 @@ if [[ "${USE_ABSOLUTE_TIMESTAMPS,,}" == "true" ]]; then
 fi
 PIPELINE+=(
     fps_meter "${FPS_PERIOD}" output="${FPS_OUTPUT}" !
-    zeromq_sink source-id="${SOURCE_ID}" socket="${ZMQ_ENDPOINT}" socket-type="${ZMQ_SOCKET_TYPE}"
-    bind="${ZMQ_SOCKET_BIND}" sync="${SYNC_OUTPUT}" ts-offset="${SYNC_DELAY}"
+    zeromq_sink "${SINK_PROPERTIES[@]}"
 )
 
 handler() {

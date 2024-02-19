@@ -47,7 +47,6 @@ if [[ "${USE_ABSOLUTE_TIMESTAMPS,,}" == "true" ]]; then
 fi
 PIPELINE+=(
     fps_meter "${FPS_PERIOD}" output="${FPS_OUTPUT}" !
-    savant_rs_serializer source-id="${SOURCE_ID}" !
     zeromq_sink "${SINK_PROPERTIES[@]}"
 )
 

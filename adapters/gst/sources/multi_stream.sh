@@ -36,17 +36,6 @@ if [[ -n "${DOWNLOAD_PATH}" ]]; then
     )
 fi
 
-if [[ -n "${SOURCE_ID_PATTERN}" ]]; then
-    SAVANT_RS_SERIALIZER_OPTS+=(
-        source-id-pattern="${SOURCE_ID_PATTERN}"
-    )
-fi
-if [[ -n "${SHUTDOWN_AUTH}" ]]; then
-    SAVANT_RS_SERIALIZER_OPTS+=(
-        shutdown-auth="${SHUTDOWN_AUTH}"
-    )
-fi
-
 
 USE_ABSOLUTE_TIMESTAMPS="${USE_ABSOLUTE_TIMESTAMPS:="false"}"
 SINK_PROPERTIES=(
@@ -61,6 +50,16 @@ SINK_PROPERTIES=(
 )
 if [[ -n "${RECEIVE_TIMEOUT}" ]]; then
     SINK_PROPERTIES+=("receive-timeout=${RECEIVE_TIMEOUT}")
+fi
+if [[ -n "${SOURCE_ID_PATTERN}" ]]; then
+    SINK_PROPERTIES+=(
+        source-id-pattern="${SOURCE_ID_PATTERN}"
+    )
+fi
+if [[ -n "${SHUTDOWN_AUTH}" ]]; then
+    SINK_PROPERTIES+=(
+        shutdown-auth="${SHUTDOWN_AUTH}"
+    )
 fi
 
 PIPELINE=(
