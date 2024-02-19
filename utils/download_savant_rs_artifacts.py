@@ -16,6 +16,7 @@ def print_usage():
     print("  GITHUB_TOKEN: GitHub personal access token")
     sys.exit(1)
 
+
 if len(sys.argv) != 3:
     print_usage()
 
