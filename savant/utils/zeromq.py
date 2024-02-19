@@ -93,7 +93,7 @@ class BaseZeroMQSource(ABC):
             bind = 'bind' in socket_options
         else:
             config_builder.with_socket_type(ReceiverSocketTypes[socket_type].value)
-            config_builder.with_bind(bind)
+            config_builder.with_bind(bool(bind))  # in case "bind" is "int"
         if source_id:
             config_builder.with_topic_prefix_spec(TopicPrefixSpec.source_id(source_id))
         elif source_id_prefix:

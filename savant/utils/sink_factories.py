@@ -188,7 +188,7 @@ class ZeroMQSinkFactory(SinkFactory):
         if self.socket_type is not None:
             config_builder.with_socket_type(self.socket_type.value)
         if self.bind is not None:
-            config_builder.with_bind(self.bind)
+            config_builder.with_bind(bool(self.bind))  # in case "bind" is "int"
         writer = BlockingWriter(config_builder.build())
         writer.start()
 
