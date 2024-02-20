@@ -5,9 +5,9 @@ ARG DS_YOLO_PATH=/opt/yolo
 ARG DS_LPR_APP_PATH=/opt/lpr
 ARG NVDSINFER_PATH=/opt/nvidia/deepstream/deepstream/sources/libs/nvdsinfer
 
-FROM nvcr.io/nvidia/deepstream:6.3-triton-multiarch as builder
+FROM nvcr.io/nvidia/deepstream:6.4-triton-multiarch as builder
 
-ENV CUDA_VER=12.1
+ENV CUDA_VER=12.2
 ARG DS_YOLO_VER=000bcd676d48eb236076aed111ab23ff0105de3d
 ARG DS_LPR_APP_VER=9c761e5ec9fea5ac4c6e3f4357326693d2d3cf48
 ARG DS_YOLO_PATH
