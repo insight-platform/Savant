@@ -14,6 +14,7 @@ def print_usage():
     # environment variables
     print("Environment variables:")
     print("  GITHUB_TOKEN: GitHub personal access token")
+    print("  GITHUB_REPOSITORY: GitHub repository name")
     sys.exit(1)
 
 
@@ -26,7 +27,12 @@ if 'GITHUB_TOKEN' in os.environ:
 else:
     TOKEN = None
 
-REPO = 'insight-platform/savant-rs'  # Repository name
+REPO = 'insight-platform/savant-rs'
+
+if 'GITHUB_REPOSITORY' in os.environ:
+    REPO = os.environ['GITHUB_REPOSITORY']
+
+# Repository name
 TAG = sys.argv[1]  # Release tag
 OUTPUT_DIR = sys.argv[2] # Directory to save the downloaded artifacts
 
