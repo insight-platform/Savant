@@ -94,9 +94,10 @@ ARG DEEPSTREAM_VERSION
 RUN /opt/nvidia/deepstream/deepstream/user_additional_install.sh
 RUN apt-get update && \
     apt-get install --no-install-recommends -y \
+      libmagic1 \
+      libcairo2-dev \
       python3-pip \
       python3-dev \
-      libcairo2-dev \
       python-gi-dev \
       python3-gst-1.0 \
       gstreamer1.0-python3-plugin-loader && \
