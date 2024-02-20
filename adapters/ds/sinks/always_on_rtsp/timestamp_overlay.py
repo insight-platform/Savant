@@ -3,7 +3,7 @@ from datetime import datetime
 import cv2
 import numpy as np
 
-from adapters.ds.sinks.always_on_rtsp.utils import Frame
+from adapters.ds.sinks.always_on_rtsp.last_frame import Frame
 from savant.utils.logging import get_logger
 
 

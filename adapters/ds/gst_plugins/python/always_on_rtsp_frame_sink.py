@@ -3,10 +3,8 @@ from datetime import datetime
 from typing import Any, Optional
 
 import cv2
-import numpy as np
 
-from adapters.ds.sinks.always_on_rtsp.last_frame import LastFrame, LastFrameRef
-from adapters.ds.sinks.always_on_rtsp.utils import Frame
+from adapters.ds.sinks.always_on_rtsp.last_frame import Frame, LastFrame, LastFrameRef
 from savant.gstreamer import GObject, Gst, GstBase
 from savant.gstreamer.utils import (
     gst_post_library_settings_error,
