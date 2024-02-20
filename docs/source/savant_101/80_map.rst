@@ -10,7 +10,7 @@ The API to access the frame with NumPy is provided with the utility function ``g
 
 .. code-block:: python
 
-    from savant.deepstream.utils import get_nvds_buf_surface
+    from savant.deepstream.utils.surface import get_nvds_buf_surface
     def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
         with get_nvds_buf_surface(buffer, frame_meta.frame_meta) as frame_mat:
             # frame_mat is a numpy.ndarray

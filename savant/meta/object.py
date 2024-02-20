@@ -28,22 +28,41 @@ class BaseObjectMetaImpl(ABC):
     def get_attr_meta_list(
         self, element_name: str, attr_name: str
     ) -> Optional[List[AttributeMeta]]:
-        """Returns object attributes (multi-label case).
+        """Returns attributes (multi-label case).
 
-        :param element_name: attribute model name.
-        :param attr_name: attribute name.
-        :return: AttributeMeta or None if the object has no such attribute.
+        :param element_name: Attribute model name.
+        :param attr_name: Attribute name.
+        :return: List of AttributeMeta or None if the object has no such attributes.
         """
 
     @abstractmethod
     def get_attr_meta(
         self, element_name: str, attr_name: str
     ) -> Optional[AttributeMeta]:
-        """Returns object meta attribute.
+        """Returns attribute.
 
-        :param element_name: attribute model name.
-        :param attr_name: attribute name.
+        :param element_name: Attribute model name.
+        :param attr_name: Attribute name.
         :return: AttributeMeta or None if the object has no such attribute.
+        """
+
+    @abstractmethod
+    def replace_attr_meta_list(
+        self, element_name: str, attr_name: str, value: List[AttributeMeta]
+    ):
+        """Replaces attributes with a new list.
+
+        :param element_name: Attribute model name.
+        :param attr_name: Attribute name.
+        :param value: List of AttributeMeta.
+        """
+
+    @abstractmethod
+    def remove_attr_meta_list(self, element_name: str, attr_name: str):
+        """Removes attributes.
+
+        :param element_name: Attribute model name.
+        :param attr_name: Attribute name.
         """
 
     @abstractmethod
@@ -53,13 +72,15 @@ class BaseObjectMetaImpl(ABC):
         name: str,
         value: Any,
         confidence: float = 1.0,
+        replace: bool = False,
     ):
-        """Adds specified object attribute to object meta.
+        """Adds attribute to the object.
 
-        :param element_name: attribute model name.
-        :param name: attribute name.
-        :param value: attribute value.
-        :param confidence: attribute confidence.
+        :param element_name: Attribute model name.
+        :param name: Attribute name.
+        :param value: Attribute value.
+        :param confidence: Attribute confidence.
+        :param replace: Replace attribute if it already exists.
         """
 
 
@@ -112,7 +133,7 @@ class ObjectMeta:
     def get_attr_meta_list(
         self, element_name: str, attr_name: str
     ) -> Optional[List[AttributeMeta]]:
-        """Returns a list of the object's specified attributes.
+        """Returns attributes (multi-label case).
 
         :param element_name: Attribute model name.
         :param attr_name: Attribute name.
@@ -127,7 +148,7 @@ class ObjectMeta:
     def get_attr_meta(
         self, element_name: str, attr_name: str
     ) -> Optional[AttributeMeta]:
-        """Returns the specified attribute of the object.
+        """Returns attribute.
 
         :param element_name: Attribute model name.
         :param attr_name: Attribute name.
@@ -136,23 +157,58 @@ class ObjectMeta:
         attrs = self.get_attr_meta_list(element_name, attr_name)
         return attrs[0] if attrs else None
 
+    def replace_attr_meta_list(
+        self, element_name: str, attr_name: str, value: List[AttributeMeta]
+    ):
+        """Replaces attributes with a new list.
+
+        :param element_name: Attribute model name.
+        :param attr_name: Attribute name.
+        :param value: List of AttributeMeta.
+        """
+        if self.object_meta_impl:
+            self.object_meta_impl.replace_attr_meta_list(
+                element_name=element_name, attr_name=attr_name, value=value
+            )
+        else:
+            self._attributes[(element_name, attr_name)] = value
+
+    def remove_attr_meta_list(self, element_name: str, attr_name: str):
+        """Removes attributes.
+
+        :param element_name: Attribute model name.
+        :param attr_name: Attribute name.
+        """
+        if self.object_meta_impl:
+            self.object_meta_impl.remove_attr_meta_list(
+                element_name=element_name, attr_name=attr_name
+            )
+        elif (element_name, attr_name) in self._attributes:
+            del self._attributes[(element_name, attr_name)]
+
     def add_attr_meta(
         self,
         element_name: str,
         name: str,
         value: Any,
         confidence: float = 1.0,
+        replace: bool = False,
     ):
-        """Adds specified object attribute to object meta.
+        """Adds attribute to the object.
 
-        :param element_name: attribute model name.
-        :param name: attribute name.
-        :param value: attribute value.
-        :param confidence: attribute confidence.
+        :param element_name: Attribute model name.
+        :param name: Attribute name.
+        :param value: Attribute value.
+        :param confidence: Attribute confidence.
+        :param replace: Replace attribute if it already exists.
         """
         if self.object_meta_impl:
             self.object_meta_impl.add_attr_meta(
-                element_name=element_name, name=name, value=value, confidence=confidence
+                element_name=element_name,
+                name=name,
+                value=value,
+                confidence=confidence,
+                replace=replace,
             )
         else:
             if not (element_name, name) in self._attributes:
