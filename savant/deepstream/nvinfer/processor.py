@@ -16,6 +16,7 @@ from savant_rs.utils.symbol_mapper import (
     parse_compound_key,
 )
 
+from savant.api.utils import copy_bbox
 from savant.base.converter import TensorFormat
 from savant.base.input_preproc import ObjectsPreprocessing
 from savant.base.pyfunc import PyFuncNoopCallException
@@ -190,7 +191,7 @@ class NvInferProcessor:
                     user_parent_object_meta = ObjectMeta(
                         parent_object_meta.element_name,
                         parent_object_meta.label,
-                        parent_object_meta.bbox.copy(),
+                        copy_bbox(parent_object_meta.bbox),
                         parent_object_meta.confidence,
                         parent_object_meta.track_id,
                         attributes=nvds_attr_meta_iterator(
@@ -220,7 +221,7 @@ class NvInferProcessor:
                 user_object_meta = ObjectMeta(
                     object_meta.element_name,
                     object_meta.label,
-                    object_meta.bbox.copy(),
+                    copy_bbox(object_meta.bbox),
                     object_meta.confidence,
                     object_meta.track_id,
                     user_parent_object_meta,
