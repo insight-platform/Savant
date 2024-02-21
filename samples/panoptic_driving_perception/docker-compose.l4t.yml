@@ -19,9 +19,7 @@ services:
         condition: service_healthy
 
   module:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.l4t
+    image: panoptic_driving_perception-module
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
