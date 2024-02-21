@@ -2,10 +2,14 @@
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, NamedTuple, Optional, Union
 
-import zmq
 from savant_rs.primitives import EndOfStream, VideoFrame, VideoFrameContent
 from savant_rs.utils import PropagatedContext
-from savant_rs.utils.serialization import Message, save_message_to_bytes
+from savant_rs.zmq import (
+    BlockingWriter,
+    WriterConfigBuilder,
+    WriterResultAck,
+    WriterResultSuccess,
+)
 
 from savant.api.enums import ExternalFrameType
 from savant.api.parser import convert_ts
@@ -13,14 +17,7 @@ from savant.base.pyfunc import PyFunc
 from savant.config.schema import SinkElement
 from savant.utils.logging import get_logger
 from savant.utils.registry import Registry
-from savant.utils.zeromq import (
-    Defaults,
-    SenderSocketTypes,
-    create_ipc_socket_dirs,
-    ipc_socket_chmod,
-    parse_zmq_socket_uri,
-    receive_response,
-)
+from savant.utils.zeromq import Defaults, SenderSocketTypes, get_zmq_socket_uri_options
 
 logger = get_logger(__name__)
 
@@ -158,7 +155,7 @@ class ZeroMQSinkFactory(SinkFactory):
         bind: bool = True,
         send_hwm: int = Defaults.SEND_HWM,
         receive_timeout: int = Defaults.SENDER_RECEIVE_TIMEOUT,
-        req_receive_retries: int = Defaults.REQ_RECEIVE_RETRIES,
+        req_receive_retries: int = Defaults.RECEIVE_RETRIES,
         set_ipc_socket_permissions: bool = True,
     ):
         super().__init__(sink_name, egress_pyfunc)
@@ -168,44 +165,41 @@ class ZeroMQSinkFactory(SinkFactory):
             socket_type,
             bind,
         )
+        socket_type = SenderSocketTypes[socket_type]
 
         self.receive_timeout = receive_timeout
         self.req_receive_retries = req_receive_retries
         self.set_ipc_socket_permissions = set_ipc_socket_permissions
-        # might raise exceptions
-        # will be handled in savant.entrypoint
-        self.socket_type, self.bind, self.socket = parse_zmq_socket_uri(
-            uri=socket,
-            socket_type_name=socket_type,
-            socket_type_enum=SenderSocketTypes,
-            bind=bind,
-        )
+        self.socket = socket
+        if get_zmq_socket_uri_options(socket):
+            self.socket_type = None
+            self.bind = None
+        else:
+            self.socket_type = socket_type
+            self.bind = bind
 
         self.send_hwm = send_hwm
-        self.wait_response = self.socket_type == SenderSocketTypes.REQ
 
     def get_sink(self) -> SinkCallable:
-        context = zmq.Context()
-        output_zmq_socket = context.socket(self.socket_type.value)
-        output_zmq_socket.setsockopt(zmq.SNDHWM, self.send_hwm)
-        output_zmq_socket.setsockopt(zmq.RCVTIMEO, self.receive_timeout)
+        config_builder = WriterConfigBuilder(self.socket)
+        config_builder.with_send_hwm(self.send_hwm)
+        config_builder.with_receive_timeout(self.receive_timeout)
+        config_builder.with_receive_retries(self.req_receive_retries)
+        if self.socket_type is not None:
+            config_builder.with_socket_type(self.socket_type.value)
+        if self.bind is not None:
+            config_builder.with_bind(bool(self.bind))  # in case "bind" is "int"
+        writer = BlockingWriter(config_builder.build())
+        writer.start()
 
-        create_ipc_socket_dirs(self.socket)
-
-        if self.bind:
-            output_zmq_socket.bind(self.socket)
-        else:
-            output_zmq_socket.connect(self.socket)
-        if self.set_ipc_socket_permissions and self.bind:
-            ipc_socket_chmod(self.socket)
+        # if self.set_ipc_socket_permissions and self.bind:
+        #     ipc_socket_chmod(self.socket)
 
         def send_message(
             msg: SinkMessage,
             **kwargs,
         ):
-            zmq_topic = f'{msg.source_id}/'.encode()
-            zmq_message = [zmq_topic]
-
+            send_result = None
             if isinstance(msg, SinkVideoFrame):
                 frame_pts = convert_ts(msg.video_frame.pts, msg.video_frame.time_base)
                 if self.video_frame_filter(msg.video_frame, frame_pts):
@@ -233,26 +227,28 @@ class ZeroMQSinkFactory(SinkFactory):
                         )
                         msg.video_frame.content = VideoFrameContent.none()
 
-                    message = Message.video_frame(msg.video_frame)
+                    message = msg.video_frame.to_message()
                     if msg.span_context is not None:
                         message.span_context = msg.span_context
-                    zmq_message.append(save_message_to_bytes(message))
-                    if msg.frame:
-                        zmq_message.append(msg.frame)
+                    send_result = writer.send_message(
+                        msg.source_id, message, msg.frame or b''
+                    )
             elif isinstance(msg, SinkEndOfStream):
                 logger.debug(
                     'Sending EOS of source "%s" to ZeroMQ sink.', msg.source_id
                 )
-                message = Message.end_of_stream(msg.eos)
-                zmq_message.append(save_message_to_bytes(message))
+                message = msg.eos.to_message()
+                send_result = writer.send_message(msg.source_id, message, b'')
             else:
                 logger.warning('Unknown message type %s.', type(msg))
                 return
-            output_zmq_socket.send_multipart(zmq_message)
-            if self.wait_response:
-                resp = receive_response(output_zmq_socket, self.req_receive_retries)
-                logger.debug(
-                    'Received %s bytes from socket %s.', len(resp), self.socket
+
+            if not (
+                send_result is None
+                or isinstance(send_result, (WriterResultAck, WriterResultSuccess))
+            ):
+                raise RuntimeError(
+                    f'Failed to send message to ZeroMQ sink: {send_result}'
                 )
 
         return send_message
@@ -370,7 +366,7 @@ def sink_factory(sink: Union[SinkElement, List[SinkElement]]) -> SinkCallable:
     if isinstance(sink, SinkElement):
         return SINK_REGISTRY.get(sink.element.lower())(
             sink.full_name, sink.egress_frame_filter, **sink.properties
-        ).get_sink()
+        ).get_sink
 
     sink_factories = []
     for _sink in sink:

@@ -1,7 +1,7 @@
+import asyncio
 from dataclasses import dataclass
-from typing import AsyncIterable, Iterable, List, Optional, Set, Tuple, Union
+from typing import AsyncIterable, Iterable, Optional, Set, Tuple, Union
 
-import zmq
 from savant_rs.pipeline2 import (
     VideoPipeline,
     VideoPipelineConfiguration,
@@ -9,10 +9,12 @@ from savant_rs.pipeline2 import (
 )
 from savant_rs.primitives import EndOfStream, Shutdown, VideoFrame
 from savant_rs.utils import TelemetrySpan
-from savant_rs.utils.serialization import (
-    Message,
-    clear_source_seq_id,
-    save_message_to_bytes,
+from savant_rs.utils.serialization import Message, clear_source_seq_id
+from savant_rs.zmq import (
+    BlockingWriter,
+    NonBlockingWriter,
+    WriterConfig,
+    WriterConfigBuilder,
 )
 
 from savant.client.frame_source import FrameSource
@@ -21,13 +23,7 @@ from savant.client.runner import LogResult
 from savant.client.runner.healthcheck import HealthCheck
 from savant.healthcheck.status import ModuleStatus
 from savant.utils.logging import get_logger
-from savant.utils.zeromq import (
-    Defaults,
-    SenderSocketTypes,
-    async_receive_response,
-    parse_zmq_socket_uri,
-    receive_response,
-)
+from savant.utils.zeromq import Defaults
 
 logger = get_logger(__name__)
 
@@ -49,6 +45,8 @@ class SourceResult(LogResult):
 
 class SourceRunner:
     """Sends messages to ZeroMQ socket."""
+
+    _writer: BlockingWriter
 
     def __init__(
         self,
@@ -78,23 +76,14 @@ class SourceRunner:
             if module_health_check_url is not None
             else None
         )
-        self._socket_type, self._bind, self._socket = parse_zmq_socket_uri(
-            uri=socket,
-            socket_type_enum=SenderSocketTypes,
-            socket_type_name=None,
-            bind=None,
-        )
+
+        config_builder = WriterConfigBuilder(socket)
+        config_builder.with_receive_timeout(receive_timeout)
+        config_builder.with_send_hwm(send_hwm)
+        config = config_builder.build()
 
         self._last_send_time = 0
-        self._wait_response = self._socket_type == SenderSocketTypes.REQ
-        self._zmq_context = self._create_zmq_ctx()
-        self._sender = self._zmq_context.socket(self._socket_type.value)
-        self._sender.setsockopt(zmq.SNDHWM, self._send_hwm)
-        self._sender.setsockopt(zmq.RCVTIMEO, self._receive_timeout)
-        if self._bind:
-            self._sender.bind(self._socket)
-        else:
-            self._sender.connect(self._socket)
+        self._writer = self._build_zeromq_writer(config)
 
         self._pipeline_stage_name = 'savant-client'
         self._pipeline = VideoPipeline(
@@ -104,6 +93,7 @@ class SourceRunner:
         )
         if self._telemetry_enabled:
             self._pipeline.sampling_period = 1
+        self._writer.start()
 
     def __call__(self, source: Frame, send_eos: bool = True) -> SourceResult:
         """Send a single frame to ZeroMQ socket.
@@ -128,15 +118,13 @@ class SourceRunner:
         if self._health_check is not None:
             self._health_check.wait_module_is_ready()
 
-        zmq_topic, serialized_message, content, result = self._prepare_video_frame(
-            source
-        )
+        zmq_topic, message, content, result = self._prepare_video_frame(source)
         logger.debug(
             'Sending video frame %s/%s.',
             result.source_id,
             result.pts,
         )
-        self._send_zmq_message([zmq_topic, serialized_message, content])
+        self._send_zmq_message(zmq_topic, message, content)
         logger.debug('Sent video frame %s/%s.', result.source_id, result.pts)
         if send_eos:
             self.send_eos(result.source_id)
@@ -180,8 +168,8 @@ class SourceRunner:
         if self._health_check is not None:
             self._health_check.wait_module_is_ready()
 
-        zmq_topic, serialized_message, result = self._prepare_eos(source_id)
-        self._send_zmq_message([zmq_topic, serialized_message])
+        zmq_topic, message, result = self._prepare_eos(source_id)
+        self._send_zmq_message(zmq_topic, message)
         logger.debug('Sent EOS for source %s.', source_id)
         result.status = 'ok'
         clear_source_seq_id(source_id)
@@ -198,32 +186,18 @@ class SourceRunner:
         if self._health_check is not None:
             self._health_check.wait_module_is_ready()
 
-        zmq_topic, serialized_message, result = self._prepare_shutdown(source_id, auth)
-        self._send_zmq_message([zmq_topic, serialized_message])
+        zmq_topic, message, result = self._prepare_shutdown(source_id, auth)
+        self._send_zmq_message(zmq_topic, message)
         logger.debug('Sent Shutdown message for source %s.', source_id)
         result.status = 'ok'
 
         return result
 
-    def _send_zmq_message(self, message: List[bytes]):
-        for retries_left in reversed(range(self._retries)):
-            try:
-                self._sender.send_multipart(message)
-                break
-            except Exception:
-                if retries_left == 0:
-                    raise
-                logger.error(
-                    'Failed to send message to socket %s. %s retries left.',
-                    self._socket,
-                    retries_left,
-                    exc_info=True,
-                )
-        if self._wait_response:
-            receive_response(self._sender, self._retries)
+    def _send_zmq_message(self, topic: str, message: Message, content: bytes = b''):
+        self._writer.send_message(topic, message, content)
 
-    def _create_zmq_ctx(self):
-        return zmq.Context()
+    def _build_zeromq_writer(self, config: WriterConfig):
+        return BlockingWriter(config)
 
     def _prepare_video_frame(self, source: Frame):
         if isinstance(source, FrameSource):
@@ -233,8 +207,7 @@ class SourceRunner:
             video_frame, content = source
             logger.debug('Sending video frame from source %s.', video_frame.source_id)
         frame_id = self._pipeline.add_frame(self._pipeline_stage_name, video_frame)
-        zmq_topic = f'{video_frame.source_id}/'.encode()
-        message = Message.video_frame(video_frame)
+        message = video_frame.to_message()
         if self._telemetry_enabled:
             span: TelemetrySpan = self._pipeline.delete(frame_id)[frame_id]
             message.span_context = span.propagate()
@@ -242,11 +215,10 @@ class SourceRunner:
             del span
         else:
             trace_id = None
-        serialized_message = save_message_to_bytes(message)
 
         return (
-            zmq_topic,
-            serialized_message,
+            video_frame.source_id,
+            message,
             content,
             SourceResult(
                 source_id=video_frame.source_id,
@@ -259,13 +231,11 @@ class SourceRunner:
 
     def _prepare_eos(self, source_id: str):
         logger.debug('Sending EOS for source %s.', source_id)
-        zmq_topic = f'{source_id}/'.encode()
-        message = Message.end_of_stream(EndOfStream(source_id))
-        serialized_message = save_message_to_bytes(message)
+        message = EndOfStream(source_id).to_message()
 
         return (
-            zmq_topic,
-            serialized_message,
+            source_id,
+            message,
             SourceResult(
                 source_id=source_id,
                 pts=None,
@@ -277,13 +247,11 @@ class SourceRunner:
 
     def _prepare_shutdown(self, source_id: str, auth: str):
         logger.debug('Sending Shutdown message for source %s.', source_id)
-        zmq_topic = f'{source_id}/'.encode()
-        message = Message.shutdown(Shutdown(auth))
-        serialized_message = save_message_to_bytes(message)
+        message = Shutdown(auth).to_message()
 
         return (
-            zmq_topic,
-            serialized_message,
+            source_id,
+            message,
             SourceResult(
                 source_id=source_id,
                 pts=None,
@@ -297,6 +265,8 @@ class SourceRunner:
 class AsyncSourceRunner(SourceRunner):
     """Sends messages to ZeroMQ socket asynchronously."""
 
+    _writer: NonBlockingWriter
+
     async def __call__(self, source: Frame, send_eos: bool = True) -> SourceResult:
         return await self.send(source, send_eos)
 
@@ -304,15 +274,13 @@ class AsyncSourceRunner(SourceRunner):
         if self._health_check is not None:
             self._health_check.wait_module_is_ready()
 
-        zmq_topic, serialized_message, content, result = self._prepare_video_frame(
-            source
-        )
+        zmq_topic, message, content, result = self._prepare_video_frame(source)
         logger.debug(
             'Sending video frame %s/%s.',
             result.source_id,
             result.pts,
         )
-        await self._send_zmq_message([zmq_topic, serialized_message, content])
+        await self._send_zmq_message(zmq_topic, message, content)
         logger.debug('Sent video frame %s/%s.', result.source_id, result.pts)
         if send_eos:
             await self.send_eos(result.source_id)
@@ -341,8 +309,8 @@ class AsyncSourceRunner(SourceRunner):
         if self._health_check is not None:
             self._health_check.wait_module_is_ready()
 
-        zmq_topic, serialized_message, result = self._prepare_eos(source_id)
-        await self._send_zmq_message([zmq_topic, serialized_message])
+        zmq_topic, message, result = self._prepare_eos(source_id)
+        await self._send_zmq_message(zmq_topic, message)
         logger.debug('Sent EOS for source %s.', source_id)
         result.status = 'ok'
         clear_source_seq_id(source_id)
@@ -352,32 +320,24 @@ class AsyncSourceRunner(SourceRunner):
         if self._health_check is not None:
             self._health_check.wait_module_is_ready()
 
-        zmq_topic, serialized_message, result = self._prepare_shutdown(source_id, auth)
-        await self._send_zmq_message([zmq_topic, serialized_message])
+        zmq_topic, message, result = self._prepare_shutdown(source_id, auth)
+        await self._send_zmq_message(zmq_topic, message)
         logger.debug('Sent Shutdown message for source %s.', source_id)
         result.status = 'ok'
 
         return result
 
-    async def _send_zmq_message(self, message: List[bytes]):
-        for retries_left in reversed(range(self._retries)):
-            try:
-                await self._sender.send_multipart(message)
-                break
-            except Exception:
-                if retries_left == 0:
-                    raise
-                logger.error(
-                    'Failed to send message to socket %s. %s retries left.',
-                    self._socket,
-                    retries_left,
-                    exc_info=True,
-                )
-        if self._wait_response:
-            await async_receive_response(self._sender, self._retries)
+    async def _send_zmq_message(
+        self, topic: str, message: Message, content: bytes = b''
+    ):
+        while not self._writer.has_capacity():
+            await asyncio.sleep(0.01)  # TODO: make configurable
+        await asyncio.get_running_loop().run_in_executor(
+            None, self._writer.send_message, topic, message, content
+        )
 
-    def _create_zmq_ctx(self):
-        return zmq.asyncio.Context()
+    def _build_zeromq_writer(self, config: WriterConfig):
+        return NonBlockingWriter(config, 10)  # TODO: make configurable
 
     async def _send_iter_item(self, source: FrameAndEos, source_ids: Set[str]):
         if isinstance(source, EndOfStream):

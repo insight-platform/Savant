@@ -3,7 +3,6 @@ from os import PathLike
 from typing import Any, BinaryIO, List, Optional, Tuple, TypeVar, Union
 
 from savant_rs.primitives import (
-    Attribute,
     AttributeValue,
     VideoFrame,
     VideoFrameContent,
@@ -120,12 +119,10 @@ class ImageSource(FrameSource):
             time_base=self._time_base,
         )
         if isinstance(self._file, (str, PathLike)):
-            video_frame.set_attribute(
-                Attribute(
-                    namespace=DEFAULT_NAMESPACE,
-                    name='location',
-                    values=[AttributeValue.string(str(self._file))],
-                )
+            video_frame.set_persistent_attribute(
+                namespace=DEFAULT_NAMESPACE,
+                name='location',
+                values=[AttributeValue.string(str(self._file))],
             )
         for update in self._updates:
             video_frame.update(update)

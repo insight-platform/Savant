@@ -31,8 +31,14 @@ if (NOT ${EXIT_CODE} EQUAL 0)
             "The \"savant_rs\" Python3 package is not installed. Please install it using the following command: \"pip3 install savant_rs\"."
     )
 endif()
-file(GLOB SAVANT_RS_LIB_FILES "${SAVANT_RS_LIB_DIR}/savant_rs.cpython*.so")
-message(STATUS "Found library for savant-rs: ${SAVANT_RS_LIB_FILES}")
+set(SAVANT_RS_CORE_LIB_DIR "${SAVANT_RS_LIB_DIR}.libs")
+
+file(GLOB SAVANT_RS_CORE_LIB_FILE "${SAVANT_RS_CORE_LIB_DIR}/libsavant_core-*.so")
+message(STATUS "Found core library for savant-rs: ${SAVANT_RS_CORE_LIB_FILE}")
+file(GLOB SAVANT_RS_CORE_PY_LIB_FILE "${SAVANT_RS_CORE_LIB_DIR}/libsavant_core_py-*.so")
+message(STATUS "Found core-py library for savant-rs: ${SAVANT_RS_CORE_PY_LIB_FILE}")
+file(GLOB SAVANT_RS_LIB_FILE "${SAVANT_RS_LIB_DIR}/savant_rs.cpython*.so")
+message(STATUS "Found library for savant-rs: ${SAVANT_RS_LIB_FILE}")
 
 if(NOT DEFINED DeepStream_DIR)
     set(DeepStream_DIR /opt/nvidia/deepstream/deepstream)
@@ -58,6 +64,7 @@ link_directories(
         ${GSTREAMER_LIBRARY_DIRS}
         ${CUDA_LIBRARY_DIRS}
         ${DeepStream_DIR}/lib
+        ${SAVANT_RS_CORE_LIB_DIR}
         ${SAVANT_RS_LIB_DIR}
  )
 
@@ -69,8 +76,12 @@ file (GLOB PYTHON_FILES "pygstsavantframemeta/*.cpp" "pygstsavantframemeta/*.h")
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${SOURCE_FILES} ${HEADER_FILES} ${PYTHON_FILES} )
 
+add_library(savant_core UNKNOWN IMPORTED)
+set_property(TARGET savant_core PROPERTY IMPORTED_LOCATION ${SAVANT_RS_CORE_LIB_FILE})
+add_library(savant_core_py UNKNOWN IMPORTED)
+set_property(TARGET savant_core_py PROPERTY IMPORTED_LOCATION ${SAVANT_RS_CORE_PY_LIB_FILE})
 add_library(savant_rs UNKNOWN IMPORTED)
-set_property(TARGET savant_rs PROPERTY IMPORTED_LOCATION ${SAVANT_RS_LIB_FILES})
+set_property(TARGET savant_rs PROPERTY IMPORTED_LOCATION ${SAVANT_RS_LIB_FILE})
 
 pybind11_add_module(${python_module_name} SHARED
     ${SOURCE_FILES}
