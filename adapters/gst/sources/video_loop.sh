@@ -30,6 +30,9 @@ EOS_ON_LOOP_END="${EOS_ON_LOOP_END:="false"}"
 READ_METADATA="${READ_METADATA:="false"}"
 USE_ABSOLUTE_TIMESTAMPS="${USE_ABSOLUTE_TIMESTAMPS:="false"}"
 SINK_PROPERTIES=(
+    source-id="${SOURCE_ID}"
+    eos-on-loop-end="${EOS_ON_LOOP_END}"
+    read-metadata="${READ_METADATA}"
     socket="${ZMQ_ENDPOINT}"
     socket-type="${ZMQ_SOCKET_TYPE}"
     bind="${ZMQ_SOCKET_BIND}"
@@ -52,8 +55,6 @@ if [[ -n "${LOSS_RATE}" ]]; then
     PIPELINE+=(identity drop-probability="${LOSS_RATE}" !)
 fi
 PIPELINE+=(
-    savant_rs_serializer source-id="${SOURCE_ID}" eos-on-loop-end="${EOS_ON_LOOP_END}"
-    read-metadata="${READ_METADATA}" !
     zeromq_sink "${SINK_PROPERTIES[@]}"
 )
 

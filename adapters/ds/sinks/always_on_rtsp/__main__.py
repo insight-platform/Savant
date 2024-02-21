@@ -81,18 +81,18 @@ def main():
 
     if not config.source_id:
         internal_socket = 'ipc:///tmp/ao-sink-internal-socket.ipc'
-        internal_zmq_endpoint = f'sub+connect:{internal_socket}'
+        zmq_reader_endpoint = f'sub+connect:{internal_socket}'
         zmq_proxy = ZeroMqProxy(
             input_socket=config.zmq_endpoint,
             input_socket_type=config.zmq_socket_type,
             input_bind=config.zmq_socket_bind,
-            output_socket=internal_socket,
+            output_socket=f'pub+bind:{internal_socket}',
         )
         zmq_proxy.start()
         zmq_proxy_thread = Thread(target=zmq_proxy.run, daemon=True)
         zmq_proxy_thread.start()
     else:
-        internal_zmq_endpoint = config.zmq_endpoint
+        zmq_reader_endpoint = config.zmq_endpoint
 
     if config.dev_mode:
         mediamtx_process = Popen(
@@ -113,7 +113,7 @@ def main():
             config.source_id: run_ao_sink_process(
                 config.source_id,
                 config.rtsp_uri,
-                internal_zmq_endpoint,
+                zmq_reader_endpoint,
             )
         }
     else:
@@ -121,7 +121,7 @@ def main():
             source_id: run_ao_sink_process(
                 source_id,
                 f'{config.rtsp_uri.rstrip("/")}/{source_id}',
-                internal_zmq_endpoint,
+                zmq_reader_endpoint,
             )
             for source_id in config.source_ids
         }

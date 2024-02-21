@@ -48,16 +48,16 @@ class Config:
         self.fps_output = opt_config('FPS_OUTPUT', 'stdout')
 
         self.metadata_output = opt_config('METADATA_OUTPUT')
-        if self.metadata_output:
-            self.pipeline_stage_name = 'source'
-            self.video_pipeline: Optional[VideoPipeline] = VideoPipeline(
-                'always-on-sink',
-                [(self.pipeline_stage_name, VideoPipelineStagePayloadType.Frame)],
-                VideoPipelineConfiguration(),
-            )
-        else:
-            self.pipeline_stage_name = None
-            self.video_pipeline: Optional[VideoPipeline] = None
+        self.pipeline_source_stage_name = 'source'
+        self.pipeline_demux_stage_name = 'source-demux'
+        self.video_pipeline: Optional[VideoPipeline] = VideoPipeline(
+            'always-on-sink',
+            [
+                (self.pipeline_source_stage_name, VideoPipelineStagePayloadType.Frame),
+                (self.pipeline_demux_stage_name, VideoPipelineStagePayloadType.Frame),
+            ],
+            VideoPipelineConfiguration(),
+        )
 
         self.framerate = opt_config('FRAMERATE', '30/1')
         self.sync = opt_config('SYNC_OUTPUT', False, strtobool)

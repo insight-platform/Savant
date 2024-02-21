@@ -8,6 +8,10 @@
 #include "gstnvdsmeta.h"
 #include "nvdsmeta.h"
 
+
+typedef struct Arc_Vec_BorrowedVideoObject {
+} Arc_Vec_BorrowedVideoObject;
+
 extern "C" {
 #include "savant_rs.h"
 }

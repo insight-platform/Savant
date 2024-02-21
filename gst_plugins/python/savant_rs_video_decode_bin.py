@@ -28,12 +28,6 @@ NESTED_DEMUX_PROPERTIES = {
         'source-timeout',
         'source-eviction-interval',
         'max-parallel-streams',
-        'shutdown-auth',
-        'pass-through-mode',
-        'ingress-module',
-        'ingress-class',
-        'ingress-kwargs',
-        'ingress-dev-mode',
     ]
 }
 SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES = {
@@ -58,10 +52,10 @@ SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES = {
         'VideoPipeline object from savant-rs.',
         GObject.ParamFlags.READWRITE,
     ),
-    'pipeline-source-stage-name': (
+    'pipeline-demux-stage-name': (
         str,
-        'Name of the pipeline stage for source.',
-        'Name of the pipeline stage for source.',
+        'Name of the pipeline stage for demuxer.',
+        'Name of the pipeline stage for demuxer.',
         None,
         GObject.ParamFlags.READWRITE,
     ),
@@ -188,7 +182,7 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
             return self._max_parallel_streams
         if prop.name == 'pipeline':
             return self._video_pipeline
-        if prop.name == 'pipeline-source-stage-name':
+        if prop.name == 'pipeline-demux-stage-name':
             return self._demuxer.get_property('pipeline-stage-name')
         if prop.name == 'pipeline-decoder-stage-name':
             return self._pipeline_decoder_stage_name
@@ -217,7 +211,7 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
         elif prop.name == 'pipeline':
             self._video_pipeline = value
             self._demuxer.set_property(prop.name, value)
-        elif prop.name == 'pipeline-source-stage-name':
+        elif prop.name == 'pipeline-demux-stage-name':
             self._demuxer.set_property('pipeline-stage-name', value)
         elif prop.name == 'pipeline-decoder-stage-name':
             self._pipeline_decoder_stage_name = value
