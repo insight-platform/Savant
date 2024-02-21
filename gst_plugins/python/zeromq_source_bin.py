@@ -1,4 +1,8 @@
 """ZeroMQ src bin."""
+from typing import Optional
+
+from savant_rs.pipeline2 import VideoPipeline
+
 from gst_plugins.python.savant_rs_video_decode_bin import (
     SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES,
     SAVANT_RS_VIDEO_DECODE_BIN_SRC_PAD_TEMPLATE,
@@ -10,6 +14,53 @@ from savant.utils.logging import LoggerMixin
 # Default values of "queue" element
 DEFAULT_INGRESS_QUEUE_LENGTH = 200
 DEFAULT_INGRESS_QUEUE_SIZE = 10485760
+
+NESTED_ZEROMQ_SRC_PROPERTIES = {
+    k: v
+    for k, v in ZEROMQ_SRC_PROPERTIES.items()
+    if k not in ['pipeline', 'pipeline-stage-name']
+}
+NESTED_SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES = {
+    k: v
+    for k, v in SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES.items()
+    if k not in ['pipeline']
+}
+
+ZEROMQ_SOURCE_BIN_PROPERTIES = {
+    **NESTED_ZEROMQ_SRC_PROPERTIES,
+    **NESTED_SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES,
+    'ingress-queue-length': (
+        int,
+        'Length of the ingress queue in frames.',
+        'Length of the ingress queue in frames (0 - no limit).',
+        0,
+        GObject.G_MAXINT,
+        DEFAULT_INGRESS_QUEUE_LENGTH,
+        GObject.ParamFlags.READWRITE,
+    ),
+    'ingress-queue-byte-size': (
+        int,
+        'Size of the ingress queue in bytes.',
+        'Size of the ingress queue in bytes (0 - no limit).',
+        0,
+        GObject.G_MAXINT,
+        DEFAULT_INGRESS_QUEUE_SIZE,
+        GObject.ParamFlags.READWRITE,
+    ),
+    'pipeline': (
+        object,
+        'VideoPipeline object from savant-rs.',
+        'VideoPipeline object from savant-rs.',
+        GObject.ParamFlags.READWRITE,
+    ),
+    'pipeline-source-stage-name': (
+        str,
+        'Name of the pipeline stage for source.',
+        'Name of the pipeline stage for source.',
+        None,
+        GObject.ParamFlags.READWRITE,
+    ),
+}
 
 
 class ZeroMQSourceBin(LoggerMixin, Gst.Bin):
@@ -29,28 +80,7 @@ class ZeroMQSourceBin(LoggerMixin, Gst.Bin):
 
     __gsttemplates__ = SAVANT_RS_VIDEO_DECODE_BIN_SRC_PAD_TEMPLATE
 
-    __gproperties__ = {
-        **ZEROMQ_SRC_PROPERTIES,
-        **SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES,
-        'ingress-queue-length': (
-            int,
-            'Length of the ingress queue in frames.',
-            'Length of the ingress queue in frames (0 - no limit).',
-            0,
-            GObject.G_MAXINT,
-            DEFAULT_INGRESS_QUEUE_LENGTH,
-            GObject.ParamFlags.READWRITE,
-        ),
-        'ingress-queue-byte-size': (
-            int,
-            'Size of the ingress queue in bytes.',
-            'Size of the ingress queue in bytes (0 - no limit).',
-            0,
-            GObject.G_MAXINT,
-            DEFAULT_INGRESS_QUEUE_SIZE,
-            GObject.ParamFlags.READWRITE,
-        ),
-    }
+    __gproperties__ = ZEROMQ_SOURCE_BIN_PROPERTIES
 
     __gsignals__ = {'shutdown': (GObject.SignalFlags.RUN_LAST, None, ())}
 
@@ -60,6 +90,7 @@ class ZeroMQSourceBin(LoggerMixin, Gst.Bin):
         # properties
         self._ingress_queue_length: int = DEFAULT_INGRESS_QUEUE_LENGTH
         self._ingress_queue_byte_size: int = DEFAULT_INGRESS_QUEUE_SIZE
+        self._video_pipeline: Optional[VideoPipeline] = None
 
         self._source: Gst.Element = Gst.ElementFactory.make('zeromq_src')
         self.add(self._source)
@@ -88,9 +119,13 @@ class ZeroMQSourceBin(LoggerMixin, Gst.Bin):
             return self._ingress_queue_length
         if prop.name == 'ingress-queue-byte-size':
             return self._ingress_queue_byte_size
-        if prop.name in ZEROMQ_SRC_PROPERTIES:
+        if prop.name == 'pipeline':
+            return self._video_pipeline
+        if prop.name == 'pipeline-source-stage-name':
+            return self._source.get_property('pipeline-stage-name')
+        if prop.name in NESTED_ZEROMQ_SRC_PROPERTIES:
             return self._source.get_property(prop.name)
-        if prop.name in SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES:
+        if prop.name in NESTED_SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES:
             return self._decodebin.get_property(prop.name)
         raise AttributeError(f'Unknown property {prop.name}')
 
@@ -107,9 +142,15 @@ class ZeroMQSourceBin(LoggerMixin, Gst.Bin):
         elif prop.name == 'ingress-queue-byte-size':
             self._ingress_queue_byte_size = value
             self._queue.set_property('max-size-bytes', value)
-        elif prop.name in ZEROMQ_SRC_PROPERTIES:
+        elif prop.name == 'pipeline':
+            self._video_pipeline = value
             self._source.set_property(prop.name, value)
-        elif prop.name in SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES:
+            self._decodebin.set_property(prop.name, value)
+        elif prop.name == 'pipeline-source-stage-name':
+            self._source.set_property('pipeline-stage-name', value)
+        elif prop.name in NESTED_ZEROMQ_SRC_PROPERTIES:
+            self._source.set_property(prop.name, value)
+        elif prop.name in NESTED_SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES:
             self._decodebin.set_property(prop.name, value)
         else:
             raise AttributeError(f'Unknown property {prop.name}')

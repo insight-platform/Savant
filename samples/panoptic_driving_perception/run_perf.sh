@@ -10,7 +10,7 @@ MODULE_CONFIG=samples/panoptic_driving_perception/module.yml
 DATA_LOCATION=data/panoptic_driving_perception.mp4
 
 if [ "$(uname -m)" = "aarch64" ]; then
-  docker compose -f samples/panoptic_driving_perception/docker-compose.l4t.yml build module
+  docker buildx build --target savant_torch -f ./samples/panoptic_driving_perception/docker/Dockerfile.l4t -t panoptic_driving_perception-module ./samples/panoptic_driving_perception
 else
   docker compose -f samples/panoptic_driving_perception/docker-compose.x86.yml build module
 fi

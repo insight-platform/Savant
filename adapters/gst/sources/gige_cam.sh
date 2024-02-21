@@ -54,6 +54,7 @@ if [[ -n "${FEATURES}" ]]; then ADDITIONAL_ARAVISSRC_ARGS+=("features=${FEATURES
 
 USE_ABSOLUTE_TIMESTAMPS="${USE_ABSOLUTE_TIMESTAMPS:="false"}"
 SINK_PROPERTIES=(
+    source-id="${SOURCE_ID}"
     socket="${ZMQ_ENDPOINT}"
     socket-type="${ZMQ_SOCKET_TYPE}"
     bind="${ZMQ_SOCKET_BIND}"
@@ -95,7 +96,6 @@ if [[ "${USE_ABSOLUTE_TIMESTAMPS,,}" == "true" ]]; then
 fi
 PIPELINE+=(
     queue max-size-buffers=1 !
-    savant_rs_serializer source-id="${SOURCE_ID}" !
     fps_meter "${FPS_PERIOD}" output="${FPS_OUTPUT}" !
     zeromq_sink "${SINK_PROPERTIES[@]}"
 )

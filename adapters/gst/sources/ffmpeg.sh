@@ -31,6 +31,14 @@ fi
 BUFFER_LEN="${BUFFER_LEN:="50"}"
 FFMPEG_LOGLEVEL="${FFMPEG_LOGLEVEL:="info"}"
 USE_ABSOLUTE_TIMESTAMPS="${USE_ABSOLUTE_TIMESTAMPS:="false"}"
+SINK_PROPERTIES=(
+    source-id="${SOURCE_ID}"
+    socket="${ZMQ_ENDPOINT}"
+    socket-type="${ZMQ_SOCKET_TYPE}"
+    bind="${ZMQ_SOCKET_BIND}"
+    sync="${SYNC_OUTPUT}"
+    ts-offset="${SYNC_DELAY}"
+)
 
 FFMPEG_SRC=(ffmpeg_src uri="${URI}" queue-len="${BUFFER_LEN}" loglevel="${FFMPEG_LOGLEVEL}")
 if [[ -n "${FFMPEG_PARAMS}" ]]; then
@@ -49,9 +57,7 @@ if [[ "${USE_ABSOLUTE_TIMESTAMPS,,}" == "true" ]]; then
 fi
 PIPELINE+=(
     fps_meter "${FPS_PERIOD}" output="${FPS_OUTPUT}" !
-    savant_rs_serializer source-id="${SOURCE_ID}" !
-    zeromq_sink socket="${ZMQ_ENDPOINT}" socket-type="${ZMQ_SOCKET_TYPE}" bind="${ZMQ_SOCKET_BIND}"
-    sync="${SYNC_OUTPUT}" ts-offset="${SYNC_DELAY}"
+    zeromq_sink "${SINK_PROPERTIES[@]}"
 )
 
 handler() {

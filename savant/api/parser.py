@@ -1,5 +1,6 @@
 from typing import Tuple, Union
 
+from savant_rs.match_query import MatchQuery
 from savant_rs.primitives import (
     Attribute,
     AttributeValue,
@@ -9,7 +10,6 @@ from savant_rs.primitives import (
     VideoObject,
 )
 from savant_rs.primitives.geometry import BBox, RBBox
-from savant_rs.video_object_query import MatchQuery
 
 from savant.api.constants import DEFAULT_TIME_BASE
 from savant.meta.constants import UNTRACKED_OBJECT_ID
@@ -90,13 +90,13 @@ def parse_video_objects(frame: VideoFrame):
         child = objects[obj_id]
         child['parent_model_name'] = parent.namespace
         child['parent_label'] = parent.label
-        child['parent_object_id'] = parent.get_track_id()
+        child['parent_object_id'] = parent.track_id
 
     return list(objects.values())
 
 
 def parse_video_object(obj: VideoObject):
-    track_id = obj.get_track_id()
+    track_id = obj.track_id
     if track_id is None:
         track_id = UNTRACKED_OBJECT_ID
 

@@ -146,7 +146,7 @@ class ArtistGPUMat(AbstractContextManager):
             return
 
         if isinstance(bbox, BBox):
-            left, top, right, bottom = bbox.visual_box(
+            left, top, right, bottom = bbox.get_visual_box(
                 PaddingDraw(*padding), border_width, self.max_col, self.max_row
             ).as_ltrb_int()
 
@@ -327,7 +327,7 @@ class ArtistGPUMat(AbstractContextManager):
             cv2.CV_8UC4, cv2.CV_8UC4, (radius, radius), sigma
         )
 
-        left, top, width, height = bbox.visual_box(
+        left, top, width, height = bbox.get_visual_box(
             PaddingDraw(*padding), 0, self.max_col, self.max_row
         ).as_ltwh_int()
 
@@ -348,7 +348,7 @@ class ArtistGPUMat(AbstractContextManager):
             value in pixels, left, top, right, bottom.
         :return: GpuMat with the specified region.
         """
-        left, top, width, height = bbox.visual_box(
+        left, top, width, height = bbox.get_visual_box(
             PaddingDraw(*padding), 0, self.max_col, self.max_row
         ).as_ltwh_int()
         roi_mat = cv2.cuda_GpuMat(self.frame, (left, top, width, height))

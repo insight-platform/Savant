@@ -77,7 +77,7 @@ def add_objects_to_video_frame(
     for obj_id, obj in enumerate(objects):
         video_object = build_video_object(obj_id, obj)
         frame.add_object(video_object, IdCollisionResolutionPolicy.Error)
-        track_id = video_object.get_track_id()
+        track_id = video_object.track_id
         if track_id is not None:
             parents[(video_object.namespace, video_object.label, track_id)] = obj_id
 
@@ -98,8 +98,14 @@ def build_video_object(obj_id: int, obj: Dict[str, Any]):
     if attributes is not None:
         attributes = build_object_attributes(attributes)
     else:
-        attributes = {}
+        attributes = []
     bbox = build_bbox(obj['bbox'])
+    track_id = obj['object_id']
+    if track_id == UNTRACKED_OBJECT_ID:
+        track_id = None
+        track_box = None
+    else:
+        track_box = bbox
     video_object = VideoObject(
         id=obj_id,
         namespace=obj['model_name'],
@@ -107,10 +113,9 @@ def build_video_object(obj_id: int, obj: Dict[str, Any]):
         detection_box=bbox,
         attributes=attributes,
         confidence=obj['confidence'],
+        track_id=track_id,
+        track_box=track_box,
     )
-    track_id = obj['object_id']
-    if track_id != UNTRACKED_OBJECT_ID:
-        video_object.set_track_info(track_id, bbox)
 
     return video_object
 
@@ -126,8 +131,8 @@ def build_bbox(bbox: Dict[str, Any]):
 
 
 def build_object_attributes(attributes: List[Dict[str, Any]]):
-    return {
-        (attr['element_name'], attr['name']): Attribute(
+    return [
+        Attribute(
             namespace=attr['element_name'],
             name=attr['name'],
             values=[
@@ -135,7 +140,7 @@ def build_object_attributes(attributes: List[Dict[str, Any]]):
             ],
         )
         for attr in attributes
-    }
+    ]
 
 
 def build_attribute_value(value: Any, confidence: Optional[float] = None):
@@ -157,10 +162,8 @@ def add_tags_to_video_frame(
     tags: Dict[str, Union[bool, int, float, str]],
 ):
     for name, value in tags.items():
-        frame.set_attribute(
-            Attribute(
-                namespace=DEFAULT_NAMESPACE,
-                name=name,
-                values=[build_attribute_value(value)],
-            )
+        frame.set_persistent_attribute(
+            namespace=DEFAULT_NAMESPACE,
+            name=name,
+            values=[build_attribute_value(value)],
         )

@@ -26,6 +26,7 @@ fi
 
 USE_ABSOLUTE_TIMESTAMPS="${USE_ABSOLUTE_TIMESTAMPS:="false"}"
 SINK_PROPERTIES=(
+    source-id="${SOURCE_ID}"
     socket="${ZMQ_ENDPOINT}"
     socket-type="${ZMQ_SOCKET_TYPE}"
     bind="${ZMQ_SOCKET_BIND}"
@@ -46,7 +47,6 @@ if [[ "${USE_ABSOLUTE_TIMESTAMPS,,}" == "true" ]]; then
 fi
 PIPELINE+=(
     fps_meter "${FPS_PERIOD}" output="${FPS_OUTPUT}" !
-    savant_rs_serializer source-id="${SOURCE_ID}" !
     zeromq_sink "${SINK_PROPERTIES[@]}"
 )
 
