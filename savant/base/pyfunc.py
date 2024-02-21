@@ -305,7 +305,7 @@ class PyFunc:
                     self.class_name,
                 )
                 if hasattr(self._instance, 'on_start'):
-                    # only plugins have on_start, callables don't
+                    # only savant_plugins have on_start, callables don't
                     try:
                         self._instance.on_start()
                     except Exception as exc:

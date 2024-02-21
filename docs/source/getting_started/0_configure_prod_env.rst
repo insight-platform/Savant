@@ -6,7 +6,13 @@ The section discusses how to configure the host system for Savant modules execut
 General Information
 -------------------
 
-**Jetson Nano 1st Gen:** Savant does not support 1st-gen Jetson Nano due to the outdated software stack supported by the device.
+.. warning::
+
+   **Jetson Nano 1st Gen:** Savant does not support 1st-gen Jetson Nano due to the outdated software stack supported by the device.
+
+.. warning::
+
+    We do not support Windows as a host OS for Savant. WSL2 is not supported by DeepStream and is not recommended for use with Savant. If you are using Windows, you do it on your own risk. We cannot help with problems and issues.
 
 :repo-link:`Savant` runs on top of DeepStream ecosystem, therefore, it requires DeepStream dependencies to be satisfied:
 
