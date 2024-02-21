@@ -3,13 +3,11 @@ import os
 import signal
 import threading
 from datetime import timedelta
-from distutils.util import strtobool
 from time import time
 from typing import Dict, Optional
 
 from savant_rs.primitives import EndOfStream, VideoFrame
 
-from adapters.python.shared.config import opt_config
 from adapters.python.sinks.chunk_writer import ChunkWriter, CompositeChunkWriter
 from adapters.python.sinks.metadata_json import MetadataJsonWriter, Patterns
 from gst_plugins.python.savant_rs_video_demux_common import FrameParams, build_caps
@@ -18,6 +16,7 @@ from savant.gstreamer import GLib, Gst, GstApp
 from savant.gstreamer.codecs import Codec
 from savant.utils.logging import get_logger, init_logging
 from savant.utils.zeromq import ZeroMQMessage, ZeroMQSource
+from savant.utils.config import strtobool, opt_config
 
 LOGGER_NAME = 'adapters.video_files_sink'
 DEFAULT_CHUNK_SIZE = 10000

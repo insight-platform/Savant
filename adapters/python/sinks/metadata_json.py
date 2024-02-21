@@ -4,7 +4,6 @@ import json
 import os
 import signal
 import traceback
-from distutils.util import strtobool
 from typing import Dict, Optional
 
 from savant_rs.match_query import MatchQuery
@@ -16,12 +15,12 @@ from savant_rs.primitives import (
     VideoFrame,
 )
 
-from adapters.python.shared.config import opt_config
 from adapters.python.sinks.chunk_writer import ChunkWriter
 from savant.api.constants import DEFAULT_NAMESPACE
 from savant.api.parser import parse_video_frame
 from savant.utils.logging import get_logger, init_logging
 from savant.utils.zeromq import ZeroMQMessage, ZeroMQSource
+from savant.utils.config import strtobool, opt_config
 
 LOGGER_NAME = 'adapters.metadata_json_sink'
 
