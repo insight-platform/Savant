@@ -11,7 +11,7 @@ General Information
 :repo-link:`Savant` runs on top of DeepStream ecosystem, therefore, it requires DeepStream dependencies to be satisfied:
 
 * Docker with Compose, Nvidia GPU drivers R525 (data center hardware), 530+ professional and desktop hardware;
-* Docker with Compose, Jetpack 5.1.2 GA on Jetson AGX Xavier/ NX, Orin Family.
+* Docker with Compose, Jetpack 6.0 DP on Jetson AGX Orin, Orin NX, Orin Nano.
 
 You can look for detailed environment setup instructions in the Nvidia `Quickstart Guide <https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_Quickstart.html#quickstart-guide>`_.
 
@@ -48,7 +48,7 @@ Install Nvidia Drivers
 
 .. code-block:: bash
 
-   sudo apt install --no-install-recommends nvidia-driver-530
+   sudo apt install --no-install-recommends nvidia-driver-535
    sudo reboot
 
 Install Nvidia Container Toolkit

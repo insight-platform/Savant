@@ -51,11 +51,11 @@ Savant works on GeForce Turing (RTX20), Ampere (RTX30, RTX40). Keep in mind that
 Edge Devices
 ------------
 
-Savant doesn't work on the 1st gen Jetson Nano because Nvidia doesn't `support <https://www.reddit.com/r/JetsonNano/comments/wz034x/nvidia_abandones_jetson_nano/>`__ it in the recent software. If you need to use it, you cannot benefit from Savant. Savant is known to support:
+Savant is known to support:
 
-- Jetson NX (regularly tested);
-- Jetson AGX (regularly tested);
-- Jetson Orin Family (Nano, NX, AGX).
+- Jetson Orin Nano (regularly tested);
+- Jetson Orin NX (regularly tested);
+- Jetson AGX Orin.
 
 Keep in mind that, unfortunately, Jetson Orin Nano doesn't have NVENC hardware.
 

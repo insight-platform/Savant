@@ -15,8 +15,8 @@ We recommend pulling Nvidia docker containers separately because the Nvidia regi
 
 .. code-block:: bash
 
-   docker pull nvcr.io/nvidia/deepstream:6.3-samples
-   docker pull nvcr.io/nvidia/deepstream:6.3-triton-multiarch
+   docker pull nvcr.io/nvidia/deepstream:6.4-samples-multiarch
+   docker pull nvcr.io/nvidia/deepstream:6.4-triton-multiarch
 
 Build The Dockerized Sphinx Runtime
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
