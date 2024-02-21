@@ -34,7 +34,7 @@ The demo uses models that are compiled into TensorRT engines the first time the 
 ```bash
 # you are expected to be in Savant/ directory
 
-./samples/license_plate_recognition/build_engines.sh
+./scripts/run_module.py --build-engines samples/license_plate_recognition/module.yml
 ```
 
 ## Run Demo

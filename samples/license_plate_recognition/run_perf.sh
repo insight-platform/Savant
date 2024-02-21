@@ -8,18 +8,6 @@
 
 MODULE_CONFIG=samples/license_plate_recognition/module.yml
 DATA_LOCATION=data/lpr_test_1080p.mp4
-PERF_CONFIG="${MODULE_CONFIG%.*}_perf.yml"
-
-if [ "$(uname -m)" = "aarch64" ]; then
-  docker compose -f samples/license_plate_recognition/docker-compose.l4t.yml build module
-else
-  docker compose -f samples/license_plate_recognition/docker-compose.x86.yml build module
-fi
 
 source samples/assets/run_perf_helper.sh
-
-set_source $DATA_LOCATION
-
-config_perf $MODULE_CONFIG $PERF_CONFIG "${YQ_ARGS[@]}"
-
-./scripts/run_module.py -i license_plate_recognition-module $PERF_CONFIG
+run_perf $MODULE_CONFIG $DATA_LOCATION

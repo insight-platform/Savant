@@ -19,9 +19,7 @@ services:
         condition: service_healthy
 
   module:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.l4t
+    image: ghcr.io/insight-platform/savant-deepstream-l4t:latest
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
