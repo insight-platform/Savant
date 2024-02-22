@@ -77,6 +77,7 @@ pipeline:
             endpoint: https://eu-central-1.linodeobjects.com
         format: etlt
         model_file: usa_pruned.etlt
+        config_file: usa_pruned_config.txt
         tlt_model_key: nvidia_tlt
         precision: fp16  # TODO: use int8
         batch_size: 16
