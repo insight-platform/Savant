@@ -18,6 +18,11 @@ Savant depends on Nvidia DeepStream and JetPack versions (Jetson). The following
 
 ### 0.2.9 LTS
 
+This release is recommended for production use. It uses the time-proven DeepStream 6.3. The release works on dGPU (Turing, Volta, Ampere, Ada) and Jetson (Xavier NX/AGX, Orin Nano/NX/AGX) hardware.
+
+Known drawbacks:
+- NVJPEG caps on 115MHz on Jetson Orin Nano in JPEG decoding.
+
 | Requirements                                    | Status | DeepStream |
 |-------------------------------------------------|--------|------------|
 | X86 Driver 525(Datacenter), 530+ Quadro/GeForce | Stable | 6.3        |
@@ -25,18 +30,21 @@ Savant depends on Nvidia DeepStream and JetPack versions (Jetson). The following
 
 ### 0.3.9 LTS
 
-| Requirements                                    | Status | DeepStream |
-|-------------------------------------------------|--------|------------|
-| X86 Driver 525(Datacenter), 530+ Quadro/GeForce | Stable | 6.4        |
-| Jetson Orin JetPack 6.0 DP                      | Stable | 6.4        |           
-
-### 0.4.0 Current Develop (Feature Release)
+This release is recommended for production use with DeepStream 6.4. The release works on dGPU (Turing, Volta, Ampere, Ada) and Jetson Orin Nano/NX/AGX hardware (JetPack 6.0 DP). It does not support Jetson Xavier and older devices.
 
 | Requirements                                    | Status | DeepStream |
 |-------------------------------------------------|--------|------------|
 | X86 Driver 525(Datacenter), 530+ Quadro/GeForce | Stable | 6.4        |
 | Jetson Orin JetPack 6.0 DP                      | Stable | 6.4        |           
 
+### 0.4.x Current Develop (Feature Releases)
+
+This branch represents current development. It is not recommended for production use. It is a good choice for testing new features and providing feedback and also if you require new features absent in `0.2.x` and `0.3.x`.
+
+| Requirements                                    | Status | DeepStream |
+|-------------------------------------------------|--------|------------|
+| X86 Driver 525(Datacenter), 530+ Quadro/GeForce | Stable | 6.4        |
+| Jetson Orin JetPack 6.0 DP                      | Stable | 6.4        |
 
 ## Chat With Us
 
