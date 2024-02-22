@@ -1,4 +1,4 @@
-# Savant: High-Performance Computer Vision Framework for Nvidia Data Center and Edge
+# Savant: High-Performance Computer Vision Framework For Data Center And Edge
 
 ![GitHub release (with filter)](https://img.shields.io/github/v/release/insight-platform/Savant)
 [![Build status](https://github.com/insight-platform/Savant/actions/workflows/main.yml/badge.svg?branch=develop)](https://github.com/insight-platform/Savant/actions/workflows/main.yml)
