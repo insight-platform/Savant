@@ -1,5 +1,4 @@
-# 🚀 Savant: Supercharged Computer Vision and Video Analytics Framework on DeepStream
-
+# Savant: High-Performance Computer Vision Framework for Nvidia Data Center and Edge
 
 ![GitHub release (with filter)](https://img.shields.io/github/v/release/insight-platform/Savant)
 [![Build status](https://github.com/insight-platform/Savant/actions/workflows/main.yml/badge.svg?branch=develop)](https://github.com/insight-platform/Savant/actions/workflows/main.yml)
