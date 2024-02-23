@@ -7,7 +7,6 @@ services:
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - /tmp/video-loop-source-downloads:/tmp/video-loop-source-downloads
-      - ../../data_test/:/video
     environment:
       - LOCATION=https://eu-central-1.linodeobjects.com/savant-data/demo/panoptic_driving_perception.mp4
       - DOWNLOAD_PATH=/tmp/video-loop-source-downloads

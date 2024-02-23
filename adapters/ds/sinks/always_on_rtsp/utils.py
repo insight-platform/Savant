@@ -1,13 +1,6 @@
 import functools
-from typing import Union
-
-import cv2
-import numpy as np
 
 from savant.gstreamer import Gst
-
-Frame = Union[cv2.cuda.GpuMat, np.ndarray, bytes]
-"""Type alias for a frame content."""
 
 
 @functools.lru_cache

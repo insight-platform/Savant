@@ -3,10 +3,8 @@ from datetime import datetime
 from typing import Any, Optional
 
 import cv2
-import numpy as np
 
-from adapters.ds.sinks.always_on_rtsp.last_frame import LastFrame, LastFrameRef
-from adapters.ds.sinks.always_on_rtsp.utils import Frame
+from adapters.ds.sinks.always_on_rtsp.last_frame import Frame, LastFrame, LastFrameRef
 from savant.gstreamer import GObject, Gst, GstBase
 from savant.gstreamer.utils import (
     gst_post_library_settings_error,
@@ -124,19 +122,6 @@ class AlwaysOnRtspFrameSink(LoggerMixin, GstBase.BaseSink):
             height=self._height,
             content=content,
         )
-
-    def _create_np_array(self, buffer: Gst.Buffer):
-        """Create numpy array from Gst.Buffer."""
-
-        map_info: Gst.MapInfo
-        is_mapped, map_info = buffer.map(Gst.MapFlags.READ)
-        assert is_mapped, 'Failed to map buffer'
-        np_arr = np.ndarray(
-            shape=(self._height, self._width, 4), dtype=np.uint8, buffer=map_info.data
-        ).copy()
-        buffer.unmap(map_info)
-
-        return np_arr
 
 
 # register plugin

@@ -1,6 +1,5 @@
 import functools
 import os
-from distutils.util import strtobool
 from pathlib import Path
 from typing import Optional
 
@@ -11,14 +10,8 @@ from savant_rs.pipeline2 import (
 )
 
 from adapters.ds.sinks.always_on_rtsp.utils import nvidia_runtime_is_available
+from savant.utils.config import opt_config, strtobool
 from savant.utils.zeromq import ReceiverSocketTypes
-
-
-def opt_config(name, default=None, convert=None):
-    conf_str = os.environ.get(name)
-    if conf_str:
-        return convert(conf_str) if convert else conf_str
-    return default
 
 
 class Config:

@@ -2,12 +2,10 @@
 import os
 import signal
 import traceback
-from distutils.util import strtobool
 from typing import Dict, Optional
 
 from savant_rs.primitives import EndOfStream, VideoFrame
 
-from adapters.python.shared.config import opt_config
 from adapters.python.sinks.chunk_writer import ChunkWriter, CompositeChunkWriter
 from adapters.python.sinks.metadata_json import (
     MetadataJsonWriter,
@@ -17,6 +15,7 @@ from adapters.python.sinks.metadata_json import (
 from savant.api.enums import ExternalFrameType
 from savant.utils.logging import get_logger, init_logging
 from savant.utils.zeromq import ZeroMQMessage, ZeroMQSource
+from savant.utils.config import strtobool, opt_config
 
 LOGGER_NAME = 'adapters.image_files_sink'
 DEFAULT_CHUNK_SIZE = 10000

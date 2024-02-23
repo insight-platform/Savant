@@ -26,7 +26,7 @@ parameters:
     label: person
 
   batch_size: 1
-  detector: ${oc.env:DETECTOR}
+  detector: ${oc.env:DETECTOR, 'yolov8m'}
   send_stats: True
 
 pipeline:

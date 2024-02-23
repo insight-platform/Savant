@@ -18,7 +18,7 @@ Modules are executed within specially prepared docker containers. If a module do
 
         docker pull ghcr.io/insight-platform/savant-deepstream:latest
 
-* Deepstream 6.1+ capable Nvidia edge devices (Jetson Xavier/Orin)
+* Deepstream 6.4 capable Nvidia edge devices (Jetson AGX Orin, Orin NX, Orin Nano)
 
    .. code-block:: bash
 

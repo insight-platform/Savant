@@ -30,9 +30,10 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
     ) -> np.ndarray:
         """Converts detector output layer tensor to bbox tensor.
 
-        Converter is suitable for PyTorch YOLOv5/v6/v7 models.
+        Converter is suitable for PyTorch YOLOv5/v6/v7/v8 models.
         `output_layers` is assumed to consist of
-        either one Nx(num_detected_classes+5) shape tensor
+        either one Nx(num_detected_classes+5) shape tensor,
+        or one tensor of shape (num_detected_classes+4)xN,
         or 4 tensors (after NMS) of shapes: 1, Nx4, N, N.
 
         :param output_layers: Output layer tensor
@@ -44,13 +45,24 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
             offset by roi upper left and scaled by roi width and height
         """
 
-        assert len(output_layers) in (1, 4)
+        assert len(output_layers) in (1, 3, 4)
 
         if len(output_layers) == 1:
             output = output_layers[0]
+            if (
+                model.output.num_detected_classes
+                and output.shape[0] == model.output.num_detected_classes + 4
+            ):
+                output = np.transpose(output)
+                scores = output[:, 4:]
+            else:
+                scores = output[:, 5:] * output[:, 4:5]  # obj_conf * cls_conf
             bboxes = output[:, :4]  # xc, yc, width, height
-            scores = output[:, 5:] * output[:, 4:5]  # obj_conf * cls_conf
             class_ids = np.argmax(scores, axis=-1)
+            confidences = np.max(scores, axis=-1)
+
+        elif len(output_layers) == 3:
+            bboxes, scores, class_ids = output_layers
             confidences = np.max(scores, axis=-1)
 
         else:

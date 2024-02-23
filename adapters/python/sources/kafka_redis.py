@@ -8,7 +8,6 @@ from redis.asyncio import Redis
 from savant_rs.primitives import EndOfStream, VideoFrame, VideoFrameContent
 from savant_rs.utils.serialization import Message, load_message_from_bytes
 
-from adapters.python.shared.config import opt_config
 from adapters.python.shared.kafka_redis import (
     STOP,
     BaseConfig,
@@ -18,6 +17,7 @@ from adapters.python.shared.kafka_redis import (
 )
 from savant.api.enums import ExternalFrameType
 from savant.client import SourceBuilder
+from savant.utils.config import opt_config
 
 
 class KafkaConfig(BaseKafkaConfig):

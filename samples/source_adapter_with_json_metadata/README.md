@@ -26,7 +26,7 @@ The demo uses models that are compiled into TensorRT engines the first time the 
 ```bash
 # you are expected to be in Savant/ directory
 
-./scripts/run_module.py --build-engines samples/traffic_meter/module.yml
+./samples/traffic_meter/build_engines.sh
 ```
 
 ## Download Data

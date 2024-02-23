@@ -7,9 +7,8 @@ from typing import Any, Callable, Dict, Optional
 import cv2
 import numpy as np
 
-from adapters.ds.sinks.always_on_rtsp.last_frame import LastFrame, LastFrameRef
+from adapters.ds.sinks.always_on_rtsp.last_frame import Frame, LastFrame, LastFrameRef
 from adapters.ds.sinks.always_on_rtsp.timestamp_overlay import TimestampOverlay
-from adapters.ds.sinks.always_on_rtsp.utils import Frame
 from savant.gstreamer import GObject, Gst, GstBase
 from savant.gstreamer.utils import (
     gst_post_library_settings_error,

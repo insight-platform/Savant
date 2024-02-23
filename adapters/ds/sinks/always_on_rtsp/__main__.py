@@ -2,17 +2,16 @@
 
 import os
 import signal
-from distutils.util import strtobool
 from pathlib import Path
 from subprocess import Popen, TimeoutExpired
 from threading import Thread
 from typing import Dict, List, Optional
 
-from adapters.ds.sinks.always_on_rtsp.config import opt_config
 from adapters.ds.sinks.always_on_rtsp.utils import nvidia_runtime_is_available
 from adapters.ds.sinks.always_on_rtsp.zeromq_proxy import ZeroMqProxy
 from savant.gstreamer import Gst
 from savant.gstreamer.codecs import Codec
+from savant.utils.config import opt_config, strtobool
 from savant.utils.logging import get_logger, init_logging
 from savant.utils.zeromq import ReceiverSocketTypes
 
