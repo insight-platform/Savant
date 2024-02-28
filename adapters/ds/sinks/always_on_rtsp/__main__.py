@@ -10,13 +10,17 @@ from typing import Dict, List, Optional
 from adapters.ds.sinks.always_on_rtsp.utils import nvidia_runtime_is_available
 from adapters.ds.sinks.always_on_rtsp.zeromq_proxy import ZeroMqProxy
 from savant.gstreamer import Gst
-from savant.gstreamer.codecs import Codec
+from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
 from savant.utils.config import opt_config, strtobool
 from savant.utils.logging import get_logger, init_logging
 from savant.utils.zeromq import ReceiverSocketTypes
 
 LOGGER_NAME = 'adapters.ao_sink.entrypoint'
 logger = get_logger(LOGGER_NAME)
+
+SUPPORTED_CODECS = {x.value.name for x in [Codec.H264, Codec.HEVC]}
+SW_CODECS = {Codec.H264}
+HW_CODECS = {Codec.H264, Codec.HEVC}
 
 
 class Config:
@@ -47,6 +51,10 @@ class Config:
                 self.rtsp_uri is not None
             ), '"RTSP_URI" must be set when "DEV_MODE=False"'
 
+        codec_name = opt_config('CODEC', 'h264')
+        assert codec_name in SUPPORTED_CODECS, f'Unsupported codec {codec_name}.'
+        self.codec = CODEC_BY_NAME[codec_name]
+
 
 def main():
     # To gracefully shutdown the adapter on SIGTERM (raise KeyboardInterrupt)
@@ -60,6 +68,13 @@ def main():
         logger.info(
             'NVIDIA runtime is available. Using hardware-based decoding/encoding.'
         )
+        if config.codec not in HW_CODECS:
+            logger.error(
+                'Hardware-based encoding is not available for codec %s.',
+                config.codec.value.name,
+            )
+            return
+
         from savant.utils.check_display import check_display_env
 
         check_display_env(logger)
@@ -67,7 +82,7 @@ def main():
         from savant.deepstream.encoding import check_encoder_is_available
 
         if not check_encoder_is_available(
-            {'output_frame': {'codec': Codec.H264.value.name}}
+            {'output_frame': {'codec': config.codec.value.name}}
         ):
             return
     else:
@@ -78,6 +93,12 @@ def main():
             'If the hardware-based encoding is available, run the adapter with Nvidia '
             'runtime enabled to activate hardware-based decoding/encoding.'
         )
+        if config.codec not in SW_CODECS:
+            logger.error(
+                'Software-based encoding is not available for codec %s.',
+                config.codec.value.name,
+            )
+            return
 
     if not config.source_id:
         internal_socket = 'ipc:///tmp/ao-sink-internal-socket.ipc'

@@ -48,18 +48,20 @@ class PipelineThread(BaseThreadWorker):
         self.factory = factory
 
     def workload(self):
-        pipeline = self.build_pipeline(self.config, self.last_frame, self.factory)
-        self.logger.info(
-            'Source %s. Starting pipeline %s',
-            self.config.source_id,
-            pipeline.get_name(),
-        )
-        with GstPipelineRunner(pipeline) as runner:
-            while self.is_running and runner.is_running:
-                time.sleep(1)
-        self.logger.info(
-            'Source %s. Pipeline %s is stopped',
-            self.config.source_id,
-            pipeline.get_name(),
-        )
-        self.is_running = False
+        try:
+            pipeline = self.build_pipeline(self.config, self.last_frame, self.factory)
+            self.logger.info(
+                'Source %s. Starting pipeline %s',
+                self.config.source_id,
+                pipeline.get_name(),
+            )
+            with GstPipelineRunner(pipeline) as runner:
+                while self.is_running and runner.is_running:
+                    time.sleep(1)
+            self.logger.info(
+                'Source %s. Pipeline %s is stopped',
+                self.config.source_id,
+                pipeline.get_name(),
+            )
+        finally:
+            self.is_running = False
