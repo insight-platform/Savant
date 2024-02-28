@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
 from omegaconf import DictConfig, ListConfig, OmegaConf
-from savant_rs.video_object_query import (
+from savant_rs.match_query import (
     register_config_resolver,
     register_env_resolver,
     register_etcd_resolver,

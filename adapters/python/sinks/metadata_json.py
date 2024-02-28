@@ -2,10 +2,12 @@
 
 import json
 import os
+import signal
 import traceback
 from distutils.util import strtobool
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 
+from savant_rs.match_query import MatchQuery
 from savant_rs.primitives import (
     Attribute,
     AttributeValue,
@@ -13,15 +15,13 @@ from savant_rs.primitives import (
     EndOfStream,
     VideoFrame,
 )
-from savant_rs.utils.serialization import Message, load_message_from_bytes
-from savant_rs.video_object_query import MatchQuery
 
 from adapters.python.shared.config import opt_config
 from adapters.python.sinks.chunk_writer import ChunkWriter
 from savant.api.constants import DEFAULT_NAMESPACE
 from savant.api.parser import parse_video_frame
 from savant.utils.logging import get_logger, init_logging
-from savant.utils.zeromq import ZeroMQSource, build_topic_prefix
+from savant.utils.zeromq import ZeroMQMessage, ZeroMQSource
 
 LOGGER_NAME = 'adapters.metadata_json_sink'
 
@@ -35,9 +35,14 @@ class Patterns:
 class MetadataJsonWriter(ChunkWriter):
     def __init__(self, pattern: str, chunk_size: int):
         self.pattern = pattern
-        super().__init__(chunk_size)
+        super().__init__(chunk_size, logger_prefix=LOGGER_NAME)
 
-    def _write_video_frame(self, frame: VideoFrame, data: Any, frame_num: int) -> bool:
+    def _write_video_frame(
+        self,
+        frame: VideoFrame,
+        content: Optional[bytes],
+        frame_num: int,
+    ) -> bool:
         metadata = parse_video_frame(frame)
         metadata['schema'] = 'VideoFrame'
         return self._write_meta_to_file(metadata, frame_num)
@@ -88,7 +93,7 @@ class MetadataJsonSink:
         skip_frames_without_objects: bool = True,
         chunk_size: int = 0,
     ):
-        self.logger = get_logger(f'adapters.{self.__class__.__name__}')
+        self.logger = get_logger(f'{LOGGER_NAME}.{self.__class__.__name__}')
         self.skip_frames_without_objects = skip_frames_without_objects
         self.chunk_size = chunk_size
         self.writers: Dict[str, MetadataJsonWriter] = {}
@@ -104,7 +109,9 @@ class MetadataJsonSink:
         for file_writer in self.writers.values():
             file_writer.close()
 
-    def write(self, message: Message):
+    def write(self, zmq_message: ZeroMQMessage):
+        message = zmq_message.message
+        message.validate_seq_id()
         if message.is_video_frame():
             return self._write_video_frame(message.as_video_frame())
         elif message.is_end_of_stream():
@@ -170,7 +177,11 @@ def get_tag_location(frame: VideoFrame):
 
 def main():
     init_logging()
+    # To gracefully shutdown the adapter on SIGTERM (raise KeyboardInterrupt)
+    signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
+
     logger = get_logger(LOGGER_NAME)
+
     location = os.environ['LOCATION']
     zmq_endpoint = os.environ['ZMQ_ENDPOINT']
     zmq_socket_type = opt_config('ZMQ_TYPE', 'SUB')
@@ -179,10 +190,8 @@ def main():
         'SKIP_FRAMES_WITHOUT_OBJECTS', False, strtobool
     )
     chunk_size = opt_config('CHUNK_SIZE', 0, int)
-    topic_prefix = build_topic_prefix(
-        source_id=opt_config('SOURCE_ID'),
-        source_id_prefix=opt_config('SOURCE_ID_PREFIX'),
-    )
+    source_id = opt_config('SOURCE_ID')
+    source_id_prefix = opt_config('SOURCE_ID_PREFIX')
 
     # possible exceptions will cause app to crash and log error by default
     # no need to handle exceptions here
@@ -190,7 +199,8 @@ def main():
         zmq_endpoint,
         zmq_socket_type,
         zmq_bind,
-        topic_prefix=topic_prefix,
+        source_id=source_id,
+        source_id_prefix=source_id_prefix,
     )
 
     sink = MetadataJsonSink(location, skip_frames_without_objects, chunk_size)
@@ -198,13 +208,12 @@ def main():
 
     try:
         source.start()
-        for message_bin, *data in source:
-            message = load_message_from_bytes(message_bin)
-            message.validate_seq_id()
-            sink.write(message)
+        for zmq_message in source:
+            sink.write(zmq_message)
     except KeyboardInterrupt:
         logger.info('Interrupted')
     finally:
+        source.terminate()
         sink.terminate()
 
 

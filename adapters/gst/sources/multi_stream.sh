@@ -26,12 +26,6 @@ fi
 READ_METADATA="${READ_METADATA:="false"}"
 NUMBER_OF_STREAMS="${NUMBER_OF_STREAMS:=1}"
 
-if [[ -n "${RECEIVE_TIMEOUT}" ]]; then
-    SENDER_RECEIVE_TIMEOUT="receive-timeout=${RECEIVE_TIMEOUT}"
-else
-    SENDER_RECEIVE_TIMEOUT=
-fi
-
 MEDIA_FILES_SRC_BIN_OPTS=(
     location="${LOCATION}"
     file-type=video
@@ -42,26 +36,13 @@ if [[ -n "${DOWNLOAD_PATH}" ]]; then
     )
 fi
 
-SAVANT_RS_SERIALIZER_OPTS=(
+
+USE_ABSOLUTE_TIMESTAMPS="${USE_ABSOLUTE_TIMESTAMPS:="false"}"
+SINK_PROPERTIES=(
     source-id="${SOURCE_ID}"
     read-metadata="${READ_METADATA}"
     enable-multistream=true
     number-of-streams="${NUMBER_OF_STREAMS}"
-)
-if [[ -n "${SOURCE_ID_PATTERN}" ]]; then
-    SAVANT_RS_SERIALIZER_OPTS+=(
-        source-id-pattern="${SOURCE_ID_PATTERN}"
-    )
-fi
-if [[ -n "${SHUTDOWN_AUTH}" ]]; then
-    SAVANT_RS_SERIALIZER_OPTS+=(
-        shutdown-auth="${SHUTDOWN_AUTH}"
-    )
-fi
-
-
-USE_ABSOLUTE_TIMESTAMPS="${USE_ABSOLUTE_TIMESTAMPS:="false"}"
-SINK_PROPERTIES=(
     socket="${ZMQ_ENDPOINT}"
     socket-type="${ZMQ_SOCKET_TYPE}"
     bind="${ZMQ_SOCKET_BIND}"
@@ -69,6 +50,16 @@ SINK_PROPERTIES=(
 )
 if [[ -n "${RECEIVE_TIMEOUT}" ]]; then
     SINK_PROPERTIES+=("receive-timeout=${RECEIVE_TIMEOUT}")
+fi
+if [[ -n "${SOURCE_ID_PATTERN}" ]]; then
+    SINK_PROPERTIES+=(
+        source-id-pattern="${SOURCE_ID_PATTERN}"
+    )
+fi
+if [[ -n "${SHUTDOWN_AUTH}" ]]; then
+    SINK_PROPERTIES+=(
+        shutdown-auth="${SHUTDOWN_AUTH}"
+    )
 fi
 
 PIPELINE=(
@@ -92,7 +83,6 @@ if [[ "${USE_ABSOLUTE_TIMESTAMPS,,}" == "true" ]]; then
     SINK_PROPERTIES+=(ts-offset="-${TS_OFFSET}")
 fi
 PIPELINE+=(
-    savant_rs_serializer "${SAVANT_RS_SERIALIZER_OPTS[@]}" !
     zeromq_sink "${SINK_PROPERTIES[@]}"
 )
 

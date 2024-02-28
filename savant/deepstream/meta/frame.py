@@ -3,7 +3,7 @@ from contextlib import AbstractContextManager
 from typing import Dict, Iterator, Optional, Union
 
 import pyds
-from savant_rs.primitives import Attribute, VideoFrame
+from savant_rs.primitives import VideoFrame
 from savant_rs.primitives.geometry import BBox
 from savant_rs.utils import TelemetrySpan
 
@@ -134,12 +134,10 @@ class NvDsFrameMeta(AbstractContextManager, LoggerMixin):
         :param value: Tag value
         """
 
-        self._video_frame.set_attribute(
-            Attribute(
-                namespace=DEFAULT_NAMESPACE,
-                name=name,
-                values=[build_attribute_value(value)],
-            )
+        self._video_frame.set_persistent_attribute(
+            namespace=DEFAULT_NAMESPACE,
+            name=name,
+            values=[build_attribute_value(value)],
         )
 
     @property
