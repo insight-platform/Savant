@@ -46,7 +46,7 @@ RUN cd /opt && \
 
 COPY build_torchvision.sh /opt/torchvision
 
-FROM ghcr.io/insight-platform/savant-deepstream-l4t:latest as savant_torch
+FROM ghcr.io/insight-platform/savant-deepstream-l4t:0.2.10-6.3 as savant_torch
 
 ARG PYTORCH_URL
 ARG PYTORCH_WHL
