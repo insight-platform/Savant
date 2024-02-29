@@ -13,9 +13,9 @@ from adapters.python.sinks.metadata_json import (
     frame_has_objects,
 )
 from savant.api.enums import ExternalFrameType
+from savant.utils.config import opt_config, strtobool
 from savant.utils.logging import get_logger, init_logging
 from savant.utils.zeromq import ZeroMQMessage, ZeroMQSource
-from savant.utils.config import strtobool, opt_config
 
 LOGGER_NAME = 'adapters.image_files_sink'
 DEFAULT_CHUNK_SIZE = 10000

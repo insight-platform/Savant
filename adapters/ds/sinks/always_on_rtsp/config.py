@@ -10,8 +10,14 @@ from savant_rs.pipeline2 import (
 )
 
 from adapters.ds.sinks.always_on_rtsp.utils import nvidia_runtime_is_available
+from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
 from savant.utils.config import opt_config, strtobool
 from savant.utils.zeromq import ReceiverSocketTypes
+
+ENCODER_DEFAULT_PROFILES = {
+    Codec.H264: 'High',
+    Codec.HEVC: 'Main',
+}
 
 
 class Config:
@@ -39,8 +45,12 @@ class Config:
         self.rtsp_latency_ms = opt_config('RTSP_LATENCY_MS', 100, int)
         self.rtsp_keep_alive = opt_config('RTSP_KEEP_ALIVE', True, strtobool)
 
-        self.encoder_profile = opt_config('ENCODER_PROFILE', 'High')
-        # default nvv4l2h264enc bitrate
+        codec_name = opt_config('CODEC', 'h264')
+        self.codec = CODEC_BY_NAME[codec_name]
+        self.encoder_profile = opt_config(
+            'ENCODER_PROFILE', ENCODER_DEFAULT_PROFILES[self.codec]
+        )
+        # default encoding bitrate
         self.encoder_bitrate = opt_config('ENCODER_BITRATE', 4000000, int)
 
         self.fps_period_frames = opt_config('FPS_PERIOD_FRAMES', 1000, int)

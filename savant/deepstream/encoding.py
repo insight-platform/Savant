@@ -16,14 +16,15 @@ def check_encoder_is_available(parameters: Dict[str, Any]) -> bool:
     logger = get_logger(__name__)
 
     output_frame = parameters.get('output_frame')
-    if not output_frame or output_frame['codec'] == 'copy':
+    codec_name = output_frame['codec']
+    if not output_frame or codec_name == 'copy':
         return True
 
-    codec = CODEC_BY_NAME[output_frame['codec']]
+    codec = CODEC_BY_NAME[codec_name]
     if codec not in [Codec.H264, Codec.HEVC]:
         return True
 
-    logger.info('Checking if encoder for codec %r is available', output_frame['codec'])
+    logger.info('Checking if encoder for codec %r is available', codec_name)
     encoder = codec.value.encoder(output_frame.get('encoder'))
     output_caps = codec.value.caps_with_params
     if codec == Codec.H264 and encoder == codec.value.sw_encoder:
@@ -33,6 +34,10 @@ def check_encoder_is_available(parameters: Dict[str, Any]) -> bool:
         output_caps = f'{output_caps},profile={profile}'
 
     pipeline: Gst.Pipeline = Gst.Pipeline.new()
+    if codec in [Codec.H264, Codec.HEVC]:
+        parser_props = {'config-interval': -1}
+    else:
+        parser_props = {}
     elements = [
         PipelineElement(
             'videotestsrc',
@@ -49,7 +54,7 @@ def check_encoder_is_available(parameters: Dict[str, Any]) -> bool:
         ),
         PipelineElement(
             codec.value.parser,
-            properties={'config-interval': -1},
+            properties=parser_props,
         ),
         PipelineElement(
             'capsfilter',
@@ -84,9 +89,10 @@ def check_encoder_is_available(parameters: Dict[str, Any]) -> bool:
         if runner.error is not None:
             logger.error(
                 'You have configured NVENC-accelerated encoding, '
-                'but your device doesn\'t support NVENC.'
+                'but your device doesn\'t support NVENC for codec %r.',
+                codec_name,
             )
             return False
 
-    logger.info('Encoder for codec %r is available', output_frame['codec'])
+    logger.info('Encoder for codec %r is available', codec_name)
     return True

@@ -802,6 +802,10 @@ This adapter **always** performs transcoding of the incoming stream to ensure co
 
 When Nvidia Runtime is available this adapter uses DeepStream SDK and performs hardware transcoding and scaling of the incoming stream, otherwise it performs software transcoding and scaling. Software-based encoding/decoding must be used only when hardware-based encoding is not available (Jetson Orin Nano, A100, H100). If the hardware-based encoding is available, run the adapter with Nvidia runtime enabled to activate hardware-based decoding/encoding.
 
+.. note::
+
+    Software-based encoding/decoding is available only for ``H264`` codec.
+
 The simplified design of the adapter is depicted in the following diagram:
 
 .. image:: ../_static/img/10_adapters_ao_rtsp.png
@@ -821,8 +825,9 @@ The simplified design of the adapter is depicted in the following diagram:
 - ``PROTOCOLS``: enabled transport protocols, e.g. ``tcp+udp-mcast+udp``; the default value is ``tcp``;
 - ``LATENCY_MS``: resulting RTSP stream buffer size in ms, default value is ``100``;
 - ``KEEP_ALIVE``: whether to send RTSP keep alive packets; set it to ``False`` for old incompatible server, default value is ``True``;
-- ``PROFILE``: an H264 encoding profile; one of: ``Baseline``, ``Main``, ``High``; the default value is ``High``;
-- ``BITRATE``: an H264 encoding bitrate; the default value is ``4000000``;
+- ``CODEC``: an encoding codec; one of: ``h264``, ``hevc``; the default value is ``h264``;
+- ``ENCODER_PROFILE``: an encoding profile. For ``h264`` one of: ``Baseline``, ``Main``, ``High``; the default value is ``High``. For ``hevc`` one of: ``Main``, ``Main10``, ``FREXT``; the default value is ``Main``;
+- ``ENCODER_BITRATE``: an encoding bitrate; the default value is ``4000000``;
 - ``FRAMERATE``: a frame rate for the output stream; the default value is ``30/1``;
 - ``METADATA_OUTPUT``: where to dump metadata (``stdout`` or ``logger``);
 - ``SYNC_OUTPUT``: a flag indicates whether to show frames on sink synchronously (i.e. at the source rate); the streaming may be not stable with this flag, try to avoid it; the default value is ``False``;
