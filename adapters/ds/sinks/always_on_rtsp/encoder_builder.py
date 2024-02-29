@@ -5,7 +5,6 @@ from adapters.ds.sinks.always_on_rtsp.config import Config
 from adapters.ds.sinks.always_on_rtsp.utils import nvidia_runtime_is_available
 from savant.config.schema import PipelineElement
 from savant.gstreamer.codecs import Codec
-from savant.utils.platform import is_aarch64
 
 
 class BaseEncoderBuilder(ABC):
@@ -37,10 +36,6 @@ class H264EncoderBuilder(BaseEncoderBuilder):
             'profile': self.config.encoder_profile,
             'bitrate': self.config.encoder_bitrate,
         }
-        if not is_aarch64():
-            # nvv4l2h264enc doesn't encode video properly for the RTSP stream on dGPU
-            # https://forums.developer.nvidia.com/t/rtsp-stream-sent-by-rtspclientsink-doesnt-play-in-deepstream-6-2/244194
-            properties['tuning-info-id'] = 'HighQualityPreset'
 
         return [PipelineElement('nvv4l2h264enc', properties=properties)]
 
@@ -74,10 +69,6 @@ class HevcEncoderBuilder(BaseEncoderBuilder):
             'profile': self.config.encoder_profile,
             'bitrate': self.config.encoder_bitrate,
         }
-        if not is_aarch64():
-            # nvv4l2h264enc doesn't encode video properly for the RTSP stream on dGPU
-            # https://forums.developer.nvidia.com/t/rtsp-stream-sent-by-rtspclientsink-doesnt-play-in-deepstream-6-2/244194
-            properties['tuning-info-id'] = 'HighQualityPreset'
 
         return [PipelineElement('nvv4l2h265enc', properties=properties)]
 

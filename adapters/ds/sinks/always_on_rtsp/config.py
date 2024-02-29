@@ -17,6 +17,7 @@ from savant.utils.zeromq import ReceiverSocketTypes
 ENCODER_DEFAULT_PROFILES = {
     Codec.H264: 'High',
     Codec.HEVC: 'Main',
+    Codec.AV1: None,
 }
 
 
@@ -50,7 +51,7 @@ class Config:
         self.encoder_profile = opt_config(
             'ENCODER_PROFILE', ENCODER_DEFAULT_PROFILES[self.codec]
         )
-        # default nvv4l2h264enc bitrate
+        # default encoding bitrate
         self.encoder_bitrate = opt_config('ENCODER_BITRATE', 4000000, int)
 
         self.fps_period_frames = opt_config('FPS_PERIOD_FRAMES', 1000, int)
