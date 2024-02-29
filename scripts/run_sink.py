@@ -361,10 +361,19 @@ def video_files_sink(
     show_default=True,
 )
 @click.option(
-    '--profile',
-    default='High',
-    help='H264 encoding profile. One of: "Baseline", "Main", "High".',
+    '--codec',
+    default='h264',
+    help='Encoding codec. One of: "h264", "hevc", "av1".',
     show_default=True,
+)
+@click.option(
+    '--profile',
+    help=(
+        'Encoding profile. '
+        'For "h264" one of: "Baseline", "Main", "High". '
+        'For "hevc" one of: "Main", "Main10", "FREXT".'
+    ),
+    required=False,
 )
 @click.option(
     '--bitrate',
@@ -431,7 +440,8 @@ def always_on_rtsp_sink(
     protocols: str,
     latency_ms: int,
     keep_alive: bool,
-    profile: str,
+    codec: str,
+    profile: Optional[str],
     bitrate: int,
     framerate: str,
     fps_period_frames: Optional[int],
@@ -493,10 +503,12 @@ def always_on_rtsp_sink(
         f'RTSP_PROTOCOLS={protocols}',
         f'RTSP_LATENCY_MS={latency_ms}',
         f'RTSP_KEEP_ALIVE={keep_alive}',
-        f'ENCODER_PROFILE={profile}',
+        f'CODEC={codec}',
         f'ENCODER_BITRATE={bitrate}',
         f'FRAMERATE={framerate}',
     ]
+    if profile:
+        envs.append(f'ENCODER_PROFILE={profile}')
     if source_ids:
         envs.append(f'SOURCE_IDS={source_ids}')
     if metadata_output:
