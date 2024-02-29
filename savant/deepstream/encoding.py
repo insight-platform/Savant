@@ -5,7 +5,7 @@ from savant.config.schema import PipelineElement
 from savant.deepstream.element_factory import NvDsElementFactory
 from savant.deepstream.runner import NvDsPipelineRunner
 from savant.gstreamer import Gst  # noqa:F401
-from savant.gstreamer.codecs import CODEC_BY_NAME_ALL, Codec
+from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
 from savant.gstreamer.element_factory import GstElementFactory
 from savant.utils.logging import get_logger
 
@@ -20,8 +20,8 @@ def check_encoder_is_available(parameters: Dict[str, Any]) -> bool:
     if not output_frame or codec_name == 'copy':
         return True
 
-    codec = CODEC_BY_NAME_ALL[codec_name]
-    if codec not in [Codec.H264, Codec.HEVC, Codec.AV1]:
+    codec = CODEC_BY_NAME[codec_name]
+    if codec not in [Codec.H264, Codec.HEVC]:
         return True
 
     logger.info('Checking if encoder for codec %r is available', codec_name)

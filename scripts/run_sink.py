@@ -363,7 +363,7 @@ def video_files_sink(
 @click.option(
     '--codec',
     default='h264',
-    help='Encoding codec. One of: "h264", "hevc", "av1".',
+    help='Encoding codec. One of: "h264", "hevc".',
     show_default=True,
 )
 @click.option(

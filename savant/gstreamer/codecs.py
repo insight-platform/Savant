@@ -112,24 +112,10 @@ class Codec(Enum):
         nv_encoder='nvjpegenc',
         sw_encoder='jpegenc',
     )
-    AV1 = CodecInfo(
-        'av1',
-        'video/x-av1',
-        [],
-        'av1parse',
-        nv_encoder='nvv4l2av1enc',
-    )
 
 
-# TODO: add support for av1 not only in AO-sink adapter
-INTERNAL_CODECS = {Codec.AV1}
-CODEC_BY_NAME_ALL: Dict[str, Codec] = {x.value.name: x for x in Codec}
-CODEC_BY_NAME: Dict[str, Codec] = {
-    x.value.name: x for x in Codec if x not in INTERNAL_CODECS
-}
-CODEC_BY_CAPS_NAME: Dict[str, Codec] = {
-    x.value.caps_name: x for x in Codec if x not in INTERNAL_CODECS
-}
+CODEC_BY_NAME: Dict[str, Codec] = {x.value.name: x for x in Codec}
+CODEC_BY_CAPS_NAME: Dict[str, Codec] = {x.value.caps_name: x for x in Codec}
 
 
 def _check_element_exists(element_name: str):

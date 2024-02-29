@@ -825,8 +825,8 @@ The simplified design of the adapter is depicted in the following diagram:
 - ``PROTOCOLS``: enabled transport protocols, e.g. ``tcp+udp-mcast+udp``; the default value is ``tcp``;
 - ``LATENCY_MS``: resulting RTSP stream buffer size in ms, default value is ``100``;
 - ``KEEP_ALIVE``: whether to send RTSP keep alive packets; set it to ``False`` for old incompatible server, default value is ``True``;
-- ``CODEC``: an encoding codec; one of: ``h264``, ``hevc``, ``av1``; the default value is ``h264``;
-- ``ENCODER_PROFILE``: an encoding profile. For ``h264`` one of: ``Baseline``, ``Main``, ``High``; the default value is ``High``. For ``hevc`` one of: ``Main``, ``Main10``, ``FREXT``; the default value is ``Main``;  for ``av1`` this config is ignored.
+- ``CODEC``: an encoding codec; one of: ``h264``, ``hevc``; the default value is ``h264``;
+- ``ENCODER_PROFILE``: an encoding profile. For ``h264`` one of: ``Baseline``, ``Main``, ``High``; the default value is ``High``. For ``hevc`` one of: ``Main``, ``Main10``, ``FREXT``; the default value is ``Main``;
 - ``ENCODER_BITRATE``: an encoding bitrate; the default value is ``4000000``;
 - ``FRAMERATE``: a frame rate for the output stream; the default value is ``30/1``;
 - ``METADATA_OUTPUT``: where to dump metadata (``stdout`` or ``logger``);
