@@ -18,9 +18,9 @@ from savant_rs.primitives import (
 from adapters.python.sinks.chunk_writer import ChunkWriter
 from savant.api.constants import DEFAULT_NAMESPACE
 from savant.api.parser import parse_video_frame
+from savant.utils.config import opt_config, strtobool
 from savant.utils.logging import get_logger, init_logging
 from savant.utils.zeromq import ZeroMQMessage, ZeroMQSource
-from savant.utils.config import strtobool, opt_config
 
 LOGGER_NAME = 'adapters.metadata_json_sink'
 

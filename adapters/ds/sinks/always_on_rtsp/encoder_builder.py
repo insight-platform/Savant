@@ -85,9 +85,24 @@ class HevcEncoderBuilder(BaseEncoderBuilder):
         return [PipelineElement('h265parse', properties={'config-interval': -1})]
 
 
+class Av1EncoderBuilder(BaseEncoderBuilder):
+    """Builder for AV1 encoder elements."""
+
+    def build_encoder_elements(self) -> List[PipelineElement]:
+        properties = {
+            'bitrate': self.config.encoder_bitrate,
+        }
+
+        return [PipelineElement('nvv4l2av1enc', properties=properties)]
+
+    def build_parser_elements(self) -> List[PipelineElement]:
+        return [PipelineElement('av1parse')]
+
+
 ENCODER_BUILDER_CLASS = {
     Codec.H264: H264EncoderBuilder,
     Codec.HEVC: HevcEncoderBuilder,
+    Codec.AV1: Av1EncoderBuilder,
 }
 
 

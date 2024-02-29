@@ -10,7 +10,7 @@ from typing import Dict, List, Optional
 from adapters.ds.sinks.always_on_rtsp.utils import nvidia_runtime_is_available
 from adapters.ds.sinks.always_on_rtsp.zeromq_proxy import ZeroMqProxy
 from savant.gstreamer import Gst
-from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
+from savant.gstreamer.codecs import CODEC_BY_NAME_ALL, Codec
 from savant.utils.config import opt_config, strtobool
 from savant.utils.logging import get_logger, init_logging
 from savant.utils.zeromq import ReceiverSocketTypes
@@ -18,9 +18,7 @@ from savant.utils.zeromq import ReceiverSocketTypes
 LOGGER_NAME = 'adapters.ao_sink.entrypoint'
 logger = get_logger(LOGGER_NAME)
 
-SUPPORTED_CODECS = {x.value.name for x in [Codec.H264, Codec.HEVC]}
-SW_CODECS = {Codec.H264}
-HW_CODECS = {Codec.H264, Codec.HEVC}
+SUPPORTED_CODECS = {x.value.name for x in [Codec.H264, Codec.HEVC, Codec.AV1]}
 
 
 class Config:
@@ -53,7 +51,7 @@ class Config:
 
         codec_name = opt_config('CODEC', 'h264')
         assert codec_name in SUPPORTED_CODECS, f'Unsupported codec {codec_name}.'
-        self.codec = CODEC_BY_NAME[codec_name]
+        self.codec = CODEC_BY_NAME_ALL[codec_name]
 
 
 def main():
@@ -68,7 +66,7 @@ def main():
         logger.info(
             'NVIDIA runtime is available. Using hardware-based decoding/encoding.'
         )
-        if config.codec not in HW_CODECS:
+        if not config.codec.value.nv_encoder:
             logger.error(
                 'Hardware-based encoding is not available for codec %s.',
                 config.codec.value.name,
@@ -93,7 +91,7 @@ def main():
             'If the hardware-based encoding is available, run the adapter with Nvidia '
             'runtime enabled to activate hardware-based decoding/encoding.'
         )
-        if config.codec not in SW_CODECS:
+        if not config.codec.value.sw_encoder:
             logger.error(
                 'Software-based encoding is not available for codec %s.',
                 config.codec.value.name,
