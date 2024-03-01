@@ -39,6 +39,24 @@ class OutputFormat(str, Enum):
     YAML = 'yaml'
 
 
+class StreamStatusModel(BaseModel):
+    is_alive: bool
+    exit_code: Optional[int]
+
+    @staticmethod
+    def from_stream(stream: Stream):
+        return StreamStatusModel(
+            is_alive=stream.exit_code is None,
+            exit_code=stream.exit_code,
+        )
+
+    def to_dict(self):
+        return {
+            'is_alive': self.is_alive,
+            'exit_code': self.exit_code,
+        }
+
+
 class StreamModel(BaseModel):
     stub_file: Optional[Path] = None
     framerate: Optional[str] = Field(None, pattern=r'^\d+/\d+$', examples=['30/1'])
@@ -50,6 +68,7 @@ class StreamModel(BaseModel):
     rtsp_keep_alive: Optional[bool] = None
     metadata_output: Optional[MetadataOutput] = None
     sync_output: Optional[bool] = None
+    status: Optional[StreamStatusModel] = None
 
     def to_stream(self):
         codec = None
@@ -82,6 +101,7 @@ class StreamModel(BaseModel):
             rtsp_keep_alive=stream.rtsp_keep_alive,
             metadata_output=stream.metadata_output,
             sync_output=stream.sync_output,
+            status=StreamStatusModel.from_stream(stream),
         )
 
     def to_dict(self):
@@ -98,19 +118,8 @@ class StreamModel(BaseModel):
                 self.metadata_output.value if self.metadata_output else None
             ),
             'sync_output': self.sync_output,
+            'status': self.status.to_dict() if self.status else None,
         }
-
-
-class StreamStatusModel(BaseModel):
-    is_alive: bool
-    exit_code: Optional[int]
-
-    @staticmethod
-    def from_stream(stream: Stream):
-        return StreamStatusModel(
-            is_alive=stream.exit_code is None,
-            exit_code=stream.exit_code,
-        )
 
 
 class Api:
@@ -129,8 +138,6 @@ class Api:
         )(self.get_stream)
         self._app.put('/streams/{source_id}')(self.enable_stream)
         self._app.delete('/streams/{source_id}')(self.delete_stream)
-        self._app.get('/status')(self.get_all_stream_statuses)
-        self._app.get('/status/{source_id}')(self.get_stream_status)
 
     def get_all_streams(
         self,
@@ -141,7 +148,10 @@ class Api:
             for source_id, stream in self._stream_manager.get_all_streams().items()
         }
         if format == OutputFormat.YAML:
-            response_content = yaml.dump({k: v.to_dict() for k, v in response.items()})
+            response_content = yaml.dump(
+                {k: v.to_dict() for k, v in response.items()},
+                sort_keys=False,
+            )
             response = Response(
                 content=response_content,
                 media_type='application/x-yaml',
@@ -163,7 +173,7 @@ class Api:
 
         response = StreamModel.from_stream(stream)
         if format == OutputFormat.YAML:
-            response_content = yaml.dump(response.to_dict())
+            response_content = yaml.dump(response.to_dict(), sort_keys=False)
             response = Response(
                 content=response_content,
                 media_type='application/x-yaml',
@@ -189,22 +199,6 @@ class Api:
         created_stream = self._stream_manager.get_stream(source_id)
 
         return StreamModel.from_stream(created_stream)
-
-    def get_all_stream_statuses(self) -> Dict[str, StreamStatusModel]:
-        return {
-            source_id: StreamStatusModel.from_stream(stream)
-            for source_id, stream in self._stream_manager.get_all_streams().items()
-        }
-
-    def get_stream_status(self, source_id: str) -> StreamStatusModel:
-        stream = self._stream_manager.get_stream(source_id)
-        if stream is None:
-            raise HTTPException(
-                status_code=HTTPStatus.NOT_FOUND,
-                detail=f'Stream {source_id} not found.',
-            )
-
-        return StreamStatusModel.from_stream(stream)
 
     def delete_stream(self, source_id: str):
         try:

@@ -64,6 +64,7 @@ class StreamManager:
         logger.info('Starting stream manager')
         self._is_running = True
         self._watcher_thread = Thread(target=self.process_watcher, daemon=True)
+        self._watcher_thread.start()
         logger.info('Stream manager started')
 
     def stop(self):
@@ -144,13 +145,19 @@ class StreamManager:
                 self.check_processes()
             except Exception as e:
                 logger.error('Failed to check processes: %s', e, exc_info=True)
-            time.sleep(1)  # TODO: configure
+            time.sleep(self._config.status_poll_interval)
 
     def check_processes(self):
+        logger.debug('Checking Always-On-RTSP processes')
         with self._lock:
             if not self._is_running:
                 return
             for source_id, process in list(self._processes.items()):
+                if self._streams[source_id].exit_code is not None:
+                    logger.debug('Stream %r has already exited.', source_id)
+                    continue
+
+                logger.debug('Checking process for source %r', source_id)
                 exit_code = process_is_alive(process)
                 if exit_code is not None:
                     logger.error(
@@ -159,6 +166,8 @@ class StreamManager:
                         exit_code,
                     )
                     self._streams[source_id].exit_code = exit_code
+                else:
+                    logger.debug('Always-On-RTSP for source %r is running', source_id)
 
     def get_stream(self, source_id: str) -> Optional[Stream]:
         with self._lock:

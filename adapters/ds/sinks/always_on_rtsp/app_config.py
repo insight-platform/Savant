@@ -15,10 +15,7 @@ class AppConfig(CommonStreamConfig):
         self.source_ids: Optional[List[str]] = opt_config(
             'SOURCE_IDS', [], lambda x: x.split(',')
         )
-        assert (
-            self.source_id or self.source_ids
-        ), 'Either "SOURCE_ID" or "SOURCE_IDS" must be set.'
-        if not self.source_ids:
+        if self.source_id and not self.source_ids:
             self.source_ids = [self.source_id]
 
         self.zmq_endpoint = os.environ['ZMQ_ENDPOINT']
@@ -42,3 +39,11 @@ class AppConfig(CommonStreamConfig):
 
         self.api_port = opt_config('API_PORT', 13000, int)
         assert 1 <= self.api_port <= 65535, 'Invalid value for "API_PORT".'
+
+        self.status_poll_interval_ms = opt_config('STATUS_POLL_INTERVAL_MS', 1000, int)
+        assert (
+            self.status_poll_interval_ms > 0
+        ), 'Invalid value for "STATUS_POLL_INTERVAL_MS".'
+        self.status_poll_interval = self.status_poll_interval_ms / 1000
+
+        self.fail_on_stream_error = opt_config('FAIL_ON_STREAM_ERROR', True, strtobool)

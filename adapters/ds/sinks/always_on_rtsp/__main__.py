@@ -64,6 +64,10 @@ def main():
     for source_id in config.source_ids:
         stream_manager.add_stream(source_id, Stream())
 
+    time.sleep(config.status_poll_interval)
+    if not check_all_streams_are_running(stream_manager):
+        return
+
     api = Api(config, stream_manager)
     api.start()
 
@@ -85,13 +89,14 @@ def main():
 
 
 def main_loop(
+    config: AppConfig,
     stream_manager: StreamManager,
     api: Api,
     mediamtx_process: Optional[Popen],
 ):
     while True:
-        for source_id, stream in stream_manager.get_all_streams().items():
-            if stream.exit_code is not None:
+        if config.fail_on_stream_error:
+            if not check_all_streams_are_running(stream_manager):
                 return
 
         if mediamtx_process is not None:
@@ -104,7 +109,15 @@ def main_loop(
             logger.error('API server is not running.')
             return
 
-        time.sleep(1)  # TODO: configure
+        time.sleep(config.status_poll_interval)
+
+
+def check_all_streams_are_running(stream_manager: StreamManager):
+    for source_id, stream in stream_manager.get_all_streams().items():
+        if stream.exit_code is not None:
+            return False
+
+    return True
 
 
 if __name__ == '__main__':
