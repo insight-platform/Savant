@@ -12,10 +12,14 @@ class Config:
     def __init__(self):
         self.dev_mode = opt_config('DEV_MODE', False, strtobool)
         self.source_id: Optional[str] = opt_config('SOURCE_ID')
-        self.source_ids: Optional[List[str]] = opt_config('SOURCE_IDS', '').split(',')
+        self.source_ids: Optional[List[str]] = opt_config(
+            'SOURCE_IDS', [], lambda x: x.split(',')
+        )
         assert (
             self.source_id or self.source_ids
         ), 'Either "SOURCE_ID" or "SOURCE_IDS" must be set.'
+        if not self.source_ids:
+            self.source_ids = [self.source_id]
 
         self.zmq_endpoint = os.environ['ZMQ_ENDPOINT']
         self.zmq_socket_type = opt_config(
