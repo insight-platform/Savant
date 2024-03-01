@@ -1,11 +1,13 @@
 import os
 import time
 from dataclasses import dataclass
+from pathlib import Path
 from subprocess import Popen
 from threading import Lock, Thread
 from typing import Dict, Optional
 
 from adapters.ds.sinks.always_on_rtsp.app_config import Config
+from adapters.ds.sinks.always_on_rtsp.config import TransferMode
 from adapters.ds.sinks.always_on_rtsp.utils import process_is_alive
 from savant.utils.logging import get_logger
 
@@ -14,12 +16,12 @@ logger = get_logger('adapters.ao_sink.stream_manager')
 
 @dataclass
 class Stream:
-    stub_file: Optional[str] = None
+    stub_file: Optional[Path] = None
     framerate: Optional[str] = None
     bitrate: Optional[int] = None
     profile: Optional[str] = None
     max_delay_ms: Optional[int] = None
-    transfer_mode: Optional[str] = None
+    transfer_mode: Optional[TransferMode] = None
     rtsp_keep_alive: Optional[bool] = None
     metadata_output: Optional[bool] = None
     sync_output: Optional[bool] = None
@@ -50,6 +52,7 @@ class StreamManager:
         with self._lock:
             if source_id in self._streams:
                 raise ValueError(f'Stream with source_id {source_id!r} already exists.')
+            # TODO: validate stream
             self._processes[source_id] = self.start_stream_process(source_id, stream)
             self._streams[source_id] = stream
         logger.info('Stream %r added', source_id)
@@ -80,7 +83,9 @@ class StreamManager:
             'ENCODER_BITRATE': stream.bitrate,
             'ENCODER_PROFILE': stream.profile,
             'MAX_DELAY_MS': stream.max_delay_ms,
-            'TRANSFER_MODE': stream.transfer_mode,
+            'TRANSFER_MODE': (
+                stream.transfer_mode.value if stream.transfer_mode else None
+            ),
             'RTSP_KEEP_ALIVE': stream.rtsp_keep_alive,
             'METADATA_OUTPUT': stream.metadata_output,
             'SYNC_OUTPUT': stream.sync_output,
@@ -88,7 +93,7 @@ class StreamManager:
             'RTSP_URI': rtsp_uri,
             'ZMQ_ENDPOINT': self._stream_in_endpoint,
         }
-        envs = {k: v for k, v in envs.items() if v is not None}
+        envs = {k: str(v) for k, v in envs.items() if v is not None}
 
         return envs
 

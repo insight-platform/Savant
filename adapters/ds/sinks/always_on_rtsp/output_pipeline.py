@@ -36,7 +36,7 @@ def build_output_pipeline(
                 'always_on_rtsp_frame_processor',
                 properties={
                     'max-delay-ms': config.max_delay_ms,
-                    'mode': config.transfer_mode,
+                    'mode': config.transfer_mode.value,
                     'last-frame': last_frame,
                 },
             ),

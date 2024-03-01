@@ -6,7 +6,9 @@ from subprocess import Popen
 from threading import Thread
 from typing import Optional
 
+from adapters.ds.sinks.always_on_rtsp.api import Api
 from adapters.ds.sinks.always_on_rtsp.app_config import Config
+from adapters.ds.sinks.always_on_rtsp.config import CommonStreamConfig
 from adapters.ds.sinks.always_on_rtsp.stream_manager import Stream, StreamManager
 from adapters.ds.sinks.always_on_rtsp.utils import (
     nvidia_runtime_is_available,
@@ -26,6 +28,7 @@ def main():
 
     init_logging()
     config = Config()
+    CommonStreamConfig()  # Just for validation
 
     Gst.init(None)
     if nvidia_runtime_is_available():
@@ -96,8 +99,11 @@ def main():
     for source_id in config.source_ids:
         stream_manager.add_stream(source_id, Stream())
 
+    api = Api(config, stream_manager)
+    api.start()
+
     try:
-        main_loop(stream_manager, mediamtx_process)
+        main_loop(stream_manager, api, mediamtx_process)
     except KeyboardInterrupt:
         pass
 
@@ -115,6 +121,7 @@ def main():
 
 def main_loop(
     stream_manager: StreamManager,
+    api: Api,
     mediamtx_process: Optional[Popen],
 ):
     while True:
@@ -127,6 +134,10 @@ def main_loop(
             if exit_code is not None:
                 logger.error('MediaMTX exited. Exit code: %s.', exit_code)
                 return
+
+        if not api.is_alive():
+            logger.error('API server is not running.')
+            return
 
         time.sleep(1)  # TODO: configure
 

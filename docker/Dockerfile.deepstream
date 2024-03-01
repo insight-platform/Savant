@@ -201,6 +201,9 @@ RUN mkdir mediamtx && \
       wget -qO- "https://github.com/bluenviron/mediamtx/releases/download/${MEDIAMTX_VERSION}/mediamtx_${MEDIAMTX_VERSION}_linux_armv7.tar.gz" | tar xz -C mediamtx; \
     fi
 
+COPY adapters/requirements-ds.txt adapters/requirements-ds.txt
+RUN python -m pip install --no-cache-dir -r adapters/requirements-ds.txt
+
 HEALTHCHECK NONE
 
 COPY adapters/shared adapters/shared
