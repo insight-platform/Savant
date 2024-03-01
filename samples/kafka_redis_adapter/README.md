@@ -36,8 +36,8 @@ docker compose -f samples/kafka_redis_adapter/docker-compose.x86.yml up
 # if Jetson
 docker compose -f samples/kafka_redis_adapter/docker-compose.l4t.yml up
 
-# open 'rtsp://127.0.0.1:554/stream' in your player
-# or visit 'http://127.0.0.1:888/stream/' (LL-HLS)
+# open 'rtsp://127.0.0.1:554/stream/city-traffic' in your player
+# or visit 'http://127.0.0.1:888/stream/city-traffic/' (LL-HLS)
 
 # Ctrl+C to stop running the compose bundle
 ```

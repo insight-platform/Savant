@@ -58,8 +58,8 @@ docker compose -f samples/fisheye_line_crossing/docker-compose.x86.yml up
 # if Jetson
 docker compose -f samples/fisheye_line_crossing/docker-compose.l4t.yml up
 
-# open 'rtsp://127.0.0.1:554/stream' in your player
-# or visit 'http://127.0.0.1:888/stream/' (LL-HLS)
+# open 'rtsp://127.0.0.1:554/stream/lab1' in your player
+# or visit 'http://127.0.0.1:888/stream/lab1/' (LL-HLS)
 
 # for pre-configured Grafana dashboard visit
 # http://127.0.0.1:3000/d/WM6WimE4z/crossings?orgId=1&refresh=5s
