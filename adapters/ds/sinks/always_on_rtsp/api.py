@@ -25,6 +25,7 @@ from adapters.ds.sinks.always_on_rtsp.stream_manager import (
     StreamManager,
     StreamNotFoundError,
 )
+from adapters.ds.sinks.always_on_rtsp.utils import check_codec_is_available
 from savant.gstreamer.codecs import CODEC_BY_NAME
 from savant.utils.logging import get_logger
 
@@ -248,7 +249,16 @@ class Api:
                     detail=f'Invalid framerate {stream.framerate}.',
                 )
 
-        codec = stream.codec or self._config.codec
+        if stream.codec is not None:
+            codec = CODEC_BY_NAME[stream.codec.value]
+            if not check_codec_is_available(codec):
+                raise HTTPException(
+                    status_code=HTTPStatus.BAD_REQUEST,
+                    detail=f'Codec {stream.codec.value} is not available.',
+                )
+        else:
+            codec = self._config.codec
+
         if stream.profile is not None:
             if stream.profile not in ENCODER_PROFILES[codec]:
                 raise HTTPException(

@@ -10,7 +10,7 @@ from adapters.ds.sinks.always_on_rtsp.api import Api
 from adapters.ds.sinks.always_on_rtsp.app_config import AppConfig
 from adapters.ds.sinks.always_on_rtsp.stream_manager import Stream, StreamManager
 from adapters.ds.sinks.always_on_rtsp.utils import (
-    nvidia_runtime_is_available,
+    check_codec_is_available,
     process_is_alive,
 )
 from adapters.ds.sinks.always_on_rtsp.zeromq_proxy import ZeroMqProxy
@@ -29,41 +29,8 @@ def main():
     config = AppConfig()
 
     Gst.init(None)
-    if nvidia_runtime_is_available():
-        logger.info(
-            'NVIDIA runtime is available. Using hardware-based decoding/encoding.'
-        )
-        if not config.codec.value.nv_encoder:
-            logger.error(
-                'Hardware-based encoding is not available for codec %s.',
-                config.codec.value.name,
-            )
-            return
-
-        from savant.utils.check_display import check_display_env
-
-        check_display_env(logger)
-
-        from savant.deepstream.encoding import check_encoder_is_available
-
-        if not check_encoder_is_available(
-            {'output_frame': {'codec': config.codec.value.name}}
-        ):
-            return
-    else:
-        logger.warning(
-            'You are using the AO-RTSP adapter with a software-based decoder/encoder '
-            '(without NVDEC/NVENC). This mode must be used only when hardware-based '
-            'encoding is not available (Jetson Orin Nano, A100, H100). '
-            'If the hardware-based encoding is available, run the adapter with Nvidia '
-            'runtime enabled to activate hardware-based decoding/encoding.'
-        )
-        if not config.codec.value.sw_encoder:
-            logger.error(
-                'Software-based encoding is not available for codec %s.',
-                config.codec.value.name,
-            )
-            return
+    if not check_codec_is_available(config.codec):
+        return
 
     internal_socket = 'ipc:///tmp/ao-sink-internal-socket.ipc'
     zmq_reader_endpoint = f'sub+connect:{internal_socket}'
