@@ -7,8 +7,7 @@ from threading import Thread
 from typing import Optional
 
 from adapters.ds.sinks.always_on_rtsp.api import Api
-from adapters.ds.sinks.always_on_rtsp.app_config import Config
-from adapters.ds.sinks.always_on_rtsp.config import CommonStreamConfig
+from adapters.ds.sinks.always_on_rtsp.app_config import AppConfig
 from adapters.ds.sinks.always_on_rtsp.stream_manager import Stream, StreamManager
 from adapters.ds.sinks.always_on_rtsp.utils import (
     nvidia_runtime_is_available,
@@ -27,8 +26,7 @@ def main():
     signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
 
     init_logging()
-    config = Config()
-    CommonStreamConfig()  # Just for validation
+    config = AppConfig()
 
     Gst.init(None)
     if nvidia_runtime_is_available():

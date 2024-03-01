@@ -25,6 +25,8 @@ ENCODER_PROFILES = {
     Codec.HEVC: ['Main', 'Main10', 'FREXT'],
 }
 
+SUPPORTED_CODECS = {x.value.name for x in [Codec.H264, Codec.HEVC]}
+
 
 class TransferMode(str, Enum):
     SCALE_TO_FIT = 'scale-to-fit'
@@ -59,6 +61,7 @@ class CommonStreamConfig:
         self.rtsp_keep_alive = opt_config('RTSP_KEEP_ALIVE', True, strtobool)
 
         codec_name = opt_config('CODEC', 'h264')
+        assert codec_name in SUPPORTED_CODECS, f'Unsupported codec {codec_name}.'
         self.codec = CODEC_BY_NAME[codec_name]
         self.encoder_profile = opt_config(
             'ENCODER_PROFILE', ENCODER_DEFAULT_PROFILES[self.codec]
@@ -76,11 +79,7 @@ class CommonStreamConfig:
         self.fps_output = opt_config('FPS_OUTPUT', 'stdout')
 
         try:
-            self.metadata_output: MetadataOutput = opt_config(
-                'METADATA_OUTPUT',
-                MetadataOutput.STDOUT,
-                MetadataOutput,
-            )
+            self.metadata_output = opt_config('METADATA_OUTPUT', None, MetadataOutput)
         except ValueError:
             raise ValueError('Invalid value for environment variable METADATA_OUTPUT')
 

@@ -6,9 +6,10 @@ from subprocess import Popen
 from threading import Lock, Thread
 from typing import Dict, Optional
 
-from adapters.ds.sinks.always_on_rtsp.app_config import Config
+from adapters.ds.sinks.always_on_rtsp.app_config import AppConfig
 from adapters.ds.sinks.always_on_rtsp.config import MetadataOutput, TransferMode
 from adapters.ds.sinks.always_on_rtsp.utils import process_is_alive
+from savant.gstreamer.codecs import Codec
 from savant.utils.logging import get_logger
 
 logger = get_logger('adapters.ao_sink.stream_manager')
@@ -38,6 +39,7 @@ class FailedToStartStreamError(StreamManagerError):
 class Stream:
     stub_file: Optional[Path] = None
     framerate: Optional[str] = None
+    codec: Optional[Codec] = None
     bitrate: Optional[int] = None
     profile: Optional[str] = None
     max_delay_ms: Optional[int] = None
@@ -49,7 +51,7 @@ class Stream:
 
 
 class StreamManager:
-    def __init__(self, config: Config, stream_in_endpoint: str):
+    def __init__(self, config: AppConfig, stream_in_endpoint: str):
         self._config = config
         self._stream_in_endpoint = stream_in_endpoint
         self._streams: Dict[str, Stream] = {}
@@ -69,6 +71,26 @@ class StreamManager:
 
     def add_stream(self, source_id: str, stream: Stream):
         logger.info('Adding stream %r', source_id)
+
+        if stream.stub_file is None:
+            stream.stub_file = self._config.stub_file_location
+        if stream.framerate is None:
+            stream.framerate = self._config.framerate
+        if stream.codec is None:
+            stream.codec = self._config.codec
+        if stream.bitrate is None:
+            stream.bitrate = self._config.encoder_bitrate
+        if stream.profile is None:
+            stream.profile = self._config.encoder_profile
+        if stream.max_delay_ms is None:
+            stream.max_delay_ms = self._config.max_delay_ms
+        if stream.transfer_mode is None:
+            stream.transfer_mode = self._config.transfer_mode
+        if stream.rtsp_keep_alive is None:
+            stream.rtsp_keep_alive = self._config.rtsp_keep_alive
+        if stream.sync_output is None:
+            stream.sync_output = self._config.sync
+
         with self._lock:
             if source_id in self._streams:
                 raise StreamAlreadyExistsError(source_id)
@@ -96,6 +118,7 @@ class StreamManager:
         envs = {
             'STUB_FILE_LOCATION': stream.stub_file,
             'FRAMERATE': stream.framerate,
+            'CODEC': stream.codec.value.name if stream.codec is not None else None,
             'ENCODER_BITRATE': stream.bitrate,
             'ENCODER_PROFILE': stream.profile,
             'MAX_DELAY_MS': stream.max_delay_ms,

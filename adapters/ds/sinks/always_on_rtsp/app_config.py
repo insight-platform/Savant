@@ -1,15 +1,15 @@
 import os
 from typing import List, Optional
 
-from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
+from adapters.ds.sinks.always_on_rtsp.config import CommonStreamConfig
 from savant.utils.config import opt_config, strtobool
 from savant.utils.zeromq import ReceiverSocketTypes
 
-SUPPORTED_CODECS = {x.value.name for x in [Codec.H264, Codec.HEVC]}
 
-
-class Config:
+class AppConfig(CommonStreamConfig):
     def __init__(self):
+        super().__init__()
+
         self.dev_mode = opt_config('DEV_MODE', False, strtobool)
         self.source_id: Optional[str] = opt_config('SOURCE_ID')
         self.source_ids: Optional[List[str]] = opt_config(
@@ -39,10 +39,6 @@ class Config:
             assert (
                 self.rtsp_uri is not None
             ), '"RTSP_URI" must be set when "DEV_MODE=False"'
-
-        codec_name = opt_config('CODEC', 'h264')
-        assert codec_name in SUPPORTED_CODECS, f'Unsupported codec {codec_name}.'
-        self.codec = CODEC_BY_NAME[codec_name]
 
         self.api_port = opt_config('API_PORT', 13000, int)
         assert 1 <= self.api_port <= 65535, 'Invalid value for "API_PORT".'

@@ -1,3 +1,4 @@
+from enum import Enum
 from fractions import Fraction
 from http import HTTPStatus
 from pathlib import Path
@@ -10,10 +11,11 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
-from adapters.ds.sinks.always_on_rtsp.app_config import Config
+from adapters.ds.sinks.always_on_rtsp.app_config import AppConfig
 from adapters.ds.sinks.always_on_rtsp.config import (
     ENCODER_PROFILES,
     MetadataOutput,
+    SUPPORTED_CODECS,
     TransferMode,
 )
 from adapters.ds.sinks.always_on_rtsp.stream_manager import (
@@ -23,9 +25,12 @@ from adapters.ds.sinks.always_on_rtsp.stream_manager import (
     StreamManager,
     StreamNotFoundError,
 )
+from savant.gstreamer.codecs import CODEC_BY_NAME
 from savant.utils.logging import get_logger
 
 logger = get_logger('adapters.ao_sink.api')
+
+SupportedCodecs = Enum('SupportedCodecs', {x.upper(): x for x in SUPPORTED_CODECS})
 
 
 class CreateStream(BaseModel):
@@ -33,6 +38,7 @@ class CreateStream(BaseModel):
     framerate: Optional[str] = Field(None, pattern=r'^\d+/\d+$', examples=['30/1'])
     bitrate: Optional[int] = Field(None, gt=0, examples=[4000000])
     profile: Optional[str] = None
+    codec: Optional[SupportedCodecs] = None
     max_delay_ms: Optional[int] = Field(None, gt=0, examples=[1000])
     transfer_mode: Optional[TransferMode] = None
     rtsp_keep_alive: Optional[bool] = None
@@ -40,9 +46,14 @@ class CreateStream(BaseModel):
     sync_output: Optional[bool] = None
 
     def to_stream(self):
+        codec = None
+        if self.codec is not None:
+            codec = CODEC_BY_NAME[self.codec.value]
+
         return Stream(
             stub_file=self.stub_file,
             framerate=self.framerate,
+            codec=codec,
             bitrate=self.bitrate,
             profile=self.profile,
             max_delay_ms=self.max_delay_ms,
@@ -63,6 +74,7 @@ class ResponseStream(CreateStream):
             source_id=source_id,
             stub_file=stream.stub_file,
             framerate=stream.framerate,
+            codec=stream.codec.value.name if stream.codec is not None else None,
             bitrate=stream.bitrate,
             profile=stream.profile,
             max_delay_ms=stream.max_delay_ms,
@@ -75,7 +87,7 @@ class ResponseStream(CreateStream):
 
 
 class Api:
-    def __init__(self, config: Config, stream_manager: StreamManager):
+    def __init__(self, config: AppConfig, stream_manager: StreamManager):
         self._config = config
         self._stream_manager = stream_manager
         self._thread: Optional[Thread] = None
@@ -130,6 +142,7 @@ class Api:
         return 'ok'
 
     def run_api(self):
+        logger.info('Starting API server on port %d', self._config.api_port)
         uvicorn.run(self._app, host='0.0.0.0', port=self._config.api_port)
 
     def start(self):
@@ -160,9 +173,10 @@ class Api:
                     detail=f'Invalid framerate {stream.framerate}.',
                 )
 
+        codec = stream.codec or self._config.codec
         if stream.profile is not None:
-            if stream.profile not in ENCODER_PROFILES[self._config.codec]:
+            if stream.profile not in ENCODER_PROFILES[codec]:
                 raise HTTPException(
                     status_code=HTTPStatus.BAD_REQUEST,
-                    detail=f'Invalid profile {stream.profile} for codec {self._config.codec.value.name}.',
+                    detail=f'Invalid profile {stream.profile} for codec {codec.value.name}.',
                 )
