@@ -43,3 +43,6 @@ class Config:
         codec_name = opt_config('CODEC', 'h264')
         assert codec_name in SUPPORTED_CODECS, f'Unsupported codec {codec_name}.'
         self.codec = CODEC_BY_NAME[codec_name]
+
+        self.api_port = opt_config('API_PORT', 13000, int)
+        assert 1 <= self.api_port <= 65535, 'Invalid value for "API_PORT".'

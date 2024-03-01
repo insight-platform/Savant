@@ -130,8 +130,7 @@ class Api:
         return 'ok'
 
     def run_api(self):
-        # TODO: configura port
-        uvicorn.run(self._app, host='0.0.0.0', port=5000)
+        uvicorn.run(self._app, host='0.0.0.0', port=self._config.api_port)
 
     def start(self):
         self._thread = Thread(target=self.run_api, daemon=True)
