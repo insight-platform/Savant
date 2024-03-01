@@ -1,4 +1,3 @@
-from enum import Enum
 from fractions import Fraction
 from http import HTTPStatus
 from pathlib import Path
@@ -6,7 +5,9 @@ from threading import Thread
 from typing import List, Optional
 
 import uvicorn
+import yaml
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
 from adapters.ds.sinks.always_on_rtsp.app_config import Config
@@ -25,11 +26,6 @@ from adapters.ds.sinks.always_on_rtsp.stream_manager import (
 from savant.utils.logging import get_logger
 
 logger = get_logger('adapters.ao_sink.api')
-
-
-class OutputFormat(str, Enum):
-    JSON = 'json'
-    YAML = 'yaml'
 
 
 class CreateStream(BaseModel):
@@ -84,16 +80,24 @@ class Api:
         self._stream_manager = stream_manager
         self._thread: Optional[Thread] = None
         self._app = FastAPI()
-        self._app.get('/streams/{output_format}')(self.get_streams)
+        self._app.get('/streams/json')(self.get_streams_json)
+        self._app.get(
+            '/streams/yaml',
+            responses={200: {'content': {'application/x-yaml': {}}}},
+        )(self.get_streams_yaml)
         self._app.put('/streams/{source_id}')(self.enable_stream)
         self._app.delete('/streams/{source_id}')(self.delete_stream)
 
-    def get_streams(self, output_format: OutputFormat) -> List[ResponseStream]:
-        # TODO: support YAML output format
+    def get_streams_json(self) -> List[ResponseStream]:
         return [
             ResponseStream.from_stream(source_id, stream)
             for source_id, stream in self._stream_manager.get_all_streams().items()
         ]
+
+    def get_streams_yaml(self):
+        response = yaml.dump([x.dict() for x in self.get_streams_json()])
+
+        return Response(content=response, media_type='application/x-yaml')
 
     def enable_stream(self, source_id: str, stream: CreateStream) -> ResponseStream:
         self.validate_stream(stream)
