@@ -7,11 +7,31 @@ from threading import Lock, Thread
 from typing import Dict, Optional
 
 from adapters.ds.sinks.always_on_rtsp.app_config import Config
-from adapters.ds.sinks.always_on_rtsp.config import TransferMode
+from adapters.ds.sinks.always_on_rtsp.config import MetadataOutput, TransferMode
 from adapters.ds.sinks.always_on_rtsp.utils import process_is_alive
 from savant.utils.logging import get_logger
 
 logger = get_logger('adapters.ao_sink.stream_manager')
+
+
+class StreamManagerError(RuntimeError):
+    @property
+    def source_id(self) -> str:
+        return self.args[0]
+
+
+class StreamAlreadyExistsError(StreamManagerError):
+    pass
+
+
+class StreamNotFoundError(StreamManagerError):
+    pass
+
+
+class FailedToStartStreamError(StreamManagerError):
+    @property
+    def exit_code(self) -> int:
+        return self.args[1]
 
 
 @dataclass
@@ -23,7 +43,7 @@ class Stream:
     max_delay_ms: Optional[int] = None
     transfer_mode: Optional[TransferMode] = None
     rtsp_keep_alive: Optional[bool] = None
-    metadata_output: Optional[bool] = None
+    metadata_output: Optional[MetadataOutput] = None
     sync_output: Optional[bool] = None
     exit_code: Optional[int] = None
 
@@ -51,8 +71,7 @@ class StreamManager:
         logger.info('Adding stream %r', source_id)
         with self._lock:
             if source_id in self._streams:
-                raise ValueError(f'Stream with source_id {source_id!r} already exists.')
-            # TODO: validate stream
+                raise StreamAlreadyExistsError(source_id)
             self._processes[source_id] = self.start_stream_process(source_id, stream)
             self._streams[source_id] = stream
         logger.info('Stream %r added', source_id)
@@ -60,22 +79,19 @@ class StreamManager:
     def start_stream_process(self, source_id: str, stream: Stream):
         process = Popen(
             ['python', '-m', 'adapters.ds.sinks.always_on_rtsp.ao_sink'],
-            env={**os.environ, **self.build_envs(stream, source_id)},
+            env={**os.environ, **self.build_envs(source_id, stream)},
         )
         logger.info(
-            'Started Always-On-RTSP for source %r, PID: %s',
+            'Starting Always-On-RTSP for source %r, PID: %s',
             source_id,
             process.pid,
         )
         if process.returncode is not None:
-            raise RuntimeError(
-                f'Failed to start Always-On-RTSP for source {source_id!r}. '
-                f'Exit code: {process.returncode}.'
-            )
+            raise FailedToStartStreamError(source_id, process.returncode)
 
         return process
 
-    def build_envs(self, stream: Stream, source_id: str):
+    def build_envs(self, source_id: str, stream: Stream):
         rtsp_uri = f'{self._config.rtsp_uri.rstrip("/")}/{source_id}'
         envs = {
             'STUB_FILE_LOCATION': stream.stub_file,
@@ -87,7 +103,9 @@ class StreamManager:
                 stream.transfer_mode.value if stream.transfer_mode else None
             ),
             'RTSP_KEEP_ALIVE': stream.rtsp_keep_alive,
-            'METADATA_OUTPUT': stream.metadata_output,
+            'METADATA_OUTPUT': (
+                stream.metadata_output.value if stream.metadata_output else None
+            ),
             'SYNC_OUTPUT': stream.sync_output,
             'SOURCE_ID': source_id,
             'RTSP_URI': rtsp_uri,
@@ -131,7 +149,8 @@ class StreamManager:
         logger.info('Deleting stream %r', source_id)
         with self._lock:
             if source_id not in self._streams:
-                raise ValueError(f'Stream with source_id {source_id!r} does not exist.')
+                raise StreamNotFoundError(source_id)
+
             process = self._processes[source_id]
             if process.returncode is None:
                 logger.info('Terminating Always-On-RTSP for source %s', source_id)

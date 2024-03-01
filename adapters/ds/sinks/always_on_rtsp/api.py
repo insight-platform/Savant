@@ -1,15 +1,27 @@
 from enum import Enum
+from fractions import Fraction
+from http import HTTPStatus
 from pathlib import Path
 from threading import Thread
-from typing import Optional
+from typing import List, Optional
 
 import uvicorn
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from adapters.ds.sinks.always_on_rtsp.app_config import Config
-from adapters.ds.sinks.always_on_rtsp.config import TransferMode
-from adapters.ds.sinks.always_on_rtsp.stream_manager import Stream, StreamManager
+from adapters.ds.sinks.always_on_rtsp.config import (
+    ENCODER_PROFILES,
+    MetadataOutput,
+    TransferMode,
+)
+from adapters.ds.sinks.always_on_rtsp.stream_manager import (
+    FailedToStartStreamError,
+    Stream,
+    StreamAlreadyExistsError,
+    StreamManager,
+    StreamNotFoundError,
+)
 from savant.utils.logging import get_logger
 
 logger = get_logger('adapters.ao_sink.api')
@@ -22,13 +34,13 @@ class OutputFormat(str, Enum):
 
 class CreateStream(BaseModel):
     stub_file: Optional[Path] = None
-    framerate: Optional[str] = None
-    bitrate: Optional[int] = None
+    framerate: Optional[str] = Field(None, pattern=r'^\d+/\d+$', examples=['30/1'])
+    bitrate: Optional[int] = Field(None, gt=0, examples=[4000000])
     profile: Optional[str] = None
-    max_delay_ms: Optional[int] = None
+    max_delay_ms: Optional[int] = Field(None, gt=0, examples=[1000])
     transfer_mode: Optional[TransferMode] = None
     rtsp_keep_alive: Optional[bool] = None
-    metadata_output: Optional[bool] = None
+    metadata_output: Optional[MetadataOutput] = None
     sync_output: Optional[bool] = None
 
     def to_stream(self):
@@ -76,18 +88,27 @@ class Api:
         self._app.put('/streams/{source_id}')(self.enable_stream)
         self._app.delete('/streams/{source_id}')(self.delete_stream)
 
-    def get_streams(self, output_format: OutputFormat):
+    def get_streams(self, output_format: OutputFormat) -> List[ResponseStream]:
         # TODO: support YAML output format
         return [
             ResponseStream.from_stream(source_id, stream)
             for source_id, stream in self._stream_manager.get_all_streams().items()
         ]
 
-    def enable_stream(self, source_id: str, stream: CreateStream):
+    def enable_stream(self, source_id: str, stream: CreateStream) -> ResponseStream:
+        self.validate_stream(stream)
         try:
             self._stream_manager.add_stream(source_id, stream.to_stream())
-        except ValueError as e:
-            raise HTTPException(status_code=400, detail=str(e))
+        except StreamAlreadyExistsError:
+            raise HTTPException(
+                status_code=HTTPStatus.BAD_REQUEST,
+                detail=f'Stream {source_id} already exists.',
+            )
+        except FailedToStartStreamError as e:
+            raise HTTPException(
+                status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+                detail=f'Failed to start stream {source_id}. Exit code: {e.exit_code}.',
+            )
 
         created_stream = self._stream_manager.get_stream(source_id)
 
@@ -96,12 +117,16 @@ class Api:
     def delete_stream(self, source_id: str):
         try:
             self._stream_manager.delete_stream(source_id)
-        except ValueError as e:
-            raise HTTPException(status_code=400, detail=str(e))
+        except StreamNotFoundError as e:
+            raise HTTPException(
+                status_code=HTTPStatus.NOT_FOUND,
+                detail=f'Stream {e.source_id} not found.',
+            )
 
         return 'ok'
 
     def run_api(self):
+        # TODO: configura port
         uvicorn.run(self._app, host='0.0.0.0', port=5000)
 
     def start(self):
@@ -110,3 +135,31 @@ class Api:
 
     def is_alive(self):
         return self._thread.is_alive()
+
+    def validate_stream(self, stream: CreateStream):
+        if stream.stub_file:
+            if not stream.stub_file.exists():
+                raise HTTPException(
+                    status_code=HTTPStatus.BAD_REQUEST,
+                    detail=f'Stub file {stream.stub_file} does not exist.',
+                )
+            if not stream.stub_file.is_file():
+                raise HTTPException(
+                    status_code=HTTPStatus.BAD_REQUEST,
+                    detail=f'Stub file {stream.stub_file} is not a file.',
+                )
+        if stream.framerate is not None:
+            try:
+                Fraction(stream.framerate)
+            except Exception:
+                raise HTTPException(
+                    status_code=HTTPStatus.BAD_REQUEST,
+                    detail=f'Invalid framerate {stream.framerate}.',
+                )
+
+        if stream.profile is not None:
+            if stream.profile not in ENCODER_PROFILES[self._config.codec]:
+                raise HTTPException(
+                    status_code=HTTPStatus.BAD_REQUEST,
+                    detail=f'Invalid profile {stream.profile} for codec {self._config.codec.value.name}.',
+                )

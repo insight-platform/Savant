@@ -20,10 +20,20 @@ ENCODER_DEFAULT_PROFILES = {
     Codec.HEVC: 'Main',
 }
 
+ENCODER_PROFILES = {
+    Codec.H264: ['Baseline', 'Main', 'High'],
+    Codec.HEVC: ['Main', 'Main10', 'FREXT'],
+}
+
 
 class TransferMode(str, Enum):
     SCALE_TO_FIT = 'scale-to-fit'
     CROP_TO_FIT = 'crop-to-fit'
+
+
+class MetadataOutput(str, Enum):
+    LOGGER = 'logger'
+    STDOUT = 'stdout'
 
 
 class CommonStreamConfig:
@@ -53,6 +63,11 @@ class CommonStreamConfig:
         self.encoder_profile = opt_config(
             'ENCODER_PROFILE', ENCODER_DEFAULT_PROFILES[self.codec]
         )
+        assert self.encoder_profile in ENCODER_PROFILES[self.codec], (
+            f'Invalid value for environment variable ENCODER_PROFILE. '
+            f'Available profiles for {self.codec.value.name} are: '
+            f'{", ".join(ENCODER_PROFILES[self.codec])}'
+        )
         # default encoding bitrate
         self.encoder_bitrate = opt_config('ENCODER_BITRATE', 4000000, int)
 
@@ -60,7 +75,14 @@ class CommonStreamConfig:
         self.fps_period_seconds = opt_config('FPS_PERIOD_SECONDS', convert=float)
         self.fps_output = opt_config('FPS_OUTPUT', 'stdout')
 
-        self.metadata_output = opt_config('METADATA_OUTPUT')
+        try:
+            self.metadata_output: MetadataOutput = opt_config(
+                'METADATA_OUTPUT',
+                MetadataOutput.STDOUT,
+                MetadataOutput,
+            )
+        except ValueError:
+            raise ValueError('Invalid value for environment variable METADATA_OUTPUT')
 
         self.framerate = opt_config('FRAMERATE', '30/1')
         self.sync = opt_config('SYNC_OUTPUT', False, strtobool)
