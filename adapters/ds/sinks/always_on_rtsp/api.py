@@ -3,7 +3,7 @@ from fractions import Fraction
 from http import HTTPStatus
 from pathlib import Path
 from threading import Thread
-from typing import List, Optional
+from typing import Dict, Optional
 
 import uvicorn
 import yaml
@@ -14,8 +14,8 @@ from pydantic import BaseModel, Field
 from adapters.ds.sinks.always_on_rtsp.app_config import AppConfig
 from adapters.ds.sinks.always_on_rtsp.config import (
     ENCODER_PROFILES,
-    MetadataOutput,
     SUPPORTED_CODECS,
+    MetadataOutput,
     TransferMode,
 )
 from adapters.ds.sinks.always_on_rtsp.stream_manager import (
@@ -33,7 +33,12 @@ logger = get_logger('adapters.ao_sink.api')
 SupportedCodecs = Enum('SupportedCodecs', {x.upper(): x for x in SUPPORTED_CODECS})
 
 
-class CreateStream(BaseModel):
+class OutputFormat(str, Enum):
+    JSON = 'json'
+    YAML = 'yaml'
+
+
+class StreamModel(BaseModel):
     stub_file: Optional[Path] = None
     framerate: Optional[str] = Field(None, pattern=r'^\d+/\d+$', examples=['30/1'])
     bitrate: Optional[int] = Field(None, gt=0, examples=[4000000])
@@ -63,15 +68,9 @@ class CreateStream(BaseModel):
             sync_output=self.sync_output,
         )
 
-
-class ResponseStream(CreateStream):
-    source_id: str
-    exit_code: Optional[int] = None
-
     @staticmethod
-    def from_stream(source_id: str, stream: Stream):
-        return ResponseStream(
-            source_id=source_id,
+    def from_stream(stream: Stream):
+        return StreamModel(
             stub_file=stream.stub_file,
             framerate=stream.framerate,
             codec=stream.codec.value.name if stream.codec is not None else None,
@@ -82,6 +81,33 @@ class ResponseStream(CreateStream):
             rtsp_keep_alive=stream.rtsp_keep_alive,
             metadata_output=stream.metadata_output,
             sync_output=stream.sync_output,
+        )
+
+    def to_dict(self):
+        return {
+            'stub_file': str(self.stub_file) if self.stub_file else None,
+            'framerate': self.framerate,
+            'codec': self.codec.value if self.codec else None,
+            'bitrate': self.bitrate,
+            'profile': self.profile,
+            'max_delay_ms': self.max_delay_ms,
+            'transfer_mode': self.transfer_mode.value if self.transfer_mode else None,
+            'rtsp_keep_alive': self.rtsp_keep_alive,
+            'metadata_output': (
+                self.metadata_output.value if self.metadata_output else None
+            ),
+            'sync_output': self.sync_output,
+        }
+
+
+class StreamStatusModel(BaseModel):
+    is_alive: bool
+    exit_code: Optional[int]
+
+    @staticmethod
+    def from_stream(stream: Stream):
+        return StreamStatusModel(
+            is_alive=stream.exit_code is None,
             exit_code=stream.exit_code,
         )
 
@@ -92,26 +118,59 @@ class Api:
         self._stream_manager = stream_manager
         self._thread: Optional[Thread] = None
         self._app = FastAPI()
-        self._app.get('/streams/json')(self.get_streams_json)
         self._app.get(
-            '/streams/yaml',
+            '/streams',
             responses={200: {'content': {'application/x-yaml': {}}}},
-        )(self.get_streams_yaml)
+        )(self.get_all_streams)
+        self._app.get(
+            '/streams/{source_id}',
+            responses={200: {'content': {'application/x-yaml': {}}}},
+        )(self.get_stream)
         self._app.put('/streams/{source_id}')(self.enable_stream)
         self._app.delete('/streams/{source_id}')(self.delete_stream)
+        self._app.get('/status')(self.get_all_stream_statuses)
+        self._app.get('/status/{source_id}')(self.get_stream_status)
 
-    def get_streams_json(self) -> List[ResponseStream]:
-        return [
-            ResponseStream.from_stream(source_id, stream)
+    def get_all_streams(
+        self,
+        format: OutputFormat = OutputFormat.JSON,
+    ) -> Dict[str, StreamModel]:
+        response = {
+            source_id: StreamModel.from_stream(stream)
             for source_id, stream in self._stream_manager.get_all_streams().items()
-        ]
+        }
+        if format == OutputFormat.YAML:
+            response_content = yaml.dump({k: v.to_dict() for k, v in response.items()})
+            response = Response(
+                content=response_content,
+                media_type='application/x-yaml',
+            )
 
-    def get_streams_yaml(self):
-        response = yaml.dump([x.dict() for x in self.get_streams_json()])
+        return response
 
-        return Response(content=response, media_type='application/x-yaml')
+    def get_stream(
+        self,
+        source_id: str,
+        format: OutputFormat = OutputFormat.JSON,
+    ) -> StreamModel:
+        stream = self._stream_manager.get_stream(source_id)
+        if stream is None:
+            raise HTTPException(
+                status_code=HTTPStatus.NOT_FOUND,
+                detail=f'Stream {source_id} not found.',
+            )
 
-    def enable_stream(self, source_id: str, stream: CreateStream) -> ResponseStream:
+        response = StreamModel.from_stream(stream)
+        if format == OutputFormat.YAML:
+            response_content = yaml.dump(response.to_dict())
+            response = Response(
+                content=response_content,
+                media_type='application/x-yaml',
+            )
+
+        return response
+
+    def enable_stream(self, source_id: str, stream: StreamModel) -> StreamModel:
         self.validate_stream(stream)
         try:
             self._stream_manager.add_stream(source_id, stream.to_stream())
@@ -128,7 +187,23 @@ class Api:
 
         created_stream = self._stream_manager.get_stream(source_id)
 
-        return ResponseStream.from_stream(source_id, created_stream)
+        return StreamModel.from_stream(created_stream)
+
+    def get_all_stream_statuses(self) -> Dict[str, StreamStatusModel]:
+        return {
+            source_id: StreamStatusModel.from_stream(stream)
+            for source_id, stream in self._stream_manager.get_all_streams().items()
+        }
+
+    def get_stream_status(self, source_id: str) -> StreamStatusModel:
+        stream = self._stream_manager.get_stream(source_id)
+        if stream is None:
+            raise HTTPException(
+                status_code=HTTPStatus.NOT_FOUND,
+                detail=f'Stream {source_id} not found.',
+            )
+
+        return StreamStatusModel.from_stream(stream)
 
     def delete_stream(self, source_id: str):
         try:
@@ -152,7 +227,7 @@ class Api:
     def is_alive(self):
         return self._thread.is_alive()
 
-    def validate_stream(self, stream: CreateStream):
+    def validate_stream(self, stream: StreamModel):
         if stream.stub_file:
             if not stream.stub_file.exists():
                 raise HTTPException(
