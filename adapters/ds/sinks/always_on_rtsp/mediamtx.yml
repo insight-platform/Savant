@@ -17,6 +17,10 @@ hlsSegmentDuration: 1s
 hlsPartDuration: 500ms
 hlsSegmentMaxSize: 50M
 
+#hlsEncryption: yes
+#hlsServerKey: /etc/server.key
+#hlsServerCert: /etc/server.crt
+
 webrtcDisable: no
 webrtcAddress: :8889
 

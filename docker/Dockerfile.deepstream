@@ -102,6 +102,7 @@ RUN apt-get update && \
       python3-dev \
       python-gi-dev \
       python3-gst-1.0 \
+      openssl \
       gstreamer1.0-python3-plugin-loader && \
     apt-get autoremove -y && \
     apt-get clean && \
@@ -200,6 +201,9 @@ RUN mkdir mediamtx && \
     elif [ "$TARGETARCH" = "arm64" ]; then \
       wget -qO- "https://github.com/bluenviron/mediamtx/releases/download/${MEDIAMTX_VERSION}/mediamtx_${MEDIAMTX_VERSION}_linux_armv7.tar.gz" | tar xz -C mediamtx; \
     fi
+
+RUN openssl genrsa -out /etc/server.key 2048
+RUN openssl req -new -x509 -sha256 -key /etc/server.key -out /etc/server.crt -days 3650 -subj "/C=US/ST=New York/L=New York/O=InSight/OU=Builder/CN=savant-ai.io"
 
 HEALTHCHECK NONE
 
