@@ -13,7 +13,7 @@ hlsAddress: :888
 hlsVariant: lowLatency
 hlsSegmentCount: 7
 hlsSegmentDuration: 1s
-hlsPartDuration: 200ms
+hlsPartDuration: 500ms
 hlsSegmentMaxSize: 50M
 
 webrtcDisable: no

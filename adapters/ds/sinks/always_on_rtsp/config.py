@@ -70,6 +70,9 @@ class Config:
         )
 
         self.framerate = opt_config('FRAMERATE', '30/1')
+        int_fps = int(self.framerate.split('/')[0])
+        frame_duration = 1000 / int_fps
+        self.idr_periodicity = int(500 / frame_duration) - 1
         self.sync = opt_config('SYNC_OUTPUT', False, strtobool)
         self.max_allowed_resolution = opt_config(
             'MAX_RESOLUTION',
