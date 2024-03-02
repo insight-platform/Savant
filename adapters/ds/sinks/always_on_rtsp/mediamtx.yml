@@ -9,6 +9,7 @@ rtmpDisable: no
 rtmpAddress: :1935
 
 hlsDisable: no
+hlsAlwaysRemux: yes
 hlsAddress: :888
 hlsVariant: lowLatency
 hlsSegmentCount: 7
