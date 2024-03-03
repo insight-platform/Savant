@@ -3,21 +3,27 @@ import os
 from pathlib import Path
 from typing import Optional
 
+from adapters.ds.sinks.always_on_rtsp.utils import nvidia_runtime_is_available
+from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
+from savant.utils.config import opt_config, strtobool
+from savant.utils.logging import get_logger
+from savant.utils.zeromq import ReceiverSocketTypes
 from savant_rs.pipeline2 import (
     VideoPipeline,
     VideoPipelineConfiguration,
     VideoPipelineStagePayloadType,
 )
 
-from adapters.ds.sinks.always_on_rtsp.utils import nvidia_runtime_is_available
-from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
-from savant.utils.config import opt_config, strtobool
-from savant.utils.zeromq import ReceiverSocketTypes
-
 ENCODER_DEFAULT_PROFILES = {
     Codec.H264: 'High',
     Codec.HEVC: 'Main',
 }
+
+MEDIAMTX_DEV_MODE_HLS_PART_DURATION = 1000
+MAX_ALLOWED_RESOLUTION = (3840, 2152)
+ENCODER_BITRATE = 4000000
+
+logger = get_logger(__name__)
 
 
 class Config:
@@ -51,7 +57,7 @@ class Config:
             'ENCODER_PROFILE', ENCODER_DEFAULT_PROFILES[self.codec]
         )
         # default encoding bitrate
-        self.encoder_bitrate = opt_config('ENCODER_BITRATE', 4000000, int)
+        self.encoder_bitrate = opt_config('ENCODER_BITRATE', ENCODER_BITRATE, int)
 
         self.fps_period_frames = opt_config('FPS_PERIOD_FRAMES', 1000, int)
         self.fps_period_seconds = opt_config('FPS_PERIOD_SECONDS', convert=float)
@@ -70,13 +76,27 @@ class Config:
         )
 
         self.framerate = opt_config('FRAMERATE', '30/1')
-        int_fps = int(self.framerate.split('/')[0])
-        frame_duration = 1000 / int_fps
-        self.idr_periodicity = int(500 / frame_duration) - 1
+
+        self.idr_period = None
+        if 'DEV_MODE' in os.environ:
+            self.idr_period = opt_config('IDR_PERIOD_FRAMES', None)
+            if self.idr_period is not None:
+                logger.error(
+                    'The IDR_PERIOD_FRAMES parameter should not be set in `DEV_MODE`, as it '
+                    'is calculated from the framerate and MEDIAMTX_DEV_MODE_HLS_PART_DURATION=%s.',
+                    MEDIAMTX_DEV_MODE_HLS_PART_DURATION,
+                )
+                exit(1)
+            int_fps = int(self.framerate.split('/')[0])
+            frame_duration = 1_000 / int_fps
+            self.idr_period = int(MEDIAMTX_DEV_MODE_HLS_PART_DURATION / frame_duration) - 1
+        else:
+            self.idr_period = opt_config('IDR_PERIOD_FRAMES', 30)
+
         self.sync = opt_config('SYNC_OUTPUT', False, strtobool)
         self.max_allowed_resolution = opt_config(
             'MAX_RESOLUTION',
-            (3840, 2152),
+            MAX_ALLOWED_RESOLUTION,
             lambda x: tuple(map(int, x.split('x'))),
         )
 

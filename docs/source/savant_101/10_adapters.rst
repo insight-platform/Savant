@@ -814,26 +814,99 @@ The simplified design of the adapter is depicted in the following diagram:
 
     We use Always-On RTSP Adapter in our demos. Take a look at one of `them <https://github.com/insight-platform/Savant/tree/develop/samples/opencv_cuda_bg_remover_mog2>`__ to get acquainted with its use.
 
-**Parameters**:
+.. list-table:: Parameters
+    :header-rows: 1
 
-- ``RTSP_URI``: an URI of the RTSP server where to cast the stream, this parameter is required only when ``DEV_MODE=False``. The sink sends video stream to ``RTSP_URI``
-    in single-stream mode and to ``RTSP_URI/{source-id}`` in multi-stream mode;
-- ``DEV_MODE``: enables the use of embedded MediaMTX to serve a stream; default value is ``False``;
-- ``STUB_FILE_LOCATION``: the location of a stub image file; the image file must be in ``JPEG`` format, this parameter is required; the stub image file is shown when there is no input data; the stub file dimensions define the resolution of the output stream;
-- ``MAX_DELAY_MS``: a maximum delay in milliseconds to wait after the last frame received before the stub image is displayed; default is ``1000``;
-- ``TRANSFER_MODE``: a transfer mode specification; one of: ``scale-to-fit``, ``crop-to-fit``; the default value is ``scale-to-fit``; the parameter defines how the incoming video stream is mapped to the resulting stream;
-- ``PROTOCOLS``: enabled transport protocols, e.g. ``tcp+udp-mcast+udp``; the default value is ``tcp``;
-- ``LATENCY_MS``: resulting RTSP stream buffer size in ms, default value is ``100``;
-- ``KEEP_ALIVE``: whether to send RTSP keep alive packets; set it to ``False`` for old incompatible server, default value is ``True``;
-- ``CODEC``: an encoding codec; one of: ``h264``, ``hevc``; the default value is ``h264``;
-- ``ENCODER_PROFILE``: an encoding profile. For ``h264`` one of: ``Baseline``, ``Main``, ``High``; the default value is ``High``. For ``hevc`` one of: ``Main``, ``Main10``, ``FREXT``; the default value is ``Main``;
-- ``ENCODER_BITRATE``: an encoding bitrate; the default value is ``4000000``;
-- ``FRAMERATE``: a frame rate for the output stream; the default value is ``30/1``;
-- ``METADATA_OUTPUT``: where to dump metadata (``stdout`` or ``logger``);
-- ``SYNC_OUTPUT``: a flag indicates whether to show frames on sink synchronously (i.e. at the source rate); the streaming may be not stable with this flag, try to avoid it; the default value is ``False``;
-- ``SOURCE_ID``: a filter to receive frames with a specific ``source_id`` only. The sink works in single-stream mode when this option is specified;
-- ``SOURCE_IDS``: a filter to receive frames with specific ``source_id``-s only. The sink works in multi-stream mode when this option is specified.
-- ``MAX_RESOLUTION``: Maximum resolution of the incoming stream. If the resolution is greater than the allowed resolution, the video stream will terminate. You can override the max allowed resolution be setting width and height of frames. The default value is ``3840x2152``.
+    * - Parameter
+      - Description
+      - Default
+      - Example
+    * - ``RTSP_URI``
+      - A URI of the RTSP server where to cast the stream, this parameter is required only when ``DEV_MODE=False``.
+        The sink sends video stream to ``RTSP_URI/{source-id}``
+      - Unset
+      - ``rtsp://1.1.1.1:554``
+    * - ``DEV_MODE``
+      - Enables the use of embedded MediaMTX to serve a stream
+      - ``True``
+      - ``False``
+    * - ``STUB_FILE_LOCATION``
+      - The location of a stub image file; the image file must be in ``JPEG`` format, this parameter is required; the stub image file is shown when there is no input data; its dimensions define the resolution of the output stream
+      - Unset
+      - ``/path/to/stub_file/test.jpg``
+    * - ``MAX_DELAY_MS``
+      - A maximum delay in milliseconds to wait after the last frame received before the stub image is displayed
+      - ``1000``
+      - ``5000``
+    * - ``TRANSFER_MODE``
+      - A transfer mode specification; one of: ``scale-to-fit``, ``crop-to-fit``; the parameter defines how the incoming video stream is mapped to the resulting stream
+      - ``scale-to-fit``
+      - ``crop-to-fit``
+    * - ``PROTOCOLS``
+      - Enabled transport protocols; the parameter is required only when ``DEV_MODE=False``
+      - ``tcp``
+      - ``tcp+udp``
+    * - ``LATENCY_MS``
+      - The resulting RTSP stream buffer size in ms
+      - ``100``
+      - ``1000``
+    * - ``KEEP_ALIVE``
+      - Whether to send RTSP keep alive packets; set it to ``False`` for old incompatible server
+      - ``True``
+      - ``False``
+    * - ``CODEC``
+      - An encoding codec; one of: ``h264``, ``hevc``
+      - ``h264`` (browser-compatible)
+      - ``hevc``
+    * - ``ENCODER_PROFILE``
+      - An encoding profile:
+          - For ``h264``, is one of:
+              - ``Baseline``
+              - ``Main``
+              - ``High``
+          - For ``hevc``, is one of:
+              - ``Main``
+              - ``Main10``
+              - ``FREXT``
+      - Depending on the selected codec:
+          - ``h264```: ``High``
+          - ``hevc``: ``Main``
+      - ``Main10``
+    * - ``ENCODER_BITRATE``
+      - An encoding bitrate
+      - ``4000000``
+      - ``8000000``
+    * - ``FRAMERATE``
+      - A frame rate for the output stream
+      - ``30/1``
+      - ``60/1``
+    * - ``IDR_PERIOD_FRAMES``
+      - A period of I-frame insertion; the parameter is incompatible with ``DEV_MODE=True`` (calculated automatically)
+      - ``30``
+      - ``60``
+    * - ``METADATA_OUTPUT``
+      - Where to dump metadata; one of: ``stdout``, ``logger``
+      - ``stdout``
+      - ``logger``
+    * - ``SYNC_OUTPUT``
+      - A flag indicating whether to show frames on sink synchronously (i.e. at the source rate); the streaming may be not stable with this flag, try to avoid it
+      - ``False``
+      - ``True``
+    * - ``SOURCE_ID``
+      - A filter to receive frames with a specific ``source_id`` only (when no other streams are configured with the REST API)
+      - Unset
+      - ``test``
+    * - ``SOURCE_IDS``
+      - A filter to receive frames with specific ``source_id``-s only (when no other streams are configured with the REST API)
+      - Unset
+      - ``test1,test2``
+    * - ``MAX_RESOLUTION``
+      - Maximum resolution of the incoming stream; if the resolution is greater than the allowed resolution, the video stream will terminate; you can override the max allowed resolution be setting width and height of frames.
+      - ``3840x2152``
+      - ``1920x1080``
+
+
+TODO! FIX IT
 
 When ``DEV_MODE=True`` the stream is available at:
 
