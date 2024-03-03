@@ -91,7 +91,7 @@ class Config:
             frame_duration = 1_000 / int_fps
             self.idr_period = int(MEDIAMTX_DEV_MODE_HLS_PART_DURATION / frame_duration) - 1
         else:
-            self.idr_period = opt_config('IDR_PERIOD_FRAMES', 30)
+            self.idr_period = opt_config('IDR_PERIOD_FRAMES', 30, int)
 
         self.sync = opt_config('SYNC_OUTPUT', False, strtobool)
         self.max_allowed_resolution = opt_config(
