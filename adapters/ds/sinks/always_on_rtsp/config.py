@@ -113,9 +113,6 @@ class Config(CommonStreamConfig):
         self.zmq_socket_bind = opt_config('ZMQ_BIND', False, strtobool)
 
         self.rtsp_uri = os.environ['RTSP_URI']
-        self.rtsp_protocols = opt_config('RTSP_PROTOCOLS', 'tcp')
-        self.rtsp_latency_ms = opt_config('RTSP_LATENCY_MS', 100, int)
-        self.rtsp_keep_alive = opt_config('RTSP_KEEP_ALIVE', True, strtobool)
 
         self.pipeline_source_stage_name = 'source'
         self.pipeline_demux_stage_name = 'source-demux'

@@ -213,7 +213,7 @@ class Api:
             '/streams/{source_id}',
             responses={200: {'content': {'application/x-yaml': {}}}},
         )(self.get_stream)
-        self._app.put('/streams/{source_id}')(self.enable_stream)
+        self._app.put('/streams/{source_id}')(self.create_stream)
         self._app.delete('/streams/{source_id}')(self.delete_stream)
 
     def get_all_streams(
@@ -262,7 +262,7 @@ class Api:
 
         return response
 
-    def enable_stream(self, source_id: str, stream: StreamModel) -> StreamModel:
+    def create_stream(self, source_id: str, stream: StreamModel) -> StreamModel:
         """Create a new stream and start it."""
 
         self.validate_stream(stream)

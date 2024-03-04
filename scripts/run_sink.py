@@ -504,8 +504,8 @@ def always_on_rtsp_sink(
     source adapter (e.g. rtsp or usb-cam).
     """
 
-    assert (source_id is not None) and (
-        source_ids is not None
+    assert (
+        source_id is None or source_ids is None
     ), '"--source-id" and "--source-ids" arguments are mutually exclusive.'
     assert os.path.exists(stub_file_location)
     assert dev_mode == (
