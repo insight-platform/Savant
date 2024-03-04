@@ -47,6 +47,7 @@ services:
       - "1935:1935"  # RTMP
       - "888:888"    # HLS
       - "8889:8889"  # WebRTC
+      - "13000:13000"  # Stream control API
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../assets/stub_imgs:/stub_imgs
