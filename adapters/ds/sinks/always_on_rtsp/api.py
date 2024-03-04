@@ -106,7 +106,6 @@ class StreamModel(BaseModel):
         gt=0,
         examples=[1000],
     )
-    # TODO
     latency_ms: Optional[int] = Field(
         None,
         description='Amount of ms to buffer RTSP stream.',
