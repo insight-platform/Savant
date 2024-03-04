@@ -879,6 +879,201 @@ Running the adapter with the helper script:
 
     ./scripts/run_sink.py always-on-rtsp --source-id=test --stub-file-location=/path/to/stub_file/test.jpg rtsp://192.168.1.1
 
+Stream control API
+""""""""""""""""""
+
+The Always-On RTSP Sink Adapter provides an API to control video streams. The API is available at ``http://<container-host>:<API_PORT>``. The OpenAPI documentation is available at ``http://<container-host>:<API_PORT>/docs``.
+
+The API provides the following endpoints:
+
+``PUT /streams/{source_id}``: Create a new stream and start it.
+
+**Path parameters:**
+
+- ``source_id`` (**required**): a source ID.
+
+**Request body:**
+
+- ``stub_file (string)``: a location of a stub image file; the image file must be in ``JPEG`` format;
+- ``framerate (string)``: a frame rate for the output stream;
+- ``codec (string)``: an encoding codec; one of: ``h264``, ``hevc``;
+- ``bitrate (integer)``: an encoding bitrate in bit/s;
+- ``profile (string)``: an encoding profile. For ``h264`` one of: ``Baseline``, ``Main``, ``High``; for ``hevc`` one of: ``Main``, ``Main10``, ``FREXT``;
+- ``max_delay_ms (integer)``: a maximum delay in milliseconds to wait after the last frame received before the stub image is displayed;
+- ``latency_ms (integer)``: resulting RTSP stream buffer size in ms;
+- ``transfer_mode (string)``: a transfer mode specification; one of: ``scale-to-fit``, ``crop-to-fit``; the parameter defines how the incoming video stream is mapped to the resulting stream;
+- ``rtsp_keep_alive (boolean)``: whether to send RTSP keep alive packets;
+- ``metadata_output (string)``: where to dump metadata; one of: ``stdout``, ``logger``;
+- ``sync_output (boolean)``: a flag indicates whether to show frames on sink synchronously (i.e. at the source rate); the streaming may be not stable with this flag, try to avoid it.
+
+.. note::
+
+    If any of the parameters is not specified, the value from the adapter parameters will be used.
+
+**Response body:**
+
+- all the fields from the request body;
+- ``status (object)``: a status of the stream:
+
+  - ``is_alive (boolean)``: a flag indicating whether the stream is alive;
+  - ``exit_code (integer)``: an exit code of the stream in case of failure.
+
+Examples:
+
+.. code-block:: bash
+
+    curl -X PUT 'http://localhost:13000/streams/test' \
+        -H 'Content-Type: application/json' \
+        -d '{
+        "stub_file": "/stub_imgs/smpte100_640x360.jpeg",
+        "framerate": "30/1",
+        "codec": "hevc",
+        "bitrate": 4000000,
+        "profile": "Main",
+        "max_delay_ms": 1000,
+        "latency_ms": 100,
+        "transfer_mode": "scale-to-fit",
+        "rtsp_keep_alive": true,
+        "metadata_output": "stdout",
+        "sync_output": false
+    }'
+
+.. code-block:: json
+
+    {
+      "stub_file": "/stub_imgs/smpte100_640x360.jpeg",
+      "framerate": "30/1",
+      "bitrate": 4000000,
+      "profile": "Main",
+      "codec": "hevc",
+      "max_delay_ms": 1000,
+      "latency_ms": 100,
+      "transfer_mode": "scale-to-fit",
+      "rtsp_keep_alive": true,
+      "metadata_output": "stdout",
+      "sync_output": false,
+      "status": {
+        "is_alive": true,
+        "exit_code": null
+      }
+    }
+
+.. code-block:: bash
+
+    curl -X PUT 'http://localhost:13000/streams/test2' \
+        -H 'Content-Type: application/json' \
+        -d '{}'
+
+.. code-block:: json
+
+    {
+      "stub_file": "/stub_imgs/smpte100_1280x720.jpeg",
+      "framerate": "20/1",
+      "bitrate": 4000000,
+      "profile": "High",
+      "codec": "h264",
+      "max_delay_ms": 1000,
+      "latency_ms": 100,
+      "transfer_mode": "scale-to-fit",
+      "rtsp_keep_alive": true,
+      "metadata_output": null,
+      "sync_output": false,
+      "status": {
+        "is_alive": true,
+        "exit_code": null
+      }
+    }
+
+``GET /streams/{source_id}``: get configuration of a stream.
+
+**Path parameters:**
+
+- ``source_id`` (**required**): a source ID.
+
+**Query parameters:**
+
+- ``format``: a response format; one of: ``json``, ``yaml``; the default value is ``json``.
+
+Response body the same as for the ``PUT /streams/{source_id}`` request.
+
+Example:
+
+.. code-block:: bash
+
+    curl 'http://localhost:13000/streams/test?format=json'
+
+Response:
+
+.. code-block:: json
+
+    {
+      "stub_file": "/stub_imgs/smpte100_640x360.jpeg",
+      "framerate": "30/1",
+      "bitrate": 4000000,
+      "profile": "Main",
+      "codec": "hevc",
+      "max_delay_ms": 1000,
+      "latency_ms": 100,
+      "transfer_mode": "scale-to-fit",
+      "rtsp_keep_alive": true,
+      "metadata_output": "stdout",
+      "sync_output": false,
+      "status": {
+        "is_alive": true,
+        "exit_code": null
+      }
+    }
+
+``GET /streams``: list configurations of all streams.
+
+**Query parameters:**
+
+- ``format``: a response format; one of: ``json``, ``yaml``; the default value is ``json``.
+
+Example:
+
+.. code-block:: bash
+
+    curl 'http://localhost:13000/streams?format=yaml'
+
+Response:
+
+.. code-block:: yaml
+
+    test:
+      stub_file: /stub_imgs/smpte100_640x360.jpeg
+      framerate: 30/1
+      codec: hevc
+      bitrate: 4000000
+      profile: Main
+      max_delay_ms: 1000
+      latency_ms: 100
+      transfer_mode: scale-to-fit
+      rtsp_keep_alive: true
+      metadata_output: stdout
+      sync_output: false
+      status:
+        is_alive: true
+        exit_code: null
+
+``DELETE /streams/{source_id}``: stop and delete a stream.
+
+**Path parameters:**
+
+- ``source_id`` (**required**): a source ID.
+
+Example:
+
+.. code-block:: bash
+
+    curl -X DELETE 'http://localhost:13000/streams/test'
+
+Response:
+
+.. code-block:: json
+
+    "ok"
+
 Kafka-Redis Sink Adapter
 ^^^^^^^^^^^^^^^^^^^^^^^^
 

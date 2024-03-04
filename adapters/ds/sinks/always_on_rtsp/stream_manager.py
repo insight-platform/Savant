@@ -86,6 +86,8 @@ class StreamManager:
             stream.profile = self._config.encoder_profile
         if stream.max_delay_ms is None:
             stream.max_delay_ms = self._config.max_delay_ms
+        if stream.latency_ms is None:
+            stream.latency_ms = self._config.rtsp_latency_ms
         if stream.transfer_mode is None:
             stream.transfer_mode = self._config.transfer_mode
         if stream.rtsp_keep_alive is None:
