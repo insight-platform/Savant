@@ -72,7 +72,7 @@ def main():
     api.start()
 
     try:
-        main_loop(stream_manager, api, mediamtx_process)
+        main_loop(config, stream_manager, api, mediamtx_process)
     except KeyboardInterrupt:
         pass
 

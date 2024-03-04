@@ -43,6 +43,7 @@ class Stream:
     bitrate: Optional[int] = None
     profile: Optional[str] = None
     max_delay_ms: Optional[int] = None
+    latency_ms: Optional[int] = None
     transfer_mode: Optional[TransferMode] = None
     rtsp_keep_alive: Optional[bool] = None
     metadata_output: Optional[MetadataOutput] = None
@@ -123,6 +124,7 @@ class StreamManager:
             'ENCODER_BITRATE': stream.bitrate,
             'ENCODER_PROFILE': stream.profile,
             'MAX_DELAY_MS': stream.max_delay_ms,
+            'RTSP_LATENCY_MS': stream.latency_ms,
             'TRANSFER_MODE': (
                 stream.transfer_mode.value if stream.transfer_mode else None
             ),

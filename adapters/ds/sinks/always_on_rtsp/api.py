@@ -40,17 +40,28 @@ class OutputFormat(str, Enum):
 
 
 class StreamStatusModel(BaseModel):
-    is_alive: bool
-    exit_code: Optional[int]
+    """Status of a stream."""
+
+    is_alive: bool = Field(
+        description='Whether the stream is alive.',
+    )
+    exit_code: Optional[int] = Field(
+        None,
+        description='Exit code of the stream process.',
+    )
 
     @staticmethod
     def from_stream(stream: Stream):
+        """Build a StreamStatusModel from a Stream object."""
+
         return StreamStatusModel(
             is_alive=stream.exit_code is None,
             exit_code=stream.exit_code,
         )
 
     def to_dict(self):
+        """Convert the model to a dictionary."""
+
         return {
             'is_alive': self.is_alive,
             'exit_code': self.exit_code,
@@ -58,19 +69,77 @@ class StreamStatusModel(BaseModel):
 
 
 class StreamModel(BaseModel):
-    stub_file: Optional[Path] = None
-    framerate: Optional[str] = Field(None, pattern=r'^\d+/\d+$', examples=['30/1'])
-    bitrate: Optional[int] = Field(None, gt=0, examples=[4000000])
-    profile: Optional[str] = None
-    codec: Optional[SupportedCodecs] = None
-    max_delay_ms: Optional[int] = Field(None, gt=0, examples=[1000])
-    transfer_mode: Optional[TransferMode] = None
-    rtsp_keep_alive: Optional[bool] = None
-    metadata_output: Optional[MetadataOutput] = None
-    sync_output: Optional[bool] = None
-    status: Optional[StreamStatusModel] = None
+    """Stream configuration."""
+
+    stub_file: Optional[Path] = Field(
+        None,
+        description='Location of the stub image file. Image file must be in JPEG format.',
+        examples=['/stub_imgs/smpte100_1280x720.jpeg'],
+    )
+    framerate: Optional[str] = Field(
+        None,
+        description='Frame rate of the output stream.',
+        pattern=r'^\d+/\d+$',
+        examples=['30/1'],
+    )
+    bitrate: Optional[int] = Field(
+        None,
+        description='Encoding bitrate in bit/s.',
+        gt=0,
+        examples=[4000000],
+    )
+    profile: Optional[str] = Field(
+        None,
+        description=(
+            'Encoding profile. '
+            'For "h264" one of: "Baseline", "Main", "High". '
+            'For "hevc" one of: "Main", "Main10", "FREXT".'
+        ),
+    )
+    codec: Optional[SupportedCodecs] = Field(
+        None,
+        description='Encoding codec.',
+    )
+    max_delay_ms: Optional[int] = Field(
+        None,
+        description='Maximum delay for the last frame in milliseconds.',
+        gt=0,
+        examples=[1000],
+    )
+    # TODO
+    latency_ms: Optional[int] = Field(
+        None,
+        description='Amount of ms to buffer RTSP stream.',
+        gt=0,
+        examples=[100],
+    )
+    transfer_mode: Optional[TransferMode] = Field(
+        None,
+        description='Transfer mode.',
+    )
+    rtsp_keep_alive: Optional[bool] = Field(
+        None,
+        description='Send RTSP keep alive packets, disable for old incompatible server.',
+    )
+    metadata_output: Optional[MetadataOutput] = Field(
+        None,
+        description='Where to dump metadata.',
+    )
+    sync_output: Optional[bool] = Field(
+        None,
+        description=(
+            'Show frames on sink synchronously (i.e. at the source file rate). '
+            'Note: inbound stream is not stable with this flag, try to avoid it.'
+        ),
+    )
+    status: Optional[StreamStatusModel] = Field(
+        None,
+        description='Status of the stream.',
+    )
 
     def to_stream(self):
+        """Convert the model to a Stream object."""
+
         codec = None
         if self.codec is not None:
             codec = CODEC_BY_NAME[self.codec.value]
@@ -82,6 +151,7 @@ class StreamModel(BaseModel):
             bitrate=self.bitrate,
             profile=self.profile,
             max_delay_ms=self.max_delay_ms,
+            latency_ms=self.latency_ms,
             transfer_mode=self.transfer_mode,
             rtsp_keep_alive=self.rtsp_keep_alive,
             metadata_output=self.metadata_output,
@@ -90,6 +160,8 @@ class StreamModel(BaseModel):
 
     @staticmethod
     def from_stream(stream: Stream):
+        """Build a StreamModel from a Stream object."""
+
         return StreamModel(
             stub_file=stream.stub_file,
             framerate=stream.framerate,
@@ -97,6 +169,7 @@ class StreamModel(BaseModel):
             bitrate=stream.bitrate,
             profile=stream.profile,
             max_delay_ms=stream.max_delay_ms,
+            latency_ms=stream.latency_ms,
             transfer_mode=stream.transfer_mode,
             rtsp_keep_alive=stream.rtsp_keep_alive,
             metadata_output=stream.metadata_output,
@@ -105,6 +178,8 @@ class StreamModel(BaseModel):
         )
 
     def to_dict(self):
+        """Convert the model to a dictionary."""
+
         return {
             'stub_file': str(self.stub_file) if self.stub_file else None,
             'framerate': self.framerate,
@@ -112,6 +187,7 @@ class StreamModel(BaseModel):
             'bitrate': self.bitrate,
             'profile': self.profile,
             'max_delay_ms': self.max_delay_ms,
+            'latency_ms': self.latency_ms,
             'transfer_mode': self.transfer_mode.value if self.transfer_mode else None,
             'rtsp_keep_alive': self.rtsp_keep_alive,
             'metadata_output': (
@@ -123,6 +199,8 @@ class StreamModel(BaseModel):
 
 
 class Api:
+    """API server for the stream control API."""
+
     def __init__(self, config: AppConfig, stream_manager: StreamManager):
         self._config = config
         self._stream_manager = stream_manager
@@ -143,6 +221,8 @@ class Api:
         self,
         format: OutputFormat = OutputFormat.JSON,
     ) -> Dict[str, StreamModel]:
+        """List all configured streams."""
+
         response = {
             source_id: StreamModel.from_stream(stream)
             for source_id, stream in self._stream_manager.get_all_streams().items()
@@ -164,6 +244,8 @@ class Api:
         source_id: str,
         format: OutputFormat = OutputFormat.JSON,
     ) -> StreamModel:
+        """Get a stream by source ID."""
+
         stream = self._stream_manager.get_stream(source_id)
         if stream is None:
             raise HTTPException(
@@ -182,6 +264,8 @@ class Api:
         return response
 
     def enable_stream(self, source_id: str, stream: StreamModel) -> StreamModel:
+        """Create a new stream and start it."""
+
         self.validate_stream(stream)
         try:
             self._stream_manager.add_stream(source_id, stream.to_stream())
@@ -201,6 +285,8 @@ class Api:
         return StreamModel.from_stream(created_stream)
 
     def delete_stream(self, source_id: str):
+        """Stop and delete a stream."""
+
         try:
             self._stream_manager.delete_stream(source_id)
         except StreamNotFoundError as e:
@@ -212,17 +298,25 @@ class Api:
         return 'ok'
 
     def run_api(self):
+        """Run the API server."""
+
         logger.info('Starting API server on port %d', self._config.api_port)
         uvicorn.run(self._app, host='0.0.0.0', port=self._config.api_port)
 
     def start(self):
+        """Start the thread with the API server."""
+
         self._thread = Thread(target=self.run_api, daemon=True)
         self._thread.start()
 
     def is_alive(self):
+        """Check if the API server is running."""
+
         return self._thread.is_alive()
 
     def validate_stream(self, stream: StreamModel):
+        """Validate a stream configuration."""
+
         if stream.stub_file:
             if not stream.stub_file.exists():
                 raise HTTPException(
