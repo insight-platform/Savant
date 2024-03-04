@@ -2,7 +2,7 @@ from typing import Optional
 
 from savant_rs.zmq import BlockingWriter, WriterConfigBuilder
 
-from savant.utils.zeromq import ZeroMQSource
+from savant.utils.zeromq import ReceiverSocketTypes, ZeroMQSource
 
 
 class ZeroMqProxy:
@@ -13,13 +13,13 @@ class ZeroMqProxy:
     def __init__(
         self,
         input_socket: str,
-        input_socket_type: Optional[str],
+        input_socket_type: Optional[ReceiverSocketTypes],
         input_bind: Optional[bool],
         output_socket: str,
     ):
         self.source = ZeroMQSource(
             socket=input_socket,
-            socket_type=input_socket_type,
+            socket_type=input_socket_type.name,
             bind=input_bind,
         )
         writer_config_builder = WriterConfigBuilder(output_socket)

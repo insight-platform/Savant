@@ -44,8 +44,8 @@ docker compose -f samples/pass_through_processing/docker-compose.x86.yml up
 # if Jetson
 docker compose -f samples/pass_through_processing/docker-compose.l4t.yml up
 
-# open 'rtsp://127.0.0.1:554/stream' in your player
-# or visit 'http://127.0.0.1:888/stream/' (LL-HLS)
+# open 'rtsp://127.0.0.1:554/stream/city-traffic' in your player
+# or visit 'http://127.0.0.1:888/stream/city-traffic/' (LL-HLS)
 
 # for pre-configured Grafana dashboard visit
 # http://127.0.0.1:3000/d/a4c1f484-75c9-4375-a04d-ab5d50578239/module-performance-metrics?orgId=1&refresh=5s

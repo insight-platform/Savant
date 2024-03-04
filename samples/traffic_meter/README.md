@@ -60,8 +60,8 @@ docker compose -f samples/traffic_meter/docker-compose.x86.yml up
 # if Jetson
 docker compose -f samples/traffic_meter/docker-compose.l4t.yml up
 
-# open 'rtsp://127.0.0.1:554/stream' in your player
-# or visit 'http://127.0.0.1:888/stream/' (LL-HLS)
+# open 'rtsp://127.0.0.1:554/stream/town-centre-processed' in your player
+# or visit 'http://127.0.0.1:888/stream/town-centre-processed/' (LL-HLS)
 
 # for pre-configured Grafana dashboard visit
 # http://127.0.0.1:3000/d/WM6WimE4z/entries-exits?orgId=1&refresh=5s

@@ -796,11 +796,13 @@ Running with the helper script:
 Always-On RTSP Sink Adapter
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The Always-On RTSP Sink Adapter broadcasts the video stream as RTSP/LL-HLS/WebRTC. The adapter works in two modes: single-stream and multi-stream. In the single-stream mode, the adapter accepts only one input stream with source ID specified in ``SOURCE_ID``. In the multi-stream mode, the adapter accepts multiple input streams with source IDs specified in ``SOURCE_IDS``.
+The Always-On RTSP Sink Adapter broadcasts the video stream as RTSP/LL-HLS/WebRTC.
 
 This adapter **always** performs transcoding of the incoming stream to ensure continuous streaming even when its source stops operating. In this case, the adapter continues to stream a static image waiting for the source to resume sending data.
 
 When Nvidia Runtime is available this adapter uses DeepStream SDK and performs hardware transcoding and scaling of the incoming stream, otherwise it performs software transcoding and scaling. Software-based encoding/decoding must be used only when hardware-based encoding is not available (Jetson Orin Nano, A100, H100). If the hardware-based encoding is available, run the adapter with Nvidia runtime enabled to activate hardware-based decoding/encoding.
+
+The adapter provides API to control video streams. API is available at ``http://<container-host>:<API_PORT>``. API documentation is available at ``http://<container-host>:<API_PORT>``.
 
 .. note::
 
@@ -816,8 +818,7 @@ The simplified design of the adapter is depicted in the following diagram:
 
 **Parameters**:
 
-- ``RTSP_URI``: an URI of the RTSP server where to cast the stream, this parameter is required only when ``DEV_MODE=False``. The sink sends video stream to ``RTSP_URI``
-    in single-stream mode and to ``RTSP_URI/{source-id}`` in multi-stream mode;
+- ``RTSP_URI``: an URI of the RTSP server where to cast the stream, this parameter is required only when ``DEV_MODE=False``. The sink sends video stream to ``RTSP_URI/{source-id}``;
 - ``DEV_MODE``: enables the use of embedded MediaMTX to serve a stream; default value is ``False``;
 - ``STUB_FILE_LOCATION``: the location of a stub image file; the image file must be in ``JPEG`` format, this parameter is required; the stub image file is shown when there is no input data; the stub file dimensions define the resolution of the output stream;
 - ``MAX_DELAY_MS``: a maximum delay in milliseconds to wait after the last frame received before the stub image is displayed; default is ``1000``;
@@ -831,16 +832,19 @@ The simplified design of the adapter is depicted in the following diagram:
 - ``FRAMERATE``: a frame rate for the output stream; the default value is ``30/1``;
 - ``METADATA_OUTPUT``: where to dump metadata (``stdout`` or ``logger``);
 - ``SYNC_OUTPUT``: a flag indicates whether to show frames on sink synchronously (i.e. at the source rate); the streaming may be not stable with this flag, try to avoid it; the default value is ``False``;
-- ``SOURCE_ID``: a filter to receive frames with a specific ``source_id`` only. The sink works in single-stream mode when this option is specified;
-- ``SOURCE_IDS``: a filter to receive frames with specific ``source_id``-s only. The sink works in multi-stream mode when this option is specified.
-- ``MAX_RESOLUTION``: Maximum resolution of the incoming stream. If the resolution is greater than the allowed resolution, the video stream will terminate. You can override the max allowed resolution be setting width and height of frames. The default value is ``3840x2152``.
+- ``SOURCE_ID``: a filter to receive frames with a specific ``source_id`` at the start of the adapter; this parameter is ignored when ``SOURCE_IDS`` is specified;
+- ``SOURCE_IDS``: a filter to receive frames with specific ``source_id``-s at the start of the adapter;
+- ``MAX_RESOLUTION``: Maximum resolution of the incoming stream. If the resolution is greater than the allowed resolution, the video stream will terminate. You can override the max allowed resolution be setting width and height of frames. The default value is ``3840x2152``;
+- ``API_PORT``: a port for the stream control API; the default value is ``13000``;
+- ``FAIL_ON_STREAM_ERROR``: a flag indicating whether to stop the adapter when a stream is failed; the default value is ``True``;
+- ``STATUS_POLL_INTERVAL_MS``: an interval in milliseconds to poll statuses of the streams; the default value is ``1000``.
 
 When ``DEV_MODE=True`` the stream is available at:
 
-- RTSP: ``rtsp://<container-host>:554/stream`` (single-stream), ``rtsp://<container-host>:554/stream/{source-id}`` (multi-stream)
-- RTMP: ``rtmp://<container-host>:1935/stream`` (single-stream), ``rtmp://<container-host>:1935/stream/{source-id}`` (multi-stream)
-- LL-HLS: ``http://<container-host>:888/stream`` (single-stream), ``http://<container-host>:888/stream/{source-id}`` (multi-stream)
-- WebRTC: ``http://<container-host>:8889/stream`` (single-stream), ``http://<container-host>:8889/stream/{source-id}`` (multi-stream)
+- RTSP: ``rtsp://<container-host>:554/stream/{source-id}``
+- RTMP: ``rtmp://<container-host>:1935/stream/{source-id}``
+- LL-HLS: ``http://<container-host>:888/stream/{source-id}``
+- WebRTC: ``http://<container-host>:8889/stream/{source-id}``
 
 Running the adapter with Docker:
 
@@ -862,6 +866,8 @@ Running the adapter with Docker:
         -e ENCODER_PROFILE=High \
         -e ENCODER_BITRATE=4000000 \
         -e FRAMERATE=30/1 \
+        -e API_PORT=13000 \
+        -p 13000:13000 \
         -v /path/to/stub_file/test.jpg:/path/to/stub_file/test.jpg:ro \
         -v /tmp/zmq-sockets:/tmp/zmq-sockets \
         ghcr.io/insight-platform/savant-adapters-deepstream:latest \
@@ -872,6 +878,201 @@ Running the adapter with the helper script:
 .. code-block:: bash
 
     ./scripts/run_sink.py always-on-rtsp --source-id=test --stub-file-location=/path/to/stub_file/test.jpg rtsp://192.168.1.1
+
+Stream control API
+""""""""""""""""""
+
+The Always-On RTSP Sink Adapter provides an API to control video streams. The API is available at ``http://<container-host>:<API_PORT>``. The OpenAPI documentation is available at ``http://<container-host>:<API_PORT>/docs``.
+
+The API provides the following endpoints:
+
+``PUT /streams/{source_id}``: Create a new stream and start it.
+
+**Path parameters:**
+
+- ``source_id`` (**required**): a source ID.
+
+**Request body:**
+
+- ``stub_file (string)``: a location of a stub image file; the image file must be in ``JPEG`` format;
+- ``framerate (string)``: a frame rate for the output stream;
+- ``codec (string)``: an encoding codec; one of: ``h264``, ``hevc``;
+- ``bitrate (integer)``: an encoding bitrate in bit/s;
+- ``profile (string)``: an encoding profile. For ``h264`` one of: ``Baseline``, ``Main``, ``High``; for ``hevc`` one of: ``Main``, ``Main10``, ``FREXT``;
+- ``max_delay_ms (integer)``: a maximum delay in milliseconds to wait after the last frame received before the stub image is displayed;
+- ``latency_ms (integer)``: resulting RTSP stream buffer size in ms;
+- ``transfer_mode (string)``: a transfer mode specification; one of: ``scale-to-fit``, ``crop-to-fit``; the parameter defines how the incoming video stream is mapped to the resulting stream;
+- ``rtsp_keep_alive (boolean)``: whether to send RTSP keep alive packets;
+- ``metadata_output (string)``: where to dump metadata; one of: ``stdout``, ``logger``;
+- ``sync_output (boolean)``: a flag indicates whether to show frames on sink synchronously (i.e. at the source rate); the streaming may be not stable with this flag, try to avoid it.
+
+.. note::
+
+    If any of the parameters is not specified, the value from the adapter parameters will be used.
+
+**Response body:**
+
+- all the fields from the request body;
+- ``status (object)``: a status of the stream:
+
+  - ``is_alive (boolean)``: a flag indicating whether the stream is alive;
+  - ``exit_code (integer)``: an exit code of the stream in case of failure.
+
+Examples:
+
+.. code-block:: bash
+
+    curl -X PUT 'http://localhost:13000/streams/test' \
+        -H 'Content-Type: application/json' \
+        -d '{
+        "stub_file": "/stub_imgs/smpte100_640x360.jpeg",
+        "framerate": "30/1",
+        "codec": "hevc",
+        "bitrate": 4000000,
+        "profile": "Main",
+        "max_delay_ms": 1000,
+        "latency_ms": 100,
+        "transfer_mode": "scale-to-fit",
+        "rtsp_keep_alive": true,
+        "metadata_output": "stdout",
+        "sync_output": false
+    }'
+
+.. code-block:: json
+
+    {
+      "stub_file": "/stub_imgs/smpte100_640x360.jpeg",
+      "framerate": "30/1",
+      "bitrate": 4000000,
+      "profile": "Main",
+      "codec": "hevc",
+      "max_delay_ms": 1000,
+      "latency_ms": 100,
+      "transfer_mode": "scale-to-fit",
+      "rtsp_keep_alive": true,
+      "metadata_output": "stdout",
+      "sync_output": false,
+      "status": {
+        "is_alive": true,
+        "exit_code": null
+      }
+    }
+
+.. code-block:: bash
+
+    curl -X PUT 'http://localhost:13000/streams/test2' \
+        -H 'Content-Type: application/json' \
+        -d '{}'
+
+.. code-block:: json
+
+    {
+      "stub_file": "/stub_imgs/smpte100_1280x720.jpeg",
+      "framerate": "20/1",
+      "bitrate": 4000000,
+      "profile": "High",
+      "codec": "h264",
+      "max_delay_ms": 1000,
+      "latency_ms": 100,
+      "transfer_mode": "scale-to-fit",
+      "rtsp_keep_alive": true,
+      "metadata_output": null,
+      "sync_output": false,
+      "status": {
+        "is_alive": true,
+        "exit_code": null
+      }
+    }
+
+``GET /streams/{source_id}``: get configuration of a stream.
+
+**Path parameters:**
+
+- ``source_id`` (**required**): a source ID.
+
+**Query parameters:**
+
+- ``format``: a response format; one of: ``json``, ``yaml``; the default value is ``json``.
+
+Response body the same as for the ``PUT /streams/{source_id}`` request.
+
+Example:
+
+.. code-block:: bash
+
+    curl 'http://localhost:13000/streams/test?format=json'
+
+Response:
+
+.. code-block:: json
+
+    {
+      "stub_file": "/stub_imgs/smpte100_640x360.jpeg",
+      "framerate": "30/1",
+      "bitrate": 4000000,
+      "profile": "Main",
+      "codec": "hevc",
+      "max_delay_ms": 1000,
+      "latency_ms": 100,
+      "transfer_mode": "scale-to-fit",
+      "rtsp_keep_alive": true,
+      "metadata_output": "stdout",
+      "sync_output": false,
+      "status": {
+        "is_alive": true,
+        "exit_code": null
+      }
+    }
+
+``GET /streams``: list configurations of all streams.
+
+**Query parameters:**
+
+- ``format``: a response format; one of: ``json``, ``yaml``; the default value is ``json``.
+
+Example:
+
+.. code-block:: bash
+
+    curl 'http://localhost:13000/streams?format=yaml'
+
+Response:
+
+.. code-block:: yaml
+
+    test:
+      stub_file: /stub_imgs/smpte100_640x360.jpeg
+      framerate: 30/1
+      codec: hevc
+      bitrate: 4000000
+      profile: Main
+      max_delay_ms: 1000
+      latency_ms: 100
+      transfer_mode: scale-to-fit
+      rtsp_keep_alive: true
+      metadata_output: stdout
+      sync_output: false
+      status:
+        is_alive: true
+        exit_code: null
+
+``DELETE /streams/{source_id}``: stop and delete a stream.
+
+**Path parameters:**
+
+- ``source_id`` (**required**): a source ID.
+
+Example:
+
+.. code-block:: bash
+
+    curl -X DELETE 'http://localhost:13000/streams/test'
+
+Response:
+
+.. code-block:: json
+
+    "ok"
 
 Kafka-Redis Sink Adapter
 ^^^^^^^^^^^^^^^^^^^^^^^^

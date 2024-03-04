@@ -51,8 +51,8 @@ docker compose -f samples/yolov8_seg/docker-compose.x86.yml up
 # if Jetson
 docker compose -f samples/yolov8_seg/docker-compose.l4t.yml up
 
-# open 'rtsp://127.0.0.1:554/stream' in your player
-# or visit 'http://127.0.0.1:888/stream/' (LL-HLS)
+# open 'rtsp://127.0.0.1:554/stream/video' in your player
+# or visit 'http://127.0.0.1:888/stream/video/' (LL-HLS)
 
 # Ctrl+C to stop running the compose bundle
 ```
