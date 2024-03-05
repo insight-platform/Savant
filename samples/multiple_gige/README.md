@@ -24,3 +24,36 @@ git lfs pull
 # to get back to project root
 cd ../..
 ```
+
+# Stream control API for Always-On-RTSP sink usage examples
+
+The Always-On-RTSP sink has a control API to start and stop the stream. The API is available at http://localhost:13000. The API is documented is available at http://localhost:13000/docs.
+
+## Dump all streams configuration
+
+Dump all streams configuration in JSON format:
+
+```bash
+curl 'http://localhost:13000/streams?format=json'
+```
+
+Dump all streams configuration in YAML format:
+
+```bash
+curl 'http://localhost:13000/streams?format=yaml'
+```
+
+## Stop and delete a stream
+
+```bash
+curl -X DELETE 'http://localhost:13000/streams/gige-raw'
+```
+
+## Create and start a stream
+
+```bash
+curl -X PUT \
+    -H 'Content-Type: application/json' \
+    -d '{"stub_file":"/stub_imgs/smpte100_1280x720.jpeg","framerate":"20/1","bitrate":4000000,"profile":"High","codec":"h264","max_delay_ms":1000,"latency_ms":null,"transfer_mode":"scale-to-fit","rtsp_keep_alive":true,"metadata_output":null,"sync_output":false}' \
+    'http://localhost:13000/streams/gige-raw'
+```

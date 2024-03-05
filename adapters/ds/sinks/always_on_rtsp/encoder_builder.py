@@ -35,7 +35,7 @@ class H264EncoderBuilder(BaseEncoderBuilder):
         properties = {
             'profile': self.config.encoder_profile,
             'bitrate': self.config.encoder_bitrate,
-            'iframeinterval': self.config.idr_period,
+            'iframeinterval': self.config.idr_period_frames,
         }
 
         return [PipelineElement('nvv4l2h264enc', properties=properties)]
@@ -48,7 +48,7 @@ class H264EncoderBuilder(BaseEncoderBuilder):
                     'tune': 'zerolatency',
                     'bitrate': self.config.encoder_bitrate // 1024,  # bit/s -> kbit/s
                     'speed-preset': 'veryfast',
-                    'key-int-max': self.config.idr_period
+                    'key-int-max': self.config.idr_period_frames,
                 },
             ),
             PipelineElement(
@@ -70,7 +70,7 @@ class HevcEncoderBuilder(BaseEncoderBuilder):
         properties = {
             'profile': self.config.encoder_profile,
             'bitrate': self.config.encoder_bitrate,
-            'iframeinterval': self.config.idr_period,
+            'iframeinterval': self.config.idr_period_frames,
         }
 
         return [PipelineElement('nvv4l2h265enc', properties=properties)]
