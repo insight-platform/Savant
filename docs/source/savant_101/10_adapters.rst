@@ -816,28 +816,108 @@ The simplified design of the adapter is depicted in the following diagram:
 
     We use Always-On RTSP Adapter in our demos. Take a look at one of `them <https://github.com/insight-platform/Savant/tree/develop/samples/opencv_cuda_bg_remover_mog2>`__ to get acquainted with its use.
 
-**Parameters**:
+.. list-table:: Parameters
+    :header-rows: 1
 
-- ``RTSP_URI``: an URI of the RTSP server where to cast the stream, this parameter is required only when ``DEV_MODE=False``. The sink sends video stream to ``RTSP_URI/{source-id}``;
-- ``DEV_MODE``: enables the use of embedded MediaMTX to serve a stream; default value is ``False``;
-- ``STUB_FILE_LOCATION``: the location of a stub image file; the image file must be in ``JPEG`` format, this parameter is required; the stub image file is shown when there is no input data; the stub file dimensions define the resolution of the output stream;
-- ``MAX_DELAY_MS``: a maximum delay in milliseconds to wait after the last frame received before the stub image is displayed; default is ``1000``;
-- ``TRANSFER_MODE``: a transfer mode specification; one of: ``scale-to-fit``, ``crop-to-fit``; the default value is ``scale-to-fit``; the parameter defines how the incoming video stream is mapped to the resulting stream;
-- ``PROTOCOLS``: enabled transport protocols, e.g. ``tcp+udp-mcast+udp``; the default value is ``tcp``;
-- ``LATENCY_MS``: resulting RTSP stream buffer size in ms, default value is ``100``;
-- ``KEEP_ALIVE``: whether to send RTSP keep alive packets; set it to ``False`` for old incompatible server, default value is ``True``;
-- ``CODEC``: an encoding codec; one of: ``h264``, ``hevc``; the default value is ``h264``;
-- ``ENCODER_PROFILE``: an encoding profile. For ``h264`` one of: ``Baseline``, ``Main``, ``High``; the default value is ``High``. For ``hevc`` one of: ``Main``, ``Main10``, ``FREXT``; the default value is ``Main``;
-- ``ENCODER_BITRATE``: an encoding bitrate; the default value is ``4000000``;
-- ``FRAMERATE``: a frame rate for the output stream; the default value is ``30/1``;
-- ``METADATA_OUTPUT``: where to dump metadata (``stdout`` or ``logger``);
-- ``SYNC_OUTPUT``: a flag indicates whether to show frames on sink synchronously (i.e. at the source rate); the streaming may be not stable with this flag, try to avoid it; the default value is ``False``;
-- ``SOURCE_ID``: a filter to receive frames with a specific ``source_id`` at the start of the adapter; this parameter is ignored when ``SOURCE_IDS`` is specified;
-- ``SOURCE_IDS``: a filter to receive frames with specific ``source_id``-s at the start of the adapter;
-- ``MAX_RESOLUTION``: Maximum resolution of the incoming stream. If the resolution is greater than the allowed resolution, the video stream will terminate. You can override the max allowed resolution be setting width and height of frames. The default value is ``3840x2152``;
-- ``API_PORT``: a port for the stream control API; the default value is ``13000``;
-- ``FAIL_ON_STREAM_ERROR``: a flag indicating whether to stop the adapter when a stream is failed; the default value is ``True``;
-- ``STATUS_POLL_INTERVAL_MS``: an interval in milliseconds to poll statuses of the streams; the default value is ``1000``.
+    * - Parameter
+      - Description
+      - Default
+      - Example
+    * - ``RTSP_URI``
+      - A URI of the RTSP server where to cast the stream, this parameter is required only when ``DEV_MODE=False``.
+        The sink sends video stream to ``RTSP_URI/{source-id}``.
+      - Unset
+      - ``rtsp://1.1.1.1:554``
+    * - ``DEV_MODE``
+      - Enables the use of embedded MediaMTX to serve a stream.
+      - ``False``
+      - ``True``
+    * - ``STUB_FILE_LOCATION``
+      - The location of a stub image file; the image file must be in ``JPEG`` format, this parameter is required; the stub image file is shown when there is no input data; its dimensions define the resolution of the output stream.
+      - Unset
+      - ``/path/to/stub_file/test.jpg``
+    * - ``MAX_DELAY_MS``
+      - A maximum delay in milliseconds to wait after the last frame received before the stub image is displayed.
+      - ``1000``
+      - ``5000``
+    * - ``TRANSFER_MODE``
+      - A transfer mode specification; one of: ``scale-to-fit``, ``crop-to-fit``; the parameter defines how the incoming video stream is mapped to the resulting stream.
+      - ``scale-to-fit``
+      - ``crop-to-fit``
+    * - ``PROTOCOLS``
+      - Enabled transport protocols; the parameter is required only when ``DEV_MODE=False``.
+      - ``tcp``
+      - ``tcp+udp``
+    * - ``LATENCY_MS``
+      - The resulting RTSP stream buffer size in milliseconds.
+      - ``100``
+      - ``1000``
+    * - ``KEEP_ALIVE``
+      - Whether to send RTSP keep alive packets; set it to ``False`` for old incompatible server.
+      - ``True``
+      - ``False``
+    * - ``CODEC``
+      - An encoding codec; one of: ``h264``, ``hevc``.
+      - ``h264`` (browser-compatible)
+      - ``hevc``
+    * - ``ENCODER_PROFILE``
+      - An encoding profile:
+          - For ``h264``, is one of:
+              - ``Baseline``
+              - ``Main``
+              - ``High``
+          - For ``hevc``, is one of:
+              - ``Main``
+              - ``Main10``
+              - ``FREXT``
+      - Depending on the selected codec:
+          - ``h264```: ``High``
+          - ``hevc``: ``Main``
+      - ``Main10``
+    * - ``ENCODER_BITRATE``
+      - An encoding bitrate in bit/s.
+      - ``4000000``
+      - ``8000000``
+    * - ``FRAMERATE``
+      - A frame rate for the output stream.
+      - ``30/1``
+      - ``60/1``
+    * - ``IDR_PERIOD_FRAMES``
+      - A period of I-frame insertion;
+      - ``30``
+      - ``60``
+    * - ``METADATA_OUTPUT``
+      - Where to dump metadata; one of: ``stdout``, ``logger``.
+      - Unset
+      - ``logger``
+    * - ``SYNC_OUTPUT``
+      - A flag indicating whether to show frames on sink synchronously (i.e. at the source rate); the streaming may be not stable with this flag, try to avoid it.
+      - ``False``
+      - ``True``
+    * - ``SOURCE_ID``
+      - A filter to receive frames with a specific ``source_id`` only (at the start of the adapter, when no other streams are configured with the REST API). This parameter is ignored when ``SOURCE_IDS`` is specified.
+      - Unset
+      - ``test``
+    * - ``SOURCE_IDS``
+      - A filter to receive frames with specific ``source_id``-s only (at the start of the adapter, when no other streams are configured with the REST API).
+      - Unset
+      - ``test1,test2``
+    * - ``MAX_RESOLUTION``
+      - Maximum resolution of the incoming stream; if the resolution is greater than the allowed resolution, the video stream will terminate; you can override the max allowed resolution be setting width and height of frames.
+      - ``3840x2152``
+      - ``1920x1080``
+    * - ``API_PORT``
+      - A port for the stream control REST API.
+      - ``13000``
+      - ``12345``
+    * - ``FAIL_ON_STREAM_ERROR``
+      - A flag indicating whether to stop the adapter when a stream is failed.
+      - ``True``
+      - ``False``
+    * - ``STATUS_POLL_INTERVAL_MS``
+      - An interval in milliseconds to poll statuses of the streams.
+      - ``1000``
+      - ``500``
 
 When ``DEV_MODE=True`` the stream is available at:
 
@@ -896,6 +976,7 @@ The API provides the following endpoints:
 
 - ``stub_file (string)``: a location of a stub image file; the image file must be in ``JPEG`` format;
 - ``framerate (string)``: a frame rate for the output stream;
+- ``idr_period (integer)``: a period of I-frame insertion;
 - ``codec (string)``: an encoding codec; one of: ``h264``, ``hevc``;
 - ``bitrate (integer)``: an encoding bitrate in bit/s;
 - ``profile (string)``: an encoding profile. For ``h264`` one of: ``Baseline``, ``Main``, ``High``; for ``hevc`` one of: ``Main``, ``Main10``, ``FREXT``;
@@ -927,6 +1008,7 @@ Examples:
         -d '{
         "stub_file": "/stub_imgs/smpte100_640x360.jpeg",
         "framerate": "30/1",
+        "idr_period": 15,
         "codec": "hevc",
         "bitrate": 4000000,
         "profile": "Main",
@@ -943,6 +1025,7 @@ Examples:
     {
       "stub_file": "/stub_imgs/smpte100_640x360.jpeg",
       "framerate": "30/1",
+      "idr_period": 15,
       "bitrate": 4000000,
       "profile": "Main",
       "codec": "hevc",
@@ -969,6 +1052,7 @@ Examples:
     {
       "stub_file": "/stub_imgs/smpte100_1280x720.jpeg",
       "framerate": "20/1",
+      "idr_period": 20,
       "bitrate": 4000000,
       "profile": "High",
       "codec": "h264",
@@ -1009,6 +1093,7 @@ Response:
     {
       "stub_file": "/stub_imgs/smpte100_640x360.jpeg",
       "framerate": "30/1",
+      "idr_period": 30,
       "bitrate": 4000000,
       "profile": "Main",
       "codec": "hevc",
@@ -1043,6 +1128,7 @@ Response:
     test:
       stub_file: /stub_imgs/smpte100_640x360.jpeg
       framerate: 30/1
+      idr_period: 30
       codec: hevc
       bitrate: 4000000
       profile: Main

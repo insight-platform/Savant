@@ -1,6 +1,7 @@
 /* wrap text in tables */
 .wy-table-responsive table td, .wy-table-responsive table th {
     white-space: normal;
+    vertical-align: top !important;
 }
 
 .wy-nav-content {
@@ -25,12 +26,15 @@ h1, h2, h3, h4, h5, h6 {
 
 /* alerts */
 .alert {}
+
 .alert-checkbox {
   display: none;
 }
+
 :checked + .alert {
   display: none;
 }
+
 .alert .fa-close {
   float: right;
   padding-left: 10px;

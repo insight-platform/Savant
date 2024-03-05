@@ -39,6 +39,7 @@ class FailedToStartStreamError(StreamManagerError):
 class Stream:
     stub_file: Optional[Path] = None
     framerate: Optional[str] = None
+    idr_period: Optional[int] = None
     codec: Optional[Codec] = None
     bitrate: Optional[int] = None
     profile: Optional[str] = None
@@ -78,6 +79,8 @@ class StreamManager:
             stream.stub_file = self._config.stub_file_location
         if stream.framerate is None:
             stream.framerate = self._config.framerate
+        if stream.idr_period is None:
+            stream.idr_period = self._config.idr_period_frames
         if stream.codec is None:
             stream.codec = self._config.codec
         if stream.bitrate is None:
@@ -122,6 +125,7 @@ class StreamManager:
         envs = {
             'STUB_FILE_LOCATION': stream.stub_file,
             'FRAMERATE': stream.framerate,
+            'IDR_PERIOD_FRAMES': stream.idr_period,
             'CODEC': stream.codec.value.name if stream.codec is not None else None,
             'ENCODER_BITRATE': stream.bitrate,
             'ENCODER_PROFILE': stream.profile,

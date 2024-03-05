@@ -27,6 +27,10 @@ ENCODER_PROFILES = {
 
 SUPPORTED_CODECS = {x.value.name for x in [Codec.H264, Codec.HEVC]}
 
+IDR_PERIOD_FRAMES = 30
+MAX_ALLOWED_RESOLUTION = (3840, 2152)
+ENCODER_BITRATE = 4000000
+
 
 class TransferMode(str, Enum):
     SCALE_TO_FIT = 'scale-to-fit'
@@ -72,7 +76,7 @@ class CommonStreamConfig:
             f'{", ".join(ENCODER_PROFILES[self.codec])}'
         )
         # default encoding bitrate
-        self.encoder_bitrate = opt_config('ENCODER_BITRATE', 4000000, int)
+        self.encoder_bitrate = opt_config('ENCODER_BITRATE', ENCODER_BITRATE, int)
 
         self.fps_period_frames = opt_config('FPS_PERIOD_FRAMES', 1000, int)
         self.fps_period_seconds = opt_config('FPS_PERIOD_SECONDS', convert=float)
@@ -84,10 +88,12 @@ class CommonStreamConfig:
             raise ValueError('Invalid value for environment variable METADATA_OUTPUT')
 
         self.framerate = opt_config('FRAMERATE', '30/1')
+        self.idr_period_frames = opt_config('IDR_PERIOD_FRAMES', IDR_PERIOD_FRAMES, int)
+
         self.sync = opt_config('SYNC_OUTPUT', False, strtobool)
         self.max_allowed_resolution = opt_config(
             'MAX_RESOLUTION',
-            (3840, 2152),
+            MAX_ALLOWED_RESOLUTION,
             lambda x: tuple(map(int, x.split('x'))),
         )
 

@@ -82,6 +82,11 @@ class StreamModel(BaseModel):
         pattern=r'^\d+/\d+$',
         examples=['30/1'],
     )
+    idr_period: Optional[int] = Field(
+        None,
+        description='Period of I-frame insertion.',
+        examples=[30],
+    )
     bitrate: Optional[int] = Field(
         None,
         description='Encoding bitrate in bit/s.',
@@ -146,6 +151,7 @@ class StreamModel(BaseModel):
         return Stream(
             stub_file=self.stub_file,
             framerate=self.framerate,
+            idr_period=self.idr_period,
             codec=codec,
             bitrate=self.bitrate,
             profile=self.profile,
@@ -164,6 +170,7 @@ class StreamModel(BaseModel):
         return StreamModel(
             stub_file=stream.stub_file,
             framerate=stream.framerate,
+            idr_period=stream.idr_period,
             codec=stream.codec.value.name if stream.codec is not None else None,
             bitrate=stream.bitrate,
             profile=stream.profile,
@@ -182,6 +189,7 @@ class StreamModel(BaseModel):
         return {
             'stub_file': str(self.stub_file) if self.stub_file else None,
             'framerate': self.framerate,
+            'idr_period': self.idr_period,
             'codec': self.codec.value if self.codec else None,
             'bitrate': self.bitrate,
             'profile': self.profile,
