@@ -8,10 +8,11 @@ services:
       - zmq_sockets:/tmp/zmq-sockets
     environment:
       - URI=/dev/video0
+      - FFMPEG_PARAMS=input_format=mjpeg,video_size=1920x1080
       - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
       - SOURCE_ID=video
     devices:
-      - /dev/video6:/dev/video0
+      - /dev/video0:/dev/video0
     entrypoint: /opt/savant/adapters/gst/sources/ffmpeg.sh
     depends_on:
       module:
