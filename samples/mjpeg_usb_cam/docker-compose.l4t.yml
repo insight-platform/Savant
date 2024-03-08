@@ -1,0 +1,60 @@
+version: "3.3"
+services:
+
+  usb-cam:
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:latest
+    restart: unless-stopped
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+    environment:
+      - URI=/dev/video0
+      - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
+      - SOURCE_ID=video
+    devices:
+      - /dev/video6:/dev/video0
+    entrypoint: /opt/savant/adapters/gst/sources/ffmpeg.sh
+    depends_on:
+      module:
+        condition: service_healthy
+
+  module:
+    image: ghcr.io/insight-platform/savant-deepstream-l4t:latest
+    restart: unless-stopped
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ../../cache:/cache
+      - ..:/opt/savant/samples
+    command: samples/multiple_rtsp/demo.yml
+    environment:
+      - MODEL_PATH=/cache/models/peoplenet_detector
+      - DOWNLOAD_PATH=/cache/downloads/peoplenet_detector
+      - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
+      - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
+      - METRICS_FRAME_PERIOD=1000
+    runtime: nvidia
+
+  always-on-sink:
+    image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
+    restart: unless-stopped
+    ports:
+      - "554:554"    # RTSP
+      - "1935:1935"  # RTMP
+      - "888:888"    # HLS
+      - "8889:8889"  # WebRTC
+      - "13000:13000"  # Stream control API
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ../assets/stub_imgs:/stub_imgs
+    environment:
+      - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
+      - SOURCE_IDS=video
+      - FRAMERATE=20/1
+      - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x720.jpeg
+      - DEV_MODE=True
+      - MAX_RESOLUTION=3840x2160
+      - METRICS_FRAME_PERIOD=1000
+      - METRICS_TIME_PERIOD=10
+    command: python -m adapters.ds.sinks.always_on_rtsp
+
+volumes:
+  zmq_sockets:
