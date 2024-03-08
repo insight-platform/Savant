@@ -34,7 +34,7 @@ services:
     runtime: nvidia
 
   always-on-sink:
-    image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
+    image: ghcr.io/insight-platform/savant-adapters-deepstream-l4t:latest
     restart: unless-stopped
     ports:
       - "554:554"    # RTSP
