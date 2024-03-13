@@ -94,6 +94,7 @@ ARG DEEPSTREAM_VERSION
 RUN /opt/nvidia/deepstream/deepstream/user_additional_install.sh
 RUN apt-get update && \
     apt-get install --no-install-recommends -y \
+      file \
       gdb \
       strace \
       libmagic1 \
