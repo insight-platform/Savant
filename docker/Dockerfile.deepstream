@@ -94,6 +94,7 @@ ARG DEEPSTREAM_VERSION
 RUN /opt/nvidia/deepstream/deepstream/user_additional_install.sh
 RUN apt-get update && \
     apt-get install --no-install-recommends -y \
+      file \
       gdb \
       strace \
       libmagic1 \
@@ -174,8 +175,6 @@ COPY adapters/gst/gst_plugins adapters/gst/gst_plugins
 RUN rm -f adapters/gst/gst_plugins/python/video_files_sink.py
 COPY adapters/gst/sources adapters/gst/sources
 
-# triton-samples image lacks file utility that is used in uri-input script
-COPY --from=savant_build /usr/bin/file /usr/bin/file
 COPY scripts/uri-input.py scripts/
 ENV PATH=$PROJECT_PATH/scripts:$PATH \
     GST_PLUGIN_PATH=$PROJECT_PATH/gst_plugins:$PROJECT_PATH/adapters/gst/gst_plugins \
