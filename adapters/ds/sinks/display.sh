@@ -27,5 +27,5 @@ SYNC_OUTPUT="${SYNC_OUTPUT:="false"}"
 CLOSING_DELAY="${CLOSING_DELAY:="0"}"
 
 gst-launch-1.0 \
-    zeromq_src "${ZEROMQ_SRC_ARGS[@]}" ! \
-    savant_rs_video_player sync="${SYNC_OUTPUT}" closing-delay="${CLOSING_DELAY}"
+    savant_rs_video_player "${ZEROMQ_SRC_ARGS[@]}" \
+    sync="${SYNC_OUTPUT}" closing-delay="${CLOSING_DELAY}"
