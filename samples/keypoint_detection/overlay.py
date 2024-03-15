@@ -1,8 +1,9 @@
-import numpy as np
-
 from savant.deepstream.drawfunc import NvDsDrawFunc
 from savant.deepstream.meta.frame import NvDsFrameMeta
+from savant.parameter_storage import param_storage
 from savant.utils.artist import Artist
+
+DETECTOR = param_storage()['detector']
 
 skeleton = [
     ([15, 13], (255, 0, 0, 255)),  # left leg
@@ -26,26 +27,71 @@ skeleton = [
     ([4, 6], (255, 255, 0, 255)),  # head
 ]
 
+# key points with the confidence below the threshold won't be displayed
+KP_CONFIDENCE_THRESHOLD = 0.4
+
+KP_LABELS = [
+    'nose',
+    'left_eye',
+    'right_eye',
+    'left_ear',
+    'right_ear',
+    'left_shoulder',
+    'right_shoulder',
+    'left_elbow',
+    'right_elbow',
+    'left_wrist',
+    'right_wrist',
+    'left_hip',
+    'right_hip',
+    'left_knee',
+    'right_knee',
+    'left_ankle',
+    'right_ankle',
+]
+
 
 class Overlay(NvDsDrawFunc):
     def draw_on_frame(self, frame_meta: NvDsFrameMeta, artist: Artist):
+        # uncomment the following line to draw bounding boxes
+        # super().draw_on_frame(frame_meta, artist)
         for obj in frame_meta.objects:
-            if obj.label == 'person':
-                key_points = obj.get_attr_meta('yolov8npose', 'keypoint').value
-                key_points = np.array(key_points).reshape(-1, 2)
+            if obj.label != 'person':
+                continue
 
-                for pair, color in skeleton:
+            kp_attr = obj.get_attr_meta(DETECTOR, 'keypoints')
+            if kp_attr is None:
+                continue
+
+            key_points = kp_attr.value
+
+            for pair, color in skeleton:
+                if (
+                    key_points[pair[0]][2] > KP_CONFIDENCE_THRESHOLD
+                    and key_points[pair[1]][2] > KP_CONFIDENCE_THRESHOLD
+                ):
                     artist.add_line(
-                        pt1=(int(key_points[pair[0]][0]), int(key_points[pair[0]][1])),
-                        pt2=(int(key_points[pair[1]][0]), int(key_points[pair[1]][1])),
+                        pt1=(
+                            int(key_points[pair[0]][0]),
+                            int(key_points[pair[0]][1]),
+                        ),
+                        pt2=(
+                            int(key_points[pair[1]][0]),
+                            int(key_points[pair[1]][1]),
+                        ),
                         color=color,
                         thickness=2,
                     )
-                for key_point in key_points:
-                    if key_point[0] > 0 and key_point[1] > 0:
-                        artist.add_circle(
-                            center=(int(key_point[0]), int(key_point[1])),
-                            radius=2,
-                            color=(255, 0, 0, 255),
-                            thickness=2,
-                        )
+            for i, (x, y, conf) in enumerate(key_points):
+                if conf > KP_CONFIDENCE_THRESHOLD:
+                    artist.add_circle(
+                        center=(int(x), int(y)),
+                        radius=2,
+                        color=(255, 0, 0, 255),
+                        thickness=2,
+                    )
+                    # show label
+                    # artist.add_text(
+                    #     text=KP_LABELS[i],
+                    #     anchor=(int(key_point[0]), int(key_point[1])),
+                    # )
