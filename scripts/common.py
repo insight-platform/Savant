@@ -152,7 +152,7 @@ def build_common_envs(
     source_id: Optional[str],
     fps_period_frames: Optional[int],
     fps_period_seconds: Optional[float],
-    fps_output: str,
+    fps_output: Optional[str],
     zmq_endpoint: str,
     zmq_type: Optional[str],
     zmq_bind: Optional[bool],
