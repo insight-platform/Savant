@@ -78,10 +78,6 @@ class CommonStreamConfig:
         # default encoding bitrate
         self.encoder_bitrate = opt_config('ENCODER_BITRATE', ENCODER_BITRATE, int)
 
-        self.fps_period_frames = opt_config('FPS_PERIOD_FRAMES', 1000, int)
-        self.fps_period_seconds = opt_config('FPS_PERIOD_SECONDS', convert=float)
-        self.fps_output = opt_config('FPS_OUTPUT', 'stdout')
-
         try:
             self.metadata_output = opt_config('METADATA_OUTPUT', None, MetadataOutput)
         except ValueError:
@@ -122,13 +118,21 @@ class Config(CommonStreamConfig):
 
         self.pipeline_source_stage_name = 'source'
         self.pipeline_demux_stage_name = 'source-demux'
+
+        conf = VideoPipelineConfiguration()
+        conf.frame_period = opt_config('FPS_PERIOD_FRAMES', 1000, int)
+        time_period_seconds = opt_config('FPS_PERIOD_SECONDS', convert=int)
+        conf.timestamp_period = (
+            time_period_seconds * 1000 if time_period_seconds else None
+        )
+
         self.video_pipeline: Optional[VideoPipeline] = VideoPipeline(
             'always-on-sink',
             [
                 (self.pipeline_source_stage_name, VideoPipelineStagePayloadType.Frame),
                 (self.pipeline_demux_stage_name, VideoPipelineStagePayloadType.Frame),
             ],
-            VideoPipelineConfiguration(),
+            conf,
         )
 
     @functools.cached_property
@@ -142,11 +146,3 @@ class Config(CommonStreamConfig):
             if nvidia_runtime_is_available()
             else 'video/x-raw'
         )
-
-    def fps_meter_properties(self, measurer_name: str):
-        props = {'output': self.fps_output, 'measurer-name': measurer_name}
-        if self.fps_period_seconds:
-            props['period-seconds'] = self.fps_period_seconds
-        else:
-            props['period-frames'] = self.fps_period_frames
-        return props
