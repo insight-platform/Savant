@@ -3,6 +3,7 @@ from typing import Any, Tuple
 
 import numpy as np
 from numba.typed import List
+
 from savant.base.converter import BaseComplexModelOutputConverter
 from savant.base.model import ComplexModel
 from savant.utils.nms import nms_cpu

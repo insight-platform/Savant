@@ -2,7 +2,7 @@
 
 This application demonstrates the human body key point detection model.
 
-The model is yolov8n-pose from [ultralytics](https://github.com/ultralytics/ultralytics). The model is exported to ONNX using ultralytics cli `yolo export model=yolov8n-pose.pt format=onnx dynamic simplify`.
+The model is yolov8n-pose from [ultralytics](https://github.com/ultralytics/ultralytics). It is exported to ONNX using ultralytics cli `yolo export model=yolov8n-pose.pt format=onnx dynamic simplify`.
 
 Preview:
 
