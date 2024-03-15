@@ -65,7 +65,7 @@
 
 | Savant ver.                                                   | A4000  | Xavier NX | Orin Nano |
 |---------------------------------------------------------------|--------|-----------|-----------|
-| [#641](https://github.com/insight-platform/Savant/issues/641) | 284.19 |           | 79.34     |
+| [#641](https://github.com/insight-platform/Savant/issues/641) | 284.19 | 58.85     | 79.34     |
 | [#692](https://github.com/insight-platform/Savant/issues/692) | 758.62 |           | 202.09    |
 
 ### intersection_traffic_meter (yolov8m)
