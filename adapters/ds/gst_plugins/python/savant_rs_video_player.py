@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from threading import Event
 from typing import Dict, Optional
 
+from pygstsavantframemeta import gst_buffer_get_savant_frame_meta
 from savant_rs.pipeline2 import (
     VideoPipeline,
     VideoPipelineConfiguration,
@@ -74,7 +75,7 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
         source_stage_name = 'video-player-source'
         demux_stage_name = 'video-player-demux'
         decoder_stage_name = 'video-player-decoder'
-        video_pipeline: VideoPipeline = VideoPipeline(
+        self._video_pipeline: VideoPipeline = VideoPipeline(
             'video-player',
             [
                 (source_stage_name, VideoPipelineStagePayloadType.Frame),
@@ -85,7 +86,7 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
         )
 
         self._source: Gst.Element = Gst.ElementFactory.make('zeromq_src')
-        self._source.set_property('pipeline', video_pipeline)
+        self._source.set_property('pipeline', self._video_pipeline)
         self._source.set_property('pipeline-stage-name', source_stage_name)
         self.add(self._source)
 
@@ -93,7 +94,7 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
             'savant_rs_video_decode_bin'
         )
         self._decoder.set_property('pass-eos', True)
-        self._decoder.set_property('pipeline', video_pipeline)
+        self._decoder.set_property('pipeline', self._video_pipeline)
         self._decoder.set_property('pipeline-demux-stage-name', decoder_stage_name)
         self._decoder.set_property('pipeline-decoder-stage-name', decoder_stage_name)
         self.add(self._decoder)
@@ -162,6 +163,21 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
         )
         branch = BranchInfo(source_id=pad_to_source_id(new_pad))
         new_pad.add_probe(Gst.PadProbeType.BLOCK_DOWNSTREAM, self._add_branch, branch)
+        new_pad.add_probe(Gst.PadProbeType.BUFFER, self.delete_frame_from_pipeline)
+
+    def delete_frame_from_pipeline(self, pad: Gst.Pad, info: Gst.PadProbeInfo):
+        buffer: Gst.Buffer = info.get_buffer()
+        savant_frame_meta = gst_buffer_get_savant_frame_meta(buffer)
+        if savant_frame_meta is None:
+            self.logger.warning(
+                'Source %s. No Savant Frame Metadata found on buffer with PTS %s.',
+                pad_to_source_id(pad),
+                buffer.pts,
+            )
+            return Gst.PadProbeReturn.PASS
+
+        self._video_pipeline.delete(savant_frame_meta.idx)
+        return Gst.PadProbeReturn.OK
 
     def _add_branch(
         self,
