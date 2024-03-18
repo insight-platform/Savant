@@ -16,8 +16,11 @@ def check_encoder_is_available(parameters: Dict[str, Any]) -> bool:
     logger = get_logger(__name__)
 
     output_frame = parameters.get('output_frame')
+    if not output_frame:
+        return True
+
     codec_name = output_frame['codec']
-    if not output_frame or codec_name == 'copy':
+    if codec_name == 'copy':
         return True
 
     codec = CODEC_BY_NAME[codec_name]
