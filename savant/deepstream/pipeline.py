@@ -17,7 +17,7 @@ from pygstsavantframemeta import (
     nvds_frame_meta_get_nvds_savant_frame_meta,
 )
 from savant_rs.pipeline2 import VideoPipeline, VideoPipelineConfiguration
-from savant_rs.primitives import EndOfStream, IdCollisionResolutionPolicy, VideoFrame
+from savant_rs.primitives import EndOfStream, VideoFrame
 from savant_rs.primitives.geometry import RBBox
 
 from savant.base.input_preproc import ObjectsPreprocessing
@@ -40,6 +40,7 @@ from savant.deepstream.element_factory import NvDsElementFactory
 from savant.deepstream.metadata import (
     nvds_attr_meta_output_converter,
     nvds_obj_meta_output_converter,
+    nvds_obj_bbox_output_converter,
 )
 from savant.deepstream.nvinfer.processor import NvInferProcessor
 from savant.deepstream.source_output import create_source_output
@@ -809,17 +810,10 @@ class NvDsPipeline(GstPipeline):
                 frame_pts,
             )
 
-        parents = {}
-
         # second iteration to collect module objects
         for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
-            obj_meta, parent_id = nvds_obj_meta_output_converter(
-                nvds_frame_meta,
-                nvds_obj_meta,
-                self._frame_params,
-            )
-            if parent_id is not None:
-                parents[obj_meta.id] = parent_id
+            # collect obj attributes
+            attributes = []
             for attr_meta in nvds_attr_meta_iterator(
                 frame_meta=nvds_frame_meta, obj_meta=nvds_obj_meta
             ):
@@ -827,12 +821,12 @@ class NvDsPipeline(GstPipeline):
                     attr_meta.element_name,
                     attr_meta.name,
                 ) not in self._internal_attrs:
-                    obj_meta.set_attribute(nvds_attr_meta_output_converter(attr_meta))
+                    attributes.append(nvds_attr_meta_output_converter(attr_meta))
             nvds_remove_obj_attrs(nvds_frame_meta, nvds_obj_meta)
 
-            # skip empty primary object that equals to frame
+            # check if primary object
             if nvds_obj_meta.obj_label == PRIMARY_OBJECT_KEY:
-                bbox = obj_meta.detection_box
+                bbox = nvds_obj_bbox_output_converter(nvds_obj_meta, self._frame_params)
                 dest_res_bbox = RBBox(
                     self._frame_params.output_width / 2,
                     self._frame_params.output_height / 2,
@@ -846,11 +840,20 @@ class NvDsPipeline(GstPipeline):
                             bbox,
                             dest_res_bbox,
                         )
-                elif obj_meta.attributes:
+                elif attributes:
                     self._logger.debug('Adding primary object, attributes not empty.')
                 else:
+                    # skip primary object equal to frame
+                    # and with no attached attributes
                     self._logger.debug('Skipping empty primary object.')
                     continue
+            # add obj to frame meta
+            obj_meta = nvds_obj_meta_output_converter(
+                nvds_frame_meta, nvds_obj_meta, self._frame_params, video_frame
+            )
+            # add obj attributes
+            for attr in attributes:
+                obj_meta.set_attribute(attr)
             if self._logger.isEnabledFor(logging.TRACE):
                 self._logger.trace(
                     'Collecting object (frame src %s, IDX %s, PTS %s): %s',
@@ -859,13 +862,6 @@ class NvDsPipeline(GstPipeline):
                     frame_pts,
                     obj_meta,
                 )
-            video_frame.add_object(obj_meta, IdCollisionResolutionPolicy.Overwrite)
-
-        self._logger.debug('Setting parents to objects')
-        for obj_id, parent_id in parents.items():
-            if self._logger.isEnabledFor(logging.DEBUG):
-                self._logger.debug('%s is a parent of %s', parent_id, obj_id)
-            video_frame.set_parent_by_id(obj_id, parent_id)
 
     # Muxer
     def _create_muxer(self, live_source: bool) -> Gst.Element:
