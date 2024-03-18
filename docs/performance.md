@@ -51,6 +51,19 @@
 | [#550](https://github.com/insight-platform/Savant/issues/550) | 229.22 |           | 49.77     |
 | [#612](https://github.com/insight-platform/Savant/issues/612) | 229.51 |           | 50.04     |
 
+### fisheye_line_crossing
+
+| Savant ver.                                                   | A4000 | Xavier NX | Orin Nano |
+|---------------------------------------------------------------|-------|-----------|-----------|
+| [#193](https://github.com/insight-platform/Savant/issues/193) | 86.6  | 23.9      | 33.7      |
+| [#612](https://github.com/insight-platform/Savant/issues/612) | 86.6  |           | 33.71     |
+
+### keypoint_detection
+
+| Savant ver.                                                   | A4000  | Xavier NX | Orin Nano |
+|---------------------------------------------------------------|--------|-----------|-----------|
+| [#692](https://github.com/insight-platform/Savant/issues/692) | 758.62 |           | 202.09    |
+
 ### intersection_traffic_meter (yolov8m)
 
 | Savant ver.                                                   | A4000  | Xavier NX | Orin Nano |
@@ -60,13 +73,6 @@
 | [#352](https://github.com/insight-platform/Savant/issues/352) | 264.02 | 32.15?    | 41.14     |
 | [#550](https://github.com/insight-platform/Savant/issues/550) | 268.50 |           | 41.11     |
 | [#612](https://github.com/insight-platform/Savant/issues/612) | 271.13 |           | 41.11     |
-
-### fisheye line crossing
-
-| Savant ver.                                                   | A4000 | Xavier NX | Orin Nano |
-|---------------------------------------------------------------|-------|-----------|-----------|
-| [#193](https://github.com/insight-platform/Savant/issues/193) | 86.6  | 23.9      | 33.7      |
-| [#612](https://github.com/insight-platform/Savant/issues/612) | 86.6  |           | 33.71     |
 
 ### license_plate_recognition
 
