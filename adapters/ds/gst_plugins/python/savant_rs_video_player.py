@@ -2,9 +2,23 @@ from dataclasses import dataclass
 from threading import Event
 from typing import Dict, Optional
 
+from pygstsavantframemeta import gst_buffer_get_savant_frame_meta
+from savant_rs.pipeline2 import (
+    VideoPipeline,
+    VideoPipelineConfiguration,
+    VideoPipelineStagePayloadType,
+)
+
+from gst_plugins.python.zeromq_src import ZEROMQ_SRC_PROPERTIES
 from savant.gstreamer import GLib, GObject, Gst
 from savant.gstreamer.utils import on_pad_event, pad_to_source_id
 from savant.utils.logging import LoggerMixin
+
+NESTED_ZEROMQ_SRC_PROPERTIES = {
+    k: v
+    for k, v in ZEROMQ_SRC_PROPERTIES.items()
+    if k not in ['pipeline', 'pipeline-stage-name']
+}
 
 
 @dataclass
@@ -22,21 +36,15 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
 
     __gstmetadata__ = (
         'Savant-rs video player',
-        'Bin/Sink/Player',
+        'Bin/Player',
         'Deserializes savant-rs video and plays it on display',
         'Pavel Tomskikh <tomskih_pa@bw-sw.com>',
     )
 
-    __gsttemplates__ = (
-        Gst.PadTemplate.new(
-            'sink',
-            Gst.PadDirection.SINK,
-            Gst.PadPresence.ALWAYS,
-            Gst.Caps.new_any(),
-        ),
-    )
+    __gsttemplates__ = ()
 
     __gproperties__ = {
+        **NESTED_ZEROMQ_SRC_PROPERTIES,
         'sync': (
             bool,
             'Sync on the clock',
@@ -64,18 +72,35 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
         self._sync = False
         self._closing_delay = 0
 
+        source_stage_name = 'video-player-source'
+        demux_stage_name = 'video-player-demux'
+        decoder_stage_name = 'video-player-decoder'
+        self._video_pipeline: VideoPipeline = VideoPipeline(
+            'video-player',
+            [
+                (source_stage_name, VideoPipelineStagePayloadType.Frame),
+                (demux_stage_name, VideoPipelineStagePayloadType.Frame),
+                (decoder_stage_name, VideoPipelineStagePayloadType.Frame),
+            ],
+            VideoPipelineConfiguration(),
+        )
+
+        self._source: Gst.Element = Gst.ElementFactory.make('zeromq_src')
+        self._source.set_property('pipeline', self._video_pipeline)
+        self._source.set_property('pipeline-stage-name', source_stage_name)
+        self.add(self._source)
+
         self._decoder: Gst.Element = Gst.ElementFactory.make(
             'savant_rs_video_decode_bin'
         )
         self._decoder.set_property('pass-eos', True)
+        self._decoder.set_property('pipeline', self._video_pipeline)
+        self._decoder.set_property('pipeline-demux-stage-name', decoder_stage_name)
+        self._decoder.set_property('pipeline-decoder-stage-name', decoder_stage_name)
         self.add(self._decoder)
         self._decoder.connect('pad-added', self.on_pad_added)
 
-        self._sink_pad: Gst.GhostPad = Gst.GhostPad.new(
-            'sink', self._decoder.get_static_pad('sink')
-        )
-        self.add_pad(self._sink_pad)
-        self._sink_pad.set_active(True)
+        assert self._source.link(self._decoder), f'Failed to link source to decoder'
 
     def do_get_property(self, prop):
         """Gst plugin get property function.
@@ -86,6 +111,8 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
             return self._sync
         if prop.name == 'closing-delay':
             return self._closing_delay
+        if prop.name in NESTED_ZEROMQ_SRC_PROPERTIES:
+            return self._source.get_property(prop.name)
         raise AttributeError(f'Unknown property {prop.name}')
 
     def do_set_property(self, prop, value):
@@ -98,6 +125,8 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
             self._sync = value
         elif prop.name == 'closing-delay':
             self._closing_delay = value
+        elif prop.name in NESTED_ZEROMQ_SRC_PROPERTIES:
+            self._source.set_property(prop.name, value)
         else:
             raise AttributeError(f'Unknown property {prop.name}')
 
@@ -134,6 +163,21 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
         )
         branch = BranchInfo(source_id=pad_to_source_id(new_pad))
         new_pad.add_probe(Gst.PadProbeType.BLOCK_DOWNSTREAM, self._add_branch, branch)
+        new_pad.add_probe(Gst.PadProbeType.BUFFER, self.delete_frame_from_pipeline)
+
+    def delete_frame_from_pipeline(self, pad: Gst.Pad, info: Gst.PadProbeInfo):
+        buffer: Gst.Buffer = info.get_buffer()
+        savant_frame_meta = gst_buffer_get_savant_frame_meta(buffer)
+        if savant_frame_meta is None:
+            self.logger.warning(
+                'Source %s. No Savant Frame Metadata found on buffer with PTS %s.',
+                pad_to_source_id(pad),
+                buffer.pts,
+            )
+            return Gst.PadProbeReturn.PASS
+
+        self._video_pipeline.delete(savant_frame_meta.idx)
+        return Gst.PadProbeReturn.OK
 
     def _add_branch(
         self,
