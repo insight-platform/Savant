@@ -15,7 +15,7 @@ from savant.utils.re_patterns import socket_uri_pattern
 from savant.utils.version import version
 
 # use version.SAVANT or 'latest'
-SAVANT_VERSION = 'latest'
+SAVANT_VERSION = version.SAVANT
 DEEPSTREAM_VERSION = version.DEEPSTREAM
 
 # docker registry to use with scripts, set to "None" to use local images

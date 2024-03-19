@@ -2,7 +2,7 @@ version: "3.3"
 services:
 
   usb-cam:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:latest
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:0.2.11
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -19,7 +19,7 @@ services:
         condition: service_healthy
 
   module:
-    image: ghcr.io/insight-platform/savant-deepstream-l4t:latest
+    image: ghcr.io/insight-platform/savant-deepstream-l4t:0.2.11-6.3
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -36,7 +36,7 @@ services:
     runtime: nvidia
 
   always-on-sink:
-    image: ghcr.io/insight-platform/savant-adapters-deepstream-l4t:latest
+    image: ghcr.io/insight-platform/savant-adapters-deepstream-l4t:0.2.11-6.3
     restart: unless-stopped
     ports:
       - "554:554"    # RTSP
