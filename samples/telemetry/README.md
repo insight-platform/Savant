@@ -56,8 +56,8 @@ docker compose -f samples/telemetry/docker-compose.x86.yml up
 # if Jetson
 docker compose -f samples/telemetry/docker-compose.l4t.yml up
 
-# open 'rtsp://127.0.0.1:554/stream' in your player
-# or visit 'http://127.0.0.1:888/stream/' (LL-HLS)
+# open 'rtsp://127.0.0.1:554/stream/0' in your player
+# or visit 'http://127.0.0.1:888/stream/0/' (LL-HLS)
 
 # navigate to 'http://localhost:16686' to access the Jaeger UI
 

@@ -74,45 +74,50 @@ def add_objects_to_video_frame(
     objects: List[Dict[str, Any]],
 ):
     parents = {}
-    for obj_id, obj in enumerate(objects):
-        video_object = build_video_object(obj_id, obj)
-        frame.add_object(video_object, IdCollisionResolutionPolicy.Error)
-        track_id = video_object.get_track_id()
+    children = {}
+    for obj in objects:
+        video_obj = add_video_object(frame, obj)
+        children[video_obj.id] = obj
+        track_id = video_obj.track_id
         if track_id is not None:
-            parents[(video_object.namespace, video_object.label, track_id)] = obj_id
+            parents[(video_obj.namespace, video_obj.label, track_id)] = video_obj.id
 
-    for obj_id, obj in enumerate(objects):
-        parent_id = obj.get('parent_object_id')
-        parent_model_name = obj.get('parent_model_name')
-        parent_label = obj.get('parent_label')
+    for child_obj_id, child_obj in children.items():
+        parent_id = child_obj.get('parent_object_id')
+        parent_model_name = child_obj.get('parent_model_name')
+        parent_label = child_obj.get('parent_label')
         if parent_id is None or parent_model_name is None or parent_label is None:
             continue
         frame.set_parent_by_id(
-            obj_id,
+            child_obj_id,
             parents[(parent_model_name, parent_label, parent_id)],
         )
 
 
-def build_video_object(obj_id: int, obj: Dict[str, Any]):
+def add_video_object(frame, obj: Dict[str, Any]):
     attributes = obj.get('attributes')
     if attributes is not None:
         attributes = build_object_attributes(attributes)
     else:
-        attributes = {}
+        attributes = []
     bbox = build_bbox(obj['bbox'])
-    video_object = VideoObject(
-        id=obj_id,
+    track_id = obj['object_id']
+    if track_id == UNTRACKED_OBJECT_ID:
+        track_id = None
+        track_box = None
+    else:
+        track_box = bbox
+
+    return frame.create_object(
         namespace=obj['model_name'],
         label=obj['label'],
-        detection_box=bbox,
-        attributes=attributes,
+        parent_id=obj.get('parent_object_id'),
         confidence=obj['confidence'],
+        detection_box=bbox,
+        track_id=track_id,
+        track_box=track_box,
+        attributes=attributes,
     )
-    track_id = obj['object_id']
-    if track_id != UNTRACKED_OBJECT_ID:
-        video_object.set_track_info(track_id, bbox)
-
-    return video_object
 
 
 def build_bbox(bbox: Dict[str, Any]):
@@ -126,8 +131,8 @@ def build_bbox(bbox: Dict[str, Any]):
 
 
 def build_object_attributes(attributes: List[Dict[str, Any]]):
-    return {
-        (attr['element_name'], attr['name']): Attribute(
+    return [
+        Attribute(
             namespace=attr['element_name'],
             name=attr['name'],
             values=[
@@ -135,7 +140,7 @@ def build_object_attributes(attributes: List[Dict[str, Any]]):
             ],
         )
         for attr in attributes
-    }
+    ]
 
 
 def build_attribute_value(value: Any, confidence: Optional[float] = None):
@@ -157,10 +162,8 @@ def add_tags_to_video_frame(
     tags: Dict[str, Union[bool, int, float, str]],
 ):
     for name, value in tags.items():
-        frame.set_attribute(
-            Attribute(
-                namespace=DEFAULT_NAMESPACE,
-                name=name,
-                values=[build_attribute_value(value)],
-            )
+        frame.set_persistent_attribute(
+            namespace=DEFAULT_NAMESPACE,
+            name=name,
+            values=[build_attribute_value(value)],
         )

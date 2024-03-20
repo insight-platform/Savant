@@ -65,11 +65,13 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONPATH=$PROJECT_PATH
 WORKDIR $PROJECT_PATH
 
-RUN apt-get update \
-    && apt-get install --no-install-recommends -y \
-        libice6 \
-        libsm6 \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && \
+    apt-get install --no-install-recommends -y \
+      gdb \
+      strace \
+      libice6 \
+      libsm6 && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY adapters/requirements.txt adapters/requirements-gst.txt $PROJECT_PATH/adapters/
 # gstreamer1.0-python3-plugin-loader requires python 3.10
@@ -87,8 +89,10 @@ RUN if [ "$(arch)" = "aarch64" ]; then \
         apt-get autoremove --purge -y && \
         apt-get clean && \
         rm -rf /var/lib/apt/lists/*; \
+        rm /usr/lib/aarch64-linux-gnu/gio/modules/libgiolibproxy.so; \
     else \
         python -m pip install --no-cache-dir -r adapters/requirements.txt -r adapters/requirements-gst.txt; \
+        rm /usr/lib/x86_64-linux-gnu/gio/modules/libgiolibproxy.so; \
     fi
 
 COPY --from=aravis-builder /build/aravis/dist /usr
@@ -104,7 +108,6 @@ COPY gst_plugins gst_plugins
 COPY adapters/shared adapters/shared
 COPY adapters/python adapters/python
 COPY adapters/gst adapters/gst
-COPY gst_plugins/python/zeromq_src.py adapters/gst/gst_plugins/python/
 COPY gst_plugins/python/logger.py adapters/gst/gst_plugins/python/
 ENV GST_PLUGIN_PATH=$PROJECT_PATH/adapters/gst/gst_plugins \
     LOGLEVEL=info

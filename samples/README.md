@@ -148,6 +148,12 @@ A sample demonstrating the use of Kafka-Redis adapters in Savant.
 
 Sample location: [kafka_redis_adapter](./kafka_redis_adapter)
 
+### USB Camera Demo (MJPEG)
+
+A sample demonstrating the use of USB camera producing MJPEG in Savant.
+
+Sample location: [mjpeg_usb_cam](./mjpeg_usb_cam)
+
 ### Pass-through Processing
 
 A sample demonstrating the use of pass-through mode in Savant.

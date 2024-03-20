@@ -1,8 +1,9 @@
 ARG DEEPSTREAM_VERSION
 ARG DEEPSTREAM_DEVEL_IMAGE=$DEEPSTREAM_VERSION-triton-multiarch
-ARG DEEPSTREAM_BASE_IMAGE=$DEEPSTREAM_VERSION-samples
+ARG DEEPSTREAM_BASE_IMAGE=$DEEPSTREAM_VERSION-samples-multiarch
 FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_DEVEL_IMAGE AS base_builder
 ARG TARGETARCH
+ARG PYTHON_VERSION=3.10
 
 # python to python3 by default
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 10
@@ -10,13 +11,25 @@ RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 10
 # update pip
 RUN python -m pip install --no-cache-dir --upgrade pip
 
+# install cmake
+ARG CMAKE_VER=3.27.7
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+      wget -nv -O /tmp/cmake.sh https://github.com/Kitware/CMake/releases/download/v$CMAKE_VER/cmake-$CMAKE_VER-linux-x86_64.sh; \
+      sh /tmp/cmake.sh --skip-license --prefix=/usr/local; \
+      rm -f /tmp/cmake.sh; \
+    elif [ "$TARGETARCH" = "arm64" ]; then \
+      wget -nv -O /tmp/cmake.sh https://github.com/Kitware/CMake/releases/download/v$CMAKE_VER/cmake-$CMAKE_VER-linux-aarch64.sh; \
+      sh /tmp/cmake.sh --skip-license --prefix=/usr/local; \
+      rm -f /tmp/cmake.sh; \
+    fi
+
 
 # Savant python package builder
 FROM base_builder as savant_build
 
 RUN apt-get update && \
     apt-get install --no-install-recommends -y \
-      python3.8-venv
+      python${PYTHON_VERSION}-venv
 
 RUN python -m pip install --no-cache-dir setuptools wheel build
 
@@ -42,19 +55,10 @@ RUN python setup.py bdist_wheel && rm -rf _skbuild
 
 
 # Savant boost(cuda) library builder
-# TODO: Check Jetson requirements (Xavier t194, Orin t234)
 FROM base_builder AS savantboost_build
-
-ARG CMAKE_VER=3.27.7
-RUN if [ "$TARGETARCH" = "amd64" ]; then \
-      wget -nv -O /tmp/cmake.sh https://github.com/Kitware/CMake/releases/download/v$CMAKE_VER/cmake-$CMAKE_VER-linux-x86_64.sh; \
-      sh /tmp/cmake.sh --skip-license --prefix=/usr/local; \
-      rm -f /tmp/cmake.sh; \
-    elif [ "$TARGETARCH" = "arm64" ]; then \
-      wget -nv -O /tmp/cmake.sh https://github.com/Kitware/CMake/releases/download/v$CMAKE_VER/cmake-$CMAKE_VER-linux-aarch64.sh; \
-      sh /tmp/cmake.sh --skip-license --prefix=/usr/local; \
-      rm -f /tmp/cmake.sh; \
-      echo "deb https://repo.download.nvidia.com/jetson/t194 `cat /etc/apt/sources.list | grep jetson/common | cut -d' ' -f3` main" \
+# TODO: Determine JetPack release (replace `r36.2`)
+RUN if [ "$TARGETARCH" = "arm64" ]; then \
+      echo "deb [trusted=yes] https://repo.download.nvidia.com/jetson/t234 r36.2 main" \
         > /etc/apt/sources.list.d/nvidia-l4t-apt-source.list; \
       rm /etc/ld.so.conf.d/nvidia-tegra.conf; \
       mkdir -p /opt/nvidia/l4t-packages/; \
@@ -87,29 +91,29 @@ ARG DEEPSTREAM_VERSION
 #RUN rm -r /etc/apt/sources.list.d/* && apt-get clean
 
 # install base packages
+RUN /opt/nvidia/deepstream/deepstream/user_additional_install.sh
 RUN apt-get update && \
     apt-get install --no-install-recommends -y \
+      file \
+      gdb \
+      strace \
+      libmagic1 \
+      libcairo2-dev \
       python3-pip \
       python3-dev \
-      libcairo2-dev \
-      libswscale-dev \
-      libgirepository1.0-dev \
+      python-gi-dev \
       python3-gst-1.0 \
       gstreamer1.0-python3-plugin-loader && \
-    apt-get install --reinstall -y \
-      gstreamer1.0-plugins-ugly \
-      libavutil56 \
-      libavformat58 \
-      libavfilter7 \
-      libavdevice58 \
-      libavcodec58 \
-      libvpx6 \
-      libx265-179 \
-      libmpg123-0 \
-      libx264-155 && \
     apt-get autoremove -y && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+# ao-rtsp bug fix
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+      rm /usr/lib/x86_64-linux-gnu/gio/modules/libgiolibproxy.so; \
+    elif [ "$TARGETARCH" = "arm64" ]; then \
+      rm /usr/lib/aarch64-linux-gnu/gio/modules/libgiolibproxy.so; \
+    fi
 
 ARG PROJECT_PATH=/opt/savant
 ENV PYTHONUNBUFFERED=1 \
@@ -185,32 +189,23 @@ HEALTHCHECK --interval=5s --timeout=5s --start-period=30m --retries=3 \
 ENTRYPOINT ["python", "-m", "savant.entrypoint"]
 
 
-# Savant DeepStream adapter mediamtx builder
-FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_DEVEL_IMAGE AS mediamtx
+# Savant DeepStream adapter container
+FROM base AS adapters
 ARG TARGETARCH
 
-ARG MEDIAMTX_VERSION="v0.22.1"
-WORKDIR /mediamtx
-RUN if [ "$TARGETARCH" = "amd64" ]; then \
-      wget -qO- "https://github.com/aler9/mediamtx/releases/download/${MEDIAMTX_VERSION}/mediamtx_${MEDIAMTX_VERSION}_linux_amd64.tar.gz" | tar xz; \
+ARG MEDIAMTX_VERSION="v1.5.1"
+RUN mkdir mediamtx && \
+    if [ "$TARGETARCH" = "amd64" ]; then \
+      wget -qO- "https://github.com/bluenviron/mediamtx/releases/download/${MEDIAMTX_VERSION}/mediamtx_${MEDIAMTX_VERSION}_linux_amd64.tar.gz" | tar xz -C mediamtx; \
     elif [ "$TARGETARCH" = "arm64" ]; then \
-      wget -qO- "https://github.com/aler9/mediamtx/releases/download/${MEDIAMTX_VERSION}/mediamtx_${MEDIAMTX_VERSION}_linux_armv7.tar.gz" | tar xz; \
+      wget -qO- "https://github.com/bluenviron/mediamtx/releases/download/${MEDIAMTX_VERSION}/mediamtx_${MEDIAMTX_VERSION}_linux_armv7.tar.gz" | tar xz -C mediamtx; \
     fi
 
-
-# Savant DeepStream adapter main container
-FROM base AS adapters
+COPY adapters/requirements-ds.txt adapters/requirements-ds.txt
+RUN python -m pip install --no-cache-dir -r adapters/requirements-ds.txt
 
 HEALTHCHECK NONE
 
-RUN apt-get update && \
-    apt-get install --no-install-recommends -y \
-      gstreamer1.0-libav && \
-    apt-get autoremove -y && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-COPY --from=mediamtx /mediamtx/mediamtx mediamtx/mediamtx
 COPY adapters/shared adapters/shared
 COPY adapters/ds adapters/ds
 # To avoid ImportError when Nvidia runtime is not available

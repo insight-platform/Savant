@@ -61,6 +61,15 @@ class SavantParseBin(LoggerMixin, Gst.Bin):
         self.logger.debug('Got caps %r. Trying to find parser.', caps.to_string())
         codec: CodecInfo = CODEC_BY_CAPS_NAME[caps[0].get_name()].value
         parser_name = codec.parser or 'identity'
+        if parser_name == 'jpegparse':
+            # JPEG parsing is not required in the adapter because the FFmpeg input element
+            # sends full JPEG frames, not a continuous stream which requires parsing
+            # Jpegparse also does not parse well for 4K yuvj420p probably because of the limitations.
+            #
+            self.logger.debug(
+                'JPEG parsing is not required in the adapter. Using identity.'
+            )
+            parser_name = 'identity'
         self.logger.debug('Adding parser %r.', parser_name)
         self._parser = Gst.ElementFactory.make(parser_name)
         if parser_name in ['h264parse', 'h265parse']:

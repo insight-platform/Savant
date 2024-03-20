@@ -54,8 +54,8 @@ docker compose -f samples/opencv_cuda_bg_remover_mog2/docker-compose.x86.yml up
 # if Jetson
 docker compose -f samples/opencv_cuda_bg_remover_mog2/docker-compose.l4t.yml up
 
-# open 'rtsp://127.0.0.1:554/stream' in your player
-# or visit 'http://127.0.0.1:888/stream/' (LL-HLS)
+# open 'rtsp://127.0.0.1:554/stream/road-traffic-processed' in your player
+# or visit 'http://127.0.0.1:888/stream/road-traffic-processed/' (LL-HLS)
 
 # Ctrl+C to stop running the compose bundle
 ```

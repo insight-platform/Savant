@@ -3,10 +3,15 @@ FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-triton-multiarch
 ARG TARGETARCH
 ARG DEEPSTREAM_VERSION
 ARG OPENCV_VERSION=4.8.0
+ARG PYTHON_VERSION=3.10
 
-# required to install CPack
-ARG CMAKE_VER=3.27.4
-RUN if [ "$TARGETARCH" = "arm64" ]; then \
+# install cmake
+ARG CMAKE_VER=3.27.7
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+      wget -nv -O /tmp/cmake.sh https://github.com/Kitware/CMake/releases/download/v$CMAKE_VER/cmake-$CMAKE_VER-linux-x86_64.sh; \
+      sh /tmp/cmake.sh --skip-license --prefix=/usr/local; \
+      rm -f /tmp/cmake.sh; \
+    elif [ "$TARGETARCH" = "arm64" ]; then \
       wget -nv -O /tmp/cmake.sh https://github.com/Kitware/CMake/releases/download/v$CMAKE_VER/cmake-$CMAKE_VER-linux-aarch64.sh; \
       sh /tmp/cmake.sh --skip-license --prefix=/usr/local; \
       rm -f /tmp/cmake.sh; \
@@ -26,8 +31,7 @@ RUN apt-get install -y \
       libavcodec-dev \
       libavformat-dev \
       libavutil-dev \
-      libswscale-dev \
-      libavresample-dev
+      libswscale-dev
 
 COPY libs/opencv/savant /opencv/opencv_contrib/modules/savant
 RUN --mount=type=cache,target=/tmp/opencv-cache \
@@ -48,7 +52,7 @@ RUN --mount=type=cache,target=/tmp/opencv-cache \
         -D WITH_FFMPEG=ON \
         -D WITH_GSTREAMER=ON \
         -D BUILD_opencv_python3=ON \
-        -D OPENCV_PYTHON_INSTALL_PATH=lib/python3.8/dist-packages \
+        -D OPENCV_PYTHON_INSTALL_PATH=lib/python${PYTHON_VERSION}/dist-packages \
         -D OPENCV_FORCE_PYTHON_LIBS=ON \
         -D BUILD_PACKAGE=ON \
         -D CPACK_BINARY_DEB=ON \

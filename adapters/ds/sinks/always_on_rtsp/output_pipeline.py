@@ -1,13 +1,10 @@
-from typing import List
-
 from adapters.ds.sinks.always_on_rtsp.config import Config
+from adapters.ds.sinks.always_on_rtsp.encoder_builder import build_encoder_elements
 from adapters.ds.sinks.always_on_rtsp.last_frame import LastFrameRef
 from adapters.ds.sinks.always_on_rtsp.pipeline import add_elements
-from adapters.ds.sinks.always_on_rtsp.utils import nvidia_runtime_is_available
 from savant.config.schema import PipelineElement
 from savant.gstreamer import Gst
 from savant.gstreamer.element_factory import GstElementFactory
-from savant.utils.platform import is_aarch64
 
 
 def build_output_pipeline(
@@ -39,7 +36,7 @@ def build_output_pipeline(
                 'always_on_rtsp_frame_processor',
                 properties={
                     'max-delay-ms': config.max_delay_ms,
-                    'mode': config.transfer_mode,
+                    'mode': config.transfer_mode.value,
                     'last-frame': last_frame,
                 },
             ),
@@ -47,16 +44,6 @@ def build_output_pipeline(
         ]
         + build_encoder_elements(config)
         + [
-            PipelineElement(
-                'h264parse',
-                properties={
-                    'config-interval': -1,
-                },
-            ),
-            PipelineElement(
-                'fps_meter',
-                properties=config.fps_meter_properties(f'Output {config.source_id}'),
-            ),
             PipelineElement(
                 'rtspclientsink',
                 properties={
@@ -72,42 +59,3 @@ def build_output_pipeline(
     add_elements(pipeline, elements, factory)
 
     return pipeline
-
-
-def build_encoder_elements(config: Config) -> List[PipelineElement]:
-    if nvidia_runtime_is_available():
-        return build_nvenc_encoder_elements(config)
-    else:
-        return build_sw_encoder_elements(config)
-
-
-def build_nvenc_encoder_elements(config: Config) -> List[PipelineElement]:
-    properties = {
-        'profile': config.encoder_profile,
-        'bitrate': config.encoder_bitrate,
-    }
-    if not is_aarch64():
-        # nvv4l2h264enc doesn't encode video properly for the RTSP stream on dGPU
-        # https://forums.developer.nvidia.com/t/rtsp-stream-sent-by-rtspclientsink-doesnt-play-in-deepstream-6-2/244194
-        properties['tuning-info-id'] = 'HighQualityPreset'
-
-    return [PipelineElement('nvv4l2h264enc', properties=properties)]
-
-
-def build_sw_encoder_elements(config: Config) -> List[PipelineElement]:
-    return [
-        PipelineElement(
-            'x264enc',
-            properties={
-                'tune': 'zerolatency',
-                'bitrate': config.encoder_bitrate // 1024,  # bit/s -> kbit/s
-                'speed-preset': 'veryfast',
-            },
-        ),
-        PipelineElement(
-            'capsfilter',
-            properties={
-                'caps': f'video/x-h264,profile={config.encoder_profile.lower()}'
-            },
-        ),
-    ]

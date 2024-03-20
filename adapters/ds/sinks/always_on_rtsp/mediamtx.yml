@@ -1,14 +1,17 @@
 logLevel: info
 logDestinations: [ stdout ]
 
-rtspDisable: no
+api: no
+
+rtsp: yes
 protocols: [ udp, multicast, tcp ]
 rtspAddress: :554
 
-rtmpDisable: no
+rtmp: yes
 rtmpAddress: :1935
 
-hlsDisable: no
+hls: yes
+hlsAlwaysRemux: yes
 hlsAddress: :888
 hlsVariant: lowLatency
 hlsSegmentCount: 7
@@ -16,11 +19,15 @@ hlsSegmentDuration: 1s
 hlsPartDuration: 200ms
 hlsSegmentMaxSize: 50M
 
-webrtcDisable: no
+webrtc: yes
 webrtcAddress: :8889
+
+srt: no
 
 paths:
   ~^stream:
     source: publisher
-    sourceProtocol: automatic
+    rtspTransport: automatic
+    record: no
+    playback: no
     publishIPs: [ "127.0.0.1", "::1" ]

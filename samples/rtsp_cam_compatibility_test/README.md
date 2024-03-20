@@ -4,7 +4,7 @@ This pipeline is a simple pipeline that can be used to test the compatibility of
 
 It uses NVDEC and NVENC internally and Savant protocol. Thus, if the pipeline works, it means that Savant highly likely will work with the camera.
 
-The resulting video is broadcast in 640x360 resolution. You can access it at `http://<ip>:888/stream`.
+The resulting video is broadcast in 640x360 resolution. You can access it at `http://<ip>:888/stream/test`.
 
 ## Specifying the RTSP URL
 

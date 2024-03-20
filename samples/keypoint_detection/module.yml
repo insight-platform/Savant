@@ -3,45 +3,40 @@ name: keypoint_detection
 parameters:
   output_frame:
     codec: ${oc.env:CODEC, 'h264'}
-  frame:
-    width: ${oc.decode:${oc.env:FRAME_WIDTH, 1280}}
-    height: ${oc.decode:${oc.env:FRAME_HEIGHT, 720}}
+  detector: yolov8n-pose
   draw_func:
     module: samples.keypoint_detection.overlay
     class_name: Overlay
-  detected_object:
-    id: 0
-    label: person
 
 pipeline:
   elements:
     - element: nvinfer@complex_model
-      name: yolov8npose
+      name: ${parameters.detector}
       model:
         remote:
-          url: s3://savant-data/models/yolov8npose/yolov8npose.zip
-          checksum_url: s3://savant-data/models/yolov8npose/yolov8npose.md5
+          url: s3://savant-data/models/yolov8-pose/${parameters.detector}.zip
+          checksum_url: s3://savant-data/models/yolov8-pose/${parameters.detector}.md5
           parameters:
             endpoint: https://eu-central-1.linodeobjects.com
         format: onnx
-        model_file: yolov8n-pose.onnx
-        config_file: config_infer_primary_yoloV8_pose.txt
+        model_file: ${parameters.detector}-simplify-dynamic.onnx
+        batch_size: 1
         input:
-          shape: [ 3, 640, 640 ]
-        # max GPU RAM used to build the engine, 6GB by default
-        # set lower than total GPU RAM available on your hardware
-        workspace_size: 6144
+          shape: [3, 384, 640]
+          maintain_aspect_ratio: true
+          scale_factor: 0.0039215697906911373
         output:
-          layer_names: [ 'boxes', 'scores', 'kpts' ]
+          layer_names: ['output0']
           converter:
-            module: samples.keypoint_detection.yolo_v8pose
-            class_name: YoloV8faceConverter
+            module: samples.keypoint_detection.converter
+            class_name: YoloV8PoseConverter
             kwargs:
               confidence_threshold: 0.6
               nms_iou_threshold: 0.45
+              top_k: 10
           objects:
-            - class_id: ${parameters.detected_object.id}
-              label: ${parameters.detected_object.label}
+            - class_id: 0
+              label: person
               selector:
                 module: savant.selector.detector
                 class_name: MinMaxSizeBBoxSelector
@@ -49,4 +44,5 @@ pipeline:
                   min_width: 40
                   min_height: 40
           attributes:
-            - name: keypoint
+            - name: keypoints
+              internal: true

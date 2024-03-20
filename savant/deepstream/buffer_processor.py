@@ -10,6 +10,7 @@ from pygstsavantframemeta import (
     gst_buffer_get_savant_frame_meta,
     nvds_frame_meta_get_nvds_savant_frame_meta,
 )
+from savant_rs.match_query import MatchQuery
 from savant_rs.pipeline2 import VideoPipeline
 from savant_rs.primitives import (
     VideoFrame,
@@ -24,7 +25,6 @@ from savant_rs.utils.symbol_mapper import (
     get_object_id,
     parse_compound_key,
 )
-from savant_rs.video_object_query import MatchQuery
 
 from savant.api.parser import parse_attribute_value
 from savant.base.input_preproc import ObjectsPreprocessing
@@ -72,7 +72,6 @@ class NvDsBufferProcessor(GstBufferProcessor):
         self,
         queue: Queue,
         sources: SourceInfoRegistry,
-        objects_preprocessing: ObjectsPreprocessing,
         frame_params: FrameParameters,
         video_pipeline: VideoPipeline,
         pass_through_mode: bool,
@@ -81,7 +80,6 @@ class NvDsBufferProcessor(GstBufferProcessor):
 
         :param queue: Queue for output data.
         :param sources: Source info registry.
-        :param objects_preprocessing: Objects processing registry.
         :param frame_params: Processing frame parameters (after nvstreammux).
         :param video_pipeline: Video pipeline.
         :param pass_through_mode: Video pass through mode.
@@ -89,7 +87,6 @@ class NvDsBufferProcessor(GstBufferProcessor):
 
         super().__init__(queue)
         self._sources = sources
-        self._objects_preprocessing = objects_preprocessing
         self._frame_params = frame_params
         self._queue = queue
         self._video_pipeline = video_pipeline
@@ -226,7 +223,7 @@ class NvDsBufferProcessor(GstBufferProcessor):
                 bbox.left += self._frame_params.padding.left
                 bbox.top += self._frame_params.padding.top
 
-            track_id = obj_meta.get_track_id()
+            track_id = obj_meta.track_id
             if track_id is None:
                 track_id = UNTRACKED_OBJECT_ID
             # create nvds obj meta
@@ -498,7 +495,7 @@ class NvDsBufferProcessor(GstBufferProcessor):
         with video_frame_span.nested_span('prepare_output'):
             if self._pass_through_mode:
                 if video_frame.content.is_internal():
-                    content = video_frame.content.get_data_as_bytes()
+                    content = video_frame.content.get_data()
                     self.logger.debug(
                         'Pass-through mode is enabled. '
                         'Sending frame with IDX %s to sink without any changes. '
@@ -584,7 +581,6 @@ class NvDsEncodedBufferProcessor(NvDsBufferProcessor):
         self,
         queue: Queue,
         sources: SourceInfoRegistry,
-        objects_preprocessing: ObjectsPreprocessing,
         frame_params: FrameParameters,
         codec: CodecInfo,
         video_pipeline: VideoPipeline,
@@ -593,7 +589,6 @@ class NvDsEncodedBufferProcessor(NvDsBufferProcessor):
 
         :param queue: Queue for output data.
         :param sources: Source info registry.
-        :param objects_preprocessing: Objects processing registry.
         :param frame_params: Processing frame parameters (after nvstreammux).
         :param codec: Codec of the output frames.
         """
@@ -602,7 +597,6 @@ class NvDsEncodedBufferProcessor(NvDsBufferProcessor):
         super().__init__(
             queue=queue,
             sources=sources,
-            objects_preprocessing=objects_preprocessing,
             frame_params=frame_params,
             video_pipeline=video_pipeline,
             pass_through_mode=False,
@@ -744,7 +738,6 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
         self,
         queue: Queue,
         sources: SourceInfoRegistry,
-        objects_preprocessing: ObjectsPreprocessing,
         frame_params: FrameParameters,
         output_frame: bool,
         video_pipeline: VideoPipeline,
@@ -754,7 +747,6 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
 
         :param queue: Queue for output data.
         :param sources: Source info registry.
-        :param objects_preprocessing: Objects processing registry.
         :param frame_params: Processing frame parameters (after nvstreammux).
         :param output_frame: Whether to output frame or not.
         :param video_pipeline: Video pipeline.
@@ -766,7 +758,6 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
         super().__init__(
             queue=queue,
             sources=sources,
-            objects_preprocessing=objects_preprocessing,
             frame_params=frame_params,
             video_pipeline=video_pipeline,
             pass_through_mode=pass_through_mode,
@@ -829,7 +820,6 @@ def extract_frame_idx(buffer: Gst.Buffer) -> Optional[int]:
 def create_buffer_processor(
     queue: Queue,
     sources: SourceInfoRegistry,
-    objects_preprocessing: ObjectsPreprocessing,
     frame_params: FrameParameters,
     source_output: SourceOutput,
     video_pipeline: VideoPipeline,
@@ -839,7 +829,6 @@ def create_buffer_processor(
 
     :param queue: Queue for output data.
     :param sources: Source info registry.
-    :param objects_preprocessing: Objects processing registry.
     :param frame_params: Processing frame parameters (after nvstreammux).
     :param source_output: Source output.
     :param video_pipeline: Video pipeline.
@@ -854,7 +843,6 @@ def create_buffer_processor(
         return buffer_processor_class(
             queue=queue,
             sources=sources,
-            objects_preprocessing=objects_preprocessing,
             frame_params=frame_params,
             codec=source_output.codec,
             video_pipeline=video_pipeline,
@@ -863,7 +851,6 @@ def create_buffer_processor(
     return NvDsRawBufferProcessor(
         queue=queue,
         sources=sources,
-        objects_preprocessing=objects_preprocessing,
         frame_params=frame_params,
         output_frame=isinstance(source_output, SourceOutputWithFrame),
         video_pipeline=video_pipeline,

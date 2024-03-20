@@ -11,9 +11,8 @@ from savant_rs.primitives import (
     VideoFrameContent,
     VideoFrameTranscodingMethod,
 )
-from savant_rs.utils.serialization import Message, save_message_to_bytes
+from savant_rs.utils.serialization import save_message_to_bytes
 
-from adapters.python.shared.config import opt_config
 from adapters.python.shared.kafka_redis import (
     STOP,
     BaseConfig,
@@ -24,6 +23,7 @@ from adapters.python.shared.kafka_redis import (
 from savant.api.enums import ExternalFrameType
 from savant.client import SinkBuilder
 from savant.client.runner.sink import SinkResult
+from savant.utils.config import opt_config, strtobool
 
 
 class KafkaConfig(BaseKafkaConfig):
@@ -54,7 +54,7 @@ class Config(BaseConfig):
     def __init__(self):
         super().__init__()
         self.zmq_endpoint = os.environ['ZMQ_ENDPOINT']
-        self.deduplicate = opt_config('DEDUPLICATE', False, bool)
+        self.deduplicate = opt_config('DEDUPLICATE', False, strtobool)
         self.kafka = KafkaConfig()
         try:
             self.redis = RedisConfig()
@@ -216,13 +216,13 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
                 frame_meta.content = await self.store_frame_content(
                     frame_meta, result.frame_content
                 )
-            message = Message.video_frame(frame_meta)
+            message = frame_meta.to_message()
             self.count_frame()
 
         else:
             source_id = result.eos.source_id
             self._logger.debug('Received EOS for source %s', source_id)
-            message = Message.end_of_stream(result.eos)
+            message = result.eos.to_message()
 
         return message, source_id
 

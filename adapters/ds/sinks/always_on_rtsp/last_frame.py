@@ -1,8 +1,12 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Union
 
-from adapters.ds.sinks.always_on_rtsp.utils import Frame
+import cv2
+import numpy as np
+
+Frame = Union[cv2.cuda.GpuMat, np.ndarray, bytes]
+"""Type alias for a frame content."""
 
 
 @dataclass

@@ -26,8 +26,8 @@ docker compose -f samples/buffer_adapter/docker-compose.x86.yml up
 # if Jetson
 docker compose -f samples/buffer_adapter/docker-compose.l4t.yml up
 
-# open 'rtsp://127.0.0.1:554/stream' in your player
-# or visit 'http://127.0.0.1:888/stream/' (LL-HLS)
+# open 'rtsp://127.0.0.1:554/stream/city-traffic' in your player
+# or visit 'http://127.0.0.1:888/stream/city-traffic/' (LL-HLS)
 
 # for pre-configured Grafana dashboard visit
 # http://127.0.0.1:3000/d/89571523-ad22-4df2-bb09-df20b18bd5ee/buffer-metrics?orgId=1&refresh=5s

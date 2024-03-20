@@ -48,8 +48,8 @@ The demo uses models that are compiled into TensorRT engines the first time the 
 # if x86
 docker compose -f samples/rtdetr/docker-compose.x86.yml up
 
-# open 'rtsp://127.0.0.1:554/stream' in your player
-# or visit 'http://127.0.0.1:888/stream/' (LL-HLS)
+# open 'rtsp://127.0.0.1:554/stream/leeds' in your player
+# or visit 'http://127.0.0.1:888/stream/leeds/' (LL-HLS)
 
 # Ctrl+C to stop running the compose bundle
 ```

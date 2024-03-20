@@ -34,7 +34,7 @@ The demo uses models that are compiled into TensorRT engines the first time the 
 ```bash
 # you are expected to be in Savant/ directory
 
-./samples/license_plate_recognition/build_engines.sh
+./scripts/run_module.py --build-engines samples/license_plate_recognition/module.yml
 ```
 
 ## Run Demo
@@ -48,8 +48,8 @@ docker compose -f samples/license_plate_recognition/docker-compose.x86.yml up
 # if Jetson
 docker compose -f samples/license_plate_recognition/docker-compose.l4t.yml up
 
-# open 'rtsp://127.0.0.1:554/stream' in your player
-# or visit 'http://127.0.0.1:888/stream/' (LL-HLS)
+# open 'rtsp://127.0.0.1:554/stream/nvidia-sample-processed' in your player
+# or visit 'http://127.0.0.1:888/stream/nvidia-sample-processed/' (LL-HLS)
 
 # Ctrl+C to stop running the compose bundle
 ```

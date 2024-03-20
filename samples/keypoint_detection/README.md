@@ -2,13 +2,15 @@
 
 This application demonstrates the human body key point detection model.
 
+The model is yolov8n-pose from [ultralytics](https://github.com/ultralytics/ultralytics). It is exported to ONNX using ultralytics cli `yolo export model=yolov8n-pose.pt format=onnx dynamic simplify`.
+
 Preview:
 
 ![](assets/shuffle_dance.webp)
 
 Tested on platforms:
 
-- Xavier NX, Xavier AGX;
+- Nvidia Jetson (Xavier NX, Xavier AGX, Orin family);
 - Nvidia Turing, Ampere.
 
 Demonstrated adapters:
@@ -48,8 +50,27 @@ docker compose -f samples/keypoint_detection/docker-compose.x86.yml up
 # if Jetson
 docker compose -f samples/keypoint_detection/docker-compose.l4t.yml up
 
-# open 'rtsp://127.0.0.1:554/stream' in your player
-# or visit 'http://127.0.0.1:888/stream/' (LL-HLS)
+# open 'rtsp://127.0.0.1:554/stream/video' in your player
+# or visit 'http://127.0.0.1:888/stream/video/' (LL-HLS)
 
 # Ctrl+C to stop running the compose bundle
 ```
+
+## Performance Measurement
+
+Download the video file to the data folder. For example:
+
+```bash
+# you are expected to be in Savant/ directory
+
+mkdir -p data && curl -o data/shuffle_dance.mp4 \
+https://eu-central-1.linodeobjects.com/savant-data/demo/shuffle_dance.mp4
+```
+
+Now you are ready to run the performance benchmark with the following command:
+
+```bash
+./samples/yolov8_seg/run_perf.sh 
+```
+
+**Note**: Change the value of the `DATA_LOCATION` variable in the `run_perf.sh` script if you changed the video.

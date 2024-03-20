@@ -93,7 +93,7 @@ Start Uri Input container
 docker compose -f docker-compose.x86.yml up uri-input
 ```
 
-Open `rtsp://127.0.0.1:554/stream` in your player, or visit `http://127.0.0.1:888/stream/` in a browser.
+Open `rtsp://127.0.0.1:554/stream/test` in your player, or visit `http://127.0.0.1:888/stream/test` in a browser.
 
 4. Restart module container
 
@@ -159,7 +159,7 @@ cd /opt/savant
 python scripts/uri-input.py /test_data/elon_musk_perf.mp4 --socket pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc --sync
 ```
 
-Open `rtsp://127.0.0.1:554/stream` in your player, or visit `http://127.0.0.1:888/stream/` in a browser.
+Open `rtsp://127.0.0.1:554/stream/test` in your player, or visit `http://127.0.0.1:888/stream/test/` in a browser.
 
 7. Rebuild module image
 

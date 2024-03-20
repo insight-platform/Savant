@@ -51,9 +51,8 @@ docker compose -f samples/area_object_counting/docker-compose.x86.yml up
 # if Jetson
 docker compose -f samples/area_object_counting/docker-compose.l4t.yml up
 
-# open 'rtsp://127.0.0.1:554/stream' in your player
-# or visit 'http://127.0.0.1:888/stream/' (LL-HLS)
+# open 'rtsp://127.0.0.1:554/stream/town-centre' in your player
+# or visit 'http://127.0.0.1:888/stream/town-centre/' (LL-HLS)
 
 # Ctrl+C to stop running the compose bundle
 ```
-

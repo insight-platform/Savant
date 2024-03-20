@@ -10,7 +10,7 @@
 
 gboolean gst_savant_frame_meta_init(GstMeta *meta, gpointer params,
                                     GstBuffer *buffer) {
-    GST_LOG_OBJECT(buffer, "Initialize meta");
+    GST_LOG("Initialize GstSavantFrameMeta for buffer %p", buffer);
     GstSavantFrameMeta *emeta = (GstSavantFrameMeta *)meta;
     emeta->idx = 0;
     return TRUE;
@@ -21,17 +21,16 @@ gboolean gst_savant_frame_meta_transform(GstBuffer *dest, GstMeta *meta,
                                          gpointer data) {
     GstSavantFrameMeta *dmeta, *smeta;
     smeta = (GstSavantFrameMeta *)meta;
-    GST_DEBUG_OBJECT(buffer, "Transform meta with IDX %d to buffer %p",
-                     smeta->idx, dest);
-    dmeta = (GstSavantFrameMeta *)gst_buffer_add_savant_frame_meta(dest,
-                                                                   smeta->idx);
+    GST_DEBUG("Transform GstSavantFrameMeta with IDX %d from buffer %p to buffer %p",
+              smeta->idx, buffer, dest);
+    dmeta = (GstSavantFrameMeta *)gst_buffer_add_savant_frame_meta(dest, smeta->idx);
     if (!dmeta)
         return FALSE;
     return TRUE;
 }
 
 GType gst_savant_frame_meta_api_get_type(void) {
-    GST_TRACE("Get meta API type");
+    GST_TRACE("Get GstSavantFrameMeta API type");
     static GType type = 0;
     static const gchar *tags[] = {NULL};
 
@@ -43,7 +42,7 @@ GType gst_savant_frame_meta_api_get_type(void) {
 }
 
 const GstMetaInfo *gst_savant_frame_meta_get_info(void) {
-    GST_TRACE("Get meta info");
+    GST_TRACE("Get GstSavantFrameMeta info");
     static const GstMetaInfo *savant_frame_meta_info = NULL;
 
     if (g_once_init_enter((GstMetaInfo **)&savant_frame_meta_info)) {
@@ -59,13 +58,14 @@ const GstMetaInfo *gst_savant_frame_meta_get_info(void) {
 }
 
 GstSavantFrameMeta *gst_buffer_get_savant_frame_meta(GstBuffer *buffer) {
-    GST_DEBUG_OBJECT(buffer, "Get savant frame meta");
+    GST_DEBUG("Get GstSavantFrameMeta for buffer %p", buffer);
     GstSavantFrameMeta *meta = (GstSavantFrameMeta *)gst_buffer_get_meta(
         buffer, GST_SAVANT_FRAME_META_API_TYPE);
     if (meta) {
-        GST_DEBUG_OBJECT(buffer, "Frame IDX is %d", meta->idx);
+        GST_DEBUG("GstSavantFrameMeta with IDX %d found for buffer %p",
+                  meta->idx, buffer);
     } else {
-        GST_DEBUG_OBJECT(buffer, "Savant frame meta not found");
+        GST_DEBUG("GstSavantFrameMeta not found for buffer %p", buffer);
     }
 
     return meta;
@@ -73,24 +73,23 @@ GstSavantFrameMeta *gst_buffer_get_savant_frame_meta(GstBuffer *buffer) {
 
 GstSavantFrameMeta *gst_buffer_add_savant_frame_meta(GstBuffer *buffer,
                                                      guint32 idx) {
-    GST_DEBUG_OBJECT(buffer, "Adding savant frame meta with IDX %d", idx);
+    GST_DEBUG("Adding GstSavantFrameMeta with IDX %d to buffer %p", idx, buffer);
     GstSavantFrameMeta *meta;
     if (!gst_buffer_is_writable(buffer)) {
-        GST_WARNING_OBJECT(buffer,
-                           "Failed to add savant frame meta with IDX %d: "
-                           "buffer is not writable",
-                           idx);
+        GST_WARNING("Failed to add GstSavantFrameMeta with IDX %d to buffer %p: "
+                    "buffer is not writable",
+                    idx, buffer);
         return NULL;
     }
     meta = (GstSavantFrameMeta *)gst_buffer_add_meta(
         buffer, gst_savant_frame_meta_get_info(), NULL);
     if (!meta) {
-        GST_WARNING_OBJECT(buffer,
-                           "Failed to add savant frame meta with IDX %d", idx);
+        GST_WARNING("Failed to add GstSavantFrameMeta with IDX %d to buffer %p",
+                    idx, buffer);
         return NULL;
     }
     meta->idx = idx;
-    GST_INFO_OBJECT(buffer, "Added savant frame meta with IDX %d", idx);
+    GST_INFO("Added GstSavantFrameMeta with IDX %d to buffer %p", idx, buffer);
 
     return meta;
 }
@@ -99,7 +98,7 @@ GstSavantFrameMeta *gst_buffer_add_savant_frame_meta(GstBuffer *buffer,
 
 gpointer nvds_savant_frame_meta_copy_func(gpointer data, gpointer user_data) {
     GstSavantFrameMeta *src_meta = (GstSavantFrameMeta *)data;
-    GST_LOG("Copying savant frame meta with IDX %d", src_meta->idx);
+    GST_LOG("Copying GstSavantFrameMeta with IDX %d", src_meta->idx);
     GstSavantFrameMeta *dst_meta =
         (GstSavantFrameMeta *)g_malloc0(sizeof(GstSavantFrameMeta));
     memcpy(dst_meta, src_meta, sizeof(GstSavantFrameMeta));
@@ -109,7 +108,7 @@ gpointer nvds_savant_frame_meta_copy_func(gpointer data, gpointer user_data) {
 void nvds_savant_frame_meta_release_func(gpointer data, gpointer user_data) {
     GstSavantFrameMeta *meta = (GstSavantFrameMeta *)data;
     if (meta) {
-        GST_LOG("Releasing savant frame meta with IDX %d", meta->idx);
+        GST_LOG("Releasing GstSavantFrameMeta with IDX %d", meta->idx);
         g_free(meta);
         meta = NULL;
     }
@@ -120,7 +119,7 @@ gpointer nvds_savant_frame_meta_transform_func(gpointer data,
     NvDsUserMeta *user_meta = (NvDsUserMeta *)data;
     GstSavantFrameMeta *src_meta =
         (GstSavantFrameMeta *)user_meta->user_meta_data;
-    GST_DEBUG("Transforming savant frame meta with IDX %d", src_meta->idx);
+    GST_DEBUG("Transforming GstSavantFrameMeta with IDX %d", src_meta->idx);
     GstSavantFrameMeta *dst_meta =
         (GstSavantFrameMeta *)nvds_savant_frame_meta_copy_func(src_meta, NULL);
     return (gpointer)dst_meta;
@@ -130,7 +129,7 @@ void nvds_user_meta_savant_frame_meta_release_func(gpointer data,
                                                    gpointer user_data) {
     NvDsUserMeta *user_meta = (NvDsUserMeta *)data;
     GstSavantFrameMeta *meta = (GstSavantFrameMeta *)user_meta->user_meta_data;
-    GST_LOG("Releasing savant frame meta with IDX %d from user meta",
+    GST_LOG("Releasing GstSavantFrameMeta with IDX %d from NvDsUserMeta",
             meta->idx);
     // nvds_savant_frame_meta_release_func(meta, NULL);
 }
@@ -146,12 +145,12 @@ static GstSavantFrameMeta *new_savant_frame_meta(guint32 frame_idx) {
 
 GstSavantFrameMeta *gst_buffer_add_nvds_savant_frame_meta(GstBuffer *buffer,
                                                           guint32 idx) {
-    GST_DEBUG_OBJECT(buffer, "Adding savant frame meta with IDX %d", idx);
+    GST_DEBUG("Adding GstSavantFrameMeta with IDX %d to buffer %p", idx, buffer);
     NvDsMeta *meta = NULL;
     GstSavantFrameMeta *savant_frame_meta =
         (GstSavantFrameMeta *)g_malloc0(sizeof(GstSavantFrameMeta));
     if (!savant_frame_meta) {
-        GST_ERROR_OBJECT(buffer, "Failed to allocate GstSavantFrameMeta");
+        GST_ERROR("Failed to allocate GstSavantFrameMeta for buffer %p", buffer);
         // TODO: stop pipeline?
         return NULL;
     }
@@ -161,10 +160,9 @@ GstSavantFrameMeta *gst_buffer_add_nvds_savant_frame_meta(GstBuffer *buffer,
                                     nvds_savant_frame_meta_copy_func,
                                     nvds_savant_frame_meta_release_func);
     if (!meta) {
-        GST_ERROR_OBJECT(buffer,
-                         "Failed to add NvDsMeta with GstSavantFrameMeta to "
-                         "buffer (frame IDX = %d)",
-                         idx);
+        GST_ERROR("Failed to add NvDsMeta with GstSavantFrameMeta with IDX %d "
+                  "to buffer %p",
+                  idx, buffer);
         // TODO: stop pipeline?
         return NULL;
     }
@@ -192,7 +190,7 @@ GstSavantFrameMeta *gst_buffer_get_nvds_savant_frame_meta(GstBuffer *buffer) {
 
 GstSavantFrameMeta *
 nvds_frame_meta_get_nvds_savant_frame_meta(NvDsFrameMeta *frame_meta) {
-    GST_DEBUG("Get savant frame meta from frame meta %p", frame_meta);
+    GST_DEBUG("Get GstSavantFrameMeta from NvDsFrameMeta %p", frame_meta);
     NvDsMetaList *l_user_meta = NULL;
     NvDsUserMeta *user_meta = NULL;
     GstSavantFrameMeta *savant_frame_meta = NULL;
@@ -201,21 +199,21 @@ nvds_frame_meta_get_nvds_savant_frame_meta(NvDsFrameMeta *frame_meta) {
         user_meta = (NvDsUserMeta *)(l_user_meta->data);
         if (user_meta->base_meta.meta_type == GST_NVDS_SAVANT_FRAME_META) {
             savant_frame_meta = (GstSavantFrameMeta *)user_meta->user_meta_data;
-            GST_DEBUG("Got savant frame meta %p from nvds frame meta %p",
+            GST_DEBUG("Got GstSavantFrameMeta %p from NvDsFrameMeta %p",
                       frame_meta, savant_frame_meta);
             return savant_frame_meta;
         }
     }
-    GST_INFO("Not found savant frame meta in nvds frame meta %p", frame_meta);
+    GST_INFO("GstSavantFrameMeta not found in NvDsFrameMeta %p", frame_meta);
     return NULL;
 }
 
 GstSavantFrameMeta *gst_savant_frame_meta_to_nvds(GstBuffer *buffer) {
-    GST_DEBUG_OBJECT(buffer, "Convert Savant Frame Meta from Gst to Nvds");
+    GST_DEBUG("Convert SavantFrameMeta from Gst to NvDs for buffer %p", buffer);
     GstSavantFrameMeta *s_meta, *d_meta;
     s_meta = gst_buffer_get_savant_frame_meta(buffer);
     if (!s_meta) {
-        GST_INFO_OBJECT(buffer, "Buffer has no GstSavantFrameMeta");
+        GST_INFO("Buffer %p has no SavantFrameMeta", buffer);
         return NULL;
     }
     d_meta = gst_buffer_add_nvds_savant_frame_meta(buffer, s_meta->idx);
@@ -223,28 +221,27 @@ GstSavantFrameMeta *gst_savant_frame_meta_to_nvds(GstBuffer *buffer) {
 }
 
 GstSavantFrameMeta *nvds_savant_frame_meta_to_gst(GstBuffer *buffer) {
-    GST_DEBUG_OBJECT(buffer, "Convert Savant Frame Meta from NvDs to Gst");
+    GST_DEBUG("Convert SavantFrameMeta from NvDs to Gst for buffer %p", buffer);
     NvDsMetaList *l_frame;
     NvDsFrameMeta *frame_meta;
     GstSavantFrameMeta *s_meta, *d_meta;
     NvDsBatchMeta *batch_meta = gst_buffer_get_nvds_batch_meta(buffer);
     if (!batch_meta) {
-        GST_INFO_OBJECT(buffer, "Buffer has no NvDsBatchMeta");
+        GST_INFO("Buffer %p has no NvDsBatchMeta", buffer);
         return NULL;
     }
-    GST_DEBUG_OBJECT(buffer, "NvDsBatchMeta %p has %d frames", batch_meta,
-                     batch_meta->num_frames_in_batch);
+    GST_DEBUG("Buffer %p with NvDsBatchMeta %p has %d frames",
+              buffer, batch_meta, batch_meta->num_frames_in_batch);
     if (batch_meta->num_frames_in_batch != 1) {
-        GST_WARNING_OBJECT(buffer, "NvDsBatchMeta has %d frames",
-                           batch_meta->num_frames_in_batch);
+        GST_WARNING("Buffer %p with NvDsBatchMeta has %d frames",
+                    buffer, batch_meta->num_frames_in_batch);
         return NULL;
     }
     l_frame = batch_meta->frame_meta_list;
     frame_meta = (NvDsFrameMeta *)l_frame->data;
     s_meta = nvds_frame_meta_get_nvds_savant_frame_meta(frame_meta);
     if (!s_meta) {
-        GST_INFO_OBJECT(buffer,
-                        "Buffer has no GstSavantFrameMeta in NvDsBatchMeta");
+        GST_INFO("Buffer %p has no SavantFrameMeta in NvDsBatchMeta", buffer);
         return NULL;
     }
     // Copying s_meta since it will be released when NvDsBatchMeta is released
@@ -257,7 +254,7 @@ typedef GstSavantFrameMeta *(*GstSavantMetaConvertFunction)(GstBuffer *buffer);
 GstPadProbeReturn convert_savant_frame_meta_pad_probe(GstPad *pad,
                                                       GstPadProbeInfo *info,
                                                       gpointer user_data) {
-    GST_DEBUG_OBJECT(pad, "Convert Savant Frame Meta");
+    GST_DEBUG_OBJECT(pad, "Convert SavantFrameMeta");
     GstSavantMetaConvertFunction conv_func =
         (GstSavantMetaConvertFunction)user_data;
     GstBuffer *buffer = GST_PAD_PROBE_INFO_BUFFER(info);

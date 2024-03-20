@@ -34,6 +34,21 @@ def log_frame_metadata(pad: Gst.Pad, info: Gst.PadProbeInfo, config: Config):
     return Gst.PadProbeReturn.OK
 
 
+def delete_frame_from_pipeline(pad: Gst.Pad, info: Gst.PadProbeInfo, config: Config):
+    buffer: Gst.Buffer = info.get_buffer()
+    savant_frame_meta = gst_buffer_get_savant_frame_meta(buffer)
+    if savant_frame_meta is None:
+        logger.warning(
+            'Source %s. No Savant Frame Metadata found on buffer with PTS %s.',
+            config.source_id,
+            buffer.pts,
+        )
+        return Gst.PadProbeReturn.PASS
+
+    config.video_pipeline.delete(savant_frame_meta.idx)
+    return Gst.PadProbeReturn.OK
+
+
 def link_added_pad(
     element: Gst.Element,
     src_pad: Gst.Pad,
@@ -61,6 +76,8 @@ def on_demuxer_pad_added(
     codec = CODEC_BY_CAPS_NAME[caps[0].get_name()]
     if config.metadata_output:
         src_pad.add_probe(Gst.PadProbeType.BUFFER, log_frame_metadata, config)
+    else:
+        src_pad.add_probe(Gst.PadProbeType.BUFFER, delete_frame_from_pipeline, config)
 
     if codec == Codec.RAW_RGBA:
         capsfilter = factory.create(
@@ -93,25 +110,25 @@ def build_input_pipeline(
     factory: GstElementFactory,
 ):
     pipeline: Gst.Pipeline = Gst.Pipeline.new('input-pipeline')
-    savant_rs_video_demux_properties = {
+    zeromq_src_properties = {
+        'source-id': config.source_id,
+        'socket': config.zmq_endpoint,
+        'socket-type': config.zmq_socket_type.name,
+        'bind': config.zmq_socket_bind,
         'max-width': config.max_allowed_resolution[0],
         'max-height': config.max_allowed_resolution[1],
+        'pipeline': config.video_pipeline,
+        'pipeline-stage-name': config.pipeline_source_stage_name,
     }
-    if config.pipeline_stage_name is not None:
-        savant_rs_video_demux_properties[
-            'pipeline-stage-name'
-        ] = config.pipeline_stage_name
-        savant_rs_video_demux_properties['pipeline'] = config.video_pipeline
+    savant_rs_video_demux_properties = {
+        'pipeline': config.video_pipeline,
+        'pipeline-stage-name': config.pipeline_demux_stage_name,
+    }
 
     source_elements = [
         PipelineElement(
             'zeromq_src',
-            properties={
-                'source-id': config.source_id,
-                'socket': config.zmq_endpoint,
-                'socket-type': config.zmq_socket_type.name,
-                'bind': config.zmq_socket_bind,
-            },
+            properties=zeromq_src_properties,
         ),
         PipelineElement(
             'savant_rs_video_demux',
@@ -123,10 +140,6 @@ def build_input_pipeline(
         PipelineElement(
             'capsfilter',
             properties={'caps': f'{config.video_raw_caps}, format=RGBA'},
-        ),
-        PipelineElement(
-            'fps_meter',
-            properties=config.fps_meter_properties(f'Input {config.source_id}'),
         ),
     ]
     if config.sync:

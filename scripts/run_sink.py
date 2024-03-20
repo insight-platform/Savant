@@ -303,7 +303,7 @@ def video_files_sink(
     cmd = build_docker_run_command(
         f'sink-video-files-{uuid.uuid4().hex}',
         zmq_endpoints=[in_endpoint],
-        entrypoint='/opt/savant/adapters/gst/sinks/video_files.sh',
+        entrypoint='/opt/savant/adapters/gst/sinks/video_files.py',
         envs=envs,
         volumes=[f'{location}:{location}'],
         docker_image=docker_image,
@@ -315,12 +315,18 @@ def video_files_sink(
 @click.option(
     '--source-id',
     callback=validate_source_id,
-    help='Source ID, e.g. "camera1". The sink works in single-stream mode when this option is specified.',
+    help=(
+        'Source ID, e.g. "camera1". Filter to receive frames with a specific '
+        'source ID at the start of the sink.'
+    ),
 )
 @click.option(
     '--source-ids',
     callback=validate_source_id_list,
-    help='Comma-separated source ID list, e.g. "camera1,camera2". The sink works in multi-stream mode when this option is specified.',
+    help=(
+        'Comma-separated source ID list, e.g. "camera1,camera2". Filter to '
+        'receive frames with specific source IDs at the start of the sink.'
+    ),
 )
 @click.option(
     '--stub-file-location',
@@ -361,16 +367,25 @@ def video_files_sink(
     show_default=True,
 )
 @click.option(
-    '--profile',
-    default='High',
-    help='H264 encoding profile. One of: "Baseline", "Main", "High".',
+    '--codec',
+    default='h264',
+    help='Encoding codec. One of: "h264", "hevc".',
     show_default=True,
+)
+@click.option(
+    '--profile',
+    help=(
+        'Encoding profile. '
+        'For "h264" one of: "Baseline", "Main", "High". '
+        'For "hevc" one of: "Main", "Main10", "FREXT".'
+    ),
+    required=False,
 )
 @click.option(
     '--bitrate',
     type=click.INT,
     default=4000000,
-    help='H264 encoding bitrate.',
+    help='Encoding bitrate in bit/s.',
     show_default=True,
 )
 @click.option(
@@ -414,7 +429,34 @@ def video_files_sink(
     is_flag=True,
     help='Use CPU for transcoding and scaling.',
 )
-@fps_meter_options
+@click.option(
+    '--api-port',
+    default=13000,
+    help='Port for the stream control API. This port is always published.',
+    show_default=True,
+)
+@click.option(
+    '--fail-on-stream-error',
+    default=True,
+    help='Stop the adapter when a stream is failed.',
+    show_default=True,
+)
+@click.option(
+    '--status-poll-interval-ms',
+    default=1000,
+    help='Interval in milliseconds to poll statuses of the streams.',
+    show_default=True,
+)
+@click.option(
+    '--fps-period-frames',
+    type=int,
+    help='FPS measurement period, in frames.',
+)
+@click.option(
+    '--fps-period-seconds',
+    type=int,
+    help='FPS measurement period, in seconds.',
+)
 @common_options
 @adapter_docker_image_option('deepstream')
 @click.argument('rtsp_uri', required=False)
@@ -431,47 +473,48 @@ def always_on_rtsp_sink(
     protocols: str,
     latency_ms: int,
     keep_alive: bool,
-    profile: str,
+    codec: str,
+    profile: Optional[str],
     bitrate: int,
     framerate: str,
     fps_period_frames: Optional[int],
     fps_period_seconds: Optional[float],
-    fps_output: Optional[str],
     metadata_output: Optional[str],
     sync: bool,
     dev_mode: bool,
     publish_ports: bool,
     cpu: bool,
+    api_port: int,
+    fail_on_stream_error: bool,
+    status_poll_interval_ms: int,
     rtsp_uri: Optional[str],
 ):
     """Send video stream from specific source to RTSP server.
 
-    RTSP_URI - URI of the RTSP server. The sink sends video stream to RTSP_URI
-    in single-stream mode and to RTSP_URI/{source-id} in multi-stream mode.
+    RTSP_URI - URI of the RTSP server. The sink sends video stream to RTSP_URI/{source-id}.
     Exactly one of --dev-mode flag and RTSP_URI argument must be used.
 
     When --dev-mode flag is used the stream is available at:
 
-        - RTSP: rtsp://<container-host>:554/stream (single-stream),
-        rtsp://<container-host>:554/stream/{source-id} (multi-stream)
+        - RTSP: rtsp://<container-host>:554/stream/{source-id}
 
-        - RTMP: rtmp://<container-host>:1935/stream (single-stream),
-        rtmp://<container-host>:1935/stream/{source-id} (multi-stream)
+        - RTMP: rtmp://<container-host>:1935/stream/{source-id}
 
-        - HLS: http://<container-host>:888/stream (single-stream),
-        http://<container-host>:888/stream/{source-id} (multi-stream)
+        - HLS: http://<container-host>:888/stream/{source-id}
 
-        - WebRTC: http://<container-host>:8889/stream (single-stream),
-        http://<container-host>:8889/stream/{source-id} (multi-stream)
+        - WebRTC: http://<container-host>:8889/stream/{source-id}
 
+    Stream control API is available at http://<container-host>:<api-port>.
+
+    See http://<container-host>:<api-port>/docs for API documentation.
 
     Note: it is advisable to use --sync flag on source adapter or use a live
     source adapter (e.g. rtsp or usb-cam).
     """
 
-    assert (source_id is None) != (
-        source_ids is None
-    ), 'Must be specified one of "--source-id" flag or "--source-ids" argument.'
+    assert (
+        source_id is None or source_ids is None
+    ), '"--source-id" and "--source-ids" arguments are mutually exclusive.'
     assert os.path.exists(stub_file_location)
     assert dev_mode == (
         rtsp_uri is None
@@ -482,7 +525,7 @@ def always_on_rtsp_sink(
         source_id=source_id,
         fps_period_frames=fps_period_frames,
         fps_period_seconds=fps_period_seconds,
-        fps_output=fps_output,
+        fps_output=None,
         zmq_endpoint=in_endpoint,
         zmq_type=in_type,
         zmq_bind=in_bind,
@@ -493,10 +536,15 @@ def always_on_rtsp_sink(
         f'RTSP_PROTOCOLS={protocols}',
         f'RTSP_LATENCY_MS={latency_ms}',
         f'RTSP_KEEP_ALIVE={keep_alive}',
-        f'ENCODER_PROFILE={profile}',
+        f'CODEC={codec}',
         f'ENCODER_BITRATE={bitrate}',
         f'FRAMERATE={framerate}',
+        f'API_PORT={api_port}',
+        f'FAIL_ON_STREAM_ERROR={fail_on_stream_error}',
+        f'STATUS_POLL_INTERVAL_MS={status_poll_interval_ms}',
     ]
+    if profile:
+        envs.append(f'ENCODER_PROFILE={profile}')
     if source_ids:
         envs.append(f'SOURCE_IDS={source_ids}')
     if metadata_output:
@@ -509,7 +557,9 @@ def always_on_rtsp_sink(
     if publish_ports:
         ports = [(x, x) for x in [554, 1935, 888, 8889]]
     else:
-        ports = None
+        ports = []
+
+    ports.append((api_port, api_port))
 
     cmd = build_docker_run_command(
         f'sink-always-on-rtsp-{uuid.uuid4().hex}',
