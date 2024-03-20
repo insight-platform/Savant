@@ -447,7 +447,16 @@ def video_files_sink(
     help='Interval in milliseconds to poll statuses of the streams.',
     show_default=True,
 )
-@fps_meter_options
+@click.option(
+    '--fps-period-frames',
+    type=int,
+    help='FPS measurement period, in frames.',
+)
+@click.option(
+    '--fps-period-seconds',
+    type=int,
+    help='FPS measurement period, in seconds.',
+)
 @common_options
 @adapter_docker_image_option('deepstream')
 @click.argument('rtsp_uri', required=False)
@@ -470,7 +479,6 @@ def always_on_rtsp_sink(
     framerate: str,
     fps_period_frames: Optional[int],
     fps_period_seconds: Optional[float],
-    fps_output: Optional[str],
     metadata_output: Optional[str],
     sync: bool,
     dev_mode: bool,
@@ -517,7 +525,7 @@ def always_on_rtsp_sink(
         source_id=source_id,
         fps_period_frames=fps_period_frames,
         fps_period_seconds=fps_period_seconds,
-        fps_output=fps_output,
+        fps_output=None,
         zmq_endpoint=in_endpoint,
         zmq_type=in_type,
         zmq_bind=in_bind,

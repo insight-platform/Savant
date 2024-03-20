@@ -141,10 +141,6 @@ def build_input_pipeline(
             'capsfilter',
             properties={'caps': f'{config.video_raw_caps}, format=RGBA'},
         ),
-        PipelineElement(
-            'fps_meter',
-            properties=config.fps_meter_properties(f'Input {config.source_id}'),
-        ),
     ]
     if config.sync:
         sink_elements.append(
