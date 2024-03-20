@@ -31,9 +31,10 @@ fi
 if [[ $platform == "x86_64" ]]; then
     echo "PC platform"
     # check driver version
+    req_ver=535
     driver_version=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader --id=0 | cut -d'.' -f 1)
-    if (( driver_version < 525 )); then
-        echo "Driver ver >= 525 is required"
+    if (( driver_version < req_ver )); then
+        echo "Driver ver >= $req_ver is required"
         echo "Environment is not configured properly"
         exit 1
     fi
@@ -41,10 +42,11 @@ if [[ $platform == "x86_64" ]]; then
 elif [[ $platform == "aarch64" ]]; then
     echo "Jetson platform"
     # check L4T ver
+    req_ver=36
     l4t_ver=$(dpkg-query --showformat=\$\{Version\} --show nvidia-l4t-core | cut -d'-' -f 1)
     IFS='.' read -ra l4t_split_ver <<< "$l4t_ver"
-    if (( l4t_split_ver[0] < 35)); then
-        echo "L4T ver >= 35 is required"
+    if (( l4t_split_ver[0] < req_ver)); then
+        echo "L4T ver >= $req_ver is required"
         echo "Environment is not configured properly"
         exit 1
     fi
