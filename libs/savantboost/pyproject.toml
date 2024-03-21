@@ -2,7 +2,6 @@
 requires = [
     'setuptools>=61.0',
     'pybind11[global]',
-    'cmake',
     'scikit-build',
 ]
 build-backend = 'setuptools.build_meta'
