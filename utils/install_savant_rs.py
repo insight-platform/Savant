@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import json
 import os
+import subprocess
 import sys
 from typing import AnyStr, Optional
 from urllib.request import Request, urlopen
@@ -8,7 +9,8 @@ from urllib.request import Request, urlopen
 
 def print_usage():
     """Show usage information."""
-    print(f'Usage: {sys.argv[0]} <tag> <output_dir>')
+    print('Download and install savant_rs package from GitHub release.')
+    print(f'Usage: {sys.argv[0]} <tag> <download_dir>')
     print(f'Example: {sys.argv[0]} 0.2.14 /tmp')
     print('Environment variables:')
     print('  GITHUB_TOKEN: GitHub personal access token')
@@ -59,6 +61,13 @@ def download_asset(
     return asset_path
 
 
+def install(package):
+    """Install a package using pip."""
+    subprocess.check_call(
+        [sys.executable, '-m', 'pip', 'install', '--no-cache-dir', package]
+    )
+
+
 def main():
     if len(sys.argv) != 3:
         print_usage()
@@ -97,6 +106,8 @@ def main():
         sys.exit(
             f'No savant_rs package found for tag {release_tag} in repository {gh_repo}.'
         )
+
+    install(asset_path)
 
 
 if __name__ == '__main__':

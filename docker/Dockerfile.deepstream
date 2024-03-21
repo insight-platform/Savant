@@ -8,8 +8,8 @@ ARG PYTHON_VERSION=3.10
 # python to python3 by default
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 10
 
-# update pip
-RUN python -m pip install --no-cache-dir --upgrade pip
+# update pip, install build
+RUN python -m pip install --no-cache-dir --upgrade pip build
 
 # install cmake
 ARG CMAKE_VER=3.27.7
@@ -36,7 +36,6 @@ RUN python -m pip install --no-cache-dir setuptools wheel build
 WORKDIR /tmp/build
 COPY pyproject.toml README.md LICENSE ./
 COPY requirements/base.txt requirements/base.txt
-COPY requirements/savant-rs.txt requirements/savant-rs.txt
 COPY savant savant
 RUN python -m build --wheel
 
@@ -47,11 +46,17 @@ FROM base_builder AS pygstsavantframemeta_build
 WORKDIR /libs/gstsavantframemeta
 COPY libs/gstsavantframemeta/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-COPY requirements/savant-rs.txt requirements-savant-rs.txt
-RUN pip install --no-cache-dir -r requirements-savant-rs.txt
+
+# install savant-rs
+ARG SAVANT_RS_VERSION
+ARG SAVANT_RS_GH_REPO=insight-platform/savant-rs
+ARG SAVANT_RS_GH_TOKEN
+COPY utils/install_savant_rs.py utils/install_savant_rs.py
+RUN ./utils/install_savant_rs.py $SAVANT_RS_VERSION ./utils && \
+    rm -rf ./utils
 
 COPY libs/gstsavantframemeta .
-RUN python setup.py bdist_wheel && rm -rf _skbuild
+RUN python -m build --wheel --no-isolation && rm -rf _skbuild
 
 
 # Savant boost(cuda) library builder
@@ -72,7 +77,8 @@ COPY libs/savantboost/requirements.txt .
 RUN python -m pip install --no-cache-dir -r requirements.txt
 
 COPY libs/savantboost .
-RUN python setup.py bdist_wheel -- -DCMAKE_BUILD_TYPE:STRING=Release  && rm -rf _skbuild
+RUN python -m build --wheel --no-isolation && rm -rf _skbuild
+
 
 # Savant amd64 base container
 FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_BASE_IMAGE AS base_amd64
@@ -145,19 +151,24 @@ RUN python -m pip install --no-cache-dir -r requirements/base.txt
 COPY requirements/ext.txt requirements/ext.txt
 RUN python -m pip install --no-cache-dir -r requirements/ext.txt
 
+RUN rm -r requirements
+
 COPY --from=savantboost_build /libs/savanboost/dist /libs/savanboost/dist
 RUN python -m pip install --no-cache-dir /libs/savanboost/dist/*.whl
-
-COPY requirements/savant-rs.txt requirements/savant-rs.txt
-RUN python -m pip install --no-cache-dir -r requirements/savant-rs.txt
-
-RUN rm -r requirements
 
 COPY --from=pygstsavantframemeta_build /libs/gstsavantframemeta/dist /libs/gstsavantframemeta/dist
 RUN python -m pip install --no-cache-dir /libs/gstsavantframemeta/dist/*.whl
 
 COPY --from=savant_build /tmp/build/dist /libs/savant/dist
 RUN python -m pip install --no-cache-dir /libs/savant/dist/*.whl
+
+# install savant-rs
+ARG SAVANT_RS_VERSION
+ARG SAVANT_RS_GH_REPO=insight-platform/savant-rs
+ARG SAVANT_RS_GH_TOKEN
+COPY utils/install_savant_rs.py utils/install_savant_rs.py
+RUN ./utils/install_savant_rs.py $SAVANT_RS_VERSION ./utils && \
+    rm -rf ./utils
 
 # TODO: install yq?
 #ARG YQ_VERSION=4.35.2

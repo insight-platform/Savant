@@ -73,32 +73,25 @@ RUN apt-get update && \
       libsm6 && \
     rm -rf /var/lib/apt/lists/*
 
-COPY adapters/requirements.txt adapters/requirements-gst.txt $PROJECT_PATH/adapters/
-# gstreamer1.0-python3-plugin-loader requires python 3.10
-# pyzmq don't have built wheels for python 3.10 for aarch64
-# need gcc and python3-dev to build them
+COPY adapters/requirements.txt adapters/requirements-gst.txt adapters/
+RUN python -m pip install --no-cache-dir \
+    -r adapters/requirements.txt \
+    -r adapters/requirements-gst.txt
 RUN if [ "$(arch)" = "aarch64" ]; then \
-        apt-get update && \
-        apt-get install -y \
-            gcc \
-            python3-dev && \
-        python -m pip install --no-cache-dir -r adapters/requirements.txt -r adapters/requirements-gst.txt && \
-        apt-get purge -y \
-            gcc \
-            python3-dev && \
-        apt-get autoremove --purge -y && \
-        apt-get clean && \
-        rm -rf /var/lib/apt/lists/*; \
         rm /usr/lib/aarch64-linux-gnu/gio/modules/libgiolibproxy.so; \
     else \
-        python -m pip install --no-cache-dir -r adapters/requirements.txt -r adapters/requirements-gst.txt; \
         rm /usr/lib/x86_64-linux-gnu/gio/modules/libgiolibproxy.so; \
     fi
 
 COPY --from=aravis-builder /build/aravis/dist /usr
 
-COPY requirements/savant-rs.txt $PROJECT_PATH/adapters/requirements-savant-rs.txt
-RUN pip install --no-cache-dir -r $PROJECT_PATH/adapters/requirements-savant-rs.txt
+# install savant-rs
+ARG SAVANT_RS_VERSION
+ARG SAVANT_RS_GH_REPO=insight-platform/savant-rs
+ARG SAVANT_RS_GH_TOKEN
+COPY utils/install_savant_rs.py utils/install_savant_rs.py
+RUN ./utils/install_savant_rs.py $SAVANT_RS_VERSION ./utils && \
+    rm -rf ./utils
 
 # copy savant and plugins - they are used in imports
 COPY savant savant

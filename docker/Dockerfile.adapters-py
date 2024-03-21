@@ -1,4 +1,4 @@
-FROM python:3.9.13-slim
+FROM python:3.10.12-slim
 
 ARG PROJECT_PATH=/opt/savant
 ENV PYTHONUNBUFFERED=1 \
@@ -12,14 +12,20 @@ RUN export DEBIAN_FRONTEND=noninteractive \
         libmagic1 \
     && rm -rf /var/lib/apt/lists/*
 
-COPY adapters/requirements.txt $PROJECT_PATH/adapters/requirements.txt
-RUN python -m pip install --no-cache-dir -r $PROJECT_PATH/adapters/requirements.txt
-COPY adapters/requirements-py.txt $PROJECT_PATH/adapters/requirements-py.txt
-RUN python -m pip install --no-cache-dir -r $PROJECT_PATH/adapters/requirements-py.txt
-COPY requirements/savant-rs.txt $PROJECT_PATH/adapters/requirements-savant-rs.txt
-RUN pip install --no-cache-dir -r $PROJECT_PATH/adapters/requirements-savant-rs.txt
+COPY adapters/requirements.txt adapters/requirements.txt
+RUN python -m pip install --no-cache-dir -r adapters/requirements.txt
+COPY adapters/requirements-py.txt adapters/requirements-py.txt
+RUN python -m pip install --no-cache-dir -r adapters/requirements-py.txt
 
-COPY savant $PROJECT_PATH/savant
-COPY adapters/shared $PROJECT_PATH/adapters/shared
-COPY adapters/python $PROJECT_PATH/adapters/python
+# install savant-rs
+ARG SAVANT_RS_VERSION
+ARG SAVANT_RS_GH_REPO=insight-platform/savant-rs
+ARG SAVANT_RS_GH_TOKEN
+COPY utils/install_savant_rs.py utils/install_savant_rs.py
+RUN ./utils/install_savant_rs.py $SAVANT_RS_VERSION ./utils && \
+    rm -rf ./utils
+
+COPY savant savant
+COPY adapters/shared adapters/shared
+COPY adapters/python adapters/python
 ENV LOGLEVEL=info
