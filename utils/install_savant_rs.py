@@ -90,8 +90,8 @@ def main():
     asset_path = None
     for asset in assets:
         name = asset['name']
-        if not name.startswith('savant_rs'):
-            continue
+        # if not name.startswith('savant_rs'):
+        #     continue
         if not name.endswith('.whl'):
             continue
         if arch not in name:
@@ -100,14 +100,12 @@ def main():
             continue
         asset_path = download_asset(asset, download_path, gh_repo, gh_token)
         print(f'Downloaded {asset_path}.')
-        break
+        install(asset_path)
 
     if asset_path is None:
         sys.exit(
             f'No savant_rs package found for tag {release_tag} in repository {gh_repo}.'
         )
-
-    install(asset_path)
 
 
 if __name__ == '__main__':
