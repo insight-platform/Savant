@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import AsyncIterable, Iterable, Optional, Set, Tuple, Union
 
 from savant_rs.pipeline2 import (
+    StageFunction,
     VideoPipeline,
     VideoPipelineConfiguration,
     VideoPipelineStagePayloadType,
@@ -88,7 +89,14 @@ class SourceRunner:
         self._pipeline_stage_name = 'savant-client'
         self._pipeline = VideoPipeline(
             'savant-client',
-            [(self._pipeline_stage_name, VideoPipelineStagePayloadType.Frame)],
+            [
+                (
+                    self._pipeline_stage_name,
+                    VideoPipelineStagePayloadType.Frame,
+                    StageFunction.none(),
+                    StageFunction.none(),
+                )
+            ],
             VideoPipelineConfiguration(),
         )
         if self._telemetry_enabled:

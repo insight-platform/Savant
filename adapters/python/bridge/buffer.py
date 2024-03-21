@@ -6,6 +6,7 @@ from typing import Dict, Optional, Tuple
 
 from rocksq.blocking import PersistentQueueWithCapacity
 from savant_rs.pipeline2 import (
+    StageFunction,
     VideoPipeline,
     VideoPipelineConfiguration,
     VideoPipelineStagePayloadType,
@@ -385,7 +386,14 @@ def build_video_pipeline(config: Config):
 
     return VideoPipeline(
         'buffer-adapter',
-        [('fps-meter', VideoPipelineStagePayloadType.Frame)],
+        [
+            (
+                'fps-meter',
+                VideoPipelineStagePayloadType.Frame,
+                StageFunction.none(),
+                StageFunction.none(),
+            )
+        ],
         conf,
     )
 

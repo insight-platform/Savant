@@ -4,6 +4,7 @@ from typing import Dict, Optional
 
 from pygstsavantframemeta import gst_buffer_get_savant_frame_meta
 from savant_rs.pipeline2 import (
+    StageFunction,
     VideoPipeline,
     VideoPipelineConfiguration,
     VideoPipelineStagePayloadType,
@@ -78,9 +79,24 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
         self._video_pipeline: VideoPipeline = VideoPipeline(
             'video-player',
             [
-                (source_stage_name, VideoPipelineStagePayloadType.Frame),
-                (demux_stage_name, VideoPipelineStagePayloadType.Frame),
-                (decoder_stage_name, VideoPipelineStagePayloadType.Frame),
+                (
+                    source_stage_name,
+                    VideoPipelineStagePayloadType.Frame,
+                    StageFunction.none(),
+                    StageFunction.none(),
+                ),
+                (
+                    demux_stage_name,
+                    VideoPipelineStagePayloadType.Frame,
+                    StageFunction.none(),
+                    StageFunction.none(),
+                ),
+                (
+                    decoder_stage_name,
+                    VideoPipelineStagePayloadType.Frame,
+                    StageFunction.none(),
+                    StageFunction.none(),
+                ),
             ],
             VideoPipelineConfiguration(),
         )
