@@ -16,7 +16,7 @@ Savant is built on DeepStream and provides a high-level abstraction layer for bu
 
 Savant depends on Nvidia DeepStream and JetPack versions (Jetson). The following tables show the compatibility of Savant versions with DeepStream versions.
 
-### 0.2.9 LTS
+### 0.2.11 LTS
 
 This release is recommended for production use. It uses the time-proven DeepStream 6.3. The release works on dGPU (Turing, Volta, Ampere, Ada) and Jetson (Xavier NX/AGX, Orin Nano/NX/AGX) hardware.
 
@@ -28,7 +28,7 @@ Known drawbacks:
 | X86 Driver 525(Datacenter), 530+ Quadro/GeForce | Stable | 6.3        |
 | Jetson Xavier, Orin with JetPack 5.1.2 GA       | Stable | 6.3        |           
 
-### 0.3.9 LTS
+### 0.3.11 LTS
 
 This release is recommended for production use with DeepStream 6.4. The release works on dGPU (Turing, Volta, Ampere, Ada) and Jetson Orin Nano/NX/AGX hardware (JetPack 6.0 DP). It does not support Jetson Xavier and older devices.
 
