@@ -2,7 +2,7 @@
 import logging
 
 import pyds
-from savant_rs.primitives import Attribute, VideoObject, VideoFrame
+from savant_rs.primitives import Attribute, VideoFrame, VideoObject
 from savant_rs.primitives.geometry import BBox, RBBox
 from savant_rs.utils.symbol_mapper import parse_compound_key
 

@@ -39,8 +39,8 @@ from savant.deepstream.buffer_processor import (
 from savant.deepstream.element_factory import NvDsElementFactory
 from savant.deepstream.metadata import (
     nvds_attr_meta_output_converter,
-    nvds_obj_meta_output_converter,
     nvds_obj_bbox_output_converter,
+    nvds_obj_meta_output_converter,
 )
 from savant.deepstream.nvinfer.processor import NvInferProcessor
 from savant.deepstream.source_output import create_source_output
