@@ -197,6 +197,9 @@ ENV SAVANT_STATUS_FILEPATH=$PROJECT_PATH/status.txt
 HEALTHCHECK --interval=5s --timeout=5s --start-period=30m --retries=3 \
     CMD [ "sh", "/opt/savant/healthcheck.sh" ]
 
+COPY savant/welcome.py .
+RUN echo 'python $PROJECT_PATH/welcome.py' >> /etc/bash.bashrc
+
 ENTRYPOINT ["python", "-m", "savant.entrypoint"]
 
 

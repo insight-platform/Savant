@@ -104,3 +104,6 @@ COPY adapters/gst adapters/gst
 COPY gst_plugins/python/logger.py adapters/gst/gst_plugins/python/
 ENV GST_PLUGIN_PATH=$PROJECT_PATH/adapters/gst/gst_plugins \
     LOGLEVEL=info
+
+COPY savant/welcome.py .
+RUN echo 'python $PROJECT_PATH/welcome.py' >> /etc/bash.bashrc

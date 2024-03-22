@@ -1,5 +1,6 @@
 """Parses VERSION file."""
 from pathlib import Path
+from typing import List
 
 from savant.utils.singleton import SingletonMeta
 
@@ -32,6 +33,13 @@ class Version(metaclass=SingletonMeta):
     @property
     def DEEPSTREAM(self):
         return self._versions['DEEPSTREAM']
+
+    def get_list(self) -> List[str]:
+        return [
+            f'Savant Version {self.SAVANT}',
+            f'Savant RS Version {self.SAVANT_RS}',
+            f'DeepStream Version {self.DEEPSTREAM}',
+        ]
 
 
 version = Version()
