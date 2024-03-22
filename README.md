@@ -1,17 +1,50 @@
-# 🚀 Savant: Supercharged Computer Vision and Video Analytics Framework on DeepStream
-
-
-Savant is an open-source, high-level framework for building real-time, streaming, highly efficient multimedia AI applications on the Nvidia stack. It helps to develop dynamic, fault-tolerant inference pipelines that utilize the best Nvidia approaches for data center and edge accelerators.
-
-Savant is built on DeepStream and provides a high-level abstraction layer for building inference pipelines. It is designed to be easy to use, flexible, and scalable. It is a great choice for building smart CV and video analytics applications for cities, retail, manufacturing, and more. Savant is a member of the Nvidia Inception Program.
-
-:star: Star us on GitHub — it motivates us a lot and helps the project become more visible to developers.
+# Savant: High-Performance Computer Vision Framework For Data Center And Edge
 
 ![GitHub release (with filter)](https://img.shields.io/github/v/release/insight-platform/Savant)
 [![Build status](https://github.com/insight-platform/Savant/actions/workflows/main.yml/badge.svg?branch=develop)](https://github.com/insight-platform/Savant/actions/workflows/main.yml)
 [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/SavantFramework.svg?style=social&label=Follow%20%40SavantFramework)](https://twitter.com/SavantFramework) [![Blog](https://img.shields.io/badge/Inside%20InSight%20Blog-444444?logo=medium)](https://b.savant-ai.io/) [![Discord](https://img.shields.io/badge/Discord-8A2BE2)](https://discord.gg/KVAfGBsZGd)
 
+:star: Star us on GitHub — it motivates us a lot and helps the project become more visible to developers.
+
 ![current-demos-page](https://github.com/insight-platform/Savant/assets/15047882/22a58429-582f-4e46-a5dd-74c54e863bec)
+
+Savant is an open-source, high-level framework for building real-time, streaming, highly efficient multimedia AI applications on the Nvidia stack. It helps to develop dynamic, fault-tolerant inference pipelines that utilize the best Nvidia approaches for data center and edge accelerators.
+
+Savant is built on DeepStream and provides a high-level abstraction layer for building inference pipelines. It is designed to be easy to use, flexible, and scalable. It is a great choice for building smart CV and video analytics applications for cities, retail, manufacturing, and more. Savant is a member of the Nvidia Inception Program.
+
+## What Version To Use
+
+Savant depends on Nvidia DeepStream and JetPack versions (Jetson). The following tables show the compatibility of Savant versions with DeepStream versions.
+
+### 0.2.11 LTS
+
+This release is recommended for production use. It uses the time-proven DeepStream 6.3. The release works on dGPU (Turing, Volta, Ampere, Ada) and Jetson (Xavier NX/AGX, Orin Nano/NX/AGX) hardware.
+
+Known drawbacks:
+- NVJPEG caps on 115MHz on Jetson Orin Nano in JPEG decoding.
+
+| Requirements                                    | Status | DeepStream |
+|-------------------------------------------------|--------|------------|
+| X86 Driver 525(Datacenter), 530+ Quadro/GeForce | Stable | 6.3        |
+| Jetson Xavier, Orin with JetPack 5.1.2 GA       | Stable | 6.3        |           
+
+### 0.3.11 LTS
+
+This release is recommended for production use with DeepStream 6.4. The release works on dGPU (Turing, Volta, Ampere, Ada) and Jetson Orin Nano/NX/AGX hardware (JetPack 6.0 DP). It does not support Jetson Xavier and older devices.
+
+| Requirements                                    | Status | DeepStream |
+|-------------------------------------------------|--------|------------|
+| X86 Driver 525(Datacenter), 530+ Quadro/GeForce | Stable | 6.4        |
+| Jetson Orin JetPack 6.0 DP                      | Stable | 6.4        |           
+
+### 0.4.x Current Develop (Feature Releases)
+
+This branch represents current development. It is not recommended for production use. It is a good choice for testing new features and providing feedback and also if you require new features absent in `0.2.x` and `0.3.x`.
+
+| Requirements                                    | Status | DeepStream |
+|-------------------------------------------------|--------|------------|
+| X86 Driver 525(Datacenter), 530+ Quadro/GeForce | Stable | 6.4        |
+| Jetson Orin JetPack 6.0 DP                      | Stable | 6.4        |
 
 ## Chat With Us
 

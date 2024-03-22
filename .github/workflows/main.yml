@@ -25,6 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       savant-version: ${{ steps.get-savant-version.outputs.savant-version }}
+      savant-rs-version: ${{ steps.get-savant-version.outputs.savant-rs-version }}
       deepstream-version: ${{ steps.get-savant-version.outputs.deepstream-version }}
       savant-deepstream-tag: ${{ steps.get-docker-vars.outputs.deepstream-tag }}
       savant-adapters-tag: ${{ steps.get-docker-vars.outputs.adapters-tag }}
@@ -107,6 +108,7 @@ jobs:
             ${{ env.REGISTRY }}/${{ github.repository_owner }}/savant-${{ matrix.docker_image_suffix }}:${{ needs.init.outputs.savant-deepstream-tag }}
           build-args: |
             SAVANT_VERSION=${{ needs.init.outputs.savant-version }}
+            SAVANT_RS_VERSION=${{ needs.init.outputs.savant-rs-version }}
             DEEPSTREAM_VERSION=${{ needs.init.outputs.deepstream-version }}
           platforms: ${{ matrix.arch }}
           target: base
@@ -121,6 +123,7 @@ jobs:
             ${{ env.REGISTRY }}/${{ github.repository_owner }}/savant-adapters-${{ matrix.docker_image_suffix }}:${{ needs.init.outputs.savant-deepstream-tag }}
           build-args: |
             SAVANT_VERSION=${{ needs.init.outputs.savant-version }}
+            SAVANT_RS_VERSION=${{ needs.init.outputs.savant-rs-version }}
             DEEPSTREAM_VERSION=${{ needs.init.outputs.deepstream-version }}
           platforms: ${{ matrix.arch }}
           target: adapters
@@ -175,6 +178,10 @@ jobs:
           file: ${{ matrix.docker_file }}
           tags: |
             ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.docker_image }}:${{ needs.init.outputs.savant-adapters-tag }}
+          build-args: |
+            SAVANT_VERSION=${{ needs.init.outputs.savant-version }}
+            SAVANT_RS_VERSION=${{ needs.init.outputs.savant-rs-version }}
+            DEEPSTREAM_VERSION=${{ needs.init.outputs.deepstream-version }}
           platforms: ${{ matrix.arch }}
           push: true
 

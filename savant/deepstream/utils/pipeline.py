@@ -1,7 +1,11 @@
 from typing import Any, Dict, List, Optional, Union
 
 from savant_rs import init_jaeger_tracer, init_noop_tracer
-from savant_rs.pipeline2 import VideoPipeline, VideoPipelineStagePayloadType
+from savant_rs.pipeline2 import (
+    StageFunction,
+    VideoPipeline,
+    VideoPipelineStagePayloadType,
+)
 
 from savant.config.schema import (
     BufferQueuesParameters,
@@ -112,34 +116,143 @@ def get_pipeline_element_stages(
 
 def build_pipeline_stages(element_stages: List[Union[str, List[str]]]):
     pipeline_stages = [
-        ('source', VideoPipelineStagePayloadType.Frame),
-        ('source-demuxer', VideoPipelineStagePayloadType.Frame),
-        ('decode', VideoPipelineStagePayloadType.Frame),
-        ('source-convert', VideoPipelineStagePayloadType.Frame),
-        ('source-capsfilter', VideoPipelineStagePayloadType.Frame),
-        ('muxer', VideoPipelineStagePayloadType.Frame),
-        ('prepare-input', VideoPipelineStagePayloadType.Batch),
+        (
+            'source',
+            VideoPipelineStagePayloadType.Frame,
+            StageFunction.none(),
+            StageFunction.none(),
+        ),
+        (
+            'source-demuxer',
+            VideoPipelineStagePayloadType.Frame,
+            StageFunction.none(),
+            StageFunction.none(),
+        ),
+        (
+            'decode',
+            VideoPipelineStagePayloadType.Frame,
+            StageFunction.none(),
+            StageFunction.none(),
+        ),
+        (
+            'source-convert',
+            VideoPipelineStagePayloadType.Frame,
+            StageFunction.none(),
+            StageFunction.none(),
+        ),
+        (
+            'source-capsfilter',
+            VideoPipelineStagePayloadType.Frame,
+            StageFunction.none(),
+            StageFunction.none(),
+        ),
+        (
+            'muxer',
+            VideoPipelineStagePayloadType.Frame,
+            StageFunction.none(),
+            StageFunction.none(),
+        ),
+        (
+            'prepare-input',
+            VideoPipelineStagePayloadType.Batch,
+            StageFunction.none(),
+            StageFunction.none(),
+        ),
     ]
     for stage in element_stages:
         if isinstance(stage, str):
-            pipeline_stages.append((stage, VideoPipelineStagePayloadType.Batch))
+            pipeline_stages.append(
+                (
+                    stage,
+                    VideoPipelineStagePayloadType.Batch,
+                    StageFunction.none(),
+                    StageFunction.none(),
+                )
+            )
         else:
             for x in stage:
-                pipeline_stages.append((x, VideoPipelineStagePayloadType.Batch))
+                pipeline_stages.append(
+                    (
+                        x,
+                        VideoPipelineStagePayloadType.Batch,
+                        StageFunction.none(),
+                        StageFunction.none(),
+                    )
+                )
     pipeline_stages.extend(
         [
-            ('update-frame-meta', VideoPipelineStagePayloadType.Batch),
-            ('demuxer', VideoPipelineStagePayloadType.Frame),
-            ('output-queue', VideoPipelineStagePayloadType.Frame),
-            ('frame-tag-filter', VideoPipelineStagePayloadType.Frame),
-            ('queue-tagged', VideoPipelineStagePayloadType.Frame),
-            ('sink-convert', VideoPipelineStagePayloadType.Frame),
-            ('encode', VideoPipelineStagePayloadType.Frame),
-            ('parse', VideoPipelineStagePayloadType.Frame),
-            ('sink-capsfilter', VideoPipelineStagePayloadType.Frame),
-            ('queue-not-tagged', VideoPipelineStagePayloadType.Frame),
-            ('frame-tag-funnel', VideoPipelineStagePayloadType.Frame),
-            ('sink', VideoPipelineStagePayloadType.Frame),
+            (
+                'update-frame-meta',
+                VideoPipelineStagePayloadType.Batch,
+                StageFunction.none(),
+                StageFunction.none(),
+            ),
+            (
+                'demuxer',
+                VideoPipelineStagePayloadType.Frame,
+                StageFunction.none(),
+                StageFunction.none(),
+            ),
+            (
+                'output-queue',
+                VideoPipelineStagePayloadType.Frame,
+                StageFunction.none(),
+                StageFunction.none(),
+            ),
+            (
+                'frame-tag-filter',
+                VideoPipelineStagePayloadType.Frame,
+                StageFunction.none(),
+                StageFunction.none(),
+            ),
+            (
+                'queue-tagged',
+                VideoPipelineStagePayloadType.Frame,
+                StageFunction.none(),
+                StageFunction.none(),
+            ),
+            (
+                'sink-convert',
+                VideoPipelineStagePayloadType.Frame,
+                StageFunction.none(),
+                StageFunction.none(),
+            ),
+            (
+                'encode',
+                VideoPipelineStagePayloadType.Frame,
+                StageFunction.none(),
+                StageFunction.none(),
+            ),
+            (
+                'parse',
+                VideoPipelineStagePayloadType.Frame,
+                StageFunction.none(),
+                StageFunction.none(),
+            ),
+            (
+                'sink-capsfilter',
+                VideoPipelineStagePayloadType.Frame,
+                StageFunction.none(),
+                StageFunction.none(),
+            ),
+            (
+                'queue-not-tagged',
+                VideoPipelineStagePayloadType.Frame,
+                StageFunction.none(),
+                StageFunction.none(),
+            ),
+            (
+                'frame-tag-funnel',
+                VideoPipelineStagePayloadType.Frame,
+                StageFunction.none(),
+                StageFunction.none(),
+            ),
+            (
+                'sink',
+                VideoPipelineStagePayloadType.Frame,
+                StageFunction.none(),
+                StageFunction.none(),
+            ),
         ]
     )
 

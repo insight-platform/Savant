@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Optional
 
 from savant_rs.pipeline2 import (
+    StageFunction,
     VideoPipeline,
     VideoPipelineConfiguration,
     VideoPipelineStagePayloadType,
@@ -129,8 +130,18 @@ class Config(CommonStreamConfig):
         self.video_pipeline: Optional[VideoPipeline] = VideoPipeline(
             'always-on-sink',
             [
-                (self.pipeline_source_stage_name, VideoPipelineStagePayloadType.Frame),
-                (self.pipeline_demux_stage_name, VideoPipelineStagePayloadType.Frame),
+                (
+                    self.pipeline_source_stage_name,
+                    VideoPipelineStagePayloadType.Frame,
+                    StageFunction.none(),
+                    StageFunction.none(),
+                ),
+                (
+                    self.pipeline_demux_stage_name,
+                    VideoPipelineStagePayloadType.Frame,
+                    StageFunction.none(),
+                    StageFunction.none(),
+                ),
             ],
             conf,
         )

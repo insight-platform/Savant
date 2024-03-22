@@ -33,7 +33,7 @@ savant = ['VERSION', '**/*.yml']
 
 [tool.setuptools.dynamic]
 version = {attr = 'savant.__version__'}
-dependencies = {file = ['requirements/base.txt', 'requirements/savant-rs.txt']}
+dependencies = {file = ['requirements/base.txt']}
 
 [tool.black]
 skip-string-normalization = true

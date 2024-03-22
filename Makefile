@@ -3,6 +3,7 @@
 
 SHELL := /bin/bash
 SAVANT_VERSION := $(shell cat savant/VERSION | awk -F= '$$1=="SAVANT"{print $$2}' | sed 's/"//g')
+SAVANT_RS_VERSION := $(shell cat savant/VERSION | awk -F= '$$1=="SAVANT_RS"{print $$2}' | sed 's/"//g')
 DEEPSTREAM_VERSION := $(shell cat savant/VERSION | awk -F= '$$1=="DEEPSTREAM"{print $$2}' | sed 's/"//g')
 DOCKER_FILE := Dockerfile.deepstream
 PLATFORM := linux/amd64
@@ -27,6 +28,7 @@ build:
 		--platform $(PLATFORM) \
 		--target base \
 		--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
+		--build-arg SAVANT_RS_VERSION=$(SAVANT_RS_VERSION) \
 		-f docker/$(DOCKER_FILE) \
 		-t savant-deepstream$(PLATFORM_SUFFIX) .
 
@@ -35,18 +37,21 @@ build-adapters-deepstream:
 		--platform $(PLATFORM) \
 		--target adapters \
 		--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
+		--build-arg SAVANT_RS_VERSION=$(SAVANT_RS_VERSION) \
 		-f docker/$(DOCKER_FILE) \
 		-t savant-adapters-deepstream$(PLATFORM_SUFFIX) .
 
 build-adapters-gstreamer:
 	docker buildx build \
 		--platform $(PLATFORM) \
+		--build-arg SAVANT_RS_VERSION=$(SAVANT_RS_VERSION) \
 		-f docker/Dockerfile.adapters-gstreamer \
 		-t savant-adapters-gstreamer$(PLATFORM_SUFFIX) .
 
 build-adapters-py:
 	docker buildx build \
 		--platform $(PLATFORM) \
+		--build-arg SAVANT_RS_VERSION=$(SAVANT_RS_VERSION) \
 		-f docker/Dockerfile.adapters-py \
 		-t savant-adapters-py$(PLATFORM_SUFFIX) .
 
@@ -57,6 +62,7 @@ build-docs:
 	docker buildx build \
 		--target docs \
 		--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
+		--build-arg SAVANT_RS_VERSION=$(SAVANT_RS_VERSION) \
 		--build-arg USER_UID=`id -u` \
 		--build-arg USER_GID=`id -g` \
 		-f docker/$(DOCKER_FILE) \
@@ -66,6 +72,7 @@ build-tests:
 	docker buildx build \
 		--target tests \
 		--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
+		--build-arg SAVANT_RS_VERSION=$(SAVANT_RS_VERSION) \
 		--build-arg USER_UID=`id -u` \
 		--build-arg USER_GID=`id -g` \
 		-f docker/$(DOCKER_FILE) \
@@ -152,17 +159,17 @@ check-unify:
 	unify --check-only --recursive savant > /dev/null
 
 check-isort:
-	isort savant adapters gst_plugins samples scripts -c
+	isort savant adapters gst_plugins samples scripts utils -c
 
 check: check-black check-unify check-isort
 
 run-unify:
-	unify --in-place --recursive savant adapters gst_plugins samples scripts tests
+	unify --in-place --recursive savant adapters gst_plugins samples scripts tests utils
 
 run-black:
 	black .
 
 run-isort:
-	isort savant adapters gst_plugins samples scripts
+	isort savant adapters gst_plugins samples scripts utils
 
 reformat: run-unify run-black run-isort

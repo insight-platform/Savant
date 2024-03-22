@@ -26,6 +26,10 @@ class Version(metaclass=SingletonMeta):
         return self._versions['SAVANT']
 
     @property
+    def SAVANT_RS(self):
+        return self._versions['SAVANT_RS']
+
+    @property
     def DEEPSTREAM(self):
         return self._versions['DEEPSTREAM']
 
