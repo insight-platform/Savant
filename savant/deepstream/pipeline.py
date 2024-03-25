@@ -56,6 +56,7 @@ from savant.deepstream.utils.iterator import (
     nvds_frame_meta_iterator,
     nvds_obj_meta_iterator,
 )
+from savant.deepstream.utils.object import nvds_is_empty_object_meta
 from savant.deepstream.utils.pipeline import (
     add_queues_to_pipeline,
     build_metrics_exporter,
@@ -811,6 +812,8 @@ class NvDsPipeline(GstPipeline):
             )
 
         # second iteration to collect module objects
+        nvds_object_id_map = {}  # nvds_obj_meta.object_id -> video_object.id
+        parents = {}  # video_object.id -> nvds_obj_meta.parent.object_id
         for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
             # collect obj attributes
             attributes = []
@@ -847,10 +850,14 @@ class NvDsPipeline(GstPipeline):
                     # and with no attached attributes
                     self._logger.debug('Skipping empty primary object.')
                     continue
-            # add obj to frame meta
+
+            # convert nvds object meta to savant-rs object meta
             obj_meta = nvds_obj_meta_output_converter(
-                nvds_frame_meta, nvds_obj_meta, self._frame_params, video_frame
+                nvds_obj_meta, self._frame_params, video_frame
             )
+            nvds_object_id_map[nvds_obj_meta.object_id] = obj_meta.id
+            if not nvds_is_empty_object_meta(nvds_obj_meta.parent) and nvds_obj_meta.parent.obj_label != PRIMARY_OBJECT_KEY:
+                parents[obj_meta.id] = nvds_obj_meta.parent.object_id
             # add obj attributes
             for attr in attributes:
                 obj_meta.set_attribute(attr)
@@ -862,6 +869,10 @@ class NvDsPipeline(GstPipeline):
                     frame_pts,
                     obj_meta,
                 )
+
+        self._logger.debug('Setting parents to objects.')
+        for obj_id, parent_id in parents.items():
+            video_frame.set_parent_by_id(obj_id, nvds_object_id_map[parent_id])
 
     # Muxer
     def _create_muxer(self, live_source: bool) -> Gst.Element:

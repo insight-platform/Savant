@@ -43,17 +43,16 @@ def nvds_obj_bbox_output_converter(
 
 
 def nvds_obj_meta_output_converter(
-    nvds_frame_meta: pyds.NvDsFrameMeta,
     nvds_obj_meta: pyds.NvDsObjectMeta,
     frame_params: FrameParameters,
     video_frame: VideoFrame,
 ) -> VideoObject:
     """Convert object meta to savant-rs format.
 
-    :param nvds_frame_meta: NvDsFrameMeta
     :param nvds_obj_meta: NvDsObjectMeta
     :param frame_params: Frame parameters (width/height, to scale to [0..1])
-    :return: Object meta in savant-rs format and its parent id.
+    :param video_frame: Video frame to which the object belongs.
+    :return: Object meta in savant-rs format and its parent.
     """
     model_name, label = parse_compound_key(nvds_obj_meta.obj_label)
 
@@ -77,28 +76,15 @@ def nvds_obj_meta_output_converter(
         track_id = nvds_obj_meta.object_id
         track_box = bbox
 
-    parent_id = None
-    if (
-        not nvds_is_empty_object_meta(nvds_obj_meta.parent)
-        and nvds_obj_meta.parent.obj_label != PRIMARY_OBJECT_KEY
-    ):
-        parent_model_name, parent_label = parse_compound_key(
-            nvds_obj_meta.parent.obj_label
-        )
-        if parent_model_name:
-            parent_id = nvds_get_obj_uid(nvds_frame_meta, nvds_obj_meta.parent)
-
-    video_object = video_frame.create_object(
+    return video_frame.create_object(
         namespace=model_name,
         label=label,
-        parent_id=parent_id,
         confidence=confidence,
         detection_box=bbox,
         track_id=track_id,
         track_box=track_box,
         attributes=[],
     )
-    return video_object
 
 
 def nvds_attr_meta_output_converter(
