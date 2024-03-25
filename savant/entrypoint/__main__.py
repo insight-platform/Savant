@@ -4,6 +4,7 @@ Usage examples:
 > echo "
 name: test-module
 parameters:
+  log_level: DEBUG
   batch_size: 1
 " | python -m savant.entrypoint
 

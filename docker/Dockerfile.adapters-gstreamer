@@ -104,3 +104,5 @@ COPY adapters/gst adapters/gst
 COPY gst_plugins/python/logger.py adapters/gst/gst_plugins/python/
 ENV GST_PLUGIN_PATH=$PROJECT_PATH/adapters/gst/gst_plugins \
     LOGLEVEL=info
+
+RUN echo 'python3 -c "from savant.utils.welcome import get_welcome_message; print(get_welcome_message())"' >> /etc/bash.bashrc

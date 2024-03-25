@@ -29,3 +29,5 @@ COPY savant savant
 COPY adapters/shared adapters/shared
 COPY adapters/python adapters/python
 ENV LOGLEVEL=info
+
+RUN echo 'python3 -c "from savant.utils.welcome import get_welcome_message; print(get_welcome_message())"' >> /etc/bash.bashrc

@@ -24,6 +24,7 @@ from savant.metrics import Counter, Gauge
 from savant.metrics.prometheus import BaseMetricsCollector, PrometheusMetricsExporter
 from savant.utils.config import opt_config
 from savant.utils.logging import get_logger, init_logging
+from savant.utils.welcome import get_starting_message
 from savant.utils.zeromq import ZeroMQMessage, ZeroMQSource
 
 LOGGER_NAME = 'adapters.buffer'
@@ -400,10 +401,10 @@ def build_video_pipeline(config: Config):
 
 def main():
     init_logging()
+    logger.info(get_starting_message('buffer bridge adapter'))
     # To gracefully shutdown the adapter on SIGTERM (raise KeyboardInterrupt)
     signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
     config = Config()
-    logger.info('Starting the adapter')
     queue = PersistentQueueWithCapacity(
         config.buffer.path,
         config.buffer.len + config.buffer.service_messages,

@@ -16,6 +16,7 @@ from adapters.ds.sinks.always_on_rtsp.utils import (
 from adapters.ds.sinks.always_on_rtsp.zeromq_proxy import ZeroMqProxy
 from savant.gstreamer import Gst
 from savant.utils.logging import get_logger, init_logging
+from savant.utils.welcome import get_starting_message
 
 LOGGER_NAME = 'adapters.ao_sink.entrypoint'
 logger = get_logger(LOGGER_NAME)
@@ -26,6 +27,7 @@ def main():
     signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
 
     init_logging()
+    logger.info(get_starting_message('always-on-rtsp sink adapter'))
     config = AppConfig()
 
     Gst.init(None)

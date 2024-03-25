@@ -344,4 +344,4 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
 
 
 if __name__ == '__main__':
-    run_kafka_redis_adapter(KafkaRedisSink, Config)
+    run_kafka_redis_adapter('kafka-redis sink adapter', KafkaRedisSink, Config)

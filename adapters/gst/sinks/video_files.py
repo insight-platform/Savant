@@ -16,6 +16,7 @@ from savant.gstreamer import GLib, Gst, GstApp
 from savant.gstreamer.codecs import Codec
 from savant.utils.config import opt_config, strtobool
 from savant.utils.logging import get_logger, init_logging
+from savant.utils.welcome import get_starting_message
 from savant.utils.zeromq import ZeroMQMessage, ZeroMQSource
 
 LOGGER_NAME = 'adapters.video_files_sink'
@@ -373,6 +374,7 @@ def main():
     signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
 
     logger = get_logger(LOGGER_NAME)
+    logger.info(get_starting_message('video files sink adapter'))
 
     dir_location = os.environ['DIR_LOCATION']
     zmq_endpoint = os.environ['ZMQ_ENDPOINT']

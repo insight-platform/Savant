@@ -286,4 +286,4 @@ class KafkaRedisSource(BaseKafkaRedisAdapter):
 
 
 if __name__ == '__main__':
-    run_kafka_redis_adapter(KafkaRedisSource, Config)
+    run_kafka_redis_adapter('kafka-redis source adapter', KafkaRedisSource, Config)
