@@ -1,6 +1,5 @@
 """Parses VERSION file."""
 from pathlib import Path
-from typing import List
 
 from savant.utils.singleton import SingletonMeta
 
