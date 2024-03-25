@@ -64,6 +64,8 @@ handler() {
 }
 trap handler SIGINT SIGTERM
 
+source "${PROJECT_PATH}/adapters/shared/utils.sh"
+print_starting_message "rtsp source adapter"
 gst-launch-1.0 --eos-on-shutdown "${PIPELINE[@]}" &
 
 child_pid="$!"

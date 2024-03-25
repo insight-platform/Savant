@@ -12,6 +12,7 @@ from confluent_kafka.admin import AdminClient, ClusterMetadata, NewTopic
 from savant.utils.config import opt_config, strtobool
 from savant.utils.fps_meter import FPSMeter
 from savant.utils.logging import get_logger, init_logging
+from savant.utils.welcome import get_starting_message
 
 LOGGER_NAME = 'adapters.kafka_redis'
 logger = get_logger(LOGGER_NAME)
@@ -221,16 +222,19 @@ class BaseKafkaRedisAdapter(ABC):
 
 
 def run_kafka_redis_adapter(
+    name: str,
     adapter_class: Type[BaseKafkaRedisAdapter],
     config_class: Type[BaseConfig],
 ):
     """Run kafka-redis adapter.
 
+    :param name: The adapter name.
     :param adapter_class: The adapter implementation.
     :param config_class: The configuration implementation.
     """
 
     init_logging()
+    logger.info(get_starting_message(name))
     # To gracefully shutdown the adapter on SIGTERM (raise KeyboardInterrupt)
     signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
     source = adapter_class(config_class())

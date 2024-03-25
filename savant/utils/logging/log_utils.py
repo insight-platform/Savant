@@ -169,14 +169,14 @@ def add_logging_level(
         if registered_num != 'Level ' + level_name:
             check_conflict(
                 registered_num != level_num,
-                'Level {!r} already registered ' 'in logging module'.format(level_name),
+                'Level {!r} already registered in logging module'.format(level_name),
             )
 
         current_level = getattr(logging, level_name, None)
         if current_level is not None:
             check_conflict(
                 current_level != level_num,
-                'Level {!r} already defined ' 'in logging module'.format(level_name),
+                'Level {!r} already defined in logging module'.format(level_name),
             )
 
         logging_func = getattr(logging, method_name, None)

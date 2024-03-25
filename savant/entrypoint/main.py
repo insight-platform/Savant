@@ -18,6 +18,7 @@ from savant.healthcheck.status import ModuleStatus, set_module_status
 from savant.utils.check_display import check_display_env
 from savant.utils.logging import get_logger, init_logging, update_logging
 from savant.utils.sink_factories import sink_factory
+from savant.utils.welcome import get_starting_message
 
 
 def main(module_config: Union[str, Path, IO[Any]]):
@@ -41,13 +42,14 @@ def main(module_config: Union[str, Path, IO[Any]]):
     config = ModuleConfig().config
 
     init_logging(config.parameters['log_level'])
+    logger = get_logger('main')
+    logger.info(get_starting_message('module'))
 
     # load module config
     config = ModuleConfig().load(module_config)
 
     # reconfigure savant logger with updated loglevel
     update_logging(config.parameters['log_level'])
-    logger = get_logger('main')
 
     check_display_env(logger)
 
@@ -115,13 +117,14 @@ def build_module_engines(module_config: Union[str, Path, IO[Any]]):
     config = ModuleConfig().config
 
     init_logging(config.parameters['log_level'])
+    logger = get_logger('engine_builder')
+    logger.info(get_starting_message('module engine builder'))
 
     # load module config
     config = ModuleConfig().load(module_config)
 
     # reconfigure savant logger with updated loglevel
     update_logging(config.parameters['log_level'])
-    logger = get_logger('engine_builder')
 
     check_display_env(logger)
 

@@ -26,6 +26,8 @@ fi
 SYNC_OUTPUT="${SYNC_OUTPUT:="false"}"
 CLOSING_DELAY="${CLOSING_DELAY:="0"}"
 
+source "${PROJECT_PATH}/adapters/shared/utils.sh"
+print_starting_message "display sink adapter"
 gst-launch-1.0 \
     savant_rs_video_player "${ZEROMQ_SRC_ARGS[@]}" \
     sync="${SYNC_OUTPUT}" closing-delay="${CLOSING_DELAY}"

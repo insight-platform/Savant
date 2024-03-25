@@ -34,12 +34,5 @@ class Version(metaclass=SingletonMeta):
     def DEEPSTREAM(self):
         return self._versions['DEEPSTREAM']
 
-    def get_list(self) -> List[str]:
-        return [
-            f'Savant Version {self.SAVANT}',
-            f'Savant RS Version {self.SAVANT_RS}',
-            f'DeepStream Version {self.DEEPSTREAM}',
-        ]
-
 
 version = Version()
