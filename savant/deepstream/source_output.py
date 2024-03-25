@@ -49,6 +49,11 @@ class SourceOutput(ABC):
         :returns Src pad that will be connected to fakesink element.
         """
 
+    @property
+    @abstractmethod
+    def codec(self) -> Optional[CodecInfo]:
+        pass
+
 
 class SourceOutputOnlyMeta(SourceOutput):
     """Adds an output elements to a DeepStream pipeline.
@@ -76,6 +81,10 @@ class SourceOutputOnlyMeta(SourceOutput):
             input_pad.add_probe(Gst.PadProbeType.BUFFER, self._check_encoding_condition)
         add_pad_probe_to_move_frame(input_pad, self._video_pipeline, 'sink')
         return input_pad
+
+    @property
+    def codec(self) -> Optional[CodecInfo]:
+        return None
 
     def _check_encoding_condition(self, pad: Gst.Pad, info: Gst.PadProbeInfo):
         buffer: Gst.Buffer = info.get_buffer()
@@ -111,12 +120,14 @@ class SourceOutputWithFrame(SourceOutput):
 
     def __init__(
         self,
+        codec: CodecInfo,
         frame_params: FrameParameters,
         condition: FrameProcessingCondition,
         video_pipeline: VideoPipeline,
         queue_properties: Dict[str, int],
     ):
         super().__init__(video_pipeline)
+        self._codec = codec
         self._frame_params = frame_params
         self._condition = condition
         self._queue_properties = queue_properties
@@ -210,6 +221,10 @@ class SourceOutputWithFrame(SourceOutput):
         add_pad_probe_to_move_frame(src_pad, self._video_pipeline, 'sink')
 
         return src_pad
+
+    @property
+    def codec(self) -> Optional[CodecInfo]:
+        return self._codec
 
     def _add_frame_tag_filter(
         self,
@@ -328,19 +343,21 @@ class SourceOutputWithFrame(SourceOutput):
         pass
 
 
-class SourceOutputRawRgba(SourceOutputWithFrame):
+class SourceOutputRaw(SourceOutputWithFrame):
     """Adds an output elements to a DeepStream pipeline.
     Output contains raw-rgba frames along with metadata.
     """
 
     def __init__(
         self,
+        codec: CodecInfo,
         frame_params: FrameParameters,
         video_pipeline: VideoPipeline,
         queue_properties: Dict[str, int],
     ):
         super().__init__(
-            frame_params,
+            codec=codec,
+            frame_params=frame_params,
             condition=FrameProcessingCondition(),
             video_pipeline=video_pipeline,
             queue_properties=queue_properties,
@@ -350,11 +367,18 @@ class SourceOutputRawRgba(SourceOutputWithFrame):
         pass
 
     def _build_output_caps(self, width: int, height: int) -> Gst.Caps:
+        if self.codec.name == Codec.RAW_RGBA.value.name:
+            codec_caps = [
+                'video/x-raw(memory:NVMM)',
+                'format=RGBA',
+            ]
+        else:
+            codec_caps = [self.codec.caps_with_params]
+
         return Gst.Caps.from_string(
             ', '.join(
-                [
-                    'video/x-raw(memory:NVMM)',
-                    'format=RGBA',
+                codec_caps
+                + [
                     f'width={width}',
                     f'height={height}',
                 ]
@@ -381,19 +405,15 @@ class SourceOutputEncoded(SourceOutputWithFrame):
         """
 
         super().__init__(
+            codec=codec,
             frame_params=frame_params,
             condition=condition,
             video_pipeline=video_pipeline,
             queue_properties=queue_properties,
         )
-        self._codec = codec
         self._output_frame = output_frame
         self._encoder = self._codec.encoder(output_frame.get('encoder'))
         self._params = output_frame.get('encoder_params') or {}
-
-    @property
-    def codec(self) -> CodecInfo:
-        return self._codec
 
     @property
     def encoder(self) -> str:
@@ -490,8 +510,9 @@ def create_source_output(
         )
 
     codec = CODEC_BY_NAME[output_frame['codec']]
-    if codec == Codec.RAW_RGBA:
-        return SourceOutputRawRgba(
+    if codec.value.is_raw:
+        return SourceOutputRaw(
+            codec=codec.value,
             frame_params=frame_params,
             video_pipeline=video_pipeline,
             queue_properties=queue_properties,

@@ -27,11 +27,11 @@ from savant_rs.utils.symbol_mapper import (
 )
 
 from savant.api.parser import parse_attribute_value
-from savant.base.input_preproc import ObjectsPreprocessing
 from savant.config.schema import FrameParameters
 from savant.deepstream.source_output import (
     SourceOutput,
     SourceOutputEncoded,
+    SourceOutputOnlyMeta,
     SourceOutputWithFrame,
 )
 from savant.deepstream.utils.attribute import nvds_add_attr_meta_to_obj
@@ -576,7 +576,7 @@ class NvDsBufferProcessor(GstBufferProcessor):
         """Iterate output frames."""
 
 
-class NvDsEncodedBufferProcessor(NvDsBufferProcessor):
+class NvDsGstBufferProcessor(NvDsBufferProcessor):
     def __init__(
         self,
         queue: Queue,
@@ -640,7 +640,7 @@ class NvDsEncodedBufferProcessor(NvDsBufferProcessor):
         )
 
 
-class NvDsJetsonH26XBufferProcessor(NvDsEncodedBufferProcessor):
+class NvDsJetsonH26XBufferProcessor(NvDsGstBufferProcessor):
     def __init__(self, *args, **kwargs):
         """Buffer processor for DeepStream pipeline.
 
@@ -835,24 +835,32 @@ def create_buffer_processor(
     :param pass_through_mode: Video pass through mode.
     """
 
-    if isinstance(source_output, SourceOutputEncoded):
-        if is_aarch64() and source_output.encoder in ['nvv4l2h264enc', 'nvv4l2h265enc']:
-            buffer_processor_class = NvDsJetsonH26XBufferProcessor
-        else:
-            buffer_processor_class = NvDsEncodedBufferProcessor
-        return buffer_processor_class(
+    if isinstance(source_output, SourceOutputOnlyMeta) or (
+        isinstance(source_output, SourceOutputWithFrame)
+        and source_output.codec.name == Codec.RAW_RGBA.value.name
+    ):
+        return NvDsRawBufferProcessor(
             queue=queue,
             sources=sources,
             frame_params=frame_params,
-            codec=source_output.codec,
+            output_frame=isinstance(source_output, SourceOutputWithFrame),
             video_pipeline=video_pipeline,
+            pass_through_mode=pass_through_mode,
         )
 
-    return NvDsRawBufferProcessor(
+    if (
+        is_aarch64()
+        and isinstance(source_output, SourceOutputEncoded)
+        and source_output.encoder in ['nvv4l2h264enc', 'nvv4l2h265enc']
+    ):
+        buffer_processor_class = NvDsJetsonH26XBufferProcessor
+    else:
+        buffer_processor_class = NvDsGstBufferProcessor
+
+    return buffer_processor_class(
         queue=queue,
         sources=sources,
         frame_params=frame_params,
-        output_frame=isinstance(source_output, SourceOutputWithFrame),
+        codec=source_output.codec,
         video_pipeline=video_pipeline,
-        pass_through_mode=pass_through_mode,
     )

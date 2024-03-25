@@ -36,6 +36,10 @@ class CodecInfo:
     does not have NvEnc encoder.
     """
 
+    is_raw: bool = False
+    """Indicates if codec is raw.
+    """
+
     @property
     def caps_with_params(self) -> str:
         """Caps with caps params string."""
@@ -96,7 +100,8 @@ class Codec(Enum):
         nv_encoder='nvv4l2h265enc',
     )
     # TODO: add support for other raw formats (RGB, etc.)
-    RAW_RGBA = CodecInfo('raw-rgba', 'video/x-raw', ['format=RGBA'])
+    RAW_RGBA = CodecInfo('raw-rgba', 'video/x-raw', ['format=RGBA'], is_raw=True)
+    RAW_RGB24 = CodecInfo('raw-rgb24', 'video/x-raw', ['format=RGB'], is_raw=True)
     PNG = CodecInfo(
         'png',
         'image/png',
