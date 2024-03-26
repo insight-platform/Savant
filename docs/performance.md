@@ -89,6 +89,7 @@
 | [#550](https://github.com/insight-platform/Savant/issues/550) | 272.64 |           | 41.86     |
 | [#612](https://github.com/insight-platform/Savant/issues/612) | 272.78 |           | 42.47     |
 | [#641](https://github.com/insight-platform/Savant/issues/641) | 276.78 |           |           |
+| [#705](https://github.com/insight-platform/Savant/issues/705) | 309.99 |           | 65.57     |
 
 ### nvidia_car_classification
 
@@ -145,6 +146,7 @@
 |---------------------------------------------------------------|-------|-----------|-----------|
 | [#612](https://github.com/insight-platform/Savant/issues/612) | 62.78 |           | 10.07     |
 | [#641](https://github.com/insight-platform/Savant/issues/641) | 60.64 |           |           |
+| [#705](https://github.com/insight-platform/Savant/issues/705) | TBD   |           | TBD       |
 
 ### peoplenet_detector
 
