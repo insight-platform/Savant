@@ -856,7 +856,10 @@ class NvDsPipeline(GstPipeline):
                 nvds_obj_meta, self._frame_params, video_frame
             )
             nvds_object_id_map[nvds_obj_meta.object_id] = obj_meta.id
-            if not nvds_is_empty_object_meta(nvds_obj_meta.parent) and nvds_obj_meta.parent.obj_label != PRIMARY_OBJECT_KEY:
+            if (
+                not nvds_is_empty_object_meta(nvds_obj_meta.parent)
+                and nvds_obj_meta.parent.obj_label != PRIMARY_OBJECT_KEY
+            ):
                 parents[obj_meta.id] = nvds_obj_meta.parent.object_id
             # add obj attributes
             for attr in attributes:
