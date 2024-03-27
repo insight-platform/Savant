@@ -78,7 +78,7 @@ services:
       - METRICS_PROVIDER_PARAMS={"port":8000, "labels":{"module_stage":"draw-func"}}
       # Use default draw_func (savant.deepstream.drawfunc.NvDsDrawFunc)
       - DRAW_FUNC={}
-      - CODEC=raw-rgba
+      - CODEC=jpeg
       - MODEL_PATH=/cache/models/peoplenet_detector
       - DOWNLOAD_PATH=/cache/downloads/peoplenet_detector
       - ZMQ_SRC_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/tracker-output.ipc
