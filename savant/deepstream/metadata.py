@@ -8,7 +8,7 @@ from savant_rs.utils.symbol_mapper import parse_compound_key
 
 from savant.api.builder import build_attribute_value
 from savant.config.schema import FrameParameters
-from savant.deepstream.utils.object import nvds_get_obj_bbox
+from savant.deepstream.utils.object import nvds_get_obj_bbox, nvds_get_obj_uid
 from savant.meta.attribute import AttributeMeta
 from savant.meta.constants import UNTRACKED_OBJECT_ID
 from savant.utils.logging import get_logger
@@ -39,12 +39,14 @@ def nvds_obj_bbox_output_converter(
 
 
 def nvds_obj_meta_output_converter(
+    nvds_frame_meta: pyds.NvDsFrameMeta,
     nvds_obj_meta: pyds.NvDsObjectMeta,
     frame_params: FrameParameters,
     video_frame: VideoFrame,
 ) -> VideoObject:
     """Convert object meta to savant-rs format.
 
+    :param nvds_frame_meta: NvDsFrameMeta
     :param nvds_obj_meta: NvDsObjectMeta
     :param frame_params: Frame parameters (width/height, to scale to [0..1])
     :param video_frame: Video frame to which the object belongs.
@@ -74,7 +76,7 @@ def nvds_obj_meta_output_converter(
 
     # video_object = video_frame.create_object(
     video_object = VideoObject(
-        id=nvds_obj_meta.object_id,
+        id=nvds_get_obj_uid(nvds_frame_meta, nvds_obj_meta),
         namespace=model_name,
         label=label,
         confidence=confidence,
@@ -83,8 +85,7 @@ def nvds_obj_meta_output_converter(
         track_box=track_box,
         attributes=[],
     )
-    # video_frame.add_object(video_object, IdCollisionResolutionPolicy.Error)
-    video_frame.add_object(video_object, IdCollisionResolutionPolicy.Overwrite)
+    video_frame.add_object(video_object, IdCollisionResolutionPolicy.Error)
 
     return video_object
 

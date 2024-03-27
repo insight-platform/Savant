@@ -758,11 +758,10 @@ class NvDsPipeline(GstPipeline):
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         # convert output meta
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
+            # correct object_id (track_id)
             # use consecutive numbers for object_id in case there is no tracker
             object_ids = defaultdict(int)
-            # first iteration to correct object_id
             for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
-                # correct object_id (track_id)
                 if nvds_obj_meta.object_id == UNTRACKED_OBJECT_ID:
                     nvds_obj_meta.object_id = object_ids[nvds_obj_meta.obj_label]
                     object_ids[nvds_obj_meta.obj_label] += 1
@@ -811,7 +810,7 @@ class NvDsPipeline(GstPipeline):
                 frame_pts,
             )
 
-        # second iteration to collect module objects
+        # collect frame objects
         nvds_object_id_map = {}  # nvds_obj_meta.object_id -> video_object.id
         parents = {}  # video_object.id -> nvds_obj_meta.parent.object_id
         for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
@@ -853,7 +852,7 @@ class NvDsPipeline(GstPipeline):
 
             # convert nvds object meta to savant-rs object meta
             obj_meta = nvds_obj_meta_output_converter(
-                nvds_obj_meta, self._frame_params, video_frame
+                nvds_frame_meta, nvds_obj_meta, self._frame_params, video_frame
             )
             nvds_object_id_map[nvds_obj_meta.object_id] = obj_meta.id
             if (
