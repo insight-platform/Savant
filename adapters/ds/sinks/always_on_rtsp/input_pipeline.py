@@ -79,7 +79,7 @@ def on_demuxer_pad_added(
     else:
         src_pad.add_probe(Gst.PadProbeType.BUFFER, delete_frame_from_pipeline, config)
 
-    if codec == Codec.RAW_RGBA:
+    if codec.value.is_raw:
         capsfilter = factory.create(
             PipelineElement(
                 'capsfilter',

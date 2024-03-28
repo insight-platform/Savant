@@ -26,6 +26,7 @@ CONVERT_CODEC = {
     'h264': Codec.H264,
     'hevc': Codec.HEVC,
     'mjpeg': Codec.JPEG,
+    'rawvideo': Codec.RAW_RGB24,
 }
 
 FFMPEG_SRC_PROPERTIES = {
@@ -167,6 +168,7 @@ class FFmpegSrc(LoggerMixin, GstBase.BaseSrc):
                 queue_len=self._queue_len,
                 decode=self._decode,
                 ffmpeg_log_level=STR_TO_FFMPEG_LOG_LEVEL[self._loglevel.lower()],
+                autoconvert_raw_formats_to_rgb24=True,
             )
 
         except Exception as exc:
