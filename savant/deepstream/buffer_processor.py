@@ -228,15 +228,15 @@ class NvDsBufferProcessor(GstBufferProcessor):
                 track_id = UNTRACKED_OBJECT_ID
             # create nvds obj meta
             nvds_obj_meta = nvds_add_obj_meta_to_frame(
-                nvds_batch_meta,
-                nvds_frame_meta,
-                selection_type,
-                class_id,
-                model_uid,
-                bbox,
-                obj_meta.confidence,
-                obj_key,
-                track_id,
+                batch_meta=nvds_batch_meta,
+                frame_meta=nvds_frame_meta,
+                selection_type=selection_type,
+                class_id=class_id,
+                gie_uid=model_uid,
+                bbox=bbox,
+                confidence=obj_meta.confidence,
+                obj_label=obj_key,
+                object_id=track_id,
             )
 
             # save nvds obj meta ref in case it is some other obj's parent

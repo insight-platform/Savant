@@ -2,19 +2,15 @@
 import logging
 
 import pyds
-from savant_rs.primitives import Attribute, VideoFrame, VideoObject
+from savant_rs.primitives import Attribute, VideoFrame, VideoObject, IdCollisionResolutionPolicy
 from savant_rs.primitives.geometry import BBox, RBBox
 from savant_rs.utils.symbol_mapper import parse_compound_key
 
 from savant.api.builder import build_attribute_value
 from savant.config.schema import FrameParameters
-from savant.deepstream.utils.object import (
-    nvds_get_obj_bbox,
-    nvds_get_obj_uid,
-    nvds_is_empty_object_meta,
-)
+from savant.deepstream.utils.object import nvds_get_obj_bbox
 from savant.meta.attribute import AttributeMeta
-from savant.meta.constants import PRIMARY_OBJECT_KEY, UNTRACKED_OBJECT_ID
+from savant.meta.constants import UNTRACKED_OBJECT_ID
 from savant.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -43,17 +39,16 @@ def nvds_obj_bbox_output_converter(
 
 
 def nvds_obj_meta_output_converter(
-    nvds_frame_meta: pyds.NvDsFrameMeta,
     nvds_obj_meta: pyds.NvDsObjectMeta,
     frame_params: FrameParameters,
     video_frame: VideoFrame,
 ) -> VideoObject:
     """Convert object meta to savant-rs format.
 
-    :param nvds_frame_meta: NvDsFrameMeta
     :param nvds_obj_meta: NvDsObjectMeta
     :param frame_params: Frame parameters (width/height, to scale to [0..1])
-    :return: Object meta in savant-rs format and its parent id.
+    :param video_frame: Video frame to which the object belongs.
+    :return: Object meta in savant-rs format and its parent.
     """
     model_name, label = parse_compound_key(nvds_obj_meta.obj_label)
 
@@ -77,27 +72,20 @@ def nvds_obj_meta_output_converter(
         track_id = nvds_obj_meta.object_id
         track_box = bbox
 
-    parent_id = None
-    if (
-        not nvds_is_empty_object_meta(nvds_obj_meta.parent)
-        and nvds_obj_meta.parent.obj_label != PRIMARY_OBJECT_KEY
-    ):
-        parent_model_name, parent_label = parse_compound_key(
-            nvds_obj_meta.parent.obj_label
-        )
-        if parent_model_name:
-            parent_id = nvds_get_obj_uid(nvds_frame_meta, nvds_obj_meta.parent)
-
-    video_object = video_frame.create_object(
+    # video_object = video_frame.create_object(
+    video_object = VideoObject(
+        id=nvds_obj_meta.object_id,
         namespace=model_name,
         label=label,
-        parent_id=parent_id,
         confidence=confidence,
         detection_box=bbox,
         track_id=track_id,
         track_box=track_box,
         attributes=[],
     )
+    # video_frame.add_object(video_object, IdCollisionResolutionPolicy.Error)
+    video_frame.add_object(video_object, IdCollisionResolutionPolicy.Overwrite)
+
     return video_object
 
 

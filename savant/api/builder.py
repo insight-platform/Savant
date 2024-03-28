@@ -111,7 +111,6 @@ def add_video_object(frame, obj: Dict[str, Any]):
     return frame.create_object(
         namespace=obj['model_name'],
         label=obj['label'],
-        parent_id=obj.get('parent_object_id'),
         confidence=obj['confidence'],
         detection_box=bbox,
         track_id=track_id,

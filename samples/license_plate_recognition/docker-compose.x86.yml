@@ -11,7 +11,7 @@ services:
       - LOCATION=https://eu-central-1.linodeobjects.com/savant-data/demo/lpr_test_1080p.mp4
       - DOWNLOAD_PATH=/tmp/video-loop-source-downloads
       - ZMQ_ENDPOINT=dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc
-      - SOURCE_ID=nvidia-sample-processed
+      - SOURCE_ID=video
       - SYNC_OUTPUT=True
     entrypoint: /opt/savant/adapters/gst/sources/video_loop.sh
     depends_on:
@@ -53,7 +53,7 @@ services:
       - ../assets/stub_imgs:/stub_imgs
     environment:
       - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
-      - SOURCE_ID=nvidia-sample-processed
+      - SOURCE_ID=video
       - STUB_FILE_LOCATION=/stub_imgs/smpte100_1920x1080.jpeg
       - DEV_MODE=True
       - RTSP_LATENCY_MS=500
