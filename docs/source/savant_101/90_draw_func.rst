@@ -29,7 +29,7 @@ In the example above, a custom ``draw_func`` implementation is used. In simple c
 
     To disable ``draw_func`` functionality, remove ``parameters.draw_func`` from the manifest completely.
 
-It is important to note that rendering is not performed if no frame encoding scheme is configured for the pipeline. To set the frame coding scheme, you must specify the codec in the ``parameters.output_frame.codec`` parameter to one of the following values: ``jpeg``, ``h264``, ``hevc``, ``raw-rgba``.
+It is important to note that rendering is not performed if no frame encoding scheme is configured for the pipeline. To set the frame coding scheme, you must specify the codec in the ``parameters.output_frame.codec`` parameter to one of the following values: ``jpeg``, ``h264``, ``hevc``, ``raw-rgba``, ``raw-rgb24``.
 
 .. code-block:: yaml
 

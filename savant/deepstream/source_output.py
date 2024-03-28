@@ -345,7 +345,7 @@ class SourceOutputWithFrame(SourceOutput):
 
 class SourceOutputRaw(SourceOutputWithFrame):
     """Adds an output elements to a DeepStream pipeline.
-    Output contains raw-rgba frames along with metadata.
+    Output contains raw frames along with metadata.
     """
 
     def __init__(
