@@ -146,7 +146,7 @@
 |---------------------------------------------------------------|-------|-----------|-----------|
 | [#612](https://github.com/insight-platform/Savant/issues/612) | 62.78 |           | 10.07     |
 | [#641](https://github.com/insight-platform/Savant/issues/641) | 60.64 |           |           |
-| [#705](https://github.com/insight-platform/Savant/issues/705) | TBD   |           | TBD       |
+| [#705](https://github.com/insight-platform/Savant/issues/705) | 59.66 |           | 10.51     |
 
 ### peoplenet_detector
 
