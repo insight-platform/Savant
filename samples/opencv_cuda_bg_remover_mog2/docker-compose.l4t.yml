@@ -29,7 +29,7 @@ services:
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
       - METRICS_FRAME_PERIOD=1000
-      - CODEC=raw-rgba
+      - CODEC=jpeg
     runtime: nvidia
 
   always-on-sink:

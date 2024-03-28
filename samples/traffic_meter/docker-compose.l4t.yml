@@ -35,7 +35,7 @@ services:
       - METRICS_FRAME_PERIOD=1000
       - DETECTOR=${DETECTOR}
       - MODULE_NAME=traffic_meter-${DETECTOR}
-      - CODEC=raw-rgba
+      - CODEC=jpeg
     runtime: nvidia
 
   always-on-sink:

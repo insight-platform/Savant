@@ -23,7 +23,7 @@ Decoding
 
 Nvidia supports very fast hardware-accelerated decoding for several video/image codecs. The dedicated NVDEC device performs the task at speed higher than 1000 FPS for FullHD. You must consider using Savant with those codecs which have hardware support. We currently support several source formats for the frames. The framework automatically understands the formats; you may simultaneously feed the module with streams in different codecs.
 
-**Raw RGBA** is a slow representation as it requires extensive data transfers over PCI-E and network, leading to decreased performance.
+Raw codec (**Raw RGBA**, **Raw RGB24**) is a slow representation as it requires extensive data transfers over PCI-E and network, leading to decreased performance.
 
 Hardware-accelerated with NVDEC, preferred to be used:
 
@@ -211,6 +211,7 @@ If the ``output_frame`` section is omitted, video frames will not be sent to sin
 The framework supports several encoding schemes:
 
 - RAW RGBA (not optimal, as it requires large transfers over PCI-E);
+- RAW RGB24 (not optimal, as it requires large transfers over PCI-E);
 - JPEG (hardware ``nvjpegenc``, software ``jpegenc``);
 - PNG (software ``pngenc``);
 - H264 (hardware ``nvv4l2h264enc``, software ``x264enc``);
@@ -493,6 +494,10 @@ To configure conditional encoding, add a subsection to ``output_frame`` as follo
         tag: <tagname, e.g. encode>
 
 An example of conditional drawing can be found in a dedicated Savant `sample <https://github.com/insight-platform/Savant/tree/develop/samples/conditional_video_processing>`__.
+
+.. note::
+
+        Conditional encoding is ignored for raw codecs: ``raw-rgba``, ``raw-rgb24``.
 
 Pass-through mode
 -----------------
