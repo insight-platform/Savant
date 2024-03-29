@@ -36,8 +36,8 @@ CODEC_TO_CONTENT_TYPE = {
 class AwsConfig:
     def __init__(self):
         self.region = os.environ['AWS_REGION']
-        self.access_key = os.environ['AWS_ACCESS_KEY_ID']
-        self.secret_key = os.environ['AWS_SECRET_ACCESS_KEY']
+        self.access_key = os.environ['AWS_ACCESS_KEY']
+        self.secret_key = os.environ['AWS_SECRET_KEY']
 
 
 class ZmqConfig:
@@ -100,6 +100,8 @@ class KvsWriter(ChunkWriter):
         super().__init__(chunk_size=0, logger_prefix=LOGGER_PREFIX)
 
     def _on_buffer(self, sink: GstApp.AppSink) -> Gst.FlowReturn:
+        """Receives a buffer from Gst pipeline and sends it to KVS."""
+
         self.logger.debug('Received buffer from source %s', self.source_id)
         sample: Gst.Sample = sink.emit('pull-sample')
         if not self.stream_started:
@@ -148,6 +150,8 @@ class KvsWriter(ChunkWriter):
         return Gst.FlowReturn.OK
 
     def _on_eos(self, sink: GstApp.AppSink):
+        """Stop the stream when EOS is received."""
+
         self.logger.info(
             'Received EOS from source %s',
             self.source_id,
@@ -209,7 +213,7 @@ class KvsWriter(ChunkWriter):
                 [
                     'appsrc name=appsrc emit-signals=false format=time max-buffers=1 block=true',
                     f'{self.frame_params.codec.value.parser} config-interval=-1',
-                    'video/x-h264,stream-format=avc,alignment=au',
+                    self.frame_params.codec.value.caps_with_params,
                     'appsink name=appsink emit-signals=true sync=false max-buffers=1',
                 ]
             )
