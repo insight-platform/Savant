@@ -1,89 +1,24 @@
-# https://forums.developer.nvidia.com/t/pytorch-for-jetson/72048/1
-ARG PYTORCH_URL=https://nvidia.box.com/shared/static/0h6tk4msrl9xz3evft9t0mpwwwkw7a32.whl
-ARG PYTORCH_WHL=torch-2.1.0-cp310-cp310-linux_aarch64.whl
+FROM ghcr.io/insight-platform/savant-deepstream-l4t:latest
 
-FROM nvcr.io/nvidia/deepstream:6.4-triton-multiarch as builder
-
-ARG TORCHVISION_VERSION="v0.16.1"
-ARG TORCH_CUDA_ARCH_LIST="5.3;6.2;7.2;8.7"
-ARG PYTORCH_URL
-ARG PYTORCH_WHL
-
+# based on https://github.com/dusty-nv/jetson-containers
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
             libopenblas-dev \
             libopenmpi-dev \
             openmpi-bin \
             openmpi-common \
-            gfortran \
             libomp-dev \
             libjpeg-dev \
             zlib1g-dev \
-            libpython3-dev \
-            libavcodec-dev \
-            libavformat-dev \
-            libswscale-dev \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
-RUN cd /opt && \
-    wget --quiet --show-progress --progress=bar:force:noscroll --no-check-certificate ${PYTORCH_URL} -O ${PYTORCH_WHL} && \
-    pip3 install --verbose ${PYTORCH_WHL}
-
-# patch for https://github.com/pytorch/pytorch/issues/45323
-RUN PYTHON_ROOT=`pip3 show torch | grep Location: | cut -d' ' -f2` && \
-    TORCH_CMAKE_CONFIG=$PYTHON_ROOT/torch/share/cmake/Torch/TorchConfig.cmake && \
-    echo "patching _GLIBCXX_USE_CXX11_ABI in ${TORCH_CMAKE_CONFIG}" && \
-    sed -i 's/  set(TORCH_CXX_FLAGS "-D_GLIBCXX_USE_CXX11_ABI=")/  set(TORCH_CXX_FLAGS "-D_GLIBCXX_USE_CXX11_ABI=0")/g' ${TORCH_CMAKE_CONFIG}
-
-# PyTorch C++ extensions frequently use ninja parallel builds
-RUN pip3 install --no-cache-dir scikit-build && \
-    pip3 install --no-cache-dir ninja
-
-RUN cd /opt && \
-    git clone --branch ${TORCHVISION_VERSION} --recursive --depth=1 https://github.com/pytorch/vision torchvision && \
-    cd torchvision && \
-    git checkout ${TORCHVISION_VERSION}
-
-COPY build_torchvision.sh /opt/torchvision
-
-FROM ghcr.io/insight-platform/savant-deepstream-l4t:latest as savant_torch
-
-ARG PYTORCH_URL
-ARG PYTORCH_WHL
-
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-            libopenblas-dev \
-            libopenmpi-dev \
-            openmpi-bin \
-            openmpi-common \
-            gfortran \
-            libomp-dev \
-            libjpeg-dev \
-            zlib1g-dev \
-            libpython3-dev \
-            libavcodec-dev \
-            libavformat-dev \
-            libswscale-dev \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
-
-COPY --from=builder /opt/${PYTORCH_WHL} /opt
-
-RUN cd /opt && \
-    pip3 install --verbose ${PYTORCH_WHL} && \
-    rm ${PYTORCH_WHL}
-
-# patch for https://github.com/pytorch/pytorch/issues/45323
-RUN PYTHON_ROOT=`pip3 show torch | grep Location: | cut -d' ' -f2` && \
-    TORCH_CMAKE_CONFIG=$PYTHON_ROOT/torch/share/cmake/Torch/TorchConfig.cmake && \
-    echo "patching _GLIBCXX_USE_CXX11_ABI in ${TORCH_CMAKE_CONFIG}" && \
-    sed -i 's/  set(TORCH_CXX_FLAGS "-D_GLIBCXX_USE_CXX11_ABI=")/  set(TORCH_CXX_FLAGS "-D_GLIBCXX_USE_CXX11_ABI=0")/g' ${TORCH_CMAKE_CONFIG}
-
-COPY ./torchvision/torchvision*.whl /opt
-
-RUN pip3 install --no-cache-dir --verbose /opt/torchvision*.whl && rm /opt/torchvision*.whl
+# required for torch
+COPY --from=dustynv/l4t-pytorch:r36.2.0 /usr/local/cuda-12.2/targets/aarch64-linux/lib/libcupti.* /usr/local/cuda-12.2/targets/aarch64-linux/lib/
+# install torch-2.1.0, torchvision-0.16.0, torchaudio-2.1.0
+COPY --from=dustynv/l4t-pytorch:r36.2.0 /opt/torch*.whl /opt/
+RUN python -m pip install --no-cache-dir /opt/torch*.whl && \
+    rm /opt/torch*.whl
 
 ENV TORCH_HOME=/cache/models/torch_hub
 RUN export PYTHONPATH=/cache/models/torch_hub:$PYTHONPATH

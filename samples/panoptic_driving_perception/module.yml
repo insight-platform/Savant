@@ -2,7 +2,7 @@ name: ${oc.env:MODULE_NAME, 'panoptic_driving_perception'}
 
 parameters:
   output_frame:
-    codec: h264
+    codec: ${oc.env:CODEC, 'h264'}
 
   frame:
     width: ${oc.decode:${oc.env:FRAME_WIDTH, 1920}}
