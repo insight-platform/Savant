@@ -2,7 +2,12 @@
 import logging
 
 import pyds
-from savant_rs.primitives import Attribute, VideoFrame, VideoObject, IdCollisionResolutionPolicy
+from savant_rs.primitives import (
+    Attribute,
+    IdCollisionResolutionPolicy,
+    VideoFrame,
+    VideoObject,
+)
 from savant_rs.primitives.geometry import BBox, RBBox
 from savant_rs.utils.symbol_mapper import parse_compound_key
 
@@ -74,20 +79,20 @@ def nvds_obj_meta_output_converter(
         track_id = nvds_obj_meta.object_id
         track_box = bbox
 
-    # video_object = video_frame.create_object(
-    video_object = VideoObject(
-        id=nvds_get_obj_uid(nvds_frame_meta, nvds_obj_meta),
-        namespace=model_name,
-        label=label,
-        confidence=confidence,
-        detection_box=bbox,
-        track_id=track_id,
-        track_box=track_box,
-        attributes=[],
+    # return video_frame.create_object(
+    return video_frame.add_object(
+        VideoObject(
+            id=nvds_get_obj_uid(nvds_frame_meta, nvds_obj_meta),
+            namespace=model_name,
+            label=label,
+            confidence=confidence,
+            detection_box=bbox,
+            track_id=track_id,
+            track_box=track_box,
+            attributes=[],
+        ),
+        IdCollisionResolutionPolicy.Error,
     )
-    video_frame.add_object(video_object, IdCollisionResolutionPolicy.Error)
-
-    return video_object
 
 
 def nvds_attr_meta_output_converter(
