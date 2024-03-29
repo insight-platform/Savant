@@ -27,9 +27,9 @@ KVS_LOG_CONFIG_TEMPLATE = os.path.normpath(
     os.path.join(os.path.dirname(__file__), 'kvs_log_configuration.template')
 )
 
-CODEC_TO_CONTENT_TYPE = {
-    Codec.H264: 'video/h264',
-    Codec.HEVC: 'video/h265',
+CODEC_TO_CAPS = {
+    Codec.H264: 'video/x-h264,stream-format=avc,alignment=au',
+    Codec.HEVC: 'video/x-h265,stream-format=hvc1,alignment=au',
 }
 
 
@@ -77,14 +77,13 @@ class KvsWriter(ChunkWriter):
         self.source_id = source_id
         self.kvs_name = kvs_name
         self.frame_params = frame_params
-        self.content_type = CODEC_TO_CONTENT_TYPE[frame_params.codec]
 
         self.kvs: KvsWrapper = KvsWrapper(
             config.aws.region,
             config.aws.access_key,
             config.aws.secret_key,
             self.kvs_name,
-            self.content_type,
+            frame_params.codec.value.name,
             config.allow_create_stream,
             round(Fraction(frame_params.framerate)),
             config.buffer.low_threshold,
@@ -213,7 +212,7 @@ class KvsWriter(ChunkWriter):
                 [
                     'appsrc name=appsrc emit-signals=false format=time max-buffers=1 block=true',
                     f'{self.frame_params.codec.value.parser} config-interval=-1',
-                    self.frame_params.codec.value.caps_with_params,
+                    CODEC_TO_CAPS[self.frame_params.codec],
                     'appsink name=appsink emit-signals=true sync=false max-buffers=1',
                 ]
             )

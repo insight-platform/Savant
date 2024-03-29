@@ -1294,7 +1294,12 @@ Running with the helper script:
         --aws-secret-key='wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY'
 
 .. note::
+
     The adapter doesn't have ``ZMQ_TYPE``, ``ZMQ_BIND`` parameters.
+
+.. note::
+
+    The adapter supports only ``h265`` and ``hevc`` codecs.
 
 
 Bridge Adapters

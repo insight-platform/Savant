@@ -16,12 +16,24 @@ KvsWrapper::KvsWrapper(
     const std::string &access_key,
     const std::string &secret_key,
     const std::string &stream_name,
-    const std::string &content_type,
+    const std::string &codec,
     bool allow_stream_creation,
     uint32_t framerate,
     uint32_t low_threshold,
     uint32_t high_threshold
 ) {
+    std::string content_type, codec_id;
+    if (codec == "h264") {
+        content_type = "video/h264";
+        codec_id = "V_MPEG4/ISO/AVC";
+    } else if (codec == "hevc") {
+        content_type = "video/h265";
+        codec_id = "V_MPEGH/ISO/HEVC";
+    } else {
+        LOG_PYBIND_ERROR("Unsupported codec: %s", codec.c_str());
+        throw std::runtime_error("Unsupported codec.");
+    }
+
     state = new ProducerState();
     frame_buffer = new FrameBuffer();
     this->low_threshold = low_threshold;
@@ -76,7 +88,8 @@ KvsWrapper::KvsWrapper(
             DEFAULT_AVG_BANDWIDTH_BPS,
             DEFAULT_BUFFER_DURATION,
             DEFAULT_REPLAY_DURATION,
-            DEFAULT_CONNECTION_STALENESS
+            DEFAULT_CONNECTION_STALENESS,
+            codec_id
         )
     );
     stream = producer->createStreamSync(std::move(stream_definition));
