@@ -14,13 +14,11 @@ from gst_plugins.python.savant_rs_video_demux_common import FrameParams, build_c
 from savant.api.enums import ExternalFrameType
 from savant.gstreamer import Gst, GstApp
 from savant.gstreamer.codecs import Codec
-from savant.utils.config import opt_config
+from savant.utils.config import opt_config, strtobool
 from savant.utils.logging import get_logger, init_logging
 from savant.utils.zeromq import ZeroMQMessage, ZeroMQSource
 
 LOGGER_PREFIX = 'adapters.multistream_kvs_sink'
-LOW_BUFFER_THRESHOLD = 30
-HIGH_BUFFER_THRESHOLD = 40
 
 KVS_LOG_CONFIG = os.path.normpath(
     os.path.join(os.path.dirname(__file__), 'kvs_log_configuration')
@@ -35,16 +33,46 @@ CODEC_TO_CONTENT_TYPE = {
 }
 
 
+class AwsConfig:
+    def __init__(self):
+        self.region = os.environ['AWS_REGION']
+        self.access_key = os.environ['AWS_ACCESS_KEY_ID']
+        self.secret_key = os.environ['AWS_SECRET_ACCESS_KEY']
+
+
+class ZmqConfig:
+    def __init__(self):
+        self.endpoint = os.environ['ZMQ_ENDPOINT']
+        self.source_id = opt_config('SOURCE_ID')
+        self.source_id_prefix = opt_config('SOURCE_ID_PREFIX')
+
+
+class BufferConfig:
+    def __init__(self):
+        self.low_threshold = opt_config('BUFFER_LOW_THRESHOLD', 30, int)
+        self.high_threshold = opt_config('BUFFER_HIGH_THRESHOLD', 40, int)
+        assert (
+            self.low_threshold < self.high_threshold
+        ), 'BUFFER_LOW_THRESHOLD must be less than BUFFER_HIGH_THRESHOLD'
+
+
+class Config:
+    def __init__(self):
+        self.allow_create_stream = opt_config('ALLOW_CREATE_STREAM', False, strtobool)
+        self.stream_name_prefix = opt_config('STREAM_NAME_PREFIX', '')
+        self.kvssdk_loglevel = os.environ.get('KVSSDK_LOGLEVEL', 'INFO')
+        self.zmq: ZmqConfig = ZmqConfig()
+        self.aws: AwsConfig = AwsConfig()
+        self.buffer: BufferConfig = BufferConfig()
+
+
 class KvsWriter(ChunkWriter):
     def __init__(
         self,
         source_id: str,
         kvs_name: str,
         frame_params: FrameParams,
-        aws_region: str,
-        access_key: str,
-        secret_key: str,
-        allow_create_stream: bool,
+        config: Config,
     ):
         self.source_id = source_id
         self.kvs_name = kvs_name
@@ -52,15 +80,15 @@ class KvsWriter(ChunkWriter):
         self.content_type = CODEC_TO_CONTENT_TYPE[frame_params.codec]
 
         self.kvs: KvsWrapper = KvsWrapper(
-            aws_region,
-            access_key,
-            secret_key,
+            config.aws.region,
+            config.aws.access_key,
+            config.aws.secret_key,
             self.kvs_name,
             self.content_type,
-            allow_create_stream,
+            config.allow_create_stream,
             round(Fraction(frame_params.framerate)),
-            LOW_BUFFER_THRESHOLD,
-            HIGH_BUFFER_THRESHOLD,
+            config.buffer.low_threshold,
+            config.buffer.high_threshold,
         )
         self.stream_started = False
 
@@ -203,17 +231,8 @@ class KvsWriter(ChunkWriter):
 
 
 class MultiStreamKvsSink:
-    def __init__(
-        self,
-        aws_region: str,
-        access_key: str,
-        secret_key: str,
-        allow_create_stream: bool,
-    ):
-        self.aws_region = aws_region
-        self.access_key = access_key
-        self.secret_key = secret_key
-        self.allow_create_stream = allow_create_stream
+    def __init__(self, config: Config):
+        self.config = config
         self.logger = get_logger(f'{LOGGER_PREFIX}.{self.__class__.__name__}')
         self.writers: Dict[str, ChunkWriter] = {}
 
@@ -272,12 +291,9 @@ class MultiStreamKvsSink:
         if writer is None:
             writer = KvsWriter(
                 source_id=frame.source_id,
-                kvs_name=frame.source_id,
+                kvs_name=self.config.stream_name_prefix + frame.source_id,
                 frame_params=frame_params,
-                aws_region=self.aws_region,
-                access_key=self.access_key,
-                secret_key=self.secret_key,
-                allow_create_stream=self.allow_create_stream,
+                config=self.config,
             )
             self.writers[frame.source_id] = writer
 
@@ -304,19 +320,11 @@ def main():
     # To gracefully shutdown the adapter on SIGTERM (raise KeyboardInterrupt)
     signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
 
-    zmq_endpoint = os.environ['ZMQ_ENDPOINT']
-    source_id = opt_config('SOURCE_ID')
-    source_id_prefix = opt_config('SOURCE_ID_PREFIX')
+    config = Config()
 
-    aws_region = os.environ['AWS_REGION']
-    access_key = os.environ['AWS_ACCESS_KEY_ID']
-    secret_key = os.environ['AWS_SECRET_ACCESS_KEY']
-    allow_create_stream = opt_config('ALLOW_CREATE_STREAM', False, convert=bool)
-
-    kvssdk_loglevel = os.environ.get('KVSSDK_LOGLEVEL', 'INFO')
     with open(KVS_LOG_CONFIG_TEMPLATE) as f:
         log_config = f.read()
-    log_config = log_config.replace('[[LOGLEVEL]]', kvssdk_loglevel)
+    log_config = log_config.replace('[[LOGLEVEL]]', config.kvssdk_loglevel)
     with open(KVS_LOG_CONFIG, 'w') as f:
         f.write(log_config)
     configure_logging(KVS_LOG_CONFIG)
@@ -326,17 +334,12 @@ def main():
     # possible exceptions will cause app to crash and log error by default
     # no need to handle exceptions here
     source = ZeroMQSource(
-        zmq_endpoint,
-        source_id=source_id,
-        source_id_prefix=source_id_prefix,
+        config.zmq.endpoint,
+        source_id=config.zmq.source_id,
+        source_id_prefix=config.zmq.source_id_prefix,
     )
 
-    sink = MultiStreamKvsSink(
-        aws_region=aws_region,
-        access_key=access_key,
-        secret_key=secret_key,
-        allow_create_stream=allow_create_stream,
-    )
+    sink = MultiStreamKvsSink(config)
     logger.info('Multistream KVS sink started')
 
     try:
