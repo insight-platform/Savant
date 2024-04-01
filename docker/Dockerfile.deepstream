@@ -80,21 +80,10 @@ COPY libs/savantboost .
 RUN python -m build --wheel --no-isolation && rm -rf _skbuild
 
 
-# Savant amd64 base container
-FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_BASE_IMAGE AS base_amd64
-
-
-# Savant arm64 base container
-FROM nvcr.io/nvidia/deepstream-l4t:$DEEPSTREAM_BASE_IMAGE AS base_arm64
-
-
-# Savant base container
-FROM base_${TARGETARCH} AS base
+# Savant amd64+arm64 (multiarch) base container
+FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_BASE_IMAGE AS base
 ARG TARGETARCH
 ARG DEEPSTREAM_VERSION
-
-# remove nvidia repos (sometimes break down)
-#RUN rm -r /etc/apt/sources.list.d/* && apt-get clean
 
 # install base packages
 RUN /opt/nvidia/deepstream/deepstream/user_additional_install.sh
@@ -261,6 +250,116 @@ WORKDIR $PROJECT_PATH/docs
 
 ENTRYPOINT ["make"]
 CMD ["clean", "html"]
+
+
+# Savant extra containers
+
+# Extra builder
+FROM base_builder AS extra_builder
+ARG TARGETARCH
+
+# pycuda
+ARG PYCUDA_VERSION=v2024.1
+RUN cd /opt && \
+    git clone --branch=${PYCUDA_VERSION} --depth=1 --recursive https://github.com/inducer/pycuda && \
+    cd pycuda && \
+    ./configure.py && \
+    python3 setup.py build_ext --inplace bdist_wheel && \
+    cp dist/pycuda*.whl /opt/ && \
+    rm -rf /opt/pycuda
+
+# torch2trt
+RUN cd /opt && \
+    python3 -m pip install tensorrt torch packaging && \
+    git clone https://github.com/NVIDIA-AI-IOT/torch2trt && \
+    cd torch2trt && \
+    sed 's|collections.Sequence|collections.abc.Sequence|g' -i torch2trt/converters/interpolate.py && \
+    python3 setup.py bdist_wheel && \
+    cp dist/torch2trt*.whl /opt/ && \
+    if [ "$TARGETARCH" = "amd64" ]; then \
+      cmake -B build .; \
+      cmake --build build --target install; \
+    elif [ "$TARGETARCH" = "arm64" ]; then \
+      sed 's|^set(CUDA_ARCHITECTURES.*|#|g' -i CMakeLists.txt; \
+      cmake -B build -DCUDA_ARCHITECTURES=87 .; \
+      cmake --build build --target install; \
+    fi && \
+    rm -rf /opt/torch2trt
+
+
+# Extra x86 container
+FROM base AS deepstream-extra
+
+# torch, torchvision, torchaudio
+RUN python -m pip install --no-cache-dir torch torchvision torchaudio && \
+    python -c 'import torch; print(f"PyTorch version: {torch.__version__}, CUDA available: {torch.cuda.is_available()}")'
+
+# torch2trt
+COPY --from=extra_builder /usr/local/lib/libtorch2trt_plugins.so /usr/local/lib/
+COPY --from=extra_builder /opt/torch2trt*.whl /opt/
+RUN ldconfig && \
+    python -m pip install --no-cache-dir --pre --upgrade tensorrt && \
+    python -m pip install --no-cache-dir /opt/torch2trt*.whl && \
+    python -m pip install --no-cache-dir nvidia-pyindex && \
+    python -m pip install --no-cache-dir onnx-graphsurgeon && \
+    python -c 'import torch2trt; print(f"Torch2TRT version: {torch2trt.__version__}")' && \
+    rm /opt/torch2trt*.whl
+
+# pycuda
+COPY --from=extra_builder /opt/pycuda*.whl /opt/
+RUN python -m pip install --no-cache-dir /opt/pycuda*.whl && \
+    python -c 'import pycuda; print(f"PyCUDA version: {pycuda.VERSION_TEXT}")' && \
+    rm /opt/pycuda*.whl
+
+
+# Extra l4t container
+FROM base AS deepstream-l4t-extra
+
+# based on https://github.com/dusty-nv/jetson-containers
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+            libopenblas-dev \
+            libopenmpi-dev \
+            openmpi-bin \
+            openmpi-common \
+            libomp-dev \
+            libjpeg-dev \
+            zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# required for torch
+COPY --from=dustynv/l4t-pytorch:r36.2.0 /usr/local/cuda-12.2/targets/aarch64-linux/lib/libcupti.* /usr/local/cuda-12.2/targets/aarch64-linux/lib/
+
+# torch, torchvision, torchaudio
+COPY --from=dustynv/l4t-pytorch:r36.2.0 /opt/torch*.whl /opt/
+RUN python -m pip install --no-cache-dir /opt/torch*.whl && \
+    python -c 'import torch; print(f"PyTorch version: {torch.__version__}, CUDA available: {torch.cuda.is_available()}")' && \
+    rm /opt/torch*.whl
+
+# set the CUDA architectures that torch extensions get built for
+# Nano/TX1 = 5.3, TX2 = 6.2, Xavier = 7.2, Orin = 8.7
+ARG TORCH_CUDA_ARCH_ARGS="8.7"
+ENV TORCH_CUDA_ARCH_LIST=${TORCH_CUDA_ARCH_ARGS} \
+    TORCH_HOME=/cache/models/torch_hub
+#RUN export PYTHONPATH=/cache/models/torch_hub:$PYTHONPATH
+
+# torch2trt
+COPY --from=extra_builder /usr/local/aarch64-linux-gnu/lib/libtorch2trt_plugins.so /usr/local/aarch64-linux-gnu/lib/
+COPY --from=extra_builder /opt/torch2trt*.whl /opt/
+RUN ldconfig && \
+    python -m pip install --no-cache-dir --pre --upgrade tensorrt && \
+    python -m pip install --no-cache-dir /opt/torch2trt*.whl && \
+    python -m pip install --no-cache-dir nvidia-pyindex && \
+    python -m pip install --no-cache-dir onnx-graphsurgeon && \
+    python -c 'import torch2trt; print(f"Torch2TRT version: {torch2trt.__version__}")' && \
+    rm /opt/torch2trt*.whl
+
+# pycuda
+COPY --from=extra_builder /opt/pycuda*.whl /opt/
+RUN python -m pip install --no-cache-dir /opt/pycuda*.whl && \
+    python -c 'import pycuda; print(f"PyCUDA version: {pycuda.VERSION_TEXT}")' && \
+    rm /opt/pycuda*.whl
 
 
 # Savant test image, x86 only

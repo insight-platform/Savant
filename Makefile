@@ -57,6 +57,15 @@ build-adapters-py:
 
 build-adapters-all: build-adapters-py build-adapters-gstreamer build-adapters-deepstream
 
+build-extra:
+	docker buildx build \
+		--platform $(PLATFORM) \
+		--target deepstream$(PLATFORM_SUFFIX)-extra \
+		--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
+		--build-arg SAVANT_RS_VERSION=$(SAVANT_RS_VERSION) \
+		-f docker/$(DOCKER_FILE) \
+		-t savant-deepstream$(PLATFORM_SUFFIX)-extra .
+
 build-docs:
 	rm -rf docs/source/reference/api/generated
 	docker buildx build \
@@ -146,7 +155,7 @@ run-dev:
 		-v `pwd`/var:$(PROJECT_PATH)/var \
 		-v /tmp/zmq-sockets:/tmp/zmq-sockets \
 		--entrypoint /bin/bash \
-		savant-deepstream$(PLATFORM_SUFFIX)
+		savant-deepstream$(PLATFORM_SUFFIX)-extra
 
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} \+
