@@ -533,53 +533,6 @@ def rtsp_source(
     run_command(cmd)
 
 
-@cli.command('usb-cam')
-@click.option(
-    '--framerate',
-    default='15/1',
-    help='USB camera framerate',
-    show_default=True,
-)
-@common_options
-@adapter_docker_image_option('gstreamer')
-@click.argument('device', default='/dev/video0')
-def usb_cam_source(
-    source_id: str,
-    out_endpoint: str,
-    out_type: str,
-    out_bind: bool,
-    docker_image: str,
-    fps_period_frames: Optional[int],
-    fps_period_seconds: Optional[float],
-    fps_output: str,
-    framerate: str,
-    device: str,
-):
-    """Read video stream from USB camera located at DEVICE.
-
-    Default DEVICE: /dev/video0.
-    """
-
-    envs = build_common_envs(
-        source_id=source_id,
-        fps_period_frames=fps_period_frames,
-        fps_period_seconds=fps_period_seconds,
-        fps_output=fps_output,
-        zmq_endpoint=out_endpoint,
-        zmq_type=out_type,
-        zmq_bind=out_bind,
-    ) + [f'DEVICE={device}', f'FRAMERATE={framerate}']
-    cmd = build_docker_run_command(
-        f'source-usb-{source_id}',
-        zmq_endpoints=[out_endpoint],
-        entrypoint='/opt/savant/adapters/gst/sources/usb_cam.sh',
-        envs=envs,
-        devices=[device],
-        docker_image=docker_image,
-    )
-    run_command(cmd)
-
-
 @cli.command('gige')
 @click.option('--width', type=int, help='Width of streaming video')
 @click.option('--height', type=int, help='Height of streaming video')
