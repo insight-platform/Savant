@@ -1,7 +1,7 @@
 ARG DEEPSTREAM_VERSION
 ARG DEEPSTREAM_DEVEL_IMAGE=$DEEPSTREAM_VERSION-triton-multiarch
 ARG DEEPSTREAM_BASE_IMAGE=$DEEPSTREAM_VERSION-samples-multiarch
-FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_DEVEL_IMAGE AS base_builder
+FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_DEVEL_IMAGE AS base-builder
 ARG TARGETARCH
 ARG PYTHON_VERSION=3.10
 
@@ -25,7 +25,7 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
 
 
 # Savant python package builder
-FROM base_builder as savant_build
+FROM base-builder as savant-package-builder
 
 RUN apt-get update && \
     apt-get install --no-install-recommends -y \
@@ -41,7 +41,7 @@ RUN python -m build --wheel
 
 
 # Savant GStreamer/DeepStream meta package builder
-FROM base_builder AS pygstsavantframemeta_build
+FROM base-builder AS savant-meta-builder
 
 WORKDIR /libs/gstsavantframemeta
 COPY libs/gstsavantframemeta/requirements.txt .
@@ -60,7 +60,7 @@ RUN python -m build --wheel --no-isolation && rm -rf _skbuild
 
 
 # Savant boost(cuda) library builder
-FROM base_builder AS savantboost_build
+FROM base-builder AS savant-boost-builder
 # TODO: Determine JetPack release (replace `r36.2`)
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
       echo "deb [trusted=yes] https://repo.download.nvidia.com/jetson/t234 r36.2 main" \
@@ -80,7 +80,7 @@ COPY libs/savantboost .
 RUN python -m build --wheel --no-isolation && rm -rf _skbuild
 
 
-# Savant amd64+arm64 (multiarch) base container
+# Savant base container
 FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_BASE_IMAGE AS base
 ARG TARGETARCH
 ARG DEEPSTREAM_VERSION
@@ -142,13 +142,13 @@ RUN python -m pip install --no-cache-dir -r requirements/ext.txt
 
 RUN rm -r requirements
 
-COPY --from=savantboost_build /libs/savanboost/dist /libs/savanboost/dist
+COPY --from=savant-boost-builder /libs/savanboost/dist /libs/savanboost/dist
 RUN python -m pip install --no-cache-dir /libs/savanboost/dist/*.whl
 
-COPY --from=pygstsavantframemeta_build /libs/gstsavantframemeta/dist /libs/gstsavantframemeta/dist
+COPY --from=savant-meta-builder /libs/gstsavantframemeta/dist /libs/gstsavantframemeta/dist
 RUN python -m pip install --no-cache-dir /libs/gstsavantframemeta/dist/*.whl
 
-COPY --from=savant_build /tmp/build/dist /libs/savant/dist
+COPY --from=savant-package-builder /tmp/build/dist /libs/savant/dist
 RUN python -m pip install --no-cache-dir /libs/savant/dist/*.whl
 
 # install savant-rs
@@ -254,9 +254,8 @@ CMD ["clean", "html"]
 
 # Savant extra containers
 
-# Extra builder
-FROM base_builder AS extra_builder
-ARG TARGETARCH
+# x86 builder
+FROM base-builder AS extra-builder
 
 # pycuda
 ARG PYCUDA_VERSION=v2024.1
@@ -276,15 +275,18 @@ RUN cd /opt && \
     sed 's|collections.Sequence|collections.abc.Sequence|g' -i torch2trt/converters/interpolate.py && \
     python3 setup.py bdist_wheel && \
     cp dist/torch2trt*.whl /opt/ && \
-    if [ "$TARGETARCH" = "amd64" ]; then \
-      cmake -B build .; \
-      cmake --build build --target install; \
-    elif [ "$TARGETARCH" = "arm64" ]; then \
-      sed 's|^set(CUDA_ARCHITECTURES.*|#|g' -i CMakeLists.txt; \
-      cmake -B build -DCUDA_ARCHITECTURES=87 .; \
-      cmake --build build --target install; \
-    fi && \
+    cmake -B build . && \
+    cmake --build build --target install && \
     rm -rf /opt/torch2trt
+
+
+# l4t builder
+FROM dustynv/l4t-pytorch:r36.2.0 AS l4t-extra-builder
+
+# torch2trt
+RUN cd /opt/torch2trt && \
+    python3 setup.py bdist_wheel && \
+    cp dist/torch2trt*.whl /opt/
 
 
 # Extra x86 container
@@ -292,24 +294,36 @@ FROM base AS deepstream-extra
 
 # torch, torchvision, torchaudio
 RUN python -m pip install --no-cache-dir torch torchvision torchaudio && \
-    python -c 'import torch; print(f"PyTorch version: {torch.__version__}, CUDA available: {torch.cuda.is_available()}")'
+    python -c 'import torch; print(f"PyTorch {torch.__version__}, CUDA available: {torch.cuda.is_available()}")'
 
 # torch2trt
-COPY --from=extra_builder /usr/local/lib/libtorch2trt_plugins.so /usr/local/lib/
-COPY --from=extra_builder /opt/torch2trt*.whl /opt/
+COPY --from=extra-builder /usr/local/lib/libtorch2trt_plugins.so /usr/local/lib/
+COPY --from=extra-builder /opt/torch2trt*.whl /opt/
 RUN ldconfig && \
-    python -m pip install --no-cache-dir --pre --upgrade tensorrt && \
+    python -m pip install --no-cache-dir tensorrt && \
     python -m pip install --no-cache-dir /opt/torch2trt*.whl && \
     python -m pip install --no-cache-dir nvidia-pyindex && \
     python -m pip install --no-cache-dir onnx-graphsurgeon && \
-    python -c 'import torch2trt; print(f"Torch2TRT version: {torch2trt.__version__}")' && \
+    python -c 'import torch2trt; print("Torch2TRT Ok")' && \
     rm /opt/torch2trt*.whl
 
 # pycuda
-COPY --from=extra_builder /opt/pycuda*.whl /opt/
+COPY --from=extra-builder /opt/pycuda*.whl /opt/
 RUN python -m pip install --no-cache-dir /opt/pycuda*.whl && \
-    python -c 'import pycuda; print(f"PyCUDA version: {pycuda.VERSION_TEXT}")' && \
+    python -c 'import pycuda; print(f"PyCUDA {pycuda.VERSION_TEXT}")' && \
     rm /opt/pycuda*.whl
+
+# onnx (installed with onnx-graphsurgeon), onnxruntime
+RUN python -m pip install --no-cache-dir onnxruntime-gpu==1.17.1 && \
+    python3 -c 'import onnx; print(f"ONNX {onnx.__version__}")' && \
+    python3 -c 'import onnxruntime as ort; print(f"ONNX Runtime {ort.__version__}")'
+
+# cython, polars, scikit-learn, jupyter
+RUN python -m pip install --no-cache-dir \
+    Cython \
+    polars[all] \
+    scikit-learn \
+    jupyterlab
 
 
 # Extra l4t container
@@ -328,13 +342,11 @@ RUN apt-get update && \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
-# required for torch
-COPY --from=dustynv/l4t-pytorch:r36.2.0 /usr/local/cuda-12.2/targets/aarch64-linux/lib/libcupti.* /usr/local/cuda-12.2/targets/aarch64-linux/lib/
-
 # torch, torchvision, torchaudio
-COPY --from=dustynv/l4t-pytorch:r36.2.0 /opt/torch*.whl /opt/
+COPY --from=l4t-extra-builder /usr/local/cuda-12.2/targets/aarch64-linux/lib/libcupti.* /usr/local/cuda-12.2/targets/aarch64-linux/lib/
+COPY --from=l4t-extra-builder /opt/torch*.whl /opt/
 RUN python -m pip install --no-cache-dir /opt/torch*.whl && \
-    python -c 'import torch; print(f"PyTorch version: {torch.__version__}, CUDA available: {torch.cuda.is_available()}")' && \
+    python -c 'import torch; print(f"PyTorch {torch.__version__}, CUDA available: {torch.cuda.is_available()}")' && \
     rm /opt/torch*.whl
 
 # set the CUDA architectures that torch extensions get built for
@@ -342,24 +354,40 @@ RUN python -m pip install --no-cache-dir /opt/torch*.whl && \
 ARG TORCH_CUDA_ARCH_ARGS="8.7"
 ENV TORCH_CUDA_ARCH_LIST=${TORCH_CUDA_ARCH_ARGS} \
     TORCH_HOME=/cache/models/torch_hub
-#RUN export PYTHONPATH=/cache/models/torch_hub:$PYTHONPATH
 
 # torch2trt
-COPY --from=extra_builder /usr/local/aarch64-linux-gnu/lib/libtorch2trt_plugins.so /usr/local/aarch64-linux-gnu/lib/
-COPY --from=extra_builder /opt/torch2trt*.whl /opt/
+COPY --from=l4t-extra-builder /usr/local/lib/libtorch2trt_plugins.so /usr/local/lib/
+COPY --from=l4t-extra-builder /opt/torch2trt*.whl /opt/
 RUN ldconfig && \
-    python -m pip install --no-cache-dir --pre --upgrade tensorrt && \
+    python -m pip install --no-cache-dir tensorrt && \
     python -m pip install --no-cache-dir /opt/torch2trt*.whl && \
     python -m pip install --no-cache-dir nvidia-pyindex && \
     python -m pip install --no-cache-dir onnx-graphsurgeon && \
-    python -c 'import torch2trt; print(f"Torch2TRT version: {torch2trt.__version__}")' && \
+    python -c 'import torch2trt; print("Torch2TRT Ok")' && \
     rm /opt/torch2trt*.whl
 
 # pycuda
-COPY --from=extra_builder /opt/pycuda*.whl /opt/
+COPY --from=l4t-extra-builder /opt/pycuda*.whl /opt/
 RUN python -m pip install --no-cache-dir /opt/pycuda*.whl && \
-    python -c 'import pycuda; print(f"PyCUDA version: {pycuda.VERSION_TEXT}")' && \
+    python -c 'import pycuda; print(f"PyCUDA {pycuda.VERSION_TEXT}")' && \
     rm /opt/pycuda*.whl
+
+# onnx (installed with onnx-graphsurgeon), onnxruntime
+# https://elinux.org/Jetson_Zoo#ONNX_Runtime
+ARG ONNXRUNTIME_URL="https://nvidia.box.com/shared/static/i7n40ki3pl2x57vyn4u7e9asyiqlnl7n.whl"
+ARG ONNXRUNTIME_WHL="onnxruntime_gpu-1.17.0-cp310-cp310-linux_aarch64.whl"
+RUN cd /opt && \
+    wget --quiet --show-progress --progress=bar:force:noscroll --no-check-certificate ${ONNXRUNTIME_URL} -O ${ONNXRUNTIME_WHL} && \
+    python -m pip install --no-cache-dir ${ONNXRUNTIME_WHL} && \
+    python3 -c 'import onnx; print(f"ONNX {onnx.__version__}")' && \
+    python3 -c 'import onnxruntime as ort; print(f"ONNX Runtime {ort.__version__}")'
+
+# cython, polars, scikit-learn, jupyter
+RUN python -m pip install --no-cache-dir \
+    Cython \
+    polars[all] \
+    scikit-learn \
+    jupyterlab
 
 
 # Savant test image, x86 only
