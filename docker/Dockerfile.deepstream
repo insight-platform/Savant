@@ -323,7 +323,8 @@ RUN python -m pip install --no-cache-dir \
     Cython \
     polars[all] \
     scikit-learn \
-    jupyterlab
+    jupyterlab \
+    pytest
 
 
 # Extra l4t container
@@ -387,15 +388,5 @@ RUN python -m pip install --no-cache-dir \
     Cython \
     polars[all] \
     scikit-learn \
-    jupyterlab
-
-
-# Savant test image, x86 only
-FROM base AS tests
-COPY requirements/dev.txt requirements/dev.txt
-COPY tests /opt/savant/tests
-
-RUN python -m pip install --no-cache-dir -r requirements/dev.txt
-RUN python -m pip install --no-cache-dir torch torchvision torchaudio
-
-ENTRYPOINT ["pytest", "-s", "/opt/savant/tests"]
+    jupyterlab \
+    pytest

@@ -77,16 +77,6 @@ build-docs:
 		-f docker/$(DOCKER_FILE) \
 		-t savant-docs:$(SAVANT_VERSION) .
 
-build-tests:
-	docker buildx build \
-		--target tests \
-		--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
-		--build-arg SAVANT_RS_VERSION=$(SAVANT_RS_VERSION) \
-		--build-arg USER_UID=`id -u` \
-		--build-arg USER_GID=`id -g` \
-		-f docker/$(DOCKER_FILE) \
-		-t savant-tests:$(SAVANT_VERSION) .
-
 build-opencv: opencv-build-amd64 opencv-build-arm64 opencv-cp-amd64 opencv-cp-arm64
 
 opencv-build-amd64:
@@ -124,12 +114,12 @@ run-docs:
 		savant-docs:$(SAVANT_VERSION)
 
 run-tests:
-		docker run -it --rm \
-		-v `pwd`/savant:$(PROJECT_PATH)/savant \
-		-v `pwd`/tests:$(PROJECT_PATH)/tests \
-		--gpus=all \
+	docker run -it --rm --gpus=all \
 		--name savant-tests \
-		savant-tests:$(SAVANT_VERSION)
+		-v `pwd`/tests:$(PROJECT_PATH)/tests \
+		--entrypoint pytest \
+		savant-deepstream$(PLATFORM_SUFFIX)-extra \
+		 -s $(PROJECT_PATH)/tests
 
 run-dev:
 	xhost +local:docker
@@ -152,6 +142,7 @@ run-dev:
 		-v `pwd`/samples:$(PROJECT_PATH)/samples \
 		-v `pwd`/savant:$(PROJECT_PATH)/savant \
 		-v `pwd`/scripts:$(PROJECT_PATH)/scripts \
+		-v `pwd`/tests:$(PROJECT_PATH)/tests \
 		-v `pwd`/var:$(PROJECT_PATH)/var \
 		-v /tmp/zmq-sockets:/tmp/zmq-sockets \
 		--entrypoint /bin/bash \
@@ -168,7 +159,7 @@ check-unify:
 	unify --check-only --recursive savant > /dev/null
 
 check-isort:
-	isort savant adapters gst_plugins samples scripts utils -c
+	isort savant adapters gst_plugins samples scripts tests utils -c
 
 check: check-black check-unify check-isort
 
@@ -179,6 +170,6 @@ run-black:
 	black .
 
 run-isort:
-	isort savant adapters gst_plugins samples scripts utils
+	isort savant adapters gst_plugins samples scripts tests utils
 
 reformat: run-unify run-black run-isort
