@@ -11,8 +11,10 @@ ifeq ("$(shell uname -m)", "aarch64")
 	PLATFORM := linux/arm64
 endif
 PLATFORM_SUFFIX :=
+RUNTIME := --gpus=all
 ifeq ("$(PLATFORM)", "linux/arm64")
     PLATFORM_SUFFIX := -l4t
+    RUNTIME := --runtime=nvidia
 endif
 
 PROJECT_PATH := /opt/savant
@@ -57,6 +59,21 @@ build-adapters-py:
 
 build-adapters-all: build-adapters-py build-adapters-gstreamer build-adapters-deepstream
 
+build-extra-packages:
+	docker buildx build \
+		--platform $(PLATFORM) \
+		--target builder \
+		--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
+		-f docker/$(DOCKER_FILE) \
+		-t savant$(PLATFORM_SUFFIX)-builder .
+	docker run --rm $(RUNTIME) \
+		--platform $(PLATFORM) \
+		-e OUTPUT_DIR=/opt/output \
+		-v `pwd`/packages/$(PLATFORM)/ds$(DEEPSTREAM_VERSION):/opt/output \
+		-v `pwd`/utils:/opt/utils \
+		--entrypoint /opt/utils/build_extra_packages.sh \
+		savant$(PLATFORM_SUFFIX)-builder
+
 build-extra:
 	docker buildx build \
 		--platform $(PLATFORM) \
@@ -65,6 +82,30 @@ build-extra:
 		--build-arg SAVANT_RS_VERSION=$(SAVANT_RS_VERSION) \
 		-f docker/$(DOCKER_FILE) \
 		-t savant-deepstream$(PLATFORM_SUFFIX)-extra .
+
+build-opencv: build-opencv-amd64 build-opencv-arm64
+
+build-opencv-amd64:
+	docker buildx build \
+		--platform linux/amd64 \
+		--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
+		-f docker/Dockerfile.deepstream-opencv \
+		-t savant-opencv-builder .
+	docker run --rm \
+		--platform linux/amd64 \
+		-v `pwd`/packages/linux/amd64/ds$(DEEPSTREAM_VERSION):/out \
+		savant-opencv-builder
+
+build-opencv-arm64:
+	docker buildx build \
+		--platform linux/arm64 \
+		--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
+		-f docker/Dockerfile.deepstream-opencv \
+		-t savant-l4t-opencv-builder .
+	docker run --rm \
+		--platform linux/arm64 \
+		-v `pwd`/packages/linux/arm64/ds$(DEEPSTREAM_VERSION):/out \
+		savant-l4t-opencv-builder
 
 build-docs:
 	rm -rf docs/source/reference/api/generated
@@ -77,34 +118,6 @@ build-docs:
 		-f docker/$(DOCKER_FILE) \
 		-t savant-docs:$(SAVANT_VERSION) .
 
-build-opencv: opencv-build-amd64 opencv-build-arm64 opencv-cp-amd64 opencv-cp-arm64
-
-opencv-build-amd64:
-	docker buildx build \
-		--platform linux/amd64 \
-		--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
-		-f docker/Dockerfile.deepstream-opencv \
-		-t savant-ds-opencv .
-
-opencv-cp-amd64:
-	docker run --rm \
-		--platform linux/amd64 \
-		-v `pwd`:/out \
-		savant-ds-opencv
-
-opencv-build-arm64:
-	docker buildx build \
-		--platform linux/arm64 \
-		--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
-		-f docker/Dockerfile.deepstream-opencv \
-		-t savant-ds-opencv-l4t .
-
-opencv-cp-arm64:
-	docker run --rm \
-		--platform linux/arm64 \
-		-v `pwd`:/out \
-		savant-ds-opencv-l4t
-
 run-docs:
 	docker run -it --rm \
 		-v `pwd`/savant:$(PROJECT_PATH)/savant \
@@ -114,7 +127,7 @@ run-docs:
 		savant-docs:$(SAVANT_VERSION)
 
 run-tests:
-	docker run -it --rm --gpus=all \
+	docker run -it --rm $(RUNTIME) \
 		--name savant-tests \
 		-v `pwd`/tests:$(PROJECT_PATH)/tests \
 		--entrypoint pytest \
@@ -122,8 +135,8 @@ run-tests:
 		 -s $(PROJECT_PATH)/tests
 
 run-dev:
-	xhost +local:docker
-	docker run -it --rm --gpus=all \
+	#xhost +local:docker
+	docker run -it --rm $(RUNTIME) \
 		--net=host --privileged \
 		-e DISPLAY=$(DISPLAY) \
 		-e XAUTHORITY=/tmp/.docker.xauth \
