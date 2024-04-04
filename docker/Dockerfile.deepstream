@@ -26,7 +26,7 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
     fi
 
 
-# extra builders
+# extra packages builders
 FROM builder AS extra-builder
 FROM dustynv/l4t-pytorch:r36.2.0 AS extra-l4t-builder
 
@@ -266,8 +266,7 @@ ARG DEEPSTREAM_VERSION
 ARG PACKAGES_URL=https://eu-central-1.linodeobjects.com/savant-data/packages/${TARGETPLATFORM}/ds${DEEPSTREAM_VERSION}
 
 # torch, torchvision, torchaudio
-RUN python -m pip install --no-cache-dir torch torchvision torchaudio && \
-    python -c 'import torch; print(f"PyTorch {torch.__version__}, CUDA available: {torch.cuda.is_available()}")'
+RUN python -m pip install --no-cache-dir torch torchvision torchaudio
 
 # torch2trt
 ARG TORCH2TRT_VERSION=0.4.0
@@ -279,7 +278,6 @@ RUN wget -nv -P /usr/local/lib/ ${PACKAGES_URL}/libtorch2trt_plugins.so && \
     python -m pip install --no-cache-dir ${TORCH2TRT_WHL} && \
     python -m pip install --no-cache-dir nvidia-pyindex && \
     python -m pip install --no-cache-dir onnx-graphsurgeon && \
-    python -c 'import torch2trt; print("Torch2TRT Ok")' && \
     rm ${TORCH2TRT_WHL}
 
 # pycuda
@@ -287,14 +285,11 @@ ARG PYCUDA_VERSION=2024.1
 ARG PYCUDA_WHL="pycuda-${PYCUDA_VERSION}-cp310-cp310-linux_x86_64.whl"
 RUN wget -nv -O ${PYCUDA_WHL} ${PACKAGES_URL}/${PYCUDA_WHL} && \
     python -m pip install --no-cache-dir ${PYCUDA_WHL} && \
-    python -c 'import pycuda; print(f"PyCUDA {pycuda.VERSION_TEXT}")' && \
     rm ${PYCUDA_WHL}
 
 # onnx, onnxruntime
 ARG ORT_VERSION=1.17.1
-RUN python -m pip install --no-cache-dir onnx onnxruntime-gpu==${ORT_VERSION} && \
-    python3 -c 'import onnx; print(f"ONNX {onnx.__version__}")' && \
-    python3 -c 'import onnxruntime as ort; print(f"ONNX Runtime {ort.__version__}")'
+RUN python -m pip install --no-cache-dir onnx onnxruntime-gpu==${ORT_VERSION}
 
 # cython, polars, scikit-learn, jupyter
 RUN python -m pip install --no-cache-dir \
@@ -325,7 +320,6 @@ RUN apt-get update && \
 COPY --from=dustynv/l4t-pytorch:r36.2.0 /usr/local/cuda-12.2/targets/aarch64-linux/lib/libcupti.* /usr/local/cuda-12.2/targets/aarch64-linux/lib/
 COPY --from=dustynv/l4t-pytorch:r36.2.0 /opt/torch*.whl /opt/
 RUN python -m pip install --no-cache-dir /opt/torch*.whl && \
-    python -c 'import torch; print(f"PyTorch {torch.__version__}, CUDA available: {torch.cuda.is_available()}")' && \
     rm /opt/torch*.whl
 
 # set the CUDA architectures that torch extensions get built for
@@ -344,7 +338,6 @@ RUN wget -nv -P /usr/local/lib/ ${PACKAGES_URL}/libtorch2trt_plugins.so && \
     python -m pip install --no-cache-dir ${TORCH2TRT_WHL} && \
     python -m pip install --no-cache-dir nvidia-pyindex && \
     python -m pip install --no-cache-dir onnx-graphsurgeon && \
-    python -c 'import torch2trt; print("Torch2TRT Ok")' && \
     rm ${TORCH2TRT_WHL}
 
 # pycuda
@@ -352,7 +345,6 @@ ARG PYCUDA_VERSION=2024.1
 ARG PYCUDA_WHL="pycuda-${PYCUDA_VERSION}-cp310-cp310-linux_aarch64.whl"
 RUN wget -nv -O ${PYCUDA_WHL} ${PACKAGES_URL}/${PYCUDA_WHL} && \
     python -m pip install --no-cache-dir ${PYCUDA_WHL} && \
-    python -c 'import pycuda; print(f"PyCUDA {pycuda.VERSION_TEXT}")' && \
     rm ${PYCUDA_WHL}
 
 # onnx, onnxruntime
@@ -360,9 +352,7 @@ RUN wget -nv -O ${PYCUDA_WHL} ${PACKAGES_URL}/${PYCUDA_WHL} && \
 ARG ORT_URL="https://nvidia.box.com/shared/static/i7n40ki3pl2x57vyn4u7e9asyiqlnl7n.whl"
 ARG ORT_WHL="onnxruntime_gpu-1.17.0-cp310-cp310-linux_aarch64.whl"
 RUN wget -nv -O ${ORT_WHL} ${ORT_URL} && \
-    python -m pip install --no-cache-dir onnx ${ORT_WHL} && \
-    python3 -c 'import onnx; print(f"ONNX {onnx.__version__}")' && \
-    python3 -c 'import onnxruntime as ort; print(f"ONNX Runtime {ort.__version__}")'
+    python -m pip install --no-cache-dir onnx ${ORT_WHL}
 
 # cython, polars, scikit-learn, jupyter
 RUN python -m pip install --no-cache-dir \
