@@ -1,16 +1,17 @@
+import cupy as cp
+import cv2
 import numpy as np
 import pytest
 import torch
-import cupy as cp
+
 from savant.utils.memory_repr import (
-    opencv_gpu_mat_as_cupy_array,
     cupy_array_as_opencv_gpu_mat,
+    opencv_gpu_mat_as_cupy_array,
 )
 from savant.utils.memory_repr_pytorch import (
     opencv_gpu_mat_as_pytorch_tensor,
     pytorch_tensor_as_opencv_gpu_mat,
 )
-import cv2
 
 TORCH_TYPE = [torch.int8, torch.uint8, torch.float32]
 NUMPY_TYPE = [np.int8, np.uint8, np.float32]
