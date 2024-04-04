@@ -26,6 +26,11 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
     fi
 
 
+# extra builders
+FROM builder AS extra-builder
+FROM dustynv/l4t-pytorch:r36.2.0 AS extra-l4t-builder
+
+
 # Savant python package builder
 FROM builder as savant-package-builder
 
@@ -344,7 +349,7 @@ RUN wget -nv -P /usr/local/lib/ ${PACKAGES_URL}/libtorch2trt_plugins.so && \
 
 # pycuda
 ARG PYCUDA_VERSION=2024.1
-ARG PYCUDA_WHL="pycuda-${PYCUDA_VERSION}-cp310-cp310-linux_x86_64.whl"
+ARG PYCUDA_WHL="pycuda-${PYCUDA_VERSION}-cp310-cp310-linux_aarch64.whl"
 RUN wget -nv -O ${PYCUDA_WHL} ${PACKAGES_URL}/${PYCUDA_WHL} && \
     python -m pip install --no-cache-dir ${PYCUDA_WHL} && \
     python -c 'import pycuda; print(f"PyCUDA {pycuda.VERSION_TEXT}")' && \

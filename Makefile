@@ -62,17 +62,17 @@ build-adapters-all: build-adapters-py build-adapters-gstreamer build-adapters-de
 build-extra-packages:
 	docker buildx build \
 		--platform $(PLATFORM) \
-		--target builder \
+		--target extra$(PLATFORM_SUFFIX)-builder \
 		--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
 		-f docker/$(DOCKER_FILE) \
-		-t savant$(PLATFORM_SUFFIX)-builder .
+		-t savant-extra$(PLATFORM_SUFFIX)-builder .
 	docker run --rm $(RUNTIME) \
 		--platform $(PLATFORM) \
 		-e OUTPUT_DIR=/opt/output \
 		-v `pwd`/packages/$(PLATFORM)/ds$(DEEPSTREAM_VERSION):/opt/output \
 		-v `pwd`/utils:/opt/utils \
 		--entrypoint /opt/utils/build_extra_packages.sh \
-		savant$(PLATFORM_SUFFIX)-builder
+		savant-extra$(PLATFORM_SUFFIX)-builder
 
 build-extra:
 	docker buildx build \
