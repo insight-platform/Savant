@@ -129,6 +129,21 @@ jobs:
           target: adapters
           push: true
 
+      # extra image
+      - name: Build and push savant-deepstream-extra docker image
+        uses: docker/build-push-action@v5
+        with:
+          file: ${{ matrix.docker_file }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/savant-${{ matrix.docker_image_suffix }}-extra:${{ needs.init.outputs.savant-deepstream-tag }}
+          build-args: |
+            SAVANT_VERSION=${{ needs.init.outputs.savant-version }}
+            SAVANT_RS_VERSION=${{ needs.init.outputs.savant-rs-version }}
+            DEEPSTREAM_VERSION=${{ needs.init.outputs.deepstream-version }}
+          platforms: ${{ matrix.arch }}
+          target: ${{ matrix.docker_image_suffix }}-extra
+          push: true
+
   # build adapter's dockers (except deepstream adapters)
   build-savant-adapters:
     needs: init
