@@ -45,7 +45,7 @@ The framework supports running the pipelines on both Nvidia's edge devices (Jets
 
 Savant pipelines run in Docker containers. We provide images for x86+dGPU and Jetson hardware.
 
-### ⚡ Low Latency and High Capacity Processing
+⚡ Low Latency and High Capacity Processing
 
 Savant can be configured to execute a pipeline in real-time, skipping data when running out of capacity or in high capacity mode, which guarantees the processing of all the data, maximizing the utilization of the available resources.
 
