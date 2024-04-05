@@ -167,13 +167,14 @@
 | [#612](https://github.com/insight-platform/Savant/issues/612)                   | 430.29 |           | 117.03    |
 | [#641](https://github.com/insight-platform/Savant/issues/641)                   | 430.91 |           | 111.75    |
 
-### rtdetr
+### RTDETR R50
 
 | Savant ver.                                                   | A4000  | Xavier NX | Orin Nano |
-|---------------------------------------------------------------|--------|-----------|-----------|
-| [#558](https://github.com/insight-platform/Savant/issues/558) | 137.41 |           |           |
-| [#612](https://github.com/insight-platform/Savant/issues/612) | 134.47 |           |           |
-| [#641](https://github.com/insight-platform/Savant/issues/641) | 119.21 |           |           |
+|---------------------------------------------------------------|--------|--------|-----------|
+| [#558](https://github.com/insight-platform/Savant/issues/558) | 137.41 |        |           |
+| [#612](https://github.com/insight-platform/Savant/issues/612) | 134.47 |        |           |
+| [#641](https://github.com/insight-platform/Savant/issues/641) | 119.21 |        |           |
+| [#718](https://github.com/insight-platform/Savant/issues/718) | 119.21 |        | 25        |
 
 ### traffic_meter (yolov8m)
 
