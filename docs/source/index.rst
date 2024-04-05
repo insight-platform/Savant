@@ -178,6 +178,7 @@ Savant supports processing parallelization; it helps to utilize the available re
    :hidden:
    :caption: Advanced Topics
 
+   advanced_topics/0_extra_image
    advanced_topics/0_batching
    advanced_topics/0_pipeline_stream_limit
    advanced_topics/0_pipeline_benchmarking
