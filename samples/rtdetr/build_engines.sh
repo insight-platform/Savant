@@ -4,7 +4,7 @@
 MODULE_CONFIG=samples/rtdetr/module.yml
 
 if [ "$(uname -m)" = "aarch64" ]; then
-  echo "aarch64 not supported for this demo."
+  docker compose -f samples/rtdetr/docker-compose.l4t.yml build module
 else
   docker compose -f samples/rtdetr/docker-compose.x86.yml build module
 fi
