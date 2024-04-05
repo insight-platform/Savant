@@ -129,6 +129,7 @@ run-docs:
 run-tests:
 	docker run -it --rm $(RUNTIME) \
 		--name savant-tests \
+		-v `pwd`/cache:/cache \
 		-v `pwd`/tests:$(PROJECT_PATH)/tests \
 		--entrypoint pytest \
 		savant-deepstream$(PLATFORM_SUFFIX)-extra \

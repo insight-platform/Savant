@@ -27,8 +27,54 @@ Extra component versions
     :header-rows: 1
 
     * - Component
-      - Version
+      - x86 Version
+      - Jetson Version
       - Notes
     * - PyTorch
-      - 2.4
+      - 2.2.2
+      - 2.1.0
       - With CUDA support
+    * - Torchaudio
+      - 2.2.2
+      - 2.1.0
+      -
+    * - Torchvision
+      - 0.17.2
+      - 0.16.0
+      -
+    * - TensorRT
+      - 8.6.1
+      - 8.6.2
+      -
+    * - Torch2TRT
+      - 0.4.0
+      - 0.4.0
+      -
+    * - ONNX
+      - 1.16.0
+      - 1.16.0
+      -
+    * - ONNX Runtime
+      - 1.17.1
+      - 1.17.0
+      - With CUDA support
+    * - PyCUDA
+      - 2024.1
+      - 2024.1
+      -
+    * - Pandas
+      - 2.2.1
+      - 2.2.1
+      -
+    * - Polars
+      - 0.20.18
+      - 0.19.12
+      -
+    * - Scikit-learn
+      - 1.4.1
+      - 1.4.1
+      -
+    * - JupyterLab
+      - 4.1.5
+      - 4.1.5
+      -
