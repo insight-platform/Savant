@@ -268,6 +268,8 @@ ARG PACKAGES_URL=https://eu-central-1.linodeobjects.com/savant-data/packages/${T
 # torch, torchvision, torchaudio
 RUN python -m pip install --no-cache-dir torch torchvision torchaudio
 
+ENV TORCH_HOME=/cache/models/torch_hub
+
 # torch2trt
 ARG TORCH2TRT_VERSION=0.4.0
 ARG TORCH2TRT_WHL="torch2trt-${TORCH2TRT_VERSION}-py3-none-any.whl"
