@@ -102,6 +102,16 @@ RUN python3 setup.py bdist_wheel -- \
     && rm -rf _skbuild *.egg-info
 
 
+FROM base-builder AS kvs-consumer-builder
+
+RUN git clone \
+        https://github.com/aws-samples/amazon-kinesis-video-streams-consumer-library-for-python.git \
+        /opt/amazon-kinesis-video-streams-consumer-library-for-python \
+    && cd /opt/amazon-kinesis-video-streams-consumer-library-for-python \
+    && git checkout c97c13029163fe83b6904b5a594d6d7f697bdcb8 \
+    && rm -rf .git
+
+
 FROM base
 
 ARG PROJECT_PATH=/opt/savant
@@ -135,6 +145,9 @@ COPY --from=kvs-sdk-builder /opt/amazon-kvs-sdk/dist/lib /opt/amazon-kvs-sdk/lib
 ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/opt/amazon-kvs-sdk/lib"
 COPY --from=kvs-sdk-builder /opt/pykvssdk/dist /opt/pykvssdk/dist
 RUN python -m pip install --no-cache-dir /opt/pykvssdk/dist/*.whl
+COPY --from=kvs-consumer-builder /opt/amazon-kinesis-video-streams-consumer-library-for-python /opt/amazon-kinesis-video-streams-consumer-library-for-python
+RUN python -m pip install --no-cache-dir -r /opt/amazon-kinesis-video-streams-consumer-library-for-python/requirements.txt
+ENV PYTHONPATH="${PYTHONPATH}:/opt/amazon-kinesis-video-streams-consumer-library-for-python"
 
 # install savant-rs
 ARG SAVANT_RS_VERSION
