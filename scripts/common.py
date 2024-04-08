@@ -165,12 +165,30 @@ def build_common_envs(
     )
     if source_id:
         envs.append(f'SOURCE_ID={source_id}')
+    envs += build_fps_meter_envs(
+        fps_period_frames=fps_period_frames,
+        fps_period_seconds=fps_period_seconds,
+        fps_output=fps_output,
+    )
+
+    return envs
+
+
+def build_fps_meter_envs(
+    fps_period_frames: Optional[int],
+    fps_period_seconds: Optional[float],
+    fps_output: Optional[str],
+):
+    """Generate env var options for FPS meter."""
+
+    envs = []
     if fps_period_frames:
         envs.append(f'FPS_PERIOD_FRAMES={fps_period_frames}')
     if fps_period_seconds:
         envs.append(f'FPS_PERIOD_SECONDS={fps_period_seconds}')
     if fps_output:
         envs.append(f'FPS_OUTPUT={fps_output}')
+
     return envs
 
 

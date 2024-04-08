@@ -1268,6 +1268,18 @@ The Multistream Kinesis Video Stream Sink Adapter sends video frames to Kinesis 
       - A threshold in seconds when the KVS SDK stops accepting new frames.
       - ``40``
       - ``45``
+    * - ``FPS_PERIOD_FRAMES``
+      - A number of frames between FPS reports.
+      - ``1000``
+      - ``500``
+    * - ``FPS_PERIOD_SECONDS``
+      - A number of seconds between FPS reports.
+      - Unset
+      - ``10``
+    * - ``FPS_OUTPUT``
+      - Where to output FPS reports; one of: ``stdout``, ``logger``.
+      - ``stdout``
+      - ``logger``
 
 Running the adapter with Docker:
 

@@ -56,6 +56,17 @@ class BufferConfig:
         ), 'BUFFER_LOW_THRESHOLD must be less than BUFFER_HIGH_THRESHOLD'
 
 
+class FpsMeterConfig:
+    def __init__(self):
+        self.period_seconds = opt_config('FPS_PERIOD_SECONDS', None, float)
+        self.period_frames = opt_config('FPS_PERIOD_FRAMES', 1000, int)
+        self.output = opt_config('FPS_OUTPUT', 'stdout')
+        assert self.output in [
+            'stdout',
+            'logger',
+        ], 'FPS_OUTPUT must be "stdout" or "logger"'
+
+
 class Config:
     def __init__(self):
         self.allow_create_stream = opt_config('ALLOW_CREATE_STREAM', False, strtobool)
@@ -64,6 +75,7 @@ class Config:
         self.zmq: ZmqConfig = ZmqConfig()
         self.aws: AwsConfig = AwsConfig()
         self.buffer: BufferConfig = BufferConfig()
+        self.fps_meter: FpsMeterConfig = FpsMeterConfig()
 
 
 class KvsWriter(ChunkWriter):
@@ -77,6 +89,7 @@ class KvsWriter(ChunkWriter):
         self.source_id = source_id
         self.kvs_name = kvs_name
         self.frame_params = frame_params
+        self.config = config
 
         self.kvs: KvsWrapper = KvsWrapper(
             config.aws.region,
@@ -207,16 +220,28 @@ class KvsWriter(ChunkWriter):
                 self.source_id,
             )
             time.sleep(0.1)
-        self.pipeline = Gst.parse_launch(
-            ' ! '.join(
-                [
-                    'appsrc name=appsrc emit-signals=false format=time max-buffers=1 block=true',
-                    f'{self.frame_params.codec.value.parser} config-interval=-1',
-                    CODEC_TO_CAPS[self.frame_params.codec],
-                    'appsink name=appsink emit-signals=true sync=false max-buffers=1',
-                ]
+
+        if self.config.fps_meter.period_seconds:
+            fps_period = f'period-seconds={self.config.fps_meter.period_seconds}'
+        elif self.config.fps_meter.period_frames:
+            fps_period = f'period-frames={self.config.fps_meter.period_frames}'
+        else:
+            fps_period = None
+
+        elements = [
+            'appsrc name=appsrc emit-signals=false format=time max-buffers=1 block=true',
+            f'{self.frame_params.codec.value.parser} config-interval=-1',
+            CODEC_TO_CAPS[self.frame_params.codec],
+        ]
+        if fps_period is not None:
+            elements.append(
+                f'fps_meter {fps_period} output={self.config.fps_meter.output} measurer-name={self.source_id}'
             )
+        elements.append(
+            'appsink name=appsink emit-signals=true sync=false max-buffers=1'
         )
+
+        self.pipeline = Gst.parse_launch(' ! '.join(elements))
         self.appsrc = self.pipeline.get_by_name('appsrc')
         self.appsink = self.pipeline.get_by_name('appsink')
         self.appsrc.set_caps(build_caps(self.frame_params))
