@@ -387,6 +387,39 @@ Running with the helper script:
 
     ./scripts/run_source.py video-loop --source-id=test /path/to/data/test.mp4
 
+FFmpeg Source Adapter
+^^^^^^^^^^^^^^^^^^^^^
+
+The adapter delivers video stream using FFmpeg library. It can be used to read video files, RTSP streams, and other sources supported by FFmpeg.
+
+**Parameters**:
+
+* ``URI`` (**required**): an URI of the stream;
+* ``FFMPEG_PARAMS``: a comma separated string ``key=value`` with parameters for FFmpeg (e.g. ``rtsp_transport=tcp``, ``input_format=mjpeg,video_size=1280x720``);
+* ``FFMPEG_LOGLEVEL``: a log level for FFmpeg; default is ``info``;
+* ``BUFFER_LEN``: a maximum amount of frames in FFmpeg buffer; default is ``50``;
+* ``SYNC_OUTPUT``: a flag indicating the need to send frames from source synchronously (i.e. at the source file rate); default is ``False``;
+* ``SYNC_DELAY``: a delay in seconds before sending frames; default is ``0``.
+
+Running the adapter with Docker:
+
+.. code-block:: bash
+
+    docker run --rm -it --name source-ffmpeg-test \
+        --entrypoint /opt/savant/adapters/gst/sources/ffmpeg.sh \
+        -e ZMQ_ENDPOINT=dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc \
+        -e SOURCE_ID=test \
+        -e URI=rtsp://192.168.1.1 \
+        -e FFMPEG_PARAMS=rtsp_transport=tcp \
+        -v /tmp/zmq-sockets:/tmp/zmq-sockets \
+        ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+
+Running with the helper script:
+
+.. code-block:: bash
+
+    ./scripts/run_source.py ffmpeg --source-id=test --ffmpeg-params=input_format=mjpeg,video_size=1280x720 --device=/dev/video0 /dev/video0
+
 RTSP Source Adapter
 ^^^^^^^^^^^^^^^^^^^
 
@@ -421,32 +454,56 @@ Running with the helper script:
 USB Cam Source Adapter
 ^^^^^^^^^^^^^^^^^^^^^^
 
-The USB/CSI cam source adapter captures frames from a V4L2-compatible device.
+The USB/CSI cam source adapter captures frames from a V4L2-compatible device. Savant does not include a dedicated USB- or CSI-cam adapter; instead, it uses the the FFmpeg source adapter to capture frames from the device.
 
-**Parameters**:
+In the compose:
 
-- ``DEVICE``: a USB/CSI cam device; default is ``/dev/video0``;
-- ``FRAMERATE``: a desired framerate for the video stream captured from the device; note that if the input device does not support specified video framerate, results may be unexpected;
+.. code-block:: yaml
 
-Running the adapter with Docker:
+  usb-cam:
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    restart: unless-stopped
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+    environment:
+      - URI=/dev/video0
+      - FFMPEG_PARAMS=input_format=mjpeg,video_size=1920x1080
+      - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
+      - SOURCE_ID=video
+    devices:
+      - /dev/video0:/dev/video0
+    entrypoint: /opt/savant/adapters/gst/sources/ffmpeg.sh
+    depends_on:
+      module:
+        condition: service_healthy
+
+In plain Docker:
 
 .. code-block:: bash
 
-    docker run --rm -it --name source-usb-test \
-    --entrypoint /opt/savant/adapters/gst/sources/usb_cam.sh \
-    -e ZMQ_ENDPOINT=dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc \
-    -e SOURCE_ID=test \
-    -e DEVICE=/dev/video0 \
-    -e FRAMERATE=30/1 \
-    -v /tmp/zmq-sockets:/tmp/zmq-sockets \
-    --device /dev/video5:/dev/video0
-    ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    docker run --rm -it --name source-usb-cam-test \
+        --entrypoint /opt/savant/adapters/gst/sources/ffmpeg.sh \
+        -e ZMQ_ENDPOINT=dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc \
+        -e SOURCE_ID=test \
+        -e URI=/dev/video0 \
+        -e FFMPEG_PARAMS=input_format=mjpeg,video_size=1920x1080 \
+        -v /tmp/zmq-sockets:/tmp/zmq-sockets \
+        --device=/dev/video0:/dev/video0 \
+        ghcr.io/insight-platform/savant-adapters-gstreamer:latest
 
 Running with the helper script:
 
 .. code-block:: bash
 
-    ./scripts/run_source.py usb-cam --source-id=test --framerate=30/1 /dev/video0
+        ./scripts/run_source.py ffmpeg --source-id=test --ffmpeg-params=input_format=mjpeg,video_size=1920x1080 --device=/dev/video0 /dev/video0
+
+.. note::
+    You can work with USB/CSI cameras that are compatible with the V4L2 API. The adapter uses FFmpeg to capture frames from the device. Currently, cameras supporting MJPEG, raw color formats, and H.264/HEVC are supported.
+
+Related articles in the Savant blog:
+
+- `How To Work With MJPEG USB Camera in Savant <https://b.savant-ai.io/2024/03/14/how-to-work-with-mjpeg-usb-camera-in-savant/>`_;
+- `Emulating USB Camera In Linux With FFmpeg and V4L2 Loopback <https://b.savant-ai.io/2024/02/23/emulating-usb-camera-in-linux/>`_.
 
 GigE Vision Source Adapter
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -495,39 +552,6 @@ Running with the helper script:
 .. code-block:: bash
 
     ./scripts/run_source.py gige --source-id=test test-camera
-
-FFmpeg Source Adapter
-^^^^^^^^^^^^^^^^^^^^^
-
-The adapter delivers video stream using FFmpeg library. It can be used to read video files, RTSP streams, and other sources supported by FFmpeg.
-
-**Parameters**:
-
-* ``URI`` (**required**): an URI of the stream;
-* ``FFMPEG_PARAMS``: a comma separated string ``key=value`` with parameters for FFmpeg (e.g. ``rtsp_transport=tcp``, ``input_format=mjpeg,video_size=1280x720``);
-* ``FFMPEG_LOGLEVEL``: a log level for FFmpeg; default is ``info``;
-* ``BUFFER_LEN``: a maximum amount of frames in FFmpeg buffer; default is ``50``;
-* ``SYNC_OUTPUT``: a flag indicating the need to send frames from source synchronously (i.e. at the source file rate); default is ``False``;
-* ``SYNC_DELAY``: a delay in seconds before sending frames; default is ``0``.
-
-Running the adapter with Docker:
-
-.. code-block:: bash
-
-    docker run --rm -it --name source-ffmpeg-test \
-        --entrypoint /opt/savant/adapters/gst/sources/ffmpeg.sh \
-        -e ZMQ_ENDPOINT=dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc \
-        -e SOURCE_ID=test \
-        -e URI=rtsp://192.168.1.1 \
-        -e FFMPEG_PARAMS=rtsp_transport=tcp \
-        -v /tmp/zmq-sockets:/tmp/zmq-sockets \
-        ghcr.io/insight-platform/savant-adapters-gstreamer:latest
-
-Running with the helper script:
-
-.. code-block:: bash
-
-    ./scripts/run_source.py ffmpeg --source-id=test --ffmpeg-params=input_format=mjpeg,video_size=1280x720 --device=/dev/video0 /dev/video0
 
 .. _multi_stream_source_adapter:
 

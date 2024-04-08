@@ -193,9 +193,11 @@ class NvDsBufferProcessor(GstBufferProcessor):
         # add external objects to nvds meta
         for obj_meta in video_frame.access_objects(MatchQuery.idle()):
             obj_key = build_model_object_key(obj_meta.namespace, obj_meta.label)
+
             bbox = obj_meta.detection_box
             if isinstance(bbox, RBBox) and not bbox.angle:
                 bbox = BBox(*bbox.as_xcycwh())
+
             # skip primary object for now, will be added later
             if obj_key == PRIMARY_OBJECT_KEY:
                 # if not a full frame then correct primary object
@@ -208,9 +210,7 @@ class NvDsBufferProcessor(GstBufferProcessor):
                         primary_bbox,
                     )
                 continue
-            # obj_key was only registered if
-            # it was required by the pipeline model elements (this case)
-            # or equaled the output object of one of the pipeline model elements
+
             model_name, label = parse_compound_key(obj_key)
             model_uid, class_id = get_object_id(model_name, label)
             if isinstance(bbox, RBBox):
@@ -228,15 +228,15 @@ class NvDsBufferProcessor(GstBufferProcessor):
                 track_id = UNTRACKED_OBJECT_ID
             # create nvds obj meta
             nvds_obj_meta = nvds_add_obj_meta_to_frame(
-                nvds_batch_meta,
-                nvds_frame_meta,
-                selection_type,
-                class_id,
-                model_uid,
-                bbox,
-                obj_meta.confidence,
-                obj_key,
-                track_id,
+                batch_meta=nvds_batch_meta,
+                frame_meta=nvds_frame_meta,
+                selection_type=selection_type,
+                class_id=class_id,
+                gie_uid=model_uid,
+                bbox=bbox,
+                confidence=obj_meta.confidence,
+                obj_label=obj_key,
+                object_id=track_id,
             )
 
             # save nvds obj meta ref in case it is some other obj's parent
@@ -264,6 +264,7 @@ class NvDsBufferProcessor(GstBufferProcessor):
                 all_nvds_obj_metas[child.id].parent = all_nvds_obj_metas[parent.id]
 
         video_frame.clear_objects()
+
         # add primary frame object
         model_name, label = parse_compound_key(PRIMARY_OBJECT_KEY)
         model_uid, class_id = get_object_id(model_name, label)

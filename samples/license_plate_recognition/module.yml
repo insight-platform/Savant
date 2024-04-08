@@ -46,40 +46,38 @@ pipeline:
         format: onnx
         model_file: yolov8n.onnx
         batch_size: ${parameters.batch_size}
-        # max GPU RAM used to build the engine, 6GB by default
-        # set lower than total GPU RAM available on your hardware
-        workspace_size: 6144
         input:
           shape: [3, 640, 640]  # TODO: use [3, 384, 640]
           maintain_aspect_ratio: true
           scale_factor: 0.0039215697906911373
-          offsets: [0.0, 0.0, 0.0]
         output:
           layer_names: [boxes, scores, classes]
           converter:
             module: savant.converter.yolo
             class_name: TensorToBBoxConverter
             kwargs:
-              confidence_threshold: 0.5
+              confidence_threshold: 0.6
               top_k: 100
           objects:
             - class_id: ${parameters.detected_object.id}
               label: ${parameters.detected_object.label}
+              selector:
+                kwargs:
+                  confidence_threshold: 0.6
+                  nms_iou_threshold: 0.5
+                  min_width: 30
+                  min_height: 40
 
     # LPD https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/lpdnet
     - element: nvinfer@detector
       name: LPDNet
       model:
         remote:
-          url: s3://savant-data/models/nvidia_license_plate_detection/lpd_usa_pruned.zip
-          checksum_url: s3://savant-data/models/nvidia_license_plate_detection/lpd_usa_pruned.md5
-          parameters:
-            endpoint: https://eu-central-1.linodeobjects.com
-        format: etlt
-        model_file: usa_pruned.etlt
-        config_file: usa_pruned_config.txt
-        tlt_model_key: nvidia_tlt
-        precision: fp16  # TODO: use int8
+          url: https://api.ngc.nvidia.com/v2/models/nvidia/tao/lpdnet/versions/pruned_v2.2/zip
+        format: onnx
+        model_file: LPDNet_usa_pruned_tao5.onnx
+        precision: int8
+        int8_calib_file: usa_cal_8.6.1.bin
         batch_size: 16
         input:
           object: yolov8n.Car
@@ -88,14 +86,14 @@ pipeline:
           scale_factor: 0.0039215697906911373
         output:
           num_detected_classes: 1
-          layer_names: [output_cov/Sigmoid, output_bbox/BiasAdd]
+          layer_names: [output_cov/Sigmoid:0, output_bbox/BiasAdd:0]
           objects:
             - class_id: 0
               label: lpd
               selector:
                 kwargs:
                   confidence_threshold: 0.1
-                  nms_iou_threshold: 0.1
+                  nms_iou_threshold: 0.5
                   min_width: 25
                   min_height: 18
 

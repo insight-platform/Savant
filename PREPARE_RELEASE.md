@@ -1,16 +1,25 @@
 # Preparing release 
 
-## Build and publish OpenCV packages
+## Build and publish extra packages
 
 This is required if the release includes an update to OpenCV or Deepstream versions, or to the savant OpenCV module (code in `libs/opencv/savant`).
 
-Run
-
+To build OpenCV, run the following command:
 ```
 make build-opencv
 ```
+Note: The command will produce OpenCV packages for x86 and l4t platforms.
 
-Move the resulting files into `savant-data/opencv-packages` bucket on the S3 storage.
+To build other packages (PyCUDA, Torch2TRT), run the following command:
+```
+make build-extra-packages
+```
+Note: The command will only build packages for the platform on which it was executed. 
+
+Move the resulting files into `savant-data/packages` bucket on the S3 storage.
+```
+aws s3 --endpoint-url=https://eu-central-1.linodeobjects.com sync ./packages/ s3://savant-data/packages/
+```
 
 ## Build and publish Savant release
 

@@ -19,7 +19,9 @@ services:
         condition: service_healthy
 
   module:
-    image: panoptic_driving_perception-module
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.l4t
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -31,6 +33,7 @@ services:
       - DOWNLOAD_PATH=/cache/downloads/panoptic_driving_perception
       - ZMQ_SRC_ENDPOINT=router+bind:ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
+      - METRICS_FRAME_PERIOD=1000
       - CODEC=jpeg
     runtime: nvidia
 

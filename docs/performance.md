@@ -89,6 +89,7 @@
 | [#550](https://github.com/insight-platform/Savant/issues/550) | 272.64 |           | 41.86     |
 | [#612](https://github.com/insight-platform/Savant/issues/612) | 272.78 |           | 42.47     |
 | [#641](https://github.com/insight-platform/Savant/issues/641) | 276.78 |           |           |
+| [#705](https://github.com/insight-platform/Savant/issues/705) | 309.99 |           | 65.57     |
 
 ### nvidia_car_classification
 
@@ -145,6 +146,7 @@
 |---------------------------------------------------------------|-------|-----------|-----------|
 | [#612](https://github.com/insight-platform/Savant/issues/612) | 62.78 |           | 10.07     |
 | [#641](https://github.com/insight-platform/Savant/issues/641) | 60.64 |           |           |
+| [#705](https://github.com/insight-platform/Savant/issues/705) | 59.66 |           | 10.51     |
 
 ### peoplenet_detector
 
@@ -165,13 +167,14 @@
 | [#612](https://github.com/insight-platform/Savant/issues/612)                   | 430.29 |           | 117.03    |
 | [#641](https://github.com/insight-platform/Savant/issues/641)                   | 430.91 |           | 111.75    |
 
-### rtdetr
+### RTDETR R50
 
 | Savant ver.                                                   | A4000  | Xavier NX | Orin Nano |
-|---------------------------------------------------------------|--------|-----------|-----------|
-| [#558](https://github.com/insight-platform/Savant/issues/558) | 137.41 |           |           |
-| [#612](https://github.com/insight-platform/Savant/issues/612) | 134.47 |           |           |
-| [#641](https://github.com/insight-platform/Savant/issues/641) | 119.21 |           |           |
+|---------------------------------------------------------------|--------|--------|-----------|
+| [#558](https://github.com/insight-platform/Savant/issues/558) | 137.41 |        |           |
+| [#612](https://github.com/insight-platform/Savant/issues/612) | 134.47 |        |           |
+| [#641](https://github.com/insight-platform/Savant/issues/641) | 119.21 |        |           |
+| [#718](https://github.com/insight-platform/Savant/issues/718) | 119.21 |        | 25        |
 
 ### traffic_meter (yolov8m)
 
