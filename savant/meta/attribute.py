@@ -1,4 +1,5 @@
 """Attribute metadata."""
+
 from dataclasses import dataclass
 from typing import Any
 

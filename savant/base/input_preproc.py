@@ -1,4 +1,5 @@
 """Base model input preprocessors."""
+
 from abc import abstractmethod
 from typing import Callable, Optional
 

@@ -1,4 +1,5 @@
 """Utilies module."""
+
 from typing import Tuple
 
 import cv2

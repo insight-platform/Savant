@@ -1,4 +1,5 @@
 """Smoothed counter module."""
+
 from typing import Any
 
 

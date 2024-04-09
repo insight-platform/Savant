@@ -1,4 +1,5 @@
 """Index builder module."""
+
 import argparse
 import os
 import pathlib

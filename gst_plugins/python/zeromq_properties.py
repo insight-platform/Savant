@@ -1,4 +1,5 @@
 """ZeroMQ properties."""
+
 from savant.gstreamer import GObject
 
 

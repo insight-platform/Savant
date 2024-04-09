@@ -1,4 +1,5 @@
 """SavantRsVideoDecodeBin element."""
+
 import time
 from dataclasses import dataclass
 from threading import Event, Lock

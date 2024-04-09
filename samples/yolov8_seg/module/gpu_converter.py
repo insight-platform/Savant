@@ -1,4 +1,5 @@
 """YOLOv8-seg postprocessing (converter)."""
+
 from typing import Any, List, Tuple
 
 import cupy as cp

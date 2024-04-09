@@ -1,4 +1,5 @@
 """Recognition module."""
+
 import os
 
 import hnswlib

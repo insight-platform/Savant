@@ -1,4 +1,5 @@
 """Custom PyFunc implementation inference PyTorch model."""
+
 import cv2
 import torch
 import torchvision

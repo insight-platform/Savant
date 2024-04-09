@@ -1,4 +1,5 @@
 """DeepStream pipeline."""
+
 import logging
 import time
 from collections import defaultdict

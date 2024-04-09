@@ -1,4 +1,5 @@
 """Background remover module."""
+
 import cv2
 
 from savant.deepstream.meta.frame import NvDsFrameMeta

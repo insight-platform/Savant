@@ -1,4 +1,5 @@
 """Wrapper of deepstream frame meta information."""
+
 from contextlib import AbstractContextManager
 from typing import Dict, Iterator, Optional, Union
 

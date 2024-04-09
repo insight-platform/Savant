@@ -1,4 +1,5 @@
 """Custom DrawFunc implementation."""
+
 from savant.deepstream.drawfunc import NvDsDrawFunc
 from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.utils.artist import Artist

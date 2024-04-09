@@ -1,4 +1,5 @@
 """Convert deepstream object meta to output format."""
+
 import logging
 
 import pyds

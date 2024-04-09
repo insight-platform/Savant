@@ -1,4 +1,5 @@
 """SourceInfo structure and SourceInfoRegistry singleton."""
+
 from dataclasses import dataclass
 from threading import Event
 from typing import Dict, List, Optional

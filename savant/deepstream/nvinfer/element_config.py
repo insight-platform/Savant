@@ -1,4 +1,5 @@
 """`nvinfer` element configuration."""
+
 import logging
 from collections import defaultdict
 from pathlib import Path
@@ -353,9 +354,11 @@ def nvinfer_element_configurator(
 
         label_file = model_config.get(
             'label_file',
-            nvinfer_config['property'].get('labelfile-path')
-            if nvinfer_config
-            else None,
+            (
+                nvinfer_config['property'].get('labelfile-path')
+                if nvinfer_config
+                else None
+            ),
         )
         if model_config.output.objects:
             # highest priority is using manually defined model_config.output.objects

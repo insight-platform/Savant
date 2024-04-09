@@ -1,4 +1,5 @@
 """Line crossing trackers."""
+
 import colorsys
 import math
 import random

@@ -1,4 +1,5 @@
 """Ctypes foreign function interface for GStreamer structures and functions."""
+
 import ctypes
 
 GST_PADDING = 4

@@ -1,4 +1,5 @@
 """ZeroMQ utilities."""
+
 import asyncio
 from abc import ABC, abstractmethod
 from enum import Enum

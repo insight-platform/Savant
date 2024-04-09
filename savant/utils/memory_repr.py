@@ -31,9 +31,11 @@ class OpenCVGpuMatCudaArrayInterface:
             'typestr': type_str,
             'descr': [('', type_str)],
             # 'stream': 1,  # TODO: Investigate
-            'strides': (gpu_mat.step, gpu_mat.elemSize(), gpu_mat.elemSize1())
-            if channels > 1
-            else (gpu_mat.step, gpu_mat.elemSize()),
+            'strides': (
+                (gpu_mat.step, gpu_mat.elemSize(), gpu_mat.elemSize1())
+                if channels > 1
+                else (gpu_mat.step, gpu_mat.elemSize())
+            ),
         }
 
 

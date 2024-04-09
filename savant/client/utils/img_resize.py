@@ -1,4 +1,5 @@
 """Image resizing utilities."""
+
 import math
 from typing import Tuple
 

@@ -1,4 +1,5 @@
 """Inotify manager module."""
+
 import logging
 import sys
 from collections import defaultdict
