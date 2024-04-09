@@ -62,15 +62,20 @@ class StreamManager:
         self.fill(stream)
 
         with self.lock:
-            next_poller = (
-                self.start_poller(stream) if need_poller_update else self.poller
-            )
+            if need_poller_update:
+                if stream.is_playing:
+                    next_poller = self.start_poller(stream)
+                else:
+                    next_poller = None
+            else:
+                next_poller = self.poller
             self.stop_stream(stop_poller=need_poller_update)
             self.stream = stream
             if self.state is not None:
                 self.state.update(state=stream)
             self.poller = next_poller
-            self.pipeline = self.start_pipeline(stream, next_poller)
+            if stream.is_playing:
+                self.pipeline = self.start_pipeline(stream, next_poller)
             logger.info(
                 'Stream updated to %s/%s', self.stream.name, self.stream.source_id
             )
@@ -107,8 +112,26 @@ class StreamManager:
 
         return pipeline
 
+    def play_stream(self):
+        """Start playing the stream."""
+
+        if self.stream is None:
+            return
+
+        with self.lock:
+            if self.stream.is_playing:
+                return
+
+            if self.poller is None:
+                self.poller = self.start_poller(self.stream)
+            if self.pipeline is None:
+                self.pipeline = self.start_pipeline(self.stream, self.poller)
+            self.stream.is_playing = True
+
     def stop_stream(self, stop_poller: bool):
         """Stop the fragments poller and the pipeline."""
+
+        self.stream.is_playing = False
 
         if stop_poller and self.poller is not None:
             logger.info('Stopping fragments poller')
@@ -125,6 +148,7 @@ class StreamManager:
 
         if self.pipeline is not None:
             self.pipeline.join(self.thread_join_timeout)
+            self.update_stream_ts()
             self.pipeline = None
             logger.info('Pipeline stopped')
 
@@ -132,6 +156,9 @@ class StreamManager:
         """Check if the stream manager is running."""
 
         with self.lock:
+            if self.stream is None or not self.stream.is_playing:
+                return True
+
             if self.poller is None or not self.poller.is_running:
                 return False
 
@@ -157,17 +184,20 @@ class StreamManager:
                         access_key=self.config.access_key,
                         secret_key=self.config.secret_key,
                     ),
+                    is_playing=self.config.playing,
                 )
                 if self.state is not None:
                     self.state.update(state=self.stream)
 
             if self.state is not None:
                 self.state.start()
-            self.poller = self.start_poller(self.stream)
-            self.pipeline = self.start_pipeline(
-                self.stream,
-                self.poller,
-            )
+            if self.stream.is_playing is None or self.stream.is_playing:
+                self.poller = self.start_poller(self.stream)
+                self.pipeline = self.start_pipeline(
+                    self.stream,
+                    self.poller,
+                )
+                self.stream.is_playing = True
         logger.info('Stream manager started')
 
     def stop(self):
@@ -195,9 +225,24 @@ class StreamManager:
                 stream.timestamp = datetime.utcfromtimestamp(last_ts)
             else:
                 stream.timestamp = self.stream.timestamp
+        if stream.is_playing is None:
+            stream.is_playing = self.stream.is_playing
+
+    def get_stream(self):
+        """Get the current stream configuration."""
+
+        with self.lock:
+            if self.stream is None:
+                return None
+            self.update_stream_ts()
+
+            return self.stream
 
     def need_update(self, stream: StreamModel) -> bool:
         """Check if the stream configuration needs to be updated."""
+
+        if self.stream is None:
+            return True
 
         if stream.name is not None and stream.name != self.stream.name:
             return True
@@ -208,6 +253,12 @@ class StreamManager:
         if (
             stream.credentials is not None
             and stream.credentials != self.stream.credentials
+        ):
+            return True
+
+        if (
+            stream.is_playing is not None
+            and stream.is_playing != self.stream.is_playing
         ):
             return True
 
@@ -226,3 +277,11 @@ class StreamManager:
             return True
 
         return stream.timestamp is not None
+
+    def update_stream_ts(self):
+        if self.pipeline is None:
+            return
+        last_ts = self.pipeline.last_ts
+        if last_ts is None:
+            return
+        self.stream.timestamp = datetime.utcfromtimestamp(last_ts)

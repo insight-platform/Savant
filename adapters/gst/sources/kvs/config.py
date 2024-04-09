@@ -21,6 +21,7 @@ class Config:
 
         self.zmq_endpoint = os.environ['ZMQ_ENDPOINT']
         self.sync_output = bool(strtobool(os.environ.get('SYNC_OUTPUT', 'False')))
+        self.playing = bool(strtobool(os.environ.get('PLAYING', 'True')))
         self.api_port = int(os.environ.get('API_PORT', 18367))
 
         self.save_state = bool(strtobool(os.environ.get('SAVE_STATE', 'False')))

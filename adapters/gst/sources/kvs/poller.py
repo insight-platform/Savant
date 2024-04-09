@@ -40,7 +40,7 @@ class FragmentsPoller(BaseThreadWorker):
     ):
         super().__init__(
             f'FragmentsPoller-{stream.name}',
-            logger_name=f'{LOGGER_PREFIX}.pipeline',
+            logger_name=f'{LOGGER_PREFIX}.poller',
         )
         self.stream = stream
         self.queue: Queue[Fragment] = Queue(max_queue_size)

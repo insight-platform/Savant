@@ -25,6 +25,10 @@ class StreamModel(BaseModel):
         None,
         description='AWS credentials for KVS stream.',
     )
+    is_playing: Optional[bool] = Field(
+        None,
+        description='Whether the stream is playing.',
+    )
 
     def without_credentials(self):
         """Return a copy of the stream configuration without credentials."""
@@ -33,4 +37,5 @@ class StreamModel(BaseModel):
             name=self.name,
             source_id=self.source_id,
             timestamp=self.timestamp,
+            is_playing=self.is_playing,
         )
