@@ -668,7 +668,9 @@ There is a number of sink adapters implemented:
 - Image File;
 - Video File;
 - Display;
-- Always-On RTSP.
+- Always-On RTSP;
+- Kafka-Redis;
+- Multistream Kinesis Video Stream.
 
 All sync adapters accept the following parameters:
 
@@ -1233,6 +1235,108 @@ Running the adapter with the helper script:
 .. code-block:: bash
 
     ./scripts/run_sink.py kafka-redis --brokers=kafka:9092 --topic=kafka-redis-adapter-demo --redis-host=redis
+
+Multistream Kinesis Video Stream Sink Adapter
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The Multistream Kinesis Video Stream Sink Adapter sends video frames to Kinesis Video Streams as video fragments.
+
+.. note::
+
+    The adapter requires frames to have absolute timestamps. This can be achieved by setting ``USE_ABSOLUTE_TIMESTAMPS=True`` on a source adapter.
+
+.. list-table:: Parameters
+    :header-rows: 1
+
+    * - Parameter
+      - Description
+      - Default
+      - Example
+    * - ``AWS_REGION``
+      - An AWS region.
+      - Unset
+      - ``us-west-2``
+    * - ``AWS_ACCESS_KEY``
+      - An AWS access key ID.
+      - Unset
+      - ``AKIAIOSFODNN7EXAMPLE``
+    * - ``AWS_SECRET_KEY``
+      - An AWS secret access key.
+      - Unset
+      - ``wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY``
+    * - ``STREAM_NAME_PREFIX``
+      - A prefix for the stream name. The stream name is generated as ``<STREAM_NAME_PREFIX><source_id>``.
+      - Empty string
+      - ``foo-``
+    * - ``ALLOW_CREATE_STREAM``
+      - A flag indicating whether to create a stream on KVS if it does not exist.
+      - ``False``
+      - ``True``
+    * - ``KVSSDK_LOGLEVEL``
+      - A log level for the KVS SDK.
+      - ``INFO``
+      - ``DEBUG``
+    * - ``SOURCE_ID``
+      - An optional filter to filter out frames with a specific ``source_id`` only.
+      - Unset
+      - ``rtsp-cam-street``
+    * - ``SOURCE_ID_PREFIX``
+      - An optional filter to filter out frames with a matching ``source_id`` prefix only.
+      - Unset
+      - ``usb-cam-``
+    * - ``BUFFER_LOW_THRESHOLD``
+      - A threshold in seconds when the KVS SDK slows down accepting new frames.
+      - ``30``
+      - ``25``
+    * - ``BUFFER_HIGH_THRESHOLD``
+      - A threshold in seconds when the KVS SDK stops accepting new frames.
+      - ``40``
+      - ``45``
+    * - ``FPS_PERIOD_FRAMES``
+      - A number of frames between FPS reports.
+      - ``1000``
+      - ``500``
+    * - ``FPS_PERIOD_SECONDS``
+      - A number of seconds between FPS reports.
+      - Unset
+      - ``10``
+    * - ``FPS_OUTPUT``
+      - Where to output FPS reports; one of: ``stdout``, ``logger``.
+      - ``stdout``
+      - ``logger``
+
+Running the adapter with Docker:
+
+.. code-block:: bash
+
+    docker run --rm -it --name sink-kvs-test \
+        --entrypoint /opt/savant/adapters/gst/sinks/multistream_kvs.py \
+        -e ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc \
+        -e AWS_REGION=us-west-2 \
+        -e AWS_ACCESS_KEY=AKIAIOSFODNN7EXAMPLE \
+        -e AWS_SECRET_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY \
+        -e STREAM_NAME_PREFIX=foo- \
+        -e ALLOW_CREATE_STREAM=True \
+        -v /tmp/zmq-sockets:/tmp/zmq-sockets \
+        ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+
+Running with the helper script:
+
+.. code-block:: bash
+
+    ./scripts/run_sink.py multistream-kvs \
+        --aws-region=us-west-2 \
+        --aws-access-key='AKIAIOSFODNN7EXAMPLE' \
+        --aws-secret-key='wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY'
+
+.. note::
+
+    The adapter doesn't have ``ZMQ_TYPE``, ``ZMQ_BIND`` parameters.
+
+.. note::
+
+    The adapter supports only ``h265`` and ``hevc`` codecs.
+
 
 Bridge Adapters
 ---------------

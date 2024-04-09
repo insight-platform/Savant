@@ -27,6 +27,15 @@ sync_option = click.option(
     default=False,
     help='Send frames from source synchronously (i.e. at the source file rate).',
 )
+absolute_ts_option = click.option(
+    '--use-absolute-timestamps',
+    is_flag=True,
+    default=False,
+    help=(
+        'Put absolute timestamps into the frames, i.e. the timestamps of the '
+        'frames start from the time of adapter launch.'
+    ),
+)
 
 
 def output_endpoint_options(func):
@@ -69,6 +78,7 @@ def files_source(
     out_type: str,
     out_bind: bool,
     sync: bool,
+    use_absolute_timestamps: Optional[bool],
     docker_image: str,
     fps_period_frames: Optional[int],
     fps_period_seconds: Optional[float],
@@ -105,6 +115,7 @@ def files_source(
             zmq_endpoint=out_endpoint,
             zmq_type=out_type,
             zmq_bind=out_bind,
+            use_absolute_timestamps=use_absolute_timestamps,
         )
         + [f'LOCATION={location}', f'FILE_TYPE={file_type}']
         + envs
@@ -144,6 +155,7 @@ def files_source(
 )
 @common_options
 @sync_option
+@absolute_ts_option
 @adapter_docker_image_option('gstreamer')
 @click.argument('location', required=True)
 def videos_source(
@@ -152,6 +164,7 @@ def videos_source(
     out_type: str,
     out_bind: bool,
     sync: bool,
+    use_absolute_timestamps: Optional[bool],
     docker_image: str,
     fps_period_frames: Optional[int],
     fps_period_seconds: Optional[float],
@@ -181,6 +194,7 @@ def videos_source(
             f'READ_METADATA={read_metadata}',
             f'EOS_ON_FILE_END={eos_on_file_end}',
         ],
+        use_absolute_timestamps=use_absolute_timestamps,
     )
 
 
@@ -223,6 +237,7 @@ def videos_source(
 )
 @common_options
 @sync_option
+@absolute_ts_option
 @adapter_docker_image_option('gstreamer')
 @click.argument('location', required=True)
 def video_loop_source(
@@ -231,6 +246,7 @@ def video_loop_source(
     out_type: str,
     out_bind: bool,
     sync: bool,
+    use_absolute_timestamps: Optional[bool],
     docker_image: str,
     fps_period_frames: Optional[int],
     fps_period_seconds: Optional[float],
@@ -277,6 +293,7 @@ def video_loop_source(
         envs=envs,
         entrypoint='/opt/savant/adapters/gst/sources/video_loop.sh',
         extra_volumes=volumes,
+        use_absolute_timestamps=use_absolute_timestamps,
     )
 
 
@@ -322,6 +339,7 @@ def video_loop_source(
 @output_endpoint_options
 @fps_meter_options
 @sync_option
+@absolute_ts_option
 @adapter_docker_image_option('gstreamer')
 @detach_option
 @click.argument('location', required=True)
@@ -330,6 +348,7 @@ def multi_stream_source(
     out_type: str,
     out_bind: bool,
     sync: bool,
+    use_absolute_timestamps: Optional[bool],
     docker_image: str,
     detach: bool,
     fps_period_frames: Optional[int],
@@ -382,6 +401,7 @@ def multi_stream_source(
         envs=envs,
         entrypoint='/opt/savant/adapters/gst/sources/multi_stream.sh',
         extra_volumes=volumes,
+        use_absolute_timestamps=use_absolute_timestamps,
     )
 
 
@@ -413,6 +433,7 @@ def multi_stream_source(
 )
 @common_options
 @sync_option
+@absolute_ts_option
 @adapter_docker_image_option('gstreamer')
 @click.argument('location', required=True)
 def images_source(
@@ -421,6 +442,7 @@ def images_source(
     out_type: str,
     out_bind: bool,
     sync: bool,
+    use_absolute_timestamps: Optional[bool],
     docker_image: str,
     fps_period_frames: Optional[int],
     fps_period_seconds: Optional[float],
@@ -453,6 +475,7 @@ def images_source(
             f'READ_METADATA={read_metadata}',
             f'EOS_ON_FILE_END={eos_on_file_end}',
         ],
+        use_absolute_timestamps=use_absolute_timestamps,
     )
 
 
@@ -485,6 +508,7 @@ def images_source(
     help='Log level for FFmpeg.',
     show_default=True,
 )
+@absolute_ts_option
 @adapter_docker_image_option('gstreamer')
 @click.argument('rtsp_uri', required=True)
 def rtsp_source(
@@ -497,6 +521,7 @@ def rtsp_source(
     buffer_len: int,
     ffmpeg_loglevel: str,
     rtsp_transport: str,
+    use_absolute_timestamps: Optional[bool],
     docker_image: str,
     fps_period_frames: Optional[int],
     fps_period_seconds: Optional[float],
@@ -513,6 +538,7 @@ def rtsp_source(
         zmq_endpoint=out_endpoint,
         zmq_type=out_type,
         zmq_bind=out_bind,
+        use_absolute_timestamps=use_absolute_timestamps,
     ) + [
         f'RTSP_URI={rtsp_uri}',
         f'RTSP_TRANSPORT={rtsp_transport}',
@@ -592,6 +618,7 @@ def rtsp_source(
     show_default=True,
 )
 @common_options
+@absolute_ts_option
 @adapter_docker_image_option('gstreamer')
 @click.argument('camera_name', required=False)
 def gige_cam_source(
@@ -599,6 +626,7 @@ def gige_cam_source(
     out_endpoint: str,
     out_type: str,
     out_bind: bool,
+    use_absolute_timestamps: Optional[bool],
     docker_image: str,
     fps_period_frames: Optional[int],
     fps_period_seconds: Optional[float],
@@ -647,6 +675,7 @@ def gige_cam_source(
         zmq_endpoint=out_endpoint,
         zmq_type=out_type,
         zmq_bind=out_bind,
+        use_absolute_timestamps=use_absolute_timestamps,
     )
 
     envs_dict = {
@@ -719,6 +748,7 @@ def gige_cam_source(
     '--device',
     help='Device to mount to the container (e.g. "/dev/video0").',
 )
+@absolute_ts_option
 @adapter_docker_image_option('gstreamer')
 @click.argument('uri', required=True)
 def ffmpeg_source(
@@ -732,6 +762,7 @@ def ffmpeg_source(
     buffer_len: int,
     ffmpeg_loglevel: str,
     device: Optional[str],
+    use_absolute_timestamps: Optional[bool],
     docker_image: str,
     fps_period_frames: Optional[int],
     fps_period_seconds: Optional[float],
@@ -748,6 +779,7 @@ def ffmpeg_source(
         zmq_endpoint=out_endpoint,
         zmq_type=out_type,
         zmq_bind=out_bind,
+        use_absolute_timestamps=use_absolute_timestamps,
     ) + [
         f'URI={uri}',
         f'BUFFER_LEN={buffer_len}',
