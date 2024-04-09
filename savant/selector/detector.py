@@ -1,4 +1,5 @@
 """Detector's bbox selectors."""
+
 import numba as nb
 import numpy as np
 
@@ -63,7 +64,7 @@ class MinMaxSizeBBoxSelector(BaseSelector):
         min_height: int = 0,
         max_width: int = 0,
         max_height: int = 0,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.min_width = min_width
@@ -154,7 +155,7 @@ class BBoxSelector(BaseSelector):
         min_height: int = 0,
         max_width: int = 0,
         max_height: int = 0,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.confidence_threshold = confidence_threshold

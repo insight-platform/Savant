@@ -1,4 +1,5 @@
 """Draw func adds license plate"""
+
 from savant_rs.draw_spec import LabelDraw, ObjectDraw
 
 from savant.deepstream.drawfunc import NvDsDrawFunc

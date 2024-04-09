@@ -1,4 +1,5 @@
 """Module configuration."""
+
 from omegaconf import OmegaConf
 
 from .calc_resolver import calc_resolver

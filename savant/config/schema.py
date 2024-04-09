@@ -1,4 +1,5 @@
 """Module and pipeline elements configuration templates."""
+
 import json
 from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List, Optional, Union

@@ -1,4 +1,5 @@
 """Thread-safe singleton metaclass."""
+
 from threading import Lock
 
 

@@ -1,4 +1,5 @@
 """Custom PyFunc implementation."""
+
 from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.deepstream.pyfunc import NvDsPyFuncPlugin
 from savant.gstreamer import Gst

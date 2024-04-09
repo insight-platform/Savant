@@ -1,4 +1,5 @@
 """Metadata constants."""
+
 from savant_rs.utils.symbol_mapper import build_model_object_key
 
 UNTRACKED_OBJECT_ID = 2**64 - 1

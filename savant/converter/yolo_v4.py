@@ -2,6 +2,7 @@
 
 Based on code from https://github.com/Tianxiaomo/pytorch-YOLOv4
 """
+
 from typing import Tuple
 
 import numpy as np

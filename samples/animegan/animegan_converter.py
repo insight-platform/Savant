@@ -12,7 +12,7 @@ class AnimeganConverter(BaseAttributeModelOutputConverter):
         self,
         *output_layers: np.ndarray,
         model: AttributeModel,
-        roi: Tuple[float, float, float, float]
+        roi: Tuple[float, float, float, float],
     ) -> List[Tuple[str, Any, Optional[float]]]:
 
         img = output_layers[0]

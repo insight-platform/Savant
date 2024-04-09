@@ -1,4 +1,5 @@
 """Draw func adds car classification models outputs: car color, car make, car type."""
+
 from savant_rs.draw_spec import LabelDraw, ObjectDraw
 
 from savant.deepstream.drawfunc import NvDsDrawFunc

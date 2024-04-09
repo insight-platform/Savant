@@ -1,4 +1,5 @@
 """JSON resolver for OmegaConf."""
+
 import json
 from typing import Optional, Union
 

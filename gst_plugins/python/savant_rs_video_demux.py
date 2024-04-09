@@ -1,4 +1,5 @@
 """SavantRsVideoDemux element."""
+
 import inspect
 import time
 from contextlib import contextmanager

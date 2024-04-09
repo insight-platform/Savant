@@ -1,4 +1,5 @@
 """Platform utils."""
+
 import os
 import platform
 import subprocess

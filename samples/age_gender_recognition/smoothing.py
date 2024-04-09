@@ -1,4 +1,5 @@
 """Analytics module."""
+
 from typing import Dict, Tuple
 
 from samples.age_gender_recognition.smoothed_counter import SmoothedCounter

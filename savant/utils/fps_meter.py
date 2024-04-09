@@ -1,4 +1,5 @@
 """FPS measurement."""
+
 from time import time
 from typing import Optional
 

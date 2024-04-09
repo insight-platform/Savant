@@ -1,4 +1,5 @@
 """YOLOX detector postprocessing (converter)."""
+
 from functools import lru_cache
 from typing import Tuple
 

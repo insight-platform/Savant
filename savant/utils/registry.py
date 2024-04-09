@@ -1,4 +1,5 @@
 """Registry utils."""
+
 from typing import Any, Dict, Iterable, Iterator, Tuple
 
 

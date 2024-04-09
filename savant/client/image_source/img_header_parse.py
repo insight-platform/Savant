@@ -1,4 +1,5 @@
 """Image header parse utility."""
+
 import re
 from os import PathLike
 from typing import BinaryIO, Tuple, Union

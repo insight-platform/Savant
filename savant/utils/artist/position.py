@@ -1,4 +1,5 @@
 """Anchor point position enum and utility."""
+
 from enum import Enum
 from typing import Tuple
 

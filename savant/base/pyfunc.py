@@ -1,4 +1,5 @@
 """PyFunc definitions."""
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from importlib import util as importlib_util

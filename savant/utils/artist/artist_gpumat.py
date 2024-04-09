@@ -1,4 +1,5 @@
 """Artist implementation using OpenCV GpuMat."""
+
 from contextlib import AbstractContextManager
 from typing import List, Optional, Tuple, Union
 

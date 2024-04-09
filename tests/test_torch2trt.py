@@ -1,4 +1,5 @@
 """Test torch2trt."""
+
 import numpy as np
 import torch
 from torch2trt import torch2trt

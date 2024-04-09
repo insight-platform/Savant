@@ -1,4 +1,5 @@
 """GStreamer base pipeline."""
+
 import logging
 from queue import Empty as EmptyException
 from queue import Queue

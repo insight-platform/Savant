@@ -1,4 +1,5 @@
 """Sink factories."""
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, replace
 from typing import Any, Callable, Dict, List, Optional, Union

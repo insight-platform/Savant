@@ -1,4 +1,5 @@
 """DeepStream surface utils."""
+
 from contextlib import contextmanager
 from typing import ContextManager
 

@@ -1,4 +1,5 @@
 """Module configuration."""
+
 import re
 from pathlib import Path
 from typing import IO, Any, Callable, Iterable, Optional, Tuple, Type, Union

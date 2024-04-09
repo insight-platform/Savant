@@ -51,9 +51,11 @@ class TestAsOpenCV:
             opencv_gpu_mat = pytorch_tensor_as_opencv_gpu_mat(pytorch_tensor)
             np.testing.assert_almost_equal(
                 opencv_gpu_mat.download(),
-                pytorch_tensor.squeeze(2).cpu().numpy()
-                if channels == 1
-                else pytorch_tensor.cpu().numpy(),
+                (
+                    pytorch_tensor.squeeze(2).cpu().numpy()
+                    if channels == 1
+                    else pytorch_tensor.cpu().numpy()
+                ),
             )
             assert opencv_gpu_mat.cudaPtr() == pytorch_tensor.data_ptr()
 

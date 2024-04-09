@@ -1,4 +1,5 @@
 """Object meta."""
+
 from abc import ABC, abstractmethod
 from typing import Any, Iterable, List, Optional, Union
 

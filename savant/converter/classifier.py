@@ -1,4 +1,5 @@
 """Tensor to label converter."""
+
 from typing import List, Optional, Tuple
 
 import numpy as np
@@ -21,7 +22,7 @@ class TensorToLabelConverter(BaseAttributeModelOutputConverter):
         self,
         *output_layers: np.ndarray,
         model: AttributeModel,
-        roi: Tuple[float, float, float, float]
+        roi: Tuple[float, float, float, float],
     ) -> List[Tuple[str, str, Optional[float]]]:
         """Converts attribute (complex) model output layer values to
         ``(attr_name, label, confidence)`` tuples."""
