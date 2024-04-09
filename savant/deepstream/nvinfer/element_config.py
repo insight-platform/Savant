@@ -43,6 +43,19 @@ class NvInferConfigException(Exception):
     """NvInfer config exception class."""
 
 
+def recognize_format_by_file_name(model_file: str):
+    """Recognize model format by model file name."""
+    if model_file.endswith('.onnx'):
+        return NvInferModelFormat.ONNX
+    if model_file.endswith('.uff'):
+        return NvInferModelFormat.UFF
+    if model_file.endswith('.etlt'):
+        return NvInferModelFormat.ETLT
+    if model_file.endswith('.caffemodel'):
+        return NvInferModelFormat.CAFFE
+    return NvInferModelFormat.CUSTOM
+
+
 def nvinfer_element_configurator(
     element_config: DictConfig, module_config: DictConfig
 ) -> DictConfig:
@@ -80,43 +93,28 @@ def nvinfer_element_configurator(
     if not model_config:
         raise NvInferConfigException('Model specification required.')
 
-    # check model format
-    model_format = model_config.get('format')
-    if not model_format:
-        raise NvInferConfigException('Model format (model.format) required.')
-    try:
-        model_config.format = NvInferModelFormat[model_format.upper()]
-    except KeyError as exc:
-        raise NvInferConfigException(
-            f'Invalid model format (model.format) value "{model_config.format}", '
-            f'expected one of {[m_format.name for m_format in NvInferModelFormat]}.'
-        ) from exc
-
     # prepare parameters with case-insensitive values (enums)
-    if (
-        'precision' in model_config
-        and model_config.precision
-        and isinstance(model_config.precision, str)
-    ):
-        new_val = ModelPrecision[model_config.precision.upper()]
-        logger.debug(
-            'Preparing model.precision: %s -> %s', model_config.precision, new_val
-        )
-        model_config.precision = new_val
-    if (
-        'input' in model_config
-        and model_config.input
-        and 'color_format' in model_config.input
-        and model_config.input.color_format
-        and isinstance(model_config.input.color_format, str)
-    ):
-        new_val = ModelColorFormat[model_config.input.color_format.upper()]
-        logger.debug(
-            'Preparing model.input.color_format: %s -> %s',
-            model_config.input.color_format,
-            new_val,
-        )
-        model_config.input.color_format = new_val
+    enum_params = {
+        'format': NvInferModelFormat,
+        'precision': ModelPrecision,
+        'input.color_format': ModelColorFormat,
+    }
+    for param_name, enum in enum_params.items():
+        cfg = model_config
+        prm_name = param_name
+        while '.' in prm_name and cfg is not None:
+            section, prm_name = prm_name.split('.', 1)
+            cfg = cfg.get(section)
+        if cfg is None:
+            continue
+        if prm_name in cfg and cfg[prm_name]:
+            try:
+                cfg[prm_name] = enum[str(cfg[prm_name]).upper()]
+            except KeyError as exc:
+                raise NvInferConfigException(
+                    f'Invalid value "{cfg[prm_name]}" for "module.{param_name}", '
+                    f'expected one of {[value.name for value in enum]}.'
+                ) from exc
 
     # setup path for the model files
     if not model_config.get('local_path'):
@@ -248,8 +246,11 @@ def nvinfer_element_configurator(
         )
         logger.info('Model engine file has been set to "%s".', model_config.engine_file)
 
-    # check model format-specific parameters
+    # check model format-specific parameters required to build the engine
     if model_file_required:
+        if not model_config.format:
+            model_config.format = recognize_format_by_file_name(model_config.model_file)
+
         if model_config.format == NvInferModelFormat.CAFFE:
             if not model_config.proto_file:
                 model_config.proto_file = Path(model_config.model_file).with_suffix(
@@ -310,46 +311,59 @@ def nvinfer_element_configurator(
                     model_config.tlt_model_key,
                 )
 
-    # model_file_required is True when the engine file is not built
-    # calibration file is required to build model in INT8
-    if model_config.precision == ModelPrecision.INT8 and model_file_required:
-        if not model_config.int8_calib_file:
-            raise NvInferConfigException(
-                'INT8 calibration file (model.int8_calib_file) required.'
-            )
-        int8_calib_file_path = model_path / model_config.int8_calib_file
-        if not int8_calib_file_path.is_file():
-            raise NvInferConfigException(
-                f'INT8 calibration file "{int8_calib_file_path}" not found.'
-            )
+        # UFF model requirements (some ETLT models are UFF originally, e.g. peoplenet)
+        if model_config.format in (NvInferModelFormat.UFF, NvInferModelFormat.ETLT):
+            if not model_config.input.layer_name:
+                raise NvInferConfigException(
+                    'Model input layer name (model.input.layer_name) required.'
+                )
+            if not model_config.input.shape:
+                raise NvInferConfigException(
+                    'Model input shape (model.input.shape) required.'
+                )
 
-    # UFF model requirements
-    if model_config.format in (NvInferModelFormat.UFF, NvInferModelFormat.ETLT):
-        if not model_config.input.layer_name:
-            raise NvInferConfigException(
-                'Model input layer name (model.input.layer_name) required.'
-            )
+        if model_config.format in (
+            NvInferModelFormat.CAFFE,
+            NvInferModelFormat.UFF,
+            NvInferModelFormat.ETLT,
+        ):
+            if not model_config.output.layer_names:
+                raise NvInferConfigException(
+                    'Model output layer names (model.output.layer_names) required.'
+                )
+
+        # calibration file is required to build model in INT8
+        if model_config.precision == ModelPrecision.INT8:
+            if not model_config.int8_calib_file:
+                raise NvInferConfigException(
+                    'INT8 calibration file (model.int8_calib_file) required.'
+                )
+            int8_calib_file_path = model_path / model_config.int8_calib_file
+            if not int8_calib_file_path.is_file():
+                raise NvInferConfigException(
+                    f'INT8 calibration file "{int8_calib_file_path}" not found.'
+                )
+
+    if model_config.output.converter:
+        logger.info('Model output converter will be used.')
+
+        # input shape is used in some converters,
+        # e.g. to scale the output of yolo detector
         if not model_config.input.shape:
             raise NvInferConfigException(
                 'Model input shape (model.input.shape) required.'
             )
 
-    # check model output layers specification
-    if (
-        model_config.format
-        in (NvInferModelFormat.CAFFE, NvInferModelFormat.UFF, NvInferModelFormat.ETLT)
-        or model_config.output.converter
-    ) and not model_config.output.layer_names:
-        raise NvInferConfigException(
-            'Model output layer names (model.output.layer_names) required.'
-        )
-
-    if nvinfer_config and model_config.output.converter:
-        logger.info('Model output converter will be used.')
+        # output layer names are required to properly order the output tensors
+        # for passing to the converter
+        if not model_config.output.layer_names:
+            raise NvInferConfigException(
+                'Model output layer names (model.output.layer_names) required.'
+            )
 
     # model type-specific parameters
     if issubclass(model_type, ObjectModel):
-        # model_config.output.objects is mandatory for object models
+        # model_config.output.objects is mandatory for object models,
         # but it may be autogenerated based on labelfile or num_detected_classes
 
         label_file = model_config.get(
