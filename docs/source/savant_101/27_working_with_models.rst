@@ -8,18 +8,17 @@ The listing below represents a typical Savant inference node:
 .. code-block:: yaml
 
     - element: nvinfer@detector
-      name: DetectionModel
+      name: detection_model
       model:
         format: etlt
         remote:
           url: "https://127.0.0.1/models/detection_model.zip"
         local_path: /opt/aispp/models/detection_model
         model_file: resnet18_dashcamnet_pruned.etlt
-        engine_file: resnet18.etlt_b1_gpu0_int8.engine
+        engine_file: resnet18_dashcamnet_pruned.etlt_b1_gpu0_int8.engine
         batch_size: 1
         precision: int8
         int8_calib_file: dashcamnet_int8.txt
-        mean_file: mean.ppm
         input:
           layer_name: input_1
           shape: [3, 544, 960]
@@ -27,35 +26,33 @@ The listing below represents a typical Savant inference node:
         output:
           layer_names: [output_cov/Sigmoid, output_bbox/BiasAdd]
 
-The ``element`` section specifies the type of a pipeline unit. There are 4 types of units for defining models: detector, classifier, attribute_model, instance_segmentation, and complex_model.
+The ``element`` section specifies the type of a pipeline unit. There are 4 types of units for defining models: :doc:`detector </savant_101/30_dm>`, :doc:`classifier </savant_101/40_cm>`, :doc:`attribute_model </savant_101/43_am>`, instance_segmentation, and :doc:`complex_model </savant_101/53_complexm>`.
 
 The ``name`` parameter defines the name of the unit. The ``name`` is used by the downstream pipeline units to refer to the objects that the unit produces. This parameter is also used to construct the path to the model files, see the ``local_path`` parameter.
 
-The ``format`` parameter specifies the format in which the model is provided. The supported formats and the peculiarities of specifying certain parameters depending on the model format are described below.
+The ``format`` parameter specifies the format in which the model is provided. The parameter is used to build the TensorRT engine and can be omitted if a pre-built engine file is provided. The supported formats and the peculiarities of specifying certain parameters depending on the model format are described below.
 
 The ``model_file`` parameter defines the name of the file with the model. The name is specified as a base name, not a full path.
 
 The ``engine_file`` parameter defines the name for the TensorRT-generated engine file. If this parameter is set, then when the pipeline is launched, the presence of this file is checked first, and if it is present, the model will be loaded from it.
 
-If the prepared model file does not exist, then the pipeline will generate the engine for the model with the name. If you are not using a specially generated, pre-created TensorRT engine file, it is recommended not to set this field: the name will be generated automatically.
+If the prepared model engine file does not exist, then the pipeline will generate the engine for the model. If you are not using a specially generated, pre-created TensorRT engine file, it is recommended not to set this field: the name will be generated automatically.
 
 The ``remote`` section specifies a URL and credentials for accessing a remote model storage. Full description below. Savant supports downloading the models from remote locations so you can easily update them without rebuilding docker images.
 
-The ``local_path`` parameter specifies the path to the model files. It can be omitted, then the path will be automatically generated according to the following rule ``<model_path>/<name>``, where ``<model_path>`` is a global parameter specifying the location of all model files, set in the parameters section (description), and ``<name>`` is the name of the element.
+The ``local_path`` parameter specifies the path to the model files. It can be omitted, then the path will be automatically generated according to the following rule ``<model_path>/<name>``, where ``<model_path>`` is a global parameter specifying the location of all model files, set in the :ref:`parameters <savant_101/12_module_definition:parameters>` section, and ``<name>`` is the name of the element.
 
 The ``batch_size`` parameter defines a batch size dimension for processing frames by the model (by default 1).
 
-The ``precision`` parameter defines a precision of the model weights. Possible values are ``fp32``, ``fp16``, ``int8``. This parameter is set according to the precision chosen when creating the model.
+The ``precision`` parameter defines the data format to be used by inference of the model. Possible values are ``fp32``, ``fp16``, ``int8``. The parameter is important for TensorRT engine creation and affects the speed of inference. ``int8`` inference is faster than ``fp16``, but requires a calibration file. ``fp16`` is faster than ``fp32``, TensorRT can perform the conversion automatically, with little or no degradation in model accuracy, so ``fp16`` is set by default.
 
-The ``int8_calib_file`` defines the name of the calibration file in case the model has ``int8`` precision.
-
-The ``mean_file`` parameter defines the name of the file with the mean values for data preprocessing. The file must be in PPM format. It makes sense to use this file if you already have it, in general, it is easier to specify the necessary mean values and scaling factor for preprocessing in the input section.
+The ``int8_calib_file`` defines the name of the calibration file in case the model ``precision`` is set to ``int8``.
 
 The ``input`` section describes the model input: names of input layers, dimensionality, etc. The mandatory or optional nature of the parameters in this section depends on the model format, as well as on the type of model. This section will be covered in more detail later, when describing model formats or types of models.
 
 The ``output`` section describes the model output: names of output layers, converters, selectors, etc. The mandatory or optional nature of the parameters in this section depends on the model format, as well as on the type of model. This section will be covered in more detail later, when describing model formats.
 
-To accelerate inference in the framework, Nvidia TensorRT is used. To use a model in a pipeline, it must be presented in one of the formats supported by TensorRT:
+To accelerate inference in the framework, NVIDIA TensorRT is used. To use a model in a pipeline, it must be presented in one of the formats supported by TensorRT:
 
 ONNX
 ----
@@ -108,7 +105,7 @@ UFF is an intermediate format for representing a model between TensorFlow and Te
       output:
         layer_names: [output_cov/Sigmoid, output_bbox/BiasAdd]
 
-This format will no longer be supported by future releases of TensorRT (`Tensor RT release notes <https://docs.nvidia.com/deeplearning/tensorrt/release-notes/index.html#rel_7-0-0>`_).
+This format will no longer be supported by future releases of TensorRT (`Tensor RT release notes <https://docs.nvidia.com/deeplearning/tensorrt/release-notes/index.html#tensorrt-9>`_).
 
 Caffe
 -----
@@ -127,9 +124,9 @@ If you have a model trained using the Caffe framework, then you can save your mo
         layer_names: [output_cov/Sigmoid, output_bbox/BiasAdd]
 
 
-This format will no longer be supported by future releases of TensorRT (`Tensor RT release notes <https://docs.nvidia.com/deeplearning/tensorrt/release-notes/index.html#rel_7-0-0>`_).
+This format will no longer be supported by future releases of TensorRT (`Tensor RT release notes <https://docs.nvidia.com/deeplearning/tensorrt/release-notes/index.html#tensorrt-9>`_).
 
-Nvidia TAO Toolkit
+NVIDIA TAO Toolkit
 ------------------
 
 The NVIDIA TAO Toolkit is a set of training tools that requires minimal effort to create computer vision neural models based on user's own data. Using the TAO toolkit, users can perform transfer learning from pre-trained NVIDIA models to create their own model.
@@ -152,7 +149,7 @@ After training the model, you can download it in the ``etlt`` format and use thi
 Custom CUDA Engine
 ------------------
 
-For all the above-mentioned variants of specifying the model, during the first launch, an engine file will be generated using TensorRT with automatic parsing of the model. When the model is very complex or requires some custom plugins or layers, you can generate the engine file yourself using the TensorRT API and specifying the library and the name of the function that generates the engine (`Using custom model with deepstream <https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_using_custom_model.html>`_).
+For all the above-mentioned variants of specifying the model, during the first launch, an engine file will be generated using TensorRT with automatic parsing of the model. When the model is very complex or requires some custom plugins or layers, you can generate the engine file yourself using the TensorRT API and specifying the library and the name of the function that generates the engine (`Using custom model with DeepStream <https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_using_custom_model.html>`_).
 
 .. code-block:: yaml
 
@@ -163,43 +160,6 @@ For all the above-mentioned variants of specifying the model, during the first l
       custom_config_file: yolov2-tiny.cfg
       custom_lib_path: libnvdsinfer_custom_impl_Yolo.so
       engine_create_func_name: NvDsInferYoloCudaEngineGet
-
-Working With Remote Models
---------------------------
-
-Currently, there are three data transfer protocols supported: S3, HTTP(S), and FTP. By specifying the URL of the archive file, you can use models that are stored remotely.
-
-.. code-block:: yaml
-
-  - element: nvinfer@detector
-    name: Primary_Detector
-    model:
-      format: caffe
-      config_file:  ${oc.env:APP_PATH}/samples/nvidia_car_classification/dstest2_pgie_config.txt
-      remote:
-        url: s3://savant-data/models/Primary_Detector/Primary_Detector.zip
-        checksum_url: s3://savant-data/models/Primary_Detector/Primary_Detector.md5
-        parameters:
-          endpoint: https://eu-central-1.linodeobjects.com
-
-In this example, in the remote section, we specify:
-
-* ``url`` - specifies where to download the archive file from;
-* ``checksum_url`` - specifies the file that stores the md5 checksum for the archive; if the archive has not been updated, it will not be downloaded during the next module launch;
-* ``parameters`` - a section that allows you to specify additional parameters for the S3, HTTP(S), or FTP protocols:
-   * S3 protocol parameters: ``access_key``, ``secret_key``, ``endpoint``, ``region``;
-   * HTTP(S) protocol parameters: ``username``, ``password``;
-   * FTP protocol parameters: ``username``, ``password``.
-
-All necessary files (model file in one of the formats described above, configuration, calibration, and other files that you specify when configuring the model) must be archived using one of the archivers (``gzip``, ``bzip2``, ``xz``, ``zip``). The must should contain all required model files.
-
-The archive should contain a set of files. You can download an example model archive used in the `Nvidia car classification <https://github.com/insight-platform/Savant/tree/develop/samples/nvidia_car_classification>`_ example with the following command:
-
-.. code-block:: bash
-
-  aws --endpoint-url=https://eu-central-1.linodeobjects.com s3 cp s3://savant-data/models/Primary_Detector/Primary_Detector.zip .
-
-You can find an example of using this model archive at the following `link <https://github.com/insight-platform/Savant/blob/develop/samples/nvidia_car_classification/module.yml#L46>`_.
 
 Build Model Engine
 ------------------
@@ -218,12 +178,62 @@ For example, you can build the model engines used in the `Nvidia car classificat
 
 .. code-block:: bash
 
-    docker run --rm -it --gpus=all \
-        -e ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc \
-        -e ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc \
-        -v /tmp/zmq_sockets:/tmp/zmq-sockets \
-        -v ./downloads/nvidia_car_classification:/downloads \
-        -v ./models/nvidia_car_classification:/models \
-        -v ./samples/:/opt/savant/samples \
-        ghcr.io/insight-platform/savant-deepstream:latest \
-        --build-engines samples/nvidia_car_classification/module.yml
+    ./scripts/run_module.py --build-engines samples/nvidia_car_classification/module.yml
+
+You can also use the ``trtexec`` tool from the TensorRT package to generate an engine file. But you need to understand exactly what parameters you need to use to generate a suitable for ``nvinfer`` engine file. And you can't use ``trtexec`` if you need a custom engine generator.
+
+Example of using ``trtexec`` to build engine for ONNX model:
+
+.. code-block:: bash
+
+    /usr/src/tensorrt/bin/trtexec --onnx=/cache/models/custom_module/model_name/model_name.onnx --saveEngine=/cache/models/custom_module/model_name/model_name.onnx_b16_gpu0_fp16.engine --minShapes='images':1x3x224x224 --optShapes='images':16x3x224x224 --maxShapes='images':16x3x224x224 --fp16 --workspace=6144 --verbose
+
+Using Pre-built Model Engine
+----------------------------
+
+If you have a pre-built engine file, you can use it in the pipeline without having to include the original model file and set some of the parameters required to generate the engine from the model file (e.g. input and output layer names for UFF model). The engine file must be placed in the model file directory. The name of the engine file must be specified in the ``engine_file`` parameter of the model configuration.
+
+.. code-block:: yaml
+
+  - element: nvinfer@detector
+    name: detection_model
+    model:
+      engine_file: detection_model.onnx_b1_gpu0_fp16.engine
+
+We recommend using the ``nvinfer`` name format for the engine file: ``{model_name}_b{batch_size}_gpu{gpu_id}_{precision}.engine``. This allows you to easily understand the configuration of the model engine and saves you from having to set ``batch-size`` and ``precision`` separately in the model config.
+
+Working With Remote Models
+--------------------------
+
+Currently, there are three data transfer protocols supported: S3, HTTP(S), and FTP. By specifying the URL of the archive file, you can use models that are stored remotely.
+
+.. code-block:: yaml
+
+  - element: nvinfer@detector
+    name: Primary_Detector
+    model:
+      format: caffe
+      remote:
+        url: s3://savant-data/models/Primary_Detector/Primary_Detector.zip
+        checksum_url: s3://savant-data/models/Primary_Detector/Primary_Detector.md5
+        parameters:
+          endpoint: https://eu-central-1.linodeobjects.com
+
+In this example, in the remote section, we specify:
+
+* ``url`` - specifies where to download the archive file from;
+* ``checksum_url`` - specifies the file that stores the md5 checksum for the archive; if the archive has not been updated, it will not be downloaded during the next module launch;
+* ``parameters`` - a section that allows you to specify additional parameters for the S3, HTTP(S), or FTP protocols:
+   * S3 protocol parameters: ``access_key``, ``secret_key``, ``endpoint``, ``region``;
+   * HTTP(S) protocol parameters: ``username``, ``password``;
+   * FTP protocol parameters: ``username``, ``password``.
+
+All necessary files (model file in one of the formats described above, configuration, calibration, and other files that you specify when configuring the model) must be archived using one of the archivers (``gzip``, ``bzip2``, ``xz``, ``zip``). The archive must contain all necessary model files.
+
+You can download an example model archive used in the `Nvidia car classification <https://github.com/insight-platform/Savant/tree/develop/samples/nvidia_car_classification>`_ example with the following command:
+
+.. code-block:: bash
+
+  aws --endpoint-url=https://eu-central-1.linodeobjects.com s3 cp s3://savant-data/models/Primary_Detector/Primary_Detector.zip .
+
+You can find an example of using this model archive at the following `link <https://github.com/insight-platform/Savant/blob/develop/samples/nvidia_car_classification/module.yml#L46>`_.
