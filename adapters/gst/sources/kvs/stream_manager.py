@@ -180,9 +180,9 @@ class StreamManager:
                     source_id=self.config.source_id,
                     timestamp=self.config.timestamp,
                     credentials=AwsCredentials(
-                        region=self.config.aws_region,
-                        access_key=self.config.access_key,
-                        secret_key=self.config.secret_key,
+                        region=self.config.aws.region,
+                        access_key=self.config.aws.access_key,
+                        secret_key=self.config.aws.secret_key,
                     ),
                     is_playing=self.config.playing,
                 )

@@ -150,6 +150,19 @@ class Pipeline(BaseThreadWorker):
             parser.set_property('config-interval', -1)
         gst_elements.append(parser)
 
+        if self.config.fps_meter.period_seconds or self.config.fps_meter.period_frames:
+            fps_meter: Gst.Element = Gst.ElementFactory.make('fps_meter')
+            fps_meter.set_property('output', self.config.fps_meter.output)
+            if self.config.fps_meter.period_seconds:
+                fps_meter.set_property(
+                    'period-seconds', self.config.fps_meter.period_seconds
+                )
+            else:
+                fps_meter.set_property(
+                    'period-frames', self.config.fps_meter.period_frames
+                )
+            gst_elements.append(fps_meter)
+
         capsfilter: Gst.Element = Gst.ElementFactory.make('capsfilter')
         capsfilter.set_property(
             'caps',

@@ -1024,6 +1024,7 @@ def kafka_redis_source(
 )
 @source_id_option(required=True)
 @sync_option
+@fps_meter_options
 @adapter_docker_image_option('gstreamer')
 def kvs_source(
     source_id: str,
@@ -1039,6 +1040,9 @@ def kvs_source(
     save_state: bool,
     state_path: str,
     mount_state_path: Optional[str],
+    fps_period_frames: Optional[int],
+    fps_period_seconds: Optional[float],
+    fps_output: Optional[str],
     docker_image: str,
 ):
     """Read video stream from Kinesis Video Stream.
@@ -1053,10 +1057,9 @@ def kvs_source(
         zmq_endpoint=out_endpoint,
         zmq_type=None,
         zmq_bind=None,
-        fps_period_frames=None,
-        fps_period_seconds=None,
-        fps_output=None,
-        use_absolute_timestamps=None,
+        fps_period_frames=fps_period_frames,
+        fps_period_seconds=fps_period_seconds,
+        fps_output=fps_output,
     ) + [
         f'AWS_REGION={aws_region}',
         f'AWS_ACCESS_KEY={aws_access_key}',
@@ -1082,7 +1085,8 @@ def kvs_source(
         f'source-kvs-{source_id}',
         zmq_endpoints=[out_endpoint],
         sync=sync,
-        entrypoint='/opt/savant/adapters/gst/sources/kvs.sh',
+        entrypoint='python',
+        args=['-m', 'adapters.gst.sources.kvs'],
         envs=envs,
         volumes=volumes,
         docker_image=docker_image,
