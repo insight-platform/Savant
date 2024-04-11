@@ -99,7 +99,7 @@ class NvInferModel(Model):
     for a model. If not set, then input will default to entire frame.
     """
 
-    format: NvInferModelFormat = MISSING
+    format: Optional[NvInferModelFormat] = None
     """Model file format.
 
     Example
