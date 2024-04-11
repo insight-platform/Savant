@@ -955,5 +955,145 @@ def kafka_redis_source(
     run_command(cmd)
 
 
+@cli.command('kvs')
+@click.option(
+    '--out-endpoint',
+    default='pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc',
+    help='Adapter output (module input) ZeroMQ socket endpoint.',
+    show_default=True,
+)
+@click.option(
+    '--aws-region',
+    required=True,
+    help='AWS region.',
+)
+@click.option(
+    '--aws-access-key',
+    required=True,
+    help='AWS access key ID.',
+)
+@click.option(
+    '--aws-secret-key',
+    required=True,
+    help='AWS secret access key.',
+)
+@click.option(
+    '--stream-name',
+    required=True,
+    help='Name of the Kinesis Video Stream.',
+)
+@click.option(
+    '--timestamp',
+    required=False,
+    help=(
+        'Either timestamp in format "%Y-%m-%dT%H:%M:%S" or delay from current '
+        'time in "-<delay>(s\|m)". E.g. "2024-03-12T06:57:00", "-30s", "-1m".'
+    ),
+)
+@click.option(
+    '--no-playing',
+    is_flag=True,
+    default=False,
+    help='Do not start playing stream immediately.',
+)
+@click.option(
+    '--api-port',
+    default=18367,
+    help='Port for the REST API. This port is always published.',
+    show_default=True,
+)
+@click.option(
+    '--save-state',
+    is_flag=True,
+    default=False,
+    help='Save state to the state file.',
+)
+@click.option(
+    '--state-path',
+    default='/state/state.json',
+    help='Path to the state file. Ignored if --save-state is not set.',
+    show_default=True,
+)
+@click.option(
+    '--mount-state-path',
+    required=False,
+    help=(
+        'Where to mount the directory with the state file. '
+        'Ignored if --save-state is not set.'
+    ),
+)
+@source_id_option(required=True)
+@sync_option
+@fps_meter_options
+@adapter_docker_image_option('gstreamer')
+def kvs_source(
+    source_id: str,
+    out_endpoint: str,
+    sync: bool,
+    aws_region: str,
+    aws_access_key: str,
+    aws_secret_key: str,
+    stream_name: str,
+    timestamp: Optional[str],
+    no_playing: bool,
+    api_port: int,
+    save_state: bool,
+    state_path: str,
+    mount_state_path: Optional[str],
+    fps_period_frames: Optional[int],
+    fps_period_seconds: Optional[float],
+    fps_output: Optional[str],
+    docker_image: str,
+):
+    """Read video stream from Kinesis Video Stream.
+
+    REST API is available at http://<container-host>:<api-port>.
+
+    See http://<container-host>:<api-port>/docs for API documentation
+    """
+
+    envs = build_common_envs(
+        source_id=source_id,
+        zmq_endpoint=out_endpoint,
+        zmq_type=None,
+        zmq_bind=None,
+        fps_period_frames=fps_period_frames,
+        fps_period_seconds=fps_period_seconds,
+        fps_output=fps_output,
+    ) + [
+        f'AWS_REGION={aws_region}',
+        f'AWS_ACCESS_KEY={aws_access_key}',
+        f'AWS_SECRET_KEY={aws_secret_key}',
+        f'STREAM_NAME={stream_name}',
+        f'TIMESTAMP={timestamp}',
+        f'PLAYING={not no_playing}',
+        f'API_PORT={api_port}',
+        f'SAVE_STATE={save_state}',
+        f'STATE_PATH={state_path}',
+    ]
+    if save_state and mount_state_path:
+        assert os.path.isabs(
+            state_path
+        ), 'State path must be absolute when mounting state path.'
+        state_dir = os.path.dirname(state_path)
+        assert state_dir != '/', 'State directory must not be root.'
+        volumes = [f'{os.path.abspath(mount_state_path)}:{state_dir}']
+    else:
+        volumes = []
+
+    cmd = build_docker_run_command(
+        f'source-kvs-{source_id}',
+        zmq_endpoints=[out_endpoint],
+        sync=sync,
+        entrypoint='python',
+        args=['-m', 'adapters.gst.sources.kvs'],
+        envs=envs,
+        volumes=volumes,
+        docker_image=docker_image,
+        ports=[(api_port, api_port)],
+    )
+    run_command(cmd)
+
+
 if __name__ == '__main__':
     cli()

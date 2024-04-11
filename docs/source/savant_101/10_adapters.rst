@@ -659,6 +659,213 @@ Running with the helper script:
 
     ./scripts/run_source.py kafka-redis --brokers=kafka:9092 --topic=kafka-redis-adapter-demo --group-id=kafka-redis-adapter-demo
 
+Kinesis Video Stream Source Adapter
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The Kinesis Video Stream Source Adapter takes video frames from Kinesis Video Stream.
+
+.. list-table:: Parameters
+    :header-rows: 1
+
+    * - Parameter
+      - Description
+      - Default
+      - Example
+    * - ``AWS_REGION``
+      - An AWS region.
+      - Unset
+      - ``us-west-2``
+    * - ``AWS_ACCESS_KEY``
+      - An AWS access key ID.
+      - Unset
+      - ``AKIAIOSFODNN7EXAMPLE``
+    * - ``AWS_SECRET_KEY``
+      - An AWS secret access key.
+      - Unset
+      - ``wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY``
+    * - ``STREAM_NAME``
+      - Name of the Kinesis Video Stream.
+      - Unset
+      - ``test-stream``
+    * - ``TIMESTAMP``
+      - Either timestamp in format `%Y-%m-%dT%H:%M:%S` or delay from current time in `-<delay>(s\|m)`. E.g. `2024-03-12T06:57:00`, `-30s`, `-1m`.
+      - Unset
+      - ``-1m``
+    * - ``SYNC_OUTPUT``
+      - A flag specifying if to send frames synchronously (i.e. at the source file rate).
+      - ``False``
+      - ``True``
+    * - ``PLAYING``
+      - A flag specifying if the stream should start playing immediately.
+      - ``True``
+      - ``False``
+    * - ``API_PORT``
+      - A port for REST API.
+      - ``18367``
+      - ``9999``
+    * - ``SAVE_STATE``
+      - A flag indicating whether to save state to the state file.
+      - ``False``
+      - ``True``
+    * - ``STATE_PATH``
+      - A path to the state file.
+      - ``state.json``
+      - ``/foo/bar.json``
+
+.. note::
+    The adapter doesn't have ``ZMQ_TYPE``, ``ZMQ_BIND``, ``USE_ABSOLUTE_TIMESTAMPS`` parameters.
+
+Running the adapter with Docker:
+
+.. code-block:: bash
+
+    docker run --rm -it --name source-kinesis-video-stream-test \
+        --entrypoint python \
+        -p 18367:18367 \
+        -e ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc \
+        -e AWS_REGION=us-west-2 \
+        -e AWS_ACCESS_KEY=AKIAIOSFODNN7EXAMPLE \
+        -e AWS_SECRET_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY \
+        -e STREAM_NAME=test-stream \
+        -e TIMESTAMP=-1m \
+        -e SYNC_OUTPUT=True \
+        -e PLAYING=True \
+        -e API_PORT=18367 \
+        -e SAVE_STATE=True \
+        -e STATE_PATH=/state/test.json \
+        -v /tmp/zmq-sockets:/tmp/zmq-sockets \
+        -v "$(pwd)/source-kinesis-video-stream-test:/state" \
+        ghcr.io/insight-platform/savant-adapters-gstreamer:latest \
+        -m adapters.python.sources.kvs
+
+Running with the helper script:
+
+.. code-block:: bash
+
+    ./scripts/run_source.py kvs \
+        --aws-region=us-west-2 \
+        --aws-access-key='AKIAIOSFODNN7EXAMPLE' \
+        --aws-secret-key='wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY' \
+        --stream-name=test-stream \
+        --timestamp=-1m \
+        --source-id=test
+
+REST API
+""""""""
+
+The adapter provides a REST API to control the stream. The API is available at ``http://<host>:<API_PORT>``. The OpenAPI documentation is available at ``http://<host>:<API_PORT>/docs``.
+
+The API provides the following endpoints:
+
+``PUT /stream``: Update stream configuration.
+
+**Request body:**
+
+- ``name (string)``: name of the Kinesis Video Stream;
+- ``source_id (string)``: source ID;
+- ``timestamp (string)``: timestamp in format `%Y-%m-%dT%H:%M:%S`;
+- ``credentials (object)``: AWS credentials:
+
+  - ``region (string)``: AWS region;
+  - ``access_key (string)``: AWS access key ID;
+  - ``secret_key (string)``: AWS secret access key;
+
+- ``is_playing (bool)``: a flag specifying if the stream should start playing immediately.
+
+.. note::
+
+    If any of the parameters is not specified, the value from the current stream configuration will be used.
+
+Response body the same as the request body.
+
+Example:
+
+.. code-block:: bash
+
+    curl -X PUT 'http://localhost:18367/stream' \
+        -H "Content-Type: application/json" \
+        -d '{
+        "name": "test-stream",
+        "source_id": "test",
+        "timestamp": "2024-03-12T06:57:00",
+        "credentials": {
+            "region": "us-west-2",
+            "access_key": "AKIAIOSFODNN7EXAMPLE",
+            "secret_key": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+        },
+        "is_playing": true
+    }'
+
+.. code-block:: json
+
+    {
+        "name": "test-stream",
+        "source_id": "test",
+        "timestamp": "2024-03-12T06:57:00",
+        "is_playing": true
+    }
+
+``GET /stream``: Get current stream configuration.
+
+Response body the same as for the ``PUT /streams`` request.
+
+Example:
+
+.. code-block:: bash
+
+    curl -X GET 'http://localhost:18367/stream'
+
+.. code-block:: json
+
+    {
+        "name": "test-stream",
+        "source_id": "test",
+        "timestamp": "2024-03-12T06:57:00",
+        "is_playing": true
+    }
+
+``PUT /stream/play``: Start playing the stream.
+
+The request has no body.
+
+Response body the same as for the ``PUT /streams`` request.
+
+Example:
+
+.. code-block:: bash
+
+    curl -X PUT 'http://localhost:18367/stream/play'
+
+.. code-block:: json
+
+    {
+        "name": "test-stream",
+        "source_id": "test",
+        "timestamp": "2024-03-12T06:57:00",
+        "is_playing": true
+    }
+
+``PUT /stream/stop``: Stop playing the stream.
+
+The request has no body.
+
+Response body the same as for the ``PUT /streams`` request.
+
+Example:
+
+.. code-block:: bash
+
+    curl -X PUT 'http://localhost:18367/stream/stop'
+
+.. code-block:: json
+
+    {
+        "name": "test-stream",
+        "source_id": "test",
+        "timestamp": "2024-03-12T06:57:00",
+        "is_playing": false
+    }
+
 Sink Adapters
 -------------
 
