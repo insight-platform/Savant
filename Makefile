@@ -135,6 +135,7 @@ run-tests:
 		savant-deepstream$(PLATFORM_SUFFIX)-extra \
 		 -s $(PROJECT_PATH)/tests
 
+# run jupyter inside `jupyter lab --allow-root`
 run-dev:
 	#xhost +local:docker
 	docker run -it --rm $(RUNTIME) \

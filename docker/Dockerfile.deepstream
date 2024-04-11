@@ -140,13 +140,8 @@ RUN wget -qO- \
     dpkg -i OpenCV* && \
     rm OpenCV*
 
-COPY requirements/base.txt requirements/base.txt
-RUN python -m pip install --no-cache-dir -r requirements/base.txt
-
-COPY requirements/ext.txt requirements/ext.txt
-RUN python -m pip install --no-cache-dir -r requirements/ext.txt
-
-RUN rm -r requirements
+COPY requirements/base.txt requirements.txt
+RUN python -m pip install --no-cache-dir -r requirements.txt && rm requirements.txt
 
 COPY --from=savant-boost-builder /libs/savanboost/dist /libs/savanboost/dist
 RUN python -m pip install --no-cache-dir /libs/savanboost/dist/*.whl
@@ -178,7 +173,9 @@ COPY savant/VERSION .
 COPY gst_plugins gst_plugins
 
 COPY adapters/gst/gst_plugins adapters/gst/gst_plugins
-RUN rm -f adapters/gst/gst_plugins/python/video_files_sink.py
+RUN rm -f \
+    adapters/gst/gst_plugins/python/video_files_sink.py \
+    adapters/gst/gst_plugins/python/zeromq_sink.py
 COPY adapters/gst/sources adapters/gst/sources
 
 COPY scripts/uri-input.py scripts/
@@ -293,13 +290,9 @@ RUN wget -nv -O ${PYCUDA_WHL} ${PACKAGES_URL}/${PYCUDA_WHL} && \
 ARG ORT_VERSION=1.17.1
 RUN python -m pip install --no-cache-dir onnx onnxruntime-gpu --extra-index-url https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/onnxruntime-cuda-12/pypi/simple/
 
-# cython, polars, scikit-learn, jupyter
-RUN python -m pip install --no-cache-dir \
-    Cython \
-    polars[all] \
-    scikit-learn \
-    jupyterlab \
-    pytest
+# cython, polars, scikit-learn, jupyter, etc.
+COPY requirements/extra.txt requirements.txt
+RUN python -m pip install --no-cache-dir -r requirements.txt && rm requirements.txt
 
 
 # Extra l4t container
@@ -356,10 +349,6 @@ ARG ORT_WHL="onnxruntime_gpu-1.17.0-cp310-cp310-linux_aarch64.whl"
 RUN wget -nv -O ${ORT_WHL} ${ORT_URL} && \
     python -m pip install --no-cache-dir onnx ${ORT_WHL}
 
-# cython, polars, scikit-learn, jupyter
-RUN python -m pip install --no-cache-dir \
-    Cython \
-    polars[all] \
-    scikit-learn \
-    jupyterlab \
-    pytest
+# cython, polars, scikit-learn, jupyter, etc.
+COPY requirements/extra.txt requirements.txt
+RUN python -m pip install --no-cache-dir -r requirements.txt && rm requirements.txt

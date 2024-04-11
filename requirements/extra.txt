@@ -1,0 +1,6 @@
+Cython
+polars[all]
+scikit-learn
+jupyterlab
+matplotlib
+pytest
