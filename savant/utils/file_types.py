@@ -19,12 +19,15 @@ class FileType(Enum):
 
 
 def parse_mime_types(files: List[Path]) -> List[Tuple[Path, str]]:
-    output = subprocess.check_output(
-        ['file', '--no-pad', '--mime-type'] + [str(x) for x in files]
-    )
     mime_types = []
-    for line in output.decode().strip().split('\n'):
-        path, mime_type = line.rsplit(': ', 1)
-        mime_types.append((Path(path), mime_type))
-
+    # use chunks to avoid `Argument list too long` error
+    chunk_size = 1000
+    for i in range(0, len(files), chunk_size):
+        chunk = files[i:i + chunk_size]
+        output = subprocess.check_output(
+            ['file', '--no-pad', '--mime-type'] + [str(x) for x in chunk]
+        )
+        for line in output.decode().strip().split('\n'):
+            path, mime_type = line.rsplit(': ', 1)
+            mime_types.append((Path(path), mime_type))
     return mime_types
