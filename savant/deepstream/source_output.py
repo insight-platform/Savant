@@ -1,4 +1,5 @@
 """Classes for adding output elements to a DeepStream pipeline."""
+
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 

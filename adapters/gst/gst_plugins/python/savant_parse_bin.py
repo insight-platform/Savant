@@ -1,4 +1,5 @@
 """SavantParseBin element."""
+
 from typing import Optional
 
 from savant.gstreamer import GObject, Gst  # noqa:F401

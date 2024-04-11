@@ -7,6 +7,7 @@ https://docs.nvidia.com/metropolis/deepstream/dev-guide/sdk-api/group__gstreamer
 * gst-nvcustomevent.h, libnvdsgst_customhelper.so
   defines GstNvCustomEventType and create/parse functions
 """
+
 import ctypes
 
 from savant.gstreamer import GObject, Gst  # noqa:F401

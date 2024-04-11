@@ -1,4 +1,5 @@
 """GStreamer utils."""
+
 import inspect
 from contextlib import contextmanager
 from types import FrameType

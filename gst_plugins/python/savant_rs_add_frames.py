@@ -1,4 +1,5 @@
 """SavantRsAddFrames element."""
+
 import inspect
 from typing import Any, NamedTuple, Optional
 

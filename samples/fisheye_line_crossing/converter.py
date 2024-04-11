@@ -1,4 +1,5 @@
 """YOLOv7 OBB detector output to bbox converter."""
+
 from typing import Tuple
 
 import numpy as np

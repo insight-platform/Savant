@@ -1,4 +1,5 @@
 """Deepstream-specific ObjectMeta interface implementation."""
+
 import logging
 from typing import Any, List, Optional, Union
 

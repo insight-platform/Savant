@@ -1,4 +1,5 @@
 """FFmpeg src."""
+
 import inspect
 from typing import Dict, NamedTuple, Optional
 

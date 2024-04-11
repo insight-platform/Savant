@@ -1,4 +1,5 @@
 """Non-maximum suppression (NMS) implementation."""
+
 import cupy as cp
 import numba as nb
 import numpy as np

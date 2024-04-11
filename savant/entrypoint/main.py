@@ -1,6 +1,7 @@
 """Module entrypoints.
 isort:skip_file
 """
+
 import os
 import signal
 from pathlib import Path

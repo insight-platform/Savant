@@ -1,4 +1,5 @@
 """DeepStream element factory."""
+
 from dataclasses import replace
 
 import pyds

@@ -1,4 +1,5 @@
 """Base implementation of user-defined PyFunc class."""
+
 from typing import Dict, Optional
 
 import cv2

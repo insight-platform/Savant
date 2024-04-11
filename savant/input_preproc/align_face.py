@@ -1,4 +1,5 @@
 """Face image preprocessor."""
+
 import cv2
 import numpy as np
 

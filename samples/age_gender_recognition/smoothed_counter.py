@@ -1,4 +1,5 @@
 """Smoothed counter module."""
+
 import queue
 from collections import defaultdict
 from typing import Any, Dict

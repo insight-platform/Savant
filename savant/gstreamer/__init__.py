@@ -1,4 +1,5 @@
 """GStreamer module."""
+
 # to avoid `gi.require_version` warning
 import gi
 

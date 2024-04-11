@@ -1,4 +1,5 @@
 """Base deep learning model configuration templates."""
+
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import List, Optional, Tuple

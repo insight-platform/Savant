@@ -1,4 +1,5 @@
 """DeepStream object utils."""
+
 from typing import Optional, Tuple, Union
 
 import pyds

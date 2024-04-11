@@ -1,4 +1,5 @@
 """Age gender converter module."""
+
 from typing import Any, List, Optional, Tuple
 
 import numpy as np
@@ -19,7 +20,7 @@ class AgeGenderConverter(BaseAttributeModelOutputConverter):
         self,
         *output_layers: np.ndarray,
         model: AttributeModel,
-        roi: Tuple[float, float, float, float]
+        roi: Tuple[float, float, float, float],
     ) -> List[Tuple[str, Any, Optional[float]]]:
         """Converts age gender model output vector to age and gender attribute."""
         age = np.sum(np.multiply(output_layers[0], age_range)).item()

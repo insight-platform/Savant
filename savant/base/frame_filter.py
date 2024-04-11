@@ -1,4 +1,5 @@
 """Ingress / egress filters module."""
+
 from abc import abstractmethod
 
 from savant_rs.primitives import VideoFrame

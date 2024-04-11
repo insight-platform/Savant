@@ -1,4 +1,5 @@
 """Tensor to vector converters."""
+
 from typing import List, Optional, Tuple
 
 import numpy as np
@@ -17,7 +18,7 @@ class TensorToVectorConverter(BaseAttributeModelOutputConverter):
         self,
         *output_layers: np.ndarray,
         model: AttributeModel,
-        roi: Tuple[float, float, float, float]
+        roi: Tuple[float, float, float, float],
     ) -> List[Tuple[List[float], Optional[float]]]:
         """Converts output array to Python list."""
         output_layer = output_layers[0]
@@ -33,7 +34,7 @@ class TensorToItemConverter(BaseAttributeModelOutputConverter):
         self,
         *output_layers: np.ndarray,
         model: AttributeModel,
-        roi: Tuple[float, float, float, float]
+        roi: Tuple[float, float, float, float],
     ) -> List[Tuple[float, Optional[float]]]:
         """Converts output arrays to floats."""
         return [(out.item(), None) for out in output_layers]

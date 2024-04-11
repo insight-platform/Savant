@@ -1,4 +1,5 @@
 """Custom DrawFunc implementation."""
+
 from savant_rs.draw_spec import BoundingBoxDraw, ColorDraw, ObjectDraw, PaddingDraw
 
 from savant.deepstream.drawfunc import NvDsDrawFunc

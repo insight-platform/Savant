@@ -1,4 +1,5 @@
 """Entrypoint for Always-On-RTSP sink."""
+
 import signal
 import time
 from pathlib import Path
