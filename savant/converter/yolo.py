@@ -73,6 +73,10 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
             confidences = det_scores[:num]
             class_ids = det_classes[:num]
 
+            # [0..1] -> model.input
+            bboxes[:, [0, 2]] *= model.input.width
+            bboxes[:, [1, 3]] *= model.input.height
+
             # (left, top, right, bottom) -> (xc, yc, width, height)
             bboxes[:, 2] -= bboxes[:, 0]
             bboxes[:, 3] -= bboxes[:, 1]

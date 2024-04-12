@@ -189,6 +189,7 @@ class NvInferConfig:
         _FieldMap('num-detected-classes', 'output.num_detected_classes', int),
         _FieldMap('gpu-id', 'gpu_id', int),
         _FieldMap('secondary-reinfer-interval', 'interval', int),
+        _FieldMap('layer-device-precision', 'layer_device_precision', lambda v: v.split(';')),
     ]
 
     _CLASS_ATTR_MAP = [
@@ -198,7 +199,7 @@ class NvInferConfig:
         _FieldMap('detected-min-h', 'min_height', int, 32),
         _FieldMap('detected-max-w', 'max_width', int),
         _FieldMap('detected-max-h', 'max_height', int),
-        # FieldMap('topk', 'topk', int),
+        _FieldMap('topk', 'top_k', int),
     ]
 
     @staticmethod
