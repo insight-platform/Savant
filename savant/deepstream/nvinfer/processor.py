@@ -374,14 +374,15 @@ class NvInferProcessor:
                         # object or complex model with non-empty output
                         if bbox_tensor.shape[1] == 6:  # no angle
                             selection_type = ObjectSelectionType.REGULAR_BBOX
+
                             # xc -> left, yc -> top
                             bbox_tensor[:, 2] -= bbox_tensor[:, 4] / 2
                             bbox_tensor[:, 3] -= bbox_tensor[:, 5] / 2
 
-                            # clip
                             # width to right, height to bottom
                             bbox_tensor[:, 4] += bbox_tensor[:, 2]
                             bbox_tensor[:, 5] += bbox_tensor[:, 3]
+
                             # clip
                             bbox_tensor[:, 2][
                                 bbox_tensor[:, 2] < self._frame_rect[0]
@@ -487,14 +488,10 @@ class NvInferProcessor:
                                 )
                                 selected_bboxes.append((int(bbox[7]), _nvds_obj_meta))
 
+                    # attribute or complex model
                     if values:
-                        # attribute or complex model
                         if self._is_complex_model:
-                            values = [
-                                v
-                                for i, v in enumerate(values)
-                                if i in {i for i, _ in selected_bboxes}
-                            ]
+                            values = [values[i] for i, _ in selected_bboxes]
                         else:
                             selected_bboxes = [(0, nvds_obj_meta)]
                             values = [values]
