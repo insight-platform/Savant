@@ -23,7 +23,7 @@ def parse_mime_types(files: List[Path]) -> List[Tuple[Path, str]]:
     # use chunks to avoid `Argument list too long` error
     chunk_size = 1000
     for i in range(0, len(files), chunk_size):
-        chunk = files[i:i + chunk_size]
+        chunk = files[i : i + chunk_size]
         output = subprocess.check_output(
             ['file', '--no-pad', '--mime-type'] + [str(x) for x in chunk]
         )

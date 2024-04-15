@@ -189,7 +189,9 @@ class NvInferConfig:
         _FieldMap('num-detected-classes', 'output.num_detected_classes', int),
         _FieldMap('gpu-id', 'gpu_id', int),
         _FieldMap('secondary-reinfer-interval', 'interval', int),
-        _FieldMap('layer-device-precision', 'layer_device_precision', lambda v: v.split(';')),
+        _FieldMap(
+            'layer-device-precision', 'layer_device_precision', lambda v: v.split(';')
+        ),
     ]
 
     _CLASS_ATTR_MAP = [

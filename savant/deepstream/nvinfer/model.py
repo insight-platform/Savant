@@ -177,7 +177,6 @@ class NvInferModel(Model):
     """
 
 
-
 NVINFER_DEFAULT_OBJECT_SELECTOR = PyFunc(
     module='savant.selector.detector',
     class_name='BBoxSelector',
