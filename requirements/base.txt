@@ -31,3 +31,5 @@ pyds @ https://github.com/NVIDIA-AI-IOT/deepstream_python_apps/releases/download
 # ffmpeg-input
 ffmpeg-input @ https://github.com/insight-platform/FFmpeg-Input/releases/download/0.1.23/ffmpeg_input-0.1.23-cp310-cp310-manylinux_2_28_x86_64.whl ; platform_machine=='x86_64'
 ffmpeg-input @ https://github.com/insight-platform/FFmpeg-Input/releases/download/0.1.23/ffmpeg_input-0.1.23-cp310-cp310-manylinux_2_28_aarch64.whl ; platform_machine=='aarch64'
+
+splitstream==1.2.6
