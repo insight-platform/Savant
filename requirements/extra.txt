@@ -2,5 +2,6 @@ Cython
 polars[all]
 scikit-learn
 jupyterlab
+ipywidgets
 matplotlib
 pytest
