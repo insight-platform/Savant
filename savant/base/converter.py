@@ -1,4 +1,5 @@
 """Base model output converters."""
+
 from abc import abstractmethod
 from enum import Enum
 from typing import Any, List, Optional, Tuple, Union

@@ -1,4 +1,5 @@
 """ZeroMQ sink."""
+
 import inspect
 import json
 from fractions import Fraction

@@ -1,4 +1,5 @@
 """SavantRsLoggingHandler module."""
+
 import logging
 
 import pretty_traceback

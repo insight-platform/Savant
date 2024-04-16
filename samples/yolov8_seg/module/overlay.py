@@ -1,4 +1,5 @@
 """Custom DrawFunc implementation."""
+
 import numpy as np
 
 from savant.deepstream.drawfunc import NvDsDrawFunc

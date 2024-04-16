@@ -1,4 +1,5 @@
 """DeepStream object attribute utils."""
+
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import pyds

@@ -9,6 +9,7 @@ from common import (
     adapter_docker_image_option,
     build_common_envs,
     build_docker_run_command,
+    build_fps_meter_envs,
     build_zmq_endpoint_envs,
     fps_meter_options,
     run_command,
@@ -732,6 +733,120 @@ def kafka_redis_sink(
         zmq_endpoints=[in_endpoint],
         entrypoint='python',
         args=['-m', 'adapters.python.sinks.kafka_redis'],
+        envs=envs,
+        docker_image=docker_image,
+    )
+    run_command(cmd)
+
+
+@cli.command('multistream-kvs')
+@click.option(
+    '--in-endpoint',
+    default='sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc',
+    help='Adapter input (module output) ZeroMQ socket endpoint.',
+    show_default=True,
+)
+@click.option(
+    '--aws-region',
+    required=True,
+    help='AWS region.',
+)
+@click.option(
+    '--aws-access-key',
+    required=True,
+    help='AWS access key ID.',
+)
+@click.option(
+    '--aws-secret-key',
+    required=True,
+    help='AWS secret access key.',
+)
+@click.option(
+    '--stream-name-prefix',
+    default='',
+    help='Prefix for the stream name. The stream name is generated as <stream-name-prefix><source-id>.',
+    show_default=True,
+)
+@click.option(
+    '--allow-create-stream',
+    is_flag=True,
+    default=False,
+    help='Create KVS stream if it does not exist.',
+)
+@click.option(
+    '--kvssdk-loglevel',
+    default='INFO',
+    help='Log level for the KVS SDK.',
+    show_default=True,
+)
+@click.option(
+    '--buffer-low-threshold',
+    default=30,
+    help='Threshold in seconds when the KVS SDK slows down accepting new frames.',
+    show_default=True,
+)
+@click.option(
+    '--buffer-high-threshold',
+    default=40,
+    help='Threshold in seconds when the KVS SDK stops accepting new frames.',
+    show_default=True,
+)
+@source_id_option(required=False)
+@source_id_prefix_option
+@fps_meter_options
+@adapter_docker_image_option('gstreamer')
+def multistream_kvs_sink(
+    in_endpoint: str,
+    docker_image: str,
+    fps_period_frames: Optional[int],
+    fps_period_seconds: Optional[float],
+    fps_output: Optional[str],
+    aws_region: str,
+    aws_access_key: str,
+    aws_secret_key: str,
+    stream_name_prefix: str,
+    allow_create_stream: bool,
+    kvssdk_loglevel: str,
+    buffer_low_threshold: int,
+    buffer_high_threshold: int,
+    source_id: Optional[str],
+    source_id_prefix: Optional[str],
+):
+    """Sends video stream to KVS.
+
+    Stream name is generated as <stream-name-prefix><source-id>.
+    """
+
+    envs = (
+        build_common_sink_envs(
+            source_id=source_id,
+            source_id_prefix=source_id_prefix,
+            zmq_endpoint=in_endpoint,
+            zmq_type=None,
+            zmq_bind=None,
+        )
+        + build_fps_meter_envs(
+            fps_period_frames=fps_period_frames,
+            fps_period_seconds=fps_period_seconds,
+            fps_output=fps_output,
+        )
+        + [
+            f'AWS_REGION={aws_region}',
+            f'AWS_ACCESS_KEY={aws_access_key}',
+            f'AWS_SECRET_KEY={aws_secret_key}',
+            f'ALLOW_CREATE_STREAM={allow_create_stream}',
+            f'KVSSDK_LOGLEVEL={kvssdk_loglevel}',
+            f'BUFFER_LOW_THRESHOLD={buffer_low_threshold}',
+            f'BUFFER_HIGH_THRESHOLD={buffer_high_threshold}',
+        ]
+    )
+    if stream_name_prefix:
+        envs.append(f'STREAM_NAME_PREFIX={stream_name_prefix}')
+
+    cmd = build_docker_run_command(
+        f'sink-multistream-kvs-{uuid.uuid4().hex}',
+        zmq_endpoints=[in_endpoint],
+        entrypoint='/opt/savant/adapters/gst/sinks/multistream_kvs.py',
         envs=envs,
         docker_image=docker_image,
     )

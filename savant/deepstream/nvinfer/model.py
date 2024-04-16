@@ -1,4 +1,5 @@
 """Gst-nvinfer model configuration templates."""
+
 from dataclasses import dataclass
 from enum import Enum
 from typing import List, Optional
@@ -98,7 +99,7 @@ class NvInferModel(Model):
     for a model. If not set, then input will default to entire frame.
     """
 
-    format: NvInferModelFormat = MISSING
+    format: Optional[NvInferModelFormat] = None
     """Model file format.
 
     Example
@@ -183,7 +184,7 @@ NVINFER_DEFAULT_OBJECT_SELECTOR = PyFunc(
 
 @dataclass
 class NvInferObjectModelOutputObject(ObjectModelOutputObject):
-    """NvInferObjectModel output objects configuration template.."""
+    """NvInferObjectModel output objects configuration template."""
 
     selector: PyFunc = NVINFER_DEFAULT_OBJECT_SELECTOR
     """Model output selector."""

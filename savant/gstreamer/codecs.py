@@ -1,4 +1,5 @@
 """Gst codecs."""
+
 from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Optional

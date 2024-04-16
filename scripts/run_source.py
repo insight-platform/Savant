@@ -27,6 +27,15 @@ sync_option = click.option(
     default=False,
     help='Send frames from source synchronously (i.e. at the source file rate).',
 )
+absolute_ts_option = click.option(
+    '--use-absolute-timestamps',
+    is_flag=True,
+    default=False,
+    help=(
+        'Put absolute timestamps into the frames, i.e. the timestamps of the '
+        'frames start from the time of adapter launch.'
+    ),
+)
 
 
 def output_endpoint_options(func):
@@ -69,6 +78,7 @@ def files_source(
     out_type: str,
     out_bind: bool,
     sync: bool,
+    use_absolute_timestamps: Optional[bool],
     docker_image: str,
     fps_period_frames: Optional[int],
     fps_period_seconds: Optional[float],
@@ -105,6 +115,7 @@ def files_source(
             zmq_endpoint=out_endpoint,
             zmq_type=out_type,
             zmq_bind=out_bind,
+            use_absolute_timestamps=use_absolute_timestamps,
         )
         + [f'LOCATION={location}', f'FILE_TYPE={file_type}']
         + envs
@@ -144,6 +155,7 @@ def files_source(
 )
 @common_options
 @sync_option
+@absolute_ts_option
 @adapter_docker_image_option('gstreamer')
 @click.argument('location', required=True)
 def videos_source(
@@ -152,6 +164,7 @@ def videos_source(
     out_type: str,
     out_bind: bool,
     sync: bool,
+    use_absolute_timestamps: Optional[bool],
     docker_image: str,
     fps_period_frames: Optional[int],
     fps_period_seconds: Optional[float],
@@ -181,6 +194,7 @@ def videos_source(
             f'READ_METADATA={read_metadata}',
             f'EOS_ON_FILE_END={eos_on_file_end}',
         ],
+        use_absolute_timestamps=use_absolute_timestamps,
     )
 
 
@@ -223,6 +237,7 @@ def videos_source(
 )
 @common_options
 @sync_option
+@absolute_ts_option
 @adapter_docker_image_option('gstreamer')
 @click.argument('location', required=True)
 def video_loop_source(
@@ -231,6 +246,7 @@ def video_loop_source(
     out_type: str,
     out_bind: bool,
     sync: bool,
+    use_absolute_timestamps: Optional[bool],
     docker_image: str,
     fps_period_frames: Optional[int],
     fps_period_seconds: Optional[float],
@@ -277,6 +293,7 @@ def video_loop_source(
         envs=envs,
         entrypoint='/opt/savant/adapters/gst/sources/video_loop.sh',
         extra_volumes=volumes,
+        use_absolute_timestamps=use_absolute_timestamps,
     )
 
 
@@ -322,6 +339,7 @@ def video_loop_source(
 @output_endpoint_options
 @fps_meter_options
 @sync_option
+@absolute_ts_option
 @adapter_docker_image_option('gstreamer')
 @detach_option
 @click.argument('location', required=True)
@@ -330,6 +348,7 @@ def multi_stream_source(
     out_type: str,
     out_bind: bool,
     sync: bool,
+    use_absolute_timestamps: Optional[bool],
     docker_image: str,
     detach: bool,
     fps_period_frames: Optional[int],
@@ -382,6 +401,7 @@ def multi_stream_source(
         envs=envs,
         entrypoint='/opt/savant/adapters/gst/sources/multi_stream.sh',
         extra_volumes=volumes,
+        use_absolute_timestamps=use_absolute_timestamps,
     )
 
 
@@ -413,6 +433,7 @@ def multi_stream_source(
 )
 @common_options
 @sync_option
+@absolute_ts_option
 @adapter_docker_image_option('gstreamer')
 @click.argument('location', required=True)
 def images_source(
@@ -421,6 +442,7 @@ def images_source(
     out_type: str,
     out_bind: bool,
     sync: bool,
+    use_absolute_timestamps: Optional[bool],
     docker_image: str,
     fps_period_frames: Optional[int],
     fps_period_seconds: Optional[float],
@@ -453,6 +475,7 @@ def images_source(
             f'READ_METADATA={read_metadata}',
             f'EOS_ON_FILE_END={eos_on_file_end}',
         ],
+        use_absolute_timestamps=use_absolute_timestamps,
     )
 
 
@@ -485,6 +508,7 @@ def images_source(
     help='Log level for FFmpeg.',
     show_default=True,
 )
+@absolute_ts_option
 @adapter_docker_image_option('gstreamer')
 @click.argument('rtsp_uri', required=True)
 def rtsp_source(
@@ -497,6 +521,7 @@ def rtsp_source(
     buffer_len: int,
     ffmpeg_loglevel: str,
     rtsp_transport: str,
+    use_absolute_timestamps: Optional[bool],
     docker_image: str,
     fps_period_frames: Optional[int],
     fps_period_seconds: Optional[float],
@@ -513,6 +538,7 @@ def rtsp_source(
         zmq_endpoint=out_endpoint,
         zmq_type=out_type,
         zmq_bind=out_bind,
+        use_absolute_timestamps=use_absolute_timestamps,
     ) + [
         f'RTSP_URI={rtsp_uri}',
         f'RTSP_TRANSPORT={rtsp_transport}',
@@ -592,6 +618,7 @@ def rtsp_source(
     show_default=True,
 )
 @common_options
+@absolute_ts_option
 @adapter_docker_image_option('gstreamer')
 @click.argument('camera_name', required=False)
 def gige_cam_source(
@@ -599,6 +626,7 @@ def gige_cam_source(
     out_endpoint: str,
     out_type: str,
     out_bind: bool,
+    use_absolute_timestamps: Optional[bool],
     docker_image: str,
     fps_period_frames: Optional[int],
     fps_period_seconds: Optional[float],
@@ -647,6 +675,7 @@ def gige_cam_source(
         zmq_endpoint=out_endpoint,
         zmq_type=out_type,
         zmq_bind=out_bind,
+        use_absolute_timestamps=use_absolute_timestamps,
     )
 
     envs_dict = {
@@ -719,6 +748,7 @@ def gige_cam_source(
     '--device',
     help='Device to mount to the container (e.g. "/dev/video0").',
 )
+@absolute_ts_option
 @adapter_docker_image_option('gstreamer')
 @click.argument('uri', required=True)
 def ffmpeg_source(
@@ -732,6 +762,7 @@ def ffmpeg_source(
     buffer_len: int,
     ffmpeg_loglevel: str,
     device: Optional[str],
+    use_absolute_timestamps: Optional[bool],
     docker_image: str,
     fps_period_frames: Optional[int],
     fps_period_seconds: Optional[float],
@@ -748,6 +779,7 @@ def ffmpeg_source(
         zmq_endpoint=out_endpoint,
         zmq_type=out_type,
         zmq_bind=out_bind,
+        use_absolute_timestamps=use_absolute_timestamps,
     ) + [
         f'URI={uri}',
         f'BUFFER_LEN={buffer_len}',
@@ -919,6 +951,146 @@ def kafka_redis_source(
         args=['-m', 'adapters.python.sources.kafka_redis'],
         envs=envs,
         docker_image=docker_image,
+    )
+    run_command(cmd)
+
+
+@cli.command('kvs')
+@click.option(
+    '--out-endpoint',
+    default='pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc',
+    help='Adapter output (module input) ZeroMQ socket endpoint.',
+    show_default=True,
+)
+@click.option(
+    '--aws-region',
+    required=True,
+    help='AWS region.',
+)
+@click.option(
+    '--aws-access-key',
+    required=True,
+    help='AWS access key ID.',
+)
+@click.option(
+    '--aws-secret-key',
+    required=True,
+    help='AWS secret access key.',
+)
+@click.option(
+    '--stream-name',
+    required=True,
+    help='Name of the Kinesis Video Stream.',
+)
+@click.option(
+    '--timestamp',
+    required=False,
+    help=(
+        'Either timestamp in format "%Y-%m-%dT%H:%M:%S" or delay from current '
+        'time in "-<delay>(s\|m)". E.g. "2024-03-12T06:57:00", "-30s", "-1m".'
+    ),
+)
+@click.option(
+    '--no-playing',
+    is_flag=True,
+    default=False,
+    help='Do not start playing stream immediately.',
+)
+@click.option(
+    '--api-port',
+    default=18367,
+    help='Port for the REST API. This port is always published.',
+    show_default=True,
+)
+@click.option(
+    '--save-state',
+    is_flag=True,
+    default=False,
+    help='Save state to the state file.',
+)
+@click.option(
+    '--state-path',
+    default='/state/state.json',
+    help='Path to the state file. Ignored if --save-state is not set.',
+    show_default=True,
+)
+@click.option(
+    '--mount-state-path',
+    required=False,
+    help=(
+        'Where to mount the directory with the state file. '
+        'Ignored if --save-state is not set.'
+    ),
+)
+@source_id_option(required=True)
+@sync_option
+@fps_meter_options
+@adapter_docker_image_option('gstreamer')
+def kvs_source(
+    source_id: str,
+    out_endpoint: str,
+    sync: bool,
+    aws_region: str,
+    aws_access_key: str,
+    aws_secret_key: str,
+    stream_name: str,
+    timestamp: Optional[str],
+    no_playing: bool,
+    api_port: int,
+    save_state: bool,
+    state_path: str,
+    mount_state_path: Optional[str],
+    fps_period_frames: Optional[int],
+    fps_period_seconds: Optional[float],
+    fps_output: Optional[str],
+    docker_image: str,
+):
+    """Read video stream from Kinesis Video Stream.
+
+    REST API is available at http://<container-host>:<api-port>.
+
+    See http://<container-host>:<api-port>/docs for API documentation
+    """
+
+    envs = build_common_envs(
+        source_id=source_id,
+        zmq_endpoint=out_endpoint,
+        zmq_type=None,
+        zmq_bind=None,
+        fps_period_frames=fps_period_frames,
+        fps_period_seconds=fps_period_seconds,
+        fps_output=fps_output,
+    ) + [
+        f'AWS_REGION={aws_region}',
+        f'AWS_ACCESS_KEY={aws_access_key}',
+        f'AWS_SECRET_KEY={aws_secret_key}',
+        f'STREAM_NAME={stream_name}',
+        f'TIMESTAMP={timestamp}',
+        f'PLAYING={not no_playing}',
+        f'API_PORT={api_port}',
+        f'SAVE_STATE={save_state}',
+        f'STATE_PATH={state_path}',
+    ]
+    if save_state and mount_state_path:
+        assert os.path.isabs(
+            state_path
+        ), 'State path must be absolute when mounting state path.'
+        state_dir = os.path.dirname(state_path)
+        assert state_dir != '/', 'State directory must not be root.'
+        volumes = [f'{os.path.abspath(mount_state_path)}:{state_dir}']
+    else:
+        volumes = []
+
+    cmd = build_docker_run_command(
+        f'source-kvs-{source_id}',
+        zmq_endpoints=[out_endpoint],
+        sync=sync,
+        entrypoint='python',
+        args=['-m', 'adapters.gst.sources.kvs'],
+        envs=envs,
+        volumes=volumes,
+        docker_image=docker_image,
+        ports=[(api_port, api_port)],
     )
     run_command(cmd)
 

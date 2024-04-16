@@ -1,4 +1,5 @@
 """ZeroMQ src bin."""
+
 from typing import Optional
 
 from savant_rs.pipeline2 import VideoPipeline

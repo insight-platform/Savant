@@ -2,6 +2,7 @@
 
 Based on code from https://github.com/deepcam-cn/yolov5-face>
 """
+
 from typing import Any, List, Tuple
 
 import numpy as np

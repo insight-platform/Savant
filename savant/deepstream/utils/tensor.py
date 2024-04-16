@@ -1,4 +1,5 @@
 """DeepStream tensor utils."""
+
 import ctypes
 from typing import List, Optional
 

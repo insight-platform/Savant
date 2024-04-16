@@ -1,4 +1,5 @@
 """Gst-nvinfer file configuration."""
+
 import copy
 import re
 from configparser import ConfigParser

@@ -1,4 +1,5 @@
 """Calculator resolver for OmegaConf."""
+
 from simpleeval import simple_eval
 
 

@@ -16,14 +16,26 @@ RUN apt-get update && \
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 10
 
 
-FROM base AS aravis-builder
+FROM base AS base-builder
 
 RUN apt-get update \
     && apt-get install -y \
         build-essential \
         cmake \
-        gettext \
         git \
+        m4 \
+        ninja-build \
+        pkg-config \
+        python3-dev \
+        python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+
+FROM base-builder AS aravis-builder
+
+RUN apt-get update \
+    && apt-get install -y \
+        gettext \
         gobject-introspection \
         gtk-doc-tools \
         libgirepository1.0-dev \
@@ -34,7 +46,6 @@ RUN apt-get update \
         libgtk-3-dev \
         libusb-1.0-0-dev \
         libxml2-dev \
-        ninja-build \
         xsltproc \
     && rm -rf /var/lib/apt/lists/*
 
@@ -57,6 +68,50 @@ RUN meson build \
     && rm -rf build
 
 
+FROM base-builder AS kvs-sdk-builder
+
+RUN apt-get update \
+    && apt-get install -y \
+        libcurl4-openssl-dev \
+        liblog4cplus-dev \
+        libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Build KVS SDK
+ARG KVS_SDK_VERSION=v3.4.1
+RUN git clone --depth 1 --branch ${KVS_SDK_VERSION} https://github.com/awslabs/amazon-kinesis-video-streams-producer-sdk-cpp.git /opt/amazon-kvs-sdk
+WORKDIR /opt/amazon-kvs-sdk/build
+RUN cmake \
+        -DBUILD_GSTREAMER_PLUGIN=OFF \
+        -DBUILD_DEPENDENCIES=OFF \
+        -DBUILD_JNI=OFF \
+        -DCMAKE_INSTALL_PREFIX=../dist \
+        .. \
+    && make \
+    && make install \
+    && find dependency -name "*.so" -exec cp {} ../dist/lib/ \;
+
+# Build bindings for KVS SDK
+WORKDIR /opt/pykvssdk
+COPY libs/pykvssdk/requirements.txt ./
+RUN python3 -m pip install --no-cache-dir -r requirements.txt
+COPY libs/pykvssdk /opt/pykvssdk
+RUN python3 setup.py bdist_wheel -- \
+      -DBUILD_TYPE=Release \
+      -DKVS_SDK_BASE_DIR=/opt/amazon-kvs-sdk \
+    && rm -rf _skbuild *.egg-info
+
+
+FROM base-builder AS kvs-consumer-builder
+
+RUN git clone \
+        https://github.com/aws-samples/amazon-kinesis-video-streams-consumer-library-for-python.git \
+        /opt/amazon-kinesis-video-streams-consumer-library-for-python \
+    && cd /opt/amazon-kinesis-video-streams-consumer-library-for-python \
+    && git checkout c97c13029163fe83b6904b5a594d6d7f697bdcb8 \
+    && rm -rf .git
+
+
 FROM base
 
 ARG PROJECT_PATH=/opt/savant
@@ -68,10 +123,12 @@ WORKDIR $PROJECT_PATH
 RUN apt-get update && \
     apt-get install --no-install-recommends -y \
       gdb \
-      strace \
+      libcurl4 \
       libice6 \
-      libsm6 && \
-    rm -rf /var/lib/apt/lists/*
+      liblog4cplus-2.0.5 \
+      libsm6 \
+      strace \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY adapters/requirements.txt adapters/requirements-gst.txt adapters/
 RUN python -m pip install --no-cache-dir \
@@ -84,6 +141,13 @@ RUN if [ "$(arch)" = "aarch64" ]; then \
     fi
 
 COPY --from=aravis-builder /build/aravis/dist /usr
+COPY --from=kvs-sdk-builder /opt/amazon-kvs-sdk/dist/lib /opt/amazon-kvs-sdk/lib
+ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/opt/amazon-kvs-sdk/lib"
+COPY --from=kvs-sdk-builder /opt/pykvssdk/dist /opt/pykvssdk/dist
+RUN python -m pip install --no-cache-dir /opt/pykvssdk/dist/*.whl
+COPY --from=kvs-consumer-builder /opt/amazon-kinesis-video-streams-consumer-library-for-python /opt/amazon-kinesis-video-streams-consumer-library-for-python
+RUN python -m pip install --no-cache-dir -r /opt/amazon-kinesis-video-streams-consumer-library-for-python/requirements.txt
+ENV PYTHONPATH="${PYTHONPATH}:/opt/amazon-kinesis-video-streams-consumer-library-for-python"
 
 # install savant-rs
 ARG SAVANT_RS_VERSION

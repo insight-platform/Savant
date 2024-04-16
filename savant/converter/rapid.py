@@ -1,4 +1,5 @@
 """Tensor to bounding box converter."""
+
 from typing import Tuple
 
 import numpy as np

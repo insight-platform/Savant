@@ -1,4 +1,5 @@
 """Analytics module."""
+
 from collections import defaultdict
 
 import numpy as np

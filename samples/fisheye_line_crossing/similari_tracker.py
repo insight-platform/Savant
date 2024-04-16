@@ -1,4 +1,5 @@
 """Similari SORT tracker module."""
+
 import math
 
 from savant_rs.primitives.geometry import RBBox

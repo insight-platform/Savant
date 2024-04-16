@@ -1,4 +1,5 @@
 """Default implementation PyFunc for drawing on frame."""
+
 from typing import Any, Dict, Optional
 
 import cv2

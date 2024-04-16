@@ -1,4 +1,5 @@
 """Buffer processor for DeepStream pipeline."""
+
 from collections import deque
 from heapq import heappop, heappush
 from queue import Queue

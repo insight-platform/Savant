@@ -12,6 +12,7 @@ parameters:
 
 > cat some/module/config.yml | python -m savant.entrypoint
 """
+
 import argparse
 import sys
 

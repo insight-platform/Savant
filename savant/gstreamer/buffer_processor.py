@@ -1,4 +1,5 @@
 """Buffer processor for GStreamer pipeline."""
+
 from abc import ABC, abstractmethod
 from queue import Queue
 from typing import Iterator
