@@ -28,6 +28,7 @@ NESTED_DEMUX_PROPERTIES = {
     in [
         'source-timeout',
         'source-eviction-interval',
+        'quarantine-timeout',
         'max-parallel-streams',
     ]
 }
@@ -111,6 +112,7 @@ class BranchInfo:
     codec: Optional[Codec] = None
     decoder: Optional[Gst.Element] = None
     src_pad: Optional[Gst.GhostPad] = None
+    pad_added_to_bin: bool = False
 
     @property
     def caps_name(self):
@@ -250,6 +252,25 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
                 self.logger.debug('Removing element %s', message.src.get_name())
                 self.remove(message.src)
 
+        if message.type == Gst.MessageType.ERROR:
+            err, debug = message.parse_error()
+            self.logger.warning(
+                'Received error from %s: %s. Debug info: %s.',
+                message.src.get_name(),
+                err,
+                debug,
+            )
+            src: Gst.Element = message.src
+            branch = self._elem_to_branch.get(src)
+            while src is not None and branch is None:
+                src = src.get_parent()
+                if src is not None:
+                    branch = self._elem_to_branch.get(src)
+            if branch is not None:
+                GLib.idle_add(self._remove_branch, branch)
+                # Drop the message to prevent it from being handled by the parent element
+                return
+
         return Gst.Bin.do_handle_message(self, message)
 
     def on_pad_added(self, element: Gst.Element, new_pad: Gst.Pad):
@@ -356,6 +377,7 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
         decoder_pad.set_active(True)
 
         self.add_pad(branch.src_pad)
+        branch.pad_added_to_bin = True
         assert branch.src_pad.set_target(decoder_pad)
         assert branch.src_pad.set_active(True)
         self.logger.debug(
@@ -388,7 +410,9 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
         # do_handle_message deletes branch.decoder when its state changed to NULL
         self.logger.debug('Setting element %s to state NULL', branch.decoder.get_name())
         branch.decoder.set_state(Gst.State.NULL)
+        self.logger.debug('Set element %s to state NULL', branch.decoder.get_name())
 
+        self.logger.debug('Setting state of the bin to PLAYING')
         self.set_state(Gst.State.PLAYING)
         self.logger.info('Branch with source %s removed', branch.source_id)
 
@@ -401,7 +425,8 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
         if branch is None:
             return
         self.logger.debug('Resources of source %s has been released', branch.source_id)
-        self.remove_pad(branch.src_pad)
+        if branch.pad_added_to_bin:
+            self.remove_pad(branch.src_pad)
         del self._branches[branch.source_id]
         branch.lock.set()
         self.logger.debug(

@@ -26,6 +26,7 @@ from savant.utils.logging import LoggerMixin
 
 DEFAULT_SOURCE_TIMEOUT = 60
 DEFAULT_SOURCE_EVICTION_INTERVAL = 15
+DEFAULT_QUARANTINE_TIMEOUT = 60
 OUT_CAPS = Gst.Caps.from_string(';'.join(x.value.caps_with_params for x in Codec))
 
 SAVANT_RS_VIDEO_DEMUX_PROPERTIES = {
@@ -45,6 +46,15 @@ SAVANT_RS_VIDEO_DEMUX_PROPERTIES = {
         0,
         2147483647,
         DEFAULT_SOURCE_EVICTION_INTERVAL,
+        GObject.ParamFlags.READWRITE,
+    ),
+    'quarantine-timeout': (
+        int,
+        'Quarantine timeout',
+        'Timeout before releasing the source from quarantine (in seconds)',
+        0,
+        2147483647,
+        DEFAULT_QUARANTINE_TIMEOUT,
         GObject.ParamFlags.READWRITE,
     ),
     'eos-on-timestamps-reset': (
@@ -153,6 +163,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
         self.eos_on_timestamps_reset = False
         self.source_timeout = DEFAULT_SOURCE_TIMEOUT
         self.source_eviction_interval = DEFAULT_SOURCE_EVICTION_INTERVAL
+        self.quarantine_timeout = DEFAULT_QUARANTINE_TIMEOUT
         self.last_eviction = 0
         self.source_lock = Lock()
         self.is_running = False
@@ -160,6 +171,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
         self.max_parallel_streams: int = 0
         self.video_pipeline: Optional[VideoPipeline] = None
         self.pipeline_stage_name: Optional[str] = None
+        self.quarantine: Dict[str, float] = {}
 
         self.sink_pad: Gst.Pad = Gst.Pad.new_from_template(
             Gst.PadTemplate.new(
@@ -210,6 +222,8 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             return self.source_timeout
         if prop.name == 'source-eviction-interval':
             return self.source_eviction_interval
+        if prop.name == 'quarantine-timeout':
+            return self.quarantine_timeout
         if prop.name == 'eos-on-timestamps-reset':
             return self.eos_on_timestamps_reset
         if prop.name == 'max-parallel-streams':
@@ -226,6 +240,8 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             self.source_timeout = value
         elif prop.name == 'source-eviction-interval':
             self.source_eviction_interval = value
+        elif prop.name == 'quarantine-timeout':
+            self.quarantine_timeout = value
         elif prop.name == 'eos-on-timestamps-reset':
             self.eos_on_timestamps_reset = value
         elif prop.name == 'max-parallel-streams':
@@ -279,6 +295,15 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             self.video_pipeline.delete(savant_frame_meta.idx)
             return Gst.FlowReturn.OK
 
+        if self.source_in_quarantine(video_frame.source_id):
+            self.logger.warning(
+                'Source %s is in quarantine. Skipping frame with PTS %s.',
+                video_frame.source_id,
+                buffer.pts,
+            )
+            self.video_pipeline.delete(savant_frame_meta.idx)
+            return Gst.FlowReturn.OK
+
         frame_info = FrameInfo.build(savant_frame_meta.idx, video_frame)
 
         with self.source_lock:
@@ -324,7 +349,15 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             result: Gst.FlowReturn = source_info.src_pad.push(buffer)
 
         if result != Gst.FlowReturn.OK:
+            self.quarantine[video_frame.source_id] = (
+                time.time() + self.quarantine_timeout
+            )
             self.video_pipeline.delete(savant_frame_meta.idx)
+            with source_info.lock():
+                self.remove_source(source_info, send_eos=False)
+            with self.source_lock:
+                del self.sources[source_info.source_id]
+
         self.logger.debug(
             'Frame with PTS %s from source %s has been processed (%s).',
             buffer.pts,
@@ -332,7 +365,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             result,
         )
 
-        return result
+        return Gst.FlowReturn.OK
 
     def _get_source_info(
         self,
@@ -397,7 +430,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
 
         with source_info.lock():
             if source_info.src_pad is not None:
-                self.send_eos(source_info)
+                self.remove_source(source_info, send_eos=True)
             with self.source_lock:
                 del self.sources[source_id]
 
@@ -415,7 +448,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             for source_id, source_info in list(self.sources.items()):
                 self.logger.debug('Sending EOS to source %s.', source_id)
                 if source_info.src_pad is not None:
-                    self.send_eos(source_info)
+                    self.remove_source(source_info, send_eos=True)
                 del self.sources[source_id]
         self.logger.debug('Emitting shutdown signal.')
         self.emit('shutdown')
@@ -468,7 +501,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
                 frame_params,
             )
             source_info.params = frame_params
-            self.send_eos(source_info)
+            self.remove_source(source_info, send_eos=True)
             return
 
         caps = build_caps(frame_params)
@@ -506,15 +539,16 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
                 'Timestamps on source %s non-monotonous. Resetting source.',
                 source_info.source_id,
             )
-            self.send_eos(source_info)
+            self.remove_source(source_info, send_eos=True)
 
-    def send_eos(self, source_info: SourceInfo):
+    def remove_source(self, source_info: SourceInfo, send_eos: bool):
         """Send EOS event to a src pad."""
-        self.logger.debug(
-            'Sending EOS event to pad %s.',
-            source_info.src_pad.get_name(),
-        )
-        source_info.src_pad.push_event(Gst.Event.new_eos())
+        if send_eos:
+            self.logger.debug(
+                'Sending EOS event to pad %s.',
+                source_info.src_pad.get_name(),
+            )
+            source_info.src_pad.push_event(Gst.Event.new_eos())
         self.logger.debug('Removing pad %s', source_info.src_pad.get_name())
         self.remove_pad(source_info.src_pad)
         if self.video_pipeline is not None:
@@ -542,13 +576,23 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
                 ):
                     self.logger.debug('Source %s has expired', source_id)
                     if source_info.src_pad is not None:
-                        self.send_eos(source_info)
+                        self.remove_source(source_info, send_eos=True)
                     del self.sources[source_id]
         self.logger.debug(
             'Waiting %s seconds for the next eviction loop',
             self.source_eviction_interval,
         )
         time.sleep(self.source_eviction_interval)
+
+    def source_in_quarantine(self, source_id: str):
+        ts = self.quarantine.get(source_id)
+        if ts is None:
+            return False
+        if ts < time.time():
+            del self.quarantine[source_id]
+            return False
+
+        return True
 
 
 # register plugin
