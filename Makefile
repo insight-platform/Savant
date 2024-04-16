@@ -25,6 +25,9 @@ publish-local: build build-adapters-deepstream build-adapters-gstreamer build-ad
 	docker tag savant-adapters-gstreamer$(PLATFORM_SUFFIX) ghcr.io/insight-platform/savant-adapters-gstreamer$(PLATFORM_SUFFIX)
 	docker tag savant-adapters-py$(PLATFORM_SUFFIX) ghcr.io/insight-platform/savant-adapters-py$(PLATFORM_SUFFIX)
 
+publish-local-extra: build-extra
+	docker tag savant-deepstream$(PLATFORM_SUFFIX)-extra ghcr.io/insight-platform/savant-deepstream$(PLATFORM_SUFFIX)-extra
+
 build:
 	docker buildx build \
 		--platform $(PLATFORM) \
