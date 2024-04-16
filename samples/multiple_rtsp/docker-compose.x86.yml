@@ -7,7 +7,7 @@ services:
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
     environment:
-      - RTSP_URI=rtsp://hello.savant.video:8554/stream/stream/city-traffic
+      - RTSP_URI=rtsp://hello.savant.video:8554/gstream/city-traffic
       - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
       - SOURCE_ID=city-traffic
     entrypoint: /opt/savant/adapters/gst/sources/rtsp.sh
@@ -21,7 +21,7 @@ services:
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
     environment:
-      - RTSP_URI=rtsp://hello.savant.video:8554/stream/stream/town-centre
+      - RTSP_URI=rtsp://hello.savant.video:8554/stream/town-centre
       - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
       - SOURCE_ID=town-centre
     entrypoint: /opt/savant/adapters/gst/sources/rtsp.sh
