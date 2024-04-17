@@ -26,7 +26,7 @@ from savant.utils.logging import LoggerMixin
 
 DEFAULT_SOURCE_TIMEOUT = 60
 DEFAULT_SOURCE_EVICTION_INTERVAL = 15
-DEFAULT_QUARANTINE_TIMEOUT = 60
+DEFAULT_QUARANTINE_TIMEOUT = 10
 OUT_CAPS = Gst.Caps.from_string(';'.join(x.value.caps_with_params for x in Codec))
 
 SAVANT_RS_VIDEO_DEMUX_PROPERTIES = {
@@ -352,6 +352,11 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             self.quarantine[video_frame.source_id] = (
                 time.time() + self.quarantine_timeout
             )
+            self.logger.warning(
+                'Source %s added to quarantine for %s seconds.',
+                video_frame.source_id,
+                self.quarantine_timeout,
+            )
             self.video_pipeline.delete(savant_frame_meta.idx)
             with source_info.lock():
                 self.remove_source(source_info, send_eos=False)
@@ -590,6 +595,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             return False
         if ts < time.time():
             del self.quarantine[source_id]
+            self.logger.info('Source %s released from quarantine.', source_id)
             return False
 
         return True

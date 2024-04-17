@@ -177,6 +177,8 @@ pipeline:
       source_timeout: ${oc.decode:${oc.env:SOURCE_TIMEOUT, 10}}
       # Interval between source eviction checks (in seconds).
       source_eviction_interval: ${oc.decode:${oc.env:SOURCE_EVICTION_INTERVAL, 1}}
+      # Timeout before releasing bad source from quarantine (in seconds).
+      quarantine_timeout: ${oc.decode:${oc.env:SOURCE_QUARANTINE_TIMEOUT, 10}}
       # Length of the ingress queue in frames (0 - no limit, default 200).
       ingress_queue_length: ${oc.decode:${oc.env:INGRESS_QUEUE_LENGTH, null}}
       # Size of the ingress queue in bytes (0 - no limit, default 10485760).
