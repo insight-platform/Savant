@@ -5,6 +5,7 @@
 #include "frame_buffer.h"
 #include "consts.h"
 #include "logger.h"
+#include "video_frame.h"
 #include "kvs_wrapper.h"
 
 
@@ -123,8 +124,13 @@ void KvsWrapper::put_frame(
     uint64_t pts,
     uint64_t dts,
     uint64_t duration,
-    bool keyframe
+    bool keyframe,
+    std::string &uuid
 ) {
+    LOG_PYBIND_DEBUG(
+        "Received frame %lu with size %u, keyframe %d, UUID %s.",
+        pts, data_size, keyframe, uuid.c_str()
+    );
     if (keyframe) {
         current_fragment_start_ts = pts;
         LOG_PYBIND_DEBUG(
@@ -156,9 +162,10 @@ void KvsWrapper::put_frame(
     frame->duration = duration / TIME_1NS_TO_100NS;
     frame->flags = keyframe ? FRAME_FLAG_KEY_FRAME : FRAME_FLAG_NONE;
     frame->trackId = DEFAULT_VIDEO_TRACK_ID;
-    frame_buffer->put_frame(frame, keyframe);
-    std::vector<video::KinesisVideoFrame *> pending_frames = std::vector<video::KinesisVideoFrame *>();
-    pending_frames.push_back(frame);
+    auto *_frame = new VideoFrame{frame, uuid};
+    frame_buffer->put_frame(_frame, keyframe);
+    std::vector<VideoFrame *> pending_frames = std::vector<VideoFrame *>();
+    pending_frames.push_back(_frame);
 
     while (!pending_frames.empty()) {
         if (!check_connection()) {
@@ -189,7 +196,11 @@ bool KvsWrapper::stop_sync() {
 }
 
 
-bool KvsWrapper::push_frame(video::KinesisVideoFrame *frame) {
+bool KvsWrapper::push_frame(VideoFrame *frame) {
+    LOG_PYBIND_DEBUG(
+        "Pushing frame with UUID %s to KVS SDK.",
+        frame->uuid.c_str()
+    );
     uint64_t duration_available = state->get_duration_available();
     if (duration_available > high_threshold_100ns) {
         LOG_PYBIND_WARN(
@@ -207,9 +218,24 @@ bool KvsWrapper::push_frame(video::KinesisVideoFrame *frame) {
             DEFAULT_OVERFLOW_PREVENTION_LOW_THR_INTERVAL);
     }
     LOG_PYBIND_DEBUG(
-        "Pushing frame %lu to KVS SDK.", frame->presentationTs);
+        "Pushing frame %lu to KVS SDK.", frame->frame->presentationTs);
 
-    return stream->putFrame(*frame);
+    bool res = stream->putFrame(*frame->frame);
+    if (res) {
+        put_frame_uuid(frame);
+    }
+
+    return res;
+}
+
+
+void KvsWrapper::put_frame_uuid(VideoFrame *frame) {
+    LOG_PYBIND_DEBUG(
+        "Adding frame UUID %s to fragment metadata.", frame->uuid.c_str());
+    if (frame->frame->flags & FRAME_FLAG_KEY_FRAME) {
+        stream->putFragmentMetadata("first-frame-uuid", frame->uuid);
+    }
+    stream->putFragmentMetadata("last-frame-uuid", frame->uuid);
 }
 
 

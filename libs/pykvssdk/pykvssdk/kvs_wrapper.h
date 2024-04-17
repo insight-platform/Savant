@@ -6,9 +6,7 @@
 #include "client_callback_provider.h"
 #include "stream_callback_provider.h"
 #include "frame_buffer.h"
-
-
-namespace video = com::amazonaws::kinesis::video;
+#include "video_frame.h"
 
 
 class KvsWrapper {
@@ -35,7 +33,8 @@ public:
         uint64_t pts,
         uint64_t dts,
         uint64_t duration,
-        bool keyframe
+        bool keyframe,
+        std::string &uuid
     );
 
     bool stop_sync();
@@ -52,7 +51,9 @@ private:
     uint64_t max_fragment_duration;
     uint64_t current_fragment_start_ts = 0;
 
-    bool push_frame(video::KinesisVideoFrame *frame);
+    bool push_frame(VideoFrame *frame);
 
     bool check_connection();
+
+    void put_frame_uuid(VideoFrame *frame);
 };
