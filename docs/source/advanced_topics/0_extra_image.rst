@@ -8,7 +8,7 @@ Savant provides two types of module images for both Jetson and X86+dGPU:
 
 The basic image is a minimal image that contains only the necessary components to run the module.
 
-The extra-dependencies image contains additional dependencies that are not required for the module to run, but are useful in particular situations, for development and debugging: PyTorch, Torchvision, Torchaudio, TensorRT, Torch2TRT, ONNX, ONNX Runtime (GPU), PyCUDA, Cython, Pandas, Polars, Scikit-learn, JupyterLab.
+The extra-dependencies image contains additional dependencies that are not required for the module to run, but are useful in particular situations, for development and debugging: PyTorch, Torchvision, Torchaudio, TensorRT, Torch2TRT, ONNX, Onnx Runtime (GPU), PyCUDA, Cython, Pandas, Polars, Scikit-learn, JupyterLab.
 
 Minimal images:
 

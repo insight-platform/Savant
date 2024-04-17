@@ -87,11 +87,12 @@ class MinMaxSizeBBoxSelector(BaseSelector):
         )
 
 
-@nb.njit('f4[:, :](f4[:, :], f4, f4, u2, u2, u2, u2)', nogil=True, cache=True)
+@nb.njit('f4[:, :](f4[:, :], f4, f4, u2, u2, u2, u2, u2)', nogil=True, cache=True)
 def default_selector(
     bbox_tensor: np.ndarray,
     confidence_threshold: float = 0.0,
     nms_iou_threshold: float = 0.0,
+    top_k: int = 0,
     min_width: int = 0,
     min_height: int = 0,
     max_width: int = 0,
@@ -102,6 +103,7 @@ def default_selector(
     :param bbox_tensor: tensor(class_id, confidence, left, top, width, height)
     :param confidence_threshold: confidence threshold
     :param nms_iou_threshold: nms iou threshold
+    :param top_k: top k bboxes to keep
     :param min_width: minimal bbox width
     :param min_height: minimal bbox height
     :param max_width: maximum bbox width
@@ -129,7 +131,8 @@ def default_selector(
             selected_bbox_tensor[:, 2:6],
             selected_bbox_tensor[:, 1],
             nms_iou_threshold,
-            selected_bbox_tensor.shape[0],  # should specify default with numba.njit
+            # should specify default with numba.njit
+            top_k if top_k > 0 else selected_bbox_tensor.shape[0],
         )
         selected_bbox_tensor = selected_bbox_tensor[keep]
 
@@ -141,6 +144,7 @@ class BBoxSelector(BaseSelector):
 
     :param confidence_threshold: confidence threshold
     :param nms_iou_threshold: nms iou threshold
+    :param top_k: top k bboxes to keep
     :param min_width: minimal bbox width
     :param min_height: minimal bbox height
     :param max_width: maximum bbox width
@@ -151,6 +155,7 @@ class BBoxSelector(BaseSelector):
         self,
         confidence_threshold: float = 0.5,
         nms_iou_threshold: float = 0.5,
+        top_k: int = 0,
         min_width: int = 0,
         min_height: int = 0,
         max_width: int = 0,
@@ -160,6 +165,7 @@ class BBoxSelector(BaseSelector):
         super().__init__(**kwargs)
         self.confidence_threshold = confidence_threshold
         self.nms_iou_threshold = nms_iou_threshold
+        self.top_k = top_k
         self.min_width = min_width
         self.min_height = min_height
         self.max_width = max_width
@@ -175,6 +181,7 @@ class BBoxSelector(BaseSelector):
             bbox_tensor=bbox_tensor,
             confidence_threshold=self.confidence_threshold,
             nms_iou_threshold=self.nms_iou_threshold,
+            top_k=self.top_k,
             min_width=self.min_width,
             min_height=self.min_height,
             max_width=self.max_width,

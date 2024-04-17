@@ -13,13 +13,12 @@ pipeline:
     - element: nvinfer@detector
       name: DashCamNet
       model:
-        format: etlt
         remote:
-          url: "https://api.ngc.nvidia.com/v2/models/nvidia/tao/dashcamnet/versions/pruned_v1.0.2/zip"
-        model_file: resnet18_dashcamnet_pruned.etlt
+          url: "https://api.ngc.nvidia.com/v2/models/nvidia/tao/dashcamnet/versions/pruned_v1.0.4/zip"
+        model_file: resnet18_dashcamnet_pruned.onnx
         # label_file: labels.txt
         precision: int8
-        int8_calib_file: dashcamnet_int8.txt
+        int8_calib_file: resnet18_dashcamnet_pruned_int8.txt
         batch_size: 1
         input:
           layer_name: input_1
