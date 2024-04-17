@@ -1,10 +1,8 @@
 """Gst-nvinfer model configuration templates."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import List, Optional
-
-from omegaconf import MISSING
 
 from savant.base.model import (
     AttributeModel,
@@ -172,6 +170,11 @@ class NvInferModel(Model):
 
     engine_create_func_name: Optional[str] = None
     """Name of the custom TensorRT CudaEngine creation function."""
+
+    layer_device_precision: List[str] = field(default_factory=list)
+    """Specifies the device type and precision for any layer in the network.
+    List of items of format ``<layer1-name>:<precision>:<device-type>``.
+    """
 
 
 NVINFER_DEFAULT_OBJECT_SELECTOR = PyFunc(
