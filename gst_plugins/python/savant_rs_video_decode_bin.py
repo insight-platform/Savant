@@ -232,44 +232,72 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
 
         Removes source if it posted a change to NULL state.
         """
+        self.logger.debug(
+            'Received message %s from %s',
+            message.type,
+            message.src.get_name(),
+        )
+
         if message.type == Gst.MessageType.STRUCTURE_CHANGE:
+            self.logger.debug(
+                'Received STRUCTURE_CHANGE message from %s: %s',
+                message.src.get_name(),
+                message.parse_structure_change(),
+            )
             # Cannot pass STRUCTURE_CHANGE to Gst.Bin.do_handle_message()
             # gst_structure_set_parent_refcount: assertion 'refcount != NULL' failed
             return
+
         if (
             message.type == Gst.MessageType.STATE_CHANGED
             and message.src in self._elem_to_branch
         ):
-            old, new, pending = message.parse_state_changed()
-            self.logger.debug(
-                'State of element %s changed from %s to %s (%s pending)',
-                message.src.get_name(),
-                old,
-                new,
-                pending,
-            )
-            if new == Gst.State.NULL:
-                self.logger.debug('Removing element %s', message.src.get_name())
-                self.remove(message.src)
+            return self.on_decoder_state_change(message)
 
         if message.type == Gst.MessageType.ERROR:
-            err, debug = message.parse_error()
+            return self.on_error_message(message)
+
+        return Gst.Bin.do_handle_message(self, message)
+
+    def on_decoder_state_change(self, message):
+        old, new, pending = message.parse_state_changed()
+        self.logger.debug(
+            'State of element %s changed from %s to %s (%s pending)',
+            message.src.get_name(),
+            old,
+            new,
+            pending,
+        )
+        if new == Gst.State.NULL:
+            self.logger.debug('Removing element %s', message.src.get_name())
+            self.remove(message.src)
+
+        return Gst.Bin.do_handle_message(self, message)
+
+    def on_error_message(self, message: Gst.Message):
+        err, debug = message.parse_error()
+        self.logger.warning(
+            'Received error from %s: %s. Debug info: %s.',
+            message.src.get_name(),
+            err,
+            debug,
+        )
+        src: Gst.Element = message.src
+        for pad in src.iterate_pads():
+            caps: Gst.Caps = pad.get_current_caps()
             self.logger.warning(
-                'Received error from %s: %s. Debug info: %s.',
-                message.src.get_name(),
-                err,
-                debug,
+                'Pad %s.%s has caps %s', src.get_name(), pad.get_name(), caps
             )
-            src: Gst.Element = message.src
-            branch = self._elem_to_branch.get(src)
-            while src is not None and branch is None:
-                src = src.get_parent()
-                if src is not None:
-                    branch = self._elem_to_branch.get(src)
-            if branch is not None:
-                GLib.idle_add(self._remove_branch, branch)
-                # Drop the message to prevent it from being handled by the parent element
-                return
+        branch = self._elem_to_branch.get(src)
+        while src is not None and branch is None:
+            src = src.get_parent()
+            if src is not None:
+                branch = self._elem_to_branch.get(src)
+
+        if branch is not None:
+            GLib.idle_add(self._remove_branch, branch)
+            # Drop the message to prevent it from being handled by the parent element
+            return
 
         return Gst.Bin.do_handle_message(self, message)
 

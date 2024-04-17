@@ -296,7 +296,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             return Gst.FlowReturn.OK
 
         if self.source_in_quarantine(video_frame.source_id):
-            self.logger.warning(
+            self.logger.debug(
                 'Source %s is in quarantine. Skipping frame with PTS %s.',
                 video_frame.source_id,
                 buffer.pts,
