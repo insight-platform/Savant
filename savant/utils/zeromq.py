@@ -17,6 +17,7 @@ from savant_rs.zmq import (
     ReaderSocketType,
     TopicPrefixSpec,
     WriterSocketType,
+    ReaderResultBlacklisted,
 )
 
 from savant.utils.logging import get_logger
@@ -54,6 +55,8 @@ class Defaults:
     RECEIVE_HWM = 50
     SEND_HWM = 50
     RECEIVE_RETRIES = 3
+    BLACKLIST_SIZE = 1024
+    BLACKLIST_TTL = 10
 
 
 class BaseZeroMQSource(ABC):
@@ -80,6 +83,8 @@ class BaseZeroMQSource(ABC):
         source_id: Optional[str] = None,
         source_id_prefix: Optional[str] = None,
         set_ipc_socket_permissions: bool = True,
+        blacklist_size: int = Defaults.BLACKLIST_SIZE,
+        blacklist_ttl: int = Defaults.BLACKLIST_TTL,
     ):
         logger.debug(
             'Initializing ZMQ source: socket %s, type %s, bind %s.',
@@ -106,6 +111,8 @@ class BaseZeroMQSource(ABC):
         if bind:
             # IPC permissions can only be set for bind sockets.
             config_builder.with_fix_ipc_permissions(set_ipc_socket_permissions)
+        config_builder.with_source_blacklist_size(blacklist_size)
+        config_builder.with_source_blacklist_ttl(blacklist_ttl)
 
         self.reader = self._create_zmq_reader(config_builder.build())
 
@@ -139,6 +146,8 @@ class BaseZeroMQSource(ABC):
             logger.debug('Timeout exceeded when receiving the next frame')
         elif isinstance(result, ReaderResultPrefixMismatch):
             logger.debug('Skipping message from topic %s', result.topic)
+        elif isinstance(result, ReaderResultBlacklisted):
+            logger.debug('Skipping blacklisted message from topic %s', result.topic)
 
         return None
 

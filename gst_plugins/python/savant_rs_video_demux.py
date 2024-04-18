@@ -10,6 +10,7 @@ from typing import Dict, NamedTuple, Optional, Union
 from pygstsavantframemeta import gst_buffer_get_savant_frame_meta
 from savant_rs.pipeline2 import VideoPipeline
 from savant_rs.primitives import VideoFrame
+from savant_rs.zmq import BlockingReader, NonBlockingReader
 
 from gst_plugins.python.savant_rs_video_demux_common import FrameParams, build_caps
 from savant.gstreamer import GObject, Gst
@@ -75,6 +76,12 @@ SAVANT_RS_VIDEO_DEMUX_PROPERTIES = {
         'Name of the pipeline stage.',
         'Name of the pipeline stage.',
         None,
+        GObject.ParamFlags.READWRITE,
+    ),
+    'zeromq-reader': (
+        object,
+        'ZeroMQ reader from savant-rs.',
+        'ZeroMQ reader from savant-rs. Needed to blacklist sources.',
         GObject.ParamFlags.READWRITE,
     ),
 }
@@ -160,6 +167,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
         self.max_parallel_streams: int = 0
         self.video_pipeline: Optional[VideoPipeline] = None
         self.pipeline_stage_name: Optional[str] = None
+        self.zeromq_reader: Optional[Union[BlockingReader, NonBlockingReader]] = None
 
         self.sink_pad: Gst.Pad = Gst.Pad.new_from_template(
             Gst.PadTemplate.new(
@@ -218,6 +226,8 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             return self.video_pipeline
         if prop.name == 'pipeline-stage-name':
             return self.pipeline_stage_name
+        if prop.name == 'zeromq-reader':
+            return self.zeromq_reader
         raise AttributeError(f'Unknown property {prop.name}')
 
     def do_set_property(self, prop, value):
@@ -234,6 +244,8 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             self.video_pipeline = value
         elif prop.name == 'pipeline-stage-name':
             self.pipeline_stage_name = value
+        elif prop.name == 'zeromq-reader':
+            self.zeromq_reader = value
         else:
             raise AttributeError(f'Unknown property {prop.name}')
 
@@ -274,6 +286,17 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
         if not self.is_running:
             self.logger.info(
                 'Demuxer is not running. Skipping buffer with timestamp %s.',
+                buffer.pts,
+            )
+            self.video_pipeline.delete(savant_frame_meta.idx)
+            return Gst.FlowReturn.OK
+
+        if self.zeromq_reader is not None and self.zeromq_reader.is_blacklisted(
+            video_frame.source_id.encode()
+        ):
+            self.logger.debug(
+                'Source %s is in blacklist. Skipping frame with PTS %s.',
+                video_frame.source_id,
                 buffer.pts,
             )
             self.video_pipeline.delete(savant_frame_meta.idx)
@@ -324,7 +347,22 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             result: Gst.FlowReturn = source_info.src_pad.push(buffer)
 
         if result != Gst.FlowReturn.OK:
-            self.video_pipeline.delete(savant_frame_meta.idx)
+            if self.zeromq_reader is not None:
+                self.zeromq_reader.blacklist_source(video_frame.source_id.encode())
+                self.video_pipeline.delete(savant_frame_meta.idx)
+                with source_info.lock():
+                    self.remove_source(source_info, send_eos=False)
+                with self.source_lock:
+                    del self.sources[source_info.source_id]
+                result = Gst.FlowReturn.OK
+            else:
+                self.logger.error(
+                    'Failed to push frame with PTS %s from source %s: %s',
+                    buffer.pts,
+                    video_frame.source_id,
+                    result,
+                )
+
         self.logger.debug(
             'Frame with PTS %s from source %s has been processed (%s).',
             buffer.pts,
@@ -397,7 +435,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
 
         with source_info.lock():
             if source_info.src_pad is not None:
-                self.send_eos(source_info)
+                self.remove_source(source_info, send_eos=True)
             with self.source_lock:
                 del self.sources[source_id]
 
@@ -415,7 +453,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             for source_id, source_info in list(self.sources.items()):
                 self.logger.debug('Sending EOS to source %s.', source_id)
                 if source_info.src_pad is not None:
-                    self.send_eos(source_info)
+                    self.remove_source(source_info, send_eos=True)
                 del self.sources[source_id]
         self.logger.debug('Emitting shutdown signal.')
         self.emit('shutdown')
@@ -468,7 +506,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
                 frame_params,
             )
             source_info.params = frame_params
-            self.send_eos(source_info)
+            self.remove_source(source_info, send_eos=True)
             return
 
         caps = build_caps(frame_params)
@@ -506,15 +544,16 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
                 'Timestamps on source %s non-monotonous. Resetting source.',
                 source_info.source_id,
             )
-            self.send_eos(source_info)
+            self.remove_source(source_info, send_eos=True)
 
-    def send_eos(self, source_info: SourceInfo):
+    def remove_source(self, source_info: SourceInfo, send_eos: bool):
         """Send EOS event to a src pad."""
-        self.logger.debug(
-            'Sending EOS event to pad %s.',
-            source_info.src_pad.get_name(),
-        )
-        source_info.src_pad.push_event(Gst.Event.new_eos())
+        if send_eos:
+            self.logger.debug(
+                'Sending EOS event to pad %s.',
+                source_info.src_pad.get_name(),
+            )
+            source_info.src_pad.push_event(Gst.Event.new_eos())
         self.logger.debug('Removing pad %s', source_info.src_pad.get_name())
         self.remove_pad(source_info.src_pad)
         if self.video_pipeline is not None:
@@ -542,7 +581,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
                 ):
                     self.logger.debug('Source %s has expired', source_id)
                     if source_info.src_pad is not None:
-                        self.send_eos(source_info)
+                        self.remove_source(source_info, send_eos=True)
                     del self.sources[source_id]
         self.logger.debug(
             'Waiting %s seconds for the next eviction loop',

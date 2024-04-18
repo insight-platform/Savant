@@ -19,12 +19,12 @@ DEFAULT_INGRESS_QUEUE_SIZE = 10485760
 NESTED_ZEROMQ_SRC_PROPERTIES = {
     k: v
     for k, v in ZEROMQ_SRC_PROPERTIES.items()
-    if k not in ['pipeline', 'pipeline-stage-name']
+    if k not in ['pipeline', 'pipeline-stage-name', 'zeromq-reader']
 }
 NESTED_SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES = {
     k: v
     for k, v in SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES.items()
-    if k not in ['pipeline']
+    if k not in ['pipeline', 'zeromq-reader']
 }
 
 ZEROMQ_SOURCE_BIN_PROPERTIES = {
@@ -155,6 +155,30 @@ class ZeroMQSourceBin(LoggerMixin, Gst.Bin):
             self._decodebin.set_property(prop.name, value)
         else:
             raise AttributeError(f'Unknown property {prop.name}')
+
+    def do_handle_message(self, message: Gst.Message):
+        self.logger.debug(
+            'Received message %s from %s',
+            message.type,
+            message.src.get_name(),
+        )
+        if (
+            message.type == Gst.MessageType.STATE_CHANGED
+            and message.src == self._source
+        ):
+            old, new, pending = message.parse_state_changed()
+            self.logger.debug(
+                'State of %s changed from %s to %s',
+                message.src.get_name(),
+                old,
+                new,
+            )
+            if old == Gst.State.READY and new != Gst.State.NULL:
+                zeromq_reader = self._source.get_property('zeromq-reader')
+                self.logger.debug('Zeromq-reader is %s', zeromq_reader)
+                self._decodebin.set_property('zeromq-reader', zeromq_reader)
+
+        return Gst.Bin.do_handle_message(self, message)
 
     # pylint: disable=unused-argument
     def on_pad_added(self, element: Gst.Element, pad: Gst.Pad):
