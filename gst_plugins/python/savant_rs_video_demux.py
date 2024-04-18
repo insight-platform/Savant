@@ -10,6 +10,7 @@ from typing import Dict, NamedTuple, Optional, Union
 from pygstsavantframemeta import gst_buffer_get_savant_frame_meta
 from savant_rs.pipeline2 import VideoPipeline
 from savant_rs.primitives import VideoFrame
+from savant_rs.zmq import BlockingReader, NonBlockingReader
 
 from gst_plugins.python.savant_rs_video_demux_common import FrameParams, build_caps
 from savant.gstreamer import GObject, Gst
@@ -26,7 +27,6 @@ from savant.utils.logging import LoggerMixin
 
 DEFAULT_SOURCE_TIMEOUT = 60
 DEFAULT_SOURCE_EVICTION_INTERVAL = 15
-DEFAULT_QUARANTINE_TIMEOUT = 10
 OUT_CAPS = Gst.Caps.from_string(';'.join(x.value.caps_with_params for x in Codec))
 
 SAVANT_RS_VIDEO_DEMUX_PROPERTIES = {
@@ -46,15 +46,6 @@ SAVANT_RS_VIDEO_DEMUX_PROPERTIES = {
         0,
         2147483647,
         DEFAULT_SOURCE_EVICTION_INTERVAL,
-        GObject.ParamFlags.READWRITE,
-    ),
-    'quarantine-timeout': (
-        int,
-        'Quarantine timeout',
-        'Timeout before releasing the source from quarantine (in seconds)',
-        0,
-        2147483647,
-        DEFAULT_QUARANTINE_TIMEOUT,
         GObject.ParamFlags.READWRITE,
     ),
     'eos-on-timestamps-reset': (
@@ -85,6 +76,12 @@ SAVANT_RS_VIDEO_DEMUX_PROPERTIES = {
         'Name of the pipeline stage.',
         'Name of the pipeline stage.',
         None,
+        GObject.ParamFlags.READWRITE,
+    ),
+    'zeromq-reader': (
+        object,
+        'ZeroMQ reader from savant-rs.',
+        'ZeroMQ reader from savant-rs. Needed to blacklist sources.',
         GObject.ParamFlags.READWRITE,
     ),
 }
@@ -163,7 +160,6 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
         self.eos_on_timestamps_reset = False
         self.source_timeout = DEFAULT_SOURCE_TIMEOUT
         self.source_eviction_interval = DEFAULT_SOURCE_EVICTION_INTERVAL
-        self.quarantine_timeout = DEFAULT_QUARANTINE_TIMEOUT
         self.last_eviction = 0
         self.source_lock = Lock()
         self.is_running = False
@@ -171,7 +167,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
         self.max_parallel_streams: int = 0
         self.video_pipeline: Optional[VideoPipeline] = None
         self.pipeline_stage_name: Optional[str] = None
-        self.quarantine: Dict[str, float] = {}
+        self.zeromq_reader: Optional[Union[BlockingReader, NonBlockingReader]] = None
 
         self.sink_pad: Gst.Pad = Gst.Pad.new_from_template(
             Gst.PadTemplate.new(
@@ -222,8 +218,6 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             return self.source_timeout
         if prop.name == 'source-eviction-interval':
             return self.source_eviction_interval
-        if prop.name == 'quarantine-timeout':
-            return self.quarantine_timeout
         if prop.name == 'eos-on-timestamps-reset':
             return self.eos_on_timestamps_reset
         if prop.name == 'max-parallel-streams':
@@ -232,6 +226,8 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             return self.video_pipeline
         if prop.name == 'pipeline-stage-name':
             return self.pipeline_stage_name
+        if prop.name == 'zeromq-reader':
+            return self.zeromq_reader
         raise AttributeError(f'Unknown property {prop.name}')
 
     def do_set_property(self, prop, value):
@@ -240,8 +236,6 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             self.source_timeout = value
         elif prop.name == 'source-eviction-interval':
             self.source_eviction_interval = value
-        elif prop.name == 'quarantine-timeout':
-            self.quarantine_timeout = value
         elif prop.name == 'eos-on-timestamps-reset':
             self.eos_on_timestamps_reset = value
         elif prop.name == 'max-parallel-streams':
@@ -250,6 +244,8 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             self.video_pipeline = value
         elif prop.name == 'pipeline-stage-name':
             self.pipeline_stage_name = value
+        elif prop.name == 'zeromq-reader':
+            self.zeromq_reader = value
         else:
             raise AttributeError(f'Unknown property {prop.name}')
 
@@ -295,9 +291,11 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             self.video_pipeline.delete(savant_frame_meta.idx)
             return Gst.FlowReturn.OK
 
-        if self.source_in_quarantine(video_frame.source_id):
+        if self.zeromq_reader is not None and self.zeromq_reader.is_blacklisted(
+            video_frame.source_id.encode()
+        ):
             self.logger.debug(
-                'Source %s is in quarantine. Skipping frame with PTS %s.',
+                'Source %s is in blacklist. Skipping frame with PTS %s.',
                 video_frame.source_id,
                 buffer.pts,
             )
@@ -349,19 +347,24 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             result: Gst.FlowReturn = source_info.src_pad.push(buffer)
 
         if result != Gst.FlowReturn.OK:
-            self.quarantine[video_frame.source_id] = (
-                time.time() + self.quarantine_timeout
-            )
-            self.logger.warning(
-                'Source %s added to quarantine for %s seconds.',
-                video_frame.source_id,
-                self.quarantine_timeout,
-            )
-            self.video_pipeline.delete(savant_frame_meta.idx)
-            with source_info.lock():
-                self.remove_source(source_info, send_eos=False)
-            with self.source_lock:
-                del self.sources[source_info.source_id]
+            if self.zeromq_reader is not None:
+                self.zeromq_reader.blacklist_source(video_frame.source_id.encode())
+                self.logger.warning(
+                    'Source %s added to blacklist.', video_frame.source_id
+                )
+                self.video_pipeline.delete(savant_frame_meta.idx)
+                with source_info.lock():
+                    self.remove_source(source_info, send_eos=False)
+                with self.source_lock:
+                    del self.sources[source_info.source_id]
+                result = Gst.FlowReturn.OK
+            else:
+                self.logger.error(
+                    'Failed to push frame with PTS %s from source %s: %s',
+                    buffer.pts,
+                    video_frame.source_id,
+                    result,
+                )
 
         self.logger.debug(
             'Frame with PTS %s from source %s has been processed (%s).',
@@ -370,7 +373,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             result,
         )
 
-        return Gst.FlowReturn.OK
+        return result
 
     def _get_source_info(
         self,
@@ -588,17 +591,6 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             self.source_eviction_interval,
         )
         time.sleep(self.source_eviction_interval)
-
-    def source_in_quarantine(self, source_id: str):
-        ts = self.quarantine.get(source_id)
-        if ts is None:
-            return False
-        if ts < time.time():
-            del self.quarantine[source_id]
-            self.logger.info('Source %s released from quarantine.', source_id)
-            return False
-
-        return True
 
 
 # register plugin

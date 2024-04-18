@@ -28,8 +28,8 @@ NESTED_DEMUX_PROPERTIES = {
     in [
         'source-timeout',
         'source-eviction-interval',
-        'quarantine-timeout',
         'max-parallel-streams',
+        'zeromq-reader',
     ]
 }
 SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES = {
