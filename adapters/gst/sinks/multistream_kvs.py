@@ -6,7 +6,17 @@ import time
 from fractions import Fraction
 from typing import Dict, Optional
 
+from pygstsavantframemeta import (
+    gst_buffer_add_savant_frame_meta,
+    gst_buffer_get_savant_frame_meta,
+)
 from pykvssdk import KvsWrapper, configure_logging
+from savant_rs.pipeline2 import (
+    StageFunction,
+    VideoPipeline,
+    VideoPipelineConfiguration,
+    VideoPipelineStagePayloadType,
+)
 from savant_rs.primitives import EndOfStream, VideoFrame
 
 from adapters.python.sinks.chunk_writer import ChunkWriter
@@ -60,11 +70,6 @@ class FpsMeterConfig:
     def __init__(self):
         self.period_seconds = opt_config('FPS_PERIOD_SECONDS', None, float)
         self.period_frames = opt_config('FPS_PERIOD_FRAMES', 1000, int)
-        self.output = opt_config('FPS_OUTPUT', 'stdout')
-        assert self.output in [
-            'stdout',
-            'logger',
-        ], 'FPS_OUTPUT must be "stdout" or "logger"'
 
 
 class Config:
@@ -84,11 +89,13 @@ class KvsWriter(ChunkWriter):
         source_id: str,
         kvs_name: str,
         frame_params: FrameParams,
+        video_pipeline: VideoPipeline,
         config: Config,
     ):
         self.source_id = source_id
         self.kvs_name = kvs_name
         self.frame_params = frame_params
+        self.video_pipeline = video_pipeline
         self.config = config
 
         self.kvs: KvsWrapper = KvsWrapper(
@@ -143,6 +150,18 @@ class KvsWriter(ChunkWriter):
             self.stream_started = True
 
         buffer: Gst.Buffer = sample.get_buffer()
+        savant_frame_meta = gst_buffer_get_savant_frame_meta(buffer)
+        if savant_frame_meta is None:
+            self.logger.warning(
+                'No Savant Frame Metadata found on buffer with PTS %s, skipping.',
+                buffer.pts,
+            )
+            return Gst.FlowReturn.OK
+        video_frame, _ = self.video_pipeline.get_independent_frame(
+            savant_frame_meta.idx
+        )
+        self.video_pipeline.delete(savant_frame_meta.idx)
+
         frame_data: bytes = buffer.extract_dup(0, buffer.get_size())
         self.logger.debug(
             'Sending frame with pts=%s to %s',
@@ -152,11 +171,12 @@ class KvsWriter(ChunkWriter):
         self.kvs.put_frame(
             frame_data,
             len(frame_data),
-            next(self.frame_idx_gen),
+            savant_frame_meta.idx,
             buffer.pts,
             buffer.dts,
             buffer.duration,
             not buffer.has_flags(Gst.BufferFlags.DELTA_UNIT),
+            video_frame.uuid,
         )
 
         return Gst.FlowReturn.OK
@@ -197,6 +217,8 @@ class KvsWriter(ChunkWriter):
         buffer.duration = frame.duration
         if not frame.keyframe:
             buffer.set_flags(Gst.BufferFlags.DELTA_UNIT)
+        frame_idx = self.video_pipeline.add_frame('kvs-sink', frame)
+        gst_buffer_add_savant_frame_meta(buffer, frame_idx)
 
         ret = self.appsrc.push_buffer(buffer)
         self.logger.debug(
@@ -221,25 +243,12 @@ class KvsWriter(ChunkWriter):
             )
             time.sleep(0.1)
 
-        if self.config.fps_meter.period_seconds:
-            fps_period = f'period-seconds={self.config.fps_meter.period_seconds}'
-        elif self.config.fps_meter.period_frames:
-            fps_period = f'period-frames={self.config.fps_meter.period_frames}'
-        else:
-            fps_period = None
-
         elements = [
             'appsrc name=appsrc emit-signals=false format=time max-buffers=1 block=true',
             f'{self.frame_params.codec.value.parser} config-interval=-1',
             CODEC_TO_CAPS[self.frame_params.codec],
+            'appsink name=appsink emit-signals=true sync=false max-buffers=1',
         ]
-        if fps_period is not None:
-            elements.append(
-                f'fps_meter {fps_period} output={self.config.fps_meter.output} measurer-name={self.source_id}'
-            )
-        elements.append(
-            'appsink name=appsink emit-signals=true sync=false max-buffers=1'
-        )
 
         self.pipeline = Gst.parse_launch(' ! '.join(elements))
         self.appsrc = self.pipeline.get_by_name('appsrc')
@@ -263,6 +272,29 @@ class MultiStreamKvsSink:
         self.config = config
         self.logger = get_logger(f'{LOGGER_PREFIX}.{self.__class__.__name__}')
         self.writers: Dict[str, ChunkWriter] = {}
+        self.video_pipeline: VideoPipeline = self.build_video_pipeline()
+
+    def build_video_pipeline(self) -> VideoPipeline:
+        conf = VideoPipelineConfiguration()
+        conf.frame_period = self.config.fps_meter.period_frames
+        conf.timestamp_period = (
+            int(self.config.fps_meter.period_seconds * 1000)
+            if self.config.fps_meter.period_seconds
+            else None
+        )
+
+        return VideoPipeline(
+            'kvs-sink',
+            [
+                (
+                    'kvs-sink',
+                    VideoPipelineStagePayloadType.Frame,
+                    StageFunction.none(),
+                    StageFunction.none(),
+                ),
+            ],
+            conf,
+        )
 
     def write(self, zmq_message: ZeroMQMessage):
         message = zmq_message.message
@@ -321,6 +353,7 @@ class MultiStreamKvsSink:
                 source_id=frame.source_id,
                 kvs_name=self.config.stream_name_prefix + frame.source_id,
                 frame_params=frame_params,
+                video_pipeline=self.video_pipeline,
                 config=self.config,
             )
             self.writers[frame.source_id] = writer

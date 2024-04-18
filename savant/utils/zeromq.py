@@ -11,13 +11,13 @@ from savant_rs.zmq import (
     NonBlockingReader,
     ReaderConfig,
     ReaderConfigBuilder,
+    ReaderResultBlacklisted,
     ReaderResultMessage,
     ReaderResultPrefixMismatch,
     ReaderResultTimeout,
     ReaderSocketType,
     TopicPrefixSpec,
     WriterSocketType,
-    ReaderResultBlacklisted,
 )
 
 from savant.utils.logging import get_logger
