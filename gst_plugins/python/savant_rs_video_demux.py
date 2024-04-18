@@ -349,9 +349,6 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
         if result != Gst.FlowReturn.OK:
             if self.zeromq_reader is not None:
                 self.zeromq_reader.blacklist_source(video_frame.source_id.encode())
-                self.logger.warning(
-                    'Source %s added to blacklist.', video_frame.source_id
-                )
                 self.video_pipeline.delete(savant_frame_meta.idx)
                 with source_info.lock():
                     self.remove_source(source_info, send_eos=False)
