@@ -1,7 +1,12 @@
-#include "gstsavantbatchmeta.h"
 #include "gstsavantframemeta.h"
+
+#ifdef SAVANT_NVDS_ENABLED
+#include "gstsavantbatchmeta.h"
+#include "nvdssavantframemeta.h"
 #include "savantrsprobes.h"
 #include "savantnvprobes.h"
+#endif // SAVANT_NVDS_ENABLED
+
 #include <pybind11/pybind11.h>
 
 namespace py = pybind11;
@@ -9,6 +14,7 @@ namespace py = pybind11;
 PYBIND11_MODULE(pygstsavantframemeta, m) {
     m.doc() = "GstSavantFrameMeta library";
 
+#ifdef SAVANT_NVDS_ENABLED
     py::class_<GstSavantBatchMeta>(m, "GstSavantBatchMeta",
                                    "Contains batch related metadata.")
         .def_readwrite("idx", &GstSavantBatchMeta::idx, "Batch IDX.");
@@ -28,6 +34,7 @@ PYBIND11_MODULE(pygstsavantframemeta, m) {
             return gst_buffer_add_savant_batch_meta(buffer, idx);
         },
         py::return_value_policy::reference);
+#endif // SAVANT_NVDS_ENABLED
 
     py::class_<GstSavantFrameMeta>(m, "GstSavantFrameMeta",
                                    "Contains frame related metadata.")
@@ -49,6 +56,7 @@ PYBIND11_MODULE(pygstsavantframemeta, m) {
         },
         py::return_value_policy::reference);
 
+#ifdef SAVANT_NVDS_ENABLED
     m.def(
         "gst_buffer_get_nvds_savant_frame_meta",
         [](size_t gst_buffer) {
@@ -150,4 +158,5 @@ PYBIND11_MODULE(pygstsavantframemeta, m) {
             NULL,
             NULL);
     });
+#endif // SAVANT_NVDS_ENABLED
 }

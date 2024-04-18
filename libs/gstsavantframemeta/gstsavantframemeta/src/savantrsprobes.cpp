@@ -1,6 +1,7 @@
 #include "savantrsprobes.h"
 #include "gstsavantbatchmeta.h"
 #include "gstsavantframemeta.h"
+#include "nvdssavantframemeta.h"
 
 #include <glib.h>
 #include <gst/gst.h>
