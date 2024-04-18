@@ -12,7 +12,7 @@ from gi.repository import Gst
 def gst_buffer_add_savant_batch_meta(
     buffer: Gst.Buffer,
     idx: int,
-) -> Optional[pygstsavantframemeta.GstSavantBatchMeta]:
+) -> Optional['pygstsavantframemeta.GstSavantBatchMeta']:
     """Add savant batch metadata to GStreamer buffer as GstMeta.
 
     :param buffer: GStreamer buffer.
@@ -24,7 +24,7 @@ def gst_buffer_add_savant_batch_meta(
 
 def gst_buffer_get_savant_batch_meta(
     buffer: Gst.Buffer,
-) -> Optional[pygstsavantframemeta.GstSavantBatchMeta]:
+) -> Optional['pygstsavantframemeta.GstSavantBatchMeta']:
     """Get savant batch metadata from GStreamer buffer.
 
     :param buffer: GStreamer buffer.
