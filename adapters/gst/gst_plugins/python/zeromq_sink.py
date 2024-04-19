@@ -29,6 +29,7 @@ from savant.api.constants import DEFAULT_FRAMERATE, DEFAULT_NAMESPACE, DEFAULT_T
 from savant.api.enums import ExternalFrameType
 from savant.gstreamer import GObject, Gst, GstBase
 from savant.gstreamer.codecs import CODEC_BY_CAPS_NAME, Codec
+from savant.gstreamer.event import parse_savant_frame_tags_event
 from savant.gstreamer.utils import (
     gst_post_library_settings_error,
     gst_post_stream_failed_error,
@@ -232,6 +233,7 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
         self.writer: BlockingWriter = None
         self.receive_timeout = Defaults.SENDER_RECEIVE_TIMEOUT
         self.receive_retries = Defaults.RECEIVE_RETRIES
+        self.savant_frame_tags: Dict[str, str] = {}
         self.set_sync(False)
 
     def do_get_property(self, prop):
@@ -496,6 +498,11 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
                 )
                 self.frame_num = 0
 
+        elif event.type == Gst.EventType.CUSTOM_DOWNSTREAM:
+            tags = parse_savant_frame_tags_event(event)
+            if tags is not None:
+                self.savant_frame_tags = tags
+
         # Cannot use `super()` since it is `self`
         return GstBase.BaseSink.do_event(self, event)
 
@@ -536,6 +543,14 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
                 namespace=DEFAULT_NAMESPACE,
                 name='location',
                 values=[AttributeValue.string(str(self.location))],
+            )
+        for tag_name, tag_value in self.savant_frame_tags.items():
+            if tag_name == 'location':
+                continue
+            video_frame.set_persistent_attribute(
+                namespace=DEFAULT_NAMESPACE,
+                name=tag_name,
+                values=[AttributeValue.string(tag_value)],
             )
 
         return video_frame

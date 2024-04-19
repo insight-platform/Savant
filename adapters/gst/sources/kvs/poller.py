@@ -27,6 +27,8 @@ class Fragment:
     fragment_number: str
     timestamp: float
     content: bytearray
+    first_frame_uuid: Optional[str] = None
+    last_frame_uuid: Optional[str] = None
 
 
 class FragmentsPoller(BaseThreadWorker):
@@ -133,8 +135,12 @@ class FragmentsPoller(BaseThreadWorker):
             fragment_receive_duration,
         )
         fragment_tags = self.fragment_processor.get_fragment_tags(fragment_dom)
+        self.logger.debug('Fragment tags: %s', fragment_tags)
         fragment_number = fragment_tags.get('AWS_KINESISVIDEO_FRAGMENT_NUMBER')
         timestamp = float(fragment_tags.get('AWS_KINESISVIDEO_PRODUCER_TIMESTAMP'))
+        first_frame_uuid = fragment_tags.get('first-frame-uuid')
+        last_frame_uuid = fragment_tags.get('last-frame-uuid')
+
         self.logger.debug(
             'Processing fragment %r with timestamp %s from stream %r.',
             fragment_number,
@@ -144,7 +150,13 @@ class FragmentsPoller(BaseThreadWorker):
         while self.is_running:
             try:
                 self.queue.put(
-                    Fragment(fragment_number, timestamp, fragment_bytes),
+                    Fragment(
+                        fragment_number=fragment_number,
+                        timestamp=timestamp,
+                        content=fragment_bytes,
+                        first_frame_uuid=first_frame_uuid,
+                        last_frame_uuid=last_frame_uuid,
+                    ),
                     timeout=self.queue_put_timeout,
                 )
                 self.last_fragment_number = fragment_number

@@ -1,3 +1,4 @@
+from collections import deque
 from queue import Empty, Queue
 from typing import Optional
 
@@ -5,6 +6,7 @@ from adapters.gst.sinks.video_files import GstPipelineRunner
 from adapters.shared.thread import BaseThreadWorker
 from savant.gstreamer import Gst, GstApp
 from savant.gstreamer.codecs import CODEC_BY_CAPS_NAME, Codec
+from savant.gstreamer.event import build_savant_frame_tags_event
 from savant.gstreamer.utils import on_pad_event
 
 from . import LOGGER_PREFIX
@@ -41,6 +43,7 @@ class Pipeline(BaseThreadWorker):
         self.runner: Optional[GstPipelineRunner] = None
         self.first_ts: Optional[float] = None
         self.last_ts: Optional[float] = None
+        self.fragment_uuids = deque()
 
     def workload(self):
         """Create and run the pipeline."""
@@ -83,9 +86,19 @@ class Pipeline(BaseThreadWorker):
             return
 
         self.logger.debug(
-            'Processing fragment %r with %d bytes',
+            'Processing fragment %r with %d bytes. Timestamp: %s. First frame UUID: %s. Last frame UUID: %s.',
             fragment.fragment_number,
             len(fragment.content),
+            fragment.timestamp,
+            fragment.first_frame_uuid,
+            fragment.last_frame_uuid,
+        )
+        self.fragment_uuids.append(
+            (
+                int(fragment.timestamp * 1000) * Gst.MSECOND,
+                fragment.first_frame_uuid,
+                fragment.last_frame_uuid,
+            )
         )
         self.appsrc.emit('push-buffer', Gst.Buffer.new_wrapped(fragment.content))
         self.queue.task_done()
@@ -206,6 +219,7 @@ class Pipeline(BaseThreadWorker):
 
         parser_pad: Gst.Pad = parser.get_static_pad('sink')
         self.logger.debug('Linking %r to %r', pad.get_name(), parser_pad.get_name())
+        parser_pad.add_probe(Gst.PadProbeType.BUFFER, self.on_parser_src_buffer)
 
         for element in gst_elements:
             element.sync_state_with_parent()
@@ -219,3 +233,21 @@ class Pipeline(BaseThreadWorker):
         tag_list: Gst.TagList = Gst.TagList.new_empty()
         tag_list.add_value(Gst.TagMergeMode.APPEND, Gst.TAG_LOCATION, self.stream.name)
         return Gst.Event.new_tag(tag_list)
+
+    def on_parser_src_buffer(self, pad: Gst.Pad, info: Gst.PadProbeInfo):
+        buffer: Gst.Buffer = info.get_buffer()
+        self.logger.debug('Processing buffer %s from parser', buffer.pts)
+        if not self.fragment_uuids:
+            return Gst.PadProbeReturn.OK
+        if buffer.pts < self.fragment_uuids[0][0]:
+            return Gst.PadProbeReturn.OK
+        ts, first_uuid, last_uuid = self.fragment_uuids.popleft()
+
+        tags = {
+            'first-frame-uuid': first_uuid,
+            'last-frame-uuid': last_uuid,
+        }
+        self.logger.debug('Sending frame tags %s', tags)
+        pad.send_event(build_savant_frame_tags_event(tags))
+
+        return Gst.PadProbeReturn.OK
