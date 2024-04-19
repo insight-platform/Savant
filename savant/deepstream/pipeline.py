@@ -811,6 +811,9 @@ class NvDsPipeline(GstPipeline):
                 frame_pts,
             )
 
+        def _nvds_obj_id(_obj_meta: pyds.NvDsObjectMeta) -> str:
+            return f'{_obj_meta.obj_label}#{_obj_meta.object_id}'
+
         # collect frame objects
         nvds_object_id_map = {}  # nvds_obj_meta.object_id -> video_object.id
         parents = {}  # video_object.id -> nvds_obj_meta.parent.object_id
@@ -855,12 +858,12 @@ class NvDsPipeline(GstPipeline):
             obj_meta = nvds_obj_meta_output_converter(
                 nvds_frame_meta, nvds_obj_meta, self._frame_params, video_frame
             )
-            nvds_object_id_map[nvds_obj_meta.object_id] = obj_meta.id
+            nvds_object_id_map[_nvds_obj_id(nvds_obj_meta)] = obj_meta.id
             if (
                 not nvds_is_empty_object_meta(nvds_obj_meta.parent)
                 and nvds_obj_meta.parent.obj_label != PRIMARY_OBJECT_KEY
             ):
-                parents[obj_meta.id] = nvds_obj_meta.parent.object_id
+                parents[obj_meta.id] = _nvds_obj_id(nvds_obj_meta.parent)
             # add obj attributes
             for attr in attributes:
                 obj_meta.set_attribute(attr)

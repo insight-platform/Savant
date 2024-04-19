@@ -3,9 +3,6 @@
 #include <glib.h>
 #include <gst/gst.h>
 
-#include "gstnvdsmeta.h"
-#include "nvdsmeta.h"
-
 /* GstMeta functions */
 
 gboolean gst_savant_batch_meta_init(GstMeta *meta, gpointer params,

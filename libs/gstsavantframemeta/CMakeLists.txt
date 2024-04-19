@@ -1,6 +1,15 @@
 cmake_minimum_required(VERSION 3.12)
+include(CheckLanguage)
 
-project(pygstsavantframemeta VERSION "0.0.2" LANGUAGES CXX CUDA)
+project(pygstsavantframemeta VERSION "0.0.3" LANGUAGES CXX)
+check_language(CUDA)
+if (CMAKE_CUDA_COMPILER)
+    set(SAVANT_NVDS_ENABLED ON)
+    enable_language(CUDA)
+else()
+    set(SAVANT_NVDS_ENABLED OFF)
+endif()
+
 set(python_module_name pygstsavantframemeta)
 
 set(CMAKE_CXX_STANDARD 14)
@@ -14,8 +23,14 @@ endif()
 set(CMAKE_CXX_FLAGS "-O3")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
+if (SAVANT_NVDS_ENABLED)
+    add_definitions(-DSAVANT_NVDS_ENABLED=${SAVANT_NVDS_ENABLED})
+endif()
+
 find_package(PkgConfig REQUIRED)
-find_package(CUDA REQUIRED)
+if (SAVANT_NVDS_ENABLED)
+    find_package(CUDA REQUIRED)
+endif()
 find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 find_package(pybind11 CONFIG REQUIRED)
 
@@ -40,7 +55,7 @@ message(STATUS "Found core-py library for savant-rs: ${SAVANT_RS_CORE_PY_LIB_FIL
 file(GLOB SAVANT_RS_LIB_FILE "${SAVANT_RS_LIB_DIR}/savant_rs.cpython*.so")
 message(STATUS "Found library for savant-rs: ${SAVANT_RS_LIB_FILE}")
 
-if(NOT DEFINED DeepStream_DIR)
+if(SAVANT_NVDS_ENABLED AND NOT DEFINED DeepStream_DIR)
     set(DeepStream_DIR /opt/nvidia/deepstream/deepstream)
 endif()
 
@@ -51,27 +66,59 @@ include_directories(
         ${Python3_INCLUDE_DIRS}
         ${GLIB_INCLUDE_DIRS}
         ${GSTREAMER_INCLUDE_DIRS}
-        ${CUDA_INCLUDE_DIRS}
-        ${DeepStream_DIR}/sources/includes
         ${SAVANT_RS_LIB_DIR}/include
         ${CMAKE_SOURCE_DIR}/gstsavantframemeta/include
         ${CMAKE_SOURCE_DIR}/pygstsavantframemeta
- )
+)
+if (SAVANT_NVDS_ENABLED)
+    include_directories(
+            ${CUDA_INCLUDE_DIRS}
+            ${DeepStream_DIR}/sources/includes
+    )
+endif()
 
 link_directories(
         ${Python3_LIBRARY_DIRS}
         ${GLIB_LIBRARY_DIRS}
         ${GSTREAMER_LIBRARY_DIRS}
-        ${CUDA_LIBRARY_DIRS}
-        ${DeepStream_DIR}/lib
         ${SAVANT_RS_CORE_LIB_DIR}
         ${SAVANT_RS_LIB_DIR}
- )
+)
+if (SAVANT_NVDS_ENABLED)
+    link_directories(
+            ${CUDA_LIBRARY_DIRS}
+            ${DeepStream_DIR}/lib
+    )
+endif()
 
 add_subdirectory(gstsavantframemeta ../build/gstsavantframemeta)
 
-file (GLOB SOURCE_FILES "gstsavantframemeta/src/*.cpp")
-file (GLOB HEADER_FILES "gstsavantframemeta/include/*.h")
+set(SOURCE_FILES
+    "gstsavantframemeta/src/gstsavantframemeta.cpp"
+)
+if (SAVANT_NVDS_ENABLED)
+    set(SOURCE_FILES
+        ${SOURCE_FILES}
+        "gstsavantframemeta/src/gstsavantbatchmeta.cpp"
+        "gstsavantframemeta/src/nvdssavantframemeta.cpp"
+        "gstsavantframemeta/src/savantrsprobes.cpp"
+        "gstsavantframemeta/src/savantnvprobes.cpp"
+    )
+endif()
+
+set(HEADER_FILES
+    "gstsavantframemeta/include/gstsavantframemeta.h"
+)
+if (SAVANT_NVDS_ENABLED)
+    set(HEADER_FILES
+        ${HEADER_FILES}
+        "gstsavantframemeta/include/gstsavantbatchmeta.h"
+        "gstsavantframemeta/include/nvdssavantframemeta.h"
+        "gstsavantframemeta/include/savantrsprobes.h"
+        "gstsavantframemeta/include/savantnvprobes.h"
+    )
+endif()
+
 file (GLOB PYTHON_FILES "pygstsavantframemeta/*.cpp" "pygstsavantframemeta/*.h")
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${SOURCE_FILES} ${HEADER_FILES} ${PYTHON_FILES} )
@@ -87,20 +134,24 @@ pybind11_add_module(${python_module_name} SHARED
     ${SOURCE_FILES}
     ${HEADER_FILES}
     ${PYTHON_FILES}
- )
+)
 
 target_link_libraries(${python_module_name} PRIVATE
     ${Python3_LIBRARIES}
     ${GLIB_LIBRARIES}
     ${GSTREAMER_LIBRARIES}
-    ${CUDA_LIBRARIES}
-    nvds_meta
-    nvdsgst_meta
     savant_rs
     pybind11::module
     pybind11::lto
     gstsavantframemeta
- )
+)
+if (SAVANT_NVDS_ENABLED)
+    target_link_libraries(${python_module_name} PRIVATE
+            ${CUDA_LIBRARIES}
+            nvds_meta
+            nvdsgst_meta
+    )
+endif()
 
 pybind11_extension(${python_module_name})
 pybind11_strip(${python_module_name})

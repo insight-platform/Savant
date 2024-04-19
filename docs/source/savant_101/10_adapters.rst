@@ -1507,10 +1507,6 @@ The Multistream Kinesis Video Stream Sink Adapter sends video frames to Kinesis 
       - A number of seconds between FPS reports.
       - Unset
       - ``10``
-    * - ``FPS_OUTPUT``
-      - Where to output FPS reports; one of: ``stdout``, ``logger``.
-      - ``stdout``
-      - ``logger``
 
 Running the adapter with Docker:
 

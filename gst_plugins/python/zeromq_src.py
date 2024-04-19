@@ -141,6 +141,30 @@ ZEROMQ_SRC_PROPERTIES = {
         False,
         GObject.ParamFlags.READWRITE,
     ),
+    'blacklist-size': (
+        int,
+        'Size of the source blacklist.',
+        'Size of the source blacklist.',
+        0,
+        GObject.G_MAXINT,
+        Defaults.BLACKLIST_SIZE,
+        GObject.ParamFlags.READWRITE,
+    ),
+    'blacklist-ttl': (
+        int,
+        'TTL of the source blacklist in seconds.',
+        'TTL of the source blacklist in seconds.',
+        0,
+        GObject.G_MAXINT,
+        Defaults.BLACKLIST_TTL,
+        GObject.ParamFlags.READWRITE,
+    ),
+    'zeromq-reader': (
+        object,
+        'ZeroMQ reader from savant-rs.',
+        'ZeroMQ reader from savant-rs.',
+        GObject.ParamFlags.READABLE,
+    ),
 }
 
 
@@ -182,6 +206,8 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
         self.max_width: int = 0
         self.max_height: int = 0
         self.pass_through_mode = False
+        self.blacklist_size: int = Defaults.BLACKLIST_SIZE
+        self.blacklist_ttl: int = Defaults.BLACKLIST_TTL
 
         self.ingress_module: Optional[str] = None
         self.ingress_class_name: Optional[str] = None
@@ -234,6 +260,16 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
         if prop.name == 'ingress-dev-mode':
             return self.ingress_dev_mode
 
+        if prop.name == 'blacklist-size':
+            return self.blacklist_size
+        if prop.name == 'blacklist-ttl':
+            return self.blacklist_ttl
+
+        if prop.name == 'zeromq-reader':
+            if self.source is not None:
+                return self.source.reader
+            return None
+
         raise AttributeError(f'Unknown property {prop.name}.')
 
     def do_set_property(self, prop, value):
@@ -279,6 +315,11 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
         elif prop.name == 'ingress-dev-mode':
             self.ingress_dev_mode = value
 
+        elif prop.name == 'blacklist-size':
+            self.blacklist_size = value
+        elif prop.name == 'blacklist-ttl':
+            self.blacklist_ttl = value
+
         else:
             raise AttributeError(f'Unknown property "{prop.name}".')
 
@@ -313,6 +354,8 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
                 receive_hwm=self.receive_hwm,
                 source_id=self.source_id,
                 source_id_prefix=self.source_id_prefix,
+                blacklist_size=self.blacklist_size,
+                blacklist_ttl=self.blacklist_ttl,
             )
         except Exception as exc:
             error = f'Failed to start ZeroMQ source with socket {self.socket}: {exc}.'
