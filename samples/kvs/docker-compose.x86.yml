@@ -11,8 +11,9 @@ services:
       - LOCATION=https://eu-central-1.linodeobjects.com/savant-data/demo/Free_City_Street_Footage.mp4
       - DOWNLOAD_PATH=/tmp/video-loop-source-downloads
       - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
-      - SOURCE_ID=city-traffic
+      - SOURCE_ID=video
       - SYNC_OUTPUT=True
+      - USE_ABSOLUTE_TIMESTAMPS=True
     entrypoint: /opt/savant/adapters/gst/sources/video_loop.sh
     depends_on:
       module:
@@ -32,7 +33,7 @@ services:
       - MODEL_PATH=/cache/models/peoplenet_detector
       - DOWNLOAD_PATH=/cache/downloads/peoplenet_detector
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
-      - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/detector-output.ipc
+      - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
       - MONGO_URI=mongodb://admin:admin@mongo:27017
       - MONGO_DB=kvs_sample
       - MONGO_COLLECTION=kvs_sample
@@ -46,6 +47,38 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [ gpu ]
+
+  kvs-sink:
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    #restart: unless-stopped
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+    environment:
+      - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
+      - AWS_REGION=${AWS_REGION}
+      - AWS_ACCESS_KEY=${AWS_ACCESS_KEY}
+      - AWS_SECRET_KEY=${AWS_SECRET_KEY}
+      - STREAM_NAME_PREFIX=savant-sample-
+      - ALLOW_CREATE_STREAM=True
+    entrypoint: /opt/savant/adapters/gst/sinks/multistream_kvs.py
+
+  kvs-source:
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    #restart: unless-stopped
+    ports:
+      - "18367:18367" # API
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+    environment:
+      - SOURCE_ID=video
+      - STREAM_NAME=savant-sample-video
+      - AWS_REGION=${AWS_REGION}
+      - AWS_ACCESS_KEY=${AWS_ACCESS_KEY}
+      - AWS_SECRET_KEY=${AWS_SECRET_KEY}
+      - TIMESTAMP=-1m
+      - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/kvs-source.ipc
+      - PLAYING=True
+    command: python -m adapters.gst.sources.kvs
 
   mongo:
     image: mongo:7.0.8
