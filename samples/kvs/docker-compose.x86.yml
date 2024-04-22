@@ -1,0 +1,69 @@
+version: "3.3"
+services:
+
+  video-loop-source:
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    #restart: unless-stopped
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - /tmp/video-loop-source-downloads:/tmp/video-loop-source-downloads
+    environment:
+      - LOCATION=https://eu-central-1.linodeobjects.com/savant-data/demo/Free_City_Street_Footage.mp4
+      - DOWNLOAD_PATH=/tmp/video-loop-source-downloads
+      - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
+      - SOURCE_ID=city-traffic
+      - SYNC_OUTPUT=True
+    entrypoint: /opt/savant/adapters/gst/sources/video_loop.sh
+    depends_on:
+      module:
+        condition: service_healthy
+
+  module:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.x86
+    #restart: unless-stopped
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ../../cache:/cache
+      - ..:/opt/savant/samples
+    command: samples/kvs/module.yml
+    environment:
+      - MODEL_PATH=/cache/models/peoplenet_detector
+      - DOWNLOAD_PATH=/cache/downloads/peoplenet_detector
+      - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
+      - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/detector-output.ipc
+      - MONGO_URI=mongodb://admin:admin@mongo:27017
+      - MONGO_DB=kvs_sample
+      - MONGO_COLLECTION=kvs_sample
+    depends_on:
+      mongo:
+        condition: service_healthy
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+
+  mongo:
+    image: mongo:7.0.8
+    #restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=admin
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh admin -u $$MONGO_INITDB_ROOT_USERNAME -p $$MONGO_INITDB_ROOT_PASSWORD
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+
+volumes:
+  zmq_sockets:
+  mongo_data:
