@@ -119,7 +119,6 @@ services:
       - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x720.jpeg
       - DEV_MODE=True
     command: python -m adapters.ds.sinks.always_on_rtsp
-    runtime: nvidia
 
   mongo:
     image: mongo:7.0.8
