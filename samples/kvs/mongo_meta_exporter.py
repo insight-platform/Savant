@@ -5,12 +5,14 @@ from typing import Optional
 from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.database import Database
-from savant_rs.primitives import VideoFrame
+from savant_rs.primitives.geometry import RBBox
 
 from savant.api.parser import parse_video_frame
 from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.deepstream.pyfunc import NvDsPyFuncPlugin
 from savant.gstreamer import Gst
+from savant.meta.constants import UNTRACKED_OBJECT_ID
+from savant.meta.object import ObjectMeta
 
 
 class MongoMetaExporter(NvDsPyFuncPlugin):
@@ -58,7 +60,7 @@ class MongoMetaExporter(NvDsPyFuncPlugin):
         return True
 
     def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
-        doc = frame_to_document(frame_meta.video_frame)
+        doc = frame_to_document(frame_meta)
         self.logger.debug(
             'Inserting document for frame %s/%s into queue',
             frame_meta.video_frame.source_id,
@@ -90,8 +92,29 @@ class MongoMetaExporter(NvDsPyFuncPlugin):
                     self.logger.error('Error inserting batch: %s', e)
 
 
-def frame_to_document(frame: VideoFrame):
-    doc = parse_video_frame(frame)
-    doc['uuid'] = frame.uuid
+def frame_to_document(frame_meta: NvDsFrameMeta):
+    doc = parse_video_frame(frame_meta.video_frame)
+    doc['uuid'] = frame_meta.video_frame.uuid
+    doc['objects'] = [object_to_document(obj) for obj in frame_meta.objects]
 
     return doc
+
+
+def object_to_document(obj: ObjectMeta):
+    # TODO: add attributes
+    return {
+        'uid': int(obj.uid),
+        'element_name': obj.element_name,
+        'label': obj.label,
+        'track_id': obj.track_id if obj.track_id != UNTRACKED_OBJECT_ID else None,
+        'confidence': float(obj.confidence),
+        'is_primary': obj.is_primary,
+        'bbox': {
+            'xc': float(obj.bbox.xc),
+            'yc': float(obj.bbox.yc),
+            'width': float(obj.bbox.width),
+            'height': float(obj.bbox.height),
+            'angle': float(obj.bbox.angle) if isinstance(obj.bbox, RBBox) else None,
+        },
+        # 'parent_uid': obj.parent.uid if obj.parent is not None else None,
+    }
