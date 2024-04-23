@@ -3,7 +3,7 @@ services:
 
   video-loop-source:
     image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
-    #restart: unless-stopped
+    restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - /tmp/video-loop-source-downloads:/tmp/video-loop-source-downloads
@@ -23,7 +23,7 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile.x86
-    #restart: unless-stopped
+    restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../cache:/cache
@@ -50,7 +50,7 @@ services:
 
   kvs-sink:
     image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
-    #restart: unless-stopped
+    restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
     environment:
@@ -64,7 +64,7 @@ services:
 
   kvs-source:
     image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
-    #restart: unless-stopped
+    restart: unless-stopped
     ports:
       - "18367:18367" # API
     volumes:
@@ -88,7 +88,7 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile.x86
-    #restart: unless-stopped
+    restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../cache:/cache
@@ -139,7 +139,7 @@ services:
 
   mongo:
     image: mongo:7.0.8
-    #restart: unless-stopped
+    restart: unless-stopped
     ports:
       - "27017:27017"
     volumes:

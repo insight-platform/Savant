@@ -35,6 +35,8 @@ class MongoMetaImporter(NvDsPyFuncPlugin):
         super().on_start()
         self.logger.info('Connecting to MongoDB')
         self.db: Database = self.mongo_client[self.db_name]
+        self.db.list_collections()  # Check if connection is working
+
         self.collection: Collection = self.db[self.collection_name]
         self.logger.info('Started MongoDB importer')
 

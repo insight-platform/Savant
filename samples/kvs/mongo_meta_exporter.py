@@ -41,6 +41,8 @@ class MongoMetaExporter(NvDsPyFuncPlugin):
         super().on_start()
         self.logger.info('Connecting to MongoDB')
         self.db: Database = self.mongo_client[self.db_name]
+        self.db.list_collections()  # Check if connection is working
+
         self.collection: Collection = self.db[self.collection_name]
         if 'source_id_uuid_index' not in self.collection.index_information():
             self.logger.info('Creating index for source_id and uuid')
