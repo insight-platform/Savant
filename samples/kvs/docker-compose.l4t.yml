@@ -37,6 +37,7 @@ services:
       - MONGO_URI=mongodb://admin:admin@mongo:27017
       - MONGO_DB=kvs_sample
       - MONGO_COLLECTION=kvs_sample
+      - CODEC=copy
     depends_on:
       mongo:
         condition: service_healthy
