@@ -47,6 +47,10 @@ class MongoMetaImporter(NvDsPyFuncPlugin):
 
         return True
 
+    def on_source_eos(self, source_id: str):
+        self.last_fragment_uuids.pop(source_id, None)
+        self.pending_meta.pop(source_id, None)
+
     def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
         self.load_fragment_meta(frame_meta)
         pending_meta = self.pending_meta.get(frame_meta.source_id)
@@ -54,7 +58,7 @@ class MongoMetaImporter(NvDsPyFuncPlugin):
             return
         next_meta = pending_meta.popleft()
         for obj in next_meta['objects']:
-            if obj['bbox']['angle'] is not None:
+            if obj['bbox']['type'] == 'rbbox':
                 bbox = RBBox(
                     xc=obj['bbox']['xc'],
                     yc=obj['bbox']['yc'],
@@ -87,12 +91,11 @@ class MongoMetaImporter(NvDsPyFuncPlugin):
         current_uuids = (first_frame_uuid, last_frame_uuid)
         if self.last_fragment_uuids.get(frame_meta.source_id) == current_uuids:
             return
-        self.logger.info('New fragment: %s', current_uuids)
         self.last_fragment_uuids[frame_meta.source_id] = current_uuids
         query = {
             'source_id': frame_meta.source_id,
             'uuid': {'$gte': first_frame_uuid, '$lte': last_frame_uuid},
         }
         docs = list(self.collection.find(query))
-        self.logger.info('Found %d documents', len(docs))
+        self.logger.info('Found %d documents for fragment %s', len(docs), current_uuids)
         self.pending_meta[frame_meta.source_id] = deque(docs)

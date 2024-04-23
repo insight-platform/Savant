@@ -2,12 +2,11 @@ from queue import Empty, Queue
 from threading import Thread
 from typing import Optional
 
-from pymongo import MongoClient
+from pymongo import ASCENDING, MongoClient
 from pymongo.collection import Collection
 from pymongo.database import Database
 from savant_rs.primitives.geometry import RBBox
 
-from savant.api.parser import parse_video_frame
 from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.deepstream.pyfunc import NvDsPyFuncPlugin
 from savant.gstreamer import Gst
@@ -22,7 +21,7 @@ class MongoMetaExporter(NvDsPyFuncPlugin):
         collection: str,
         db: str,
         queue_size: int = 1000,
-        max_batch_size: int = 100,
+        max_batch_size: int = 25,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -42,6 +41,13 @@ class MongoMetaExporter(NvDsPyFuncPlugin):
         self.logger.info('Connecting to MongoDB')
         self.db: Database = self.mongo_client[self.db_name]
         self.collection: Collection = self.db[self.collection_name]
+        if 'source_id_uuid_index' not in self.collection.index_information():
+            self.logger.info('Creating index for source_id and uuid')
+            self.collection.create_index(
+                [('source_id', ASCENDING), ('uuid', ASCENDING)],
+                unique=True,
+                name='source_id_uuid_index',
+            )
         self.thread = Thread(target=self.thread_workload)
         self.is_running = True
         self.thread.start()
@@ -93,28 +99,31 @@ class MongoMetaExporter(NvDsPyFuncPlugin):
 
 
 def frame_to_document(frame_meta: NvDsFrameMeta):
-    doc = parse_video_frame(frame_meta.video_frame)
-    doc['uuid'] = frame_meta.video_frame.uuid
-    doc['objects'] = [object_to_document(obj) for obj in frame_meta.objects]
+    doc = {
+        'source_id': frame_meta.video_frame.source_id,
+        'uuid': frame_meta.video_frame.uuid,
+        'pts': frame_meta.video_frame.pts,
+        'objects': [
+            object_to_document(obj) for obj in frame_meta.objects if not obj.is_primary
+        ],
+    }
 
     return doc
 
 
 def object_to_document(obj: ObjectMeta):
-    # TODO: add attributes
     return {
         'uid': int(obj.uid),
         'element_name': obj.element_name,
         'label': obj.label,
         'track_id': obj.track_id if obj.track_id != UNTRACKED_OBJECT_ID else None,
         'confidence': float(obj.confidence),
-        'is_primary': obj.is_primary,
         'bbox': {
+            'type': 'rbbox' if isinstance(obj.bbox, RBBox) else 'bbox',
             'xc': float(obj.bbox.xc),
             'yc': float(obj.bbox.yc),
             'width': float(obj.bbox.width),
             'height': float(obj.bbox.height),
             'angle': float(obj.bbox.angle) if isinstance(obj.bbox, RBBox) else None,
         },
-        # 'parent_uid': obj.parent.uid if obj.parent is not None else None,
     }

@@ -70,12 +70,13 @@ services:
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
     environment:
+      - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/draw-func-input.ipc
       - SOURCE_ID=video
       - STREAM_NAME=savant-sample-video
       - AWS_REGION=${AWS_REGION}
       - AWS_ACCESS_KEY=${AWS_ACCESS_KEY}
       - AWS_SECRET_KEY=${AWS_SECRET_KEY}
-      - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/draw-func-input.ipc
+      - TIMESTAMP=-1m
       - PLAYING=False
       - SYNC_OUTPUT=True
     command: python -m adapters.gst.sources.kvs
