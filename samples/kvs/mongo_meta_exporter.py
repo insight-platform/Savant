@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from queue import Empty, Queue
 from threading import Thread
 from typing import Optional
@@ -48,6 +49,15 @@ class MongoMetaExporter(NvDsPyFuncPlugin):
                 unique=True,
                 name='source_id_uuid_index',
             )
+
+        if 'ttl_index' not in self.collection.index_information():
+            self.logger.info('Creating TTL index')
+            self.collection.create_index(
+                'created_at',
+                expireAfterSeconds=int(timedelta(days=1).total_seconds()),
+                name='ttl_index',
+            )
+
         self.thread = Thread(target=self.thread_workload)
         self.is_running = True
         self.thread.start()
@@ -106,6 +116,7 @@ def frame_to_document(frame_meta: NvDsFrameMeta):
         'objects': [
             object_to_document(obj) for obj in frame_meta.objects if not obj.is_primary
         ],
+        'created_at': datetime.now(),
     }
 
     return doc
