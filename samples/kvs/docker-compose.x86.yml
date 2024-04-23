@@ -1,0 +1,159 @@
+version: "3.3"
+services:
+
+  video-loop-source:
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    restart: unless-stopped
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - /tmp/video-loop-source-downloads:/tmp/video-loop-source-downloads
+    environment:
+      - LOCATION=https://eu-central-1.linodeobjects.com/savant-data/demo/Free_City_Street_Footage.mp4
+      - DOWNLOAD_PATH=/tmp/video-loop-source-downloads
+      - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
+      - SOURCE_ID=video
+      - SYNC_OUTPUT=True
+      - USE_ABSOLUTE_TIMESTAMPS=True
+    entrypoint: /opt/savant/adapters/gst/sources/video_loop.sh
+    depends_on:
+      module:
+        condition: service_healthy
+
+  module:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.x86
+    restart: unless-stopped
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ../../cache:/cache
+      - ..:/opt/savant/samples
+    command: samples/kvs/module.yml
+    environment:
+      - MODEL_PATH=/cache/models/peoplenet_detector
+      - DOWNLOAD_PATH=/cache/downloads/peoplenet_detector
+      - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
+      - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
+      - MONGO_URI=mongodb://admin:admin@mongo:27017
+      - MONGO_DB=kvs_sample
+      - MONGO_COLLECTION=kvs_sample
+    depends_on:
+      mongo:
+        condition: service_healthy
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+
+  kvs-sink:
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    restart: unless-stopped
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+    environment:
+      - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
+      - AWS_REGION=${AWS_REGION}
+      - AWS_ACCESS_KEY=${AWS_ACCESS_KEY}
+      - AWS_SECRET_KEY=${AWS_SECRET_KEY}
+      - STREAM_NAME_PREFIX=savant-sample-
+      - ALLOW_CREATE_STREAM=True
+    entrypoint: /opt/savant/adapters/gst/sinks/multistream_kvs.py
+
+  kvs-source:
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    restart: unless-stopped
+    ports:
+      - "18367:18367" # API
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+    environment:
+      - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/draw-func-input.ipc
+      - SOURCE_ID=video
+      - STREAM_NAME=savant-sample-video
+      - AWS_REGION=${AWS_REGION}
+      - AWS_ACCESS_KEY=${AWS_ACCESS_KEY}
+      - AWS_SECRET_KEY=${AWS_SECRET_KEY}
+      - TIMESTAMP=-1m
+      - PLAYING=False
+      - SYNC_OUTPUT=True
+    command: python -m adapters.gst.sources.kvs
+    depends_on:
+      draw-func:
+        condition: service_healthy
+
+  draw-func:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.x86
+    restart: unless-stopped
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ../../cache:/cache
+      - ..:/opt/savant/samples
+    command: samples/kvs/draw_func.yml
+    environment:
+      - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/draw-func-input.ipc
+      - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/draw-func-output.ipc
+      - MONGO_URI=mongodb://admin:admin@mongo:27017
+      - MONGO_DB=kvs_sample
+      - MONGO_COLLECTION=kvs_sample
+    depends_on:
+      mongo:
+        condition: service_healthy
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+
+  always-on-sink:
+    image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
+    restart: unless-stopped
+    ports:
+      - "554:554"    # RTSP
+      - "1935:1935"  # RTMP
+      - "888:888"    # HLS
+      - "8889:8889"  # WebRTC
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ../assets/stub_imgs:/stub_imgs
+    environment:
+      - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/draw-func-output.ipc
+      - SOURCE_ID=video
+      - FRAMERATE=25/1
+      - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x720.jpeg
+      - DEV_MODE=True
+    command: python -m adapters.ds.sinks.always_on_rtsp
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+
+  mongo:
+    image: mongo:7.0.8
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=admin
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh admin -u $$MONGO_INITDB_ROOT_USERNAME -p $$MONGO_INITDB_ROOT_PASSWORD
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+
+volumes:
+  zmq_sockets:
+  mongo_data:

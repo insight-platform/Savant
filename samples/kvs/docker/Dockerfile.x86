@@ -1,0 +1,4 @@
+FROM ghcr.io/insight-platform/savant-deepstream:latest
+
+COPY requirements.txt requirements.txt
+RUN python -m pip install --no-cache-dir -r requirements.txt
