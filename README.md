@@ -70,8 +70,8 @@ questions you may have.
 
 ## Quick Start
 
-Runtime configuration [guide](https://docs.savant-ai.io/getting_started/0_configure_prod_env.html) helps to configure
-the runtime to run Savant pipelines.
+Runtime configuration [guide](https://docs.savant-ai.io/develop/getting_started/0_configure_prod_env.html) helps to
+configure the runtime to run Savant pipelines.
 
 The [demo](https://github.com/insight-platform/Savant/tree/develop/samples/peoplenet_detector) shows a pipeline
 featuring person detection, facial detection, tracking, facial blurring (OpenCV CUDA), and a real-time analytics
