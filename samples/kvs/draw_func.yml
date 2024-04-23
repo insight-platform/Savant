@@ -1,0 +1,29 @@
+# module name, required
+name: kvs-sample
+
+# base module parameters
+parameters:
+  # pipeline processing frame parameters
+  frame:
+    width: 1280
+    height: 720
+  output_frame:
+    codec: ${oc.env:CODEC, 'h264'}
+  draw_func: {}
+  batch_size: 1
+
+# pipeline definition
+pipeline:
+  # source definition is skipped, zeromq source is used by default to connect with source adapters
+
+  # define pipeline's main elements
+  elements:
+    - element: pyfunc
+      module: samples.kvs.mongo_meta_importer
+      class_name: MongoMetaImporter
+      kwargs:
+        uri: ${oc.decode:${oc.env:MONGO_URI}}
+        collection: ${oc.decode:${oc.env:MONGO_COLLECTION}}
+        db: ${oc.decode:${oc.env:MONGO_DB}}
+
+  # sink definition is skipped, zeromq sink is used by default to connect with sink adapters
