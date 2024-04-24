@@ -54,6 +54,14 @@ def link_added_pad(
     src_pad: Gst.Pad,
     sink_pad: Gst.Pad,
 ):
+    logger.debug(
+        'Linking %s.%s to %s.%s',
+        src_pad.get_parent().get_name(),
+        src_pad.get_name(),
+        sink_pad.get_parent().get_name(),
+        sink_pad.get_name(),
+    )
+
     assert src_pad.link(sink_pad) == Gst.PadLinkReturn.OK
 
 
@@ -92,6 +100,7 @@ def on_demuxer_pad_added(
         capsfilter.sync_state_with_parent()
     else:
         decodebin = factory.create(PipelineElement('decodebin'))
+        decodebin.set_property('sink-caps', caps)
         pipeline.add(decodebin)
         decodebin_sink_pad: Gst.Pad = decodebin.get_static_pad('sink')
         decodebin.connect('pad-added', link_added_pad, sink_pad)

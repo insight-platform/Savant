@@ -246,25 +246,50 @@ class VideoFilesWriter(ChunkWriter):
         )
         appsrc_name = 'appsrc'
         filesink_name = 'filesink'
-        self.pipeline: Gst.Pipeline = Gst.parse_launch(
-            ' ! '.join(
-                [
-                    f'appsrc name={appsrc_name} emit-signals=false format=time',
-                    'queue',
-                    'adjust_timestamps',
-                    self.frame_params.codec.value.parser,
-                    'qtmux fragment-duration=1000 fragment-mode=first-moov-then-finalise',
-                    f'filesink name={filesink_name}',
-                ]
-            ),
-        )
+        pipeline = [
+            f'appsrc name={appsrc_name} emit-signals=false format=time',
+            'queue',
+            'adjust_timestamps',
+        ]
+
+        if self.frame_params.codec.value.parser is not None:
+            pipeline.append(self.frame_params.codec.value.parser)
+
+        if self.frame_params.codec in [
+            Codec.H264,
+            Codec.HEVC,
+            Codec.JPEG,
+            Codec.PNG,
+        ]:
+            pipeline.append(
+                'qtmux fragment-duration=1000 fragment-mode=first-moov-then-finalise'
+            )
+            file_ext = 'mov'
+        elif self.frame_params.codec in [
+            Codec.VP8,
+            Codec.VP9,
+        ]:
+            pipeline.append('matroskamux')
+            file_ext = 'mkv'
+        else:
+            self.logger.error(
+                'Unsupported codec %s for source %s',
+                self.frame_params.codec,
+                self.source_id,
+            )
+            return
+
+        pipeline.append(f'filesink name={filesink_name}')
+        self.pipeline: Gst.Pipeline = Gst.parse_launch(' ! '.join(pipeline))
         self.pipeline.set_name(f'video_chunk_{self.source_id}_{self.chunk_idx}')
         self.appsrc: GstApp.AppSrc = self.pipeline.get_by_name(appsrc_name)
         self.appsrc.set_caps(self.caps)
 
         filesink: Gst.Element = self.pipeline.get_by_name(filesink_name)
         os.makedirs(self.base_location, exist_ok=True)
-        dst_location = os.path.join(self.base_location, f'{self.chunk_idx:04}.mov')
+        dst_location = os.path.join(
+            self.base_location, f'{self.chunk_idx:04}.{file_ext}'
+        )
         self.logger.info(
             'Writing video from source %s to file %s', self.source_id, dst_location
         )
@@ -321,7 +346,14 @@ class VideoFilesSink:
         self, video_frame: VideoFrame, content: Optional[bytes]
     ) -> bool:
         frame_params = FrameParams.from_video_frame(video_frame)
-        if frame_params.codec not in [Codec.H264, Codec.HEVC, Codec.JPEG, Codec.PNG]:
+        if frame_params.codec not in [
+            Codec.H264,
+            Codec.HEVC,
+            Codec.VP8,
+            Codec.VP9,
+            Codec.JPEG,
+            Codec.PNG,
+        ]:
             self.logger.error(
                 'Frame %s/%s has unsupported codec %s',
                 video_frame.source_id,
