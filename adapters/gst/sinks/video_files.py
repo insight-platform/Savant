@@ -269,8 +269,8 @@ class VideoFilesWriter(ChunkWriter):
             Codec.VP8,
             Codec.VP9,
         ]:
-            pipeline.append('matroskamux')
-            file_ext = 'mkv'
+            pipeline.append('webmmux')
+            file_ext = 'webm'
         else:
             self.logger.error(
                 'Unsupported codec %s for source %s',
