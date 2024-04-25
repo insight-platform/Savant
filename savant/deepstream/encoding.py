@@ -24,6 +24,13 @@ def check_encoder_is_available(parameters: Dict[str, Any]) -> bool:
         return True
 
     codec = CODEC_BY_NAME[codec_name]
+    if codec.value.is_raw:
+        return True
+
+    if codec.value.sw_encoder is None and codec.value.nv_encoder is None:
+        logger.error('Encoding for %r is not supported.', codec_name)
+        return False
+
     if codec not in [Codec.H264, Codec.HEVC]:
         return True
 
