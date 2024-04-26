@@ -83,6 +83,7 @@ if [[ "${USE_ABSOLUTE_TIMESTAMPS,,}" == "true" ]]; then
     SINK_PROPERTIES+=(ts-offset="-${TS_OFFSET}")
 fi
 PIPELINE+=(
+    set_dts !
     zeromq_sink "${SINK_PROPERTIES[@]}"
 )
 
