@@ -68,7 +68,10 @@ class SetDts(LoggerMixin, Gst.Element):
         """Handle buffer from a sink pad."""
 
         self.logger.debug(
-            'Received buffer PTS=%s from %s', buffer.pts, sink_pad.get_name()
+            'Received buffer PTS=%s DTS=%s from %s',
+            buffer.pts,
+            buffer.dts,
+            sink_pad.get_name(),
         )
         if not self.enabled:
             return self.push_buffer(buffer)
@@ -76,6 +79,11 @@ class SetDts(LoggerMixin, Gst.Element):
         if buffer.has_flags(Gst.BufferFlags.DELTA_UNIT) and (
             self.buffers or buffer.dts == Gst.CLOCK_TIME_NONE
         ):
+            self.logger.debug(
+                'Storing buffer PTS=%s DTS=%s in a queue',
+                buffer.pts,
+                buffer.dts,
+            )
             self.buffers.append(buffer)
             heapq.heappush(self.pts_list, buffer.pts)
             flow_ret = Gst.FlowReturn.OK
@@ -85,7 +93,13 @@ class SetDts(LoggerMixin, Gst.Element):
             if flow_ret != Gst.FlowReturn.OK:
                 return flow_ret
 
-            buffer.dts = buffer.pts
+            if buffer.dts == Gst.CLOCK_TIME_NONE:
+                self.logger.debug(
+                    'Setting DTS=%s for buffer PTS=%s',
+                    buffer.dts,
+                    buffer.pts,
+                )
+                buffer.dts = buffer.pts
             flow_ret = self.push_buffer(buffer)
 
         return flow_ret
@@ -135,7 +149,7 @@ class SetDts(LoggerMixin, Gst.Element):
     def push_buffer(self, buffer: Gst.Buffer) -> Gst.FlowReturn:
         """Push buffer to the src pad."""
 
-        self.logger.debug('Pushing buffer PTS=%s', buffer.pts)
+        self.logger.debug('Pushing buffer PTS=%s DTS=%s', buffer.pts, buffer.dts)
         flow_ret = self.src_pad.push(buffer)
         if flow_ret == Gst.FlowReturn.OK:
             self.logger.debug('Buffer PTS=%s successfully pushed', buffer.pts)
