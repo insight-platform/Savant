@@ -173,9 +173,7 @@ COPY savant/VERSION .
 COPY gst_plugins gst_plugins
 
 COPY adapters/gst/gst_plugins adapters/gst/gst_plugins
-RUN rm -f \
-    adapters/gst/gst_plugins/python/video_files_sink.py \
-    adapters/gst/gst_plugins/python/zeromq_sink.py
+RUN rm -f adapters/gst/gst_plugins/python/video_files_sink.py
 COPY adapters/gst/sources adapters/gst/sources
 
 COPY scripts/uri-input.py scripts/
