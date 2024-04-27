@@ -346,8 +346,20 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             )
             result: Gst.FlowReturn = source_info.src_pad.push(buffer)
 
-        if result != Gst.FlowReturn.OK:
+        if result not in [
+            Gst.FlowReturn.OK,
+            Gst.FlowReturn.FLUSHING,
+            Gst.FlowReturn.EOS,
+            Gst.FlowReturn.CUSTOM_SUCCESS,
+            Gst.FlowReturn.CUSTOM_SUCCESS_1,
+            Gst.FlowReturn.CUSTOM_SUCCESS_2,
+        ]:
             if self.zeromq_reader is not None:
+                self.logger.debug(
+                    'Blacklisting source %s due to error %s',
+                    video_frame.source_id,
+                    result,
+                )
                 self.zeromq_reader.blacklist_source(video_frame.source_id.encode())
                 self.video_pipeline.delete(savant_frame_meta.idx)
                 with source_info.lock():

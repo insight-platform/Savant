@@ -27,6 +27,7 @@ pipeline:
         format: onnx
         model_file: ${parameters.gan_name}.onnx
         input:
+          shape: [3, 720, 1280]
           scale_factor: 0.0189673343
           offsets: [127.5, 127.5, 127.5]
         output:
