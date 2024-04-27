@@ -323,6 +323,7 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
             return False
 
         last_pad = pad
+        parser = None
         if codec.value.parser is not None:
             self.logger.debug(
                 'Attaching parser to pad %s.%s with caps %s',
@@ -342,7 +343,6 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
             self._elements.append(parser)
             assert last_pad.link(parser.get_static_pad('sink')) == Gst.PadLinkReturn.OK
             last_pad = parser.get_static_pad('src')
-            parser.sync_state_with_parent()
 
         filtered_caps = Gst.Caps.from_string(codec.value.caps_with_params)
         self.logger.debug(
@@ -369,6 +369,8 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
         self.send_file_location(self.source.get_property('location'))
         self.capssetter.sync_state_with_parent()
         self.capsfilter.sync_state_with_parent()
+        if parser is not None:
+            parser.sync_state_with_parent()
 
         return True
 
