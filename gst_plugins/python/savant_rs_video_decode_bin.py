@@ -147,6 +147,7 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
         self._elem_to_branch: Dict[Gst.Element, BranchInfo] = {}
         self._branches_lock = Lock()
         self._branches: Dict[str, BranchInfo] = {}
+        self._is_running = True
 
         # properties
         self._low_latency_decoding = False
@@ -460,6 +461,9 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
         self.logger.debug(
             'Lock %s of source %s has been released', branch.lock, branch.source_id
         )
+        if not self._is_running and not self._branches:
+            self.logger.debug('Emitting shutdown signal.')
+            self.emit('shutdown')
 
     def build_decoder(self, branch: BranchInfo):
         self.logger.debug('Building decoder for source %s', branch.source_id)
@@ -517,11 +521,11 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
     def on_shutdown(self, element: Gst.Element):
         """Handle shutdown signal."""
 
-        self.logger.debug(
-            'Received shutdown signal from %s. Passing it downstream.',
-            element.get_name(),
-        )
-        self.emit('shutdown')
+        self.logger.debug('Received shutdown signal from %s.', element.get_name())
+        self._is_running = False
+        if not self._branches:
+            self.logger.debug('Emitting shutdown signal.')
+            self.emit('shutdown')
 
 
 # register plugin
