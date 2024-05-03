@@ -55,6 +55,7 @@ if [[ -n "${LOSS_RATE}" ]]; then
     PIPELINE+=(identity drop-probability="${LOSS_RATE}" !)
 fi
 PIPELINE+=(
+    set_dts !
     zeromq_sink "${SINK_PROPERTIES[@]}"
 )
 

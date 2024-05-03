@@ -322,24 +322,35 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
             )
             return False
 
-        self.logger.debug(
-            'Attaching parser to pad %s.%s with caps %s',
-            pad.get_parent().get_name(),
-            pad.get_name(),
-            caps.to_string(),
-        )
-
-        parser: Gst.Element = Gst.ElementFactory.make(codec.value.parser)
-        if codec.value.parser in ['h264parse', 'h265parse']:
-            # Send VPS, SPS and PPS with every IDR frame
-            # h26xparse cannot start stream without VPS, SPS or PPS in the first frame
-            self.logger.debug('Set config-interval of %s to %s', parser.get_name(), -1)
-            parser.set_property('config-interval', -1)
-        self.add(parser)
-        self._elements.append(parser)
-        assert pad.link(parser.get_static_pad('sink')) == Gst.PadLinkReturn.OK
+        last_pad = pad
+        parser = None
+        if codec.value.parser is not None:
+            self.logger.debug(
+                'Attaching parser to pad %s.%s with caps %s',
+                last_pad.get_parent().get_name(),
+                last_pad.get_name(),
+                caps.to_string(),
+            )
+            parser: Gst.Element = Gst.ElementFactory.make(codec.value.parser)
+            if codec.value.parser in ['h264parse', 'h265parse']:
+                # Send VPS, SPS and PPS with every IDR frame
+                # h26xparse cannot start stream without VPS, SPS or PPS in the first frame
+                self.logger.debug(
+                    'Set config-interval of %s to %s', parser.get_name(), -1
+                )
+                parser.set_property('config-interval', -1)
+            self.add(parser)
+            self._elements.append(parser)
+            assert last_pad.link(parser.get_static_pad('sink')) == Gst.PadLinkReturn.OK
+            last_pad = parser.get_static_pad('src')
 
         filtered_caps = Gst.Caps.from_string(codec.value.caps_with_params)
+        self.logger.debug(
+            'Attaching capsfilter to pad %s.%s with caps %s',
+            last_pad.get_parent().get_name(),
+            last_pad.get_name(),
+            filtered_caps.to_string(),
+        )
         self.capsfilter.set_property('caps', filtered_caps)
         modified_caps = Gst.Caps.from_string(filtered_caps[0].get_name())
         if self.file_type == FileType.IMAGE:
@@ -350,12 +361,16 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
                 Gst.Fraction(self.framerate.numerator, self.framerate.denominator),
             )
         self.capssetter.set_property('caps', modified_caps)
-        assert parser.link(self.capsfilter)
+        assert (
+            last_pad.link(self.capsfilter.get_static_pad('sink'))
+            == Gst.PadLinkReturn.OK
+        )
         assert self.src_pad.set_active(True)
         self.send_file_location(self.source.get_property('location'))
         self.capssetter.sync_state_with_parent()
         self.capsfilter.sync_state_with_parent()
-        parser.sync_state_with_parent()
+        if parser is not None:
+            parser.sync_state_with_parent()
 
         return True
 

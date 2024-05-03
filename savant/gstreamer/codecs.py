@@ -85,6 +85,7 @@ class CodecInfo:
 class Codec(Enum):
     """Codec enum."""
 
+    # Video codecs
     H264 = CodecInfo(
         'h264',
         'video/x-h264',
@@ -100,8 +101,23 @@ class Codec(Enum):
         'h265parse',
         nv_encoder='nvv4l2h265enc',
     )
+    VP8 = CodecInfo(
+        'vp8',
+        'video/x-vp8',
+        [],
+    )
+    VP9 = CodecInfo(
+        'vp9',
+        'video/x-vp9',
+        [],
+        'vp9parse',
+    )
+
+    # Raw video codecs
     RAW_RGBA = CodecInfo('raw-rgba', 'video/x-raw', ['format=RGBA'], is_raw=True)
     RAW_RGB24 = CodecInfo('raw-rgb24', 'video/x-raw', ['format=RGB'], is_raw=True)
+
+    # Image codecs
     PNG = CodecInfo(
         'png',
         'image/png',
