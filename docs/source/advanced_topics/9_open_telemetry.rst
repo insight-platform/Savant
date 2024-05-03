@@ -80,4 +80,4 @@ Use ``params.telemetry.tracing`` to configure OpenTelemetry for the module.
           -p 9411:9411 \
           jaegertracing/all-in-one:1.48
 
-.. youtube:: -DXDM_wJZho
+.. youtube:: DkNifuKg-kY
