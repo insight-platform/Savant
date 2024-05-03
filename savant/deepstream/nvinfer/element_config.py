@@ -348,7 +348,7 @@ def nvinfer_element_configurator(
         logger.info('Model output converter will be used.')
 
         # input shape is used in some converters,
-        # e.g. to scale the output of yolo detector
+        # e.g. to cloud the output of yolo detector
         if not model_config.input.shape:
             raise NvInferConfigException(
                 'Model input shape (model.input.shape) required.'

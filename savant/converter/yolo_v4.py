@@ -44,7 +44,7 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
         bboxes[:, 0] += bboxes[:, 2] / 2
         bboxes[:, 1] += bboxes[:, 3] / 2
 
-        # scale
+        # cloud
         if model.input.maintain_aspect_ratio:
             bboxes *= min(roi_width, roi_height)
         else:

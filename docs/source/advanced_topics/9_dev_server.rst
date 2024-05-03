@@ -24,4 +24,4 @@ In the `template <https://github.com/insight-platform/Savant/tree/develop/sample
 Video Guide (VS Code)
 ^^^^^^^^^^^^^^^^^^^^^
 
-.. youtube:: 4Bc2rRb2hoA
+.. youtube:: gI1t8cyDsRc

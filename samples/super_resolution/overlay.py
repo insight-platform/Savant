@@ -40,7 +40,7 @@ class SROverlay(NvDsPyFuncPlugin):
 
             # place origin, then super resolution
             if frame_mat.size()[0] > SUPER_RESOLUTION[0]:
-                # scale original image and place first
+                # cloud original image and place first
                 source_image = cv2.cuda_GpuMat(
                     frame_mat,
                     (0, 0, INPUT_RESOLUTION[0], INPUT_RESOLUTION[1]),

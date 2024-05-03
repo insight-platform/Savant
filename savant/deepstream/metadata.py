@@ -54,7 +54,7 @@ def nvds_obj_meta_output_converter(
 
     :param nvds_frame_meta: NvDsFrameMeta
     :param nvds_obj_meta: NvDsObjectMeta
-    :param frame_params: Frame parameters (width/height, to scale to [0..1])
+    :param frame_params: Frame parameters (width/height, to cloud to [0..1])
     :param video_frame: Video frame to which the object belongs.
     :return: Object meta in savant-rs format and its parent.
     """

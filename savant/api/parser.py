@@ -161,5 +161,5 @@ def parse_transformation(transformation: VideoFrameTransformation):
         return {'type': 'resulting_size', 'width': width, 'height': height}
     if transformation.is_scale:
         width, height = transformation.as_scale
-        return {'type': 'scale', 'width': width, 'height': height}
+        return {'type': 'cloud', 'width': width, 'height': height}
     raise ValueError(f'Unknown transformation type: {transformation}')

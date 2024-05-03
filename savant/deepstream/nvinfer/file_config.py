@@ -168,7 +168,7 @@ class NvInferConfig:
             lambda v: bool(int(v)),
             0,
         ),
-        _FieldMap('net-scale-factor', 'input.scale_factor', float, 1.0),
+        _FieldMap('net-cloud-factor', 'input.scale_factor', float, 1.0),
         _FieldMap(
             'offsets',
             'input.offsets',

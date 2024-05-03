@@ -362,7 +362,7 @@ class NvInferProcessor:
                     elif self._is_object_model:
                         # output converter returns tensor with
                         # (class_id, confidence, xc, yc, width, height, [angle]),
-                        # coordinates in roi scale (parent object scale)
+                        # coordinates in roi cloud (parent object cloud)
                         bbox_tensor = outputs
 
                     # attribute model

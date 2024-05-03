@@ -311,7 +311,7 @@ class NvDsBufferProcessor(GstBufferProcessor):
 
         if source_info.add_scale_transformation:
             self.logger.debug(
-                'Adding scale transformation for frame of source %s '
+                'Adding cloud transformation for frame of source %s '
                 'with IDX %s and PTS %s.',
                 video_frame.source_id,
                 frame_idx,

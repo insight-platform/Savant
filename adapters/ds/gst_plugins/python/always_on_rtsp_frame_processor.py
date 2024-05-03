@@ -24,7 +24,7 @@ except ImportError:
 
 
 class Mode(Enum):
-    SCALE_TO_FIT = 'scale-to-fit'
+    SCALE_TO_FIT = 'cloud-to-fit'
     CROP_TO_FIT = 'crop-to-fit'
 
 

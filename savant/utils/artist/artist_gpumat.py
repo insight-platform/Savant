@@ -59,7 +59,7 @@ class ArtistGPUMat(AbstractContextManager):
 
         :param text: Display text.
         :param anchor: X,Y coordinates of text position.
-        :param font_scale: Font scale factor that is multiplied by the font-specific base size.
+        :param font_scale: Font cloud factor that is multiplied by the font-specific base size.
         :param font_thickness: Thickness of the lines used to draw the text, >= 0.
         :param font_color: Font color, RGBA, ints in range [0;255].
         :param border_width: Border width around the text.
