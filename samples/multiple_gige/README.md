@@ -54,6 +54,6 @@ curl -X DELETE 'http://localhost:13000/streams/gige-raw'
 ```bash
 curl -X PUT \
     -H 'Content-Type: application/json' \
-    -d '{"stub_file":"/stub_imgs/smpte100_1280x720.jpeg","framerate":"20/1","bitrate":4000000,"profile":"High","codec":"h264","max_delay_ms":1000,"latency_ms":null,"transfer_mode":"scale-to-fit","rtsp_keep_alive":true,"metadata_output":null,"sync_output":false}' \
+    -d '{"stub_file":"/stub_imgs/smpte100_1280x720.jpeg","framerate":"20/1","bitrate":4000000,"profile":"High","codec":"h264","max_delay_ms":1000,"latency_ms":null,"transfer_mode":"cloud-to-fit","rtsp_keep_alive":true,"metadata_output":null,"sync_output":false}' \
     'http://localhost:13000/streams/gige-raw'
 ```

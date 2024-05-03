@@ -76,7 +76,7 @@ class YoloV8PoseConverter(BaseComplexModelOutputConverter):
         key_points = output[:, 5:]
         key_points = key_points.reshape(key_points.shape[0], -1, 3)
 
-        # scale
+        # cloud
         roi_left, roi_top, roi_width, roi_height = roi
         if model.input.maintain_aspect_ratio:
             ratio_x = ratio_y = min(

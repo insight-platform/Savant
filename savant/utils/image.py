@@ -216,14 +216,14 @@ class CPUImage:
         """Resizes image to resolution.
 
         :param resolution: resolution to resize [width, height]
-        :param method: method to resize one of ['fit', 'scale']
+        :param method: method to resize one of ['fit', 'cloud']
         :param interpolation: interpolation method.
             Oone of [cv2.INTER_NEAREST, cv2.INTER_AREA, cv2.INTER_LINEAR,
             cv2.INTER_CUBIC, cv2.INTER_LANCZOS4]
         :return: resized image
         """
         resize_resolution = resolution
-        if method == 'scale':
+        if method == 'cloud':
             scale_factor = min(resolution[0] / self.width, resolution[1] / self.height)
             resize_resolution = (
                 int(self.width * scale_factor),
@@ -485,14 +485,14 @@ class GPUImage:
         """Resizes image to resolution.
 
         :param resolution: resolution to resize [width, height]
-        :param method: method to resize one of ['fit', 'scale']
+        :param method: method to resize one of ['fit', 'cloud']
         :param interpolation: interpolation method.
             Oone of [cv2.INTER_NEAREST, cv2.INTER_AREA, cv2.INTER_LINEAR,
             cv2.INTER_CUBIC, cv2.INTER_LANCZOS4]
         :return: resized image
         """
         resize_resolution = resolution
-        if method == 'scale':
+        if method == 'cloud':
             scale_factor = min(resolution[0] / self.width, resolution[1] / self.height)
             resize_resolution = (
                 int(self.width * scale_factor),

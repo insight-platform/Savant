@@ -17,8 +17,8 @@ def scale_rbbox(
     """Scaling rotated boxes in-place.
 
     :param bboxes: np array of bboxes, shape Nx5. Row is [cx, cy, w, h, angle]
-    :param scale_factor_x: scale factor for x coordinates
-    :param scale_factor_y: scale factor for y coordinates
+    :param scale_factor_x: cloud factor for x coordinates
+    :param scale_factor_y: cloud factor for y coordinates
     """
     no_angle_mask = np.mod(bboxes[:, 4], 90) == 0
     angle_mask = ~no_angle_mask
@@ -86,7 +86,7 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
         :param roi: [top, left, width, height] of the rectangle
             on which the model infers
         :return: BBox tensor (class_id, confidence, xc, yc, width, height, angle)
-            in roi scale
+            in roi cloud
         """
         if not output_layers[0].shape[0]:
             return np.empty((0, 7), dtype=np.float32)

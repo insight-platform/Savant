@@ -343,8 +343,8 @@ def video_files_sink(
 )
 @click.option(
     '--transfer-mode',
-    default='scale-to-fit',
-    help='Transfer mode. One of: "scale-to-fit", "crop-to-fit".',
+    default='cloud-to-fit',
+    help='Transfer mode. One of: "cloud-to-fit", "crop-to-fit".',
     show_default=True,
 )
 @click.option(

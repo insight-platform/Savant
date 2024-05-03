@@ -71,7 +71,7 @@ def get_obj_draw_spec(config: Optional[dict]) -> ObjectDraw:
         border_color = config['label'].get('border_color', '00000000')
         # default black background
         background_color = config['label'].get('background_color', '000000FF')
-        # default font scale 0.5
+        # default font cloud 0.5
         font_scale = config['label'].get('font_scale', 0.5)
         # default font thickness 1
         thickness = config['label'].get('thickness', 1)

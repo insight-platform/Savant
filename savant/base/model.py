@@ -47,7 +47,7 @@ class OutputImage:
 
     def __post_init__(self):
         self.method = self.method.lower()
-        if self.method not in ['fit', 'scale']:
+        if self.method not in ['fit', 'cloud']:
             raise ValueError(f'Invalid output image method: {self.method}')
         self.interpolation = self.interpolation.lower()
         if self.interpolation not in ['nearest', 'linear', 'cubic', 'area', 'lanczos4']:

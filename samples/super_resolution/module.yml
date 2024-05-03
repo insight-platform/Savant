@@ -1,7 +1,7 @@
 name: super_resolution
 
 parameters:
-  # set the super resolution model scale (x2/3/4) and name (ninasr_b0/1)
+  # set the super resolution model cloud (x2/3/4) and name (ninasr_b0/1)
   sr_scale: 3
   sr_model: ninasr_b0
   frame:

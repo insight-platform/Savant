@@ -100,7 +100,7 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
 
         roi_left, roi_top, roi_width, roi_height = roi
 
-        # scale
+        # cloud
         if model.input.maintain_aspect_ratio:
             bboxes /= min(
                 model.input.width / roi_width,

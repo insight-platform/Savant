@@ -76,13 +76,13 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
             ratio_x = roi_width / model.input.width
             ratio_y = roi_height / model.input.height
 
-        # scale & shift bboxes
+        # cloud & shift bboxes
         tensors[:, [2, 4]] *= ratio_x
         tensors[:, [3, 5]] *= ratio_y
         tensors[:, 2] += roi_left
         tensors[:, 3] += roi_top
 
-        # scale masks & prepare mask list
+        # cloud masks & prepare mask list
         mask_width = int(ratio_x * model.input.width)
         mask_height = int(ratio_y * model.input.height)
 

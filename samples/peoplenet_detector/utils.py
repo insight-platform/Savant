@@ -29,7 +29,7 @@ def get_font_scale(
     font_scale_range: Tuple[float, float] = (0.1, 5),
     font_scale_step: float = 0.1,
 ) -> float:
-    """Find a font scale for OpenCV's text according to target text height in pixels."""
+    """Find a font cloud for OpenCV's text according to target text height in pixels."""
 
     font_scale = font_scale_range[0]
     text_size, _ = cv2.getTextSize(sample_text, font_face, font_scale, font_thickness)
