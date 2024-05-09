@@ -108,7 +108,7 @@ In VSCode:
 
 .. image:: ../_static/img/dev-env/16-run-python-file.png
 
-.. youtube:: qhjEF8qBvmE
+.. youtube:: vuE2ZB6ZmB8
 
 Also you can do it from the CLI like:
 
@@ -138,9 +138,4 @@ Using uri-input.py Script
 
 The video demonstrates how to use ``uri-input.py`` to submit a video file to the module, and display its contents with the Always-On RTSP Sink Adapter.
 
-.. youtube:: Gag1Nn_gg7g
-
-Summary
--------
-
-TODO
+.. youtube:: jIntvew3QaI
