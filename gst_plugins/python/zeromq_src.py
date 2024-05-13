@@ -1,7 +1,6 @@
 """ZeroMQ src."""
 
 import inspect
-import itertools
 from collections import deque
 from typing import Deque, Optional, Tuple
 
@@ -618,10 +617,7 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
         """Handle VideoFrameBatch message."""
 
         # TODO: make batch_size configurable
-        for i in itertools.count():
-            frame = video_frame_batch.get(i)
-            if frame is None:
-                break
+        for frame in video_frame_batch.frames:
             result = self.handle_video_frame(frame, span_context, b'')
             self.pending_buffers.append(result)
 
