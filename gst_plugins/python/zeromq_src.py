@@ -1,7 +1,8 @@
 """ZeroMQ src."""
 
 import inspect
-from typing import Optional, Tuple
+from collections import deque
+from typing import Deque, Optional, Tuple
 
 from pygstsavantframemeta import gst_buffer_add_savant_frame_meta
 from savant_rs.pipeline2 import VideoPipeline
@@ -9,6 +10,7 @@ from savant_rs.primitives import (
     EndOfStream,
     Shutdown,
     VideoFrame,
+    VideoFrameBatch,
     VideoFrameContent,
     VideoFrameTransformation,
 )
@@ -214,6 +216,7 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
         self.ingress_kwargs: Optional[str] = None
         self.ingress_dev_mode: bool = False
         self.ingress_pyfunc: Optional[PyFunc] = None
+        self.pending_buffers: Deque[HandlerResult] = deque()
 
         self.source: ZeroMQSource = None
         self.set_live(True)
@@ -405,6 +408,9 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
         return result
 
     def try_create(self) -> HandlerResult:
+        if self.pending_buffers:
+            return self.pending_buffers.popleft()
+
         zmq_message = self.source.next_message()
         if zmq_message is None:
             return
@@ -420,6 +426,11 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
                 message.as_video_frame(),
                 message.span_context,
                 zmq_message.content,
+            )
+        if message.is_video_frame_batch():
+            return self.handle_video_frame_batch(
+                message.as_video_frame_batch(),
+                message.span_context,
             )
         if message.is_end_of_stream():
             return self.handle_eos(message.as_end_of_stream())
@@ -541,7 +552,7 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
             return None
 
         if video_frame.content.is_internal():
-            return Gst.Buffer.new_wrapped(video_frame.content.get_data_as_bytes())
+            return Gst.Buffer.new_wrapped(video_frame.content.get_data())
 
         frame_type = ExternalFrameType(video_frame.content.get_method())
         if frame_type != ExternalFrameType.ZEROMQ:
@@ -597,6 +608,21 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
                 )
             )
         gst_buffer_add_savant_frame_meta(frame_buf, idx)
+
+    def handle_video_frame_batch(
+        self,
+        video_frame_batch: VideoFrameBatch,
+        span_context: PropagatedContext,
+    ) -> HandlerResult:
+        """Handle VideoFrameBatch message."""
+
+        # TODO: make batch_size configurable
+        for frame in video_frame_batch.frames:
+            result = self.handle_video_frame(frame, span_context, b'')
+            self.pending_buffers.append(result)
+
+        if self.pending_buffers:
+            return self.pending_buffers.popleft()
 
     def handle_eos(self, eos: EndOfStream) -> HandlerResult:
         """Handle EndOfStream message."""
