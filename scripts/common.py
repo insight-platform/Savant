@@ -216,7 +216,8 @@ def build_docker_run_command(
     entrypoint: str,
     docker_image: str,
     detach: bool = False,
-    sync: bool = False,
+    sync_output: bool = False,
+    sync_input: bool = False,
     envs: List[str] = None,
     volumes: List[str] = None,
     devices: List[str] = None,
@@ -234,7 +235,8 @@ def build_docker_run_command(
     :param entrypoint: add ``--entrypoint`` parameter
     :param docker_image: docker image to run
     :param detach: run docker container in background
-    :param sync: add ``SYNC_OUTPUT`` env var to container
+    :param sync_output: add ``SYNC_OUTPUT`` env var to container
+    :param sync_input: add ``SYNC_INPUT`` env var to container
     :param envs: add ``-e`` parameters
     :param volumes: add ``-v`` parametrs
     :param devices: add ``--devices`` parameters
@@ -251,7 +253,8 @@ def build_docker_run_command(
         '--name', container_name,
         '-e', f'GST_DEBUG={gst_debug}',
         '-e', 'LOGLEVEL',
-        '-e', f'SYNC_OUTPUT={sync}',
+        '-e', f'SYNC_OUTPUT={sync_output}',
+        '-e', f'SYNC_INPUT={sync_input}',
     ]
     # fmt: on
 

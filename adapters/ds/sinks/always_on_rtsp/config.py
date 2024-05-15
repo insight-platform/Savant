@@ -87,7 +87,12 @@ class CommonStreamConfig:
         self.framerate = opt_config('FRAMERATE', '30/1')
         self.idr_period_frames = opt_config('IDR_PERIOD_FRAMES', IDR_PERIOD_FRAMES, int)
 
-        self.sync = opt_config('SYNC_OUTPUT', False, strtobool)
+        self.sync = opt_config('SYNC_INPUT', False, strtobool)
+        self.realtime = opt_config('REALTIME', False, strtobool)
+        self.sync_offset_ms = opt_config('SYNC_OFFSET_MS', 0, int)
+        assert self.sync_offset_ms >= 0, 'SYNC_OFFSET_MS should be non-negative.'
+        self.sync_queue_size = opt_config('SYNC_QUEUE_SIZE', 500, int)
+        assert self.sync_queue_size > 0, 'SYNC_QUEUE_SIZE should be positive.'
         self.max_allowed_resolution = opt_config(
             'MAX_RESOLUTION',
             MAX_ALLOWED_RESOLUTION,

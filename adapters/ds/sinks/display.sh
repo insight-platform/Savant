@@ -23,11 +23,11 @@ if [[ -n "${SOURCE_ID_PREFIX}" ]]; then
     ZEROMQ_SRC_ARGS+=(source-id-prefix="${SOURCE_ID_PREFIX}")
 fi
 
-SYNC_OUTPUT="${SYNC_OUTPUT:="false"}"
+SYNC_INPUT="${SYNC_INPUT:="false"}"
 CLOSING_DELAY="${CLOSING_DELAY:="0"}"
 
 source "${PROJECT_PATH}/adapters/shared/utils.sh"
 print_starting_message "display sink adapter"
 gst-launch-1.0 \
     savant_rs_video_player "${ZEROMQ_SRC_ARGS[@]}" \
-    sync="${SYNC_OUTPUT}" closing-delay="${CLOSING_DELAY}"
+    sync="${SYNC_INPUT}" closing-delay="${CLOSING_DELAY}"
