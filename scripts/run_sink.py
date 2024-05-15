@@ -409,6 +409,32 @@ def video_files_sink(
     ),
 )
 @click.option(
+    '--realtime',
+    is_flag=True,
+    default=False,
+    help='Synchronise frames at realtime (i.e. using avsolute timestamps).',
+)
+@click.option(
+    '--sync-offset-ms',
+    type=click.INT,
+    default=0,
+    help=(
+        'Offset in milliseconds to adjust the synchronisation. '
+        'Tune this parameter to play video more smoothly.'
+    ),
+    show_default=True,
+)
+@click.option(
+    '--sync-queue-size',
+    type=click.INT,
+    default=0,
+    help=(
+        'Size of queue for frames to be synchronised. '
+        'Tune this parameter according to the stream framerate and --sync-offset-ms.'
+    ),
+    show_default=True,
+)
+@click.option(
     '--dev-mode',
     default=False,
     is_flag=True,
@@ -482,6 +508,9 @@ def always_on_rtsp_sink(
     fps_period_seconds: Optional[float],
     metadata_output: Optional[str],
     sync: bool,
+    realtime: bool,
+    sync_offset_ms: int,
+    sync_queue_size: int,
     dev_mode: bool,
     publish_ports: bool,
     cpu: bool,
@@ -543,6 +572,9 @@ def always_on_rtsp_sink(
         f'API_PORT={api_port}',
         f'FAIL_ON_STREAM_ERROR={fail_on_stream_error}',
         f'STATUS_POLL_INTERVAL_MS={status_poll_interval_ms}',
+        f'REALTIME={realtime}',
+        f'SYNC_OFFSET_MS={sync_offset_ms}',
+        f'SYNC_QUEUE_SIZE={sync_queue_size}',
     ]
     if profile:
         envs.append(f'ENCODER_PROFILE={profile}')

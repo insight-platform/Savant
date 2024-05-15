@@ -1126,6 +1126,18 @@ The simplified design of the adapter is depicted in the following diagram:
       - A flag indicating whether to show frames on sink synchronously (i.e. at the source rate); the streaming may be not stable with this flag, try to avoid it.
       - ``False``
       - ``True``
+    * - ``REALTIME``
+      - A flag indicating whether to synchronise frames at realtime (i.e. using avsolute timestamps); ignored when ``SYNC_OUTPUT=False``.
+      - ``False``
+      - ``True``
+    * - ``SYNC_OFFSET_MS``
+      - An offset in milliseconds to adjust the synchronisation. Tune this parameter to play video more smoothly. When ``REALTIME=False``, the offset is applied to the timestamp of the first frame; when ``REALTIME=True``, the offset is applied to the current time. Ignored when ``SYNC_OUTPUT=False``.
+      - ``0``
+      - ``10``
+    * - ``SYNC_QUEUE_SIZE``
+      - A size of queue for frames to be synchronised; ignored when ``SYNC_OUTPUT=False``. Tune this parameter according to the stream framerate and ``SYNC_OFFSET_MS``.
+      - ``500``
+      - ``1000``
     * - ``SOURCE_ID``
       - A filter to receive frames with a specific ``source_id`` only (at the start of the adapter, when no other streams are configured with the REST API). This parameter is ignored when ``SOURCE_IDS`` is specified.
       - Unset

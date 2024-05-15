@@ -96,21 +96,40 @@ def on_demuxer_pad_added(
         )
         pipeline.add(capsfilter)
         assert capsfilter.get_static_pad('src').link(sink_pad) == Gst.PadLinkReturn.OK
-        assert src_pad.link(capsfilter.get_static_pad('sink')) == Gst.PadLinkReturn.OK
+        demuxer_peer_pad: Gst.Pad = capsfilter.get_static_pad('sink')
         capsfilter.sync_state_with_parent()
     else:
         decodebin = factory.create(PipelineElement('decodebin'))
         decodebin.set_property('sink-caps', caps)
         pipeline.add(decodebin)
-        decodebin_sink_pad: Gst.Pad = decodebin.get_static_pad('sink')
+        demuxer_peer_pad: Gst.Pad = decodebin.get_static_pad('sink')
         decodebin.connect('pad-added', link_added_pad, sink_pad)
-        assert src_pad.link(decodebin_sink_pad) == Gst.PadLinkReturn.OK
         decodebin.sync_state_with_parent()
         logger.debug(
             'Source %s. Added decoder %s.',
             config.source_id,
             decodebin.get_name(),
         )
+
+    if config.sync:
+        queue = factory.create(
+            PipelineElement(
+                'queue',
+                properties={
+                    'max-size-buffers': config.sync_queue_size,
+                    'max-size-bytes': 0,
+                    'max-size-time': 0,
+                },
+            )
+        )
+        pipeline.add(queue)
+        assert (
+            queue.get_static_pad('src').link(demuxer_peer_pad) == Gst.PadLinkReturn.OK
+        )
+        demuxer_peer_pad = queue.get_static_pad('sink')
+        queue.sync_state_with_parent()
+
+    assert src_pad.link(demuxer_peer_pad) == Gst.PadLinkReturn.OK
 
 
 def build_input_pipeline(
@@ -163,7 +182,10 @@ def build_input_pipeline(
             'always_on_rtsp_frame_sink',
             properties={
                 'last-frame': last_frame,
-                'sync': config.sync,
+                'realtime': config.realtime,
+                'sync-offset': (
+                    config.sync_offset_ms * Gst.MSECOND if config.sync else -1
+                ),
             },
         )
     )
