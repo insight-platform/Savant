@@ -3,10 +3,11 @@ from threading import Lock
 from typing import Deque, Optional, Tuple
 
 from gst_plugins.python.frame_tag_filter_common import parse_stream_part_event
-from savant.gstreamer import GObject, Gst
+from savant.gstreamer import GLib, GObject, Gst
 from savant.gstreamer.utils import on_pad_event
 from savant.utils.logging import LoggerMixin
 
+DEFAULT_QUEUE_SIZE = 50
 SINK_TAGGED_PAD_TEMPLATE = Gst.PadTemplate.new(
     'sink_tagged',
     Gst.PadDirection.SINK,
@@ -50,12 +51,28 @@ class FrameTagFunnel(LoggerMixin, Gst.Element):
         SRC_PAD_TEMPLATE,
     )
 
+    __gproperties__ = {
+        'queue-size': (
+            GObject.TYPE_UINT,
+            'Max number of frames in a queue.',
+            'Max number of frames in a queue.',
+            1,
+            GLib.MAXUINT,
+            DEFAULT_QUEUE_SIZE,
+            GObject.ParamFlags.READWRITE,
+        ),
+    }
+
     def __init__(self):
         super().__init__()
+
+        # properties
+        self.max_queue_size = DEFAULT_QUEUE_SIZE
 
         # ((part_pad, part_id), part_source_pad)
         self.pending_parts: Deque[Tuple[Tuple[Gst.Pad, int], Gst.Pad]] = deque()
         self.buffers: Deque[Deque[Gst.Buffer]] = deque()
+        self.queue_size = 0
         self.current_pad: Optional[Gst.Pad] = None
         self.stream_lock = Lock()
 
@@ -97,6 +114,22 @@ class FrameTagFunnel(LoggerMixin, Gst.Element):
             event_handlers,
         )
 
+    def do_get_property(self, prop):
+        """Get property callback."""
+
+        if prop.name == 'queue-size':
+            return self.max_queue_size
+        raise AttributeError(f'Unknown property {prop.name}')
+
+    def do_set_property(self, prop, value):
+        """Set property callback."""
+
+        self.logger.debug('Setting property "%s" to "%s".', prop.name, value)
+        if prop.name == 'queue-size':
+            self.max_queue_size = value
+        else:
+            raise AttributeError(f'Unknown property {prop.name}')
+
     def handle_buffer(
         self,
         sink_pad: Gst.Pad,
@@ -117,6 +150,24 @@ class FrameTagFunnel(LoggerMixin, Gst.Element):
                 return self.push_buffer(buffer)
             else:
                 self.buffers[-1].append(buffer)
+                self.queue_size += 1
+                if self.queue_size < self.max_queue_size:
+                    return Gst.FlowReturn.OK
+
+                for part_buffers in self.buffers:
+                    if self.queue_size < self.max_queue_size:
+                        return Gst.FlowReturn.OK
+                    buffer = part_buffers.popleft()
+                    self.queue_size -= 1
+                    ret = self.push_buffer(buffer)
+                    if ret != Gst.FlowReturn.OK:
+                        self.logger.error(
+                            'Failed to push buffer %s: %s.',
+                            buffer.pts,
+                            ret,
+                        )
+                        return ret
+
                 return Gst.FlowReturn.OK
 
     def on_eos(self, pad: Gst.Pad, event: Gst.Event):
@@ -135,6 +186,7 @@ class FrameTagFunnel(LoggerMixin, Gst.Element):
                 while self.buffers:
                     for buffer in self.buffers.popleft():
                         self.push_buffer(buffer)
+                        self.queue_size -= 1
 
                 return Gst.PadProbeReturn.PASS
             else:
@@ -165,6 +217,7 @@ class FrameTagFunnel(LoggerMixin, Gst.Element):
                 self.pending_events[part_source_pad] -= 1
                 for buffer in self.buffers.popleft():
                     self.push_buffer(buffer)
+                    self.queue_size -= 1
                 if self.pending_events[next_part_pad] == 0:
                     self.current_pad = next_part_pad
                     self.logger.debug(
