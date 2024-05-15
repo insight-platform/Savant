@@ -137,12 +137,13 @@ class AlwaysOnRtspFrameSink(LoggerMixin, GstBase.BaseSink):
                 + self.get_base_time()
                 - self.get_clock().get_time()
             ) / Gst.SECOND
-            self.logger.debug(
-                'Waiting %s seconds to process frame %s',
-                wait_time,
-                buffer.pts,
-            )
-            time.sleep(wait_time)
+            if wait_time > 0:
+                self.logger.debug(
+                    'Waiting %s seconds to process frame %s',
+                    wait_time,
+                    buffer.pts,
+                )
+                time.sleep(wait_time)
 
         try:
             if self._width == 0 or self._height == 0:
