@@ -157,7 +157,7 @@ def display_sink(
     cmd = build_docker_run_command(
         'sink-display',
         zmq_endpoints=[in_endpoint],
-        sync=sync,
+        sync_input=sync,
         entrypoint='/opt/savant/adapters/ds/sinks/display.sh',
         envs=envs,
         volumes=[f'{xsock}:{xsock}', f'{xauth}:{xauth}'],
@@ -403,10 +403,7 @@ def video_files_sink(
     '--sync',
     is_flag=True,
     default=False,
-    help=(
-        'Show frames on sink synchronously (i.e. at the source file rate). '
-        'Note: inbound stream is not stable with this flag, try to avoid it.'
-    ),
+    help='Show frames on sink synchronously (i.e. at the source file rate).',
 )
 @click.option(
     '--realtime',
@@ -597,7 +594,7 @@ def always_on_rtsp_sink(
     cmd = build_docker_run_command(
         f'sink-always-on-rtsp-{uuid.uuid4().hex}',
         zmq_endpoints=[in_endpoint],
-        sync=sync,
+        sync_input=sync,
         entrypoint='python',
         args=['-m', 'adapters.ds.sinks.always_on_rtsp'],
         envs=envs,

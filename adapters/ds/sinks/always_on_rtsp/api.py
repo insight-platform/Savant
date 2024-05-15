@@ -129,12 +129,9 @@ class StreamModel(BaseModel):
         None,
         description='Where to dump metadata.',
     )
-    sync_output: Optional[bool] = Field(
+    sync_input: Optional[bool] = Field(
         None,
-        description=(
-            'Show frames on sink synchronously (i.e. at the source file rate). '
-            'Note: inbound stream is not stable with this flag, try to avoid it.'
-        ),
+        description='Show frames on sink synchronously (i.e. at the source file rate).',
     )
     status: Optional[StreamStatusModel] = Field(
         None,
@@ -160,7 +157,7 @@ class StreamModel(BaseModel):
             transfer_mode=self.transfer_mode,
             rtsp_keep_alive=self.rtsp_keep_alive,
             metadata_output=self.metadata_output,
-            sync_output=self.sync_output,
+            sync_input=self.sync_input,
         )
 
     @staticmethod
@@ -179,7 +176,7 @@ class StreamModel(BaseModel):
             transfer_mode=stream.transfer_mode,
             rtsp_keep_alive=stream.rtsp_keep_alive,
             metadata_output=stream.metadata_output,
-            sync_output=stream.sync_output,
+            sync_input=stream.sync_input,
             status=StreamStatusModel.from_stream(stream),
         )
 
@@ -200,7 +197,7 @@ class StreamModel(BaseModel):
             'metadata_output': (
                 self.metadata_output.value if self.metadata_output else None
             ),
-            'sync_output': self.sync_output,
+            'sync_input': self.sync_input,
             'status': self.status.to_dict() if self.status else None,
         }
 
