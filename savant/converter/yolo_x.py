@@ -31,7 +31,9 @@ class TensorToBBoxConverter(YoloTensorToBBoxConverter):
         """
         self.decode = decode
         super().__init__(
-            confidence_threshold=confidence_threshold, top_k=top_k, nms_iou_threshold=nms_iou_threshold
+            confidence_threshold=confidence_threshold,
+            top_k=top_k,
+            nms_iou_threshold=nms_iou_threshold,
         )
 
     def __call__(
