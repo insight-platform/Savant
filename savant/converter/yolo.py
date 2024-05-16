@@ -58,7 +58,7 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
 
         if len(output_layers) == 1:
             output = output_layers[0]
-            assert model.output.num_detected_classes > 0
+            assert model.output.num_detected_classes is not None
             if output.shape[0] == model.output.num_detected_classes + 4:
                 output = np.transpose(output)
                 scores = output[:, 4:]
