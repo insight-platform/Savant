@@ -18,6 +18,7 @@ class TensorToBBoxConverter(YoloTensorToBBoxConverter):
         decode: bool = False,
         confidence_threshold: float = 0.25,
         top_k: int = 3000,
+        nms_iou_threshold: float = 0.0,
     ):
         """
         :param decode: Decode output before convert.
@@ -26,9 +27,12 @@ class TensorToBBoxConverter(YoloTensorToBBoxConverter):
         :param confidence_threshold: Select detections with confidence
             greater than specified.
         :param top_k: Maximum number of output detections.
+        :param nms_iou_threshold: Class agnostic NMS IoU threshold.
         """
         self.decode = decode
-        super().__init__(confidence_threshold=confidence_threshold, top_k=top_k)
+        super().__init__(
+            confidence_threshold=confidence_threshold, top_k=top_k, nms_iou_threshold=nms_iou_threshold
+        )
 
     def __call__(
         self,

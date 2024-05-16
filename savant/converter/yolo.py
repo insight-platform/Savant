@@ -8,18 +8,26 @@ import numpy as np
 
 from savant.base.converter import BaseObjectModelOutputConverter
 from savant.base.model import ObjectModel
+from savant.utils.nms import nms_cpu
 
 
 class TensorToBBoxConverter(BaseObjectModelOutputConverter):
     """YOLO detector output to bbox converter."""
 
-    def __init__(self, confidence_threshold: float = 0.25, top_k: int = 3000):
+    def __init__(
+        self,
+        confidence_threshold: float = 0.25,
+        top_k: int = 3000,
+        nms_iou_threshold: float = 0.0,
+    ):
         """
         :param confidence_threshold: Select detections with confidence
             greater than specified.
         :param top_k: Maximum number of output detections.
+        :param nms_iou_threshold: Class agnostic NMS IoU threshold.
         """
         self.confidence_threshold = confidence_threshold
+        self.nms_iou_threshold = nms_iou_threshold
         self.top_k = top_k
         super().__init__()
 
@@ -50,10 +58,8 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
 
         if len(output_layers) == 1:
             output = output_layers[0]
-            if (
-                model.output.num_detected_classes
-                and output.shape[0] == model.output.num_detected_classes + 4
-            ):
+            assert model.output.num_detected_classes > 0
+            if output.shape[0] == model.output.num_detected_classes + 4:
                 output = np.transpose(output)
                 scores = output[:, 4:]
             else:
@@ -90,9 +96,16 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
             class_ids = class_ids[conf_mask]
             confidences = confidences[conf_mask]
 
-        # TODO: Replace with NMS+topK?
+        # TODO: ability to filter by class, by size (width, height) and aspect ratio
+        # apply class agnostic NMS (all classes are treated as one)
+        if self.nms_iou_threshold > 0 and len(confidences) > 1:
+            nms_mask = nms_cpu(bboxes, confidences, self.nms_iou_threshold, self.top_k)
+            bboxes = bboxes[nms_mask]
+            class_ids = class_ids[nms_mask]
+            confidences = confidences[nms_mask]
+
         # select top k
-        if len(confidences) > self.top_k:
+        elif len(confidences) > self.top_k:
             top_k_mask = np.argpartition(confidences, -self.top_k)[-self.top_k :]
             bboxes = bboxes[top_k_mask]
             class_ids = class_ids[top_k_mask]
