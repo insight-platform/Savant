@@ -2,7 +2,7 @@ version: "3.3"
 services:
 
   image-json-source:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:0.4.0
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../data/source_adapter_with_json_metadata:/data/
@@ -42,7 +42,7 @@ services:
               capabilities: [gpu]
 
   image-json-sink:
-    image: ghcr.io/insight-platform/savant-adapters-py:latest
+    image: ghcr.io/insight-platform/savant-adapters-py:0.4.0
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
