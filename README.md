@@ -120,9 +120,7 @@ Savant components, processing video and computer vision, require Nvidia hardware
 
 - Jetson Xavier NX/AGX (0.2.x);
 - Jetson Orin Nano/NX/AGX (0.3.x and newer);
-- Nvidia Turing GPU;
-- Nvidia Ampere GPU;
-- Nvidia Grace Hopper.
+- Nvidia Turing, Ampere, Ada, Hopper, Blackwell GPUs (0.2.x and newer).
 
 ## Why We Developed Savant
 
