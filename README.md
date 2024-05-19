@@ -104,7 +104,7 @@ cd ../..
 If your task is to implement high-performance production-ready computer vision and video analytics applications, Savant
 is for you.
 
-With Savant, you:
+With Savant, developers:
 
 - get the maximum performance on Nvidia equipment on edge and in the core;
 - decrease time to market when building dynamic pipelines with DeepStream technology but without low-level programming;
