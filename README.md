@@ -116,10 +116,11 @@ With Savant, you:
 
 ## Runs On Nvidia Hardware
 
-- Nvidia Jetson NX/AGX, Orin Nano/NX/AGX;
+- Jetson Xavier NX/AGX (0.2.x),
+- Jetson Orin Nano/NX/AGX (0.3.x and newer);
 - Nvidia Turing GPU;
 - Nvidia Ampere GPU;
-- Nvidia Hopper, hopefully, we did not have a chance to try it yet :-)
+- Nvidia Grace Hopper.
 
 ## Why We Developed Savant
 
