@@ -125,7 +125,7 @@ With Savant, developers:
 ## Why We Developed Savant
 
 We developed Savant give computer vision and video analytics engineers a ready-to-use stack for building real-life
-computer vision applications working at the edge and in the data center. Unlike commonly used computer vision frameworks
+computer vision applications working at the edge and in the data center. Unlike other computer vision frameworks
 like PyTorch, TensorFlow, OpenVINO/DlStreamer, and DeepStream, Savant provides users with not only inference and image
 manipulation tools but also advanced architecture for building distributed edge/datacenter computer vision applications
 communicating over the network. Thus, Savant users focus on computer vision but do not reinvent the wheel, when
