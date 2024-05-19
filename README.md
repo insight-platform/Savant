@@ -69,9 +69,9 @@ questions you may have.
 
 ## Getting Started
 
-First, look at the runtime
-configuration [guide](https://docs.savant-ai.io/develop/getting_started/0_configure_prod_env.html) to
-configure the working environment.
+First, take a look at the runtime
+configuration [guide](https://docs.savant-ai.io/develop/getting_started/0_configure_prod_env.html) to configure the
+working environment.
 
 The [demo](https://github.com/insight-platform/Savant/tree/develop/samples/peoplenet_detector) shows a pipeline
 featuring person detection, facial detection, tracking, facial blurring (OpenCV CUDA), and a real-time analytics
