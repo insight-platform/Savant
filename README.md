@@ -116,7 +116,9 @@ With Savant, developers:
 
 ## Runs On Nvidia Hardware
 
-- Jetson Xavier NX/AGX (0.2.x),
+Savant components, processing video and computer vision, require Nvidia hardware. We support the following devices:
+
+- Jetson Xavier NX/AGX (0.2.x);
 - Jetson Orin Nano/NX/AGX (0.3.x and newer);
 - Nvidia Turing GPU;
 - Nvidia Ampere GPU;
