@@ -998,7 +998,7 @@ The Display Sink Adapter is a visualizing adapter designed for development purpo
 **Parameters**:
 
 - ``CLOSING_DELAY``: a delay in seconds before closing the window after the video stream has finished, the default value is ``0``;
-- ``SYNC_OUTPUT``: a flag indicating whether to show the frames on the sink synchronously with the source (i.e., at the source file rate); if you are intending to use ``SYNC`` processing, consider ``DEALER/ROUTER`` or ``REQ/REP`` sockets, because ``PUB/SUB`` may drop packets when queues are overflown;
+- ``SYNC_INPUT``: a flag indicating whether to show the frames on the sink synchronously with the source (i.e., at the source file rate); if you are intending to use ``SYNC`` processing, consider ``DEALER/ROUTER`` or ``REQ/REP`` sockets, because ``PUB/SUB`` may drop packets when queues are overflown;
 - ``SOURCE_ID``: an optional filter to filter out frames with a specific ``source_id`` only;
 - ``SOURCE_ID_PREFIX``: an optional filter to filter out frames with a ``source_id`` prefix only.
 
@@ -1008,7 +1008,7 @@ Running the adapter with Docker:
 
     docker run --rm -it --name sink-display \
         --entrypoint /opt/savant/adapters/ds/sinks/display.sh \
-        -e SYNC_OUTPUT=False \
+        -e SYNC_INPUT=False \
         -e ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc \
         -e DISPLAY \
         -e XAUTHORITY=/tmp/.docker.xauth \
@@ -1122,10 +1122,22 @@ The simplified design of the adapter is depicted in the following diagram:
       - Where to dump metadata; one of: ``stdout``, ``logger``.
       - Unset
       - ``logger``
-    * - ``SYNC_OUTPUT``
-      - A flag indicating whether to show frames on sink synchronously (i.e. at the source rate); the streaming may be not stable with this flag, try to avoid it.
+    * - ``SYNC_INPUT``
+      - A flag indicating whether to show frames on sink synchronously (i.e. at the source rate).
       - ``False``
       - ``True``
+    * - ``REALTIME``
+      - A flag indicating whether to synchronise frames at realtime (i.e. using avsolute timestamps); ignored when ``SYNC_INPUT=False``.
+      - ``False``
+      - ``True``
+    * - ``SYNC_OFFSET_MS``
+      - An offset in milliseconds to adjust the synchronisation. Tune this parameter to play video more smoothly. When ``REALTIME=False``, the offset is applied to the timestamp of the first frame; when ``REALTIME=True``, the offset is applied to the current time. Ignored when ``SYNC_INPUT=False``.
+      - ``0``
+      - ``10``
+    * - ``SYNC_QUEUE_SIZE``
+      - A size of queue for frames to be synchronised; ignored when ``SYNC_INPUT=False``. Tune this parameter according to the stream framerate and ``SYNC_OFFSET_MS``.
+      - ``500``
+      - ``1000``
     * - ``SOURCE_ID``
       - A filter to receive frames with a specific ``source_id`` only (at the start of the adapter, when no other streams are configured with the REST API). This parameter is ignored when ``SOURCE_IDS`` is specified.
       - Unset
@@ -1165,7 +1177,7 @@ Running the adapter with Docker:
     docker run --rm -it --name sink-always-on-rtsp \
         --gpus=all \
         --entrypoint python \
-        -e SYNC_OUTPUT=False \
+        -e SYNC_INPUT=False \
         -e ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc \
         -e SOURCE_ID=test \
         -e STUB_FILE_LOCATION=/path/to/stub_file/test.jpg \
@@ -1217,7 +1229,7 @@ The API provides the following endpoints:
 - ``transfer_mode (string)``: a transfer mode specification; one of: ``scale-to-fit``, ``crop-to-fit``; the parameter defines how the incoming video stream is mapped to the resulting stream;
 - ``rtsp_keep_alive (boolean)``: whether to send RTSP keep alive packets;
 - ``metadata_output (string)``: where to dump metadata; one of: ``stdout``, ``logger``;
-- ``sync_output (boolean)``: a flag indicates whether to show frames on sink synchronously (i.e. at the source rate); the streaming may be not stable with this flag, try to avoid it.
+- ``sync_input (boolean)``: a flag indicates whether to show frames on sink synchronously (i.e. at the source rate).
 
 .. note::
 
@@ -1249,7 +1261,7 @@ Examples:
         "transfer_mode": "scale-to-fit",
         "rtsp_keep_alive": true,
         "metadata_output": "stdout",
-        "sync_output": false
+        "sync_input": false
     }'
 
 .. code-block:: json
@@ -1266,7 +1278,7 @@ Examples:
       "transfer_mode": "scale-to-fit",
       "rtsp_keep_alive": true,
       "metadata_output": "stdout",
-      "sync_output": false,
+      "sync_input": false,
       "status": {
         "is_alive": true,
         "exit_code": null
@@ -1293,7 +1305,7 @@ Examples:
       "transfer_mode": "scale-to-fit",
       "rtsp_keep_alive": true,
       "metadata_output": null,
-      "sync_output": false,
+      "sync_input": false,
       "status": {
         "is_alive": true,
         "exit_code": null
@@ -1334,7 +1346,7 @@ Response:
       "transfer_mode": "scale-to-fit",
       "rtsp_keep_alive": true,
       "metadata_output": "stdout",
-      "sync_output": false,
+      "sync_input": false,
       "status": {
         "is_alive": true,
         "exit_code": null
@@ -1369,7 +1381,7 @@ Response:
       transfer_mode: scale-to-fit
       rtsp_keep_alive: true
       metadata_output: stdout
-      sync_output: false
+      sync_input: false
       status:
         is_alive: true
         exit_code: null

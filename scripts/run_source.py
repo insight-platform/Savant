@@ -123,7 +123,7 @@ def files_source(
     cmd = build_docker_run_command(
         container_name,
         zmq_endpoints=[out_endpoint],
-        sync=sync,
+        sync_output=sync,
         entrypoint=entrypoint,
         envs=envs,
         volumes=volumes,
@@ -551,7 +551,7 @@ def rtsp_source(
     cmd = build_docker_run_command(
         f'source-rtsp-{source_id}',
         zmq_endpoints=[out_endpoint],
-        sync=sync,
+        sync_output=sync,
         entrypoint='/opt/savant/adapters/gst/sources/rtsp.sh',
         envs=envs,
         docker_image=docker_image,
@@ -794,7 +794,7 @@ def ffmpeg_source(
     cmd = build_docker_run_command(
         f'source-rtsp-{source_id}',
         zmq_endpoints=[out_endpoint],
-        sync=sync,
+        sync_output=sync,
         entrypoint='/opt/savant/adapters/gst/sources/ffmpeg.sh',
         envs=envs,
         devices=devices,
@@ -1084,7 +1084,7 @@ def kvs_source(
     cmd = build_docker_run_command(
         f'source-kvs-{source_id}',
         zmq_endpoints=[out_endpoint],
-        sync=sync,
+        sync_output=sync,
         entrypoint='python',
         args=['-m', 'adapters.gst.sources.kvs'],
         envs=envs,

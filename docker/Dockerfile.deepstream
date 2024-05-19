@@ -266,12 +266,12 @@ RUN python -m pip install --no-cache-dir torch torchvision torchaudio
 ENV TORCH_HOME=/cache/models/torch_hub
 
 # torch2trt
-ARG TORCH2TRT_VERSION=0.4.0
+ARG TORCH2TRT_VERSION=0.5.0
 ARG TORCH2TRT_WHL="torch2trt-${TORCH2TRT_VERSION}-py3-none-any.whl"
 RUN wget -nv -P /usr/local/lib/ ${PACKAGES_URL}/libtorch2trt_plugins.so && \
     ldconfig && \
     wget -nv -O ${TORCH2TRT_WHL} ${PACKAGES_URL}/${TORCH2TRT_WHL} && \
-    python -m pip install --no-cache-dir tensorrt && \
+    python -m pip install --no-cache-dir tensorrt~=8.6 && \
     python -m pip install --no-cache-dir ${TORCH2TRT_WHL} && \
     python -m pip install --no-cache-dir nvidia-pyindex && \
     python -m pip install --no-cache-dir onnx-graphsurgeon && \
@@ -305,15 +305,30 @@ RUN apt-get update && \
             openmpi-common \
             libomp-dev \
             libjpeg-dev \
+            libpng-dev \
             zlib1g-dev \
+            cmake \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
 # torch, torchvision, torchaudio
-COPY --from=dustynv/l4t-pytorch:r36.2.0 /usr/local/cuda-12.2/targets/aarch64-linux/lib/libcupti.* /usr/local/cuda-12.2/targets/aarch64-linux/lib/
-COPY --from=dustynv/l4t-pytorch:r36.2.0 /opt/torch*.whl /opt/
-RUN python -m pip install --no-cache-dir /opt/torch*.whl && \
-    rm /opt/torch*.whl
+COPY --from=builder /usr/local/cuda-12.2/targets/aarch64-linux/lib/libcupti.* /usr/local/cuda-12.2/targets/aarch64-linux/lib/
+# https://forums.developer.nvidia.com/t/pytorch-for-jetson/72048
+ARG PYTORCH_URL=https://nvidia.box.com/shared/static/mp164asf3sceb570wvjsrezk1p4ftj8t.whl
+ARG PYTORCH_WHL=torch-2.3.0-cp310-cp310-linux_aarch64.whl
+RUN wget -nv -O ${PYTORCH_WHL} ${PYTORCH_URL} && \
+    python -m pip install --no-cache-dir ${PYTORCH_WHL} && \
+    rm ${PYTORCH_WHL}
+ARG TORCHAUDIO_URL=https://nvidia.box.com/shared/static/9agsjfee0my4sxckdpuk9x9gt8agvjje.whl
+ARG TORCHAUDIO_WHL=torchaudio-2.3.0+952ea74-cp310-cp310-linux_aarch64.whl
+RUN wget -nv -O ${TORCHAUDIO_WHL} ${TORCHAUDIO_URL} && \
+    python -m pip install --no-cache-dir ${TORCHAUDIO_WHL} && \
+    rm ${TORCHAUDIO_WHL}
+ARG TORCHVISION_URL=https://nvidia.box.com/shared/static/xpr06qe6ql3l6rj22cu3c45tz1wzi36p.whl
+ARG TORCHVISION_WHL=torchvision-0.18.0a0+6043bc2-cp310-cp310-linux_aarch64.whl
+RUN wget -nv -O ${TORCHVISION_WHL} ${TORCHVISION_URL} && \
+    python -m pip install --no-cache-dir ${TORCHVISION_WHL} && \
+    rm ${TORCHVISION_WHL}
 
 # set the CUDA architectures that torch extensions get built for
 # Nano/TX1 = 5.3, TX2 = 6.2, Xavier = 7.2, Orin = 8.7
@@ -327,7 +342,7 @@ ARG TORCH2TRT_WHL="torch2trt-${TORCH2TRT_VERSION}-py3-none-any.whl"
 RUN wget -nv -P /usr/local/lib/ ${PACKAGES_URL}/libtorch2trt_plugins.so && \
     ldconfig && \
     wget -nv -O ${TORCH2TRT_WHL} ${PACKAGES_URL}/${TORCH2TRT_WHL} && \
-    python -m pip install --no-cache-dir tensorrt && \
+    python -m pip install --no-cache-dir tensorrt~=8.6 && \
     python -m pip install --no-cache-dir ${TORCH2TRT_WHL} && \
     python -m pip install --no-cache-dir nvidia-pyindex && \
     python -m pip install --no-cache-dir onnx-graphsurgeon && \
