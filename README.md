@@ -13,8 +13,8 @@ applications on the Nvidia stack. It helps to develop dynamic, fault-tolerant in
 Nvidia approaches for data center and edge accelerators.
 
 Savant is built on DeepStream and provides a high-level abstraction layer for building inference pipelines. It is
-designed to be easy to use, flexible, and scalable. It is a great choice for building smart CV and video analytics
-applications for cities, retail, manufacturing, and more. Savant is a member of the Nvidia Inception Program.
+designed to be easy to use, flexible, and scalable. It is a great choice for building both real-time or high-load
+computer vision and video analytics applications.
 
 ## What Version To Use
 
