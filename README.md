@@ -47,8 +47,7 @@ Ada) and Jetson Orin Nano/NX/AGX hardware (JetPack 6.0 DP). It does not support 
 
 ### 0.4.x Current Develop (Feature Releases)
 
-This branch represents current development. It is not recommended for production use. It is a good choice for testing
-new features and providing feedback and also if you require new features absent in `0.2.x` and `0.3.x`.
+This branch contains new features. It is a good choice for users requiring functionality missing in 0.2.x and 0.3.x.
 
 | Requirements                                    | Status | DeepStream |
 |-------------------------------------------------|--------|------------|
@@ -68,7 +67,7 @@ questions you may have.
 - [Documentation](https://docs.savant-ai.io/)
 - [Performance Regression Tracking Dashboard](docs/performance.md)
 
-## Quick Start
+## Getting Started
 
 Runtime configuration [guide](https://docs.savant-ai.io/develop/getting_started/0_configure_prod_env.html) helps to
 configure the runtime to run Savant pipelines.
@@ -120,38 +119,21 @@ is for you. It helps to:
 - Nvidia Ampere GPU;
 - Nvidia Hopper, hopefully, we did not have a chance to try it yet :-)
 
-## About Nvidia DeepStream
+## Why We Developed Savant
 
-[Nvidia DeepStream](https://developer.nvidia.com/deepstream-sdk) is today's most advanced toolkit for developing
-high-performance real-time computer vision AI applications that run magnitude times faster than conventional AI
-applications executed within the runtimes like PyTorch, TensorFlow and similar.
+We developed Savant give computer vision and video analytics engineers a ready-to-use stack for building real-life
+computer vision applications working at the edge and in the data center. Unlike commonly used computer vision frameworks
+like PyTorch, TensorFlow, OpenVINO/DlStreamer, and DeepStream, Savant provides users with not only inference and image
+manipulation tools but also advanced architecture for building distributed edge/datacenter computer vision applications
+communicating over the network. Thus, Savant users focus on computer vision but do not reinvent the wheel, when
+developing their applications.
 
-[![Nvidia DeepStream Picture](https://developer.nvidia.com/sites/default/files/akamai/deepstream/metropolis-and-iva-deepstreadm-sdk-block-diagrams-2009801-r1-1.png)](#)
-
-The top-notch performance is achieved by specially designed software using the best Nvidia accelerator features,
-including hardware encoding and decoding for video streams, moving the frames through inference blocks solely in GPU RAM
-without data transfers into CPU RAM and back. The inference blocks utilize the highly efficient
-low-level ([TensorRT](https://developer.nvidia.com/tensorrt)) software stack, optimizing inference operations to get the
-best of the hardware used.
-
-## Why We Developed Savant?
-
-Why do we develop Savant if DeepStream solves the problem? That is because DeepStream is a challenging-to-use
-technology; it does not define software architecture, just a bunch of plug-ins for GStreamer: the open-source multimedia
-framework for building highly-efficient streaming applications.
-
-It makes developing more or less sophisticated DeepStream applications very painful because the developer must
-understand how the GStreamer processes the data, making the learning curve steep and almost unreachable for ML engineers
-focused on model training.
-
-Savant is a very high-level framework on DeepStream, hiding low-level internals from the developer and providing
-practical tools for quickly implementing real-life streaming AI applications. So, you implement your inference pipeline
-as a set of declarative (YAML) blocks with several user-defined functions in Python (or C/C++ if you would like to
-utilize most of the CUDA runtime).
+Savant is a very high-level framework hiding low-level internals from developers: computer vision pipelines consist of
+declarative (YAML) blocks with Python functions.
 
 ## Features
 
-Savant is packed with several killer features which skyrocket the development of Deepstream applications.
+Savant is packed with many features skyrocketing the development of high-performing computer vision applications.
 
 ### 🔧 All You Need for Building Real-Life Applications
 
