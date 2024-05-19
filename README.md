@@ -99,19 +99,20 @@ git lfs pull
 cd ../..
 ```
 
-## What Savant Is Not
-
-Savant is not for AI model training; it's for building fast streaming inference applications working on Edge and Core
-Nvidia equipment. We use PyTorch to train our models and recommend sticking with it.
-
-## Who Would Be Interested in Savant?
+## Who Would Be Interested in Savant
 
 If your task is to implement high-performance production-ready computer vision and video analytics applications, Savant
-is for you. It helps to:
+is for you.
+
+With Savant, you:
 
 - get the maximum performance on Nvidia equipment on edge and in the core;
 - decrease time to market when building dynamic pipelines with DeepStream technology but without low-level programming;
-- develop easily maintainable and testable applications with a well-established framework API.
+- develop easily maintainable and testable applications with a well-established framework API;
+- build heterogeneous pipelines with different models and data sources;
+- build hybrid edge/datacenter applications with the same codebase;
+- monitor and trace the pipelines with OpenTelemetry and Prometheus;
+- implement on-demand and non-linear processing by utilizing [Replay](https://github.com/insight-platform/Replay).
 
 ## Runs On Nvidia Hardware
 
