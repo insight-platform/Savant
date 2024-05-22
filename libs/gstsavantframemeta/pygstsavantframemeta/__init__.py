@@ -180,3 +180,13 @@ def add_pad_probe_to_remove_tracker_objs(pad: Gst.Pad):
     :param pad: nvtracker src pad.
     """
     pygstsavantframemeta.add_pad_probe_to_remove_tracker_objs(hash(pad))
+
+
+class NvBufSurfaceGenerator:
+    def __init__(self, caps: Gst.Caps, gpu_id: int, mem_type: int):
+        self._nested = pygstsavantframemeta.NvBufSurfaceGenerator(
+            hash(caps), gpu_id, mem_type
+        )
+
+    def create_surface(self, buffer: Gst.Buffer):
+        return self._nested.create_surface(hash(buffer))
