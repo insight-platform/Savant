@@ -1,6 +1,6 @@
 """Base implementation of user-defined PyFunc class."""
 
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 import cv2
 import pyds
@@ -10,7 +10,9 @@ from pygstsavantframemeta import (
 )
 from savant_rs.pipeline2 import VideoPipeline
 
+from savant.api.constants import DEFAULT_FRAMERATE
 from savant.base.pyfunc import BasePyFuncPlugin
+from savant.deepstream.auxiliary_stream import AuxiliaryStream
 from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.deepstream.utils.event import (
     GST_NVEVENT_PAD_ADDED,
@@ -50,6 +52,7 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
         }
         self._stream_pool_size = None
         self._stream_pool = []
+        self._auxiliary_streams: Dict[str, AuxiliaryStream] = {}
 
     def on_start(self) -> bool:
         """Do on plugin start."""
@@ -168,6 +171,9 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
         for stream in self._stream_pool:
             stream.waitForCompletion()
 
+        for aux_stream in self._auxiliary_streams.values():
+            aux_stream._flush()
+
     def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
         """Process gstreamer buffer and frame metadata. Throws an exception if fatal
         error has occurred.
@@ -210,3 +216,27 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
         """
 
         return self._metrics_registry
+
+    def auxiliary_stream(
+        self,
+        source_id: str,
+        width: int,
+        height: int,
+        codec_params: Dict[str, Any],
+        framerate: str = DEFAULT_FRAMERATE,
+    ) -> AuxiliaryStream:
+        aux_stream = AuxiliaryStream(
+            source_id=source_id,
+            sources=self._sources,
+            width=width,
+            height=height,
+            framerate=framerate,
+            codec_params=codec_params,
+            video_pipeline=self._video_pipeline,
+            # stage_name=self.gst_element.get_name(),
+            stage_name='source',
+            gst_pipeline=self.gst_element.get_property('gst-pipeline'),
+        )
+        self._auxiliary_streams[source_id] = aux_stream
+
+        return aux_stream

@@ -114,6 +114,7 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
         sink: Optional[PipelineElement] = None,
         link: bool = True,
         probe_data: Any = None,
+        buffer_processor: Optional[GstBufferProcessor] = None,
     ) -> Gst.Element:
         if not sink:
             sink = PipelineElement(
@@ -123,9 +124,11 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
         _sink = self.add_element(sink, link=link)
 
         # output processor (pre-sink)
+        if buffer_processor is None:
+            buffer_processor = self._buffer_processor
         add_buffer_probe(
             _sink.get_static_pad('sink'),
-            self._buffer_processor.process_output,
+            buffer_processor.process_output,
             probe_data,
         )
 
