@@ -12,7 +12,7 @@ from savant.config.schema import FrameParameters, PipelineElement
 from savant.deepstream.buffer_processor import create_buffer_processor
 from savant.deepstream.pipeline import NvDsPipeline
 from savant.deepstream.source_output import SourceOutputH26X, create_source_output
-from savant.gstreamer import Gst, GstApp
+from savant.gstreamer import Gst
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
 from savant.utils.logging import get_logger
 from savant.utils.source_info import SourceInfoRegistry
@@ -30,6 +30,7 @@ class AuxiliaryStream:
         video_pipeline: VideoPipeline,
         stage_name: str,
         gst_pipeline: NvDsPipeline,
+        pad: Gst.Pad,
     ):
         self._logger = get_logger(f'{__name__}.{source_id}')
         self._source_id = source_id
@@ -44,10 +45,10 @@ class AuxiliaryStream:
         self._video_pipeline = video_pipeline
         self._stage_name = stage_name
         self._gst_pipeline = gst_pipeline
+        self._pad = pad
 
         self._is_opened = False
 
-        self._appsrc: Optional[GstApp.AppSrc] = None
         self._fakesink: Optional[Gst.Element] = None
         self._pending_buffers: Deque[Gst.Buffer] = deque()
 
@@ -136,9 +137,9 @@ class AuxiliaryStream:
 
         return frame, buffer
 
-    def eos(self) -> Gst.FlowReturn:
+    def eos(self) -> bool:
         self._logger.info('Sending EOS to auxiliary stream')
-        return self._appsrc.emit('end-of-stream')
+        return self._pad.push_event(Gst.Event.new_eos())
 
     def _flush(self) -> Gst.FlowReturn:
         self._logger.debug('Flushing %s buffers', len(self._pending_buffers))
@@ -146,7 +147,7 @@ class AuxiliaryStream:
         while self._pending_buffers:
             buffer = self._pending_buffers.popleft()
             self._logger.debug('Pushing buffer %s', buffer.pts)
-            ret = self._appsrc.emit('push-buffer', buffer)
+            ret = self._pad.push(buffer)
             if ret != Gst.FlowReturn.OK:
                 self._logger.error('Failed to push buffer %s: %s', ret)
                 break
@@ -159,22 +160,6 @@ class AuxiliaryStream:
             return
 
         self._logger.info('Opening auxiliary stream')
-        # TODO: use pad from pyfunc instead of fakesink
-        self._logger.debug('Creating appsrc')
-        self._appsrc = self._gst_pipeline.add_element(
-            PipelineElement(
-                'appsrc',
-                properties={
-                    'emit-signals': False,
-                    'format': int(Gst.Format.TIME),
-                    'max-buffers': 1,
-                    'block': True,
-                },
-            ),
-            link=False,
-        )
-        self._source_info.after_demuxer.append(self._appsrc)
-
         self._logger.debug('Creating capsfilter')
         capsfilter = self._gst_pipeline.add_element(
             PipelineElement(
@@ -184,7 +169,7 @@ class AuxiliaryStream:
             link=False,
         )
         self._source_info.after_demuxer.append(capsfilter)
-        assert self._appsrc.link(capsfilter)
+        assert self._pad.link(capsfilter.get_static_pad('sink')) == Gst.PadLinkReturn.OK
 
         self._logger.debug('Creating source output')
         sink_pad = self._gst_pipeline._add_source_output(
@@ -196,7 +181,6 @@ class AuxiliaryStream:
 
         assert capsfilter.get_static_pad('src').link(sink_pad) == Gst.PadLinkReturn.OK
         capsfilter.sync_state_with_parent()
-        self._appsrc.sync_state_with_parent()
         self._is_opened = True
         self._logger.info('Auxiliary stream opened')
 

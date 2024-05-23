@@ -225,6 +225,12 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
         codec_params: Dict[str, Any],
         framerate: str = DEFAULT_FRAMERATE,
     ) -> AuxiliaryStream:
+        self.logger.info('Requesting pad for source %s', source_id)
+        pad: Gst.Pad = self.gst_element.request_pad_simple('aux_src_%u')
+        if pad is None:
+            raise RuntimeError(f'Failed to request pad for source {source_id}')
+        self.logger.info('Got pad %s for source %s', pad.get_name(), source_id)
+
         aux_stream = AuxiliaryStream(
             source_id=source_id,
             sources=self._sources,
@@ -236,6 +242,7 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
             # stage_name=self.gst_element.get_name(),
             stage_name='source',
             gst_pipeline=self.gst_element.get_property('gst-pipeline'),
+            pad=pad,
         )
         self._auxiliary_streams[source_id] = aux_stream
 

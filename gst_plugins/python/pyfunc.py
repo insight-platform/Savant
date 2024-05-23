@@ -4,6 +4,7 @@ Can be used for metadata conversion, inference post-processing, and
 other tasks.
 """
 
+import itertools
 from typing import Any, Optional
 
 from savant_rs.pipeline2 import VideoPipeline
@@ -47,6 +48,9 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             'sink', Gst.PadDirection.SINK, Gst.PadPresence.ALWAYS, CAPS
         ),
         Gst.PadTemplate.new('src', Gst.PadDirection.SRC, Gst.PadPresence.ALWAYS, CAPS),
+        Gst.PadTemplate.new(
+            'aux_src_%u', Gst.PadDirection.SRC, Gst.PadPresence.REQUEST, CAPS
+        ),
     )
 
     __gproperties__ = {
@@ -123,6 +127,7 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
         self.max_stream_pool_size: int = 1
         # pyfunc object
         self.pyfunc: Optional[PyFunc] = None
+        self._aux_pad_idx_gen = itertools.count()
 
     def do_get_property(self, prop: GObject.GParamSpec) -> Any:
         """Gst plugin get property function.
@@ -255,6 +260,39 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             )
 
         return Gst.FlowReturn.OK
+
+    def do_request_new_pad(
+        self, templ: Gst.PadTemplate, name: str = None, caps: Gst.Caps = None
+    ):
+        pad_name = templ.name_template % next(self._aux_pad_idx_gen)
+        self.logger.info('Creating auxiliary pad %s', pad_name)
+        pad: Gst.Pad = Gst.Pad.new_from_template(templ, pad_name)
+        if pad is None:
+            self.logger.error('Failed to create pad %s', pad_name)
+            return None
+
+        self.logger.debug('Created pad %s', pad.get_name())
+        self.add_pad(pad)
+
+        stream: Gst.Stream = Gst.Stream.new(
+            stream_id=None,
+            caps=None,
+            type=Gst.StreamType.VIDEO,
+            flags=Gst.StreamFlags.NONE,
+        )
+        self.logger.debug(
+            'Starting new stream in pad %s with stream id %s',
+            pad.get_name(),
+            stream.stream_id,
+        )
+        pad.push_event(Gst.Event.new_stream_start(stream.stream_id))
+
+        segment: Gst.Segment = Gst.Segment.new()
+        segment.init(Gst.Format.TIME)
+        self.logger.debug('Starting new segment in pad %s', pad.get_name())
+        pad.push_event(Gst.Event.new_segment(segment))
+
+        return pad
 
 
 # register plugin
