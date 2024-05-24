@@ -1,0 +1,40 @@
+# module name, required
+name: multiple_resolutions
+
+# base module parameters
+parameters:
+  # pipeline processing frame parameters
+  frame:
+    width: 1920
+    height: 1080
+  batch_size: 1
+
+# pipeline definition
+pipeline:
+  # source definition is skipped, zeromq source is used by default to connect with source adapters
+
+  # define pipeline's main elements
+  elements:
+    # analytics element realized in custom pyfunc
+    - element: pyfunc
+      # specify the pyfunc's python module
+      module: samples.multiple_resolutions.multiple_resolutions
+      # specify the pyfunc's python class from the module
+      class_name: MultipleResolutions
+      # pyfunc's class init keyword arguments
+      # will be available as pyfunc object's attributes
+      kwargs:
+        resolutions:
+          - suffix: '-360p'
+            width: 640
+            height: 360
+          - suffix: '-480p'
+            width: 856
+            height: 480
+          - suffix: '-720p'
+            width: 1280
+            height: 720
+        codec_params:
+          codec: h264
+
+  # sink definition is skipped, zeromq sink is used by default to connect with sink adapters
