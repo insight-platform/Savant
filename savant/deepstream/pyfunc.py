@@ -247,3 +247,14 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
         self._auxiliary_streams[source_id] = aux_stream
 
         return aux_stream
+
+    def remove_auxiliary_stream(self, source_id: str):
+        """Remove auxiliary stream by source ID."""
+        if source_id not in self._auxiliary_streams:
+            self.logger.warning('Auxiliary stream for source %s not found', source_id)
+            return
+
+        aux_stream = self._auxiliary_streams.pop(source_id)
+        aux_stream._flush()
+        aux_stream.eos()
+        self.logger.info('Removed auxiliary stream for source %s', source_id)

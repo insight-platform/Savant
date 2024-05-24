@@ -50,7 +50,9 @@ class AuxiliaryStream:
         self._is_opened = False
 
         self._fakesink: Optional[Gst.Element] = None
-        self._pending_buffers: Deque[Gst.Buffer] = deque()
+
+        # None means EOS
+        self._pending_buffers: Deque[Optional[Gst.Buffer]] = deque()
 
         codec = CODEC_BY_NAME[codec_params['codec']]
         if codec not in [Codec.H264, Codec.HEVC]:
@@ -137,20 +139,41 @@ class AuxiliaryStream:
 
         return frame, buffer
 
-    def eos(self) -> bool:
+    def eos(self):
+        if not self._is_opened:
+            self._logger.warning('Auxiliary stream is not opened')
+            return
+        if self._pending_buffers:
+            self._pending_buffers.append(None)
+        else:
+            self._eos()
+
+    def _eos(self):
         self._logger.info('Sending EOS to auxiliary stream')
-        return self._pad.push_event(Gst.Event.new_eos())
+        self._pad.push_event(Gst.Event.new_eos())
 
     def _flush(self) -> Gst.FlowReturn:
         self._logger.debug('Flushing %s buffers', len(self._pending_buffers))
         ret = Gst.FlowReturn.OK
         while self._pending_buffers:
             buffer = self._pending_buffers.popleft()
-            self._logger.debug('Pushing buffer %s', buffer.pts)
-            ret = self._pad.push(buffer)
-            if ret != Gst.FlowReturn.OK:
-                self._logger.error('Failed to push buffer %s: %s', ret)
-                break
+            if buffer is not None:
+                if not self._is_opened:
+                    self._open()
+                self._logger.debug('Pushing buffer %s', buffer.pts)
+                ret = self._pad.push(buffer)
+                if ret not in [
+                    Gst.FlowReturn.OK,
+                    Gst.FlowReturn.FLUSHING,
+                    Gst.FlowReturn.EOS,
+                    Gst.FlowReturn.CUSTOM_SUCCESS,
+                    Gst.FlowReturn.CUSTOM_SUCCESS_1,
+                    Gst.FlowReturn.CUSTOM_SUCCESS_2,
+                ]:
+                    self._logger.error('Failed to push buffer %s: %s', buffer.pts, ret)
+                    break
+            else:
+                self._eos()
 
         return ret
 
@@ -182,11 +205,23 @@ class AuxiliaryStream:
         assert capsfilter.get_static_pad('src').link(sink_pad) == Gst.PadLinkReturn.OK
         capsfilter.sync_state_with_parent()
         self._is_opened = True
+
+        stream: Gst.Stream = Gst.Stream.new(
+            stream_id=None,
+            caps=None,
+            type=Gst.StreamType.VIDEO,
+            flags=Gst.StreamFlags.NONE,
+        )
+        self._logger.debug(
+            'Starting new stream in pad %s with stream id %s',
+            self._pad.get_name(),
+            stream.stream_id,
+        )
+        self._pad.push_event(Gst.Event.new_stream_start(stream.stream_id))
+
+        segment: Gst.Segment = Gst.Segment.new()
+        segment.init(Gst.Format.TIME)
+        self._logger.debug('Starting new segment in pad %s', self._pad.get_name())
+        self._pad.push_event(Gst.Event.new_segment(segment))
+
         self._logger.info('Auxiliary stream opened')
-
-    def _close(self):
-        pass
-
-    def __del__(self):
-        if self._is_opened:
-            self._close()

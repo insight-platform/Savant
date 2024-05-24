@@ -274,24 +274,6 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
         self.logger.debug('Created pad %s', pad.get_name())
         self.add_pad(pad)
 
-        stream: Gst.Stream = Gst.Stream.new(
-            stream_id=None,
-            caps=None,
-            type=Gst.StreamType.VIDEO,
-            flags=Gst.StreamFlags.NONE,
-        )
-        self.logger.debug(
-            'Starting new stream in pad %s with stream id %s',
-            pad.get_name(),
-            stream.stream_id,
-        )
-        pad.push_event(Gst.Event.new_stream_start(stream.stream_id))
-
-        segment: Gst.Segment = Gst.Segment.new()
-        segment.init(Gst.Format.TIME)
-        self.logger.debug('Starting new segment in pad %s', pad.get_name())
-        pad.push_event(Gst.Event.new_segment(segment))
-
         return pad
 
 
