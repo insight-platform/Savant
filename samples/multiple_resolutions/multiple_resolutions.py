@@ -72,6 +72,10 @@ class MultipleResolutions(NvDsPyFuncPlugin):
                         stream=stream,
                     )
 
+    def on_stop(self) -> bool:
+        self.aux_streams = {}
+        return super().on_stop()
+
     def on_source_eos(self, source_id: str):
         self.logger.info('Got EOS from source %s.', source_id)
         if source_id not in self.aux_streams:

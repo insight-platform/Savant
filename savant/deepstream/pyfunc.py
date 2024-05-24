@@ -12,7 +12,11 @@ from savant_rs.pipeline2 import VideoPipeline
 
 from savant.api.constants import DEFAULT_FRAMERATE
 from savant.base.pyfunc import BasePyFuncPlugin
-from savant.deepstream.auxiliary_stream import AuxiliaryStream
+from savant.deepstream.auxiliary_stream import (
+    AuxiliaryStream,
+    AuxiliaryStreamInternal,
+    AuxiliaryStreamRegistry,
+)
 from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.deepstream.utils.event import (
     GST_NVEVENT_PAD_ADDED,
@@ -52,7 +56,8 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
         }
         self._stream_pool_size = None
         self._stream_pool = []
-        self._auxiliary_streams: Dict[str, AuxiliaryStream] = {}
+        # TODO: make AuxiliaryStreamRegistry global?
+        self._auxiliary_streams = AuxiliaryStreamRegistry()
 
     def on_start(self) -> bool:
         """Do on plugin start."""
@@ -171,8 +176,7 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
         for stream in self._stream_pool:
             stream.waitForCompletion()
 
-        for aux_stream in self._auxiliary_streams.values():
-            aux_stream._flush()
+        self._auxiliary_streams.flush()
 
     def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
         """Process gstreamer buffer and frame metadata. Throws an exception if fatal
@@ -225,13 +229,16 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
         codec_params: Dict[str, Any],
         framerate: str = DEFAULT_FRAMERATE,
     ) -> AuxiliaryStream:
+        if self._auxiliary_streams.get_stream(source_id) is not None:
+            raise RuntimeError(f'Auxiliary stream {source_id} already exists')
+
         self.logger.info('Requesting pad for source %s', source_id)
         pad: Gst.Pad = self.gst_element.request_pad_simple('aux_src_%u')
         if pad is None:
             raise RuntimeError(f'Failed to request pad for source {source_id}')
         self.logger.info('Got pad %s for source %s', pad.get_name(), source_id)
 
-        aux_stream = AuxiliaryStream(
+        aux_stream_internal = AuxiliaryStreamInternal(
             source_id=source_id,
             sources=self._sources,
             width=width,
@@ -244,17 +251,7 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
             gst_pipeline=self.gst_element.get_property('gst-pipeline'),
             pad=pad,
         )
-        self._auxiliary_streams[source_id] = aux_stream
+        aux_stream = AuxiliaryStream(aux_stream_internal, self._auxiliary_streams)
+        self._auxiliary_streams.add_stream(aux_stream_internal)
 
         return aux_stream
-
-    def remove_auxiliary_stream(self, source_id: str):
-        """Remove auxiliary stream by source ID."""
-        if source_id not in self._auxiliary_streams:
-            self.logger.warning('Auxiliary stream for source %s not found', source_id)
-            return
-
-        aux_stream = self._auxiliary_streams.pop(source_id)
-        aux_stream._flush()
-        aux_stream.eos()
-        self.logger.info('Removed auxiliary stream for source %s', source_id)

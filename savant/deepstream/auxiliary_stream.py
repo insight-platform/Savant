@@ -18,7 +18,7 @@ from savant.utils.logging import get_logger
 from savant.utils.source_info import SourceInfoRegistry
 
 
-class AuxiliaryStream:
+class AuxiliaryStreamInternal:
     def __init__(
         self,
         source_id: str,
@@ -139,41 +139,34 @@ class AuxiliaryStream:
 
         return frame, buffer
 
-    def eos(self):
+    def eos(self) -> bool:
         if not self._is_opened:
             self._logger.warning('Auxiliary stream is not opened')
             return
         if self._pending_buffers:
-            self._pending_buffers.append(None)
-        else:
-            self._eos()
-
-    def _eos(self):
+            self.flush()
         self._logger.info('Sending EOS to auxiliary stream')
-        self._pad.push_event(Gst.Event.new_eos())
+        return self._pad.push_event(Gst.Event.new_eos())
 
-    def _flush(self) -> Gst.FlowReturn:
+    def flush(self) -> Gst.FlowReturn:
         self._logger.debug('Flushing %s buffers', len(self._pending_buffers))
         ret = Gst.FlowReturn.OK
         while self._pending_buffers:
             buffer = self._pending_buffers.popleft()
-            if buffer is not None:
-                if not self._is_opened:
-                    self._open()
-                self._logger.debug('Pushing buffer %s', buffer.pts)
-                ret = self._pad.push(buffer)
-                if ret not in [
-                    Gst.FlowReturn.OK,
-                    Gst.FlowReturn.FLUSHING,
-                    Gst.FlowReturn.EOS,
-                    Gst.FlowReturn.CUSTOM_SUCCESS,
-                    Gst.FlowReturn.CUSTOM_SUCCESS_1,
-                    Gst.FlowReturn.CUSTOM_SUCCESS_2,
-                ]:
-                    self._logger.error('Failed to push buffer %s: %s', buffer.pts, ret)
-                    break
-            else:
-                self._eos()
+            if not self._is_opened:
+                self._open()
+            self._logger.debug('Pushing buffer %s', buffer.pts)
+            ret = self._pad.push(buffer)
+            if ret not in [
+                Gst.FlowReturn.OK,
+                Gst.FlowReturn.FLUSHING,
+                Gst.FlowReturn.EOS,
+                Gst.FlowReturn.CUSTOM_SUCCESS,
+                Gst.FlowReturn.CUSTOM_SUCCESS_1,
+                Gst.FlowReturn.CUSTOM_SUCCESS_2,
+            ]:
+                self._logger.error('Failed to push buffer %s: %s', buffer.pts, ret)
+                break
 
         return ret
 
@@ -225,3 +218,46 @@ class AuxiliaryStream:
         self._pad.push_event(Gst.Event.new_segment(segment))
 
         self._logger.info('Auxiliary stream opened')
+
+
+class AuxiliaryStreamRegistry:
+    def __init__(self):
+        self._streams: Dict[str, AuxiliaryStreamInternal] = {}
+
+    def add_stream(self, stream: AuxiliaryStreamInternal):
+        self._streams[stream._source_id] = stream
+
+    def get_stream(self, source_id: str) -> Optional[AuxiliaryStreamInternal]:
+        return self._streams.get(source_id)
+
+    def remove_stream(self, source_id: str):
+        self._streams.pop(source_id, None)
+
+    def flush(self):
+        for stream in self._streams.values():
+            stream.flush()
+
+
+class AuxiliaryStream:
+    def __init__(
+        self,
+        internal: AuxiliaryStreamInternal,
+        registry: AuxiliaryStreamRegistry,
+    ):
+        self._internal = internal
+        self._registry = registry
+
+    def create_frame(
+        self,
+        pts: int,
+        duration: Optional[int] = None,
+    ) -> Tuple[VideoFrame, Gst.Buffer]:
+        return self._internal.create_frame(pts, duration)
+
+    def eos(self) -> bool:
+        return self._internal.eos()
+
+    def __del__(self):
+        self._internal.flush()
+        self._internal.eos()
+        self._registry.remove_stream(self._internal._source_id)
