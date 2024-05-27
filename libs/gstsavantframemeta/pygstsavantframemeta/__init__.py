@@ -183,10 +183,21 @@ def add_pad_probe_to_remove_tracker_objs(pad: Gst.Pad):
 
 
 class NvBufSurfaceGenerator:
+    """Generates GStreamer buffers with NvBufSurface memory allocated.
+
+    :param caps: Caps for the generated buffers.
+    :param gpu_id: ID of the GPU to allocate NvBufSurface.
+    :param mem_type: Memory type for the NvBufSurface.
+    """
+
     def __init__(self, caps: Gst.Caps, gpu_id: int, mem_type: int):
         self._nested = pygstsavantframemeta.NvBufSurfaceGenerator(
             hash(caps), gpu_id, mem_type
         )
 
     def create_surface(self, buffer: Gst.Buffer):
+        """Create a new NvBufSurface and attach it to the given buffer.
+
+        :param buffer: Buffer to attach the NvBufSurface to.
+        """
         return self._nested.create_surface(hash(buffer))

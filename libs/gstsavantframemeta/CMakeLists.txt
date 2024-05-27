@@ -152,11 +152,7 @@ if (SAVANT_NVDS_ENABLED)
             ${CUDA_LIBRARIES}
             nvds_meta
             nvdsgst_meta
-            nvdsgst_bufferpool
             nvdsbufferpool
-            nvbufsurface
-            nvdsgst_helper
-            nvbufsurftransform
     )
 endif()
 

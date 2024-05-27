@@ -19,6 +19,8 @@ from savant.utils.source_info import SourceInfoRegistry
 
 
 class AuxiliaryStreamInternal:
+    """Internal auxiliary stream implementation."""
+
     def __init__(
         self,
         source_id: str,
@@ -142,7 +144,7 @@ class AuxiliaryStreamInternal:
     def eos(self) -> bool:
         if not self._is_opened:
             self._logger.warning('Auxiliary stream is not opened')
-            return
+            return False
         if self._pending_buffers:
             self.flush()
         self._logger.info('Sending EOS to auxiliary stream')
@@ -221,6 +223,8 @@ class AuxiliaryStreamInternal:
 
 
 class AuxiliaryStreamRegistry:
+    """Registry for auxiliary streams."""
+
     def __init__(self):
         self._streams: Dict[str, AuxiliaryStreamInternal] = {}
 
@@ -239,6 +243,11 @@ class AuxiliaryStreamRegistry:
 
 
 class AuxiliaryStream:
+    """Auxiliary stream for sending frames directly to sink with a different source ID.
+
+    Do not create instances of this class directly. Use `NvDsPyFuncPlugin.auxiliary_stream` instead.
+    """
+
     def __init__(
         self,
         internal: AuxiliaryStreamInternal,
@@ -252,12 +261,23 @@ class AuxiliaryStream:
         pts: int,
         duration: Optional[int] = None,
     ) -> Tuple[VideoFrame, Gst.Buffer]:
+        """Create a frame for the auxiliary stream.
+
+        :param pts: Presentation timestamp of the frame.
+        :param duration: Duration of the frame.
+        :return: Tuple of the frame metadata and the buffer.
+        """
+
         return self._internal.create_frame(pts, duration)
 
     def eos(self) -> bool:
+        """Send EOS to the auxiliary stream."""
+
         return self._internal.eos()
 
     def __del__(self):
+        """Remove the auxiliary stream."""
+
         self._internal.flush()
         self._internal.eos()
         self._registry.remove_stream(self._internal._source_id)

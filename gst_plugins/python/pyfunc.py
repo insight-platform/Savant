@@ -262,8 +262,13 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
         return Gst.FlowReturn.OK
 
     def do_request_new_pad(
-        self, templ: Gst.PadTemplate, name: str = None, caps: Gst.Caps = None
+        self,
+        templ: Gst.PadTemplate,
+        name: str = None,
+        caps: Gst.Caps = None,
     ):
+        """Create a new pad on request."""
+
         pad_name = templ.name_template % next(self._aux_pad_idx_gen)
         self.logger.info('Creating auxiliary pad %s', pad_name)
         pad: Gst.Pad = Gst.Pad.new_from_template(templ, pad_name)

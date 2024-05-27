@@ -30,6 +30,7 @@ from savant.deepstream.utils.iterator import nvds_frame_meta_iterator
 from savant.gstreamer import Gst  # noqa: F401
 from savant.metrics.base import BaseMetricsExporter
 from savant.metrics.registry import MetricsRegistry
+from savant.utils.platform import is_aarch64
 from savant.utils.source_info import SourceInfoRegistry
 
 
@@ -229,6 +230,46 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
         codec_params: Dict[str, Any],
         framerate: str = DEFAULT_FRAMERATE,
     ) -> AuxiliaryStream:
+        """Create an auxiliary stream.
+
+        Frames from auxiliary streams are encoded and sent to sink. They are
+        not sent to downstream pipeline elements. This can be useful to send
+        video in different resolutions, codecs, etc.
+
+        Usage example:
+
+        .. code-block:: python
+
+            aux_stream = self.auxiliary_stream(
+                source_id='aux-source',
+                width=640,
+                height=480,
+                codec_params={'codec': 'h264'},
+            )
+
+            ...
+
+            cuda_stream = self.get_cuda_stream(frame_meta)
+            aux_frame, aux_buffer = aux_stream.create_frame(pts=pts)
+            with nvds_to_gpu_mat(aux_buffer, batch_id=0) as aux_mat:
+                cv2.cuda.resize(
+                    src=orig_frame_mat,
+                    dst=aux_mat,
+                    dsize=(640, 480),
+                    stream=cuda_stream,
+                )
+
+        :param source_id: Source ID. Must be unique.
+        :param width: Frame width.
+        :param height: Frame height.
+        :param codec_params: Codec parameters. Only "h264" and "hevc" codecs
+            are supported.
+        :param framerate: Framerate. Default is 30/1.
+        """
+
+        if is_aarch64():
+            raise RuntimeError('Auxiliary streams are not supported on aarch64')
+
         if self._auxiliary_streams.get_stream(source_id) is not None:
             raise RuntimeError(f'Auxiliary stream {source_id} already exists')
 
