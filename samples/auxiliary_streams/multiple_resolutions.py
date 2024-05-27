@@ -34,6 +34,8 @@ class MultipleResolutions(NvDsPyFuncPlugin):
         super().__init__(**kwargs)
 
     def on_source_add(self, source_id: str):
+        """Create auxiliary streams for the source."""
+
         self.logger.info('Source %s added.', source_id)
         if source_id in self.aux_streams:
             self.logger.info('Source %s already has auxiliary streams.', source_id)
@@ -60,11 +62,14 @@ class MultipleResolutions(NvDsPyFuncPlugin):
         with nvds_to_gpu_mat(buffer, frame_meta.frame_meta) as frame_mat:
             for resolution in self.resolutions:
                 aux_stream = self.aux_streams[frame_meta.source_id][resolution.suffix]
+                # Create frame for the auxiliary stream.
+                # The frame will be sent automatically
                 aux_frame, aux_buffer = aux_stream.create_frame(
                     pts=frame_meta.pts,
                     duration=frame_meta.duration,
                 )
                 with nvds_to_gpu_mat(aux_buffer, batch_id=0) as aux_mat:
+                    # Resize the original frame
                     cv2.cuda.resize(
                         src=frame_mat,
                         dst=aux_mat,

@@ -1,5 +1,5 @@
 # module name, required
-name: multiple_resolutions
+name: auxiliary_streams
 
 # base module parameters
 parameters:
@@ -15,16 +15,18 @@ pipeline:
 
   # define pipeline's main elements
   elements:
-    # analytics element realized in custom pyfunc
+    # pyfunc element to create auxiliary streams and send frames to them
     - element: pyfunc
       # specify the pyfunc's python module
-      module: samples.multiple_resolutions.multiple_resolutions
+      module: samples.auxiliary_streams.multiple_resolutions
       # specify the pyfunc's python class from the module
       class_name: MultipleResolutions
       # pyfunc's class init keyword arguments
       # will be available as pyfunc object's attributes
       kwargs:
+        # list of resolutions to create auxiliary streams
         resolutions:
+          # suffix for source ID of the auxiliary stream
           - suffix: '-360p'
             width: 640
             height: 360
@@ -34,6 +36,7 @@ pipeline:
           - suffix: '-720p'
             width: 1280
             height: 720
+        # codec parameters for auxiliary streams
         codec_params:
           codec: h264
 
