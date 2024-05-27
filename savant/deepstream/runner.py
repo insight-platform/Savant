@@ -1,7 +1,6 @@
 """DeepStream pipeline runner class."""
 
-from gi.repository import GLib, Gst  # noqa:F401
-
+from savant.gstreamer import GLib, Gst  # noqa:F401
 from savant.gstreamer.codecs import Codec
 from savant.gstreamer.runner import GstPipelineRunner
 
