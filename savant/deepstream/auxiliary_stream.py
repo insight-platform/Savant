@@ -221,6 +221,9 @@ class AuxiliaryStreamInternal:
 
         self._logger.info('Auxiliary stream opened')
 
+    def close(self):
+        self._pad.get_parent().release_request_pad(self._pad)
+
 
 class AuxiliaryStreamRegistry:
     """Registry for auxiliary streams."""
@@ -280,4 +283,5 @@ class AuxiliaryStream:
 
         self._internal.flush()
         self._internal.eos()
+        self._internal.close()
         self._registry.remove_stream(self._internal._source_id)
