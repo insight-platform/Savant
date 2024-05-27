@@ -189,6 +189,7 @@ PYBIND11_MODULE(pygstsavantframemeta, m) {
             size_t gst_buffer_dest
         ) {
             auto *buffer_dest = reinterpret_cast<GstBuffer *>(gst_buffer_dest);
+            py::gil_scoped_release release;
             self.create_surface(buffer_dest);
         });
 

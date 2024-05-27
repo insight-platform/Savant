@@ -65,4 +65,5 @@ void NvBufSurfaceGenerator::create_surface(GstBuffer *buffer_dest) {
     gst_buffer_copy_into(buffer_dest, buffer, GST_BUFFER_COPY_ALL, 0, -1);
     GST_DEBUG("Buffer %p copied into buffer %p", buffer, buffer_dest);
     gst_buffer_unref(buffer);
+    gst_buffer_pool_release_buffer(buffer_pool, buffer);
 }
