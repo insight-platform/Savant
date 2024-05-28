@@ -1,13 +1,19 @@
 #include "gstsavantframemeta.h"
 
+
 #ifdef SAVANT_NVDS_ENABLED
+
 #include "gstsavantbatchmeta.h"
+#include "nvbufsurface_generator.h"
 #include "nvdssavantframemeta.h"
 #include "savantrsprobes.h"
 #include "savantnvprobes.h"
+
+
 #endif // SAVANT_NVDS_ENABLED
 
 #include <pybind11/pybind11.h>
+
 
 namespace py = pybind11;
 
@@ -80,8 +86,10 @@ PYBIND11_MODULE(pygstsavantframemeta, m) {
         },
         py::return_value_policy::reference);
 
-    m.def("add_convert_savant_frame_meta_pad_probe", [](size_t gst_pad,
-                                                        bool to_nvds) {
+    m.def("add_convert_savant_frame_meta_pad_probe", [](
+        size_t gst_pad,
+        bool to_nvds
+    ) {
         auto *pad = reinterpret_cast<GstPad *>(gst_pad);
         gpointer conv_func;
         if (to_nvds) {
@@ -93,9 +101,11 @@ PYBIND11_MODULE(pygstsavantframemeta, m) {
                           convert_savant_frame_meta_pad_probe, conv_func, NULL);
     });
 
-    m.def("add_pad_probe_to_move_frame", [](size_t gst_pad,
-                                            uintptr_t video_pipeline,
-                                            const char *stage) {
+    m.def("add_pad_probe_to_move_frame", [](
+        size_t gst_pad,
+        uintptr_t video_pipeline,
+        const char *stage
+    ) {
         auto *pad = reinterpret_cast<GstPad *>(gst_pad);
         SavantRsPadProbeData *data = create_savant_rs_pad_probe_data(
             video_pipeline, stage);
@@ -107,9 +117,11 @@ PYBIND11_MODULE(pygstsavantframemeta, m) {
             (GDestroyNotify)release_savant_rs_pad_probe_data);
     });
 
-    m.def("add_pad_probe_to_pack_and_move_frames", [](size_t gst_pad,
-                                                      uintptr_t video_pipeline,
-                                                      const char *stage) {
+    m.def("add_pad_probe_to_pack_and_move_frames", [](
+        size_t gst_pad,
+        uintptr_t video_pipeline,
+        const char *stage
+    ) {
         auto *pad = reinterpret_cast<GstPad *>(gst_pad);
         SavantRsPadProbeData *data = create_savant_rs_pad_probe_data(
             video_pipeline, stage);
@@ -121,9 +133,11 @@ PYBIND11_MODULE(pygstsavantframemeta, m) {
             (GDestroyNotify)release_savant_rs_pad_probe_data);
     });
 
-    m.def("add_pad_probe_to_move_batch", [](size_t gst_pad,
-                                            uintptr_t video_pipeline,
-                                            const char *stage) {
+    m.def("add_pad_probe_to_move_batch", [](
+        size_t gst_pad,
+        uintptr_t video_pipeline,
+        const char *stage
+    ) {
         auto *pad = reinterpret_cast<GstPad *>(gst_pad);
         SavantRsPadProbeData *data = create_savant_rs_pad_probe_data(
             video_pipeline, stage);
@@ -135,9 +149,11 @@ PYBIND11_MODULE(pygstsavantframemeta, m) {
             (GDestroyNotify)release_savant_rs_pad_probe_data);
     });
 
-    m.def("add_pad_probe_to_unpack_and_move_batch", [](size_t gst_pad,
-                                                       uintptr_t video_pipeline,
-                                                       const char *stage) {
+    m.def("add_pad_probe_to_unpack_and_move_batch", [](
+        size_t gst_pad,
+        uintptr_t video_pipeline,
+        const char *stage
+    ) {
         auto *pad = reinterpret_cast<GstPad *>(gst_pad);
         SavantRsPadProbeData *data = create_savant_rs_pad_probe_data(
             video_pipeline, stage);
@@ -158,5 +174,24 @@ PYBIND11_MODULE(pygstsavantframemeta, m) {
             NULL,
             NULL);
     });
+
+    py::class_<NvBufSurfaceGenerator>(m, "NvBufSurfaceGenerator")
+        .def(py::init([](
+            size_t gst_caps,
+            uint32_t gpuId,
+            uint32_t memType
+        ) {
+            auto *caps = reinterpret_cast<GstCaps *>(gst_caps);
+            return new NvBufSurfaceGenerator(caps, gpuId, memType);
+        }))
+        .def("create_surface", [](
+            NvBufSurfaceGenerator &self,
+            size_t gst_buffer_dest
+        ) {
+            auto *buffer_dest = reinterpret_cast<GstBuffer *>(gst_buffer_dest);
+            py::gil_scoped_release release;
+            self.create_surface(buffer_dest);
+        });
+
 #endif // SAVANT_NVDS_ENABLED
 }

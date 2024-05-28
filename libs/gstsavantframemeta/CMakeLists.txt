@@ -100,6 +100,7 @@ if (SAVANT_NVDS_ENABLED)
     set(SOURCE_FILES
         ${SOURCE_FILES}
         "gstsavantframemeta/src/gstsavantbatchmeta.cpp"
+        "gstsavantframemeta/src/nvbufsurface_generator.cpp"
         "gstsavantframemeta/src/nvdssavantframemeta.cpp"
         "gstsavantframemeta/src/savantrsprobes.cpp"
         "gstsavantframemeta/src/savantnvprobes.cpp"
@@ -113,6 +114,7 @@ if (SAVANT_NVDS_ENABLED)
     set(HEADER_FILES
         ${HEADER_FILES}
         "gstsavantframemeta/include/gstsavantbatchmeta.h"
+        "gstsavantframemeta/include/nvbufsurface_generator.h"
         "gstsavantframemeta/include/nvdssavantframemeta.h"
         "gstsavantframemeta/include/savantrsprobes.h"
         "gstsavantframemeta/include/savantnvprobes.h"
@@ -150,6 +152,7 @@ if (SAVANT_NVDS_ENABLED)
             ${CUDA_LIBRARIES}
             nvds_meta
             nvdsgst_meta
+            nvdsbufferpool
     )
 endif()
 

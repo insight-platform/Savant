@@ -4,6 +4,7 @@ Can be used for metadata conversion, inference post-processing, and
 other tasks.
 """
 
+import itertools
 from typing import Any, Optional
 
 from savant_rs.pipeline2 import VideoPipeline
@@ -46,6 +47,9 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             'sink', Gst.PadDirection.SINK, Gst.PadPresence.ALWAYS, CAPS
         ),
         Gst.PadTemplate.new('src', Gst.PadDirection.SRC, Gst.PadPresence.ALWAYS, CAPS),
+        Gst.PadTemplate.new(
+            'aux_src_%u', Gst.PadDirection.SRC, Gst.PadPresence.REQUEST, CAPS
+        ),
     )
 
     __gproperties__ = {
@@ -74,6 +78,12 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             object,
             'VideoPipeline object from savant-rs.',
             'VideoPipeline object from savant-rs.',
+            GObject.ParamFlags.READWRITE,
+        ),
+        'gst-pipeline': (
+            object,
+            'GstPipeline object.',
+            'GstPipeline object.',
             GObject.ParamFlags.READWRITE,
         ),
         'metrics-exporter': (
@@ -110,11 +120,13 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
         self.class_name: Optional[str] = None
         self.kwargs: Optional[str] = None
         self.video_pipeline: Optional[VideoPipeline] = None
+        self.gst_pipeline: Optional['GstPipeline'] = None
         self.metrics_exporter: Optional[BaseMetricsExporter] = None
         self.dev_mode: bool = False
         self.max_stream_pool_size: int = 1
         # pyfunc object
         self.pyfunc: Optional[PyFunc] = None
+        self._aux_pad_idx_gen = itertools.count()
 
     def do_get_property(self, prop: GObject.GParamSpec) -> Any:
         """Gst plugin get property function.
@@ -129,6 +141,8 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             return self.kwargs
         if prop.name == 'pipeline':
             return self.video_pipeline
+        if prop.name == 'gst-pipeline':
+            return self.gst_pipeline
         if prop.name == 'metrics-exporter':
             return self.metrics_exporter
         if prop.name == 'stream-pool-size':
@@ -151,6 +165,8 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             self.kwargs = value
         elif prop.name == 'pipeline':
             self.video_pipeline = value
+        elif prop.name == 'gst-pipeline':
+            self.gst_pipeline = value
         elif prop.name == 'metrics-exporter':
             self.metrics_exporter = value
         elif prop.name == 'stream-pool-size':
@@ -243,6 +259,26 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             )
 
         return Gst.FlowReturn.OK
+
+    def do_request_new_pad(
+        self,
+        templ: Gst.PadTemplate,
+        name: str = None,
+        caps: Gst.Caps = None,
+    ):
+        """Create a new pad on request."""
+
+        pad_name = templ.name_template % next(self._aux_pad_idx_gen)
+        self.logger.info('Creating auxiliary pad %s', pad_name)
+        pad: Gst.Pad = Gst.Pad.new_from_template(templ, pad_name)
+        if pad is None:
+            self.logger.error('Failed to create pad %s', pad_name)
+            return None
+
+        self.logger.debug('Created pad %s', pad.get_name())
+        self.add_pad(pad)
+
+        return pad
 
 
 # register plugin

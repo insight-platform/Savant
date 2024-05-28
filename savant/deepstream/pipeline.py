@@ -44,7 +44,7 @@ from savant.deepstream.metadata import (
     nvds_obj_meta_output_converter,
 )
 from savant.deepstream.nvinfer.processor import NvInferProcessor
-from savant.deepstream.source_output import create_source_output
+from savant.deepstream.source_output import SourceOutput, create_source_output
 from savant.deepstream.utils.attribute import (
     nvds_attr_meta_iterator,
     nvds_remove_obj_attrs,
@@ -66,6 +66,7 @@ from savant.deepstream.utils.pipeline import (
     init_tracing,
 )
 from savant.gstreamer import GLib, Gst  # noqa:F401
+from savant.gstreamer.buffer_processor import GstBufferProcessor
 from savant.gstreamer.pipeline import GstPipeline
 from savant.gstreamer.utils import add_buffer_probe, on_pad_event, pad_to_source_id
 from savant.meta.constants import PRIMARY_OBJECT_KEY, UNTRACKED_OBJECT_ID
@@ -228,6 +229,7 @@ class NvDsPipeline(GstPipeline):
         if element_idx is not None:
             if isinstance(element, PyFuncElement):
                 gst_element.set_property('pipeline', self._video_pipeline)
+                gst_element.set_property('gst-pipeline', self)
                 gst_element.set_property('stream-pool-size', self._batch_size)
                 if self._metrics_exporter is not None:
                     gst_element.set_property('metrics-exporter', self._metrics_exporter)
@@ -339,6 +341,7 @@ class NvDsPipeline(GstPipeline):
         sink: Optional[PipelineElement] = None,
         link: bool = True,
         probe_data: Any = None,
+        buffer_processor: Optional[GstBufferProcessor] = None,
     ) -> Gst.Element:
         """Adds sink elements."""
 
@@ -628,7 +631,13 @@ class NvDsPipeline(GstPipeline):
         return False
 
     # Output
-    def _add_source_output(self, source_info: SourceInfo):
+    def _add_source_output(
+        self,
+        source_info: SourceInfo,
+        link_to_demuxer: bool = True,
+        source_output: Optional[SourceOutput] = None,
+        buffer_processor: Optional[GstBufferProcessor] = None,
+    ) -> Gst.Pad:
         self._check_pipeline_is_running()
         fakesink = super()._add_sink(
             PipelineElement(
@@ -642,6 +651,7 @@ class NvDsPipeline(GstPipeline):
             ),
             link=False,
             probe_data=source_info,
+            buffer_processor=buffer_processor,
         )
         fakesink_pad: Gst.Pad = fakesink.get_static_pad('sink')
         fakesink.sync_state_with_parent()
@@ -667,10 +677,13 @@ class NvDsPipeline(GstPipeline):
             self._video_pipeline,
             'output-queue',
         )
-        self._link_demuxer_src_pad(output_queue_sink_pad, source_info)
+        if link_to_demuxer:
+            self._link_demuxer_src_pad(output_queue_sink_pad, source_info)
 
         self._check_pipeline_is_running()
-        output_pad: Gst.Pad = self._source_output.add_output(
+        if source_output is None:
+            source_output = self._source_output
+        output_pad: Gst.Pad = source_output.add_output(
             pipeline=self,
             source_info=source_info,
             input_pad=output_queue.get_static_pad('src'),
@@ -679,6 +692,8 @@ class NvDsPipeline(GstPipeline):
         assert output_pad.link(fakesink_pad) == Gst.PadLinkReturn.OK
 
         source_info.after_demuxer.append(fakesink)
+
+        return output_queue_sink_pad
 
     def _remove_output_elements(self, source_info: SourceInfo):
         """Process EOS on last pad."""
@@ -699,7 +714,8 @@ class NvDsPipeline(GstPipeline):
 
             self._sources.remove_source(source_info)
 
-            self._free_pad_indices.append(source_info.pad_idx)
+            if source_info.pad_idx is not None:
+                self._free_pad_indices.append(source_info.pad_idx)
 
         except PipelineIsNotRunningError:
             self._logger.info(
