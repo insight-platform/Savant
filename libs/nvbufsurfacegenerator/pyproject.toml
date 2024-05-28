@@ -1,0 +1,13 @@
+[build-system]
+requires = [
+    'setuptools>=61.0',
+    'pybind11[global]>=2.11',
+    'scikit-build>=0.17',
+]
+build-backend = 'setuptools.build_meta'
+
+[tool.black]
+skip-string-normalization = true
+
+[tool.pylint.messages_control]
+max-line-length = 88

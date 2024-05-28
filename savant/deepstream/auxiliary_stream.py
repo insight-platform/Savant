@@ -3,7 +3,8 @@ from fractions import Fraction
 from typing import Any, Deque, Dict, Optional, Tuple
 
 import pyds
-from pygstsavantframemeta import NvBufSurfaceGenerator, gst_buffer_add_savant_frame_meta
+from pygstsavantframemeta import gst_buffer_add_savant_frame_meta
+from pynvbufsurfacegenerator import NvBufSurfaceGenerator
 from savant_rs.pipeline2 import VideoPipeline
 from savant_rs.primitives import VideoFrame, VideoFrameContent
 
