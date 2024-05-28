@@ -63,6 +63,17 @@ COPY libs/gstsavantframemeta .
 RUN python3 -m build --wheel --no-isolation && rm -rf _skbuild
 
 
+# Package builder for NvBufSurfaceGenerator
+FROM builder AS nv-buf-surface-generator-builder
+
+WORKDIR /libs/nvbufsurfacegenerator
+COPY libs/nvbufsurfacegenerator/requirements.txt .
+RUN python3 -m pip install --no-cache-dir -r requirements.txt
+
+COPY libs/nvbufsurfacegenerator .
+RUN python3 -m build --wheel --no-isolation && rm -rf _skbuild
+
+
 # Savant boost(cuda) library builder
 FROM builder AS savant-boost-builder
 # TODO: Determine JetPack release (replace `r36.2`)
@@ -148,6 +159,9 @@ RUN python -m pip install --no-cache-dir /libs/savanboost/dist/*.whl
 
 COPY --from=savant-meta-builder /libs/gstsavantframemeta/dist /libs/gstsavantframemeta/dist
 RUN python -m pip install --no-cache-dir /libs/gstsavantframemeta/dist/*.whl
+
+COPY --from=nv-buf-surface-generator-builder /libs/nvbufsurfacegenerator/dist /libs/nvbufsurfacegenerator/dist
+RUN python -m pip install --no-cache-dir /libs/nvbufsurfacegenerator/dist/*.whl
 
 COPY --from=savant-package-builder /tmp/build/dist /libs/savant/dist
 RUN python -m pip install --no-cache-dir /libs/savant/dist/*.whl

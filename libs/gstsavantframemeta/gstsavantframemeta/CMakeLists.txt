@@ -87,8 +87,6 @@ if (SAVANT_NVDS_ENABLED)
         ${SOURCE_FILES}
         ${PROJECT_INCLUDE_DIR}/gstsavantbatchmeta.h
         ${PROJECT_SOURCE_DIR}/gstsavantbatchmeta.cpp
-        ${PROJECT_INCLUDE_DIR}/nvbufsurface_generator.h
-        ${PROJECT_SOURCE_DIR}/nvbufsurface_generator.cpp
         ${PROJECT_INCLUDE_DIR}/nvdssavantframemeta.h
         ${PROJECT_SOURCE_DIR}/nvdssavantframemeta.cpp
         ${PROJECT_INCLUDE_DIR}/savantrsprobes.h
@@ -122,7 +120,6 @@ if (SAVANT_NVDS_ENABLED)
             ${CUDA_LIBRARIES}
             nvds_meta
             nvdsgst_meta
-            nvdsbufferpool
     )
 endif()
 
