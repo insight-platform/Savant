@@ -3,7 +3,9 @@
 #include <gst/gst.h>
 #include <stdexcept>
 #include "gstnvdsbufferpool.h"
+#ifdef PLATFORM_X86_64
 #include "nvbufsurface.h"
+#endif
 
 
 NvBufSurfaceGenerator::NvBufSurfaceGenerator(
@@ -11,6 +13,8 @@ NvBufSurfaceGenerator::NvBufSurfaceGenerator(
     uint32_t gpu_id,
     uint32_t mem_type
 ) {
+#ifdef PLATFORM_X86_64
+
     GST_DEBUG("Creating NvBufSurfaceGenerator");
     GstStructure *config;
 
@@ -36,17 +40,29 @@ NvBufSurfaceGenerator::NvBufSurfaceGenerator(
     gst_buffer_pool_set_active(buffer_pool, TRUE);
 
     GST_DEBUG("NvBufSurfaceGenerator created");
+
+#else
+
+    throw std::runtime_error("NvBufSurfaceGenerator is not supported on this platform");
+
+#endif
 }
 
 
 NvBufSurfaceGenerator::~NvBufSurfaceGenerator() {
+#ifdef PLATFORM_X86_64
+
     GST_DEBUG("Destroying NvBufSurfaceGenerator");
     gst_object_unref(buffer_pool);
     GST_DEBUG("Buffer pool %p destroyed", buffer_pool);
+
+#endif
 }
 
 
 void NvBufSurfaceGenerator::create_surface(GstBuffer *buffer_dest) {
+    #ifdef PLATFORM_X86_64
+
     GST_DEBUG("Creating NvBufSurface at buffer %p", buffer_dest);
     GstBuffer *buffer;
     GstFlowReturn result;
@@ -66,4 +82,10 @@ void NvBufSurfaceGenerator::create_surface(GstBuffer *buffer_dest) {
     GST_DEBUG("Buffer %p copied into buffer %p", buffer, buffer_dest);
     gst_buffer_unref(buffer);
     gst_buffer_pool_release_buffer(buffer_pool, buffer);
+
+#else
+
+    throw std::runtime_error("NvBufSurfaceGenerator is not supported on this platform");
+
+#endif
 }
