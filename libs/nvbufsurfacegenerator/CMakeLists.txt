@@ -8,6 +8,16 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined" )
 set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,--no-undefined" )
 
+if(CMAKE_SYSTEM_PROCESSOR STREQUAL aarch64)
+    message("Building for ${CMAKE_SYSTEM_PROCESSOR}")
+    add_definitions(-DPLATFORM_AARCH64)
+elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL x86_64)
+    message("Building for ${CMAKE_SYSTEM_PROCESSOR}")
+    add_definitions(-DPLATFORM_X86_64)
+else()
+    message(FATAL_ERROR "Unsupported arhitecture: ${CMAKE_SYSTEM_PROCESSOR}")
+endif()
+
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
@@ -69,11 +79,15 @@ target_link_libraries(${python_module_name} PRIVATE
     ${GLIB_LIBRARIES}
     ${GSTREAMER_LIBRARIES}
     ${CUDA_LIBRARIES}
-    nvdsbufferpool
     nvbufsurfacegenerator
     pybind11::module
     pybind11::lto
 )
+if (CMAKE_SYSTEM_PROCESSOR STREQUAL x86_64)
+    target_link_libraries(${python_module_name} PRIVATE
+        nvdsbufferpool
+    )
+endif()
 
 pybind11_extension(${python_module_name})
 pybind11_strip(${python_module_name})
