@@ -56,10 +56,6 @@ NvBufSurfaceGenerator::~NvBufSurfaceGenerator() {
     gst_object_unref(buffer_pool);
     GST_DEBUG("Buffer pool %p destroyed", buffer_pool);
 
-#else
-
-    throw std::runtime_error("NvBufSurfaceGenerator is not supported on this platform");
-
 #endif
 }
 
