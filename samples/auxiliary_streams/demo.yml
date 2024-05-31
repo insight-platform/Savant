@@ -8,6 +8,9 @@ parameters:
     width: 1920
     height: 1080
   batch_size: 1
+  # to check encoders used in auxiliary streams
+  auxiliary_encoders:
+    - ${pipeline.elements[0].kwargs.codec_params}
 
 # pipeline definition
 pipeline:
