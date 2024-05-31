@@ -41,7 +41,6 @@ pipeline:
             height: 720
         # codec parameters for auxiliary streams
         codec_params:
-          codec: h264
-          encoder: ${oc.env:ENCODER_TYPE, 'nvenc'}
+          codec: ${oc.env:CODEC, 'h264'}
 
   # sink definition is skipped, zeromq sink is used by default to connect with sink adapters

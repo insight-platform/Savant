@@ -16,7 +16,7 @@ from savant.deepstream.nvinfer.build_engine import build_engine
 from savant.deepstream.nvinfer.model import NvInferModel
 from savant.deepstream.pipeline import NvDsPipeline
 from savant.deepstream.runner import NvDsPipelineRunner
-from savant.gstreamer.codecs import Codec
+from savant.gstreamer.codecs import AUXILIARY_STREAM_CODECS
 from savant.healthcheck.server import HealthCheckHttpServer
 from savant.healthcheck.status import ModuleStatus, set_module_status
 from savant.utils.check_display import check_display_env
@@ -87,7 +87,7 @@ def main(module_config: Union[str, Path, IO[Any]]):
         for aux_encoder in auxiliary_encoders:
             if not check_encoder_is_available(
                 aux_encoder,
-                allowed_codecs=[Codec.H264.value.name, Codec.HEVC.value.name],
+                allowed_codecs=[x.value.name for x in AUXILIARY_STREAM_CODECS],
             ):
                 return False
 
