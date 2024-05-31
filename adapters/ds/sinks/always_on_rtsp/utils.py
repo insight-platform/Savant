@@ -42,7 +42,7 @@ def check_codec_is_available(codec: Codec) -> bool:
 
         from savant.deepstream.encoding import check_encoder_is_available
 
-        return check_encoder_is_available({'output_frame': {'codec': codec.value.name}})
+        return check_encoder_is_available({'codec': codec.value.name})
 
     else:
         logger.warning(

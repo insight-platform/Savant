@@ -8,6 +8,9 @@ parameters:
     width: 1920
     height: 1080
   batch_size: 1
+  # to check encoders used in auxiliary streams
+  auxiliary_encoders:
+    - ${pipeline.elements[0].kwargs.codec_params}
 
 # pipeline definition
 pipeline:
@@ -38,6 +41,6 @@ pipeline:
             height: 720
         # codec parameters for auxiliary streams
         codec_params:
-          codec: h264
+          codec: ${oc.env:CODEC, 'h264'}
 
   # sink definition is skipped, zeromq sink is used by default to connect with sink adapters

@@ -12,9 +12,9 @@ from savant.api.constants import DEFAULT_TIME_BASE
 from savant.config.schema import FrameParameters, PipelineElement
 from savant.deepstream.buffer_processor import create_buffer_processor
 from savant.deepstream.pipeline import NvDsPipeline
-from savant.deepstream.source_output import SourceOutputH26X, create_source_output
+from savant.deepstream.source_output import create_source_output
 from savant.gstreamer import Gst
-from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
+from savant.gstreamer.codecs import AUXILIARY_STREAM_CODECS, CODEC_BY_NAME
 from savant.utils.logging import get_logger
 from savant.utils.source_info import SourceInfoRegistry
 
@@ -57,8 +57,9 @@ class AuxiliaryStreamInternal:
         # None means EOS
         self._pending_buffers: Deque[Optional[Gst.Buffer]] = deque()
 
-        codec = CODEC_BY_NAME[codec_params['codec']]
-        if codec not in [Codec.H264, Codec.HEVC]:
+        self._codec = codec_params['codec']
+        codec = CODEC_BY_NAME[self._codec]
+        if codec not in AUXILIARY_STREAM_CODECS:
             raise ValueError(f'Unsupported codec: {codec}')
 
         frame_params = FrameParameters(width=width, height=height)
@@ -68,9 +69,6 @@ class AuxiliaryStreamInternal:
             video_pipeline=video_pipeline,
             queue_properties={},
         )
-        if not isinstance(self._source_output, SourceOutputH26X):
-            raise ValueError('Unsupported codec')
-        self._codec = self._source_output.codec.name
         self._buffer_processor = create_buffer_processor(
             queue=gst_pipeline._queue,
             sources=sources,

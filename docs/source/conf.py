@@ -82,7 +82,14 @@ exclude_patterns = ['includes/**/*.rst']
 
 # List of modules that will be excluded from import to prevent import errors to stop
 # the build process when some external dependencies cannot be imported during the build.
-autodoc_mock_imports = ['cv2', 'pyds', 'pysavantboost', 'cupy', 'torch', 'pynvbufsurfacegenerator']
+autodoc_mock_imports = [
+    'cv2',
+    'pyds',
+    'pysavantboost',
+    'cupy',
+    'torch',
+    'pynvbufsurfacegenerator',
+]
 
 # -- Options for HTML output -------------------------------------------------
 

@@ -30,7 +30,6 @@ from savant.deepstream.utils.iterator import nvds_frame_meta_iterator
 from savant.gstreamer import Gst  # noqa: F401
 from savant.metrics.base import BaseMetricsExporter
 from savant.metrics.registry import MetricsRegistry
-from savant.utils.platform import is_aarch64
 from savant.utils.source_info import SourceInfoRegistry
 
 
@@ -266,9 +265,6 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
             are supported.
         :param framerate: Framerate. Default is 30/1.
         """
-
-        if is_aarch64():
-            raise RuntimeError('Auxiliary streams are not supported on aarch64')
 
         if self._auxiliary_streams.get_stream(source_id) is not None:
             raise RuntimeError(f'Auxiliary stream {source_id} already exists')

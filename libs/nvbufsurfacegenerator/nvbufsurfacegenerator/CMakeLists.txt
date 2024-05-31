@@ -6,16 +6,6 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined" )
 set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,--no-undefined" )
 
-if(CMAKE_SYSTEM_PROCESSOR STREQUAL aarch64)
-    message("Building for ${CMAKE_SYSTEM_PROCESSOR}")
-    add_definitions(-DPLATFORM_AARCH64)
-elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL x86_64)
-    message("Building for ${CMAKE_SYSTEM_PROCESSOR}")
-    add_definitions(-DPLATFORM_X86_64)
-else()
-    message(FATAL_ERROR "Unsupported arhitecture: ${CMAKE_SYSTEM_PROCESSOR}")
-endif()
-
 find_package(PkgConfig REQUIRED)
 find_package(CUDA REQUIRED)
 find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
@@ -59,13 +49,8 @@ target_link_libraries(
         ${GLIB_LIBRARIES}
         ${GSTREAMER_LIBRARIES}
         ${CUDA_LIBRARIES}
+        nvdsbufferpool
 )
-if (CMAKE_SYSTEM_PROCESSOR STREQUAL x86_64)
-    target_link_libraries(
-            nvbufsurfacegenerator
-            nvdsbufferpool
-    )
-endif()
 
 target_include_directories(nvbufsurfacegenerator PUBLIC include)
 

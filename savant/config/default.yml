@@ -70,6 +70,14 @@ parameters:
   #  # Default is "baseline".
   #  profile: baseline
 
+  # Codec parameters for auxiliary streams.
+  # Used to check whether the codec is supported by the pipeline.
+  # auxiliary_encoders:
+  #   - codec: h264
+  #     encoder: nvenc
+  #   encoder_params:
+  #     iframeinterval: 25
+
   # PyFunc for drawing on frames. Should be an instance of savant.config.schema.DrawFunc.
   #
   # To not draw on frames leave "null".
