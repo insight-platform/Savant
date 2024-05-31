@@ -42,9 +42,9 @@ services:
       - ../assets/stub_imgs:/stub_imgs
     environment:
       - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
-      - SOURCE_IDS=video-360p,video-480p,video-720p
+      - SOURCE_IDS=video-360p,video-480p
       - FRAMERATE=25/1
-      - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x720.jpeg
+      - STUB_FILE_LOCATION=/stub_imgs/smpte100_856x480.jpeg
       - DEV_MODE=True
     command: python -m adapters.ds.sinks.always_on_rtsp
 
