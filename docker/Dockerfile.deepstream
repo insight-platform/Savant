@@ -25,6 +25,16 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
       rm -f /tmp/cmake.sh; \
     fi
 
+# TODO: Determine JetPack release (replace `r36.2`)
+RUN if [ "$TARGETARCH" = "arm64" ]; then \
+      echo "deb [trusted=yes] https://repo.download.nvidia.com/jetson/t234 r36.2 main" \
+        > /etc/apt/sources.list.d/nvidia-l4t-apt-source.list \
+      && rm /etc/ld.so.conf.d/nvidia-tegra.conf \
+      && mkdir -p /opt/nvidia/l4t-packages/ \
+      && touch /opt/nvidia/l4t-packages/.nv-l4t-disable-boot-fw-update-in-preinstall \
+      && apt-get update \
+      && apt-get install --no-install-recommends -y nvidia-l4t-multimedia; \
+    fi
 
 # extra packages builders
 FROM builder AS extra-builder
@@ -63,18 +73,19 @@ COPY libs/gstsavantframemeta .
 RUN python3 -m build --wheel --no-isolation && rm -rf _skbuild
 
 
+# Package builder for NvBufSurfaceGenerator
+FROM builder AS nv-buf-surface-generator-builder
+
+WORKDIR /libs/nvbufsurfacegenerator
+COPY libs/nvbufsurfacegenerator/requirements.txt .
+RUN python3 -m pip install --no-cache-dir -r requirements.txt
+
+COPY libs/nvbufsurfacegenerator .
+RUN python3 -m build --wheel --no-isolation && rm -rf _skbuild
+
+
 # Savant boost(cuda) library builder
 FROM builder AS savant-boost-builder
-# TODO: Determine JetPack release (replace `r36.2`)
-RUN if [ "$TARGETARCH" = "arm64" ]; then \
-      echo "deb [trusted=yes] https://repo.download.nvidia.com/jetson/t234 r36.2 main" \
-        > /etc/apt/sources.list.d/nvidia-l4t-apt-source.list; \
-      rm /etc/ld.so.conf.d/nvidia-tegra.conf; \
-      mkdir -p /opt/nvidia/l4t-packages/; \
-      touch /opt/nvidia/l4t-packages/.nv-l4t-disable-boot-fw-update-in-preinstall; \
-      apt-get update; \
-      apt-get install --no-install-recommends -y nvidia-l4t-multimedia; \
-    fi
 
 WORKDIR /libs/savanboost
 COPY libs/savantboost/requirements.txt .
@@ -148,6 +159,9 @@ RUN python -m pip install --no-cache-dir /libs/savanboost/dist/*.whl
 
 COPY --from=savant-meta-builder /libs/gstsavantframemeta/dist /libs/gstsavantframemeta/dist
 RUN python -m pip install --no-cache-dir /libs/gstsavantframemeta/dist/*.whl
+
+COPY --from=nv-buf-surface-generator-builder /libs/nvbufsurfacegenerator/dist /libs/nvbufsurfacegenerator/dist
+RUN python -m pip install --no-cache-dir /libs/nvbufsurfacegenerator/dist/*.whl
 
 COPY --from=savant-package-builder /tmp/build/dist /libs/savant/dist
 RUN python -m pip install --no-cache-dir /libs/savant/dist/*.whl

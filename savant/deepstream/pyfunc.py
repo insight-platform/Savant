@@ -1,6 +1,6 @@
 """Base implementation of user-defined PyFunc class."""
 
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 import cv2
 import pyds
@@ -10,7 +10,13 @@ from pygstsavantframemeta import (
 )
 from savant_rs.pipeline2 import VideoPipeline
 
+from savant.api.constants import DEFAULT_FRAMERATE
 from savant.base.pyfunc import BasePyFuncPlugin
+from savant.deepstream.auxiliary_stream import (
+    AuxiliaryStream,
+    AuxiliaryStreamInternal,
+    AuxiliaryStreamRegistry,
+)
 from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.deepstream.utils.event import (
     GST_NVEVENT_PAD_ADDED,
@@ -50,6 +56,8 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
         }
         self._stream_pool_size = None
         self._stream_pool = []
+        # TODO: make AuxiliaryStreamRegistry global?
+        self._auxiliary_streams = AuxiliaryStreamRegistry()
 
     def on_start(self) -> bool:
         """Do on plugin start."""
@@ -168,6 +176,8 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
         for stream in self._stream_pool:
             stream.waitForCompletion()
 
+        self._auxiliary_streams.flush()
+
     def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
         """Process gstreamer buffer and frame metadata. Throws an exception if fatal
         error has occurred.
@@ -210,3 +220,75 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
         """
 
         return self._metrics_registry
+
+    def auxiliary_stream(
+        self,
+        source_id: str,
+        width: int,
+        height: int,
+        codec_params: Dict[str, Any],
+        framerate: str = DEFAULT_FRAMERATE,
+    ) -> AuxiliaryStream:
+        """Create an auxiliary stream.
+
+        Frames from auxiliary streams are encoded and sent to sink. They are
+        not sent to downstream pipeline elements. This can be useful to send
+        video in different resolutions, codecs, etc.
+
+        Usage example:
+
+        .. code-block:: python
+
+            aux_stream = self.auxiliary_stream(
+                source_id='aux-source',
+                width=640,
+                height=480,
+                codec_params={'codec': 'h264'},
+            )
+
+            ...
+
+            cuda_stream = self.get_cuda_stream(frame_meta)
+            aux_frame, aux_buffer = aux_stream.create_frame(pts=pts)
+            with nvds_to_gpu_mat(aux_buffer, batch_id=0) as aux_mat:
+                cv2.cuda.resize(
+                    src=orig_frame_mat,
+                    dst=aux_mat,
+                    dsize=(640, 480),
+                    stream=cuda_stream,
+                )
+
+        :param source_id: Source ID. Must be unique.
+        :param width: Frame width.
+        :param height: Frame height.
+        :param codec_params: Codec parameters. Only "h264" and "hevc" codecs
+            are supported.
+        :param framerate: Framerate. Default is 30/1.
+        """
+
+        if self._auxiliary_streams.get_stream(source_id) is not None:
+            raise RuntimeError(f'Auxiliary stream {source_id} already exists')
+
+        self.logger.info('Requesting pad for source %s', source_id)
+        pad: Gst.Pad = self.gst_element.request_pad_simple('aux_src_%u')
+        if pad is None:
+            raise RuntimeError(f'Failed to request pad for source {source_id}')
+        self.logger.info('Got pad %s for source %s', pad.get_name(), source_id)
+
+        aux_stream_internal = AuxiliaryStreamInternal(
+            source_id=source_id,
+            sources=self._sources,
+            width=width,
+            height=height,
+            framerate=framerate,
+            codec_params=codec_params,
+            video_pipeline=self._video_pipeline,
+            # stage_name=self.gst_element.get_name(),
+            stage_name='source',
+            gst_pipeline=self.gst_element.get_property('gst-pipeline'),
+            pad=pad,
+        )
+        aux_stream = AuxiliaryStream(aux_stream_internal, self._auxiliary_streams)
+        self._auxiliary_streams.add_stream(aux_stream_internal)
+
+        return aux_stream

@@ -1,5 +1,5 @@
 import time
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
 
 from savant.config.schema import PipelineElement
 from savant.deepstream.element_factory import NvDsElementFactory
@@ -10,16 +10,19 @@ from savant.gstreamer.element_factory import GstElementFactory
 from savant.utils.logging import get_logger
 
 
-def check_encoder_is_available(parameters: Dict[str, Any]) -> bool:
+def check_encoder_is_available(
+    codec_params: Dict[str, Any],
+    allowed_codecs: Optional[List[str]] = None,
+) -> bool:
     """Check if encoder is available."""
 
     logger = get_logger(__name__)
 
-    output_frame = parameters.get('output_frame')
-    if not output_frame:
-        return True
+    codec_name = codec_params['codec']
+    if allowed_codecs and codec_name not in allowed_codecs:
+        logger.error('Unsupported codec %r.', codec_name)
+        return False
 
-    codec_name = output_frame['codec']
     if codec_name == 'copy':
         return True
 
@@ -35,10 +38,10 @@ def check_encoder_is_available(parameters: Dict[str, Any]) -> bool:
         return True
 
     logger.info('Checking if encoder for codec %r is available', codec_name)
-    encoder = codec.value.encoder(output_frame.get('encoder'))
+    encoder = codec.value.encoder(codec_params.get('encoder'))
     output_caps = codec.value.caps_with_params
     if codec == Codec.H264 and encoder == codec.value.sw_encoder:
-        profile = output_frame.get('profile')
+        profile = codec_params.get('profile')
         if profile is None:
             profile = 'baseline'
         output_caps = f'{output_caps},profile={profile}'
@@ -60,7 +63,7 @@ def check_encoder_is_available(parameters: Dict[str, Any]) -> bool:
         PipelineElement('nvvideoconvert'),
         PipelineElement(
             encoder,
-            properties=output_frame.get('encoder_params', {}),
+            properties=codec_params.get('encoder_params', {}),
         ),
         PipelineElement(
             codec.value.parser,

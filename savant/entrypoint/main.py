@@ -16,6 +16,7 @@ from savant.deepstream.nvinfer.build_engine import build_engine
 from savant.deepstream.nvinfer.model import NvInferModel
 from savant.deepstream.pipeline import NvDsPipeline
 from savant.deepstream.runner import NvDsPipelineRunner
+from savant.gstreamer.codecs import AUXILIARY_STREAM_CODECS
 from savant.healthcheck.server import HealthCheckHttpServer
 from savant.healthcheck.status import ModuleStatus, set_module_status
 from savant.utils.check_display import check_display_env
@@ -77,8 +78,18 @@ def main(module_config: Union[str, Path, IO[Any]]):
 
     Gst.init(None)
 
-    if not check_encoder_is_available(config.parameters):
-        return
+    output_frame = config.parameters.get('output_frame')
+    if output_frame and not check_encoder_is_available(output_frame):
+        return False
+
+    auxiliary_encoders = config.parameters.get('auxiliary_encoders')
+    if auxiliary_encoders:
+        for aux_encoder in auxiliary_encoders:
+            if not check_encoder_is_available(
+                aux_encoder,
+                allowed_codecs=[x.value.name for x in AUXILIARY_STREAM_CODECS],
+            ):
+                return False
 
     pipeline = NvDsPipeline(
         config.name,
