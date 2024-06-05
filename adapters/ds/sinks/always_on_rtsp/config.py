@@ -87,7 +87,7 @@ class CommonStreamConfig:
         self.framerate = opt_config('FRAMERATE', '30/1')
         self.idr_period_frames = opt_config('IDR_PERIOD_FRAMES', IDR_PERIOD_FRAMES, int)
 
-        self.sync = opt_config('SYNC_INPUT', False, strtobool)
+        self.sync = opt_config('SYNC_INPUT', True, strtobool)
         self.realtime = opt_config('REALTIME', False, strtobool)
         self.sync_offset_ms = opt_config('SYNC_OFFSET_MS', 0, int)
         assert self.sync_offset_ms >= 0, 'SYNC_OFFSET_MS should be non-negative.'
