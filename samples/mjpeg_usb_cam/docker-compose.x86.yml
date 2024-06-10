@@ -1,4 +1,3 @@
-version: "3.3"
 services:
 
   usb-cam:
@@ -38,7 +37,7 @@ services:
           devices:
             - driver: nvidia
               count: 1
-              capabilities: [gpu]
+              capabilities: [ gpu ]
 
   always-on-sink:
     image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
@@ -68,7 +67,7 @@ services:
           devices:
             - driver: nvidia
               count: 1
-              capabilities: [gpu]
+              capabilities: [ gpu ]
 
 volumes:
   zmq_sockets:

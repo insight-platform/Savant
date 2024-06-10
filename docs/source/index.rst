@@ -1,5 +1,4 @@
-.. Savant documentation master file,
-   should at least contain the root `toctree` directive.
+.. Savant documentation master file, should at least contain the root `toctree` directive.
 
 Welcome To Savant Documentation
 ===================================
@@ -198,6 +197,7 @@ Savant supports processing parallelization; it helps to utilize the available re
    advanced_topics/10_client_sdk
    advanced_topics/11_memory_representation_function.rst
    advanced_topics/12_torch_hub.rst
+   advanced_topics/13_auxiliary_video_streams.rst
 
 .. toctree::
    :maxdepth: 0

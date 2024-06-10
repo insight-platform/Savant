@@ -456,7 +456,8 @@ PNG Сodec
 
    PNG compression level. Range: ``0`` - ``9``. The default value is ``6``.
 
-Example:
+Codec Configuration Examples
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   .. code-block:: yaml
 
