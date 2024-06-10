@@ -1,8 +1,12 @@
 # People detection, tracking and face blurring (PeopleNet, Nvidia Tracker, OpenCV CUDA)
 
-A simple pipeline that uses standard [Nvidia PeopleNet](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/peoplenet) model to detect persons and their faces in the video. The faces are matched versus bodies and blurred with the integrated OpenCV CUDA functionality. There is also a simple unreliable tracker that helps reduce flickering of boxes.
+A simple pipeline that uses
+standard [Nvidia PeopleNet](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/peoplenet) model to detect
+persons and their faces in the video. The faces are matched versus bodies and blurred with the integrated OpenCV CUDA
+functionality. There is also a simple unreliable tracker that helps reduce flickering of boxes.
 
-GPU-accelerated blurring made with OpenCV is a killer feature of this demonstration. It enables very fast and efficient face blurring without CPU utilization.
+GPU-accelerated blurring made with OpenCV is a killer feature of this demonstration. It enables very fast and efficient
+face blurring without CPU utilization.
 
 The **Green** Icon represents how many people with blurred faces in the scene.
 The **Blue** Icon represents how many people with blurred faces in the scene.
@@ -17,9 +21,10 @@ Features:
 
 YouTube Video:
 
-[![Watch the video](https://img.youtube.com/vi/YCvT3XbiSik/default.jpg)](https://youtu.be/YCvT3XbiSik)
+[![Watch the video](https://img.youtube.com/vi/rHAY9SKONRQ/default.jpg)](https://youtu.be/rHAY9SKONRQ)
 
-A step-by-step [tutorial](https://blog.savant-ai.io/meet-savant-a-new-high-performance-python-video-analytics-framework-for-nvidia-hardware-22cc830ead4d?source=friends_link&sk=c7169b378b31451ab8de3d882c22a774).
+A
+step-by-step [tutorial](https://blog.savant-ai.io/meet-savant-a-new-high-performance-python-video-analytics-framework-for-nvidia-hardware-22cc830ead4d?source=friends_link&sk=c7169b378b31451ab8de3d882c22a774).
 
 Tested on platforms:
 
@@ -32,6 +37,7 @@ Demonstrated operational modes:
 - capacity processing: directory of files (FPS).
 
 Demonstrated adapters:
+
 - RTSP source adapter;
 - video file source adapter;
 - Always-ON RTSP sink adapter;
@@ -46,11 +52,14 @@ git lfs pull
 ./utils/check-environment-compatible
 ```
 
-**Note**: Ubuntu 22.04 runtime configuration [guide](https://insight-platform.github.io/Savant/develop/getting_started/0_configure_prod_env.html) helps to configure the runtime to run Savant pipelines.
+**Note**: Ubuntu 22.04 runtime
+configuration [guide](https://insight-platform.github.io/Savant/develop/getting_started/0_configure_prod_env.html) helps
+to configure the runtime to run Savant pipelines.
 
 ## Build Engines
 
-The demo uses models that are compiled into TensorRT engines the first time the demo is run. This takes time. Optionally, you can prepare the engines before running the demo by using the command:
+The demo uses models that are compiled into TensorRT engines the first time the demo is run. This takes time.
+Optionally, you can prepare the engines before running the demo by using the command:
 
 ```bash
 # you are expected to be in Savant/ directory
