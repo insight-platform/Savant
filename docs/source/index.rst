@@ -1,5 +1,4 @@
-.. Savant documentation master file,
-should at least contain the root `toctree` directive.
+.. Savant documentation master file, should at least contain the root `toctree` directive.
 
 Welcome To Savant Documentation
 ===================================
