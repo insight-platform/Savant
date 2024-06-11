@@ -1132,8 +1132,8 @@ The simplified design of the adapter is depicted in the following diagram:
       - ``True``
     * - ``SYNC_OFFSET_MS``
       - An offset in milliseconds to adjust the synchronisation. Tune this parameter to play video more smoothly. When ``REALTIME=False``, the offset is applied to the timestamp of the first frame; when ``REALTIME=True``, the offset is applied to the current time. Ignored when ``SYNC_INPUT=False``.
-      - ``0``
-      - ``10``
+      - ``1000``
+      - ``5000``
     * - ``SYNC_QUEUE_SIZE``
       - A size of queue for frames to be synchronised; ignored when ``SYNC_INPUT=False``. Tune this parameter according to the stream framerate and ``SYNC_OFFSET_MS``.
       - ``500``

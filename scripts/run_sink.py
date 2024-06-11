@@ -417,7 +417,7 @@ def video_files_sink(
 @click.option(
     '--sync-offset-ms',
     type=click.INT,
-    default=0,
+    default=1000,
     help=(
         'Offset in milliseconds to adjust the synchronisation. '
         'Tune this parameter to play video more smoothly.'

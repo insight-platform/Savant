@@ -89,7 +89,7 @@ class CommonStreamConfig:
 
         self.sync = opt_config('SYNC_INPUT', True, strtobool)
         self.realtime = opt_config('REALTIME', False, strtobool)
-        self.sync_offset_ms = opt_config('SYNC_OFFSET_MS', 0, int)
+        self.sync_offset_ms = opt_config('SYNC_OFFSET_MS', 1000, int)
         assert self.sync_offset_ms >= 0, 'SYNC_OFFSET_MS should be non-negative.'
         self.sync_queue_size = opt_config('SYNC_QUEUE_SIZE', 500, int)
         assert self.sync_queue_size > 0, 'SYNC_QUEUE_SIZE should be positive.'
