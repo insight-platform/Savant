@@ -70,7 +70,7 @@ class NvInferConfig:
 
     @staticmethod
     def merge(
-            config1: NvInferConfigType, config2: NvInferConfigType
+        config1: NvInferConfigType, config2: NvInferConfigType
     ) -> NvInferConfigType:
         """Merges config2 into config1.
 
@@ -111,7 +111,7 @@ class NvInferConfig:
 
     @staticmethod
     def generate_model_engine_file(
-            model_file: str, batch_size: int, gpu_id: int, precision: ModelPrecision
+        model_file: str, batch_size: int, gpu_id: int, precision: ModelPrecision
     ) -> str:
         """Generate ``model-engine-file`` according to default Deepstream
         engine naming scheme."""
@@ -207,7 +207,7 @@ class NvInferConfig:
 
     @staticmethod
     def to_model(
-            nvinfer_config: NvInferConfigType, model_config: NvInferModel
+        nvinfer_config: NvInferConfigType, model_config: NvInferModel
     ) -> NvInferModel:
         """Convert nvinfer config from file format to schema format."""
         config = copy.deepcopy(model_config)
@@ -230,7 +230,7 @@ class NvInferConfig:
 
     @staticmethod
     def from_model(
-            model_config: DictConfig, nvinfer_config: Optional[NvInferConfigType] = None
+        model_config: DictConfig, nvinfer_config: Optional[NvInferConfigType] = None
     ) -> NvInferConfigType:
         """Convert nvinfer config from schema format to file format."""
         config = (
@@ -240,23 +240,23 @@ class NvInferConfig:
         for field in NvInferConfig._PROPERTY_FIELD_MAP:
             # filter model file by model format
             if (
-                    field.property_name == 'uff-file'
-                    and model_config.format != NvInferModelFormat.UFF
+                field.property_name == 'uff-file'
+                and model_config.format != NvInferModelFormat.UFF
             ):
                 continue
             if (
-                    field.property_name == 'onnx-file'
-                    and model_config.format != NvInferModelFormat.ONNX
+                field.property_name == 'onnx-file'
+                and model_config.format != NvInferModelFormat.ONNX
             ):
                 continue
             if (
-                    field.property_name == 'tlt-encoded-model'
-                    and model_config.format != NvInferModelFormat.ETLT
+                field.property_name == 'tlt-encoded-model'
+                and model_config.format != NvInferModelFormat.ETLT
             ):
                 continue
             if field.property_name == 'model-file' and model_config.format not in (
-                    NvInferModelFormat.CAFFE,
-                    NvInferModelFormat.CUSTOM,
+                NvInferModelFormat.CAFFE,
+                NvInferModelFormat.CUSTOM,
             ):
                 continue
 
