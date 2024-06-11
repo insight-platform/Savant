@@ -176,6 +176,14 @@ class NvInferModel(Model):
     List of items of format ``<layer1-name>:<precision>:<device-type>``.
     """
 
+    enable_dla: Optional[bool] = None
+    """Specifies that DLA engines to be used for inference.
+    """
+
+    use_dla_core: Optional[int] = None
+    """Specifies the DLA core to be used for inference.
+    """
+
 
 NVINFER_DEFAULT_OBJECT_SELECTOR = PyFunc(
     module='savant.selector.detector',
