@@ -193,7 +193,7 @@ pipeline:
       ingress_queue_length: ${oc.decode:${oc.env:INGRESS_QUEUE_LENGTH, null}}
       # Size of the ingress queue in bytes (0 - no limit, default 10485760).
       ingress_queue_byte_size: ${oc.decode:${oc.env:INGRESS_QUEUE_BYTE_SIZE, null}}
-      # Length of the queue before decoder in frames (0 - no limit, default 200).
+      # Length of the queue before decoder in frames (0 - no limit, default 5).
       decoder_queue_length: ${oc.decode:${oc.env:DECODER_QUEUE_LENGTH, null}}
       # Size of the queue before decoder in bytes (0 - no limit, default 10485760).
       decoder_queue_byte_size: ${oc.decode:${oc.env:DECODER_QUEUE_BYTE_SIZE, null}}

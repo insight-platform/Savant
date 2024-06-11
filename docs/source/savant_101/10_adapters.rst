@@ -1124,16 +1124,16 @@ The simplified design of the adapter is depicted in the following diagram:
       - ``logger``
     * - ``SYNC_INPUT``
       - A flag indicating whether to show frames on sink synchronously (i.e. at the source rate).
-      - ``False``
       - ``True``
+      - ``False``
     * - ``REALTIME``
-      - A flag indicating whether to synchronise frames at realtime (i.e. using avsolute timestamps); ignored when ``SYNC_INPUT=False``.
+      - A flag indicating whether to synchronise frames at realtime (i.e. using absolute timestamps); ignored when ``SYNC_INPUT=False``.
       - ``False``
       - ``True``
     * - ``SYNC_OFFSET_MS``
       - An offset in milliseconds to adjust the synchronisation. Tune this parameter to play video more smoothly. When ``REALTIME=False``, the offset is applied to the timestamp of the first frame; when ``REALTIME=True``, the offset is applied to the current time. Ignored when ``SYNC_INPUT=False``.
-      - ``0``
-      - ``10``
+      - ``1000``
+      - ``5000``
     * - ``SYNC_QUEUE_SIZE``
       - A size of queue for frames to be synchronised; ignored when ``SYNC_INPUT=False``. Tune this parameter according to the stream framerate and ``SYNC_OFFSET_MS``.
       - ``500``
@@ -1177,7 +1177,7 @@ Running the adapter with Docker:
     docker run --rm -it --name sink-always-on-rtsp \
         --gpus=all \
         --entrypoint python \
-        -e SYNC_INPUT=False \
+        -e SYNC_INPUT=True \
         -e ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc \
         -e SOURCE_ID=test \
         -e STUB_FILE_LOCATION=/path/to/stub_file/test.jpg \
