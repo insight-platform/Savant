@@ -111,12 +111,12 @@ class NvInferConfig:
 
     @staticmethod
     def generate_model_engine_file(
-        model_file: str, batch_size: int, gpu_id: int, precision: ModelPrecision
+        model_file: str, batch_size: int, device_id: str, precision: ModelPrecision
     ) -> str:
         """Generate ``model-engine-file`` according to default Deepstream
         engine naming scheme."""
         prefix = model_file if model_file else 'model'
-        return f'{prefix}_b{batch_size}_gpu{gpu_id}_{precision.name.lower()}.engine'
+        return f'{prefix}_b{batch_size}_{device_id}_{precision.name.lower()}.engine'
 
     @dataclass
     class _FieldMap:
