@@ -198,6 +198,7 @@ Savant supports processing parallelization; it helps to utilize the available re
    advanced_topics/11_memory_representation_function.rst
    advanced_topics/12_torch_hub.rst
    advanced_topics/13_auxiliary_video_streams.rst
+   advanced_topics/14_jetson_dla.rst
 
 .. toctree::
    :maxdepth: 0
