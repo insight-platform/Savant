@@ -18,7 +18,7 @@ from savant.utils.platform import is_aarch64
 OUT_CAPS = Gst.Caps.from_string('video/x-raw(memory:NVMM);video/x-raw')
 DEFAULT_PASS_EOS = True
 # Default values of "queue" element
-DEFAULT_DECODER_QUEUE_LENGTH = 200
+DEFAULT_DECODER_QUEUE_LENGTH = 5
 DEFAULT_DECODER_QUEUE_SIZE = 10485760
 
 NESTED_DEMUX_PROPERTIES = {

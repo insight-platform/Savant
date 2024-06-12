@@ -400,10 +400,13 @@ def video_files_sink(
     help='Where to dump metadata (stdout or logger).',
 )
 @click.option(
-    '--sync',
+    '--no-sync',
     is_flag=True,
     default=False,
-    help='Show frames on sink synchronously (i.e. at the source file rate).',
+    help=(
+        'Disable showing frames on sink synchronously (i.e. at the source file rate). '
+        'Set this flag to show frames as soon as possible.'
+    ),
 )
 @click.option(
     '--realtime',
@@ -414,7 +417,7 @@ def video_files_sink(
 @click.option(
     '--sync-offset-ms',
     type=click.INT,
-    default=0,
+    default=1000,
     help=(
         'Offset in milliseconds to adjust the synchronisation. '
         'Tune this parameter to play video more smoothly.'
@@ -504,7 +507,7 @@ def always_on_rtsp_sink(
     fps_period_frames: Optional[int],
     fps_period_seconds: Optional[float],
     metadata_output: Optional[str],
-    sync: bool,
+    no_sync: bool,
     realtime: bool,
     sync_offset_ms: int,
     sync_queue_size: int,
@@ -534,9 +537,6 @@ def always_on_rtsp_sink(
     Stream control API is available at http://<container-host>:<api-port>.
 
     See http://<container-host>:<api-port>/docs for API documentation.
-
-    Note: it is advisable to use --sync flag on source adapter or use a live
-    source adapter (e.g. rtsp or usb-cam).
     """
 
     assert (
@@ -594,7 +594,7 @@ def always_on_rtsp_sink(
     cmd = build_docker_run_command(
         f'sink-always-on-rtsp-{uuid.uuid4().hex}',
         zmq_endpoints=[in_endpoint],
-        sync_input=sync,
+        sync_input=not no_sync,
         entrypoint='python',
         args=['-m', 'adapters.ds.sinks.always_on_rtsp'],
         envs=envs,

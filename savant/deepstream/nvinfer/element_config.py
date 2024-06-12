@@ -238,10 +238,15 @@ def nvinfer_element_configurator(
 
     # generate model-engine-file if not set
     if not model_config.engine_file:
+        device_id = None
+        if model_config.enable_dla:
+            device_id = f'dla{model_config.use_dla_core}'
+        else:
+            device_id = f'gpu{model_config.gpu_id}'
         model_config.engine_file = NvInferConfig.generate_model_engine_file(
             model_config.model_file,
             model_config.batch_size,
-            model_config.gpu_id,
+            device_id,
             model_config.precision,
         )
         logger.info('Model engine file has been set to "%s".', model_config.engine_file)
