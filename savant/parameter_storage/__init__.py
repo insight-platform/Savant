@@ -13,6 +13,7 @@ from savant_rs.match_query import (
     EtcdCredentials,
 )
 import pathlib
+import logging
 
 __all__ = ['param_storage', 'init_param_storage']
 
@@ -55,7 +56,7 @@ class EtcdStorageConfig:
     credentials: Optional[EtcdCredentialsConfig] = None
     """The credentials to use for authentication."""
 
-    tls_config: Optional[TlsConfigConfig] = None
+    tls: Optional[TlsConfigConfig] = None
     """The TLS configuration."""
 
     watch_path: str = 'savant'
@@ -139,12 +140,26 @@ def init_param_storage(config: DictConfig) -> None:
                 storage_config.credentials.username, storage_config.credentials.password
             )
         tls_config: TlsConfig = None
-        if storage_config.tls_config:
-            tls_config = TlsConfig(
-                storage_config.tls_config.ca.read_text(),
-                storage_config.tls_config.cert.read_text(),
-                storage_config.tls_config.key.read_text(),
-            )
+        if storage_config.tls:
+            try:
+                logging.info(f"Loading Etcd CA from {storage_config.tls.ca}")
+                ca = storage_config.tls.ca.read_text()
+                logging.info(f"Loading Etcd client cert from {storage_config.tls.cert}")
+                cert = storage_config.tls.cert.read_text()
+                logging.info(f"Loading Etcd client key from {storage_config.tls.key}")
+                key = storage_config.tls.key.read_text()
+                tls_config = TlsConfig(
+                    ca,
+                    cert,
+                    key,
+                )
+            except FileNotFoundError as e:
+                raise FileNotFoundError(
+                    f"File not found when loading Etcd CA, cert or key: {e.filename}. Please check the path to the file."
+                )
+            except Exception as e:
+                raise e
+
         watch_path: str = storage_config.watch_path
         connect_timeout: int = storage_config.connect_timeout
         watch_path_wait_timeout: int = storage_config.watch_path_wait_timeout
