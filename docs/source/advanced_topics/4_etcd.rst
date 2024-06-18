@@ -68,3 +68,13 @@ The third argument is the time-to-live for the cache, and the fourth argument is
 The function returns a tuple with the value and a boolean flag indicating whether the value is cached.
 
 More information on Etcd usage in Savant can be found in a `conditional video processing sample <https://github.com/insight-platform/Savant/tree/develop/samples/conditional_video_processing>`__.
+
+Edge Design
+-----------
+
+For edge devices, Etcd can be deployed locally with mirroring configuration from the cloud. This way, edge devices can operate autonomously, even when the connection to the cloud is lost. Etcd can be configured to mirror the cloud configuration with Etcdctl, and the edge device will continue using local configuration when the connection is lost.
+
+Datacenter Design
+-----------------
+
+In the datacenter, Etcd can be deployed in a cluster configuration. This way, the system can be fault-tolerant and highly available. Etcd can be configured to use a quorum of nodes to make decisions, and the system will continue to operate even when some nodes are down.
