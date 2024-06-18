@@ -33,13 +33,13 @@ class EtcdCredentialsConfig:
 
 
 @dataclass
-class TlsCertificatesConfig:
+class TlsParametersConfig:
     """TLS configuration parameters."""
 
-    ca: pathlib.Path
+    ca_certificate: pathlib.Path
     """The certificate authority file path."""
 
-    cert: pathlib.Path
+    certificate: pathlib.Path
     """The client certificate file path."""
 
     key: pathlib.Path
@@ -56,7 +56,7 @@ class EtcdStorageConfig:
     credentials: Optional[EtcdCredentialsConfig] = None
     """The credentials to use for authentication."""
 
-    tls: Optional[TlsCertificatesConfig] = None
+    tls: Optional[TlsParametersConfig] = None
     """The TLS configuration."""
 
     watch_path: str = 'savant'
@@ -142,10 +142,14 @@ def init_param_storage(config: DictConfig) -> None:
         tls_config: TlsConfig = None
         if storage_config.tls:
             try:
-                logging.info(f"Loading Etcd CA from {storage_config.tls.ca}")
-                ca = storage_config.tls.ca.read_text()
-                logging.info(f"Loading Etcd client cert from {storage_config.tls.cert}")
-                cert = storage_config.tls.cert.read_text()
+                logging.info(
+                    f"Loading Etcd CA from {storage_config.tls.ca_certificate}"
+                )
+                ca = storage_config.tls.ca_certificate.read_text()
+                logging.info(
+                    f"Loading Etcd client cert from {storage_config.tls.certificate}"
+                )
+                cert = storage_config.tls.certificate.read_text()
                 logging.info(f"Loading Etcd client key from {storage_config.tls.key}")
                 key = storage_config.tls.key.read_text()
                 tls_config = TlsConfig(

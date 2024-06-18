@@ -36,8 +36,8 @@ To configure Etcd, users specify the following parameters in module configuratio
           username: user
           password: password
         tls:
-          ca: /path/to/ca.crt
-          cert: /path/to/cert.crt
+          ca_certificate: /path/to/ca.crt
+          certificate: /path/to/cert.crt
           key: /path/to/key.key
         watch_path: savant
         connect_timeout: 5
