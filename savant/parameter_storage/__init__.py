@@ -33,7 +33,7 @@ class EtcdCredentialsConfig:
 
 
 @dataclass
-class TlsConfigConfig:
+class TlsCertificatesConfig:
     """TLS configuration parameters."""
 
     ca: pathlib.Path
@@ -56,7 +56,7 @@ class EtcdStorageConfig:
     credentials: Optional[EtcdCredentialsConfig] = None
     """The credentials to use for authentication."""
 
-    tls: Optional[TlsConfigConfig] = None
+    tls: Optional[TlsCertificatesConfig] = None
     """The TLS configuration."""
 
     watch_path: str = 'savant'
