@@ -1,19 +1,19 @@
 """Parameter storage package."""
 
+import logging
+import pathlib
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
 from omegaconf import DictConfig, ListConfig, OmegaConf
 from savant_rs.match_query import (
+    EtcdCredentials,
+    TlsConfig,
     register_config_resolver,
     register_env_resolver,
     register_etcd_resolver,
     register_utility_resolver,
-    TlsConfig,
-    EtcdCredentials,
 )
-import pathlib
-import logging
 
 __all__ = ['param_storage', 'init_param_storage']
 
@@ -143,26 +143,21 @@ def init_param_storage(config: DictConfig) -> None:
         if storage_config.tls:
             try:
                 logging.info(
-                    f"Loading Etcd CA from {storage_config.tls.ca_certificate}"
+                    'Loading Etcd CA from %s.', storage_config.tls.ca_certificate
                 )
-                ca = storage_config.tls.ca_certificate.read_text()
+                ca_certificate = storage_config.tls.ca_certificate.read_text()
                 logging.info(
-                    f"Loading Etcd client cert from {storage_config.tls.certificate}"
+                    'Loading Etcd client cert from %s.', storage_config.tls.certificate
                 )
                 cert = storage_config.tls.certificate.read_text()
-                logging.info(f"Loading Etcd client key from {storage_config.tls.key}")
+                logging.info('Loading Etcd client key from %s.', storage_config.tls.key)
                 key = storage_config.tls.key.read_text()
-                tls_config = TlsConfig(
-                    ca,
-                    cert,
-                    key,
-                )
-            except FileNotFoundError as e:
+                tls_config = TlsConfig(ca_certificate, cert, key)
+            except FileNotFoundError as exc:
                 raise FileNotFoundError(
-                    f"File not found when loading Etcd CA, cert or key: {e.filename}. Please check the path to the file."
+                    f'File not found when loading Etcd CA, cert or key: {exc.filename}.'
+                    ' Please check the path to the file.'
                 )
-            except Exception as e:
-                raise e
 
         watch_path: str = storage_config.watch_path
         connect_timeout: int = storage_config.connect_timeout
