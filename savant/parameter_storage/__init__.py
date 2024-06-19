@@ -1,6 +1,5 @@
 """Parameter storage package."""
 
-import logging
 import pathlib
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
@@ -15,10 +14,13 @@ from savant_rs.match_query import (
     register_utility_resolver,
 )
 
+from savant.utils.logging import get_logger
+
 __all__ = ['param_storage', 'init_param_storage']
 
 ParameterStorage = Dict[str, Any]
 __PARAM_STORAGE: Optional[ParameterStorage] = None
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -142,15 +144,15 @@ def init_param_storage(config: DictConfig) -> None:
         tls_config: TlsConfig = None
         if storage_config.tls:
             try:
-                logging.info(
+                logger.info(
                     'Loading Etcd CA from %s.', storage_config.tls.ca_certificate
                 )
                 ca_certificate = storage_config.tls.ca_certificate.read_text()
-                logging.info(
+                logger.info(
                     'Loading Etcd client cert from %s.', storage_config.tls.certificate
                 )
                 cert = storage_config.tls.certificate.read_text()
-                logging.info('Loading Etcd client key from %s.', storage_config.tls.key)
+                logger.info('Loading Etcd client key from %s.', storage_config.tls.key)
                 key = storage_config.tls.key.read_text()
                 tls_config = TlsConfig(ca_certificate, cert, key)
             except FileNotFoundError as exc:
