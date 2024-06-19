@@ -1,6 +1,8 @@
 # OpenCV CUDA MOG2 Background Segmentation Demo
 
-A simple pipeline demonstrates removing the background with accelerated MOG2 from OpenCV CUDA. The pipeline takes less than 2 ms to decode, remove the background, draw the background, and encode the frame to HEVC, which results in achieving 500+ FPS on modern hardware.
+A simple pipeline demonstrates removing the background with accelerated MOG2 from OpenCV CUDA. The pipeline takes less
+than 2 ms to decode, remove the background, draw the background, and encode the frame to HEVC, which results in
+achieving 500+ FPS on modern hardware.
 
 The left side represents the orignial frame; the right side represents the framw without the background.
 
@@ -14,9 +16,10 @@ Features:
 
 YouTube Video:
 
-[![Watch the video](https://img.youtube.com/vi/P9w-WS6HLew/default.jpg)](https://youtu.be/P9w-WS6HLew)
+[![Watch the video](https://img.youtube.com/vi/ZCXOSqklgb0/default.jpg)](https://youtu.be/ZCXOSqklgb0)
 
-A step-by-step [tutorial](https://blog.savant-ai.io/building-a-500-fps-accelerated-video-background-removal-pipeline-with-savant-and-opencv-cuda-mog2-441294570ac4?source=friends_link&sk=8cee4e671e77cb2b4bb36518619f9044).
+A
+step-by-step [tutorial](https://blog.savant-ai.io/building-a-500-fps-accelerated-video-background-removal-pipeline-with-savant-and-opencv-cuda-mog2-441294570ac4?source=friends_link&sk=8cee4e671e77cb2b4bb36518619f9044).
 
 Tested on platforms:
 
@@ -29,6 +32,7 @@ Demonstrated operational modes:
 - capacity processing: directory of files (FPS).
 
 Demonstrated adapters:
+
 - RTSP source adapter;
 - Always-ON RTSP sink adapter;
 
@@ -41,7 +45,9 @@ git lfs pull
 ./utils/check-environment-compatible
 ```
 
-**Note**: Ubuntu 22.04 runtime configuration [guide](https://insight-platform.github.io/Savant/develop/getting_started/0_configure_prod_env.html) helps to configure the runtime to run Savant pipelines.
+**Note**: Ubuntu 22.04 runtime
+configuration [guide](https://insight-platform.github.io/Savant/develop/getting_started/0_configure_prod_env.html) helps
+to configure the runtime to run Savant pipelines.
 
 ## Run Demo
 
