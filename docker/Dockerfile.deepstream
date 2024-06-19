@@ -275,7 +275,7 @@ ARG DEEPSTREAM_VERSION
 ARG PACKAGES_URL=https://eu-central-1.linodeobjects.com/savant-data/packages/${TARGETPLATFORM}/ds${DEEPSTREAM_VERSION}
 
 # torch, torchvision, torchaudio
-RUN python -m pip install --no-cache-dir torch torchvision torchaudio
+RUN python -m pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
 
 ENV TORCH_HOME=/cache/models/torch_hub
 

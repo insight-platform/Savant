@@ -23,7 +23,7 @@ RUN git clone --branch "${OPENCV_VERSION}" --depth 1 https://github.com/opencv/o
 RUN git clone --branch "${OPENCV_VERSION}" --depth 1 https://github.com/opencv/opencv_contrib
 WORKDIR /opencv/build
 
-RUN python3 -m pip install --no-cache-dir 'numpy~=1.22.4'
+RUN python3 -m pip install --no-cache-dir 'numpy>=1.22.4,<2.0'
 
 # add ffmpeg/gstreamer libs
 RUN /opt/nvidia/deepstream/deepstream/user_additional_install.sh
