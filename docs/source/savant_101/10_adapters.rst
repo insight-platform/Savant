@@ -1619,3 +1619,52 @@ Running the adapter with the helper script:
 .. code-block:: bash
 
     ./scripts/run_bridge.py buffer --mount-buffer-path /tmp/savant/buffer
+
+The adapter exports its internal state to Prometheus:
+
+.. list-table:: Metrics
+    :header-rows: 1
+
+    * - Metric
+      - Description
+      - Type
+
+    * - ``received_messages``
+      - A total number of received messages.
+      - Counter
+
+    * - ``pushed_messages``
+      - A total number of messages pushed in the disk buffer.
+      - Counter
+
+    * - ``dropped_messages``
+      - A total number of dropped messages (exceeded the buffer limit).
+      - Counter
+
+    * - ``sent_messages``
+      - A total number of downstream-sent messages.
+      - Counter
+
+    * - ``buffer_size``
+      - A current buffer size in elements.
+      - Gauge
+
+    * - ``payload_size``
+      - A current buffer size in bytes.
+      - Gauge
+
+    * - ``last_received_message``
+      - A timestamp of the last received message.
+      - Gauge
+
+    * - ``last_pushed_message``
+      - A timestamp of the last pushed message.
+      - Gauge
+
+    * - ``last_dropped_message``
+      - A timestamp of the last dropped message.
+      - Gauge
+
+    * - ``last_sent_message``
+      - A timestamp of the last sent message.
+      - Gauge
