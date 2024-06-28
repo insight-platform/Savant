@@ -314,9 +314,8 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             source_info.timestamp = time.time()
 
         with source_info.lock():
-            if (
-                source_info.src_pad is not None
-                and source_info.params != frame_info.params
+            if source_info.src_pad is not None and not self.frame_params_equal(
+                source_info.params, frame_info.params
             ):
                 self.update_frame_params(source_info, frame_info.params)
             if source_info.src_pad is not None:
@@ -510,22 +509,15 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
     def update_frame_params(self, source_info: SourceInfo, frame_params: FrameParams):
         """Handle changed frame parameters on a source."""
 
-        if source_info.params != frame_params:
-            self.logger.info(
-                'Frame parameters on pad %s was changed from %s to %s',
-                source_info.src_pad.get_name(),
-                source_info.params,
-                frame_params,
-            )
-            source_info.params = frame_params
-            self.remove_source(source_info, send_eos=True)
-            return
-
-        caps = build_caps(frame_params)
-        source_info.src_pad.push_event(Gst.Event.new_caps(caps))
         self.logger.info(
-            'Caps on pad %s changed to %s', source_info.src_pad, caps.to_string()
+            'Frame parameters on pad %s was changed from %s to %s',
+            source_info.src_pad.get_name(),
+            source_info.params,
+            frame_params,
         )
+        source_info.params = frame_params
+        self.remove_source(source_info, send_eos=True)
+        return
 
     def check_timestamps(self, source_info: SourceInfo, buffer: Gst.Buffer):
         """Check frame timestamps (PTS and DTS).
@@ -600,6 +592,13 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             self.source_eviction_interval,
         )
         time.sleep(self.source_eviction_interval)
+
+    def frame_params_equal(self, a: FrameParams, b: FrameParams) -> bool:
+        if a.codec != b.codec:
+            return False
+        if a.codec in [Codec.JPEG, Codec.PNG]:
+            return True
+        return a == b
 
 
 # register plugin

@@ -29,9 +29,11 @@ fi
 if [[ "${FILE_TYPE}" == "image" ]]; then
     MEASURE_PER_FILE=false
     EOS_ON_FILE_END="${EOS_ON_FILE_END:="false"}"
+    EOS_ON_FRAME_PARAMS_CHANGE="${EOS_ON_FRAME_PARAMS_CHANGE:="false"}"
 else
     MEASURE_PER_FILE=true
     EOS_ON_FILE_END="${EOS_ON_FILE_END:="true"}"
+    EOS_ON_FRAME_PARAMS_CHANGE="${EOS_ON_FRAME_PARAMS_CHANGE:="true"}"
 fi
 SORT_BY_TIME="${SORT_BY_TIME:="false"}"
 READ_METADATA="${READ_METADATA:="false"}"
@@ -41,7 +43,7 @@ SINK_PROPERTIES=(
     source-id="${SOURCE_ID}"
     read-metadata="${READ_METADATA}"
     eos-on-file-end="${EOS_ON_FILE_END}"
-    eos-on-frame-params-change=true
+    eos-on-frame-params-change="${EOS_ON_FRAME_PARAMS_CHANGE}"
     socket="${ZMQ_ENDPOINT}"
     socket-type="${ZMQ_SOCKET_TYPE}"
     bind="${ZMQ_SOCKET_BIND}"
