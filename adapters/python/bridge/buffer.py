@@ -4,6 +4,7 @@ import signal
 import time
 from typing import Dict, Optional, Tuple
 
+import msgpack
 from rocksq.blocking import PersistentQueueWithCapacity
 from savant_rs.pipeline2 import (
     StageFunction,
@@ -46,6 +47,18 @@ class MetricsConfig:
         )
 
 
+class MessageDumpConfig:
+    """Message dump configuration for the adapter."""
+
+    def __init__(self):
+        self.enabled = opt_config('MESSAGE_DUMP_ENABLED', False, bool)
+        self.path = opt_config('MESSAGE_DUMP_PATH', '/tmp/buffer-adapter-dump', str)
+        self.segment_duration = opt_config('MESSAGE_DUMP_SEGMENT_DURATION', 60, int)
+        self.segment_template = opt_config(
+            'MESSAGE_DUMP_SEGMENT_TEMPLATE', 'dump-%Y-%m-%d-%H-%M-%S.msgpack', str
+        )
+
+
 class BufferConfig:
     """Buffer configuration for the adapter."""
 
@@ -73,9 +86,56 @@ class Config:
         self.zmq_src_endpoint = os.environ['ZMQ_SRC_ENDPOINT']
         self.zmq_sink_endpoint = os.environ['ZMQ_SINK_ENDPOINT']
         self.buffer = BufferConfig()
+        self.message_dump = MessageDumpConfig()
         self.idle_polling_period = opt_config('IDLE_POLLING_PERIOD', 0.005, float)
         self.stats_log_interval = opt_config('STATS_LOG_INTERVAL', 60, int)
         self.metrics = MetricsConfig()
+
+
+class MessageDumper:
+    """Message dump for the adapter."""
+
+    def __init__(self, config: MessageDumpConfig):
+        self._config = config
+
+        # create the dump directory if it does not exist and it is enabled
+        if self._config.enabled and not os.path.exists(self._config.path):
+            os.makedirs(self._config.path)
+
+        self._segment_start = 0
+        self._segment_path = self._get_segment_path()
+        self._file = None
+
+    def dump(self, message: ZeroMQMessage):
+        """Dump the message to the message dump."""
+
+        if not self._config.enabled:
+            logger.trace('Message dump is not enabled. Skipping')
+            return
+
+        if time.time() - self._segment_start > self._config.segment_duration:
+            self._segment_start = time.time()
+            self._segment_path = self._get_segment_path()
+            logger.info(
+                'Rotating message dump segment. New segment: %s', self._segment_path
+            )
+            if self._file is not None:
+                self._file.close()
+            self._file = open(self._segment_path, 'wb')
+
+        topic = message.topic
+        message = message.message
+        content = message.content
+        ts = time.time_ns()
+        self._file.write(
+            msgpack.packb((ts, topic, message, content), use_bin_type=True)
+        )
+
+    def _get_segment_path(self):
+        return os.path.join(
+            self._config.path,
+            time.strftime(self._config.segment_template, time.gmtime()),
+        )
 
 
 class Ingress(BaseThreadWorker):
@@ -89,6 +149,7 @@ class Ingress(BaseThreadWorker):
         )
         self._queue = queue
         self._config = config
+        self._message_dumper = MessageDumper(config.message_dump)
         self._buffer_is_full = False
         self._received_messages = 0
         self._last_received_message = 0
@@ -116,7 +177,7 @@ class Ingress(BaseThreadWorker):
 
     def handle_next_message(self, message: ZeroMQMessage):
         """Handle the next message from the source ZeroMQ socket."""
-
+        self._message_dumper.dump(message)
         self._received_messages += 1
         self._last_received_message = time.time()
         if message.message.is_video_frame():
