@@ -1,4 +1,7 @@
 import os
+from savant.utils.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 def opt_config(name, default=None, convert=None):
@@ -10,9 +13,11 @@ def opt_config(name, default=None, convert=None):
     """
 
     conf_str = os.environ.get(name)
+    val = default
     if conf_str:
-        return convert(conf_str) if convert else conf_str
-    return default
+        val = convert(conf_str) if convert else conf_str
+    logger.info(f"Applying Configuration Value: {name}={val}")
+    return val
 
 
 def strtobool(val):

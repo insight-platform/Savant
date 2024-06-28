@@ -23,7 +23,7 @@ from savant_rs.zmq import BlockingWriter, WriterConfigBuilder, WriterSocketType
 from adapters.shared.thread import BaseThreadWorker
 from savant.metrics import Counter, Gauge
 from savant.metrics.prometheus import BaseMetricsCollector, PrometheusMetricsExporter
-from savant.utils.config import opt_config
+from savant.utils.config import opt_config, strtobool
 from savant.utils.logging import get_logger, init_logging
 from savant.utils.welcome import get_starting_message
 from savant.utils.zeromq import ZeroMQMessage, ZeroMQSource
@@ -51,7 +51,7 @@ class MessageDumpConfig:
     """Message dump configuration for the adapter."""
 
     def __init__(self):
-        self.enabled = opt_config('MESSAGE_DUMP_ENABLED', False, bool)
+        self.enabled = opt_config('MESSAGE_DUMP_ENABLED', False, strtobool)
         self.path = opt_config('MESSAGE_DUMP_PATH', '/tmp/buffer-adapter-dump', str)
         self.segment_duration = opt_config('MESSAGE_DUMP_SEGMENT_DURATION', 60, int)
         self.segment_template = opt_config(
@@ -124,11 +124,13 @@ class MessageDumper:
             self._file = open(self._segment_path, 'wb')
 
         topic = message.topic
-        message = message.message
+        meta = message.message
         content = message.content
         ts = time.time_ns()
         self._file.write(
-            msgpack.packb((ts, topic, message, content), use_bin_type=True)
+            msgpack.packb(
+                (ts, topic, save_message_to_bytes(meta), content), use_bin_type=True
+            )
         )
 
     def _get_segment_path(self):
