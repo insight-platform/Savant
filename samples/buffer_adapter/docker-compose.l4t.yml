@@ -27,7 +27,7 @@ services:
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - buffer:/tmp/savant-adapter/buffer
-      - /tmp/message-dump:/tmp/message-dump
+      - message_dump:/tmp/message-dump
     environment:
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/buffer.ipc
       - ZMQ_SINK_ENDPOINT=dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc
@@ -102,3 +102,4 @@ services:
 volumes:
   buffer:
   zmq_sockets:
+  message_dump:

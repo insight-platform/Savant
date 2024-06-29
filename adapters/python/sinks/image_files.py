@@ -17,6 +17,7 @@ from savant.utils.config import opt_config, strtobool
 from savant.utils.logging import get_logger, init_logging
 from savant.utils.welcome import get_starting_message
 from savant.utils.zeromq import ZeroMQMessage, ZeroMQSource
+from savant.utils.config import get_env
 
 LOGGER_NAME = 'adapters.image_files_sink'
 DEFAULT_CHUNK_SIZE = 10000
@@ -153,8 +154,8 @@ def main():
     logger = get_logger(LOGGER_NAME)
     logger.info(get_starting_message('image files sink adapter'))
 
-    dir_location = os.environ['DIR_LOCATION']
-    zmq_endpoint = os.environ['ZMQ_ENDPOINT']
+    dir_location = get_env('DIR_LOCATION')
+    zmq_endpoint = get_env('ZMQ_ENDPOINT')
     zmq_socket_type = opt_config('ZMQ_TYPE', 'SUB')
     zmq_bind = opt_config('ZMQ_BIND', False, strtobool)
     skip_frames_without_objects = opt_config(

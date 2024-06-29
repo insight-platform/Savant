@@ -18,6 +18,7 @@ from adapters.python.shared.kafka_redis import (
 from savant.api.enums import ExternalFrameType
 from savant.client import SourceBuilder
 from savant.utils.config import opt_config
+from savant.utils.config import get_env
 
 
 class KafkaConfig(BaseKafkaConfig):
@@ -25,7 +26,7 @@ class KafkaConfig(BaseKafkaConfig):
 
     def __init__(self):
         super().__init__()
-        self.group_id = os.environ['KAFKA_GROUP_ID']
+        self.group_id = get_env('KAFKA_GROUP_ID')
         self.poll_timeout = opt_config('KAFKA_POLL_TIMEOUT', 1, float)
         self.auto_commit_interval_ms = opt_config(
             'KAFKA_AUTO_COMMIT_INTERVAL_MS', 1000, int
@@ -46,7 +47,7 @@ class Config(BaseConfig):
 
     def __init__(self):
         super().__init__()
-        self.zmq_endpoint = os.environ['ZMQ_ENDPOINT']
+        self.zmq_endpoint = get_env('ZMQ_ENDPOINT')
         self.kafka = KafkaConfig()
 
 

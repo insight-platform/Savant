@@ -3,6 +3,7 @@ import os
 from enum import Enum
 from pathlib import Path
 from typing import Optional
+from savant.utils.config import get_env
 
 from savant_rs.pipeline2 import (
     StageFunction,
@@ -45,7 +46,7 @@ class MetadataOutput(str, Enum):
 
 class CommonStreamConfig:
     def __init__(self):
-        self.stub_file_location = Path(os.environ['STUB_FILE_LOCATION'])
+        self.stub_file_location = Path(get_env('STUB_FILE_LOCATION'))
         if not self.stub_file_location.exists():
             raise RuntimeError(f'File {self.stub_file_location} does not exist.')
         if not self.stub_file_location.is_file():
@@ -110,9 +111,9 @@ class Config(CommonStreamConfig):
     def __init__(self):
         super().__init__()
 
-        self.source_id = os.environ['SOURCE_ID']
+        self.source_id = get_env('SOURCE_ID')
 
-        self.zmq_endpoint = os.environ['ZMQ_ENDPOINT']
+        self.zmq_endpoint = get_env('ZMQ_ENDPOINT')
         self.zmq_socket_type = opt_config(
             'ZMQ_TYPE',
             ReceiverSocketTypes.SUB,
@@ -120,7 +121,7 @@ class Config(CommonStreamConfig):
         )
         self.zmq_socket_bind = opt_config('ZMQ_BIND', False, strtobool)
 
-        self.rtsp_uri = os.environ['RTSP_URI']
+        self.rtsp_uri = get_env('RTSP_URI')
 
         self.pipeline_source_stage_name = 'source'
         self.pipeline_demux_stage_name = 'source-demux'

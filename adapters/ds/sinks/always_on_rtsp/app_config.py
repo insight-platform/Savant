@@ -2,7 +2,7 @@ import os
 from typing import List, Optional
 
 from adapters.ds.sinks.always_on_rtsp.config import CommonStreamConfig
-from savant.utils.config import opt_config, strtobool
+from savant.utils.config import opt_config, strtobool, get_env
 from savant.utils.zeromq import ReceiverSocketTypes
 
 
@@ -18,7 +18,7 @@ class AppConfig(CommonStreamConfig):
         if self.source_id and not self.source_ids:
             self.source_ids = [self.source_id]
 
-        self.zmq_endpoint = os.environ['ZMQ_ENDPOINT']
+        self.zmq_endpoint = get_env('ZMQ_ENDPOINT')
         self.zmq_socket_type = opt_config(
             'ZMQ_TYPE',
             ReceiverSocketTypes.SUB,

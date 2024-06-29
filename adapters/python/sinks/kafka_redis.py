@@ -24,6 +24,7 @@ from savant.api.enums import ExternalFrameType
 from savant.client import SinkBuilder
 from savant.client.runner.sink import SinkResult
 from savant.utils.config import opt_config, strtobool
+from savant.utils.config import get_env
 
 
 class KafkaConfig(BaseKafkaConfig):
@@ -39,7 +40,7 @@ class RedisConfig:
     """Redis configuration for kafka-redis sink adapter."""
 
     def __init__(self):
-        self.host = os.environ['REDIS_HOST']
+        self.host = get_env('REDIS_HOST')
         self.port = opt_config('REDIS_PORT', 6379, int)
         self.db = opt_config('REDIS_DB', 0, int)
         self.key_prefix = opt_config('REDIS_KEY_PREFIX', 'savant:frames')
@@ -53,7 +54,7 @@ class Config(BaseConfig):
 
     def __init__(self):
         super().__init__()
-        self.zmq_endpoint = os.environ['ZMQ_ENDPOINT']
+        self.zmq_endpoint = get_env('ZMQ_ENDPOINT')
         self.deduplicate = opt_config('DEDUPLICATE', False, strtobool)
         self.kafka = KafkaConfig()
         try:

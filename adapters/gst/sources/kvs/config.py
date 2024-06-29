@@ -4,6 +4,7 @@ from distutils.util import strtobool
 from pathlib import Path
 
 from savant.utils.config import opt_config
+from savant.utils.config import get_env
 
 TIME_DELTAS = {
     's': lambda x: timedelta(seconds=x),
@@ -13,9 +14,9 @@ TIME_DELTAS = {
 
 class AwsConfig:
     def __init__(self):
-        self.region = os.environ['AWS_REGION']
-        self.access_key = os.environ['AWS_ACCESS_KEY']
-        self.secret_key = os.environ['AWS_SECRET_KEY']
+        self.region = get_env('AWS_REGION')
+        self.access_key = get_env('AWS_ACCESS_KEY')
+        self.secret_key = get_env('AWS_SECRET_KEY')
 
 
 class FpsMeterConfig:
@@ -31,12 +32,12 @@ class FpsMeterConfig:
 
 class Config:
     def __init__(self):
-        self.source_id = os.environ['SOURCE_ID']
-        self.stream_name = os.environ['STREAM_NAME']
+        self.source_id = get_env('SOURCE_ID')
+        self.stream_name = get_env('STREAM_NAME')
         timestamp = os.environ.get('TIMESTAMP')
         self.timestamp = parse_timestamp(timestamp) if timestamp else datetime.utcnow()
 
-        self.zmq_endpoint = os.environ['ZMQ_ENDPOINT']
+        self.zmq_endpoint = get_env('ZMQ_ENDPOINT')
         self.sync_output = opt_config('SYNC_OUTPUT', False, strtobool)
         self.playing = opt_config('PLAYING', True, strtobool)
         self.api_port = opt_config('API_PORT', 18367, int)

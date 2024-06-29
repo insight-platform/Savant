@@ -1,7 +1,33 @@
 import os
+import sys
+
 from savant.utils.logging import get_logger
+import logging
 
 logger = get_logger(__name__)
+
+
+def get_env(name):
+    """Get a configuration value from the environment.
+
+    :param name: The name of the environment variable.
+    """
+    val = os.environ.get(name)
+    if val is None:
+        logger.error(
+            f"Mandatory environment configuration variable '{name}' not found."
+        )
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"Available environment variables:")
+            for k, v in os.environ.items():
+                logger.debug(f"\t{k}={v}")
+            raise ValueError(
+                f"Configuration Value Not Found in environment variables: {name}"
+            )
+        else:
+            sys.exit(1)
+    logger.info(f"Applying Configuration Value: {name}={val}")
+    return val
 
 
 def opt_config(name, default=None, convert=None):
