@@ -15,6 +15,7 @@ def check_display_env(logger: logging.Logger, unset: Optional[bool] = None):
     """
     display = os.environ.get('DISPLAY')
     if not display:
+        logger.info('DISPLAY env is not set')
         return
 
     logger.info(f'DISPLAY env is set to "{display}"')

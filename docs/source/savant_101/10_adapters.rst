@@ -1588,7 +1588,11 @@ The Buffer Bridge Adapter buffers messages from a source and sends them to a mod
 - ``METRICS_TIME_PERIOD``: output FPS stats after every N seconds;
 - ``METRICS_HISTORY``: how many last FPS stats to keep in the memory; default is ``100``;
 - ``METRICS_PROVIDER``: a metrics provider name; only ``prometheus`` is supported;
-- ``METRICS_PROVIDER_PARAMS``: a json dict of metrics provider parameters; default is ``{}``. The ``port`` in ``METRICS_PROVIDER_PARAMS`` is required when ``METRICS_PROVIDER`` is set to ``'prometheus'``. ``labels`` in ``METRICS_PROVIDER_PARAMS`` defines extra labels added to the metrics.
+- ``METRICS_PROVIDER_PARAMS``: a json dict of metrics provider parameters; default is ``{}``. The ``port`` in ``METRICS_PROVIDER_PARAMS`` is required when ``METRICS_PROVIDER`` is set to ``'prometheus'``. ``labels`` in ``METRICS_PROVIDER_PARAMS`` defines extra labels added to the metrics;
+- ``MESSAGE_DUMP_ENABLED``: a flag indicating whether to dump messages to a file; default is ``False``;
+- ``MESSAGE_DUMP_PATH``: a directory to dump message segment files; default is ``/tmp/buffer-adapter-dump``;
+- ``MESSAGE_DUMP_SEGMENT_DURATION``: a duration of a message segment in seconds; default is ``60``.
+- ``MESSAGE_DUMP_SEGMENT_TEMPLATE``: a template for message segment file names; default is ``dump-%Y-%m-%d-%H-%M-%S.msgpack``.
 
 Running the adapter with Docker:
 
