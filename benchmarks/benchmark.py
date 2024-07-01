@@ -29,7 +29,7 @@ gi.require_version('Gst', '1.0')
 import pyds
 from gi.repository import GLib, Gst
 
-scale = 10 ** 6  # milliseconds
+scale = 10**6  # milliseconds
 RECT_COLOR = (127, 127, 127, 255)  # gray
 RECT_N = 20
 RECT_WIDTH = 100

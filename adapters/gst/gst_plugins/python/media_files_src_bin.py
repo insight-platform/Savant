@@ -18,7 +18,7 @@ MIME_TYPE_REGEX = {
     FileType.IMAGE: re.compile(r'image/(jpeg|png)'),
 }
 
-SIZE_MB = 2 ** 20
+SIZE_MB = 2**20
 
 
 class MediaFilesSrcBin(LoggerMixin, Gst.Bin):

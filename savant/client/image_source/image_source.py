@@ -16,7 +16,7 @@ from savant.utils.logging import get_logger
 
 from .img_header_parse import get_image_size_codec
 
-SECOND_IN_NS = 10 ** 9
+SECOND_IN_NS = 10**9
 T = TypeVar('T', bound='ImageSource')
 
 logger = get_logger(__name__)

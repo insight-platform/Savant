@@ -11,7 +11,7 @@ class SmoothedCounter:
     """
 
     def __init__(self, update_period: float = 1) -> None:
-        self.frame_period_ns = update_period * 10 ** 9
+        self.frame_period_ns = update_period * 10**9
         self.last_change_time = 0
         self.current_val = 0
         self.values = []

@@ -42,7 +42,7 @@ class BaseSinkRunner(ABC):
         receive_hwm: int = Defaults.RECEIVE_HWM,
     ):
         self._log_provider = log_provider
-        self._idle_timeout = idle_timeout if idle_timeout is not None else 10 ** 6
+        self._idle_timeout = idle_timeout if idle_timeout is not None else 10**6
         self._health_check = (
             HealthCheck(
                 url=module_health_check_url,
