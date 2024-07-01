@@ -18,6 +18,7 @@ from savant.utils.config import opt_config, strtobool
 from savant.utils.logging import get_logger, init_logging
 from savant.utils.welcome import get_starting_message
 from savant.utils.zeromq import ZeroMQMessage, ZeroMQSource
+from savant.utils.config import req_config
 
 LOGGER_NAME = 'adapters.video_files_sink'
 DEFAULT_CHUNK_SIZE = 10000
@@ -402,14 +403,14 @@ class VideoFilesSink:
 
 def main():
     init_logging()
-    # To gracefully shutdown the adapter on SIGTERM (raise KeyboardInterrupt)
+    # To gracefully shut down the adapter on SIGTERM (raise KeyboardInterrupt)
     signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
 
     logger = get_logger(LOGGER_NAME)
     logger.info(get_starting_message('video files sink adapter'))
 
-    dir_location = os.environ['DIR_LOCATION']
-    zmq_endpoint = os.environ['ZMQ_ENDPOINT']
+    dir_location = req_config('DIR_LOCATION')
+    zmq_endpoint = req_config('ZMQ_ENDPOINT')
     zmq_socket_type = opt_config('ZMQ_TYPE', 'SUB')
     zmq_bind = opt_config('ZMQ_BIND', False, strtobool)
     chunk_size = opt_config('CHUNK_SIZE', DEFAULT_CHUNK_SIZE, int)
