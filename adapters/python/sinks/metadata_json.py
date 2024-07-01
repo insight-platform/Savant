@@ -22,7 +22,7 @@ from savant.utils.config import opt_config, strtobool
 from savant.utils.logging import get_logger, init_logging
 from savant.utils.welcome import get_starting_message
 from savant.utils.zeromq import ZeroMQMessage, ZeroMQSource
-from savant.utils.config import get_env
+from savant.utils.config import req_config
 
 LOGGER_NAME = 'adapters.metadata_json_sink'
 
@@ -184,8 +184,8 @@ def main():
     logger = get_logger(LOGGER_NAME)
     logger.info(get_starting_message('metadata sink adapter'))
 
-    location = get_env('LOCATION')
-    zmq_endpoint = get_env('ZMQ_ENDPOINT')
+    location = req_config('LOCATION')
+    zmq_endpoint = req_config('ZMQ_ENDPOINT')
     zmq_socket_type = opt_config('ZMQ_TYPE', 'SUB')
     zmq_bind = opt_config('ZMQ_BIND', False, strtobool)
     skip_frames_without_objects = opt_config(

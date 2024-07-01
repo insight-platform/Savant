@@ -7,7 +7,7 @@ import logging
 logger = get_logger(__name__)
 
 
-def get_env(name):
+def req_config(name):
     """Get a configuration value from the environment.
 
     :param name: The name of the environment variable.
@@ -17,15 +17,12 @@ def get_env(name):
         logger.error(
             f"Mandatory environment configuration variable '{name}' not found."
         )
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug(f"Available environment variables:")
-            for k, v in os.environ.items():
-                logger.debug(f"\t{k}={v}")
-            raise ValueError(
-                f"Configuration Value Not Found in environment variables: {name}"
-            )
-        else:
-            sys.exit(1)
+        logger.error(f"Configured environment variables:")
+        for k, v in os.environ.items():
+            logger.error(f"\t{k}={v}")
+        raise ValueError(
+            f"Configuration Value Not Found in environment variables: {name}"
+        )
     logger.info(f"Applying Configuration Value: {name}={val}")
     return val
 

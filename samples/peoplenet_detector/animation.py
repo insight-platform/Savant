@@ -19,7 +19,7 @@ class Animation:
 
     def __init__(self, sprites_dir: str, fps: int, sprite_height: int) -> None:
         self.fps = fps
-        self.frame_period_ns = 10**9 // self.fps
+        self.frame_period_ns = 10 ** 9 // self.fps
         self.sprites = [
             load_sprite(str(path), sprite_height)
             for path in sorted(Path(sprites_dir).glob('*.png'))

@@ -5,7 +5,7 @@ import signal
 import time
 from fractions import Fraction
 from typing import Dict, Optional
-from savant.utils.config import get_env
+from savant.utils.config import req_config
 
 from pygstsavantframemeta import (
     gst_buffer_add_savant_frame_meta,
@@ -46,14 +46,14 @@ CODEC_TO_CAPS = {
 
 class AwsConfig:
     def __init__(self):
-        self.region = get_env('AWS_REGION')
-        self.access_key = get_env('AWS_ACCESS_KEY')
-        self.secret_key = get_env('AWS_SECRET_KEY')
+        self.region = req_config('AWS_REGION')
+        self.access_key = req_config('AWS_ACCESS_KEY')
+        self.secret_key = req_config('AWS_SECRET_KEY')
 
 
 class ZmqConfig:
     def __init__(self):
-        self.endpoint = get_env('ZMQ_ENDPOINT')
+        self.endpoint = req_config('ZMQ_ENDPOINT')
         self.source_id = opt_config('SOURCE_ID')
         self.source_id_prefix = opt_config('SOURCE_ID_PREFIX')
 

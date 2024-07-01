@@ -3,7 +3,7 @@ import os
 import signal
 import time
 from typing import Dict, Optional, Tuple
-from savant.utils.config import get_env
+from savant.utils.config import req_config
 
 import msgpack
 from rocksq.blocking import PersistentQueueWithCapacity
@@ -64,7 +64,7 @@ class BufferConfig:
     """Buffer configuration for the adapter."""
 
     def __init__(self):
-        self.path = get_env('BUFFER_PATH')
+        self.path = req_config('BUFFER_PATH')
         len_items = opt_config('BUFFER_LEN', 1000, int)
         assert len_items > 0, 'BUFFER_LEN must be positive'
         self.len = len_items * QUEUE_ITEM_SIZE
@@ -84,8 +84,8 @@ class Config:
     """Configuration for the adapter."""
 
     def __init__(self):
-        self.zmq_src_endpoint = get_env('ZMQ_SRC_ENDPOINT')
-        self.zmq_sink_endpoint = get_env('ZMQ_SINK_ENDPOINT')
+        self.zmq_src_endpoint = req_config('ZMQ_SRC_ENDPOINT')
+        self.zmq_sink_endpoint = req_config('ZMQ_SINK_ENDPOINT')
         self.buffer = BufferConfig()
         self.message_dump = MessageDumpConfig()
         self.idle_polling_period = opt_config('IDLE_POLLING_PERIOD', 0.005, float)
