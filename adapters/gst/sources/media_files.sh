@@ -29,7 +29,7 @@ fi
 if [[ "${FILE_TYPE}" == "image" ]]; then
     MEASURE_PER_FILE=false
     EOS_ON_FILE_END="${EOS_ON_FILE_END:="false"}"
-    EOS_ON_FRAME_PARAMS_CHANGE="${EOS_ON_FRAME_PARAMS_CHANGE:="false"}"
+    EOS_ON_FRAME_PARAMS_CHANGE="${EOS_ON_FRAME_PARAMS_CHANGE:="true"}"
 else
     MEASURE_PER_FILE=true
     EOS_ON_FILE_END="${EOS_ON_FILE_END:="true"}"

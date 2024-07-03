@@ -442,7 +442,7 @@ def multi_stream_source(
 @click.option(
     '--eos-on-frame-params-change',
     help='Send EOS at every image resolution change.',
-    default=False,
+    default=True,
     show_default=True,
 )
 @common_options

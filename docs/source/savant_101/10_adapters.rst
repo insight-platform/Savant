@@ -274,7 +274,7 @@ The images are served from:
 - ``FRAMERATE``: a desired framerate for the output video stream generated from image files (the parameter is used only if ``SYNC_OUTPUT=True``);
 - ``SYNC_OUTPUT``: a flag indicating that images are delivered into a module as a video stream; otherwise, the files are sent as fast as the module is capable processing them; default is ``False``;
 - ``EOS_ON_FILE_END``: a flag configuring sending of ``EOS`` message after every image; the ``EOS`` message is important to trackers, helping them to reset tracking when a video stream is no longer continuous; default is ``False``;
-- ``EOS_ON_FRAME_PARAMS_CHANGE``: a flag configuring sending of ``EOS`` message after every change in image resolution; the ``EOS`` message is important to trackers, helping them to reset tracking when a video stream is no longer continuous; default is ``False``;
+- ``EOS_ON_FRAME_PARAMS_CHANGE``: a flag configuring sending of ``EOS`` message after every change in image resolution; the ``EOS`` message is important to trackers, helping them to reset tracking when a video stream is no longer continuous; default is ``True``;
 - ``SORT_BY_TIME``: a flag specifying sorting by modification time (ascending); by default, it is ``False``, causing the files to be sorted lexicographically;
 - ``READ_METADATA``: a flag specifying the need to augment images with metadata from ``JSON`` files with the corresponding names as the source files; default is ``False``.
 
