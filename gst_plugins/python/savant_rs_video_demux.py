@@ -24,9 +24,11 @@ from savant.gstreamer.utils import (
     required_property,
 )
 from savant.utils.logging import LoggerMixin
+from savant.utils.platform import is_aarch64
 
 DEFAULT_SOURCE_TIMEOUT = 60
 DEFAULT_SOURCE_EVICTION_INTERVAL = 15
+DEFAULT_EOS_ON_FRAME_RESOLUTION_CHANGE = is_aarch64()
 OUT_CAPS = Gst.Caps.from_string(';'.join(x.value.caps_with_params for x in Codec))
 
 SAVANT_RS_VIDEO_DEMUX_PROPERTIES = {
@@ -54,6 +56,13 @@ SAVANT_RS_VIDEO_DEMUX_PROPERTIES = {
         'Send EOS when timestamps reset (i.e. non-monotonous). '
         'Needed to prevent decoder from changing PTS on "decreasing timestamp" error.',
         False,
+        GObject.ParamFlags.READWRITE,
+    ),
+    'eos-on-frame-resolution-change': (
+        bool,
+        'Send EOS when frame resolution changed for JPEG and PNG codecs',
+        'Send EOS when frame resolution changed for JPEG and PNG codecs',
+        DEFAULT_EOS_ON_FRAME_RESOLUTION_CHANGE,
         GObject.ParamFlags.READWRITE,
     ),
     'max-parallel-streams': (
@@ -158,6 +167,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
         super().__init__()
         self.sources: Dict[str, SourceInfo] = {}
         self.eos_on_timestamps_reset = False
+        self.eos_on_frame_resolution_change = DEFAULT_EOS_ON_FRAME_RESOLUTION_CHANGE
         self.source_timeout = DEFAULT_SOURCE_TIMEOUT
         self.source_eviction_interval = DEFAULT_SOURCE_EVICTION_INTERVAL
         self.last_eviction = 0
@@ -220,6 +230,8 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             return self.source_eviction_interval
         if prop.name == 'eos-on-timestamps-reset':
             return self.eos_on_timestamps_reset
+        if prop.name == 'eos-on-frame-resolution-change':
+            return self.eos_on_frame_resolution_change
         if prop.name == 'max-parallel-streams':
             return self.max_parallel_streams
         if prop.name == 'pipeline':
@@ -238,6 +250,8 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             self.source_eviction_interval = value
         elif prop.name == 'eos-on-timestamps-reset':
             self.eos_on_timestamps_reset = value
+        elif prop.name == 'eos-on-frame-resolution-change':
+            self.eos_on_frame_resolution_change = value
         elif prop.name == 'max-parallel-streams':
             self.max_parallel_streams = value
         elif prop.name == 'pipeline':
@@ -594,6 +608,8 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
         time.sleep(self.source_eviction_interval)
 
     def frame_params_equal(self, a: FrameParams, b: FrameParams) -> bool:
+        if self.eos_on_frame_resolution_change:
+            return a == b
         if a.codec != b.codec:
             return False
         if a.codec in [Codec.JPEG, Codec.PNG]:
