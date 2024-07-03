@@ -267,6 +267,12 @@ The images are served from:
 .. note::
     The adapter also can be used to implement asynchronous image processing pipelines. Metadata allows passing per-image identification information over the pipeline to access the results when those images are processed.
 
+.. note::
+    It is advisable to have all pictures in the same resolution to avoid issues with the pipeline. Sending images with different resolutions will degrade the performance of the pipeline. To avoid this there are few options:
+        1. Resize all images to the same resolution.
+        2. Set ``EOS_ON_FRAME_PARAMS_CHANGE=True`` in the adapter and ``pipeline.source.properties.eos_on_frame_resolution_change: true`` in module configuration. This should work on dGPU but won't work on Jetson.
+        3. Sort images by resolution. This will decrease the amount of generated EOS.
+
 **Parameters**:
 
 - ``FILE_TYPE``: a flag specifying that the adapter is used for images; it must always be set to ``image``;
