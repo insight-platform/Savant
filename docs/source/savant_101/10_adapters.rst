@@ -1590,7 +1590,11 @@ The Buffer Bridge Adapter buffers messages from a source and sends them to a mod
 - ``METRICS_TIME_PERIOD``: output FPS stats after every N seconds;
 - ``METRICS_HISTORY``: how many last FPS stats to keep in the memory; default is ``100``;
 - ``METRICS_PROVIDER``: a metrics provider name; only ``prometheus`` is supported;
-- ``METRICS_PROVIDER_PARAMS``: a json dict of metrics provider parameters; default is ``{}``. The ``port`` in ``METRICS_PROVIDER_PARAMS`` is required when ``METRICS_PROVIDER`` is set to ``'prometheus'``. ``labels`` in ``METRICS_PROVIDER_PARAMS`` defines extra labels added to the metrics.
+- ``METRICS_PROVIDER_PARAMS``: a json dict of metrics provider parameters; default is ``{}``. The ``port`` in ``METRICS_PROVIDER_PARAMS`` is required when ``METRICS_PROVIDER`` is set to ``'prometheus'``. ``labels`` in ``METRICS_PROVIDER_PARAMS`` defines extra labels added to the metrics;
+- ``MESSAGE_DUMP_ENABLED``: a flag indicating whether to dump messages to a file; default is ``False``;
+- ``MESSAGE_DUMP_PATH``: a directory to dump message segment files; default is ``/tmp/buffer-adapter-dump``;
+- ``MESSAGE_DUMP_SEGMENT_DURATION``: a duration of a message segment in seconds; default is ``60``.
+- ``MESSAGE_DUMP_SEGMENT_TEMPLATE``: a template for message segment file names; default is ``dump-%Y-%m-%d-%H-%M-%S.msgpack``.
 
 Running the adapter with Docker:
 
@@ -1621,3 +1625,52 @@ Running the adapter with the helper script:
 .. code-block:: bash
 
     ./scripts/run_bridge.py buffer --mount-buffer-path /tmp/savant/buffer
+
+The adapter exports its internal state to Prometheus:
+
+.. list-table:: Metrics
+    :header-rows: 1
+
+    * - Metric
+      - Description
+      - Type
+
+    * - ``received_messages``
+      - A total number of received messages.
+      - Counter
+
+    * - ``pushed_messages``
+      - A total number of messages pushed in the disk buffer.
+      - Counter
+
+    * - ``dropped_messages``
+      - A total number of dropped messages (exceeded the buffer limit).
+      - Counter
+
+    * - ``sent_messages``
+      - A total number of downstream-sent messages.
+      - Counter
+
+    * - ``buffer_size``
+      - A current buffer size in elements.
+      - Gauge
+
+    * - ``payload_size``
+      - A current buffer size in bytes.
+      - Gauge
+
+    * - ``last_received_message``
+      - A timestamp of the last received message.
+      - Gauge
+
+    * - ``last_pushed_message``
+      - A timestamp of the last pushed message.
+      - Gauge
+
+    * - ``last_dropped_message``
+      - A timestamp of the last dropped message.
+      - Gauge
+
+    * - ``last_sent_message``
+      - A timestamp of the last sent message.
+      - Gauge

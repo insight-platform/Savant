@@ -13,7 +13,7 @@ from savant_rs.pipeline2 import (
 
 from adapters.ds.sinks.always_on_rtsp.utils import nvidia_runtime_is_available
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
-from savant.utils.config import opt_config, strtobool
+from savant.utils.config import opt_config, req_config, strtobool
 from savant.utils.zeromq import ReceiverSocketTypes
 
 ENCODER_DEFAULT_PROFILES = {
@@ -45,7 +45,7 @@ class MetadataOutput(str, Enum):
 
 class CommonStreamConfig:
     def __init__(self):
-        self.stub_file_location = Path(os.environ['STUB_FILE_LOCATION'])
+        self.stub_file_location = Path(req_config('STUB_FILE_LOCATION'))
         if not self.stub_file_location.exists():
             raise RuntimeError(f'File {self.stub_file_location} does not exist.')
         if not self.stub_file_location.is_file():
@@ -110,9 +110,9 @@ class Config(CommonStreamConfig):
     def __init__(self):
         super().__init__()
 
-        self.source_id = os.environ['SOURCE_ID']
+        self.source_id = req_config('SOURCE_ID')
 
-        self.zmq_endpoint = os.environ['ZMQ_ENDPOINT']
+        self.zmq_endpoint = req_config('ZMQ_ENDPOINT')
         self.zmq_socket_type = opt_config(
             'ZMQ_TYPE',
             ReceiverSocketTypes.SUB,
@@ -120,7 +120,7 @@ class Config(CommonStreamConfig):
         )
         self.zmq_socket_bind = opt_config('ZMQ_BIND', False, strtobool)
 
-        self.rtsp_uri = os.environ['RTSP_URI']
+        self.rtsp_uri = req_config('RTSP_URI')
 
         self.pipeline_source_stage_name = 'source'
         self.pipeline_demux_stage_name = 'source-demux'

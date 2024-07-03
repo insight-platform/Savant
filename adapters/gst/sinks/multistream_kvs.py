@@ -24,7 +24,7 @@ from gst_plugins.python.savant_rs_video_demux_common import FrameParams, build_c
 from savant.api.enums import ExternalFrameType
 from savant.gstreamer import Gst, GstApp
 from savant.gstreamer.codecs import Codec
-from savant.utils.config import opt_config, strtobool
+from savant.utils.config import opt_config, req_config, strtobool
 from savant.utils.logging import get_logger, init_logging
 from savant.utils.zeromq import ZeroMQMessage, ZeroMQSource
 
@@ -45,14 +45,14 @@ CODEC_TO_CAPS = {
 
 class AwsConfig:
     def __init__(self):
-        self.region = os.environ['AWS_REGION']
-        self.access_key = os.environ['AWS_ACCESS_KEY']
-        self.secret_key = os.environ['AWS_SECRET_KEY']
+        self.region = req_config('AWS_REGION')
+        self.access_key = req_config('AWS_ACCESS_KEY')
+        self.secret_key = req_config('AWS_SECRET_KEY')
 
 
 class ZmqConfig:
     def __init__(self):
-        self.endpoint = os.environ['ZMQ_ENDPOINT']
+        self.endpoint = req_config('ZMQ_ENDPOINT')
         self.source_id = opt_config('SOURCE_ID')
         self.source_id_prefix = opt_config('SOURCE_ID_PREFIX')
 

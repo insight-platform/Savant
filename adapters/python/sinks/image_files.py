@@ -13,7 +13,7 @@ from adapters.python.sinks.metadata_json import (
     frame_has_objects,
 )
 from savant.api.enums import ExternalFrameType
-from savant.utils.config import opt_config, strtobool
+from savant.utils.config import opt_config, req_config, strtobool
 from savant.utils.logging import get_logger, init_logging
 from savant.utils.welcome import get_starting_message
 from savant.utils.zeromq import ZeroMQMessage, ZeroMQSource
@@ -153,8 +153,8 @@ def main():
     logger = get_logger(LOGGER_NAME)
     logger.info(get_starting_message('image files sink adapter'))
 
-    dir_location = os.environ['DIR_LOCATION']
-    zmq_endpoint = os.environ['ZMQ_ENDPOINT']
+    dir_location = req_config('DIR_LOCATION')
+    zmq_endpoint = req_config('ZMQ_ENDPOINT')
     zmq_socket_type = opt_config('ZMQ_TYPE', 'SUB')
     zmq_bind = opt_config('ZMQ_BIND', False, strtobool)
     skip_frames_without_objects = opt_config(

@@ -4,6 +4,7 @@ import signal
 import time
 from typing import Dict, Optional, Tuple
 
+import msgpack
 from rocksq.blocking import PersistentQueueWithCapacity
 from savant_rs.pipeline2 import (
     StageFunction,
@@ -22,7 +23,7 @@ from savant_rs.zmq import BlockingWriter, WriterConfigBuilder, WriterSocketType
 from adapters.shared.thread import BaseThreadWorker
 from savant.metrics import Counter, Gauge
 from savant.metrics.prometheus import BaseMetricsCollector, PrometheusMetricsExporter
-from savant.utils.config import opt_config
+from savant.utils.config import opt_config, req_config, strtobool
 from savant.utils.logging import get_logger, init_logging
 from savant.utils.welcome import get_starting_message
 from savant.utils.zeromq import ZeroMQMessage, ZeroMQSource
@@ -46,11 +47,23 @@ class MetricsConfig:
         )
 
 
+class MessageDumpConfig:
+    """Message dump configuration for the adapter."""
+
+    def __init__(self):
+        self.enabled = opt_config('MESSAGE_DUMP_ENABLED', False, strtobool)
+        self.path = opt_config('MESSAGE_DUMP_PATH', '/tmp/buffer-adapter-dump', str)
+        self.segment_duration = opt_config('MESSAGE_DUMP_SEGMENT_DURATION', 60, int)
+        self.segment_template = opt_config(
+            'MESSAGE_DUMP_SEGMENT_TEMPLATE', 'dump-%Y-%m-%d-%H-%M-%S.msgpack', str
+        )
+
+
 class BufferConfig:
     """Buffer configuration for the adapter."""
 
     def __init__(self):
-        self.path = os.environ['BUFFER_PATH']
+        self.path = req_config('BUFFER_PATH')
         len_items = opt_config('BUFFER_LEN', 1000, int)
         assert len_items > 0, 'BUFFER_LEN must be positive'
         self.len = len_items * QUEUE_ITEM_SIZE
@@ -70,12 +83,61 @@ class Config:
     """Configuration for the adapter."""
 
     def __init__(self):
-        self.zmq_src_endpoint = os.environ['ZMQ_SRC_ENDPOINT']
-        self.zmq_sink_endpoint = os.environ['ZMQ_SINK_ENDPOINT']
+        self.zmq_src_endpoint = req_config('ZMQ_SRC_ENDPOINT')
+        self.zmq_sink_endpoint = req_config('ZMQ_SINK_ENDPOINT')
         self.buffer = BufferConfig()
+        self.message_dump = MessageDumpConfig()
         self.idle_polling_period = opt_config('IDLE_POLLING_PERIOD', 0.005, float)
         self.stats_log_interval = opt_config('STATS_LOG_INTERVAL', 60, int)
         self.metrics = MetricsConfig()
+
+
+class MessageDumper:
+    """Message dump for the adapter."""
+
+    def __init__(self, config: MessageDumpConfig):
+        self._config = config
+
+        # create the dump directory if it does not exist and it is enabled
+        if self._config.enabled and not os.path.exists(self._config.path):
+            os.makedirs(self._config.path)
+
+        self._segment_start = 0
+        self._segment_path = self._get_segment_path()
+        self._file = None
+
+    def dump(self, message: ZeroMQMessage):
+        """Dump the message to the message dump."""
+
+        if not self._config.enabled:
+            logger.trace('Message dump is not enabled. Skipping')
+            return
+
+        if time.time() - self._segment_start > self._config.segment_duration:
+            self._segment_start = time.time()
+            self._segment_path = self._get_segment_path()
+            logger.info(
+                'Rotating message dump segment. New segment: %s', self._segment_path
+            )
+            if self._file is not None:
+                self._file.close()
+            self._file = open(self._segment_path, 'wb')
+
+        topic = message.topic
+        meta = message.message
+        content = message.content
+        ts = time.time_ns()
+        self._file.write(
+            msgpack.packb(
+                (ts, topic, save_message_to_bytes(meta), content), use_bin_type=True
+            )
+        )
+
+    def _get_segment_path(self):
+        return os.path.join(
+            self._config.path,
+            time.strftime(self._config.segment_template, time.gmtime()),
+        )
 
 
 class Ingress(BaseThreadWorker):
@@ -89,10 +151,14 @@ class Ingress(BaseThreadWorker):
         )
         self._queue = queue
         self._config = config
+        self._message_dumper = MessageDumper(config.message_dump)
         self._buffer_is_full = False
         self._received_messages = 0
+        self._last_received_message = 0
         self._pushed_messages = 0
+        self._last_pushed_message = 0
         self._dropped_messages = 0
+        self._last_dropped_message = 0
         self._zmq_source = ZeroMQSource(config.zmq_src_endpoint)
 
     def workload(self):
@@ -113,16 +179,19 @@ class Ingress(BaseThreadWorker):
 
     def handle_next_message(self, message: ZeroMQMessage):
         """Handle the next message from the source ZeroMQ socket."""
-
+        self._message_dumper.dump(message)
         self._received_messages += 1
+        self._last_received_message = time.time()
         if message.message.is_video_frame():
             pushed = self.push_frame(message)
         else:
             pushed = self.push_service_message(message)
         if pushed:
             self._pushed_messages += 1
+            self._last_pushed_message = time.time()
         else:
             self._dropped_messages += 1
+            self._last_dropped_message = time.time()
 
     def push_frame(self, message: ZeroMQMessage) -> bool:
         """Push frame to the buffer."""
@@ -172,14 +241,29 @@ class Ingress(BaseThreadWorker):
         return self._received_messages
 
     @property
+    def last_received_message(self) -> int:
+        """Timestamp of the last received message."""
+        return self._last_received_message
+
+    @property
     def pushed_messages(self) -> int:
         """Number of messages pushed to the buffer."""
         return self._pushed_messages
 
     @property
+    def last_pushed_message(self) -> int:
+        """Timestamp of the last pushed message."""
+        return self._last_pushed_message
+
+    @property
     def dropped_messages(self) -> int:
         """Number of messages dropped by the adapter."""
         return self._dropped_messages
+
+    @property
+    def last_dropped_message(self) -> int:
+        """Timestamp of the last dropped message."""
+        return self._last_dropped_message
 
 
 class Egress(BaseThreadWorker):
@@ -199,6 +283,7 @@ class Egress(BaseThreadWorker):
         self._queue = queue
         self._idle_polling_period = config.idle_polling_period
         self._sent_messages = 0
+        self._last_sent_message = 0
         self._pipeline = pipeline
         self._video_frame = VideoFrame(
             source_id='test',
@@ -251,10 +336,16 @@ class Egress(BaseThreadWorker):
         message = load_message_from_bytes(message)
 
         self._sent_messages += 1
+        self._last_sent_message = time.time()
         frame_id = self._pipeline.add_frame('fps-meter', self._video_frame)
         self._pipeline.delete(frame_id)
 
         return topic, message, data
+
+    @property
+    def last_sent_message(self) -> int:
+        """Timestamp of the last sent message."""
+        return self._last_sent_message
 
     @property
     def sent_messages(self) -> int:
@@ -287,9 +378,13 @@ class StatsAggregator:
         """
 
         received_messages = self._ingress.received_messages
+        last_received_message = self._ingress.last_received_message
         pushed_messages = self._ingress.pushed_messages
+        last_pushed_message = self._ingress.last_pushed_message
         dropped_messages = self._ingress.dropped_messages
+        last_dropped_message = self._ingress.last_dropped_message
         sent_messages = self._egress.sent_messages
+        last_sent_message = self._egress.last_sent_message
         buffer_size = self._queue.len // QUEUE_ITEM_SIZE
         payload_size = self._queue.payload_size
 
@@ -300,6 +395,10 @@ class StatsAggregator:
             'sent_messages': sent_messages,
             'buffer_size': buffer_size,
             'payload_size': payload_size,
+            'last_received_message': last_received_message,
+            'last_pushed_message': last_pushed_message,
+            'last_dropped_message': last_dropped_message,
+            'last_sent_message': last_sent_message,
         }
 
 
@@ -331,13 +430,17 @@ class StatsLogger(BaseThreadWorker):
 
         stats = self._stats_aggregator.get_stats()
         self.logger.info(
-            'Received %s, pushed %s, dropped %s, sent %s, buffer size %s, payload size %s',
+            'Received %s, pushed %s, dropped %s, sent %s, buffer size %s, payload size %s, last message received %s, last message pushed %s, last message dropped %s, last message sent %s',
             stats['received_messages'],
             stats['pushed_messages'],
             stats['dropped_messages'],
             stats['sent_messages'],
             stats['buffer_size'],
             stats['payload_size'],
+            stats['last_received_message'],
+            stats['last_pushed_message'],
+            stats['last_dropped_message'],
+            stats['last_sent_message'],
         )
 
 
@@ -366,6 +469,18 @@ class AdapterMetricsCollector(BaseMetricsCollector):
         self.register_metric(Gauge('buffer_size', 'Number of messages in the buffer'))
         self.register_metric(
             Gauge('payload_size', 'Size of the queue in bytes (only payload)')
+        )
+        self.register_metric(
+            Gauge('last_received_message', 'Timestamp of the last received message')
+        )
+        self.register_metric(
+            Gauge('last_pushed_message', 'Timestamp of the last pushed message')
+        )
+        self.register_metric(
+            Gauge('last_dropped_message', 'Timestamp of the last dropped message')
+        )
+        self.register_metric(
+            Gauge('last_sent_message', 'Timestamp of the last sent message')
         )
 
     def update_all_metrics(self):
