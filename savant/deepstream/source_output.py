@@ -24,6 +24,7 @@ from savant.gstreamer.codecs import CODEC_BY_NAME, Codec, CodecInfo
 from savant.gstreamer.pipeline import GstPipeline
 from savant.gstreamer.utils import link_pads
 from savant.utils.logging import get_logger
+from savant.utils.platform import is_aarch64
 from savant.utils.source_info import SourceInfo
 
 
@@ -619,7 +620,7 @@ def create_source_output(
             queue_properties=queue_properties,
         )
 
-    if codec == Codec.JPEG:
+    if codec == Codec.JPEG and not is_aarch64():
         return SourceOutputNvJpeg(
             codec=codec.value,
             output_frame=output_frame,
