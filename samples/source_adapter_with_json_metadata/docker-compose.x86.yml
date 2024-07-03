@@ -7,7 +7,7 @@ services:
       - ../../data/source_adapter_with_json_metadata:/data/
     environment:
       - READ_METADATA=TRUE
-      - ZMQ_ENDPOINT=req+connect:ipc:///tmp/zmq-sockets/input.ipc
+      - ZMQ_ENDPOINT=dealer+connect:ipc:///tmp/zmq-sockets/input.ipc
       - SOURCE_ID=coco-images
       - LOCATION=/data
       - FILE_TYPE=image
@@ -29,7 +29,7 @@ services:
     environment:
       - MODEL_PATH=/cache/models/traffic_meter
       - DOWNLOAD_PATH=/cache/downloads/traffic_meter
-      - ZMQ_SRC_ENDPOINT=rep+bind:ipc:///tmp/zmq-sockets/input.ipc
+      - ZMQ_SRC_ENDPOINT=router+bind:ipc:///tmp/zmq-sockets/input.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output.ipc
       - METRICS_FRAME_PERIOD=1000
     deploy:
