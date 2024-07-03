@@ -698,6 +698,7 @@ class NvDsPipeline(GstPipeline):
         )
 
         try:
+            self._source_output.remove_output(self._pipeline, source_info)
             for elem in source_info.after_demuxer:
                 self._logger.debug('Removing element %s', elem.get_name())
                 elem.set_locked_state(True)
