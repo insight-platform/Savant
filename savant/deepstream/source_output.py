@@ -538,12 +538,14 @@ class SourceOutputNvJpeg(SourceOutputEncoded):
             video_pipeline=video_pipeline,
             queue_properties=queue_properties,
         )
-        # Pool of nvjpegenc elements to reuse them
-        self._encoder_pool: Deque[Gst.Element] = deque()
         self._use_nvenc = codec.nv_encoder == self._encoder
+        # Pool of nvjpegenc elements to reuse them
+        self._encoder_pool: Optional[Deque[Gst.Element]] = (
+            deque() if self._use_nvenc and not is_aarch64() else None
+        )
 
     def _create_encoder(self, pipeline: GstPipeline):
-        if self._use_nvenc and self._encoder_pool:
+        if self._encoder_pool:
             self._logger.debug(
                 'Reusing nvjpegenc element from the pool. Pool size: %s.',
                 len(self._encoder_pool),
@@ -568,12 +570,19 @@ class SourceOutputNvJpeg(SourceOutputEncoded):
 
         for elem in source_info.source_output_elements:
             if elem.get_factory().get_name() == 'nvjpegenc':
-                self._logger.debug('Adding element %s to the pool', elem.get_name())
-                self._encoder_pool.append(elem)
-                elem.set_locked_state(True)
-                elem.set_state(Gst.State.NULL)
-                self._logger.debug('Encoder pool size: %s', len(self._encoder_pool))
-                continue
+                if self._encoder_pool is not None:
+                    self._logger.debug('Adding element %s to the pool', elem.get_name())
+                    self._encoder_pool.append(elem)
+                    elem.set_locked_state(True)
+                    elem.set_state(Gst.State.NULL)
+                    self._logger.debug('Encoder pool size: %s', len(self._encoder_pool))
+                    continue
+                else:
+                    self._logger.warning(
+                        'Removing nvjpegenc do not release GPU memory. This leads to memory leak. See '
+                        'https://forums.developer.nvidia.com/t/nvjpegenc-dont-release-gpu-memory-when-gst-element-removed-from-pipeline'
+                        ' for details.'
+                    )
 
             self._logger.debug('Removing element %s', elem.get_name())
             elem.set_locked_state(True)
@@ -620,7 +629,7 @@ def create_source_output(
             queue_properties=queue_properties,
         )
 
-    if codec == Codec.JPEG and not is_aarch64():
+    if codec == Codec.JPEG:
         return SourceOutputNvJpeg(
             codec=codec.value,
             output_frame=output_frame,
