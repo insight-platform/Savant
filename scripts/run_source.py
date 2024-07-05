@@ -955,6 +955,59 @@ def kafka_redis_source(
     run_command(cmd)
 
 
+@cli.command('mdp')
+@click.option(
+    '--playlist',
+    required=True,
+    help='Path to the playlist file.',
+)
+@click.option(
+    '--dump-files-dir',
+    required=True,
+    help='Path to the directory with message dump files listed in the playlist.',
+)
+@click.option(
+    '--out-endpoint',
+    default='dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc',
+    help='Adapter output (module input) ZeroMQ socket endpoint.',
+    show_default=True,
+)
+@click.option(
+    '--sync',
+    is_flag=True,
+    default=False,
+    help='Send frames from source synchronously (i.e. at the source file rate).',
+)
+@adapter_docker_image_option('py')
+def message_dump_player_source(
+    out_endpoint: str, docker_image: str, playlist: str, dump_files_dir: str, sync: bool
+):
+    """Plays video dumps sequentially from a playlist file and sends them to a module."""
+
+    envs = build_common_envs(
+        source_id=None,
+        fps_period_frames=None,
+        fps_period_seconds=None,
+        fps_output=None,
+        zmq_endpoint=out_endpoint,
+        zmq_type=None,
+        zmq_bind=None,
+    ) + [
+        f'PLAYLIST_PATH={playlist}',
+        f'SYNC_OUTPUT={sync}',
+    ]
+    cmd = build_docker_run_command(
+        f'source-message-dump-player-{uuid.uuid4().hex}',
+        zmq_endpoints=[out_endpoint],
+        volumes=[f'{playlist}:{playlist}:ro', f'{dump_files_dir}:{dump_files_dir}'],
+        entrypoint='python',
+        args=['-m', 'adapters.python.sources.message_dump_player'],
+        envs=envs,
+        docker_image=docker_image,
+    )
+    run_command(cmd)
+
+
 @cli.command('kvs')
 @click.option(
     '--out-endpoint',

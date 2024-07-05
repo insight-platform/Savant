@@ -22,7 +22,7 @@ git lfs pull
 docker compose -f samples/auxiliary_streams/docker-compose.x86.yml up
 
 # if Jetson
-docker compose -f samples/buffer_adapter/docker-compose.l4t.yml up
+docker compose -f samples/auxiliary_streams/docker-compose.l4t.yml up
 
 # open 'rtsp://127.0.0.1:554/stream/video-360p', 'rtsp://127.0.0.1:554/stream/video-480p',
 # 'rtsp://127.0.0.1:554/stream/video-720p' in your player

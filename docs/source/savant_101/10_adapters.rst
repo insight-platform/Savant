@@ -236,7 +236,8 @@ Currently, the following source adapters are available:
 - GigE (Genicam) industrial cam;
 - FFmpeg;
 - Multi-stream;
-- Kafka-Redis Source.
+- Kafka-Redis Source;
+- Message Dump Player.
 
 Most source adapters accept the following common parameters:
 
@@ -865,6 +866,39 @@ Example:
         "timestamp": "2024-03-12T06:57:00",
         "is_playing": false
     }
+
+Message Dump Player Source Adapter
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The Message Dump Player Adapter plays video dumps sequentially from a playlist file and sends them to a module.
+Playlist file contains a list of message dump files, one per line.
+It's one shot adapter, i.e. it stops after playing all files from the playlist.
+
+**Parameters**:
+
+- ``PLAYLIST_PATH``: a path to the playlist file;
+- ``SYNC_OUTPUT``: flag specifying if to send frames synchronously (i.e. at the source file rate); default is ``False``.
+
+Running the adapter with Docker:
+
+.. code-block:: bash
+
+    docker run --rm -it --name message-dump-player-test \
+        --entrypoint python \
+        -e PLAYLIST_PATH=/path/to/playlist/file.txt \
+        -e SYNC_OUTPUT=False \
+        -e ZMQ_ENDPOINT=dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc \
+        -v /path/to/playlist/file.txt:/path/to/playlist/file.txt:ro \
+        -v /path/to/dump/files:/path/to/dump/files \
+        -v /tmp/zmq-sockets:/tmp/zmq-sockets \
+        ghcr.io/insight-platform/savant-adapters-py:latest \
+        -m adapters.python.sources.message_dump_player
+
+Running with the helper script:
+
+.. code-block:: bash
+
+    ./scripts/run_source.py mdp --playlist /path/to/playlist/file.txt --dump-files-dir /path/to/dump/files
 
 Sink Adapters
 -------------
