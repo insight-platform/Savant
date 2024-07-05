@@ -24,11 +24,10 @@ from savant.gstreamer.utils import (
     required_property,
 )
 from savant.utils.logging import LoggerMixin
-from savant.utils.platform import is_aarch64
 
 DEFAULT_SOURCE_TIMEOUT = 60
 DEFAULT_SOURCE_EVICTION_INTERVAL = 15
-DEFAULT_EOS_ON_FRAME_RESOLUTION_CHANGE = is_aarch64()
+DEFAULT_EOS_ON_FRAME_RESOLUTION_CHANGE = True
 OUT_CAPS = Gst.Caps.from_string(';'.join(x.value.caps_with_params for x in Codec))
 
 SAVANT_RS_VIDEO_DEMUX_PROPERTIES = {
