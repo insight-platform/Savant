@@ -3,7 +3,6 @@ import os
 import signal
 import time
 from typing import Dict, Optional, Tuple
-from savant.utils.config import req_config
 
 import msgpack
 from rocksq.blocking import PersistentQueueWithCapacity
@@ -24,7 +23,7 @@ from savant_rs.zmq import BlockingWriter, WriterConfigBuilder, WriterSocketType
 from adapters.shared.thread import BaseThreadWorker
 from savant.metrics import Counter, Gauge
 from savant.metrics.prometheus import BaseMetricsCollector, PrometheusMetricsExporter
-from savant.utils.config import opt_config, strtobool
+from savant.utils.config import opt_config, req_config, strtobool
 from savant.utils.logging import get_logger, init_logging
 from savant.utils.welcome import get_starting_message
 from savant.utils.zeromq import ZeroMQMessage, ZeroMQSource

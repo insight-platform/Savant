@@ -3,14 +3,10 @@ import time
 from typing import Optional, Tuple
 
 import msgpack
-from savant_rs.utils.serialization import (
-    Message,
-    load_message_from_bytes,
-)
+from savant_rs.utils.serialization import Message, load_message_from_bytes
 from savant_rs.zmq import BlockingWriter, WriterConfigBuilder
 
-from savant.utils.config import opt_config, strtobool
-from savant.utils.config import req_config
+from savant.utils.config import opt_config, req_config, strtobool
 from savant.utils.logging import get_logger, init_logging
 from savant.utils.welcome import get_starting_message
 
@@ -83,7 +79,9 @@ class MessageDumpReader:
             self._logger.error('Message dump file not found: %s', file_path)
             raise RuntimeError('Message dump file not found')
         except OSError as e:
-            self._logger.error('Failed to open a message dump file [%s]: %s', file_path, e)
+            self._logger.error(
+                'Failed to open a message dump file [%s]: %s', file_path, e
+            )
             raise RuntimeError('Failed to open a message dump file')
         try:
             self._unpacker = msgpack.Unpacker(self._message_dump_file)
@@ -142,7 +140,9 @@ class Player:
 
         if self._sync_output:
             if self._last_send_time is not None:
-                delta = (ts - self._last_ts) / 1.0e9 - (time.time() - self._last_send_time)
+                delta = (ts - self._last_ts) / 1.0e9 - (
+                    time.time() - self._last_send_time
+                )
                 if delta > 0:
                     time.sleep(delta)
                 elif delta < 0:

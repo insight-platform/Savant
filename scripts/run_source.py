@@ -980,11 +980,7 @@ def kafka_redis_source(
 )
 @adapter_docker_image_option('py')
 def message_dump_player_source(
-    out_endpoint: str,
-    docker_image: str,
-    playlist: str,
-    dump_files_dir: str,
-    sync: bool
+    out_endpoint: str, docker_image: str, playlist: str, dump_files_dir: str, sync: bool
 ):
     """Plays video dumps sequentially from a playlist file and sends them to a module."""
 
