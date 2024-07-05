@@ -16,7 +16,6 @@ from .model import NVINFER_DEFAULT_OBJECT_SELECTOR, NvInferModel, NvInferModelFo
 
 __all__ = ['NvInferConfig', 'NvInferConfigType']
 
-
 # nvinfer config type specification
 NvInferConfigType = Dict[str, Dict]
 
@@ -112,12 +111,12 @@ class NvInferConfig:
 
     @staticmethod
     def generate_model_engine_file(
-        model_file: str, batch_size: int, gpu_id: int, precision: ModelPrecision
+        model_file: str, batch_size: int, device_id: str, precision: ModelPrecision
     ) -> str:
         """Generate ``model-engine-file`` according to default Deepstream
         engine naming scheme."""
         prefix = model_file if model_file else 'model'
-        return f'{prefix}_b{batch_size}_gpu{gpu_id}_{precision.name.lower()}.engine'
+        return f'{prefix}_b{batch_size}_{device_id}_{precision.name.lower()}.engine'
 
     @dataclass
     class _FieldMap:
@@ -153,6 +152,8 @@ class NvInferConfig:
         _FieldMap('custom-lib-path', 'custom_lib_path'),
         _FieldMap('engine-create-func-name', 'engine_create_func_name'),
         _FieldMap('workspace-size', 'workspace_size'),
+        _FieldMap('enable-dla', 'enable_dla', lambda v: int(v), 0),
+        _FieldMap('use-dla-core', 'use_dla_core', int, 0),
         _FieldMap(
             'parse-bbox-instance-mask-func-name', 'parse_bbox_instance_mask_func_name'
         ),

@@ -48,7 +48,7 @@ class Stream:
     transfer_mode: Optional[TransferMode] = None
     rtsp_keep_alive: Optional[bool] = None
     metadata_output: Optional[MetadataOutput] = None
-    sync_output: Optional[bool] = None
+    sync_input: Optional[bool] = None
     exit_code: Optional[int] = None
 
 
@@ -95,8 +95,8 @@ class StreamManager:
             stream.transfer_mode = self._config.transfer_mode
         if stream.rtsp_keep_alive is None:
             stream.rtsp_keep_alive = self._config.rtsp_keep_alive
-        if stream.sync_output is None:
-            stream.sync_output = self._config.sync
+        if stream.sync_input is None:
+            stream.sync_input = self._config.sync
 
         with self._lock:
             if source_id in self._streams:
@@ -138,7 +138,7 @@ class StreamManager:
             'METADATA_OUTPUT': (
                 stream.metadata_output.value if stream.metadata_output else None
             ),
-            'SYNC_OUTPUT': stream.sync_output,
+            'SYNC_INPUT': stream.sync_input,
             'SOURCE_ID': source_id,
             'RTSP_URI': rtsp_uri,
             'ZMQ_ENDPOINT': self._stream_in_endpoint,

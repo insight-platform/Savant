@@ -1,11 +1,12 @@
 import inspect
+import time
 from datetime import datetime
 from typing import Any, Optional
 
 import cv2
 
 from adapters.ds.sinks.always_on_rtsp.last_frame import Frame, LastFrame, LastFrameRef
-from savant.gstreamer import GObject, Gst, GstBase
+from savant.gstreamer import GLib, GObject, Gst, GstBase
 from savant.gstreamer.utils import (
     gst_post_library_settings_error,
     gst_post_stream_failed_error,
@@ -46,25 +47,53 @@ class AlwaysOnRtspFrameSink(LoggerMixin, GstBase.BaseSink):
             'Reference to last frame with its timestamp and resolution.',
             GObject.ParamFlags.READWRITE,
         ),
+        'sync-offset': (
+            GObject.TYPE_LONG,
+            'Timestamp offset for frame synchronization (in frames, -1=disable).',
+            'Timestamp offset for frame synchronization (in frames, -1=disable).',
+            -1,
+            GLib.MAXLONG,
+            -1,
+            GObject.ParamFlags.READWRITE,
+        ),
+        'realtime': (
+            bool,
+            'Synchronize frames using absolute timestamps.',
+            'Synchronize frames using absolute timestamps.',
+            False,
+            GObject.ParamFlags.READWRITE,
+        ),
     }
 
     def __init__(self):
         super().__init__()
         # properties
         self._last_frame: Optional[LastFrameRef] = None
+        self._sync_offset = -1
+        self._realtime = False
 
         self._use_gpu = nvds_to_gpu_mat is not None
         self._width = 0
         self._height = 0
+        self._offset_is_set = False
+        self.set_sync(False)
 
     def do_get_property(self, prop: GObject.GParamSpec) -> Any:
         if prop.name == 'last-frame':
             return self._last_frame
+        if prop.name == 'sync-offset':
+            return self._sync_offset
+        if prop.name == 'realtime':
+            return self._realtime
         raise AttributeError(f'Unknown property {prop.name}.')
 
     def do_set_property(self, prop: GObject.GParamSpec, value: Any):
         if prop.name == 'last-frame':
             self._last_frame = value
+        elif prop.name == 'sync-offset':
+            self._sync_offset = value
+        elif prop.name == 'realtime':
+            self._realtime = value
         else:
             raise AttributeError(f'Unknown property {prop.name}.')
 
@@ -88,6 +117,34 @@ class AlwaysOnRtspFrameSink(LoggerMixin, GstBase.BaseSink):
         return True
 
     def do_render(self, buffer: Gst.Buffer):
+        self.logger.debug('Processing frame %s', buffer.pts)
+
+        if self._sync_offset >= 0 and not self._offset_is_set:
+            ts_offset = (
+                self._sync_offset + self.get_clock().get_time() - self.get_base_time()
+            )
+            if self._realtime:
+                ts_offset -= int(time.time() * Gst.SECOND)
+            else:
+                ts_offset -= buffer.pts
+            self.logger.debug('Setting ts offset to %s', ts_offset)
+            self.set_ts_offset(ts_offset)
+            self.set_sync(True)
+            self._offset_is_set = True
+            wait_time = (
+                +buffer.pts
+                + ts_offset
+                + self.get_base_time()
+                - self.get_clock().get_time()
+            ) / Gst.SECOND
+            if wait_time > 0:
+                self.logger.debug(
+                    'Waiting %s seconds to process frame %s',
+                    wait_time,
+                    buffer.pts,
+                )
+                time.sleep(wait_time)
+
         try:
             if self._width == 0 or self._height == 0:
                 raise RuntimeError('Frame resolution is not set')

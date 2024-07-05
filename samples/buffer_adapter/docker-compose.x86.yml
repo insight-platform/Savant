@@ -1,4 +1,3 @@
-version: "3.3"
 services:
 
   video-loop-source:
@@ -28,6 +27,7 @@ services:
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - buffer:/tmp/savant-adapter/buffer
+      - message_dump:/tmp/message-dump
     environment:
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/buffer.ipc
       - ZMQ_SINK_ENDPOINT=dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc
@@ -39,6 +39,9 @@ services:
       - STATS_LOG_INTERVAL=10
       - METRICS_PROVIDER=prometheus
       - METRICS_PROVIDER_PARAMS={"port":8000, "labels":{"adapter":"buffer"}}
+      - MESSAGE_DUMP_ENABLED=False # Set to True to enable message dumping for later analysis
+      - MESSAGE_DUMP_SEGMENT_DURATION=30
+      - MESSAGE_DUMP_PATH=/tmp/message-dump
     command: python -m adapters.python.bridge.buffer
 
   module:
@@ -59,7 +62,7 @@ services:
           devices:
             - driver: nvidia
               count: 1
-              capabilities: [gpu]
+              capabilities: [ gpu ]
 
   always-on-sink:
     image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
@@ -85,7 +88,7 @@ services:
           devices:
             - driver: nvidia
               count: 1
-              capabilities: [gpu]
+              capabilities: [ gpu ]
 
   prometheus:
     image: prom/prometheus:v2.48.0
@@ -112,3 +115,4 @@ services:
 volumes:
   buffer:
   zmq_sockets:
+  message_dump:

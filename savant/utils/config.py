@@ -1,4 +1,30 @@
 import os
+import sys
+
+from savant.utils.logging import get_logger
+import logging
+
+logger = get_logger(__name__)
+
+
+def req_config(name):
+    """Get a configuration value from the environment.
+
+    :param name: The name of the environment variable.
+    """
+    val = os.environ.get(name)
+    if val is None:
+        logger.error(
+            f"Mandatory environment configuration variable '{name}' not found."
+        )
+        logger.error(f"Configured environment variables:")
+        for k, v in os.environ.items():
+            logger.error(f"\t{k}={v}")
+        raise ValueError(
+            f"Configuration Value Not Found in environment variables: {name}"
+        )
+    logger.info(f"Applying Configuration Value: {name}={val}")
+    return val
 
 
 def opt_config(name, default=None, convert=None):
@@ -10,9 +36,11 @@ def opt_config(name, default=None, convert=None):
     """
 
     conf_str = os.environ.get(name)
+    val = default
     if conf_str:
-        return convert(conf_str) if convert else conf_str
-    return default
+        val = convert(conf_str) if convert else conf_str
+    logger.info(f"Applying Configuration Value: {name}={val}")
+    return val
 
 
 def strtobool(val):

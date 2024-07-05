@@ -2,7 +2,7 @@
 # Builds torch2trt from source (amd64/arm64).
 # Requires nvidia runtime to share some host libs with the container on Jetson.
 
-: "${TORCH2TRT_VERSION:=v0.4.0}"
+: "${TORCH2TRT_VERSION:=v0.5.0}"
 : "${OUTPUT_DIR:=/opt}"
 : "${TMP_DIR:=/tmp}"
 
@@ -15,7 +15,7 @@ sed 's|collections.Sequence|collections.abc.Sequence|g' -i torch2trt/converters/
 #cat torch2trt/converters/interpolate.py | grep Sequence
 
 # install requirements
-python3 -m pip install tensorrt torch packaging
+python3 -m pip install tensorrt~=8.6 torch packaging
 
 python3 setup.py bdist_wheel
 cp dist/torch2trt*.whl "$OUTPUT_DIR"

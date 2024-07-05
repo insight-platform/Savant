@@ -138,6 +138,8 @@ class Codec(Enum):
 CODEC_BY_NAME: Dict[str, Codec] = {x.value.name: x for x in Codec}
 CODEC_BY_CAPS_NAME: Dict[str, Codec] = {x.value.caps_name: x for x in Codec}
 
+AUXILIARY_STREAM_CODECS = [Codec.H264, Codec.HEVC, Codec.JPEG]
+
 
 def _check_element_exists(element_name: str):
     logger.debug('Check if element %r exists', element_name)

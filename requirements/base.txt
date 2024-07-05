@@ -1,4 +1,4 @@
-numpy~=1.22.4
+numpy>=1.22.4,<2.0
 cupy-cuda12x
 numba~=0.57
 scipy~=1.10
@@ -14,7 +14,7 @@ inotify-simple~=1.3.5
 pretty-traceback==2023.1019
 
 # remote file support
-requests~=2.27
+requests~=2.32
 boto3~=1.23
 tqdm~=4.64
 

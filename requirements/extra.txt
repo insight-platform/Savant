@@ -1,7 +1,10 @@
 Cython
-polars[all]
+polars[all]==0.19.12
 scikit-learn
 jupyterlab
 ipywidgets
 matplotlib
 pytest
+seaborn
+onnxsim
+tensorboard

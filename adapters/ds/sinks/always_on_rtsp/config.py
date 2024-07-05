@@ -3,6 +3,7 @@ import os
 from enum import Enum
 from pathlib import Path
 from typing import Optional
+from savant.utils.config import req_config
 
 from savant_rs.pipeline2 import (
     StageFunction,
@@ -45,7 +46,7 @@ class MetadataOutput(str, Enum):
 
 class CommonStreamConfig:
     def __init__(self):
-        self.stub_file_location = Path(os.environ['STUB_FILE_LOCATION'])
+        self.stub_file_location = Path(req_config('STUB_FILE_LOCATION'))
         if not self.stub_file_location.exists():
             raise RuntimeError(f'File {self.stub_file_location} does not exist.')
         if not self.stub_file_location.is_file():
@@ -87,7 +88,12 @@ class CommonStreamConfig:
         self.framerate = opt_config('FRAMERATE', '30/1')
         self.idr_period_frames = opt_config('IDR_PERIOD_FRAMES', IDR_PERIOD_FRAMES, int)
 
-        self.sync = opt_config('SYNC_OUTPUT', False, strtobool)
+        self.sync = opt_config('SYNC_INPUT', True, strtobool)
+        self.realtime = opt_config('REALTIME', False, strtobool)
+        self.sync_offset_ms = opt_config('SYNC_OFFSET_MS', 1000, int)
+        assert self.sync_offset_ms >= 0, 'SYNC_OFFSET_MS should be non-negative.'
+        self.sync_queue_size = opt_config('SYNC_QUEUE_SIZE', 500, int)
+        assert self.sync_queue_size > 0, 'SYNC_QUEUE_SIZE should be positive.'
         self.max_allowed_resolution = opt_config(
             'MAX_RESOLUTION',
             MAX_ALLOWED_RESOLUTION,
@@ -105,9 +111,9 @@ class Config(CommonStreamConfig):
     def __init__(self):
         super().__init__()
 
-        self.source_id = os.environ['SOURCE_ID']
+        self.source_id = req_config('SOURCE_ID')
 
-        self.zmq_endpoint = os.environ['ZMQ_ENDPOINT']
+        self.zmq_endpoint = req_config('ZMQ_ENDPOINT')
         self.zmq_socket_type = opt_config(
             'ZMQ_TYPE',
             ReceiverSocketTypes.SUB,
@@ -115,7 +121,7 @@ class Config(CommonStreamConfig):
         )
         self.zmq_socket_bind = opt_config('ZMQ_BIND', False, strtobool)
 
-        self.rtsp_uri = os.environ['RTSP_URI']
+        self.rtsp_uri = req_config('RTSP_URI')
 
         self.pipeline_source_stage_name = 'source'
         self.pipeline_demux_stage_name = 'source-demux'

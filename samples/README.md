@@ -165,3 +165,9 @@ Sample location: [pass_through_processing](./pass_through_processing)
 A sample demonstrating the use of RT-DETR model in Savant.
 
 Sample location: [rtdetr](./rtdetr/)
+
+### Auxiliary Streams
+
+A pipeline demonstrating the use of Auxiliary Streams in Savant.
+
+Sample location: [auxiliary_streams](./auxiliary_streams)

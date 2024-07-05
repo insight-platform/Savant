@@ -1,4 +1,3 @@
-version: "3.3"
 services:
 
   video-loop-source:
@@ -38,7 +37,7 @@ services:
           devices:
             - driver: nvidia
               count: 1
-              capabilities: [gpu]
+              capabilities: [ gpu ]
 
   always-on-sink:
     image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
@@ -55,6 +54,7 @@ services:
       - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
       - SOURCE_ID=city-traffic
       - FRAMERATE=25/1
+      - SYNC_INPUT=True
       - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x900.jpeg
       - DEV_MODE=True
     command: python -m adapters.ds.sinks.always_on_rtsp
@@ -64,7 +64,7 @@ services:
           devices:
             - driver: nvidia
               count: 1
-              capabilities: [gpu]
+              capabilities: [ gpu ]
 
 volumes:
   zmq_sockets:

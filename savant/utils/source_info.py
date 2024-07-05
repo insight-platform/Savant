@@ -72,7 +72,8 @@ class SourceInfoRegistry(metaclass=SingletonMeta):
         :param source_info: SourceInfo to be removed from map.
         """
         del self._sources[source_info.source_id]
-        del self._source_id_by_index[source_info.pad_idx]
+        if source_info.pad_idx is not None:
+            del self._source_id_by_index[source_info.pad_idx]
 
     def get_id_by_pad_index(self, pad_idx: int) -> str:
         """Retrieve string value associated with given pad index.

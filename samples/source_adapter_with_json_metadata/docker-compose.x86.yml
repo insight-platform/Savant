@@ -1,4 +1,3 @@
-version: "3.3"
 services:
 
   image-json-source:
@@ -39,7 +38,7 @@ services:
           devices:
             - driver: nvidia
               count: 1
-              capabilities: [gpu]
+              capabilities: [ gpu ]
 
   image-json-sink:
     image: ghcr.io/insight-platform/savant-adapters-py:latest

@@ -116,7 +116,7 @@ Check that streaming works properly:
 
 You must see the video stream as demonstrated in the following Youtube video:
 
-.. youtube:: P9w-WS6HLew
+.. youtube:: ZCXOSqklgb0
 
 Disable SUDO for Docker
 ^^^^^^^^^^^^^^^^^^^^^^^
