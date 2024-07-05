@@ -1,0 +1,15 @@
+name: issue809
+
+parameters:
+  frame:
+    width: 7680
+    height: 4320
+  batch_size: 1
+  output_frame:
+    codec: hevc
+    encoder_params:
+      # 100 Mbps - module works normally
+      #bitrate: 100000000
+
+      # 200 Mbps - module hangs after processing 150 frames
+      bitrate: 200000000
