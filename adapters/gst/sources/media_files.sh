@@ -19,6 +19,7 @@ ZMQ_SOCKET_BIND="${ZMQ_BIND:="false"}"
 SYNC_OUTPUT="${SYNC_OUTPUT:="false"}"
 FRAMERATE="${FRAMERATE:="30/1"}"
 FPS_OUTPUT="${FPS_OUTPUT:="stdout"}"
+EOS_ON_FRAME_PARAMS_CHANGE="${EOS_ON_FRAME_PARAMS_CHANGE:="true"}"
 if [[ -n "${FPS_PERIOD_SECONDS}" ]]; then
     FPS_PERIOD="period-seconds=${FPS_PERIOD_SECONDS}"
 elif [[ -n "${FPS_PERIOD_FRAMES}" ]]; then
@@ -29,11 +30,9 @@ fi
 if [[ "${FILE_TYPE}" == "image" ]]; then
     MEASURE_PER_FILE=false
     EOS_ON_FILE_END="${EOS_ON_FILE_END:="false"}"
-    EOS_ON_FRAME_PARAMS_CHANGE="${EOS_ON_FRAME_PARAMS_CHANGE:="true"}"
 else
     MEASURE_PER_FILE=true
     EOS_ON_FILE_END="${EOS_ON_FILE_END:="true"}"
-    EOS_ON_FRAME_PARAMS_CHANGE="${EOS_ON_FRAME_PARAMS_CHANGE:="true"}"
 fi
 SORT_BY_TIME="${SORT_BY_TIME:="false"}"
 READ_METADATA="${READ_METADATA:="false"}"
