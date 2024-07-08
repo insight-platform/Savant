@@ -17,7 +17,7 @@ def req_config(name):
         logger.error(
             f"Mandatory environment configuration variable '{name}' not found."
         )
-        logger.error(f'Configured environment variables:')
+        logger.error('Configured environment variables:')
         for k, v in os.environ.items():
             logger.error(f'\t{k}={v}')
         raise ValueError(
