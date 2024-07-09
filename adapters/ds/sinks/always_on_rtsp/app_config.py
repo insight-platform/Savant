@@ -2,7 +2,7 @@ import os
 from typing import List, Optional
 
 from adapters.ds.sinks.always_on_rtsp.config import CommonStreamConfig
-from savant.utils.config import opt_config, strtobool, req_config
+from savant.utils.config import opt_config, req_config, strtobool
 from savant.utils.zeromq import ReceiverSocketTypes
 
 

@@ -225,7 +225,8 @@ The following source adapters are available:
 - [Kafka-Redis](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#kafka-redis-source-adapter);
 - [Video loop URL](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#video-loop-source-adapter);
 - [Multi-stream Source](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#multi-stream-source-adapter);
-- [Amazon Kinesis Video Streams Source](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#kinesis-video-stream-source-adapter).
+- [Amazon Kinesis Video Streams Source](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#kinesis-video-stream-source-adapter);
+- [Message Dump Player](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#message-dump-player-source-adapter).
 
 Several sink adapters are implemented:
 
