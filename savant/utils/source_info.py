@@ -21,8 +21,8 @@ class SourceInfo:
     source_id: str
     pad_idx: Optional[int]
     src_resolution: Optional[Resolution]
-    add_scale_transformation: bool
     before_muxer: List[Gst.Element]
+    source_output_elements: List[Gst.Element]
     after_demuxer: List[Gst.Element]
     lock: Event
 
@@ -41,8 +41,8 @@ class SourceInfoRegistry(metaclass=SingletonMeta):
             source_id=source_id,
             pad_idx=None,
             src_resolution=None,
-            add_scale_transformation=True,
             before_muxer=[],
+            source_output_elements=[],
             after_demuxer=[],
             lock=Event(),
         )

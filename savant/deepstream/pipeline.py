@@ -453,10 +453,6 @@ class NvDsPipeline(GstPipeline):
             with self._source_adding_lock:
                 self._check_pipeline_is_running()
                 source_info.src_resolution = Resolution(width, height)
-                source_info.add_scale_transformation = (
-                    self._frame_params.width != width
-                    or self._frame_params.height != height
-                )
                 self._sources.update_source(source_info)
 
                 if not source_info.after_demuxer:
@@ -702,6 +698,7 @@ class NvDsPipeline(GstPipeline):
         )
 
         try:
+            self._source_output.remove_output(self._pipeline, source_info)
             for elem in source_info.after_demuxer:
                 self._logger.debug('Removing element %s', elem.get_name())
                 elem.set_locked_state(True)

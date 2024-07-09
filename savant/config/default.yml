@@ -197,6 +197,8 @@ pipeline:
       decoder_queue_length: ${oc.decode:${oc.env:DECODER_QUEUE_LENGTH, null}}
       # Size of the queue before decoder in bytes (0 - no limit, default 10485760).
       decoder_queue_byte_size: ${oc.decode:${oc.env:DECODER_QUEUE_BYTE_SIZE, null}}
+      # Send EOS on frame resolution change for JPEG and PNG codecs (default true).
+      eos_on_frame_resolution_change: ${oc.decode:${oc.env:EOS_ON_FRAME_RESOLUTION_CHANGE, null}}
 
 # elements:
 # elements should be defined here

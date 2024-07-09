@@ -1,7 +1,8 @@
 """Classes for adding output elements to a DeepStream pipeline."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
+from collections import deque
+from typing import Any, Deque, Dict, Optional
 
 import pyds
 from pygstsavantframemeta import (
@@ -23,6 +24,7 @@ from savant.gstreamer.codecs import CODEC_BY_NAME, Codec, CodecInfo
 from savant.gstreamer.pipeline import GstPipeline
 from savant.gstreamer.utils import link_pads
 from savant.utils.logging import get_logger
+from savant.utils.platform import is_aarch64
 from savant.utils.source_info import SourceInfo
 
 
@@ -49,6 +51,20 @@ class SourceOutput(ABC):
         :param input_pad: A sink pad to which elements must be linked.
         :returns Src pad that will be connected to fakesink element.
         """
+
+    def remove_output(self, pipeline: Gst.Pipeline, source_info: SourceInfo):
+        """Remove output elements from the pipeline.
+
+        :param pipeline: Target pipeline.
+        :param source_info: Video source information.
+        """
+
+        for elem in source_info.source_output_elements:
+            self._logger.debug('Removing element %s', elem.get_name())
+            elem.set_locked_state(True)
+            elem.set_state(Gst.State.NULL)
+            pipeline.remove(elem)
+        source_info.source_output_elements = []
 
     @property
     @abstractmethod
@@ -182,7 +198,7 @@ class SourceOutputWithFrame(SourceOutput):
             self._video_pipeline,
             'sink-convert',
         )
-        source_info.after_demuxer.append(output_converter)
+        source_info.source_output_elements.append(output_converter)
         output_converter.sync_state_with_parent()
         self._logger.debug(
             'Added converter for video frames (source_id=%s)',
@@ -197,7 +213,7 @@ class SourceOutputWithFrame(SourceOutput):
             self._frame_params.output_height,
         )
         output_capsfilter.set_property('caps', output_caps)
-        source_info.after_demuxer.append(output_capsfilter)
+        source_info.source_output_elements.append(output_capsfilter)
         output_capsfilter.sync_state_with_parent()
         self._logger.debug(
             'Added capsfilter with caps %s (source_id=%s)',
@@ -421,6 +437,14 @@ class SourceOutputEncoded(SourceOutputWithFrame):
         return self._encoder
 
     def _add_transform_elems(self, pipeline: GstPipeline, source_info: SourceInfo):
+        encoder = self._create_encoder(pipeline)
+        source_info.source_output_elements.append(encoder)
+        encoder.sync_state_with_parent()
+        self._logger.debug(
+            'Added encoder %s with params %s', self._encoder, self._params
+        )
+
+    def _create_encoder(self, pipeline: GstPipeline):
         encoder = pipeline.add_element(
             PipelineElement(self._encoder, properties=self._params)
         )
@@ -429,11 +453,8 @@ class SourceOutputEncoded(SourceOutputWithFrame):
             self._video_pipeline,
             'encode',
         )
-        source_info.after_demuxer.append(encoder)
-        encoder.sync_state_with_parent()
-        self._logger.debug(
-            'Added encoder %s with params %s', self._encoder, self._params
-        )
+
+        return encoder
 
     def _build_output_caps(self, width: int, height: int) -> Gst.Caps:
         return Gst.Caps.from_string(
@@ -468,7 +489,7 @@ class SourceOutputH26X(SourceOutputEncoded):
             self._video_pipeline,
             'parse',
         )
-        source_info.after_demuxer.append(parser)
+        source_info.source_output_elements.append(parser)
         parser.sync_state_with_parent()
         self._logger.debug(
             'Added parser %s with params %s', self._codec.parser, parser_params
@@ -490,6 +511,84 @@ class SourceOutputH26X(SourceOutputEncoded):
             caps_params.append(f'profile={profile}')
 
         return Gst.Caps.from_string(', '.join(caps_params))
+
+
+class SourceOutputNvJpeg(SourceOutputEncoded):
+    """Adds an output elements to a DeepStream pipeline.
+    Output contains frames encoded with jpeg codec along with metadata.
+
+    Separate handling for nvjpegenc element to reuse it needed as a workaround for bug
+    https://forums.developer.nvidia.com/t/nvjpegenc-dont-release-gpu-memory-when-gst-element-removed-from-pipeline
+    """
+
+    def __init__(
+        self,
+        codec: CodecInfo,
+        output_frame: Dict[str, Any],
+        frame_params: FrameParameters,
+        condition: FrameProcessingCondition,
+        video_pipeline: VideoPipeline,
+        queue_properties: Dict[str, int],
+    ):
+        super().__init__(
+            codec=codec,
+            output_frame=output_frame,
+            frame_params=frame_params,
+            condition=condition,
+            video_pipeline=video_pipeline,
+            queue_properties=queue_properties,
+        )
+        self._use_nvenc = codec.nv_encoder == self._encoder
+        # Pool of nvjpegenc elements to reuse them
+        self._encoder_pool: Optional[Deque[Gst.Element]] = (
+            deque() if self._use_nvenc and not is_aarch64() else None
+        )
+
+    def _create_encoder(self, pipeline: GstPipeline):
+        if self._encoder_pool:
+            self._logger.debug(
+                'Reusing nvjpegenc element from the pool. Pool size: %s.',
+                len(self._encoder_pool),
+            )
+            encoder = self._encoder_pool.popleft()
+            encoder.set_locked_state(False)
+            pipeline.link_element(encoder)
+        else:
+            encoder = super()._create_encoder(pipeline)
+
+        return encoder
+
+    def remove_output(self, pipeline: Gst.Pipeline, source_info: SourceInfo):
+        """Remove output elements from the pipeline.
+
+        :param pipeline: Target pipeline.
+        :param source_info: Video source information.
+        """
+
+        if not self._use_nvenc:
+            return super().remove_output(pipeline, source_info)
+
+        for elem in source_info.source_output_elements:
+            if elem.get_factory().get_name() == 'nvjpegenc':
+                if self._encoder_pool is not None:
+                    self._logger.debug('Adding element %s to the pool', elem.get_name())
+                    self._encoder_pool.append(elem)
+                    elem.set_locked_state(True)
+                    elem.set_state(Gst.State.NULL)
+                    self._logger.debug('Encoder pool size: %s', len(self._encoder_pool))
+                    continue
+                else:
+                    self._logger.warning(
+                        'Removing nvjpegenc do not release GPU memory. This leads to memory leak. See '
+                        'https://forums.developer.nvidia.com/t/nvjpegenc-dont-release-gpu-memory-when-gst-element-removed-from-pipeline'
+                        ' for details.'
+                    )
+
+            self._logger.debug('Removing element %s', elem.get_name())
+            elem.set_locked_state(True)
+            elem.set_state(Gst.State.NULL)
+            pipeline.remove(elem)
+        source_info.source_output_elements = []
 
 
 def create_source_output(
@@ -522,6 +621,16 @@ def create_source_output(
     condition = FrameProcessingCondition(**(output_frame.get('condition') or {}))
     if codec in [Codec.H264, Codec.HEVC]:
         return SourceOutputH26X(
+            codec=codec.value,
+            output_frame=output_frame,
+            frame_params=frame_params,
+            condition=condition,
+            video_pipeline=video_pipeline,
+            queue_properties=queue_properties,
+        )
+
+    if codec == Codec.JPEG:
+        return SourceOutputNvJpeg(
             codec=codec.value,
             output_frame=output_frame,
             frame_params=frame_params,

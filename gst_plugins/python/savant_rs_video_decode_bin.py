@@ -30,6 +30,7 @@ NESTED_DEMUX_PROPERTIES = {
         'source-eviction-interval',
         'max-parallel-streams',
         'zeromq-reader',
+        'eos-on-frame-resolution-change',
     ]
 }
 SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES = {
