@@ -173,11 +173,7 @@ class NvDsBufferProcessor(GstBufferProcessor):
 
         # full frame primary object by default
         source_info = self._sources.get_source(video_frame.source_id)
-        self._add_transformations(
-            frame_idx=frame_idx,
-            source_info=source_info,
-            video_frame=video_frame,
-        )
+        self._add_transformations(frame_idx=frame_idx, video_frame=video_frame)
         scale_factor_x = self._frame_params.width / source_info.src_resolution.width
         scale_factor_y = self._frame_params.height / source_info.src_resolution.height
         primary_bbox = BBox(
@@ -293,12 +289,7 @@ class NvDsBufferProcessor(GstBufferProcessor):
 
         nvds_frame_meta.bInferDone = True  # required for tracker (DS 6.0)
 
-    def _add_transformations(
-        self,
-        frame_idx: Optional[int],
-        source_info: SourceInfo,
-        video_frame: VideoFrame,
-    ):
+    def _add_transformations(self, frame_idx: Optional[int], video_frame: VideoFrame):
         if self._pass_through_mode:
             return
 
@@ -309,7 +300,7 @@ class NvDsBufferProcessor(GstBufferProcessor):
             video_frame.pts,
         )
 
-        if source_info.add_scale_transformation:
+        if self._add_scale_transformation(video_frame):
             self.logger.debug(
                 'Adding scale transformation for frame of source %s '
                 'with IDX %s and PTS %s.',
@@ -328,6 +319,24 @@ class NvDsBufferProcessor(GstBufferProcessor):
                 video_frame.pts,
             )
             video_frame.add_transformation(self._padding_transformation)
+
+    def _add_scale_transformation(self, video_frame: VideoFrame) -> bool:
+        """Check if scale transformation is needed and add it to the frame."""
+
+        if not video_frame.transformations:
+            return True
+
+        last_transformation = video_frame.transformations[-1]
+        if last_transformation.is_scale:
+            last_transformation_size = last_transformation.as_scale
+        elif last_transformation.is_initial_size:
+            last_transformation_size = last_transformation.as_initial_size
+        elif last_transformation.is_resulting_size:
+            last_transformation_size = last_transformation.as_resulting_size
+        else:
+            last_transformation_size = 0, 0
+
+        return last_transformation_size != self._scale_transformation.as_scale
 
     def prepare_output(
         self,

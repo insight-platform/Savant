@@ -153,6 +153,12 @@ def files_source(
     default=True,
     show_default=True,
 )
+@click.option(
+    '--eos-on-frame-params-change',
+    help='Send EOS at every video parameters change (resolution, framerate).',
+    default=True,
+    show_default=True,
+)
 @common_options
 @sync_option
 @absolute_ts_option
@@ -173,6 +179,7 @@ def videos_source(
     sort_by_time: bool,
     read_metadata: bool,
     eos_on_file_end: bool,
+    eos_on_frame_params_change: bool,
 ):
     """Read video files from LOCATION.
     LOCATION can be single file, directory or HTTP URL.
@@ -193,6 +200,7 @@ def videos_source(
             f'SORT_BY_TIME={sort_by_time}',
             f'READ_METADATA={read_metadata}',
             f'EOS_ON_FILE_END={eos_on_file_end}',
+            f'EOS_ON_FRAME_PARAMS_CHANGE={eos_on_frame_params_change}',
         ],
         use_absolute_timestamps=use_absolute_timestamps,
     )
@@ -431,6 +439,12 @@ def multi_stream_source(
     default=False,
     show_default=True,
 )
+@click.option(
+    '--eos-on-frame-params-change',
+    help='Send EOS at every image resolution change.',
+    default=True,
+    show_default=True,
+)
 @common_options
 @sync_option
 @absolute_ts_option
@@ -452,6 +466,7 @@ def images_source(
     sort_by_time: bool,
     read_metadata: bool,
     eos_on_file_end: bool,
+    eos_on_frame_params_change: bool,
 ):
     """Read image files from LOCATION.
     LOCATION can be single file, directory or HTTP URL.
@@ -474,6 +489,7 @@ def images_source(
             f'SORT_BY_TIME={sort_by_time}',
             f'READ_METADATA={read_metadata}',
             f'EOS_ON_FILE_END={eos_on_file_end}',
+            f'EOS_ON_FRAME_PARAMS_CHANGE={eos_on_frame_params_change}',
         ],
         use_absolute_timestamps=use_absolute_timestamps,
     )
