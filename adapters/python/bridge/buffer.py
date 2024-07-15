@@ -18,7 +18,8 @@ from savant_rs.utils.serialization import (
     load_message_from_bytes,
     save_message_to_bytes,
 )
-from savant_rs.zmq import BlockingWriter, WriterConfigBuilder, WriterSocketType, WriterResultSuccess, WriterResultAck
+from savant_rs.zmq import BlockingWriter, WriterConfigBuilder, WriterSocketType, WriterResultSuccess, WriterResultAck, \
+    WriterResultSendTimeout
 
 from adapters.shared.thread import BaseThreadWorker
 from savant.metrics import Counter, Gauge
@@ -311,15 +312,21 @@ class Egress(BaseThreadWorker):
                 if message is not None:
                     is_sent = False
                     while not is_sent:
-                        self.logger.debug('Sending message to the sink ZeroMQ socket')
+                        self.logger.debug('Sending a message to the sink ZeroMQ socket')
                         send_message_result = self._writer.send_message(*message)
                         if isinstance(send_message_result, (WriterResultSuccess, WriterResultAck)):
                             self._sent_messages += 1
                             self._last_sent_message = time.time()
                             is_sent = True
+                        elif isinstance(send_message_result, WriterResultSendTimeout):
+                            self.logger.warning(
+                                'Failed to send message to the sink ZeroMQ socket due to timeout. Retrying'
+                            )
                         else:
-                            self.logger.warning('Failed to send message to the sink ZeroMQ socket: %s. '
-                                                'Retrying', send_message_result)
+                            self.logger.warning(
+                                'Error sending a message to the sink ZeroMQ socket: %s. Ignoring', send_message_result
+                            )
+                            is_sent = True
             except Exception as e:
                 self.logger.error('Failed to send message: %s', e)
                 self.is_running = False
