@@ -309,14 +309,17 @@ class Egress(BaseThreadWorker):
             try:
                 message = self.pop_next_message()
                 if message is not None:
-                    self.logger.debug('Sending message to the sink ZeroMQ socket')
-                    send_message_result = self._writer.send_message(*message)
-                    if (isinstance(send_message_result, WriterResultSuccess) and send_message_result.retries_spent !=
-                            self._write_timeout_send_retries) or isinstance(send_message_result, WriterResultAck):
-                        self._sent_messages += 1
-                        self._last_sent_message = time.time()
-                    else:
-                        self.logger.warning('Failed to send message to the sink ZeroMQ socket: %s', send_message_result)
+                    is_sent = False
+                    while not is_sent:
+                        self.logger.debug('Sending message to the sink ZeroMQ socket')
+                        send_message_result = self._writer.send_message(*message)
+                        if isinstance(send_message_result, (WriterResultSuccess, WriterResultAck)):
+                            self._sent_messages += 1
+                            self._last_sent_message = time.time()
+                            is_sent = True
+                        else:
+                            self.logger.warning('Failed to send message to the sink ZeroMQ socket: %s. '
+                                                'Retrying', send_message_result)
             except Exception as e:
                 self.logger.error('Failed to send message: %s', e)
                 self.is_running = False
