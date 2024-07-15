@@ -18,7 +18,7 @@ from savant_rs.utils.serialization import (
     load_message_from_bytes,
     save_message_to_bytes,
 )
-from savant_rs.zmq import BlockingWriter, WriterConfigBuilder, WriterSocketType
+from savant_rs.zmq import BlockingWriter, WriterConfigBuilder, WriterSocketType, WriterResultSuccess, WriterResultAck
 
 from adapters.shared.thread import BaseThreadWorker
 from savant.metrics import Counter, Gauge
@@ -298,6 +298,7 @@ class Egress(BaseThreadWorker):
         assert (
             config.socket_type == WriterSocketType.Dealer
         ), 'Only DEALER socket type is supported for Egress'
+        self._write_timeout_send_retries = config.send_retries + 1
 
         self._writer = BlockingWriter(config)
 
@@ -309,7 +310,13 @@ class Egress(BaseThreadWorker):
                 message = self.pop_next_message()
                 if message is not None:
                     self.logger.debug('Sending message to the sink ZeroMQ socket')
-                    self._writer.send_message(*message)
+                    send_message_result = self._writer.send_message(*message)
+                    if (isinstance(send_message_result, WriterResultSuccess) and send_message_result.retries_spent !=
+                            self._write_timeout_send_retries) or isinstance(send_message_result, WriterResultAck):
+                        self._sent_messages += 1
+                        self._last_sent_message = time.time()
+                    else:
+                        self.logger.warning('Failed to send message to the sink ZeroMQ socket: %s', send_message_result)
             except Exception as e:
                 self.logger.error('Failed to send message: %s', e)
                 self.is_running = False
@@ -335,8 +342,6 @@ class Egress(BaseThreadWorker):
         topic = topic.decode()
         message = load_message_from_bytes(message)
 
-        self._sent_messages += 1
-        self._last_sent_message = time.time()
         frame_id = self._pipeline.add_frame('fps-meter', self._video_frame)
         self._pipeline.delete(frame_id)
 
