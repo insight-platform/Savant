@@ -18,7 +18,14 @@ from savant_rs.utils.serialization import (
     load_message_from_bytes,
     save_message_to_bytes,
 )
-from savant_rs.zmq import BlockingWriter, WriterConfigBuilder, WriterSocketType
+from savant_rs.zmq import (
+    BlockingWriter,
+    WriterConfigBuilder,
+    WriterResultAck,
+    WriterResultSendTimeout,
+    WriterResultSuccess,
+    WriterSocketType,
+)
 
 from adapters.shared.thread import BaseThreadWorker
 from savant.metrics import Counter, Gauge
@@ -298,6 +305,7 @@ class Egress(BaseThreadWorker):
         assert (
             config.socket_type == WriterSocketType.Dealer
         ), 'Only DEALER socket type is supported for Egress'
+        self._write_timeout_send_retries = config.send_retries + 1
 
         self._writer = BlockingWriter(config)
 
@@ -308,8 +316,26 @@ class Egress(BaseThreadWorker):
             try:
                 message = self.pop_next_message()
                 if message is not None:
-                    self.logger.debug('Sending message to the sink ZeroMQ socket')
-                    self._writer.send_message(*message)
+                    is_sent = False
+                    while not is_sent:
+                        self.logger.debug('Sending a message to the sink ZeroMQ socket')
+                        send_message_result = self._writer.send_message(*message)
+                        if isinstance(
+                            send_message_result, (WriterResultSuccess, WriterResultAck)
+                        ):
+                            self._sent_messages += 1
+                            self._last_sent_message = time.time()
+                            is_sent = True
+                        elif isinstance(send_message_result, WriterResultSendTimeout):
+                            self.logger.warning(
+                                'Failed to send message to the sink ZeroMQ socket due to timeout. Retrying'
+                            )
+                        else:
+                            self.logger.warning(
+                                'Error sending a message to the sink ZeroMQ socket: %s. Ignoring',
+                                send_message_result,
+                            )
+                            is_sent = True
             except Exception as e:
                 self.logger.error('Failed to send message: %s', e)
                 self.is_running = False
@@ -335,8 +361,6 @@ class Egress(BaseThreadWorker):
         topic = topic.decode()
         message = load_message_from_bytes(message)
 
-        self._sent_messages += 1
-        self._last_sent_message = time.time()
         frame_id = self._pipeline.add_frame('fps-meter', self._video_frame)
         self._pipeline.delete(frame_id)
 
