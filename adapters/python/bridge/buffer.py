@@ -18,8 +18,14 @@ from savant_rs.utils.serialization import (
     load_message_from_bytes,
     save_message_to_bytes,
 )
-from savant_rs.zmq import BlockingWriter, WriterConfigBuilder, WriterSocketType, WriterResultSuccess, WriterResultAck, \
-    WriterResultSendTimeout
+from savant_rs.zmq import (
+    BlockingWriter,
+    WriterConfigBuilder,
+    WriterResultAck,
+    WriterResultSendTimeout,
+    WriterResultSuccess,
+    WriterSocketType,
+)
 
 from adapters.shared.thread import BaseThreadWorker
 from savant.metrics import Counter, Gauge
@@ -314,7 +320,9 @@ class Egress(BaseThreadWorker):
                     while not is_sent:
                         self.logger.debug('Sending a message to the sink ZeroMQ socket')
                         send_message_result = self._writer.send_message(*message)
-                        if isinstance(send_message_result, (WriterResultSuccess, WriterResultAck)):
+                        if isinstance(
+                            send_message_result, (WriterResultSuccess, WriterResultAck)
+                        ):
                             self._sent_messages += 1
                             self._last_sent_message = time.time()
                             is_sent = True
@@ -324,7 +332,8 @@ class Egress(BaseThreadWorker):
                             )
                         else:
                             self.logger.warning(
-                                'Error sending a message to the sink ZeroMQ socket: %s. Ignoring', send_message_result
+                                'Error sending a message to the sink ZeroMQ socket: %s. Ignoring',
+                                send_message_result,
                             )
                             is_sent = True
             except Exception as e:
