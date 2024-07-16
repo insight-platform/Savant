@@ -82,20 +82,28 @@ class NvInferScalingFilter(Enum):
     """Bilinear interpolation."""
 
     GPU_CUBIC = 2
+    """GPU cubic interpolation."""
 
     VIC_5_TAP = 2
+    """VIC-based 5-tap interpolation."""
 
     GPU_SUPER = 3
+    """GPU super resolution."""
 
     VIC_10_TAP = 3
+    """VIC-based 10-tap interpolation."""
 
     LANCOZ = 4
+    """GPU Lancoz interpolation."""
 
     VIC_SMART = 4
+    """VIC-based smart interpolation."""
 
     IGNORED = 5
+    """Ignore scaling."""
 
     VIC_NICEST = 5
+    """VIC-based nicest interpolation."""
 
     AUTO = 6
 
