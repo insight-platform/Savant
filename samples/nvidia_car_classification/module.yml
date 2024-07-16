@@ -23,7 +23,7 @@ parameters:
             # Note that the label format for Primary_Detector.Car objects
             # is overriden on a per object basis:
             # every car has the classifier result labels added on separate lines
-            format: ['{label} #{track_id}']
+            format: [ '{label} #{track_id}' ]
             position:
               # position options are TopLeftInside / TopLeftOutside / Center
               position: TopLeftInside
@@ -53,11 +53,13 @@ pipeline:
         precision: int8
         int8_calib_file: cal_trt.bin
         label_file: labels.txt
+        scaling_compute_hw: AUTO
+        scaling_filter: AUTO
         input:
           scale_factor: 0.0039215697906911373
         output:
           num_detected_classes: 4
-          layer_names: [conv2d_bbox, conv2d_cov/Sigmoid]
+          layer_names: [ conv2d_bbox, conv2d_cov/Sigmoid ]
           objects:
             - class_id: 0
               label: Car
@@ -93,7 +95,7 @@ pipeline:
           object_min_height: 64
           color_format: bgr
         output:
-          layer_names: [predictions/Softmax]
+          layer_names: [ predictions/Softmax ]
           attributes:
             - name: car_color
               threshold: 0.51
@@ -119,7 +121,7 @@ pipeline:
           object_min_height: 64
           color_format: bgr
         output:
-          layer_names: [predictions/Softmax]
+          layer_names: [ predictions/Softmax ]
           attributes:
             - name: car_make
               threshold: 0.51
@@ -145,7 +147,7 @@ pipeline:
           object_min_height: 64
           color_format: bgr
         output:
-          layer_names: [predictions/Softmax]
+          layer_names: [ predictions/Softmax ]
           attributes:
             - name: car_type
               threshold: 0.51
