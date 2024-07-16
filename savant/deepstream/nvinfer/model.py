@@ -66,10 +66,10 @@ class NvInferScalingComputeHW(Enum):
     """Auto select the hardware."""
 
     GPU = 1
-    """Use GPU for scaling compute."""
+    """Use GPU for scaling."""
 
     VIC = 2
-    """Use DLA for scaling compute."""
+    """Use VIC for scaling."""
 
 
 class NvInferScalingFilter(Enum):
