@@ -93,13 +93,13 @@ class NvInferScalingFilter(Enum):
     VIC_10_TAP = 3
     """VIC-based 10-tap interpolation."""
 
-    LANCOZ = 4
-    """GPU Lancoz interpolation."""
+    GPU_LANCZOS = 4
+    """GPU Lanczos interpolation."""
 
     VIC_SMART = 4
     """VIC-based smart interpolation."""
 
-    IGNORED = 5
+    GPU_IGNORED = 5
     """Ignore scaling."""
 
     VIC_NICEST = 5
