@@ -42,7 +42,7 @@ FROM dustynv/l4t-pytorch:r36.2.0 AS extra-l4t-builder
 
 
 # Savant python package builder
-FROM builder as savant-package-builder
+FROM builder AS savant-package-builder
 
 RUN apt-get update && \
     apt-get install --no-install-recommends -y python3-venv

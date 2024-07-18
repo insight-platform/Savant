@@ -59,6 +59,55 @@ class NvInferModelType(Enum):
     """Custom model."""
 
 
+class NvInferScalingComputeHW(Enum):
+    """Enum for hardware to be used for scaling compute."""
+
+    AUTO = 0
+    """Auto select the hardware."""
+
+    GPU = 1
+    """Use GPU for scaling."""
+
+    VIC = 2
+    """Use VIC for scaling."""
+
+
+class NvInferScalingFilter(Enum):
+    """Enum for algorithm to be used for scaling."""
+
+    NEAREST = 0
+    """Nearest neighbor interpolation."""
+
+    BILINEAR = 1
+    """Bilinear interpolation."""
+
+    GPU_CUBIC = 2
+    """GPU cubic interpolation."""
+
+    VIC_5_TAP = 2
+    """VIC-based 5-tap interpolation."""
+
+    GPU_SUPER = 3
+    """GPU super resolution."""
+
+    VIC_10_TAP = 3
+    """VIC-based 10-tap interpolation."""
+
+    GPU_LANCZOS = 4
+    """GPU Lanczos interpolation."""
+
+    VIC_SMART = 4
+    """VIC-based smart interpolation."""
+
+    GPU_IGNORED = 5
+    """Ignore scaling."""
+
+    VIC_NICEST = 5
+    """VIC-based nicest interpolation."""
+
+    AUTO = 6
+
+
 @dataclass
 class NvInferModelInput(ModelInput):
     """`nvinfer` model input configuration template.
@@ -182,6 +231,14 @@ class NvInferModel(Model):
 
     use_dla_core: Optional[int] = None
     """Specifies the DLA core to be used for inference.
+    """
+
+    scaling_compute_hw: Optional[NvInferScalingComputeHW] = None
+    """Specifies the hardware to be used for scaling compute.
+    """
+
+    scaling_filter: Optional[NvInferScalingFilter] = None
+    """Specifies the algorithm to be used for scaling.
     """
 
 

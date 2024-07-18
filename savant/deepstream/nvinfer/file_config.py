@@ -154,6 +154,8 @@ class NvInferConfig:
         _FieldMap('workspace-size', 'workspace_size'),
         _FieldMap('enable-dla', 'enable_dla', lambda v: int(v), 0),
         _FieldMap('use-dla-core', 'use_dla_core', int, 0),
+        _FieldMap('scaling-compute-hw', 'scaling_compute_hw', int, 0),
+        _FieldMap('scaling-filter', 'scaling_filter', int, 0),
         _FieldMap(
             'parse-bbox-instance-mask-func-name', 'parse_bbox_instance_mask_func_name'
         ),
