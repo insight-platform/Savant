@@ -42,6 +42,31 @@ Nvidia Jetson Setup
 
 An Nvidia Jetson device is almost ready to run Savant after setup. You only need to install **Compose** plugin for Docker. Follow the official `guide <https://docs.docker.com/compose/install/linux/>`_ to install it.
 
+After the installation disable the default Nvidia runtime for all images to properly use Savant sample compose files. This is necessary because particular containers can work in GPU-accelerated modes and others in CPU-only modes. To disable the runtime for all images, remove the following line from the ``/etc/docker/daemon.json`` file like demonstrated:
+
+.. code-block:: json
+
+   {
+     "default-runtime": "nvidia",  /* remove this line */
+     "runtimes": {
+        "nvidia": {
+            "path": "nvidia-container-runtime",
+            "runtimeArgs": []
+        }
+     }
+   }
+
+Restart the Docker service to apply the changes:
+
+.. code-block:: bash
+
+   sudo systemctl restart docker
+
+.. note::
+
+    This step is crucial for the Jetson Orin Nano device because it has particular limitations because of NVENC absence and, thus, requires AO-RTSP to work on CPU.
+
+
 Ubuntu 22.04 Setup
 ------------------
 
