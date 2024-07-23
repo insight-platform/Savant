@@ -1,9 +1,8 @@
 """Buffer processor for DeepStream pipeline."""
 
-from collections import deque
 from heapq import heappop, heappush
 from queue import Queue
-from typing import Deque, Dict, Iterator, List, NamedTuple, Optional, Tuple
+from typing import Dict, Iterator, List, NamedTuple, Optional
 
 import pyds
 from pygstsavantframemeta import (
@@ -31,7 +30,6 @@ from savant.api.parser import parse_attribute_value
 from savant.config.schema import FrameParameters
 from savant.deepstream.source_output import (
     SourceOutput,
-    SourceOutputEncoded,
     SourceOutputOnlyMeta,
     SourceOutputWithFrame,
 )
@@ -44,7 +42,6 @@ from savant.gstreamer.buffer_processor import GstBufferProcessor
 from savant.gstreamer.codecs import Codec, CodecInfo
 from savant.meta.constants import PRIMARY_OBJECT_KEY, UNTRACKED_OBJECT_ID
 from savant.meta.type import ObjectSelectionType
-from savant.utils.platform import is_aarch64
 from savant.utils.sink_factories import SinkVideoFrame
 from savant.utils.source_info import SourceInfo, SourceInfoRegistry
 
@@ -651,99 +648,6 @@ class NvDsGstBufferProcessor(NvDsBufferProcessor):
         )
 
 
-class NvDsJetsonH26XBufferProcessor(NvDsGstBufferProcessor):
-    def __init__(self, *args, **kwargs):
-        """Buffer processor for DeepStream pipeline.
-
-        Workaround for a bug in h264x encoders on Jetson devices.
-        https://forums.developer.nvidia.com/t/nvv4l2h264enc-returns-frames-in-wrong-order-when-pts-doesnt-align-with-framerate/257363
-
-        Encoder "nvv4l2h26xenc" on Jetson devices produces frames with correct
-        DTS but with PTS and metadata from different frames. We store buffers
-        in a queue and wait for a buffer with correct PTS.
-        """
-
-        # source_id -> (DTS, buffer)
-        self._dts_queues: Dict[str, Deque[Tuple[int, Gst.Buffer]]] = {}
-        # source_id -> (PTS, IDX)
-        self._pts_queues: Dict[str, List[Tuple[int, Optional[int]]]] = {}
-        super().__init__(*args, **kwargs)
-
-    def _iterate_output_frames(
-        self,
-        buffer: Gst.Buffer,
-        source_info: SourceInfo,
-    ) -> Iterator[_OutputFrame]:
-        """Iterate output frames from Gst.Buffer."""
-
-        frame_idx = extract_frame_idx(buffer)
-        dts_queue = self._dts_queues.setdefault(source_info.source_id, deque())
-        pts_queue = self._pts_queues.setdefault(source_info.source_id, [])
-        # When the frame is empty assign DTS=PTS
-        dts = buffer.dts if buffer.get_size() > 0 else buffer.pts
-        if dts_queue or buffer.pts != dts:
-            self.logger.debug(
-                'Storing frame with PTS %s, DTS %s and IDX %s to queue.',
-                buffer.pts,
-                dts,
-                frame_idx,
-            )
-            dts_queue.append((dts, buffer))
-            heappush(pts_queue, (buffer.pts, frame_idx))
-            while dts_queue and dts_queue[0][0] == pts_queue[0][0]:
-                next_dts, next_buf = dts_queue.popleft()
-                next_pts, next_idx = heappop(pts_queue)
-                self.logger.debug(
-                    'Pushing output frame frame with PTS %s, DTS %s and IDX %s.',
-                    next_pts,
-                    next_dts,
-                    next_idx,
-                )
-                yield self._build_output_frame(
-                    idx=next_idx,
-                    pts=next_pts,
-                    dts=next_dts,
-                    buffer=next_buf,
-                )
-        else:
-            self.logger.debug(
-                'PTS and DTS of the frame are the same: %s. Pushing output frame.', dts
-            )
-            yield self._build_output_frame(
-                idx=frame_idx,
-                pts=buffer.pts,
-                dts=dts,
-                buffer=buffer,
-            )
-
-    def on_eos(self, source_info: SourceInfo):
-        """Pipeline EOS handler."""
-        dts_queue = self._dts_queues.pop(source_info.source_id, None)
-        pts_queue = self._pts_queues.pop(source_info.source_id, None)
-        if dts_queue is None:
-            return
-        while dts_queue:
-            dts, buffer = dts_queue.popleft()
-            pts, idx = dts, None
-
-            if pts_queue:
-                while pts_queue and pts_queue[0][0] <= dts:
-                    pts, idx = heappop(pts_queue)
-            if pts != dts:
-                pts = dts
-                idx = None
-
-            output_frame = self._build_output_frame(
-                idx=idx,
-                pts=pts,
-                dts=dts,
-                buffer=buffer,
-            )
-            sink_message = self._build_sink_video_frame(output_frame, source_info)
-            sink_message = self._delete_frame_from_pipeline(idx, sink_message)
-            self._queue.put(sink_message)
-
-
 class NvDsRawBufferProcessor(NvDsBufferProcessor):
     def __init__(
         self,
@@ -859,16 +763,7 @@ def create_buffer_processor(
             pass_through_mode=pass_through_mode,
         )
 
-    if (
-        is_aarch64()
-        and isinstance(source_output, SourceOutputEncoded)
-        and source_output.encoder in ['nvv4l2h264enc', 'nvv4l2h265enc']
-    ):
-        buffer_processor_class = NvDsJetsonH26XBufferProcessor
-    else:
-        buffer_processor_class = NvDsGstBufferProcessor
-
-    return buffer_processor_class(
+    return NvDsGstBufferProcessor(
         queue=queue,
         sources=sources,
         frame_params=frame_params,

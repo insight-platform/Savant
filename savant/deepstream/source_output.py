@@ -495,6 +495,29 @@ class SourceOutputH26X(SourceOutputEncoded):
             'Added parser %s with params %s', self._codec.parser, parser_params
         )
 
+    def _create_encoder(self, pipeline: GstPipeline):
+        if not is_aarch64():
+            return super()._create_encoder(pipeline)
+
+        # Workaround for a bug in h264x encoders on Jetson devices.
+        # https://forums.developer.nvidia.com/t/nvv4l2h264enc-returns-frames-in-wrong-order-when-pts-doesnt-align-with-framerate/257363
+        #
+        # Encoder "nvv4l2h26xenc" on Jetson devices produces frames with correct
+        # DTS but with PTS and metadata from different frames.
+        # We don't send more than one frame to the encoder at a time to avoid this issue.
+        encoder = pipeline._element_factory.create(
+            PipelineElement(self._encoder, properties=self._params)
+        )
+        add_pad_probe_to_move_frame(
+            encoder.get_static_pad('sink'),
+            self._video_pipeline,
+            'encode',
+        )
+        wrapped_encoder = pipeline.add_element(PipelineElement('sync_io_wrapper_bin'))
+        wrapped_encoder.set_property('nested-element', encoder)
+
+        return wrapped_encoder
+
     def _build_output_caps(self, width: int, height: int) -> Gst.Caps:
         caps_params = [
             self._codec.caps_with_params,
