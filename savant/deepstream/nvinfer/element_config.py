@@ -1,6 +1,7 @@
 """`nvinfer` element configuration."""
 
 import logging
+import os.path
 from collections import defaultdict
 from pathlib import Path
 from typing import Optional, Type
@@ -41,6 +42,10 @@ MERGED_CLASSES = defaultdict(dict)
 
 class NvInferConfigException(Exception):
     """NvInfer config exception class."""
+
+
+class NvTrackerConfigException(Exception):
+    """NvTracker config exception class."""
 
 
 def recognize_format_by_file_name(model_file: str):
@@ -542,5 +547,26 @@ def nvinfer_element_configurator(
     if 'properties' not in element_config:
         element_config.properties = {}
     element_config.properties['config-file-path'] = str(config_file_path)
+
+    return element_config
+
+
+def nvtracker_element_configurator(
+    element_config: DictConfig,
+    module_config: DictConfig,
+) -> DictConfig:
+    ll_config_file = element_config.properties.get('ll-config-file')
+    if ll_config_file is not None and not os.path.exists(ll_config_file):
+        raise NvTrackerConfigException(
+            f'File not found when loading low-level library config for nvtracker: {ll_config_file}.'
+            ' Please check the path to the file.'
+        )
+
+    ll_lib_file = element_config.properties.get('ll-lib-file')
+    if ll_lib_file is not None and not os.path.exists(ll_lib_file):
+        raise NvTrackerConfigException(
+            f'File not found when loading low-level library for nvtracker: {ll_lib_file}.'
+            ' Please check the path to the file.'
+        )
 
     return element_config
