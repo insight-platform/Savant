@@ -21,7 +21,10 @@ from savant.config.schema import (
     TelemetryParameters,
     get_element_name,
 )
-from savant.deepstream.nvinfer.element_config import nvinfer_element_configurator
+from savant.deepstream.nvinfer.element_config import (
+    nvinfer_element_configurator,
+    nvtracker_element_configurator,
+)
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
 from savant.parameter_storage import init_param_storage
 from savant.utils.logging import get_logger
@@ -172,6 +175,9 @@ def get_schema_configurator(
 
     if element == 'nvinfer':
         return ModelElement, nvinfer_element_configurator
+
+    if element == 'nvtracker':
+        return PipelineElement, nvtracker_element_configurator
 
     if element == 'zeromq_source_bin':
         return SourceElement, source_element_configurator
