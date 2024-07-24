@@ -473,6 +473,25 @@ class SourceOutputH26X(SourceOutputEncoded):
     Output contains frames encoded with h264 or h265 (hevc) codecs along with metadata.
     """
 
+    def __init__(
+        self,
+        codec: CodecInfo,
+        output_frame: Dict[str, Any],
+        frame_params: FrameParameters,
+        condition: FrameProcessingCondition,
+        video_pipeline: VideoPipeline,
+        queue_properties: Dict[str, int],
+    ):
+        super().__init__(
+            codec=codec,
+            output_frame=output_frame,
+            frame_params=frame_params,
+            condition=condition,
+            video_pipeline=video_pipeline,
+            queue_properties=queue_properties,
+        )
+        self._is_jetson_nvenc = is_aarch64() and self._encoder == codec.nv_encoder
+
     def _add_transform_elems(self, pipeline: GstPipeline, source_info: SourceInfo):
         super()._add_transform_elems(pipeline, source_info)
         # A parser for codecs h264, h265 is added to include
@@ -496,7 +515,7 @@ class SourceOutputH26X(SourceOutputEncoded):
         )
 
     def _create_encoder(self, pipeline: GstPipeline):
-        if not is_aarch64():
+        if not self._is_jetson_nvenc:
             return super()._create_encoder(pipeline)
 
         # Workaround for a bug in h264x encoders on Jetson devices.
