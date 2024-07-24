@@ -473,6 +473,25 @@ class SourceOutputH26X(SourceOutputEncoded):
     Output contains frames encoded with h264 or h265 (hevc) codecs along with metadata.
     """
 
+    def __init__(
+        self,
+        codec: CodecInfo,
+        output_frame: Dict[str, Any],
+        frame_params: FrameParameters,
+        condition: FrameProcessingCondition,
+        video_pipeline: VideoPipeline,
+        queue_properties: Dict[str, int],
+    ):
+        super().__init__(
+            codec=codec,
+            output_frame=output_frame,
+            frame_params=frame_params,
+            condition=condition,
+            video_pipeline=video_pipeline,
+            queue_properties=queue_properties,
+        )
+        self._is_jetson_nvenc = is_aarch64() and self._encoder == codec.nv_encoder
+
     def _add_transform_elems(self, pipeline: GstPipeline, source_info: SourceInfo):
         super()._add_transform_elems(pipeline, source_info)
         # A parser for codecs h264, h265 is added to include
@@ -494,6 +513,29 @@ class SourceOutputH26X(SourceOutputEncoded):
         self._logger.debug(
             'Added parser %s with params %s', self._codec.parser, parser_params
         )
+
+    def _create_encoder(self, pipeline: GstPipeline):
+        if not self._is_jetson_nvenc:
+            return super()._create_encoder(pipeline)
+
+        # Workaround for a bug in h264x encoders on Jetson devices.
+        # https://forums.developer.nvidia.com/t/nvv4l2h264enc-returns-frames-in-wrong-order-when-pts-doesnt-align-with-framerate/257363
+        #
+        # Encoder "nvv4l2h26xenc" on Jetson devices produces frames with correct
+        # DTS but with PTS and metadata from different frames.
+        # We don't send more than one frame to the encoder at a time to avoid this issue.
+        encoder = pipeline._element_factory.create(
+            PipelineElement(self._encoder, properties=self._params)
+        )
+        add_pad_probe_to_move_frame(
+            encoder.get_static_pad('sink'),
+            self._video_pipeline,
+            'encode',
+        )
+        wrapped_encoder = pipeline.add_element(PipelineElement('sync_io_wrapper_bin'))
+        wrapped_encoder.set_property('nested-element', encoder)
+
+        return wrapped_encoder
 
     def _build_output_caps(self, width: int, height: int) -> Gst.Caps:
         caps_params = [
