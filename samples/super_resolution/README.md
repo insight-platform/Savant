@@ -41,8 +41,8 @@ The demo uses models that are compiled into TensorRT engines the first time the 
 
 docker compose -f samples/super_resolution/docker-compose.x86.yml up
 
-# open 'rtsp://127.0.0.1:554/stream/video' in your player
-# or visit 'http://127.0.0.1:888/stream/video/' (LL-HLS)
+# open 'rtsp://127.0.0.1:554/stream/video-super-resolution' in your player
+# or visit 'http://127.0.0.1:888/stream/video-super-resolution/' (LL-HLS)
 
 # Ctrl+C to stop running the compose bundle
 ```
