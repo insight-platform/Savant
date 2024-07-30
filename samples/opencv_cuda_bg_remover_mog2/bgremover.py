@@ -99,7 +99,9 @@ class BgRemover(NvDsPyFuncPlugin):
                     frame_mat_copy = frame_mat.clone()
 
                     back_sub = self.back_subtractors[frame_meta.source_id]
-                    self.gaussian_filter.apply(frame_mat_copy, frame_mat_copy, stream=stream)
+                    self.gaussian_filter.apply(
+                        frame_mat_copy, frame_mat_copy, stream=stream
+                    )
                     cu_mat_fg = back_sub.apply(frame_mat_copy, -1, stream)
                     res_image = frame_mat_copy.copyTo(cu_mat_fg, stream)
 

@@ -99,9 +99,17 @@ class SROverlay(NvDsPyFuncPlugin):
                     )
 
                     # Place original frame and super resolution frame side by side
-                    opencv_utils.alpha_comp(aux_mat, scaled_image, (0, 0), cuda_stream)
                     opencv_utils.alpha_comp(
-                        aux_mat, sr_image_np, (sr_image_np.shape[1], 0), cuda_stream
+                        aux_mat,
+                        scaled_image,
+                        (0, 0),
+                        stream=cuda_stream,
+                    )
+                    opencv_utils.alpha_comp(
+                        aux_mat,
+                        sr_image_np,
+                        (sr_image_np.shape[1], 0),
+                        stream=cuda_stream,
                     )
             else:
                 self.logger.warning('Super resolution attribute not found.')
