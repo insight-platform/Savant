@@ -7,19 +7,10 @@ parameters:
   frame:
     width: 1280
     height: 720
-    # Add paddings to the frame before processing
-    padding:
-      # Paddings are kept on the output frame
-      keep: true
-      left: 0
-      right: 1280
-      top: 0
-      bottom: 0
-  output_frame:
-    # Frame is output without any encoding
-    # this is to circumvent 3 hardware decoding processes limit on NVIDIA consumer hardware
-    codec: ${oc.env:CODEC, 'raw-rgba'}
   batch_size: 1
+  # to check auxiliary streams' encoder
+  auxiliary_encoders:
+    - ${pipeline.elements[0].kwargs.codec_params}
 
 # pipeline definition
 pipeline:
@@ -32,4 +23,9 @@ pipeline:
       module: samples.opencv_cuda_bg_remover_mog2.bgremover
       # specify the pyfunc's python class from the module
       class_name: BgRemover
+      kwargs:
+        # codec parameters for result stream (auxiliary stream)
+        codec_params:
+          codec: ${oc.env:CODEC, 'h264'}
+
   # sink definition is skipped, zeromq sink is used by default to connect with sink adapters
