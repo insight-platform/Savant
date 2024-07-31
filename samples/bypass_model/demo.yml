@@ -1,0 +1,62 @@
+# module name, required
+name: bypass_demo
+
+# base module parameters
+parameters:
+  # pipeline processing frame parameters
+  frame:
+    width: 640
+    height: 360
+  batch_size: 1
+  # needs to retrieve the model output in pyfunc element using object meta attributes
+  model_name: identity
+  attribute_name: frame
+
+pipeline:
+  # source definition is skipped, zeromq source is used by default to connect with source adapters
+
+  # define pipeline's main elements
+  elements:
+    - element: nvinfer@attribute_model
+      # model name in the pipeline, required
+      name: ${parameters.model_name}
+      # model definition
+      model:
+        # remote storage from which model files will be downloaded
+        # delete if model files are provided locally
+        remote:
+          url: s3://savant-data/models/${parameters.model_name}/${parameters.model_name}.zip
+          checksum_url: s3://savant-data/models/${parameters.model_name}/${parameters.model_name}.md5
+          parameters:
+            endpoint: https://eu-central-1.linodeobjects.com
+        # format of the provided model
+        format: onnx
+        # model file name without location
+        model_file: ${parameters.model_name}.onnx
+        # configuration of input data and custom preprocessing methods
+        input:
+          # model input layer shape
+          shape: [3, 360, 640]
+          # preprocessing settings
+          maintain_aspect_ratio: True
+          scale_factor: 0.0039215697906911373
+
+        # configuration of model output
+        output:
+          # model output layer names
+          layer_names: [output]
+          # specify a class to transform raw model output tensors into attributes
+          converter:
+            module: savant.converter.raw_output
+            class_name: ModelRawOutputConverter
+          # name of the attribute to store model output
+          attributes:
+            - name: ${parameters.attribute_name}
+              # no need to send as frame metadata
+              internal: true
+    # bypass the previous element output to the log
+    - element: pyfunc
+      module: samples.bypass_model.example
+      class_name: PrintOutput
+
+  # sink definition is skipped, zeromq sink is used by default to connect with sink adapters
