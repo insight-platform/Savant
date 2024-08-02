@@ -24,6 +24,8 @@ services:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../cache:/cache
       - ..:/opt/savant/samples
+      # uncomment the following line to use a local model
+      #- ./identity.onnx:/cache/models/bypass_model/identity-local/identity.onnx
     command: samples/bypass_model/demo.yml
     environment:
       - MODEL_PATH=/cache/models/bypass_model

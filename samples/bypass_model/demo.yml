@@ -52,7 +52,7 @@ pipeline:
           # name of the attribute to store model output
           attributes:
             - name: ${parameters.attribute_name}
-              # no need to send as frame metadata
+              # must be internal, frame metadata doesn't currently support numpy arrays
               internal: true
     # bypass the previous element output to the log
     - element: pyfunc
