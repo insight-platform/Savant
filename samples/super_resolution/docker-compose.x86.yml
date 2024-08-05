@@ -52,7 +52,7 @@ services:
       - ../assets/stub_imgs:/stub_imgs
     environment:
       - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
-      - SOURCE_ID=video
+      - SOURCE_IDS=video-super-resolution
       - FRAMERATE=25/1
       - STUB_FILE_LOCATION=/stub_imgs/smpte100_3840x1080.jpeg
       - DEV_MODE=True
