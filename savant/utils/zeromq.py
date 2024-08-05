@@ -193,9 +193,6 @@ class ZeroMQSource(BaseZeroMQSource):
     def _create_zmq_reader(self, config: ReaderConfig):
         return BlockingReader(config)
 
-    def __del__(self):
-        self.reader.shutdown()
-
 
 class AsyncZeroMQSource(ZeroMQSource):
     """Async ZeroMQ Source class."""
@@ -233,8 +230,6 @@ class AsyncZeroMQSource(ZeroMQSource):
             raise StopIteration
         return message
 
-    def __del__(self):
-        self.reader.shutdown()
 
 def get_zmq_socket_uri_options(uri: str) -> Optional[str]:
     socket_options, _ = socket_uri_pattern.fullmatch(uri).groups()
