@@ -57,7 +57,7 @@ class BaseSinkRunner(ABC):
         self._source.start()
 
     def __del__(self):
-        logger.info("Terminating ZeroMQ connection")
+        logger.info('Terminating ZeroMQ connection')
         self._source.terminate()
 
     @abstractmethod
