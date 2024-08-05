@@ -104,6 +104,7 @@ class SourceRunner:
         self._writer.start()
 
     def __del__(self):
+        logger.info("Terminating ZeroMQ connection")
         self._writer.shutdown()
 
     def __call__(self, source: Frame, send_eos: bool = True) -> SourceResult:
@@ -277,6 +278,10 @@ class AsyncSourceRunner(SourceRunner):
     """Sends messages to ZeroMQ socket asynchronously."""
 
     _writer: NonBlockingWriter
+
+    def __del__(self):
+        logger.info("Terminating ZeroMQ connection")
+        self._writer.shutdown()
 
     async def __call__(self, source: Frame, send_eos: bool = True) -> SourceResult:
         return await self.send(source, send_eos)
