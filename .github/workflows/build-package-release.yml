@@ -2,6 +2,8 @@ name: Build and publish release package
 
 on:
   push:
+    branches:
+      - develop
     tags:
       - 'v*'
 
