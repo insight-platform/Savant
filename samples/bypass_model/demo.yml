@@ -8,8 +8,10 @@ parameters:
     width: 640
     height: 360
   batch_size: 1
-  # needs to retrieve the model output in pyfunc element using object meta attributes
+  # model name
   model_name: identity
+  # needs to retrieve the model output in pyfunc element using object meta attributes
+  element_name: model
   attribute_name: frame
 
 pipeline:
@@ -19,7 +21,7 @@ pipeline:
   elements:
     - element: nvinfer@attribute_model
       # model name in the pipeline, required
-      name: ${parameters.model_name}
+      name: ${parameters.element_name}
       # model definition
       model:
         # remote storage from which model files will be downloaded
@@ -36,27 +38,31 @@ pipeline:
         # configuration of input data and custom preprocessing methods
         input:
           # model input layer shape
-          shape: [3, 360, 640]
+          shape: [3, 720, 1080]
           # preprocessing settings
-          maintain_aspect_ratio: True
-          scale_factor: 0.0039215697906911373
+          maintain_aspect_ratio: true
 
         # configuration of model output
         output:
           # model output layer names
           layer_names: [output]
-          # specify a class to transform raw model output tensors into attributes
+          # specify a class to transform raw model output tensors into attributes using GPU
           converter:
             module: savant.converter.raw_output
-            class_name: ModelRawOutputConverter
+            class_name: ModelCudaRawOutputConverter
           # name of the attribute to store model output
           attributes:
             - name: ${parameters.attribute_name}
               # must be internal, frame metadata doesn't currently support numpy arrays
               internal: true
+
     # bypass the previous element output to the log
     - element: pyfunc
       module: samples.bypass_model.example
-      class_name: PrintOutput
+      class_name: CompareOutputs
+      kwargs:
+        # codec parameters for result stream (auxiliary stream)
+        codec_params:
+          codec: hevc
 
   # sink definition is skipped, zeromq sink is used by default to connect with sink adapters

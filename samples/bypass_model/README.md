@@ -2,6 +2,7 @@
 
 The pipeline shows the usage of the bypass model, which is a simple model that does not perform any computation on the input data. 
 It demonstrates how data is pre-processed before being processed by the model and can be used for troubleshooting.
+The demo uses a `maintain_aspect_ratio` flag to show how pre-processed data can be compared with the raw data.
 
 Identity model is prepared by converting `nn.Identity` PyTorch model to ONNX format (using standard `torch.onnx.export`). For more details, please refer to the [export ONNX model](#export-onnx-model) section.
 
@@ -41,7 +42,7 @@ docker compose -f samples/bypass_model/docker-compose.x86.yml up -d
 # if Jetson
 docker compose -f samples/bypass_model/docker-compose.l4t.yml up -d
 
-# check docker logs of the module container to see pre-processed data
+# check docker logs of the module container to see raw data, pre-processed data and the result of the comparison
 docker logs -f bypass_model-module-1
 ```
 
