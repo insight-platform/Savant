@@ -103,6 +103,9 @@ class SourceRunner:
             self._pipeline.sampling_period = 1
         self._writer.start()
 
+    def __del__(self):
+        self._writer.shutdown()
+
     def __call__(self, source: Frame, send_eos: bool = True) -> SourceResult:
         """Send a single frame to ZeroMQ socket.
 

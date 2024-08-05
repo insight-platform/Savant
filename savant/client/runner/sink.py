@@ -56,6 +56,9 @@ class BaseSinkRunner(ABC):
         self._source = self._build_zeromq_source(socket, receive_timeout, receive_hwm)
         self._source.start()
 
+    def __del__(self):
+        self._source.terminate()
+
     @abstractmethod
     def _build_zeromq_source(self, socket: str, receive_timeout: int, receive_hwm: int):
         pass
