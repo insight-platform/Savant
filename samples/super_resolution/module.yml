@@ -32,7 +32,7 @@ pipeline:
           layer_names: [output]
           converter:
             module: savant.converter.raw_output
-            class_name: ModelRawOutputConverter
+            class_name: ModelCudaRawOutputConverter
           attributes:
             - name: ${parameters.sr_attribute}
               # just a way to save model output before place on frame, no need to output

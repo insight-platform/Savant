@@ -2,8 +2,8 @@
 
 from typing import Dict
 
+import cupy as cp
 import cv2
-import numpy as np
 
 from savant.deepstream import opencv_utils
 from savant.deepstream.meta.frame import NvDsFrameMeta
@@ -11,6 +11,7 @@ from savant.deepstream.opencv_utils import nvds_to_gpu_mat
 from savant.deepstream.pyfunc import NvDsPyFuncPlugin
 from savant.gstreamer import Gst
 from savant.parameter_storage import param_storage
+from savant.utils.memory_repr import cupy_array_as_opencv_gpu_mat
 
 SR_MODEL_NAME = param_storage()['sr_model']
 SR_ATTR_NAME = param_storage()['sr_attribute']
@@ -71,18 +72,20 @@ class SROverlay(NvDsPyFuncPlugin):
             # Transform super resolution image
             if sr_attr:
                 # Normalize array values to be within the range [0.0, 1.0]
-                sr_image_np = sr_attr.value.clip(0.0, 1.0)
+                sr_image_cp = sr_attr.value.clip(0.0, 1.0)
                 # Convert the normalized array to 8-bit unsigned integer format
-                sr_image_np = (sr_image_np * 255).astype(np.uint8)
+                sr_image_cp = (sr_image_cp * 255).astype(cp.uint8)
                 # CHW => HWC
-                sr_image_np = np.transpose(sr_image_np, (1, 2, 0))
+                sr_image_cp = cp.transpose(sr_image_cp, (1, 2, 0))
                 # RGB => RGBA
-                sr_image_np = np.dstack(
+                sr_image_cp = cp.dstack(
                     (
-                        sr_image_np,
-                        np.full(SUPER_RESOLUTION[::-1], 255, dtype=np.uint8),
+                        sr_image_cp,
+                        cp.full(SUPER_RESOLUTION[::-1], 255, dtype=cp.uint8),
                     )
                 )
+                sr_image_start_point = (sr_image_cp.shape[1], 0)
+                sr_image_mat = cupy_array_as_opencv_gpu_mat(sr_image_cp)
 
                 # Create frame for the auxiliary stream.
                 # The frame will be sent automatically
@@ -107,8 +110,8 @@ class SROverlay(NvDsPyFuncPlugin):
                     )
                     opencv_utils.alpha_comp(
                         aux_mat,
-                        sr_image_np,
-                        (sr_image_np.shape[1], 0),
+                        sr_image_mat,
+                        sr_image_start_point,
                         stream=cuda_stream,
                     )
             else:
