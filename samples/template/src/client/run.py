@@ -35,6 +35,7 @@ source = (
 sink = (
     SinkBuilder()
     .with_socket('sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc')
+    .with_source_id(source_id)
     .with_idle_timeout(60)
     .with_log_provider(JaegerLogProvider(jaeger_endpoint))
     # Note: healthcheck port should be configured in the module.
