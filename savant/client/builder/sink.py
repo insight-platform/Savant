@@ -51,6 +51,8 @@ class SinkBuilder:
         module_health_check_url: Optional[str] = None,
         module_health_check_timeout: float = 60,
         module_health_check_interval: float = 5,
+        source_id: Optional[str] = None,
+        source_id_prefix: Optional[str] = None,
     ):
         self._socket = socket
         self._log_provider = log_provider
@@ -58,6 +60,8 @@ class SinkBuilder:
         self._module_health_check_url = module_health_check_url
         self._module_health_check_timeout = module_health_check_timeout
         self._module_health_check_interval = module_health_check_interval
+        self._source_id = source_id
+        self._source_id_prefix = source_id_prefix
 
     def with_socket(self, socket: str) -> 'SinkBuilder':
         """Set ZeroMQ socket for Sink."""
@@ -96,6 +100,22 @@ class SinkBuilder:
         """
         return self._with_field('module_health_check_interval', interval)
 
+    def with_source_id(self, source_id: Optional[str]) -> 'SinkBuilder':
+        """Set source id for Sink.
+
+        Sink will filter messages by source id.
+        """
+        return self._with_field('source_id', source_id)
+
+    def with_source_id_prefix(self, source_id_prefix: Optional[str]) -> 'SinkBuilder':
+        """Set source id prefix for Sink.
+
+        Sink will filter messages by source id prefix.
+
+        Note: source_id and source_id_prefix are mutually exclusive. If both are set, source_id will be used.
+        """
+        return self._with_field('source_id_prefix', source_id_prefix)
+
     def build(self) -> SinkRunner:
         """Build Sink."""
 
@@ -112,6 +132,8 @@ class SinkBuilder:
             module_health_check_url=self._module_health_check_url,
             module_health_check_timeout=self._module_health_check_timeout,
             module_health_check_interval=self._module_health_check_interval,
+            source_id=self._source_id,
+            source_id_prefix=self._source_id_prefix,
         )
 
     def build_async(self) -> AsyncSinkRunner:
@@ -130,6 +152,8 @@ class SinkBuilder:
             module_health_check_url=self._module_health_check_url,
             module_health_check_timeout=self._module_health_check_timeout,
             module_health_check_interval=self._module_health_check_interval,
+            source_id=self._source_id,
+            source_id_prefix=self._source_id_prefix,
         )
 
     def __repr__(self):
@@ -140,7 +164,9 @@ class SinkBuilder:
             f'idle_timeout={self._idle_timeout}, '
             f'module_health_check_url={self._module_health_check_url}, '
             f'module_health_check_timeout={self._module_health_check_timeout}, '
-            f'module_health_check_interval={self._module_health_check_interval})'
+            f'module_health_check_interval={self._module_health_check_interval}, '
+            f'source_id={self._source_id}, '
+            f'source_id_prefix={self._source_id_prefix})'
         )
 
     def _with_field(self, field: str, value) -> 'SinkBuilder':
@@ -152,6 +178,8 @@ class SinkBuilder:
                 'module_health_check_url': self._module_health_check_url,
                 'module_health_check_timeout': self._module_health_check_timeout,
                 'module_health_check_interval': self._module_health_check_interval,
+                'source_id': self._source_id,
+                'source_id_prefix': self._source_id_prefix,
                 field: value,
             }
         )

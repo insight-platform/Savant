@@ -8,7 +8,7 @@ This sample is intended to help users to start developing a custom Savant module
 * Easy dev environment setup with either Docker Compose or devcontainer configuration files.
 * Jaeger tracing platform service that allows to collect and inspect module's pipeline traces.
 * Supporting Savant services such as Always On Sink adapter and Uri Input script that allow to send a video to the module and receive stream output.
-* All of the above is setup to be ready to run, with no additional configuration needed.
+* All of the above is set up to be ready to run, with no additional configuration needed.
 
 See [documentation](https://insight-platform.github.io/Savant/) for more information.
 
