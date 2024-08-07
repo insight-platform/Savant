@@ -1,4 +1,4 @@
-"""Example of a Python plugin that compares multiple module outputs."""
+"""Example of a Python plugin for comparing pre-processed and raw frames."""
 
 from typing import Dict
 
@@ -14,12 +14,12 @@ from savant.utils.memory_repr import cupy_array_as_opencv_gpu_mat
 
 ELEMENT_NAME = param_storage()['element_name']
 ATTR_NAME = param_storage()['attribute_name']
-RESULT_RESOLUTION = (1080, 720)  # todo move to params
-result_resolution = (RESULT_RESOLUTION[0] * 2, RESULT_RESOLUTION[1])
+PREPROCESSED_RESOLUTION = (param_storage()['result_shape'][2], param_storage()['result_shape'][1])
+RESULT_RESOLUTION = (PREPROCESSED_RESOLUTION[0] * 2, PREPROCESSED_RESOLUTION[1])
 
 
-class CompareOutputs(NvDsPyFuncPlugin):  # todo update class name and description
-    """Compare raw and pre-processed images and print the result to log."""
+class DisplayFrames(NvDsPyFuncPlugin):
+    """Place raw and pre-processed frames in the result stream for visual comparison."""
 
     def __init__(
         self,
@@ -41,12 +41,12 @@ class CompareOutputs(NvDsPyFuncPlugin):  # todo update class name and descriptio
             'Creating result stream %s for source %s. Resolution: %s.',
             result_source_id,
             source_id,
-            result_resolution,
+            RESULT_RESOLUTION,
         )
         self.result_aux_stream = self.auxiliary_stream(
             source_id=result_source_id,
-            width=result_resolution[0],
-            height=result_resolution[1],
+            width=RESULT_RESOLUTION[0],
+            height=RESULT_RESOLUTION[1],
             codec_params=self.codec_params,
         )
 
@@ -74,7 +74,7 @@ class CompareOutputs(NvDsPyFuncPlugin):  # todo update class name and descriptio
                 preprocessed_image = cp.dstack(
                     (
                         preprocessed_image.astype(cp.uint8),
-                        cp.full(RESULT_RESOLUTION[::-1], 255, dtype=cp.uint8),
+                        cp.full(PREPROCESSED_RESOLUTION[::-1], 255, dtype=cp.uint8),
                     )
                 )
                 start_point = (preprocessed_image.shape[1], 0)
@@ -90,7 +90,7 @@ class CompareOutputs(NvDsPyFuncPlugin):  # todo update class name and descriptio
                 )
                 with nvds_to_gpu_mat(aux_buffer, batch_id=0) as aux_mat:
                     # Create a background image
-                    white_image = cp.full((result_resolution[1], result_resolution[0], 4), 255, dtype=cp.uint8)
+                    white_image = cp.full((RESULT_RESOLUTION[1], RESULT_RESOLUTION[0], 4), 255, dtype=cp.uint8)
                     background = cupy_array_as_opencv_gpu_mat(white_image)
                     opencv_utils.alpha_comp(aux_mat, background, (0, 0), stream=cuda_stream)
 

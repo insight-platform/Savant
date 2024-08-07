@@ -13,6 +13,8 @@ parameters:
   # needs to retrieve the model output in pyfunc element using object meta attributes
   element_name: model
   attribute_name: frame
+  # pre-processed frame shape
+  result_shape: [3, 720, 1080]
 
 pipeline:
   # source definition is skipped, zeromq source is used by default to connect with source adapters
@@ -38,7 +40,7 @@ pipeline:
         # configuration of input data and custom preprocessing methods
         input:
           # model input layer shape
-          shape: [3, 720, 1080]
+          shape: ${parameters.result_shape}
           # preprocessing settings
           maintain_aspect_ratio: true
 
@@ -56,10 +58,10 @@ pipeline:
               # must be internal, frame metadata doesn't currently support numpy arrays
               internal: true
 
-    # bypass the previous element output to the log
+    # display preprocessed frames next to the original frames
     - element: pyfunc
       module: samples.bypass_model.example
-      class_name: CompareOutputs
+      class_name: DisplayFrames
       kwargs:
         # codec parameters for result stream (auxiliary stream)
         codec_params:

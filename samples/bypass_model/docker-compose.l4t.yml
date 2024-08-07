@@ -35,5 +35,23 @@ services:
       - METRICS_FRAME_PERIOD=1000
     runtime: nvidia
 
+  always-on-sink:
+    image: ghcr.io/insight-platform/savant-adapters-deepstream-l4t:latest
+    restart: unless-stopped
+    ports:
+      - "554:554"    # RTSP
+      - "1935:1935"  # RTMP
+      - "888:888"    # HLS
+      - "8889:8889"  # WebRTC
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ../assets/stub_imgs:/stub_imgs
+    environment:
+      - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
+      - SOURCE_ID=video-with-preprocessed-frame
+      - STUB_FILE_LOCATION=/stub_imgs/smpte100_2160x720.jpeg
+      - DEV_MODE=True
+    command: python -m adapters.ds.sinks.always_on_rtsp
+
 volumes:
   zmq_sockets:

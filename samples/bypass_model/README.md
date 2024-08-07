@@ -66,12 +66,6 @@ docker compose -f samples/bypass_model/docker-compose.l4t.yml down -v
 
 ## How To Obtain ONNX Identity Model From PyTorch
 
-The model input has dynamic tensor axes `batch x 3 x height x width` where `batch`, `height` and `width` are defined at
-runtime. So you can provide a source of different shapes to the model.
-
-However, if you want to change the shape of the input tensor, you need to modify the `export.py` script accordingly. And
-then you can export the model using the following command:
-
 The model takes input in the form of dynamic tensor axes `batch x 3 x height x width`, where `batch`, `height`,
 and `width` are defined at runtime.
 
