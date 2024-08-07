@@ -43,6 +43,7 @@ pipeline:
           shape: ${parameters.result_shape}
           # preprocessing settings
           maintain_aspect_ratio: true
+          symmetric_padding: true
 
         # configuration of model output
         output:
