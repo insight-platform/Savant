@@ -56,7 +56,7 @@ A result video can be viewed:
 - in a player using `rtsp://127.0.0.1:554/stream/video-with-preprocessed-frame
 
 The video consists of original video stream and the pre-processed video stream side by side from left to right. The white background highlights the original video frame because its size is different from the size of the pre-processed frame.
-The pre-processed frame has a black background at the bottom, which is the result of the `maintain_aspect_ratio` flag.
+The pre-processed frame has a black background to match the aspect ratio of the original frame, i.e. `maintain_aspect_ratio` flag is set to `true`. The frame is centered on the background, as the `symmetric_padding` flag is set to `true`.
 
 Example output frame:
 ![](assets/result.jpg)

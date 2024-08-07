@@ -119,7 +119,10 @@ class ModelInput:
     """Indicates whether the input preprocessing should maintain image aspect ratio.
     """
 
-    # TODO: Add `symmetric-padding` support.
+    symmetric_padding: bool = False
+    """Indicates whether the input preprocessing should symmetrically pad the image when it's scaled. 
+    By default the images are padded asymmetrically.
+    """
 
     # TODO: Enhance scaling options
     #  range: Tuple[] = (0, 255) or (0.0, 1.0)
