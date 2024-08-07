@@ -51,7 +51,9 @@ Note that starting module for the first time involves downloading the model file
 
 URI-Input script demonstration requires a sample video.
 
-```
+```bash
+# you are expected to be in Savant/samples/template/ directory
+
 curl -o assets/test_data/elon_musk_perf.mp4 https://eu-central-1.linodeobjects.com/savant-data/demo/elon_musk_perf.mp4
 ```
 

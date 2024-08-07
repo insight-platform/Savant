@@ -136,6 +136,8 @@ class SinkRunner(BaseSinkRunner):
             receive_timeout=receive_timeout,
             receive_hwm=receive_hwm,
             set_ipc_socket_permissions=False,
+            source_id=source_id,
+            source_id_prefix=source_id_prefix,
         )
 
     def __next__(self) -> SinkResult:
