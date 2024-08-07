@@ -47,10 +47,19 @@ docker compose -f samples/bypass_model/docker-compose.x86.yml up -d
 
 # if Jetson
 docker compose -f samples/bypass_model/docker-compose.l4t.yml up -d
-
-# check docker logs of the module container to see raw data, pre-processed data and the result of the comparison
-docker logs -f bypass_model-module-1
 ```
+
+## View Output
+
+A result video can be viewed:
+- in the browser at `http://127.0.0.1:888/stream/video-with-preprocessed-frame/' (LL-HLS)
+- in a player using `rtsp://127.0.0.1:554/stream/video-with-preprocessed-frame
+
+The video consists of original video stream and the pre-processed video stream side by side from left to right. The white background highlights the original video frame because its size is different from the size of the pre-processed frame.
+The pre-processed frame has a black background at the bottom, which is the result of the `maintain_aspect_ratio` flag.
+
+Example output frame:
+![](assets/result.jpg)
 
 ## Clean Up
 

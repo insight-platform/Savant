@@ -14,7 +14,10 @@ from savant.utils.memory_repr import cupy_array_as_opencv_gpu_mat
 
 ELEMENT_NAME = param_storage()['element_name']
 ATTR_NAME = param_storage()['attribute_name']
-PREPROCESSED_RESOLUTION = (param_storage()['result_shape'][2], param_storage()['result_shape'][1])
+PREPROCESSED_RESOLUTION = (
+    param_storage()['result_shape'][2],
+    param_storage()['result_shape'][1],
+)
 RESULT_RESOLUTION = (PREPROCESSED_RESOLUTION[0] * 2, PREPROCESSED_RESOLUTION[1])
 
 
@@ -90,9 +93,15 @@ class DisplayFrames(NvDsPyFuncPlugin):
                 )
                 with nvds_to_gpu_mat(aux_buffer, batch_id=0) as aux_mat:
                     # Create a background image
-                    white_image = cp.full((RESULT_RESOLUTION[1], RESULT_RESOLUTION[0], 4), 255, dtype=cp.uint8)
+                    white_image = cp.full(
+                        (RESULT_RESOLUTION[1], RESULT_RESOLUTION[0], 4),
+                        255,
+                        dtype=cp.uint8,
+                    )
                     background = cupy_array_as_opencv_gpu_mat(white_image)
-                    opencv_utils.alpha_comp(aux_mat, background, (0, 0), stream=cuda_stream)
+                    opencv_utils.alpha_comp(
+                        aux_mat, background, (0, 0), stream=cuda_stream
+                    )
 
                     # Place original frame and pre-processed frame side by side
                     opencv_utils.alpha_comp(
