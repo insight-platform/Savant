@@ -23,7 +23,7 @@ The pipeline configuration file defines parameters regulating the batch size. Th
 
 The ``batch_size`` parameter is configured for video multiplexing. When it is **not** configured, it is set based on the value defined for the first pipeline model. The default value is ``1``.
 
-The ``batched_push_timeout`` defines the maximum time the pipeline waits for the batch to be fully formed, pushing out partially formed batches if the wait time exceeds this threshold. The smaller value decreases latency, while the larger one results in greater throughput. The default value is: ``4000000`` (``4`` seconds).
+The ``batched_push_timeout`` defines the maximum time the pipeline waits for the batch to be fully formed, pushing out partially formed batches if the wait time exceeds this threshold. The smaller value decreases latency, while the larger one results in greater throughput. The default value is: ``2000`` (``2`` milliseconds).
 
 .. tip::
 
