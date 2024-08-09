@@ -8,7 +8,7 @@ from savant_rs.pipeline2 import (
     VideoPipelineConfiguration,
     VideoPipelineStagePayloadType,
 )
-from savant_rs.primitives import EndOfStream, Shutdown, VideoFrame
+from savant_rs.primitives import EndOfStream, Shutdown, VideoFrame, VideoFrameBatch
 from savant_rs.utils import TelemetrySpan
 from savant_rs.utils.serialization import Message, clear_source_seq_id
 from savant_rs.zmq import (
@@ -28,6 +28,7 @@ from savant.utils.zeromq import Defaults
 
 logger = get_logger(__name__)
 
+Batch = VideoFrameBatch
 Frame = Union[FrameSource, Tuple[VideoFrame, bytes]]
 FrameAndEos = Union[Frame, EndOfStream]
 
@@ -144,6 +145,24 @@ class SourceRunner:
 
         return result
 
+    def send_batch(self, source_id: str, content: Batch) -> SourceResult:
+        """Send a batch of frames to ZeroMQ socket.
+
+        :param source_id: Source ID.
+        :param content: Batch of frames to send.
+        :return: Result of sending the batch.
+        """
+
+        if self._health_check is not None:
+            self._health_check.wait_module_is_ready()
+
+        zmq_topic, message, result = self._prepare_batch(source_id, content)
+        self._send_zmq_message(zmq_topic, message)
+        logger.debug('Sent video frame batch to source %s.', source_id)
+        result.status = 'ok'
+
+        return result
+
     def send_iter(
         self,
         sources: Iterable[FrameAndEos],
@@ -241,6 +260,22 @@ class SourceRunner:
             ),
         )
 
+    def _prepare_batch(self, source_id: str, batch: Batch):
+        logger.debug('Sending video frame batch to source %s.', source_id)
+        message = Message.video_frame_batch(batch)
+
+        return (
+            source_id,
+            message,
+            SourceResult(
+                source_id=source_id,
+                pts=None,
+                status='',
+                trace_id=None,
+                log_provider=self._log_provider,
+            ),
+        )
+
     def _prepare_eos(self, source_id: str):
         logger.debug('Sending EOS for source %s.', source_id)
         message = EndOfStream(source_id).to_message()
@@ -301,6 +336,17 @@ class AsyncSourceRunner(SourceRunner):
         if send_eos:
             await self.send_eos(result.source_id)
 
+        result.status = 'ok'
+
+        return result
+
+    async def send_batch(self, source_id: str, content: Batch) -> SourceResult:
+        if self._health_check is not None:
+            self._health_check.wait_module_is_ready()
+
+        zmq_topic, message, result = self._prepare_batch(source_id, content)
+        await self._send_zmq_message(zmq_topic, message)
+        logger.debug('Sent video frame batch to source %s.', source_id)
         result.status = 'ok'
 
         return result

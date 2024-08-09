@@ -3,7 +3,12 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Optional
 
-from savant_rs.primitives import EndOfStream, VideoFrame, VideoFrameContent
+from savant_rs.primitives import (
+    EndOfStream,
+    VideoFrame,
+    VideoFrameBatch,
+    VideoFrameContent,
+)
 
 from savant.client.log_provider import LogProvider
 from savant.client.runner import LogResult
@@ -17,8 +22,13 @@ logger = get_logger(__name__)
 
 @dataclass
 class SinkResult(LogResult):
-    """Result of receiving a message from ZeroMQ socket."""
+    """Result of receiving a message from ZeroMQ socket.
 
+    frame_batch, frame_meta+frame_content, and eos are mutually exclusive.
+    """
+
+    frame_batch: Optional[VideoFrameBatch]
+    """Video frame batch."""
     frame_meta: Optional[VideoFrame]
     """Video frame metadata."""
     frame_content: Optional[bytes] = field(repr=False)
@@ -101,6 +111,22 @@ class BaseSinkRunner(ABC):
             return SinkResult(
                 frame_meta=video_frame,
                 frame_content=content,
+                frame_batch=None,
+                eos=None,
+                trace_id=trace_id,
+                log_provider=self._log_provider,
+            )
+
+        if message.is_video_frame_batch():
+            video_frame_batch = message.as_video_frame_batch()
+            logger.debug(
+                'Received video frame batch with %s frames.',
+                len(video_frame_batch.frames),
+            )
+            return SinkResult(
+                frame_meta=None,
+                frame_content=None,
+                frame_batch=video_frame_batch,
                 eos=None,
                 trace_id=trace_id,
                 log_provider=self._log_provider,
@@ -112,6 +138,7 @@ class BaseSinkRunner(ABC):
             return SinkResult(
                 frame_meta=None,
                 frame_content=None,
+                frame_batch=None,
                 eos=eos,
                 trace_id=trace_id,
                 log_provider=self._log_provider,
