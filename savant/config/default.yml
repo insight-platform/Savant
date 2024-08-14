@@ -25,8 +25,8 @@ parameters:
 
   # pipeline processing frame parameters, default 720p
   frame:
-    width: ${oc.decode:${oc.env:FRAME_WIDTH, 1280}}
-    height: ${oc.decode:${oc.env:FRAME_HEIGHT, 720}}
+    width: ${oc.decode:${oc.env:FRAME_WIDTH, null}}
+    height: ${oc.decode:${oc.env:FRAME_HEIGHT, null}}
     # Add paddings to the frame before processing
     # padding:
     #   # Whether to keep paddings on the output frame

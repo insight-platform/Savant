@@ -34,15 +34,25 @@ class FramePadding:
     def __bool__(self):
         return bool(self.left or self.top or self.right or self.bottom)
 
+    @property
+    def width(self) -> int:
+        """Total width of paddings."""
+        return self.left + self.right
+
+    @property
+    def height(self) -> int:
+        """Total height of paddings."""
+        return self.top + self.bottom
+
 
 @dataclass
 class FrameParameters:
     """Pipeline processing frame parameters"""
 
-    width: int
+    width: Optional[int] = None
     """Pipeline processing frame width"""
 
-    height: int
+    height: Optional[int] = None
     """Pipeline processing frame height"""
 
     padding: Optional[FramePadding] = None
@@ -50,38 +60,6 @@ class FrameParameters:
 
     geometry_base: int = 8
     """Base value for frame parameters. All frame parameters must be divisible by this value."""
-
-    @property
-    def total_width(self) -> int:
-        """Total frame width including paddings."""
-
-        if self.padding is not None:
-            return self.width + self.padding.left + self.padding.right
-        return self.width
-
-    @property
-    def total_height(self) -> int:
-        """Total frame height including paddings."""
-
-        if self.padding is not None:
-            return self.height + self.padding.top + self.padding.bottom
-        return self.height
-
-    @property
-    def output_width(self) -> int:
-        """Width of the output frame. Includes paddings if they are set to keep."""
-
-        if self.padding is not None and self.padding.keep:
-            return self.total_width
-        return self.width
-
-    @property
-    def output_height(self) -> int:
-        """Height of the output frame. Includes paddings if they are set to keep."""
-
-        if self.padding is not None and self.padding.keep:
-            return self.total_height
-        return self.height
 
 
 @dataclass

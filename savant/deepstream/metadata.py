@@ -1,6 +1,7 @@
 """Convert deepstream object meta to output format."""
 
 import logging
+from typing import Optional
 
 import pyds
 from savant_rs.primitives import (
@@ -13,7 +14,7 @@ from savant_rs.primitives.geometry import BBox, RBBox
 from savant_rs.utils.symbol_mapper import parse_compound_key
 
 from savant.api.builder import build_attribute_value
-from savant.config.schema import FrameParameters
+from savant.config.schema import FramePadding
 from savant.deepstream.utils.object import nvds_get_obj_bbox, nvds_get_obj_uid
 from savant.meta.attribute import AttributeMeta
 from savant.meta.constants import UNTRACKED_OBJECT_ID
@@ -23,18 +24,17 @@ logger = get_logger(__name__)
 
 
 def nvds_obj_bbox_output_converter(
-    nvds_obj_meta: pyds.NvDsObjectMeta, frame_params: FrameParameters
+    nvds_obj_meta: pyds.NvDsObjectMeta,
+    padding: Optional[FramePadding],
 ) -> RBBox:
     bbox = nvds_get_obj_bbox(nvds_obj_meta)
     if logger.isEnabledFor(logging.TRACE):
         logger.trace('Object DS bbox %s', bbox)
-    if frame_params.padding and not frame_params.padding.keep:
-        bbox.xc -= frame_params.padding.left
-        bbox.yc -= frame_params.padding.top
+    if padding and not padding.keep:
+        bbox.xc -= padding.left
+        bbox.yc -= padding.top
         if logger.isEnabledFor(logging.TRACE):
-            logger.trace(
-                'Applied frame padding %s, bbox: %s', frame_params.padding, bbox
-            )
+            logger.trace('Applied frame padding %s, bbox: %s', padding, bbox)
     if isinstance(bbox, BBox):
         bbox = bbox.as_rbbox()
         bbox.angle = 0
@@ -47,14 +47,14 @@ def nvds_obj_bbox_output_converter(
 def nvds_obj_meta_output_converter(
     nvds_frame_meta: pyds.NvDsFrameMeta,
     nvds_obj_meta: pyds.NvDsObjectMeta,
-    frame_params: FrameParameters,
+    padding: Optional[FramePadding],
     video_frame: VideoFrame,
 ) -> VideoObject:
     """Convert object meta to savant-rs format.
 
     :param nvds_frame_meta: NvDsFrameMeta
     :param nvds_obj_meta: NvDsObjectMeta
-    :param frame_params: Frame parameters (width/height, to scale to [0..1])
+    :param padding: Frame padding
     :param video_frame: Video frame to which the object belongs.
     :return: Object meta in savant-rs format and its parent.
     """
@@ -71,7 +71,7 @@ def nvds_obj_meta_output_converter(
     if 0.0 < nvds_obj_meta.tracker_confidence < 1.0:  # specified confidence
         confidence = nvds_obj_meta.tracker_confidence
 
-    bbox = nvds_obj_bbox_output_converter(nvds_obj_meta, frame_params)
+    bbox = nvds_obj_bbox_output_converter(nvds_obj_meta, padding)
 
     if nvds_obj_meta.object_id == UNTRACKED_OBJECT_ID:
         track_id = None
