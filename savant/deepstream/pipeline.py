@@ -1,6 +1,7 @@
 """DeepStream pipeline."""
 
 import logging
+import tempfile
 import time
 from collections import defaultdict
 from queue import Queue
@@ -903,11 +904,16 @@ class NvDsPipeline(GstPipeline):
     def _create_muxer(self) -> Gst.Element:
         """Create nvstreammux element and add it into pipeline."""
 
+        config_file = self._create_muxer_config()
+        self._logger.debug('Muxer config file: %s', config_file)
+        with open(config_file) as f:
+            self._logger.debug('Muxer config:\n%s\n-----------', f.read())
         frame_processing_params = {
             # Allowed range for batch-size: 1 - 1024
             'batch-size': self._batch_size,
             'batched-push-timeout': self._batched_push_timeout,
             'drop-pipeline-eos': self._suppress_eos,
+            'config-file-path': config_file,
         }
 
         self._muxer = self.add_element(
@@ -931,6 +937,31 @@ class NvDsPipeline(GstPipeline):
         add_buffer_probe(muxer_src_pad, self._buffer_processor.prepare_input)
 
         return self._muxer
+
+    def _create_muxer_config(self) -> str:
+        file = tempfile.NamedTemporaryFile(
+            prefix='nvstreammux_',
+            suffix='.txt',
+            delete=False,
+        )
+        params = {
+            'algorithm-type': 1,
+            'batch-size': self._batch_size,
+            'max-same-source-frames': self._batch_size,
+            'adaptive-batching': 0,
+            'max-fps-control': 0,
+            # TODO: do we need configure these parameters when max-fps-control=0?
+            'overall-max-fps-n=1': 120,
+            'overall-max-fps-d': 1,
+            'overall-min-fps-n': 5,
+            'overall-min-fps-d': 1,
+        }
+        with open(file.name, 'w') as f:
+            f.write('[property]\n')
+            for key, value in params.items():
+                f.write(f'{key}={value}\n')
+
+        return file.name
 
     def _link_to_muxer(self, pad: Gst.Pad, source_info: SourceInfo):
         """Link src pad to muxer.
