@@ -28,9 +28,10 @@ from savant.utils.zeromq import Defaults
 
 logger = get_logger(__name__)
 
-Batch = VideoFrameBatch
 Frame = Union[FrameSource, Tuple[VideoFrame, bytes]]
-FrameAndEos = Union[Frame, EndOfStream]
+Batch = Tuple[VideoFrameBatch, str]
+Source = Union[Frame, Batch]
+SourceAndEos = Union[Source, EndOfStream]
 
 
 @dataclass
@@ -108,71 +109,45 @@ class SourceRunner:
         logger.info('Terminating ZeroMQ connection')
         self._writer.shutdown()
 
-    def __call__(self, source: Frame, send_eos: bool = True) -> SourceResult:
-        """Send a single frame to ZeroMQ socket.
-
-        :param source: Source of the frame to send. Can be an instance
-            of FrameSource or a tuple of VideoFrame and content.
-        :param send_eos: Whether to send EOS after sending the frame.
-        :return: Result of sending the frame.
-        """
+    def __call__(self, source: Source, send_eos: bool = True) -> SourceResult:
+        """Handle the callable interface for this object. For more information, see the send method."""
 
         return self.send(source, send_eos)
 
-    def send(self, source: Frame, send_eos: bool = True) -> SourceResult:
-        """Send a single frame to ZeroMQ socket.
+    def send(self, source: Source, send_eos: bool = True) -> SourceResult:
+        """Send source data to ZeroMQ socket.
 
         :param source: Source of the frame to send. Can be an instance
-            of FrameSource or a tuple of VideoFrame and content.
-        :param send_eos: Whether to send EOS after sending the frame.
-        :return: Result of sending the frame.
+            of FrameSource or a tuple of VideoFrame and content, or a batch of frames with source ID.
+        :param send_eos: Whether to send EOS after sending the source.
+        :return: Result of sending the source.
         """
 
         if self._health_check is not None:
             self._health_check.wait_module_is_ready()
 
-        zmq_topic, message, content, result = self._prepare_video_frame(source)
-        logger.debug(
-            'Sending video frame %s/%s.',
-            result.source_id,
-            result.pts,
-        )
-        self._send_zmq_message(zmq_topic, message, content)
-        logger.debug('Sent video frame %s/%s.', result.source_id, result.pts)
+        if isinstance(source, tuple) and isinstance(source[0], VideoFrameBatch):
+            batch, source_id = source
+            result = self._send_batch(source_id, batch)
+        else:
+            result = self._send_frame(source)
+
         if send_eos:
             self.send_eos(result.source_id)
         result.status = 'ok'
 
         return result
 
-    def send_batch(self, source_id: str, content: Batch) -> SourceResult:
-        """Send a batch of frames to ZeroMQ socket.
-
-        :param source_id: Source ID.
-        :param content: Batch of frames to send.
-        :return: Result of sending the batch.
-        """
-
-        if self._health_check is not None:
-            self._health_check.wait_module_is_ready()
-
-        zmq_topic, message, result = self._prepare_batch(source_id, content)
-        self._send_zmq_message(zmq_topic, message)
-        logger.debug('Sent video frame batch to source %s.', source_id)
-        result.status = 'ok'
-
-        return result
-
     def send_iter(
         self,
-        sources: Iterable[FrameAndEos],
+        sources: Iterable[SourceAndEos],
         send_eos: bool = True,
     ) -> Iterable[SourceResult]:
-        """Send multiple frames to ZeroMQ socket.
+        """Send multiple sources to ZeroMQ socket.
 
-        :param sources: Sources of the frames to send.
-        :param send_eos: Whether to send EOS after sending the frames.
-        :return: Results of sending the frames.
+        :param sources: Frame sources to send.
+        :param send_eos: Whether to send EOS after sending sources.
+        :return: Results of sending the sources.
         """
 
         source_ids = set()
@@ -221,6 +196,34 @@ class SourceRunner:
         self._send_zmq_message(zmq_topic, message)
         logger.debug('Sent Shutdown message for source %s.', source_id)
         result.status = 'ok'
+
+        return result
+
+    def _send_frame(self, source: Frame) -> SourceResult:
+        """Send a single frame to ZeroMQ socket.
+
+        :param source: Source of the frame to send. Can be an instance
+            of FrameSource or a tuple of VideoFrame and content.
+        :return: Result of sending the frame.
+        """
+
+        zmq_topic, message, content, result = self._prepare_video_frame(source)
+        self._send_zmq_message(zmq_topic, message, content)
+        logger.debug('Sent video frame %s/%s.', result.source_id, result.pts)
+
+        return result
+
+    def _send_batch(self, source_id: str, source: Batch) -> SourceResult:
+        """Send a batch of frames to ZeroMQ socket.
+
+        :param source_id: Source ID.
+        :param source: Batch of frames to send.
+        :return: Result of sending the batch.
+        """
+
+        zmq_topic, message, result = self._prepare_batch(source_id, source)
+        self._send_zmq_message(zmq_topic, message)
+        logger.debug('Sent video frame batch to source %s.', source_id)
 
         return result
 
@@ -318,42 +321,28 @@ class AsyncSourceRunner(SourceRunner):
         logger.info('Terminating ZeroMQ connection')
         self._writer.shutdown()
 
-    async def __call__(self, source: Frame, send_eos: bool = True) -> SourceResult:
+    async def __call__(self, source: Source, send_eos: bool = True) -> SourceResult:
         return await self.send(source, send_eos)
 
-    async def send(self, source: Frame, send_eos: bool = True) -> SourceResult:
+    async def send(self, source: Source, send_eos: bool = True) -> SourceResult:
         if self._health_check is not None:
             self._health_check.wait_module_is_ready()
 
-        zmq_topic, message, content, result = self._prepare_video_frame(source)
-        logger.debug(
-            'Sending video frame %s/%s.',
-            result.source_id,
-            result.pts,
-        )
-        await self._send_zmq_message(zmq_topic, message, content)
-        logger.debug('Sent video frame %s/%s.', result.source_id, result.pts)
+        if isinstance(source, tuple) and isinstance(source[0], VideoFrameBatch):
+            batch, source_id = source
+            result = await self._send_batch(source_id, batch)
+        else:
+            result = await self._send_frame(source)
+
         if send_eos:
             await self.send_eos(result.source_id)
-
-        result.status = 'ok'
-
-        return result
-
-    async def send_batch(self, source_id: str, content: Batch) -> SourceResult:
-        if self._health_check is not None:
-            self._health_check.wait_module_is_ready()
-
-        zmq_topic, message, result = self._prepare_batch(source_id, content)
-        await self._send_zmq_message(zmq_topic, message)
-        logger.debug('Sent video frame batch to source %s.', source_id)
         result.status = 'ok'
 
         return result
 
     async def send_iter(
         self,
-        sources: Union[Iterable[FrameAndEos], AsyncIterable[FrameAndEos]],
+        sources: Union[Iterable[SourceAndEos], AsyncIterable[SourceAndEos]],
         send_eos: bool = True,
     ) -> AsyncIterable[SourceResult]:
         source_ids = set()
@@ -389,6 +378,20 @@ class AsyncSourceRunner(SourceRunner):
 
         return result
 
+    async def _send_frame(self, source: Frame) -> SourceResult:
+        zmq_topic, message, content, result = self._prepare_video_frame(source)
+        await self._send_zmq_message(zmq_topic, message, content)
+        logger.debug('Sent video frame %s/%s.', result.source_id, result.pts)
+
+        return result
+
+    async def _send_batch(self, source_id: str, source: Batch) -> SourceResult:
+        zmq_topic, message, result = self._prepare_batch(source_id, source)
+        await self._send_zmq_message(zmq_topic, message)
+        logger.debug('Sent video frame batch to source %s.', source_id)
+
+        return result
+
     async def _send_zmq_message(
         self, topic: str, message: Message, content: bytes = b''
     ):
@@ -401,7 +404,9 @@ class AsyncSourceRunner(SourceRunner):
     def _build_zeromq_writer(self, config: WriterConfig):
         return NonBlockingWriter(config, 10)  # TODO: make configurable
 
-    async def _send_iter_item(self, source: FrameAndEos, source_ids: Set[str]):
+    async def _send_iter_item(
+        self, source: SourceAndEos, source_ids: Set[str]
+    ) -> Union[SourceResult, None]:
         if isinstance(source, EndOfStream):
             await self.send_eos(source.source_id)
             source_ids.remove(source.source_id)
@@ -409,4 +414,5 @@ class AsyncSourceRunner(SourceRunner):
 
         result = await self.send(source, send_eos=False)
         source_ids.add(result.source_id)
+
         return result
