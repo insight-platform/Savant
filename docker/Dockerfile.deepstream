@@ -157,6 +157,14 @@ RUN python -m pip install --no-cache-dir -r requirements.txt && rm requirements.
 COPY --from=savant-boost-builder /libs/savanboost/dist /libs/savanboost/dist
 RUN python -m pip install --no-cache-dir /libs/savanboost/dist/*.whl
 
+# install savant-rs
+ARG SAVANT_RS_VERSION
+ARG SAVANT_RS_GH_REPO=insight-platform/savant-rs
+ARG SAVANT_RS_GH_TOKEN
+COPY utils/install_savant_rs.py utils/install_savant_rs.py
+RUN ./utils/install_savant_rs.py $SAVANT_RS_VERSION ./utils && \
+    rm -rf ./utils
+
 COPY --from=savant-meta-builder /libs/gstsavantframemeta/dist /libs/gstsavantframemeta/dist
 RUN python -m pip install --no-cache-dir /libs/gstsavantframemeta/dist/*.whl
 
@@ -165,14 +173,6 @@ RUN python -m pip install --no-cache-dir /libs/nvbufsurfacegenerator/dist/*.whl
 
 COPY --from=savant-package-builder /tmp/build/dist /libs/savant/dist
 RUN python -m pip install --no-cache-dir /libs/savant/dist/*.whl
-
-# install savant-rs
-ARG SAVANT_RS_VERSION
-ARG SAVANT_RS_GH_REPO=insight-platform/savant-rs
-ARG SAVANT_RS_GH_TOKEN
-COPY utils/install_savant_rs.py utils/install_savant_rs.py
-RUN ./utils/install_savant_rs.py $SAVANT_RS_VERSION ./utils && \
-    rm -rf ./utils
 
 # TODO: install yq?
 #ARG YQ_VERSION=4.35.2
