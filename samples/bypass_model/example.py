@@ -69,7 +69,6 @@ class DisplayFrames(NvDsPyFuncPlugin):
                     element_attr = obj_meta.get_attr_meta(ELEMENT_NAME, ATTR_NAME)
                     break
 
-            # Transform super resolution image
             if element_attr:
                 # CHW => HWC
                 preprocessed_image = cp.transpose(element_attr.value, (1, 2, 0))
