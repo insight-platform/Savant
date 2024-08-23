@@ -5,7 +5,7 @@ from typing import Optional
 from adapters.gst.sinks.video_files import GstPipelineRunner
 from adapters.shared.thread import BaseThreadWorker
 from savant.gstreamer import Gst, GstApp
-from savant.gstreamer.codecs import CODEC_BY_CAPS_NAME, Codec
+from savant.gstreamer.codecs import Codec, caps_to_codec
 from savant.gstreamer.event import build_savant_frame_tags_event
 from savant.gstreamer.utils import on_pad_event
 
@@ -144,8 +144,8 @@ class Pipeline(BaseThreadWorker):
 
         self.logger.debug(f'Try to find codec for %r', caps[0].get_name())
         try:
-            codec = CODEC_BY_CAPS_NAME[caps[0].get_name()]
-        except KeyError:
+            codec = caps_to_codec(caps)
+        except ValueError:
             self.logger.error(
                 'Pad %s.%s has caps %s. Not attaching parser to it.',
                 pad.get_parent().get_name(),
