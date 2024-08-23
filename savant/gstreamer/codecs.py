@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from savant.gstreamer import Gst
 from savant.utils.logging import get_logger
@@ -20,7 +20,7 @@ class CodecInfo:
     caps_name: str
     """Gstreamer caps."""
 
-    caps_params: List[str]
+    caps_params_dict: Dict[str, Any]
     """Gstreamer caps params."""
 
     parser: Optional[str] = None
@@ -40,6 +40,11 @@ class CodecInfo:
     is_raw: bool = False
     """Indicates if codec is raw.
     """
+
+    def __post_init__(self):
+        self.caps_params: List[str] = [
+            f'{k}={v}' for k, v in self.caps_params_dict.items()
+        ]
 
     @property
     def caps_with_params(self) -> str:
@@ -89,7 +94,7 @@ class Codec(Enum):
     H264 = CodecInfo(
         'h264',
         'video/x-h264',
-        ['stream-format=byte-stream', 'alignment=au'],
+        {'stream-format': 'byte-stream', 'alignment': 'au'},
         'h264parse',
         nv_encoder='nvv4l2h264enc',
         sw_encoder='x264enc',
@@ -97,38 +102,38 @@ class Codec(Enum):
     HEVC = CodecInfo(
         'hevc',
         'video/x-h265',
-        ['stream-format=byte-stream', 'alignment=au'],
+        {'stream-format': 'byte-stream', 'alignment': 'au'},
         'h265parse',
         nv_encoder='nvv4l2h265enc',
     )
     VP8 = CodecInfo(
         'vp8',
         'video/x-vp8',
-        [],
+        {},
     )
     VP9 = CodecInfo(
         'vp9',
         'video/x-vp9',
-        [],
+        {},
         'vp9parse',
     )
 
     # Raw video codecs
-    RAW_RGBA = CodecInfo('raw-rgba', 'video/x-raw', ['format=RGBA'], is_raw=True)
-    RAW_RGB24 = CodecInfo('raw-rgb24', 'video/x-raw', ['format=RGB'], is_raw=True)
+    RAW_RGBA = CodecInfo('raw-rgba', 'video/x-raw', {'format': 'RGBA'}, is_raw=True)
+    RAW_RGB24 = CodecInfo('raw-rgb24', 'video/x-raw', {'format': 'RGB'}, is_raw=True)
 
     # Image codecs
     PNG = CodecInfo(
         'png',
         'image/png',
-        [],
+        {},
         'pngparse',
         sw_encoder='pngenc',
     )
     JPEG = CodecInfo(
         'jpeg',
         'image/jpeg',
-        [],
+        {},
         'jpegparse',
         nv_encoder='nvjpegenc',
         sw_encoder='jpegenc',
@@ -136,7 +141,37 @@ class Codec(Enum):
 
 
 CODEC_BY_NAME: Dict[str, Codec] = {x.value.name: x for x in Codec}
-CODEC_BY_CAPS_NAME: Dict[str, Codec] = {x.value.caps_name: x for x in Codec}
+
+CODECS_BY_CAPS_NAME: Dict[str, List[Codec]] = {}
+for codec in Codec:
+    if codec.value.caps_name not in CODECS_BY_CAPS_NAME:
+        CODECS_BY_CAPS_NAME[codec.value.caps_name] = []
+    CODECS_BY_CAPS_NAME[codec.value.caps_name].append(codec)
+
+
+def caps_to_codec(caps: Gst.Caps) -> Codec:
+    struct: Gst.Structure = caps.get_structure(0)
+    caps_name = struct.get_name()
+    possible_codecs = CODECS_BY_CAPS_NAME.get(caps_name)
+    if not possible_codecs:
+        raise ValueError(f'Unknown caps: {caps.to_string()}')
+
+    if len(possible_codecs) == 1:
+        return possible_codecs[0]
+
+    for codec in possible_codecs:
+        if _caps_compatible_with_codec(codec.value, struct):
+            return codec
+
+    raise ValueError(f'Cannot find codec for caps {caps.to_string()}')
+
+
+def _caps_compatible_with_codec(codec: CodecInfo, struct: Gst.Structure):
+    for k, v in codec.caps_params_dict.items():
+        if struct.get_value(k) != v:
+            return False
+    return True
+
 
 AUXILIARY_STREAM_CODECS = [Codec.H264, Codec.HEVC, Codec.JPEG]
 
