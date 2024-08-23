@@ -1,7 +1,7 @@
 services:
 
   rtsp-city-traffic:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:0.4.2
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -15,7 +15,7 @@ services:
         condition: service_healthy
 
   rtsp-town-centre:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:0.4.2
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -29,7 +29,7 @@ services:
         condition: service_healthy
 
   module:
-    image: ghcr.io/insight-platform/savant-deepstream:latest
+    image: ghcr.io/insight-platform/savant-deepstream:0.4.2-6.4
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -51,7 +51,7 @@ services:
               capabilities: [ gpu ]
 
   always-on-sink:
-    image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
+    image: ghcr.io/insight-platform/savant-adapters-deepstream:0.4.2-6.4
     restart: unless-stopped
     ports:
       - "554:554"    # RTSP
