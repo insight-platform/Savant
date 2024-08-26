@@ -3,7 +3,7 @@
 from typing import Optional
 
 from savant.gstreamer import GObject, Gst  # noqa:F401
-from savant.gstreamer.codecs import CODEC_BY_CAPS_NAME, Codec, CodecInfo
+from savant.gstreamer.codecs import Codec, CodecInfo, caps_to_codec
 from savant.gstreamer.utils import on_pad_event
 from savant.utils.logging import LoggerMixin
 
@@ -60,7 +60,7 @@ class SavantParseBin(LoggerMixin, Gst.Bin):
     def on_sink_pad_caps(self, pad: Gst.Pad, event: Gst.Event):
         caps: Gst.Caps = event.parse_caps()
         self.logger.debug('Got caps %r. Trying to find parser.', caps.to_string())
-        codec: CodecInfo = CODEC_BY_CAPS_NAME[caps[0].get_name()].value
+        codec: CodecInfo = caps_to_codec(caps).value
         parser_name = codec.parser or 'identity'
         if parser_name == 'jpegparse':
             # JPEG parsing is not required in the adapter because the FFmpeg input element
