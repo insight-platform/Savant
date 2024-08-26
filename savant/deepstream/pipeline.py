@@ -980,7 +980,7 @@ class NvDsPipeline(GstPipeline):
                 sink_pad_name,
             )
             self._check_pipeline_is_running()
-            sink_pad: Gst.Pad = self._muxer.get_request_pad(sink_pad_name)
+            sink_pad: Gst.Pad = self._muxer.request_pad_simple(sink_pad_name)
 
         return sink_pad
 
@@ -1039,7 +1039,7 @@ class NvDsPipeline(GstPipeline):
 
         pads = []
         for pad_idx in range(n_pads):
-            pad: Gst.Pad = demuxer.get_request_pad(f'src_{pad_idx}')
+            pad: Gst.Pad = demuxer.request_pad_simple(f'src_{pad_idx}')
             add_convert_savant_frame_meta_pad_probe(pad, False)
             pad.add_probe(
                 Gst.PadProbeType.EVENT_DOWNSTREAM,
