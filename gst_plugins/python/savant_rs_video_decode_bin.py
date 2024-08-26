@@ -10,7 +10,7 @@ from savant_rs.pipeline2 import VideoPipeline
 
 from gst_plugins.python.savant_rs_video_demux import SAVANT_RS_VIDEO_DEMUX_PROPERTIES
 from savant.gstreamer import GLib, GObject, Gst  # noqa:F401
-from savant.gstreamer.codecs import CODEC_BY_CAPS_NAME, Codec
+from savant.gstreamer.codecs import Codec, caps_to_codec
 from savant.gstreamer.utils import on_pad_event, pad_to_source_id
 from savant.utils.logging import LoggerMixin
 from savant.utils.platform import is_aarch64
@@ -364,7 +364,7 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
             time.sleep(5)
 
         branch.caps = caps
-        branch.codec = CODEC_BY_CAPS_NAME[caps[0].get_name()]
+        branch.codec = caps_to_codec(caps)
         branch.src_pad = Gst.GhostPad.new_no_target(
             pad.get_name(), Gst.PadDirection.SRC
         )
