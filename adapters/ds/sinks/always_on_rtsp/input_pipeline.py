@@ -5,7 +5,7 @@ from adapters.ds.sinks.always_on_rtsp.last_frame import LastFrameRef
 from adapters.ds.sinks.always_on_rtsp.pipeline import add_elements
 from savant.config.schema import PipelineElement
 from savant.gstreamer import Gst
-from savant.gstreamer.codecs import CODEC_BY_CAPS_NAME, Codec
+from savant.gstreamer.codecs import caps_to_codec
 from savant.gstreamer.element_factory import GstElementFactory
 from savant.utils.logging import get_logger
 
@@ -81,7 +81,7 @@ def on_demuxer_pad_added(
         element.get_name(),
         caps,
     )
-    codec = CODEC_BY_CAPS_NAME[caps[0].get_name()]
+    codec = caps_to_codec(caps)
     if config.metadata_output:
         src_pad.add_probe(Gst.PadProbeType.BUFFER, log_frame_metadata, config)
     else:

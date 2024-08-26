@@ -8,7 +8,7 @@ from urllib.request import urlretrieve
 
 from savant.api.constants import DEFAULT_FRAMERATE
 from savant.gstreamer import GLib, GObject, Gst
-from savant.gstreamer.codecs import CODEC_BY_CAPS_NAME, Codec
+from savant.gstreamer.codecs import Codec, caps_to_codec
 from savant.gstreamer.utils import on_pad_event
 from savant.utils.file_types import FileType, parse_mime_types
 from savant.utils.logging import LoggerMixin
@@ -312,8 +312,8 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
     def attach_parser(self, pad: Gst.Pad, caps: Gst.Caps):
         try:
             self.logger.debug(f'Try to find codec for `{caps[0].get_name()}`')
-            codec = CODEC_BY_CAPS_NAME[caps[0].get_name()]
-        except KeyError:
+            codec = caps_to_codec(caps)
+        except ValueError:
             self.logger.debug(
                 'Pad %s.%s has caps %s. Not attaching parser to it.',
                 pad.get_parent().get_name(),
