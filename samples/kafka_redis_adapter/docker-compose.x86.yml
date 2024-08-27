@@ -29,7 +29,7 @@ services:
     restart: unless-stopped
 
   video-loop-source:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:0.4.3
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -48,7 +48,7 @@ services:
         condition: service_started
 
   kafka-redis-sink:
-    image: ghcr.io/insight-platform/savant-adapters-py:latest
+    image: ghcr.io/insight-platform/savant-adapters-py:0.4.3
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -72,7 +72,7 @@ services:
         condition: service_started
 
   kafka-redis-source:
-    image: ghcr.io/insight-platform/savant-adapters-py:latest
+    image: ghcr.io/insight-platform/savant-adapters-py:0.4.3
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -93,7 +93,7 @@ services:
         condition: service_started
 
   module:
-    image: ghcr.io/insight-platform/savant-deepstream:latest
+    image: ghcr.io/insight-platform/savant-deepstream:0.4.3-6.4
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -115,7 +115,7 @@ services:
               capabilities: [ gpu ]
 
   always-on-sink:
-    image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
+    image: ghcr.io/insight-platform/savant-adapters-deepstream:0.4.3-6.4
     restart: unless-stopped
     ports:
       - "554:554"    # RTSP

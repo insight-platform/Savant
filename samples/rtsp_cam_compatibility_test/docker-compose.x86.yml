@@ -1,7 +1,7 @@
 services:
 
   receiver:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:0.4.3
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -14,7 +14,7 @@ services:
     entrypoint: /opt/savant/adapters/gst/sources/ffmpeg.sh
 
   broadcaster:
-    image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
+    image: ghcr.io/insight-platform/savant-adapters-deepstream:0.4.3-6.4
     restart: unless-stopped
     ports:
       - "888:888"    # HLS

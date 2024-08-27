@@ -1,7 +1,7 @@
 services:
 
   client:
-    image: ghcr.io/insight-platform/savant-deepstream:latest
+    image: ghcr.io/insight-platform/savant-deepstream:0.4.3-6.4
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ./assets/test_data:/test_data
@@ -16,7 +16,7 @@ services:
       - network
 
   uri-input:
-    image: ghcr.io/insight-platform/savant-deepstream:latest
+    image: ghcr.io/insight-platform/savant-deepstream:0.4.3-6.4
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ./assets/test_data:/test_data
@@ -84,7 +84,7 @@ services:
       - network
 
   always-on-sink:
-    image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
+    image: ghcr.io/insight-platform/savant-adapters-deepstream:0.4.3-6.4
     restart: unless-stopped
     ports:
       - "554:554"    # RTSP
