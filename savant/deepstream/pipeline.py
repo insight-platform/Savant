@@ -182,7 +182,8 @@ class NvDsPipeline(GstPipeline):
         # Set the rank to NONE for the plugin to not use it.
         if is_aarch64():
             factory = Gst.ElementFactory.find('nvjpegdec')
-            factory.set_rank(Gst.Rank.NONE)
+            if factory is not None:
+                factory.set_rank(Gst.Rank.NONE)
 
         super().__init__(name, pipeline_cfg, **kwargs)
 
