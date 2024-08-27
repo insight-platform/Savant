@@ -1,0 +1,46 @@
+# module name, required
+name: original-resolution-processing
+
+# base module parameters
+parameters:
+  # do not set pipeline processing frame parameters to keep original resolution
+  # frame:
+  #   width:
+  #   height:
+  output_frame:
+    # "copy" codec means the pipeline works in pass-through mode
+    codec: ${oc.env:CODEC, 'h264'}
+  draw_func: {}
+  batch_size: 1
+  detected_object:
+    id: 0
+    label: person
+
+# pipeline definition
+pipeline:
+  # source definition is skipped, zeromq source is used by default to connect with source adapters
+
+  # define pipeline's main elements
+  elements:
+    - element: nvinfer@detector
+      name: peoplenet
+      model:
+        format: etlt
+        remote:
+          url: s3://savant-data/models/peoplenet/peoplenet_pruned_v2.0.zip
+          checksum_url: s3://savant-data/models/peoplenet/peoplenet_pruned_v2.0.md5
+          parameters:
+            endpoint: https://eu-central-1.linodeobjects.com
+        model_file: resnet34_peoplenet_pruned.etlt
+        input:
+          layer_name: input_1
+          shape: [ 3, 544, 960 ]
+          scale_factor: 0.0039215697906911373
+        output:
+          layer_names: [ output_bbox/BiasAdd, output_cov/Sigmoid ]
+          num_detected_classes: 3
+          objects:
+            - class_id: ${parameters.detected_object.id}
+              label: ${parameters.detected_object.label}
+
+  # sink definition is skipped, zeromq sink is used by default to connect with sink adapters

@@ -171,3 +171,9 @@ Sample location: [rtdetr](./rtdetr/)
 A pipeline demonstrating the use of Auxiliary Streams in Savant.
 
 Sample location: [auxiliary_streams](./auxiliary_streams)
+
+### Original Resolution Processing
+
+A pipeline demonstrates processing of streams at the original resolution, i.e. without scaling to a single resolution.
+
+Sample location: [original_resolution_processing](original_resolution_processing)
