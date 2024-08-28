@@ -1,7 +1,7 @@
 services:
 
   video-loop-source-720p:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:latest
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -18,7 +18,7 @@ services:
         condition: service_healthy
 
   video-loop-source-1080p:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:latest
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
