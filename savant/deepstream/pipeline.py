@@ -180,9 +180,11 @@ class NvDsPipeline(GstPipeline):
         # the plugin doesn't support some jpg
         #  https://forums.developer.nvidia.com/t/nvvideoconvert-memory-compatibility-error/226138;
         # Set the rank to NONE for the plugin to not use it.
+        # Decodebin will use nvv4l2decoder instead.
         if is_aarch64():
             factory = Gst.ElementFactory.find('nvjpegdec')
-            factory.set_rank(Gst.Rank.NONE)
+            if factory is not None:
+                factory.set_rank(Gst.Rank.NONE)
 
         super().__init__(name, pipeline_cfg, **kwargs)
 
