@@ -35,7 +35,7 @@ Known drawbacks:
 | X86 Driver 525(Datacenter), 530+ Quadro/GeForce | Stable | 6.3        |
 | Jetson Xavier, Orin with JetPack 5.1.2 GA       | Stable | 6.3        |           
 
-### 0.3.11 LTS
+### 0.3.11 Previous Release 
 
 This release is recommended for production use with DeepStream 6.4. The release works on dGPU (Turing, Volta, Ampere,
 Ada) and Jetson Orin Nano/NX/AGX hardware (JetPack 6.0 DP). It does not support Jetson Xavier and older devices.
@@ -45,14 +45,23 @@ Ada) and Jetson Orin Nano/NX/AGX hardware (JetPack 6.0 DP). It does not support 
 | X86 Driver 525(Datacenter), 530+ Quadro/GeForce | Stable | 6.4        |
 | Jetson Orin JetPack 6.0 DP                      | Stable | 6.4        |           
 
-### 0.4.x Current Develop (Feature Releases)
+### 0.4.1 Current Production Release
 
-This branch contains new features. It is a good choice for users requiring functionality missing in 0.2.x and 0.3.x.
+This release contains new features and is tested for production use. It is a choice for users requiring functionality missing in 0.2.x and 0.3.x.
 
 | Requirements                                    | Status | DeepStream |
 |-------------------------------------------------|--------|------------|
 | X86 Driver 525(Datacenter), 530+ Quadro/GeForce | Stable | 6.4        |
-| Jetson Orin JetPack 6.0 DP                      | Stable | 6.4        |
+| Jetson Orin JetPack 6.0                         | Stable | 6.4        |
+
+### 0.5.x Current Development
+
+This release integrates DeepStream 7.0
+
+| Requirements                                    | Status | DeepStream |
+|-------------------------------------------------|--------|------------|
+| X86 Driver 525(Datacenter), 530+ Quadro/GeForce | Stable | 7.0        |
+| Jetson Orin JetPack 6.0                         | Stable | 7.0        |
 
 ## Chat With Us
 

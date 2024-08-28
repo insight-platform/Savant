@@ -58,7 +58,7 @@ def build_engine(element: ModelElement, rebuild: bool = True):
         pipeline.add(gst_element)
         if last_gst_element is not None:
             if element.element == 'nvstreammux':
-                sink_pad = gst_element.get_request_pad('sink_0')
+                sink_pad = gst_element.request_pad_simple('sink_0')
                 src_pad = last_gst_element.get_static_pad('src')
                 link_res = src_pad.link(sink_pad) == Gst.PadLinkReturn.OK
             else:
