@@ -41,7 +41,7 @@ services:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../cache:/cache
       - ..:/opt/savant/samples
-    command: samples/different_resolutions/module.yml
+    command: samples/original_resolution_processing/module.yml
     environment:
       - MODEL_PATH=/cache/models/peoplenet_detector
       - DOWNLOAD_PATH=/cache/downloads/peoplenet_detector
@@ -65,7 +65,7 @@ services:
       - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
       - SOURCE_IDS=video-720p,video-1080p
       - FRAMERATE=25/1
-      - STUB_FILE_LOCATION=/stub_imgs/smpte100_1920x1080.jpeg
+      - STUB_FILE_LOCATION=/stub_imgs/smpte100_1920x1260.jpeg
       - DEV_MODE=True
     command: python -m adapters.ds.sinks.always_on_rtsp
 

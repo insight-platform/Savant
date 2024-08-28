@@ -1,6 +1,6 @@
 # Original Resolution Processing
 
-A pipeline demonstrates processing of streams at the original resolution, i.e. without scaling to a single resolution. `parameters.frame` in  [module.yml](module.yml) is not specified. The sample sends two streams with resolutions 1280x720 and 1920x1080 to the module.
+A pipeline demonstrates processing of streams at the original resolution, i.e. without scaling to a single resolution. `parameters.frame` in  [module.yml](module.yml) is not specified. The sample sends two streams with resolutions 1280x720 and 1920x1080 to the module. Based on [peoplenet_detector](../peoplenet_detector). 
 
 ## Prerequisites
 
@@ -44,8 +44,8 @@ docker compose -f samples/different_resolutions/docker-compose.l4t.yml up
 
 ```
 always-on-sink-1 |  INFO  insight::savant::savant_rs_video_demux     > Created new src pad for source video-720p: src_video-720p.
-always-on-sink-1 |  INFO  insight::savant::always_on_rtsp_frame_sink > Frame resolution is 1280x720
+always-on-sink-1 |  INFO  insight::savant::always_on_rtsp_frame_sink > Frame resolution is 1280x900
 ...
 always-on-sink-1 |  INFO  insight::savant::savant_rs_video_demux     > Created new src pad for source video-1080p: src_video-1080p.
-always-on-sink-1 |  INFO  insight::savant::always_on_rtsp_frame_sink > Frame resolution is 1920x1080
+always-on-sink-1 |  INFO  insight::savant::always_on_rtsp_frame_sink > Frame resolution is 1920x1260
 ```
