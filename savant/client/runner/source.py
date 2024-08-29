@@ -118,7 +118,9 @@ class SourceRunner:
         """Send source data to ZeroMQ socket.
 
         :param source: Source of the frame to send. Can be an instance
-            of FrameSource or a tuple of VideoFrame and content, or a batch of frames with source ID.
+            of FrameSource or a tuple of VideoFrame and content, or a batch of frames with topic name.
+            NB: If the source is used to send a stream of batches,
+            the topic name must remain the same for all batches to maintain their order.
         :param send_eos: Whether to send EOS after sending the source.
         :return: Result of sending the source.
         """
@@ -127,8 +129,8 @@ class SourceRunner:
             self._health_check.wait_module_is_ready()
 
         if isinstance(source, tuple) and isinstance(source[0], VideoFrameBatch):
-            batch, source_id = source
-            result = self._send_batch(source_id, batch)
+            batch, zmq_topic = source
+            result = self._send_batch(zmq_topic, batch)
         else:
             result = self._send_frame(source)
 
@@ -164,27 +166,27 @@ class SourceRunner:
             for source_id in source_ids:
                 self.send_eos(source_id)
 
-    def send_eos(self, source_id: str) -> SourceResult:
+    def send_eos(self, zmq_topic: str) -> SourceResult:
         """Send EOS for a source to ZeroMQ socket.
 
-        :param source_id: Source ID.
+        :param zmq_topic: ZeroMQ topic name.
         :return: Result of sending EOS.
         """
 
         if self._health_check is not None:
             self._health_check.wait_module_is_ready()
 
-        zmq_topic, message, result = self._prepare_eos(source_id)
+        message, result = self._prepare_eos(zmq_topic)
         self._send_zmq_message(zmq_topic, message)
-        logger.debug('Sent EOS for source %s.', source_id)
+        logger.debug('Sent EOS for source %s.', zmq_topic)
         result.status = 'ok'
-        clear_source_seq_id(source_id)
+        clear_source_seq_id(zmq_topic)
         return result
 
-    def send_shutdown(self, source_id: str, auth: str) -> SourceResult:
+    def send_shutdown(self, zmq_topic: str, auth: str) -> SourceResult:
         """Send Shutdown message for a source to ZeroMQ socket.
 
-        :param source_id: Source ID.
+        :param zmq_topic: ZeroMQ topic name.
         :param auth: Authentication key.
         :return: Result of sending Shutdown.
         """
@@ -192,9 +194,9 @@ class SourceRunner:
         if self._health_check is not None:
             self._health_check.wait_module_is_ready()
 
-        zmq_topic, message, result = self._prepare_shutdown(source_id, auth)
+        message, result = self._prepare_shutdown(zmq_topic, auth)
         self._send_zmq_message(zmq_topic, message)
-        logger.debug('Sent Shutdown message for source %s.', source_id)
+        logger.debug('Sent Shutdown message for source %s.', zmq_topic)
         result.status = 'ok'
 
         return result
@@ -213,17 +215,17 @@ class SourceRunner:
 
         return result
 
-    def _send_batch(self, source_id: str, source: Batch) -> SourceResult:
+    def _send_batch(self, zmq_topic: str, source: Batch) -> SourceResult:
         """Send a batch of frames to ZeroMQ socket.
 
-        :param source_id: Source ID.
+        :param zmq_topic: ZeroMQ topic name to send the batch to.
         :param source: Batch of frames to send.
         :return: Result of sending the batch.
         """
 
-        zmq_topic, message, result = self._prepare_batch(source_id, source)
+        message, result = self._prepare_batch(zmq_topic, source)
         self._send_zmq_message(zmq_topic, message)
-        logger.debug('Sent video frame batch to source %s.', source_id)
+        logger.debug('Sent video frame batch to source %s.', zmq_topic)
 
         return result
 
@@ -263,12 +265,11 @@ class SourceRunner:
             ),
         )
 
-    def _prepare_batch(self, source_id: str, batch: Batch):
+    def _prepare_batch(self, source_id: str, batch: Batch) -> Tuple[Message, SourceResult]:
         logger.debug('Sending video frame batch to source %s.', source_id)
         message = Message.video_frame_batch(batch)
 
         return (
-            source_id,
             message,
             SourceResult(
                 source_id=source_id,
@@ -279,12 +280,11 @@ class SourceRunner:
             ),
         )
 
-    def _prepare_eos(self, source_id: str):
+    def _prepare_eos(self, source_id: str) -> Tuple[Message, SourceResult]:
         logger.debug('Sending EOS for source %s.', source_id)
         message = EndOfStream(source_id).to_message()
 
         return (
-            source_id,
             message,
             SourceResult(
                 source_id=source_id,
@@ -295,12 +295,11 @@ class SourceRunner:
             ),
         )
 
-    def _prepare_shutdown(self, source_id: str, auth: str):
+    def _prepare_shutdown(self, source_id: str, auth: str) -> Tuple[Message, SourceResult]:
         logger.debug('Sending Shutdown message for source %s.', source_id)
         message = Shutdown(auth).to_message()
 
         return (
-            source_id,
             message,
             SourceResult(
                 source_id=source_id,
@@ -356,24 +355,24 @@ class AsyncSourceRunner(SourceRunner):
             for source_id in source_ids:
                 await self.send_eos(source_id)
 
-    async def send_eos(self, source_id: str) -> SourceResult:
+    async def send_eos(self, zmq_topic: str) -> SourceResult:
         if self._health_check is not None:
             self._health_check.wait_module_is_ready()
 
-        zmq_topic, message, result = self._prepare_eos(source_id)
+        message, result = self._prepare_eos(zmq_topic)
         await self._send_zmq_message(zmq_topic, message)
-        logger.debug('Sent EOS for source %s.', source_id)
+        logger.debug('Sent EOS for source %s.', zmq_topic)
         result.status = 'ok'
-        clear_source_seq_id(source_id)
+        clear_source_seq_id(zmq_topic)
         return result
 
-    async def send_shutdown(self, source_id: str, auth: str) -> SourceResult:
+    async def send_shutdown(self, zmq_topic: str, auth: str) -> SourceResult:
         if self._health_check is not None:
             self._health_check.wait_module_is_ready()
 
-        zmq_topic, message, result = self._prepare_shutdown(source_id, auth)
+        message, result = self._prepare_shutdown(zmq_topic, auth)
         await self._send_zmq_message(zmq_topic, message)
-        logger.debug('Sent Shutdown message for source %s.', source_id)
+        logger.debug('Sent Shutdown message for source %s.', zmq_topic)
         result.status = 'ok'
 
         return result
@@ -385,10 +384,10 @@ class AsyncSourceRunner(SourceRunner):
 
         return result
 
-    async def _send_batch(self, source_id: str, source: Batch) -> SourceResult:
-        zmq_topic, message, result = self._prepare_batch(source_id, source)
+    async def _send_batch(self, zmq_topic: str, source: Batch) -> SourceResult:
+        message, result = self._prepare_batch(zmq_topic, source)
         await self._send_zmq_message(zmq_topic, message)
-        logger.debug('Sent video frame batch to source %s.', source_id)
+        logger.debug('Sent video frame batch to source %s.', zmq_topic)
 
         return result
 
