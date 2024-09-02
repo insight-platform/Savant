@@ -6,6 +6,7 @@ from savant.gstreamer import Gst
 from savant.gstreamer.runner import GstPipelineRunner
 from savant.utils.config import opt_config, req_config, strtobool
 from savant.utils.logging import get_logger, init_logging
+from savant.utils.platform import is_aarch64
 from savant.utils.welcome import get_starting_message
 
 LOGGER_NAME = 'adapters.display_sink'
@@ -33,6 +34,16 @@ def main():
     logger.info(get_starting_message('display sink adapter'))
 
     Gst.init(None)
+
+    # nvjpegdec decoder is selected in decodebin according to the rank, but
+    # the plugin doesn't support some jpg
+    #  https://forums.developer.nvidia.com/t/nvvideoconvert-memory-compatibility-error/226138;
+    # Set the rank to NONE for the plugin to not use it.
+    # Decodebin will use nvv4l2decoder instead.
+    if is_aarch64():
+        factory = Gst.ElementFactory.find('nvjpegdec')
+        if factory is not None:
+            factory.set_rank(Gst.Rank.NONE)
 
     pipeline: Gst.Pipeline = Gst.Pipeline.new()
     savant_rs_video_player: Gst.Element = Gst.ElementFactory.make(
