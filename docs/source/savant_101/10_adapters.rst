@@ -1042,7 +1042,15 @@ The Display Sink Adapter is a visualizing adapter designed for development purpo
 - ``CLOSING_DELAY``: a delay in seconds before closing the window after the video stream has finished, the default value is ``0``;
 - ``SYNC_INPUT``: a flag indicating whether to show the frames on the sink synchronously with the source (i.e., at the source file rate); if you are intending to use ``SYNC`` processing, consider ``DEALER/ROUTER`` or ``REQ/REP`` sockets, because ``PUB/SUB`` may drop packets when queues are overflown;
 - ``SOURCE_ID``: an optional filter to filter out frames with a specific ``source_id`` only;
-- ``SOURCE_ID_PREFIX``: an optional filter to filter out frames with a ``source_id`` prefix only.
+- ``SOURCE_ID_PREFIX``: an optional filter to filter out frames with a ``source_id`` prefix only;
+- ``SOURCE_TIMEOUT``: a timeout before deleting stale source (in seconds); the default value is ``10``;
+- ``SOURCE_EVICTION_INTERVAL``: an interval between source eviction checks (in seconds); the default value is ``1``;
+- ``INGRESS_QUEUE_LENGTH``: a length of the ingress queue in frames; the default value is ``200``;
+- ``INGRESS_QUEUE_BYTE_SIZE``: a size of the ingress queue in bytes; the default value is ``10485760``;
+- ``DECODER_QUEUE_LENGTH``: a length of the queue before decoder in frames; the default value is ``5``;
+- ``DECODER_QUEUE_BYTE_SIZE``: a size of the queue before decoder in bytes; the default value is ``10485760``;
+- ``EGRESS_QUEUE_LENGTH``: a length of the queue after decoder in frames; the default value is ``5``;
+- ``EGRESS_QUEUE_BYTE_SIZE``: a size of the queue after decoder in bytes; the default value is ``10485760``.
 
 Running the adapter with Docker:
 
