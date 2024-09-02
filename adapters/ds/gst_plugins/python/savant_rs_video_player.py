@@ -14,6 +14,7 @@ from gst_plugins.python.zeromq_src import ZEROMQ_SRC_PROPERTIES
 from savant.gstreamer import GLib, GObject, Gst
 from savant.gstreamer.utils import on_pad_event, pad_to_source_id
 from savant.utils.logging import LoggerMixin
+from savant.utils.platform import is_aarch64
 
 NESTED_ZEROMQ_SRC_PROPERTIES = {
     k: v
@@ -106,6 +107,10 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
         self._source.set_property('pipeline-stage-name', source_stage_name)
         self.add(self._source)
 
+        self._queue: Gst.Element = Gst.ElementFactory.make('queue')
+        self._queue.set_property('max-size-time', 0)
+        self.add(self._queue)
+
         self._decoder: Gst.Element = Gst.ElementFactory.make(
             'savant_rs_video_decode_bin'
         )
@@ -113,10 +118,13 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
         self._decoder.set_property('pipeline', self._video_pipeline)
         self._decoder.set_property('pipeline-demux-stage-name', decoder_stage_name)
         self._decoder.set_property('pipeline-decoder-stage-name', decoder_stage_name)
+        self._decoder.set_property('source-timeout', 10)
+        self._decoder.set_property('source-eviction-interval', 1)
         self.add(self._decoder)
         self._decoder.connect('pad-added', self.on_pad_added)
 
-        assert self._source.link(self._decoder), f'Failed to link source to decoder'
+        assert self._source.link(self._queue), f'Failed to link source to queue'
+        assert self._queue.link(self._decoder), f'Failed to link queue to decoder'
 
     def do_get_property(self, prop):
         """Gst plugin get property function.
@@ -178,7 +186,20 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
             'Added pad %s on element %s', new_pad.get_name(), element.get_name()
         )
         branch = BranchInfo(source_id=pad_to_source_id(new_pad))
-        new_pad.add_probe(Gst.PadProbeType.BLOCK_DOWNSTREAM, self._add_branch, branch)
+        caps: Gst.Caps = new_pad.get_current_caps()
+        if caps is not None:
+            self.logger.info('Waiting for caps on pad %s', new_pad.get_name())
+            new_pad.add_probe(
+                Gst.PadProbeType.BLOCK_DOWNSTREAM, self._add_branch, branch
+            )
+        else:
+            self.logger.info('Caps on pad %s: %s', new_pad.get_name(), caps)
+            new_pad.add_probe(
+                Gst.PadProbeType.EVENT_DOWNSTREAM,
+                on_pad_event,
+                {Gst.EventType.CAPS: self.on_caps_change},
+                branch,
+            )
         new_pad.add_probe(Gst.PadProbeType.BUFFER, self.delete_frame_from_pipeline)
 
     def delete_frame_from_pipeline(self, pad: Gst.Pad, info: Gst.PadProbeInfo):
@@ -192,7 +213,13 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
             )
             return Gst.PadProbeReturn.PASS
 
+        self.logger.debug(
+            'Deleting frame with IDX %s and PTS %s from pipeline',
+            savant_frame_meta.idx,
+            savant_frame_meta.pts,
+        )
         self._video_pipeline.delete(savant_frame_meta.idx)
+
         return Gst.PadProbeReturn.OK
 
     def _add_branch(
@@ -211,21 +238,28 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
             )
             lock.wait()
 
+        self.logger.debug('Creating sink bin for source %s', branch.source_id)
         videosink_name = f'videosink_{branch.source_id}'
+        sink_bin_elements = [
+            'queue',
+            'nvvideoconvert',
+            'capsfilter caps=video/x-raw(memory:NVMM)',
+            'adjust_timestamps',
+        ]
+        if is_aarch64():
+            sink_bin_elements.append('nvegltransform')
+        sink_bin_elements.append(f'nveglglessink name={videosink_name}')
         branch.sink = Gst.parse_bin_from_description(
-            ' ! '.join(
-                [
-                    'queue',
-                    'nvvideoconvert',
-                    # nveglglessink cannot negotiate with "video/x-raw(memory:NVMM)" on dGPU
-                    'capsfilter caps=video/x-raw',
-                    'adjust_timestamps',
-                    f'autovideosink name={videosink_name}',
-                ]
-            ),
+            ' ! '.join(sink_bin_elements),
             True,
         )
+        self.logger.debug(
+            'Sink bin for source %s created: %s',
+            branch.source_id,
+            branch.sink.get_name(),
+        )
         self.add(branch.sink)
+        self.logger.debug('Sink bin for source %s added', branch.source_id)
         sink: Gst.Element = branch.sink.get_by_name(videosink_name)
         sink.set_property('sync', self._sync)
         if self._sync:
@@ -234,6 +268,11 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
             )
         branch.sink.sync_state_with_parent()
         assert pad.link(branch.sink.get_static_pad('sink')) == Gst.PadLinkReturn.OK
+        self.logger.debug(
+            'Pad %s linked to sink %s',
+            pad.get_name(),
+            branch.sink.get_name(),
+        )
 
         self._elem_to_source_id[branch.sink] = branch.source_id
         self._locks[branch.source_id] = Event()
@@ -243,13 +282,6 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
             {Gst.EventType.EOS: self.on_sink_pad_eos},
             branch,
         )
-        pad.add_probe(
-            Gst.PadProbeType.EVENT_DOWNSTREAM,
-            on_pad_event,
-            {Gst.EventType.CAPS: self.on_caps_change},
-            branch,
-        )
-        self.set_state(Gst.State.PLAYING)
         self.logger.info('Branch with source %s added', branch.source_id)
 
         return Gst.PadProbeReturn.OK
@@ -263,11 +295,11 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
 
     def _remove_branch(self, branch: BranchInfo):
         self.logger.info('Removing branch with source %s', branch.source_id)
+        branch.sink.set_locked_state(True)
         branch.sink.set_state(Gst.State.NULL)
         self.logger.info('Removing element %s', branch.sink.get_name())
         self.remove(branch.sink)
 
-        self.set_state(Gst.State.PLAYING)
         self.logger.info('Branch with source %s removed', branch.source_id)
 
         return False
@@ -278,10 +310,8 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
             'Caps on pad %s changed to %s', pad.get_name(), caps.to_string()
         )
 
-        self.logger.debug('Set state of %s to READY', branch.sink.get_name())
-        branch.sink.set_state(Gst.State.READY)
-        self.logger.debug('Sync state of %s with parent', branch.sink.get_name())
-        branch.sink.sync_state_with_parent()
+        if branch.sink is None:
+            pad.add_probe(Gst.PadProbeType.BLOCK_DOWNSTREAM, self._add_branch, branch)
 
         return Gst.PadProbeReturn.OK
 
