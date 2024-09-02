@@ -10,16 +10,37 @@ from savant_rs.pipeline2 import (
     VideoPipelineStagePayloadType,
 )
 
+from gst_plugins.python.savant_rs_video_decode_bin import (
+    SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES,
+)
 from gst_plugins.python.zeromq_src import ZEROMQ_SRC_PROPERTIES
 from savant.gstreamer import GLib, GObject, Gst
 from savant.gstreamer.utils import on_pad_event, pad_to_source_id
 from savant.utils.logging import LoggerMixin
 from savant.utils.platform import is_aarch64
 
+# Default values of "queue" element
+DEFAULT_INGRESS_QUEUE_LENGTH = 200
+DEFAULT_INGRESS_QUEUE_SIZE = 10485760
+
+DEFAULT_EGRESS_QUEUE_LENGTH = 5
+DEFAULT_EGRESS_QUEUE_SIZE = 10485760
+
 NESTED_ZEROMQ_SRC_PROPERTIES = {
     k: v
     for k, v in ZEROMQ_SRC_PROPERTIES.items()
     if k not in ['pipeline', 'pipeline-stage-name']
+}
+NESTED_SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES = {
+    k: v
+    for k, v in SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES.items()
+    if k
+    in [
+        'decoder-queue-length',
+        'decoder-queue-byte-size',
+        'source-timeout',
+        'source-eviction-interval',
+    ]
 }
 
 
@@ -47,6 +68,7 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
 
     __gproperties__ = {
         **NESTED_ZEROMQ_SRC_PROPERTIES,
+        **NESTED_SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES,
         'sync': (
             bool,
             'Sync on the clock',
@@ -59,8 +81,44 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
             'Window closing delay',
             'Delay in seconds before closing window after the last frame',
             0,
-            2147483647,
+            GObject.G_MAXINT,
             0,
+            GObject.ParamFlags.READWRITE,
+        ),
+        'ingress-queue-length': (
+            int,
+            'Length of the ingress queue in frames.',
+            'Length of the ingress queue in frames (0 - no limit).',
+            0,
+            GObject.G_MAXINT,
+            DEFAULT_INGRESS_QUEUE_LENGTH,
+            GObject.ParamFlags.READWRITE,
+        ),
+        'ingress-queue-byte-size': (
+            int,
+            'Size of the ingress queue in bytes.',
+            'Size of the ingress queue in bytes (0 - no limit).',
+            0,
+            GObject.G_MAXINT,
+            DEFAULT_INGRESS_QUEUE_SIZE,
+            GObject.ParamFlags.READWRITE,
+        ),
+        'egress-queue-length': (
+            int,
+            'Length of the egress queue in frames.',
+            'Length of the egress queue in frames (0 - no limit).',
+            0,
+            GObject.G_MAXINT,
+            DEFAULT_EGRESS_QUEUE_LENGTH,
+            GObject.ParamFlags.READWRITE,
+        ),
+        'egress-queue-byte-size': (
+            int,
+            'Size of the egress queue in bytes.',
+            'Size of the egress queue in bytes (0 - no limit).',
+            0,
+            GObject.G_MAXINT,
+            DEFAULT_EGRESS_QUEUE_SIZE,
             GObject.ParamFlags.READWRITE,
         ),
     }
@@ -73,6 +131,8 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
         # properties
         self._sync = False
         self._closing_delay = 0
+        self._egress_queue_length = DEFAULT_EGRESS_QUEUE_LENGTH
+        self._egress_queue_byte_size = DEFAULT_EGRESS_QUEUE_SIZE
 
         source_stage_name = 'video-player-source'
         demux_stage_name = 'video-player-demux'
@@ -118,8 +178,6 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
         self._decoder.set_property('pipeline', self._video_pipeline)
         self._decoder.set_property('pipeline-demux-stage-name', decoder_stage_name)
         self._decoder.set_property('pipeline-decoder-stage-name', decoder_stage_name)
-        self._decoder.set_property('source-timeout', 10)
-        self._decoder.set_property('source-eviction-interval', 1)
         self.add(self._decoder)
         self._decoder.connect('pad-added', self.on_pad_added)
 
@@ -135,8 +193,18 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
             return self._sync
         if prop.name == 'closing-delay':
             return self._closing_delay
+        if prop.name == 'ingress-queue-length':
+            return self._queue.get_property('max-size-buffers')
+        if prop.name == 'ingress-queue-byte-size':
+            return self._queue.get_property('max-size-bytes')
+        if prop.name == 'egress-queue-length':
+            return self._egress_queue_length
+        if prop.name == 'egress-queue-byte-size':
+            return self._egress_queue_byte_size
         if prop.name in NESTED_ZEROMQ_SRC_PROPERTIES:
             return self._source.get_property(prop.name)
+        if prop.name in NESTED_SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES:
+            return self._decoder.get_property(prop.name)
         raise AttributeError(f'Unknown property {prop.name}')
 
     def do_set_property(self, prop, value):
@@ -149,8 +217,18 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
             self._sync = value
         elif prop.name == 'closing-delay':
             self._closing_delay = value
+        elif prop.name == 'ingress-queue-length':
+            self._queue.set_property('max-size-buffers', value)
+        elif prop.name == 'ingress-queue-byte-size':
+            self._queue.set_property('max-size-bytes', value)
+        elif prop.name == 'egress-queue-length':
+            self._egress_queue_length = value
+        elif prop.name == 'egress-queue-byte-size':
+            self._egress_queue_byte_size = value
         elif prop.name in NESTED_ZEROMQ_SRC_PROPERTIES:
             self._source.set_property(prop.name, value)
+        elif prop.name in NESTED_SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES:
+            self._decoder.set_property(prop.name, value)
         else:
             raise AttributeError(f'Unknown property {prop.name}')
 
@@ -243,7 +321,8 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
         self.logger.debug('Creating sink bin for source %s', branch.source_id)
         videosink_name = f'videosink_{branch.source_id}'
         sink_bin_elements = [
-            'queue',
+            f'queue max-size-buffers={self._egress_queue_length}'
+            f' max-size-bytes={self._egress_queue_byte_size} max-size-time=0',
             'nvvideoconvert',
             'capsfilter caps=video/x-raw(memory:NVMM)',
             'adjust_timestamps',

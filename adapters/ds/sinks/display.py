@@ -11,6 +11,9 @@ from savant.utils.welcome import get_starting_message
 
 LOGGER_NAME = 'adapters.display_sink'
 
+DEFAULT_SOURCE_TIMEOUT = 10
+DEFAULT_SOURCE_EVICTION_INTERVAL = 1
+
 
 class Config:
     def __init__(self):
@@ -21,6 +24,18 @@ class Config:
         self.source_id_prefix = opt_config('SOURCE_ID_PREFIX')
         self.sync_input = opt_config('SYNC_INPUT', False, strtobool)
         self.closing_delay = opt_config('CLOSING_DELAY', 0, int)
+        self.source_timeout = opt_config('SOURCE_TIMEOUT', DEFAULT_SOURCE_TIMEOUT, int)
+        self.source_eviction_interval = opt_config(
+            'SOURCE_EVICTION_INTERVAL',
+            DEFAULT_SOURCE_EVICTION_INTERVAL,
+            int,
+        )
+        self.ingress_queue_length = opt_config('INGRESS_QUEUE_LENGTH', None, int)
+        self.ingress_queue_byte_size = opt_config('INGRESS_QUEUE_BYTE_SIZE', None, int)
+        self.decoder_queue_length = opt_config('DECODER_QUEUE_LENGTH', None, int)
+        self.decoder_queue_byte_size = opt_config('DECODER_QUEUE_BYTE_SIZE', None, int)
+        self.egress_queue_length = opt_config('EGRESS_QUEUE_LENGTH', None, int)
+        self.egress_queue_byte_size = opt_config('EGRESS_QUEUE_BYTE_SIZE', None, int)
 
 
 def main():
@@ -58,6 +73,35 @@ def main():
         savant_rs_video_player.set_property('source-id-prefix', config.source_id_prefix)
     savant_rs_video_player.set_property('sync', config.sync_input)
     savant_rs_video_player.set_property('closing-delay', config.closing_delay)
+    savant_rs_video_player.set_property('source-timeout', config.source_timeout)
+    savant_rs_video_player.set_property(
+        'source-eviction-interval', config.source_eviction_interval
+    )
+    if config.ingress_queue_length is not None:
+        savant_rs_video_player.set_property(
+            'ingress-queue-length', config.ingress_queue_length
+        )
+    if config.ingress_queue_byte_size is not None:
+        savant_rs_video_player.set_property(
+            'ingress-queue-byte-size', config.ingress_queue_byte_size
+        )
+    if config.decoder_queue_length is not None:
+        savant_rs_video_player.set_property(
+            'decoder-queue-length', config.decoder_queue_length
+        )
+    if config.decoder_queue_byte_size is not None:
+        savant_rs_video_player.set_property(
+            'decoder-queue-byte-size', config.decoder_queue_byte_size
+        )
+    if config.egress_queue_length is not None:
+        savant_rs_video_player.set_property(
+            'egress-queue-length', config.egress_queue_length
+        )
+    if config.egress_queue_byte_size is not None:
+        savant_rs_video_player.set_property(
+            'egress-queue-byte-size', config.egress_queue_byte_size
+        )
+
     pipeline.add(savant_rs_video_player)
 
     logger.info('Display sink started')
