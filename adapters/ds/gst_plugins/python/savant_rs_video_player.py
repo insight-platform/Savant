@@ -205,18 +205,20 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
     def delete_frame_from_pipeline(self, pad: Gst.Pad, info: Gst.PadProbeInfo):
         buffer: Gst.Buffer = info.get_buffer()
         savant_frame_meta = gst_buffer_get_savant_frame_meta(buffer)
+        source_id = pad_to_source_id(pad)
         if savant_frame_meta is None:
             self.logger.warning(
                 'Source %s. No Savant Frame Metadata found on buffer with PTS %s.',
-                pad_to_source_id(pad),
+                source_id,
                 buffer.pts,
             )
             return Gst.PadProbeReturn.PASS
 
         self.logger.debug(
-            'Deleting frame with IDX %s and PTS %s from pipeline',
+            'Deleting frame %s/%s and PTS %s from pipeline',
+            source_id,
             savant_frame_meta.idx,
-            savant_frame_meta.pts,
+            buffer.pts,
         )
         self._video_pipeline.delete(savant_frame_meta.idx)
 
