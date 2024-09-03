@@ -1,0 +1,66 @@
+# module name, required
+name: nanosam
+
+# base module parameters
+parameters:
+  # pipeline processing frame parameters
+  frame:
+    width: 1280
+    height: 720
+  output_frame:
+    codec: ${oc.env:CODEC, 'hevc'}
+  batch_size: 1
+  # model name
+  model_name: resnet18_image_encoder
+  # needs to retrieve the model output in pyfunc element using object meta attributes
+  element_name: image_encoder
+  attribute_name: image_embeddings
+
+pipeline:
+  # source definition is skipped, zeromq source is used by default to connect with source adapters
+
+  # define pipeline's main elements
+  elements:
+    - element: nvinfer@attribute_model
+      # model name in the pipeline, required
+      name: ${parameters.element_name}
+      # model definition
+      model:
+        # remote storage from which model files will be downloaded
+        remote:
+          url: s3://savant-data/models/nanosam/nanosam.zip
+          checksum_url: s3://savant-data/models/nanosam/nanosam.md5
+          parameters:
+            endpoint: https://eu-central-1.linodeobjects.com
+        format: onnx
+        model_file: resnet18_image_encoder.onnx
+        batch_size: ${parameters.batch_size}
+        input:
+          shape: [3, 1024, 1024]
+          scale_factor: 0.01735207357279195
+          offsets: [123.675, 116.28, 103.53]
+          maintain_aspect_ratio: true
+        # configuration of model output
+        output:
+          # model output layer names
+          layer_names: [image_embeddings]
+          # specify a class to transform raw model output tensors into attributes using GPU
+          converter:
+            module: savant.converter.raw_output
+            class_name: ModelCudaRawOutputConverter
+          # name of the attribute to store model output
+          attributes:
+            - name: ${parameters.attribute_name}
+              # must be internal, frame metadata doesn't currently support numpy arrays
+              internal: true
+
+
+    # applies mask decoder to a frame and draws the result on the frame
+    # nvinfer cannot be used here because it doesn't support an arbitrary number of inputs
+    - element: pyfunc
+      module: samples.nanosam.module.predictor
+      class_name: Predictor
+      kwargs:
+        mask_decoder_engine_path: /cache/models/nanosam/mobile_sam_mask_decoder.engine
+
+  # sink definition is skipped, zeromq sink is used by default to connect with sink adapters
