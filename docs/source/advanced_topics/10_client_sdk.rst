@@ -62,6 +62,7 @@ Sources ingest frames and their metadata to a running module.
 
     import time
     from savant_rs import init_jaeger_tracer
+    from savant_rs.primitives import VideoFrameBatch, VideoFrameContent
     from savant.client import JaegerLogProvider, JpegSource, SourceBuilder
 
     # Initialize Jaeger tracer to send metrics and logs to Jaeger.
@@ -82,6 +83,17 @@ Sources ingest frames and their metadata to a running module.
     result = source(JpegSource('cam-1', 'data/AVG-TownCentre.jpeg'))
     print(result.status)
     time.sleep(1)  # Wait for the module to process the frame
+    result.logs().pretty_print()
+
+    # Send a batch to the module
+    src_jpeg = JpegSource('cam-2', 'data/AVG-TownCentre.jpeg')
+    batch = VideoFrameBatch()
+    frame, content = src_jpeg.build_frame()
+    frame.content = VideoFrameContent.internal(content)
+    batch.add(0, frame)
+    result = source((batch, 'topic')) # topic name to send a batch, can differ from `src_jpeg` source
+    print(result.status)
+    time.sleep(1)  # Wait for the module to process the batch
     result.logs().pretty_print()
 
 
