@@ -8,7 +8,6 @@ parameters:
   #   width:
   #   height:
   output_frame:
-    # "copy" codec means the pipeline works in pass-through mode
     codec: ${oc.env:CODEC, 'h264'}
   draw_func: {}
   batch_size: 1
