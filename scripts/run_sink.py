@@ -110,6 +110,50 @@ def chunk_size_option(default=10000):
     default=False,
     help='Show frames on sink synchronously (i.e. at the source file rate).',
 )
+@click.option(
+    '--source-timeout',
+    type=click.INT,
+    default=10,
+    help='Timeout before deleting stale source (in seconds).',
+    show_default=True,
+)
+@click.option(
+    '--source-eviction-interval',
+    type=click.INT,
+    default=1,
+    help='Interval between source eviction checks (in seconds).',
+    show_default=True,
+)
+@click.option(
+    '--ingress-queue-length',
+    type=click.INT,
+    help='Length of the ingress queue in frames (0 - no limit, default 200).',
+)
+@click.option(
+    '--ingress-queue-byte-size',
+    type=click.INT,
+    help='Size of the ingress queue in bytes (0 - no limit, default 10485760).',
+)
+@click.option(
+    '--decoder-queue-length',
+    type=click.INT,
+    help='Length of the queue before decoder in frames (0 - no limit, default 5).',
+)
+@click.option(
+    '--decoder-queue-byte-size',
+    type=click.INT,
+    help='Size of the queue before decoder in bytes (0 - no limit, default 10485760).',
+)
+@click.option(
+    '--egress-queue-length',
+    type=click.INT,
+    help='Length of the egress queue (after decoder) in frames (0 - no limit, default 5).',
+)
+@click.option(
+    '--egress-queue-byte-size',
+    type=click.INT,
+    help='Size of the egress queue (after decoder) in bytes (0 - no limit, default 10485760).',
+)
 @common_options
 @source_id_option(required=False)
 @source_id_prefix_option
@@ -123,6 +167,14 @@ def display_sink(
     closing_delay: int,
     source_id: Optional[str],
     source_id_prefix: Optional[str],
+    source_timeout: int,
+    source_eviction_interval: int,
+    ingress_queue_length: Optional[int],
+    ingress_queue_byte_size: Optional[int],
+    decoder_queue_length: Optional[int],
+    decoder_queue_byte_size: Optional[int],
+    egress_queue_length: Optional[int],
+    egress_queue_byte_size: Optional[int],
 ):
     """Show video on display, one window per source."""
 
@@ -152,13 +204,27 @@ def display_sink(
         'DISPLAY',
         f'XAUTHORITY={xauth}',
         f'CLOSING_DELAY={closing_delay}',
+        f'SOURCE_TIMEOUT={source_timeout}',
+        f'SOURCE_EVICTION_INTERVAL={source_eviction_interval}',
     ]
+    if ingress_queue_length is not None:
+        envs.append(f'INGRESS_QUEUE_LENGTH={ingress_queue_length}')
+    if ingress_queue_byte_size is not None:
+        envs.append(f'INGRESS_QUEUE_BYTE_SIZE={ingress_queue_byte_size}')
+    if decoder_queue_length is not None:
+        envs.append(f'DECODER_QUEUE_LENGTH={decoder_queue_length}')
+    if decoder_queue_byte_size is not None:
+        envs.append(f'DECODER_QUEUE_BYTE_SIZE={decoder_queue_byte_size}')
+    if egress_queue_length is not None:
+        envs.append(f'EGRESS_QUEUE_LENGTH={egress_queue_length}')
+    if egress_queue_byte_size is not None:
+        envs.append(f'EGRESS_QUEUE_BYTE_SIZE={egress_queue_byte_size}')
 
     cmd = build_docker_run_command(
         'sink-display',
         zmq_endpoints=[in_endpoint],
         sync_input=sync,
-        entrypoint='/opt/savant/adapters/ds/sinks/display.sh',
+        entrypoint='/opt/savant/adapters/ds/sinks/display.py',
         envs=envs,
         volumes=[f'{xsock}:{xsock}', f'{xauth}:{xauth}'],
         with_gpu=True,
