@@ -38,8 +38,8 @@ SourceAndEos = Union[Source, EndOfStream]
 class SourceResult(LogResult):
     """Result of sending a message to ZeroMQ socket."""
 
-    source_id: str
-    """Source ID."""
+    source_ids: Set[str]
+    """Source IDs. Single source ID for a frame, multiple source IDs for a batch."""
     pts: Optional[int]
     """PTS of the frame."""
     status: str
@@ -135,7 +135,8 @@ class SourceRunner:
             result = self._send_frame(source)
 
         if send_eos:
-            self.send_eos(result.source_id)
+            for source_id in result.source_ids:
+                self.send_eos(source_id)
         result.status = 'ok'
 
         return result
@@ -160,7 +161,7 @@ class SourceRunner:
                 continue
 
             result = self.send(source, send_eos=False)
-            source_ids.add(result.source_id)
+            source_ids.update(result.source_ids)
             yield result
         if send_eos:
             for source_id in source_ids:
@@ -211,7 +212,7 @@ class SourceRunner:
 
         zmq_topic, message, content, result = self._prepare_video_frame(source)
         self._send_zmq_message(zmq_topic, message, content)
-        logger.debug('Sent video frame %s/%s.', result.source_id, result.pts)
+        logger.debug('Sent video frame %s/%s.', zmq_topic, result.pts)
 
         return result
 
@@ -257,7 +258,7 @@ class SourceRunner:
             message,
             content,
             SourceResult(
-                source_id=video_frame.source_id,
+                source_ids={video_frame.source_id},
                 pts=video_frame.pts,
                 status='',
                 trace_id=trace_id,
@@ -269,10 +270,14 @@ class SourceRunner:
         logger.debug('Sending video frame batch to source %s.', source_id)
         message = Message.video_frame_batch(batch)
 
+        source_ids = set()
+        for frame in batch.frames:
+            source_ids.add(frame.source_id)
+
         return (
             message,
             SourceResult(
-                source_id=source_id,
+                source_ids=source_ids,
                 pts=None,
                 status='',
                 trace_id=None,
@@ -287,7 +292,7 @@ class SourceRunner:
         return (
             message,
             SourceResult(
-                source_id=source_id,
+                source_ids={source_id},
                 pts=None,
                 status='',
                 trace_id=None,
@@ -302,7 +307,7 @@ class SourceRunner:
         return (
             message,
             SourceResult(
-                source_id=source_id,
+                source_ids={source_id},
                 pts=None,
                 status='',
                 trace_id=None,
@@ -334,7 +339,8 @@ class AsyncSourceRunner(SourceRunner):
             result = await self._send_frame(source)
 
         if send_eos:
-            await self.send_eos(result.source_id)
+            for source_id in result.source_ids:
+                await self.send_eos(source_id)
         result.status = 'ok'
 
         return result
@@ -380,7 +386,7 @@ class AsyncSourceRunner(SourceRunner):
     async def _send_frame(self, source: Frame) -> SourceResult:
         zmq_topic, message, content, result = self._prepare_video_frame(source)
         await self._send_zmq_message(zmq_topic, message, content)
-        logger.debug('Sent video frame %s/%s.', result.source_id, result.pts)
+        logger.debug('Sent video frame %s/%s.', zmq_topic, result.pts)
 
         return result
 
@@ -412,6 +418,6 @@ class AsyncSourceRunner(SourceRunner):
             return
 
         result = await self.send(source, send_eos=False)
-        source_ids.add(result.source_id)
+        source_ids.update(result.source_ids)
 
         return result
