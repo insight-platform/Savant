@@ -2,7 +2,7 @@ services:
 
   video-loop-source-720p:
     image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:latest
-#    restart: unless-stopped
+    restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - /tmp/video-loop-source-downloads:/tmp/video-loop-source-downloads
@@ -19,7 +19,7 @@ services:
 
   video-loop-source-1080p:
     image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:latest
-#    restart: unless-stopped
+    restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - /tmp/video-loop-source-downloads:/tmp/video-loop-source-downloads
@@ -36,7 +36,7 @@ services:
 
   module:
     image: ghcr.io/insight-platform/savant-deepstream-l4t:latest
-#    restart: unless-stopped
+    restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../cache:/cache
@@ -48,12 +48,11 @@ services:
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
       - CODEC=jpeg
-      - METRICS_TIME_PERIOD=5
     runtime: nvidia
 
   always-on-sink:
     image: ghcr.io/insight-platform/savant-adapters-deepstream-l4t:latest
-#    restart: unless-stopped
+    restart: unless-stopped
     ports:
       - "554:554"    # RTSP
       - "1935:1935"  # RTMP
