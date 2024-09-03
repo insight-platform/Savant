@@ -166,21 +166,21 @@ class SourceRunner:
             for source_id in source_ids:
                 self.send_eos(source_id)
 
-    def send_eos(self, zmq_topic: str) -> SourceResult:
+    def send_eos(self, source_id: str) -> SourceResult:
         """Send EOS for a source to ZeroMQ socket.
 
-        :param zmq_topic: ZeroMQ topic name.
+        :param source_id: Source ID.
         :return: Result of sending EOS.
         """
 
         if self._health_check is not None:
             self._health_check.wait_module_is_ready()
 
-        message, result = self._prepare_eos(zmq_topic)
-        self._send_zmq_message(zmq_topic, message)
-        logger.debug('Sent EOS for source %s.', zmq_topic)
+        message, result = self._prepare_eos(source_id)
+        self._send_zmq_message(source_id, message)
+        logger.debug('Sent EOS for source %s.', source_id)
         result.status = 'ok'
-        clear_source_seq_id(zmq_topic)
+        clear_source_seq_id(source_id)
         return result
 
     def send_shutdown(self, zmq_topic: str, auth: str) -> SourceResult:
@@ -355,15 +355,15 @@ class AsyncSourceRunner(SourceRunner):
             for source_id in source_ids:
                 await self.send_eos(source_id)
 
-    async def send_eos(self, zmq_topic: str) -> SourceResult:
+    async def send_eos(self, source_id: str) -> SourceResult:
         if self._health_check is not None:
             self._health_check.wait_module_is_ready()
 
-        message, result = self._prepare_eos(zmq_topic)
-        await self._send_zmq_message(zmq_topic, message)
-        logger.debug('Sent EOS for source %s.', zmq_topic)
+        message, result = self._prepare_eos(source_id)
+        await self._send_zmq_message(source_id, message)
+        logger.debug('Sent EOS for source %s.', source_id)
         result.status = 'ok'
-        clear_source_seq_id(zmq_topic)
+        clear_source_seq_id(source_id)
         return result
 
     async def send_shutdown(self, zmq_topic: str, auth: str) -> SourceResult:
