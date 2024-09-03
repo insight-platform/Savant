@@ -30,12 +30,16 @@ class SourceInfo:
 
     @property
     def processing_width(self):
+        """Width of the frame that will be processed by the pipeline."""
+
         if self.frame_params.width:
             return self.frame_params.width
         return self.src_resolution.width
 
     @property
     def processing_height(self):
+        """Height of the frame that will be processed by the pipeline."""
+
         if self.frame_params.height:
             return self.frame_params.height
         return self.src_resolution.height

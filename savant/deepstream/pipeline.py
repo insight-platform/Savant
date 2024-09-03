@@ -952,11 +952,6 @@ class NvDsPipeline(GstPipeline):
             'max-same-source-frames': self._batch_size,
             'adaptive-batching': 0,
             'max-fps-control': 0,
-            # TODO: do we need configure these parameters when max-fps-control=0?
-            'overall-max-fps-n=1': 120,
-            'overall-max-fps-d': 1,
-            'overall-min-fps-n': 5,
-            'overall-min-fps-d': 1,
         }
         with open(file.name, 'w') as f:
             f.write('[property]\n')
