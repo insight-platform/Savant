@@ -1213,7 +1213,7 @@ The simplified design of the adapter is depicted in the following diagram:
       - ``1000``
       - ``500``
     * - ``LOW_LATENCY_DECODING``
-      - A flag specifying whether to use low-latency decoding (only for hardware decoder ``nvv4l2decoder``).
+      - A flag specifying whether to use low-latency decoding (only for hardware decoder ``nvv4l2decoder``). Do not enable it if input stream contains B-frames.
       - ``False``
       - ``True``
 
