@@ -23,7 +23,7 @@ The pipeline configuration file defines parameters regulating the batch size. Th
 
 The ``batch_size`` parameter is configured for video multiplexing. When it is **not** configured, it is set based on the value defined for the first pipeline model. The default value is ``1``.
 
-The ``max_same_source_frames`` parameter defines the maximum number of frames from the same source in the batch. The default value is equal to ``batch_size``.
+The ``max_same_source_frames`` parameter defines the maximum number of frames from the same source in the batch. The default value is equal to ``batch_size``. When ``max_same_source_frames`` is less than ``batch_size``, ``min_fps`` also should be configured.
 
 The ``batched_push_timeout`` defines the maximum time the pipeline waits for the batch to be fully formed, pushing out partially formed batches if the wait time exceeds this threshold. The smaller value decreases latency, while the larger one results in greater throughput. The default value is: ``2000`` (``2`` milliseconds).
 

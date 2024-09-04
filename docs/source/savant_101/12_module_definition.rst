@@ -54,7 +54,7 @@ The following parameters are defined for a Savant module by default:
 
 .. literalinclude:: ../../../savant/config/default.yml
   :language: YAML
-  :lines: 1-172
+  :lines: 1-181
 
 .. note::
 

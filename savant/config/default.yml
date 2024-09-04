@@ -39,6 +39,15 @@ parameters:
     # Default is 8.
     # geometry_base: 8
 
+  # Maximum number of frames from the same source to process in a batch. Default is equal to batch_size.
+  # max_same_source_frames: 1
+  # Minimum desired FPS. Applied when max_same_source_frames is less than batch_size.
+  min_fps: ${oc.env:MIN_FPS, 30/1}
+  # Turn on/off limiting the maximum FPS per source.
+  max_fps_control: ${oc.decode:${oc.env:MAX_FPS_CONTROL, False}}
+  # Maximum desired FPS.
+  max_fps: ${oc.env:MAX_FPS, 30/1}
+
   # pipeline output queue max size
   queue_maxsize: 100
 

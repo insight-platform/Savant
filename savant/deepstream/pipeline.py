@@ -4,6 +4,7 @@ import logging
 import tempfile
 import time
 from collections import defaultdict
+from fractions import Fraction
 from queue import Queue
 from threading import Lock, Thread
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -98,9 +99,14 @@ class NvDsPipeline(GstPipeline):
         self._frame_params: FrameParameters = kwargs['frame']
 
         self._batch_size = kwargs['batch_size']
-        self._max_same_source_frames = kwargs.get('max_same_source_frames', self._batch_size)
+        self._max_same_source_frames = kwargs.get(
+            'max_same_source_frames', self._batch_size
+        )
         self._stream_buffer_pool_size = kwargs.get('stream_buffer_pool_size')
         self._muxer_buffer_pool_size = kwargs.get('muxer_buffer_pool_size')
+        self._min_fps = Fraction(kwargs.get('min_fps', '30/1'))
+        self._max_fps = Fraction(kwargs.get('max_fps', '1000/1'))
+        self._max_fps_control = kwargs.get('max_fps_control', False)
 
         # Timeout in microseconds
         self._batched_push_timeout = kwargs.get('batched_push_timeout', 2000)
@@ -952,7 +958,11 @@ class NvDsPipeline(GstPipeline):
             'batch-size': self._batch_size,
             'max-same-source-frames': self._max_same_source_frames,
             'adaptive-batching': 0,
-            'max-fps-control': 0,
+            'max-fps-control': int(self._max_fps_control),
+            'overall-min-fps-n': self._min_fps.numerator,
+            'overall-min-fps-d': self._min_fps.denominator,
+            'overall-max-fps-n': self._max_fps.numerator,
+            'overall-max-fps-d': self._max_fps.denominator,
         }
         with open(file.name, 'w') as f:
             f.write('[property]\n')
