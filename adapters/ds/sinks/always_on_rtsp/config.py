@@ -125,6 +125,8 @@ class Config(CommonStreamConfig):
         self.pipeline_source_stage_name = 'source'
         self.pipeline_demux_stage_name = 'source-demux'
 
+        self.low_latency_decoding = opt_config('LOW_LATENCY_DECODING', False, strtobool)
+
         conf = VideoPipelineConfiguration()
         conf.frame_period = opt_config('FPS_PERIOD_FRAMES', 1000, int)
         time_period_seconds = opt_config('FPS_PERIOD_SECONDS', convert=int)

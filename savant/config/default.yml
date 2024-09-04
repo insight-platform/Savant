@@ -208,6 +208,9 @@ pipeline:
       decoder_queue_byte_size: ${oc.decode:${oc.env:DECODER_QUEUE_BYTE_SIZE, null}}
       # Send EOS on frame resolution change for JPEG and PNG codecs (default true).
       eos_on_frame_resolution_change: ${oc.decode:${oc.env:EOS_ON_FRAME_RESOLUTION_CHANGE, null}}
+      # Enable low latency decoding (default false, only for hardware decoder "nvv4l2decoder").
+      # Do not enable it if input stream contains B-frames.
+      low_latency_decoding: ${oc.decode:${oc.env:LOW_LATENCY_DECODING, null}}
 
 # elements:
 # elements should be defined here
