@@ -51,6 +51,15 @@ WORKDIR /tmp/build
 COPY pyproject.toml README.md LICENSE ./
 COPY requirements/base.txt requirements/base.txt
 COPY savant savant
+
+# build .so files
+RUN python3 -m pip install --no-cache-dir Cython # todo extra requirements also has cython
+RUN find savant -name "*.py" \
+    ! -name "__main__.py" ! -name "nms.py" ! -name "detector.py" ! -name "yolo_v5face.py" ! -name "rapid.py" -print | xargs cythonize -i
+# RUN find savant \( -type d -name gstreamer -o -type d -name deepstream \) -prune -o -type f -name "*.py" ! -name "__main__.py" -print
+RUN find savant -name "*.py" \
+    ! -name "__main__.py" ! -name "nms.py" ! -name "detector.py" ! -name "yolo_v5face.py" ! -name "rapid.py" -print | xargs rm
+
 RUN python3 -m build --wheel
 
 

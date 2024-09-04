@@ -51,11 +51,12 @@ _nv_custom_event_type_name = {
 def gst_event_type_to_str(event_type: int) -> str:
     """Returns event type string representation."""
     if event_type in _nv_event_type_name:
-        return f'<enum {_nv_event_type_name[event_type]} of type GstNvEventType>'
+        return '<enum {} of type GstNvEventType>'.format(
+            _nv_event_type_name[event_type]
+        )
     if event_type in _nv_custom_event_type_name:
-        return (
-            f'<enum {_nv_custom_event_type_name[event_type]} '
-            'of type GstNvCustomEventType>'
+        return '<enum {} of type GstNvCustomEventType>'.format(
+            _nv_custom_event_type_name[event_type]
         )
     return str(event_type)
 

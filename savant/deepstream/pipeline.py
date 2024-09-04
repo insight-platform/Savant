@@ -838,7 +838,7 @@ class NvDsPipeline(GstPipeline):
         source_info = self._sources.get_source(video_frame.source_id)
 
         def _nvds_obj_id(_obj_meta: pyds.NvDsObjectMeta) -> str:
-            return f'{_obj_meta.obj_label}#{_obj_meta.object_id}'
+            return '{}#{}'.format(_obj_meta.obj_label, _obj_meta.object_id)
 
         # collect frame objects
         nvds_object_id_map = {}  # nvds_obj_meta.object_id -> video_object.id

@@ -244,7 +244,7 @@ def configure_module_parameters(module_cfg: DictConfig) -> None:
         return
 
     def apply_schema(
-        cfg: dict, node: str, schema_class: Any, default: Any = None
+        cfg: Union[dict, DictConfig], node: str, schema_class: Any, default: Any = None
     ) -> None:
         if node not in cfg or cfg[node] is None:
             cfg[node] = default

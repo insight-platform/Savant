@@ -175,6 +175,8 @@ RUN apt-get update && \
       liblog4cplus-2.0.5 \
       libsm6 \
       strace \
+      build-essential \
+      python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
 COPY adapters/requirements.txt adapters/requirements-gst.txt adapters/
@@ -221,5 +223,10 @@ COPY adapters/gst adapters/gst
 COPY gst_plugins/python/logger.py adapters/gst/gst_plugins/python/
 ENV GST_PLUGIN_PATH=$PROJECT_PATH/adapters/gst/gst_plugins \
     LOGLEVEL=info
+
+# build .so files
+RUN python -m pip install --no-cache-dir Cython # todo extra requirements also has cython
+RUN find savant -name "*.py" -not -name "__main__.py" | xargs cythonize -i
+RUN find savant -name "*.py" -delete # todo remove?
 
 RUN echo 'python3 -c "from savant.utils.welcome import get_welcome_message; print(get_welcome_message())"' >> /etc/bash.bashrc

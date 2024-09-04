@@ -10,6 +10,8 @@ RUN export DEBIAN_FRONTEND=noninteractive \
     && apt-get update \
     && apt-get install --no-install-recommends -y \
         libmagic1 \
+        build-essential \
+        python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
 COPY adapters/requirements.txt adapters/requirements.txt
@@ -29,5 +31,10 @@ COPY savant savant
 COPY adapters/shared adapters/shared
 COPY adapters/python adapters/python
 ENV LOGLEVEL=info
+
+# build .so files
+RUN python -m pip install --no-cache-dir Cython # todo extra requirements also has cython
+RUN find savant -name "*.py" -not -name "__main__.py" | xargs cythonize -i
+RUN find savant -name "*.py" -delete # todo remove?
 
 RUN echo 'python3 -c "from savant.utils.welcome import get_welcome_message; print(get_welcome_message())"' >> /etc/bash.bashrc

@@ -10,7 +10,7 @@ def get_welcome_message() -> str:
         f'Savant RS Version {version.SAVANT_RS}\n'
         f'DeepStream Version {version.DEEPSTREAM}'
     )
-    return f'\n============\n== Savant ==\n============\n\n{version_info}\n'
+    return '\n============\n== Savant ==\n============\n\n{}'.format(version_info)
 
 
 def get_starting_message(name: str):

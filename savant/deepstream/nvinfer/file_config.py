@@ -116,7 +116,9 @@ class NvInferConfig:
         """Generate ``model-engine-file`` according to default Deepstream
         engine naming scheme."""
         prefix = model_file if model_file else 'model'
-        return f'{prefix}_b{batch_size}_{device_id}_{precision.name.lower()}.engine'
+        return '{}_b{}_{}_{}.engine'.format(
+            prefix, batch_size, device_id, precision.name.lower()
+        )
 
     @dataclass
     class _FieldMap:

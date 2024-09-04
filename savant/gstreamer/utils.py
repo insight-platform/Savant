@@ -3,7 +3,7 @@
 import inspect
 from contextlib import contextmanager
 from types import FrameType
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from gi.repository import Gst  # noqa:F401
 from savant_rs.utils import ByteBuffer
@@ -17,7 +17,7 @@ logger = get_logger(__name__)
 
 @contextmanager
 def map_gst_buffer(
-    gst_buffer: Gst.Buffer, flags: int = Gst.MapFlags.READ
+    gst_buffer: Gst.Buffer, flags: Union[int, Gst.MapFlags] = Gst.MapFlags.READ
 ) -> GstMapInfo:
     """Check if the buffer is writable and try to map it. Unmap at context
     exit.

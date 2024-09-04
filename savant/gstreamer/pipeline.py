@@ -73,7 +73,9 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
         elements = ' -> '.join([e.full_name for e, _ in self.elements])
         if not elements:
             elements = 'no elements'
-        return f'{self._pipeline.name}<{self.__class__.__name__}>: {elements}'
+        return '{}<{}>: {}'.format(
+            self._pipeline.name, self.__class__.__name__, elements
+        )
 
     def add_element(
         self,

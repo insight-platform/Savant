@@ -118,7 +118,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
     @property
     def uid(self) -> int:
         """Returns uid of the object."""
-        return nvds_get_obj_uid(self._frame_meta, self.ds_object_meta)
+        return int(nvds_get_obj_uid(self._frame_meta, self.ds_object_meta))
 
     def get_attr_meta_list(
         self, element_name: str, attr_name: str

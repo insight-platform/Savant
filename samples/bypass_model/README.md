@@ -46,7 +46,8 @@ Optionally, you can prepare the engines before running the demo by using the com
 docker compose -f samples/bypass_model/docker-compose.x86.yml up -d
 
 # if Jetson
-docker compose -f samples/bypass_model/docker-compose.l4t.yml up -d
+# doesn't work on versions higher than 0.4.1 - exception during preprocessed_image.astype(cp.uint8)
+docker compose -f samples/bypass_model/docker-compose.l4t.yml up -d # todo 
 ```
 
 ## View Output

@@ -105,7 +105,7 @@ def init_param_storage(config: DictConfig) -> None:
                 ]
                 if value:
                     for key, val in value.items():
-                        _to_dot_keys(val, f'{start_key}.{key}', res)
+                        _to_dot_keys(val, '{}.{}'.format(start_key, key), res)
             elif isinstance(value, (ListConfig, list)):
                 res += [
                     (f'{start_key}#type', 'list'),
@@ -113,7 +113,7 @@ def init_param_storage(config: DictConfig) -> None:
                 ]
                 if value:
                     for idx, val in enumerate(value):
-                        _to_dot_keys(val, f'{start_key}[{idx}]', res)
+                        _to_dot_keys(val, '{}[{}]'.format(start_key, idx), res)
             else:
                 res += [
                     (f'{start_key}#type', type(value).__name__),

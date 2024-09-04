@@ -105,7 +105,7 @@ def nvds_get_obj_selection_type(obj_meta: pyds.NvDsObjectMeta) -> int:
     :return: Selection type
     """
 
-    return obj_meta.misc_obj_info[InformationType.OBJECT_SELECTION_TYPE]
+    return int(obj_meta.misc_obj_info[InformationType.OBJECT_SELECTION_TYPE])
 
 
 def nvds_set_obj_uid(
@@ -122,7 +122,7 @@ def nvds_set_obj_uid(
     obj_uid = nvds_generate_obj_uid(frame_meta, obj_meta)
     obj_meta.misc_obj_info[InformationType.OBJECT_HASH_KEY] = obj_uid
 
-    return obj_uid
+    return int(obj_uid)
 
 
 def nvds_get_obj_uid(
@@ -140,7 +140,7 @@ def nvds_get_obj_uid(
         if not nvds_get_obj_selection_type(obj_meta):
             nvds_set_obj_selection_type(obj_meta, ObjectSelectionType.REGULAR_BBOX)
         obj_uid = nvds_set_obj_uid(frame_meta=frame_meta, obj_meta=obj_meta)
-    return obj_uid
+    return int(obj_uid)
 
 
 def nvds_generate_obj_uid(
