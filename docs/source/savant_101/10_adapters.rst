@@ -1212,6 +1212,10 @@ The simplified design of the adapter is depicted in the following diagram:
       - An interval in milliseconds to poll statuses of the streams.
       - ``1000``
       - ``500``
+    * - ``LOW_LATENCY_DECODING``
+      - A flag specifying whether to use low-latency decoding (only for hardware decoder ``nvv4l2decoder``). Do not enable it if input stream contains B-frames.
+      - ``False``
+      - ``True``
 
 When ``DEV_MODE=True`` the stream is available at:
 

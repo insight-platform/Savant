@@ -22,6 +22,6 @@ Take a look at the ``default.yml`` for details:
 
 .. literalinclude:: ../../../savant/config/default.yml
   :language: YAML
-  :lines: 172-202
+  :lines: 174-205
 
 You can override only required parameters in your module YAML configuration file. Also, take a look at corresponding environment variables helping to configure the parameters without specifying them in the module config.
