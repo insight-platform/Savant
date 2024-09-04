@@ -6,6 +6,8 @@ logger = get_logger(__name__)
 
 
 def configure_low_latency_decoding(element: Gst.Element):
+    """Configure low latency decoding for the given element if element supports it."""
+
     factory_name = element.get_factory().get_name()
     if factory_name == 'nvv4l2decoder':
         logger.debug('Configuring low latency decoding for %s', element.get_name())
