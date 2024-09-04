@@ -38,11 +38,7 @@ Software-decoded (not recommended to use):
 Scaling to a Common Resolution
 ------------------------------
 
-**The pipeline will scale all streams to the configured resolution.**
-
-This is a crucial topic. The pipeline is always configured to run on common resolution. It means that every stream handled by a certain pipeline instance is always scaled to the common resolution configured for the pipeline instance, no matter what its input resolution was.
-
-If you need different streams to be handled on different resolutions, you have to launch several pipelines configuring each pipeline to use a resolution acceptable for streams processed by that pipeline.
+By default Savant handles all streams on their original resolution. If you need to process streams on a common resolution, you have to set ``parameters.frame.width`` and ``parameters.frame.height``. E.g.:
 
 .. code-block:: yaml
 
@@ -53,28 +49,7 @@ If you need different streams to be handled on different resolutions, you have t
         width: 1280
         height: 720
 
-Let us consider the following examples:
-
-Case 1: No Output Footage
-^^^^^^^^^^^^^^^^^^^^^^^^^
-
-You have 10 cams of FullHD and 15 cams of HD resolution. You don't need the outgoing video at all, all your models are fine to work with HD resolution.
-
-**Solution**: configure the pipeline to use HD resolution, send all streams to a single pipeline.
-
-Case 2: Low-Res Output Footage
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-You have 10 cams of FullHD and 15 cams of HD resolution. You need the outgoing video and HD resolition is acceptable, all your models are fine to work with HD resolution.
-
-**Solution**: configure the pipeline to use HD resolution, send all streams to a single pipeline.
-
-Case 3: Hi-Res Output Footage
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-You have 10 cams of FullHD and 15 cams of HD resolution. You need the outgoing video in the same resolution as incoming.
-
-**Solution**: configure two pipelines - the first to use Full-HD resolution, the second to use HD resolution. Point Full-HD cams to the Full-HD pipeline, HD cams to the HD pipeline.
+In that example every stream will be scaled to 1280x720 resolution before processing.
 
 Paddings
 --------
@@ -104,6 +79,10 @@ The paddings can either be preserved or removed at the output.
 
     If you specify ``parameters.frame.padding.keep == false``, the paddings are removed before frame encoding. The geometry for all objects are recalculated to conform new geometry.
 
+.. note::
+
+    Paddings and scaling to a common resolution are independent configurations. You can use them together or separately.
+
 Geometry Base
 -------------
 
@@ -124,6 +103,10 @@ When the developer specifies the frame dimensions do not fit the ``geometry_base
         # Base value for frame parameters. All frame parameters must be divisible by this value.
         # Default is 8.
         geometry_base: 8
+
+.. note::
+
+    When scaling to a common resolution is disabled, the ``geometry_base`` parameter is used only for paddings.
 
 Multiplexing
 ------------

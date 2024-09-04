@@ -202,6 +202,7 @@ HEALTHCHECK --interval=5s --timeout=5s --start-period=30m --retries=3 \
     CMD [ "sh", "/opt/savant/healthcheck.sh" ]
 
 RUN echo 'python3 -c "from savant.utils.welcome import get_welcome_message; print(get_welcome_message())"' >> /etc/bash.bashrc
+ENV USE_NEW_NVSTREAMMUX=yes
 
 ENTRYPOINT ["python", "-m", "savant.entrypoint"]
 

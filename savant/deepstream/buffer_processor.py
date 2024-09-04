@@ -85,15 +85,17 @@ class NvDsBufferProcessor(GstBufferProcessor):
 
         super().__init__(queue)
         self._sources = sources
-        self._frame_params = frame_params
         self._queue = queue
         self._video_pipeline = video_pipeline
         self._pass_through_mode = pass_through_mode
 
-        self._scale_transformation = VideoFrameTransformation.scale(
-            frame_params.width,
-            frame_params.height,
-        )
+        if frame_params.width:
+            self._scale_transformation = VideoFrameTransformation.scale(
+                frame_params.width,
+                frame_params.height,
+            )
+        else:
+            self._scale_transformation = None
         if frame_params.padding and frame_params.padding.keep:
             self._padding_transformation = VideoFrameTransformation.padding(
                 frame_params.padding.left,
@@ -171,13 +173,15 @@ class NvDsBufferProcessor(GstBufferProcessor):
         # full frame primary object by default
         source_info = self._sources.get_source(video_frame.source_id)
         self._add_transformations(frame_idx=frame_idx, video_frame=video_frame)
-        scale_factor_x = self._frame_params.width / source_info.src_resolution.width
-        scale_factor_y = self._frame_params.height / source_info.src_resolution.height
+        scale_factor_x = source_info.processing_width / source_info.src_resolution.width
+        scale_factor_y = (
+            source_info.processing_height / source_info.src_resolution.height
+        )
         primary_bbox = BBox(
-            self._frame_params.width / 2,
-            self._frame_params.height / 2,
-            self._frame_params.width,
-            self._frame_params.height,
+            source_info.processing_width / 2,
+            source_info.processing_height / 2,
+            source_info.processing_width,
+            source_info.processing_height,
         )
         self.logger.debug(
             'Init primary bbox for frame with PTS %s: %s', frame_pts, primary_bbox
@@ -213,9 +217,9 @@ class NvDsBufferProcessor(GstBufferProcessor):
                 selection_type = ObjectSelectionType.REGULAR_BBOX
 
             bbox.scale(scale_factor_x, scale_factor_y)
-            if self._frame_params.padding:
-                bbox.left += self._frame_params.padding.left
-                bbox.top += self._frame_params.padding.top
+            if source_info.padding:
+                bbox.left += source_info.padding.left
+                bbox.top += source_info.padding.top
 
             track_id = obj_meta.track_id
             if track_id is None:
@@ -262,9 +266,9 @@ class NvDsBufferProcessor(GstBufferProcessor):
         # add primary frame object
         model_name, label = parse_compound_key(PRIMARY_OBJECT_KEY)
         model_uid, class_id = get_object_id(model_name, label)
-        if self._frame_params.padding:
-            primary_bbox.xc += self._frame_params.padding.left
-            primary_bbox.yc += self._frame_params.padding.top
+        if source_info.padding:
+            primary_bbox.xc += source_info.padding.left
+            primary_bbox.yc += source_info.padding.top
         self.logger.debug(
             'Add primary object to frame meta with PTS %s, bbox: %s',
             frame_pts,
@@ -319,6 +323,9 @@ class NvDsBufferProcessor(GstBufferProcessor):
 
     def _add_scale_transformation(self, video_frame: VideoFrame) -> bool:
         """Check if scale transformation is needed and add it to the frame."""
+
+        if not self._scale_transformation:
+            return False
 
         if not video_frame.transformations:
             return True
@@ -523,8 +530,8 @@ class NvDsBufferProcessor(GstBufferProcessor):
                 video_frame.transcoding_method = VideoFrameTranscodingMethod.Copy
 
             else:
-                video_frame.width = self._frame_params.output_width
-                video_frame.height = self._frame_params.output_height
+                video_frame.width = source_info.output_width
+                video_frame.height = source_info.output_height
                 video_frame.dts = output_frame.dts
                 if output_frame.codec is not None:
                     video_frame.codec = output_frame.codec.name
@@ -532,7 +539,7 @@ class NvDsBufferProcessor(GstBufferProcessor):
                 content = output_frame.frame
                 video_frame.transcoding_method = VideoFrameTranscodingMethod.Encoded
 
-            self._transform_geometry(video_frame)
+            self._transform_geometry(source_info, video_frame)
 
         return SinkVideoFrame(video_frame=video_frame, frame=content)
 
@@ -545,16 +552,16 @@ class NvDsBufferProcessor(GstBufferProcessor):
         span_context = spans[frame_idx].propagate()
         return sink_video_frame._replace(span_context=span_context)
 
-    def _transform_geometry(self, video_frame: VideoFrame):
+    def _transform_geometry(self, source_info: SourceInfo, video_frame: VideoFrame):
         if self._pass_through_mode and (
-            video_frame.width != self._frame_params.width
-            or video_frame.height != self._frame_params.height
+            video_frame.width != source_info.processing_width
+            or video_frame.height != source_info.processing_height
         ):
             video_frame.transform_geometry(
                 [
                     VideoObjectBBoxTransformation.scale(
-                        video_frame.width / self._frame_params.width,
-                        video_frame.height / self._frame_params.height,
+                        video_frame.width / source_info.processing_width,
+                        video_frame.height / source_info.processing_height,
                     )
                 ]
             )

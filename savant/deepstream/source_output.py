@@ -13,11 +13,7 @@ from savant_rs.pipeline2 import VideoPipeline
 from savant_rs.primitives import VideoFrameContent
 
 from savant.api.constants import DEFAULT_NAMESPACE
-from savant.config.schema import (
-    FrameParameters,
-    FrameProcessingCondition,
-    PipelineElement,
-)
+from savant.config.schema import FrameProcessingCondition, PipelineElement
 from savant.deepstream.utils.iterator import nvds_frame_meta_iterator
 from savant.gstreamer import Gst  # noqa:F401
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec, CodecInfo
@@ -138,14 +134,12 @@ class SourceOutputWithFrame(SourceOutput):
     def __init__(
         self,
         codec: CodecInfo,
-        frame_params: FrameParameters,
         condition: FrameProcessingCondition,
         video_pipeline: VideoPipeline,
         queue_properties: Dict[str, int],
     ):
         super().__init__(video_pipeline)
         self._codec = codec
-        self._frame_params = frame_params
         self._condition = condition
         self._queue_properties = queue_properties
 
@@ -171,14 +165,14 @@ class SourceOutputWithFrame(SourceOutput):
             source_info.source_id,
         )
         output_converter_props = {}
-        if self._frame_params.padding and not self._frame_params.padding.keep:
+        if source_info.padding and not source_info.padding.keep:
             output_converter_props['src_crop'] = ':'.join(
                 str(x)
                 for x in [
-                    self._frame_params.padding.left,
-                    self._frame_params.padding.top,
-                    self._frame_params.width,
-                    self._frame_params.height,
+                    source_info.padding.left,
+                    source_info.padding.top,
+                    source_info.processing_width,
+                    source_info.processing_height,
                 ]
             )
         self._logger.debug(
@@ -209,8 +203,8 @@ class SourceOutputWithFrame(SourceOutput):
 
         output_capsfilter = pipeline.add_element(PipelineElement('capsfilter'))
         output_caps = self._build_output_caps(
-            self._frame_params.output_width,
-            self._frame_params.output_height,
+            source_info.output_width,
+            source_info.output_height,
         )
         output_capsfilter.set_property('caps', output_caps)
         source_info.source_output_elements.append(output_capsfilter)
@@ -368,13 +362,11 @@ class SourceOutputRaw(SourceOutputWithFrame):
     def __init__(
         self,
         codec: CodecInfo,
-        frame_params: FrameParameters,
         video_pipeline: VideoPipeline,
         queue_properties: Dict[str, int],
     ):
         super().__init__(
             codec=codec,
-            frame_params=frame_params,
             condition=FrameProcessingCondition(),
             video_pipeline=video_pipeline,
             queue_properties=queue_properties,
@@ -412,7 +404,6 @@ class SourceOutputEncoded(SourceOutputWithFrame):
         self,
         codec: CodecInfo,
         output_frame: Dict[str, Any],
-        frame_params: FrameParameters,
         condition: FrameProcessingCondition,
         video_pipeline: VideoPipeline,
         queue_properties: Dict[str, int],
@@ -423,7 +414,6 @@ class SourceOutputEncoded(SourceOutputWithFrame):
 
         super().__init__(
             codec=codec,
-            frame_params=frame_params,
             condition=condition,
             video_pipeline=video_pipeline,
             queue_properties=queue_properties,
@@ -477,7 +467,6 @@ class SourceOutputH26X(SourceOutputEncoded):
         self,
         codec: CodecInfo,
         output_frame: Dict[str, Any],
-        frame_params: FrameParameters,
         condition: FrameProcessingCondition,
         video_pipeline: VideoPipeline,
         queue_properties: Dict[str, int],
@@ -485,7 +474,6 @@ class SourceOutputH26X(SourceOutputEncoded):
         super().__init__(
             codec=codec,
             output_frame=output_frame,
-            frame_params=frame_params,
             condition=condition,
             video_pipeline=video_pipeline,
             queue_properties=queue_properties,
@@ -567,7 +555,6 @@ class SourceOutputNvJpeg(SourceOutputEncoded):
         self,
         codec: CodecInfo,
         output_frame: Dict[str, Any],
-        frame_params: FrameParameters,
         condition: FrameProcessingCondition,
         video_pipeline: VideoPipeline,
         queue_properties: Dict[str, int],
@@ -575,7 +562,6 @@ class SourceOutputNvJpeg(SourceOutputEncoded):
         super().__init__(
             codec=codec,
             output_frame=output_frame,
-            frame_params=frame_params,
             condition=condition,
             video_pipeline=video_pipeline,
             queue_properties=queue_properties,
@@ -634,7 +620,6 @@ class SourceOutputNvJpeg(SourceOutputEncoded):
 
 
 def create_source_output(
-    frame_params: FrameParameters,
     output_frame: Optional[Dict[str, Any]],
     video_pipeline: VideoPipeline,
     queue_properties: Dict[str, int],
@@ -655,7 +640,6 @@ def create_source_output(
     if codec.value.is_raw:
         return SourceOutputRaw(
             codec=codec.value,
-            frame_params=frame_params,
             video_pipeline=video_pipeline,
             queue_properties=queue_properties,
         )
@@ -665,7 +649,6 @@ def create_source_output(
         return SourceOutputH26X(
             codec=codec.value,
             output_frame=output_frame,
-            frame_params=frame_params,
             condition=condition,
             video_pipeline=video_pipeline,
             queue_properties=queue_properties,
@@ -675,7 +658,6 @@ def create_source_output(
         return SourceOutputNvJpeg(
             codec=codec.value,
             output_frame=output_frame,
-            frame_params=frame_params,
             condition=condition,
             video_pipeline=video_pipeline,
             queue_properties=queue_properties,
@@ -684,7 +666,6 @@ def create_source_output(
     return SourceOutputEncoded(
         codec=codec.value,
         output_frame=output_frame,
-        frame_params=frame_params,
         condition=condition,
         video_pipeline=video_pipeline,
         queue_properties=queue_properties,
