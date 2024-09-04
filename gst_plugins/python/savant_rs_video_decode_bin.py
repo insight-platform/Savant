@@ -9,6 +9,7 @@ from pygstsavantframemeta import add_pad_probe_to_move_frame
 from savant_rs.pipeline2 import VideoPipeline
 
 from gst_plugins.python.savant_rs_video_demux import SAVANT_RS_VIDEO_DEMUX_PROPERTIES
+from savant.deepstream.decoding import configure_low_latency_decoding
 from savant.gstreamer import GLib, GObject, Gst  # noqa:F401
 from savant.gstreamer.codecs import Codec, caps_to_codec
 from savant.gstreamer.utils import on_pad_event, pad_to_source_id
@@ -387,6 +388,21 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
 
         return Gst.PadProbeReturn.OK
 
+    def on_decodebin_element_added(
+        self,
+        decodebin: Gst.Element,
+        new_element: Gst.Element,
+    ):
+        """Handle adding new element to decodebin."""
+
+        self.logger.debug(
+            'Added element %s to %s',
+            new_element.get_name(),
+            decodebin.get_name(),
+        )
+        if self._low_latency_decoding:
+            configure_low_latency_decoding(new_element)
+
     def on_decodebin_pad_added(
         self,
         decodebin: Gst.Element,
@@ -509,6 +525,7 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
         decodebin.set_property('caps', OUT_CAPS)
         self.logger.debug('Built decoder for source %s.', branch.source_id)
 
+        decodebin.connect('element-added', self.on_decodebin_element_added)
         decodebin.connect('pad-added', self.on_decodebin_pad_added, branch)
 
         sink_pad: Gst.GhostPad = Gst.GhostPad.new(

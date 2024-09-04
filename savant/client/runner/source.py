@@ -266,7 +266,9 @@ class SourceRunner:
             ),
         )
 
-    def _prepare_batch(self, source_id: str, batch: Batch) -> Tuple[Message, SourceResult]:
+    def _prepare_batch(
+        self, source_id: str, batch: Batch
+    ) -> Tuple[Message, SourceResult]:
         logger.debug('Sending video frame batch to source %s.', source_id)
         message = Message.video_frame_batch(batch)
 
@@ -300,7 +302,9 @@ class SourceRunner:
             ),
         )
 
-    def _prepare_shutdown(self, source_id: str, auth: str) -> Tuple[Message, SourceResult]:
+    def _prepare_shutdown(
+        self, source_id: str, auth: str
+    ) -> Tuple[Message, SourceResult]:
         logger.debug('Sending Shutdown message for source %s.', source_id)
         message = Shutdown(auth).to_message()
 
