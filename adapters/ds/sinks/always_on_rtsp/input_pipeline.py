@@ -4,6 +4,7 @@ from adapters.ds.sinks.always_on_rtsp.config import Config
 from adapters.ds.sinks.always_on_rtsp.last_frame import LastFrameRef
 from adapters.ds.sinks.always_on_rtsp.pipeline import add_elements
 from savant.config.schema import PipelineElement
+from savant.deepstream.decoding import configure_low_latency_decoding
 from savant.gstreamer import Gst
 from savant.gstreamer.codecs import caps_to_codec
 from savant.gstreamer.element_factory import GstElementFactory
@@ -47,6 +48,16 @@ def delete_frame_from_pipeline(pad: Gst.Pad, info: Gst.PadProbeInfo, config: Con
 
     config.video_pipeline.delete(savant_frame_meta.idx)
     return Gst.PadProbeReturn.OK
+
+
+def on_decodebin_element_added(
+    decodebin: Gst.Element,
+    new_element: Gst.Element,
+    config: Config,
+):
+    logger.debug('Added element %s to %s', new_element.get_name(), decodebin.get_name())
+    if config.low_latency_decoding:
+        configure_low_latency_decoding(new_element)
 
 
 def link_added_pad(
@@ -103,6 +114,7 @@ def on_demuxer_pad_added(
         decodebin.set_property('sink-caps', caps)
         pipeline.add(decodebin)
         demuxer_peer_pad: Gst.Pad = decodebin.get_static_pad('sink')
+        decodebin.connect('element-added', on_decodebin_element_added, config)
         decodebin.connect('pad-added', link_added_pad, sink_pad)
         decodebin.sync_state_with_parent()
         logger.debug(
