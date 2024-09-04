@@ -19,9 +19,11 @@ Depending on the first model architecture, increasing the batch size may not imp
 
     E.g., you expect the pipeline to handle up to 16 streams; you also discovered that the model saturates its performance with a batch size of 4. Therefore, you should use four as a pipeline batch size.
 
-The pipeline configuration file defines parameters regulating the batch size. They are ``batch_size`` and ``batched_push_timeout``.
+The pipeline configuration file defines parameters regulating the batch size. They are ``batch_size``, ``max_same_source_frames`` and ``batched_push_timeout``.
 
 The ``batch_size`` parameter is configured for video multiplexing. When it is **not** configured, it is set based on the value defined for the first pipeline model. The default value is ``1``.
+
+The ``max_same_source_frames`` parameter defines the maximum number of frames from the same source in the batch. The default value is equal to ``batch_size``.
 
 The ``batched_push_timeout`` defines the maximum time the pipeline waits for the batch to be fully formed, pushing out partially formed batches if the wait time exceeds this threshold. The smaller value decreases latency, while the larger one results in greater throughput. The default value is: ``2000`` (``2`` milliseconds).
 
@@ -51,4 +53,3 @@ However, the rule of thumb is to set the batch size to a number between one and 
       name: Secondary_CarColor
       model:
         batch_size: 16
-

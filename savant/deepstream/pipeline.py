@@ -98,6 +98,7 @@ class NvDsPipeline(GstPipeline):
         self._frame_params: FrameParameters = kwargs['frame']
 
         self._batch_size = kwargs['batch_size']
+        self._max_same_source_frames = kwargs.get('max_same_source_frames', self._batch_size)
         self._stream_buffer_pool_size = kwargs.get('stream_buffer_pool_size')
         self._muxer_buffer_pool_size = kwargs.get('muxer_buffer_pool_size')
 
@@ -949,7 +950,7 @@ class NvDsPipeline(GstPipeline):
         params = {
             'algorithm-type': 1,
             'batch-size': self._batch_size,
-            'max-same-source-frames': self._batch_size,
+            'max-same-source-frames': self._max_same_source_frames,
             'adaptive-batching': 0,
             'max-fps-control': 0,
         }
