@@ -8,8 +8,11 @@ parameters:
   output_frame:
     codec: hevc
     encoder_params:
-      # 100 Mbps - module works normally
+      # 4.7 Mbps - module works normally on DS 7.0
+      bitrate: 4700000
+
+      # 100 Mbps - module works normally on DS 6.4, hangs on DS 7.0
       #bitrate: 100000000
 
       # 200 Mbps - module hangs after processing 150 frames
-      bitrate: 200000000
+      #bitrate: 200000000
