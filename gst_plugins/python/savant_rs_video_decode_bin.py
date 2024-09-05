@@ -332,7 +332,7 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
         source_id: str,
         caps: Gst.Caps,
     ):
-        self.logger.info('Adding branch with source %s', source_id)
+        self.logger.info('Adding branch with source %s. Caps: %s', source_id, caps)
         pad.remove_probe(probe_info.id)
 
         branch = self._branches.get(source_id)
@@ -392,6 +392,7 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
         self,
         decodebin: Gst.Element,
         new_element: Gst.Element,
+        branch: BranchInfo,
     ):
         """Handle adding new element to decodebin."""
 
@@ -400,6 +401,16 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
             new_element.get_name(),
             decodebin.get_name(),
         )
+
+        # https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_FAQ.html#on-jetson-platform-i-get-same-output-when-multiple-jpeg-images-are-fed-to-nvv4l2decoder-using-multifilesrc-plugin-why-is-that
+        if (
+            branch.codec == Codec.JPEG
+            and is_aarch64()
+            and new_element.get_factory().get_name() == 'nvv4l2decoder'
+        ):
+            self.logger.debug('Added mjpeg=true for nvv4l2decoder element')
+            new_element.set_property('mjpeg', 1)
+
         if self._low_latency_decoding:
             configure_low_latency_decoding(new_element)
 
@@ -500,32 +511,12 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
         decodebin.set_property('max-size-bytes', self._decoder_queue_byte_size)
         decodebin.set_property('max-size-time', 0)
 
-        # https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_FAQ.html#on-jetson-platform-i-get-same-output-when-multiple-jpeg-images-are-fed-to-nvv4l2decoder-using-multifilesrc-plugin-why-is-that
-        if branch.codec == Codec.JPEG and is_aarch64():
-
-            def on_add_element(
-                bin: Gst.Bin,
-                elem: Gst.Element,
-            ):
-                if elem.get_factory().get_name() == 'nvv4l2decoder':
-                    self.logger.debug('Added mjpeg=true for nvv4l2decoder element')
-                    elem.set_property('mjpeg', 1)
-
-            decodebin.connect('element-added', on_add_element)
-
         self.logger.debug('Configuring decodebin for source %s', branch.source_id)
-        # TODO: configure low-latency decoding
-        if branch.codec == Codec.H264:
-            # pipeline hangs up when caps specified with all the properties
-            decodebin.set_property(
-                'sink-caps', Gst.Caps.from_string(branch.codec.value.caps_with_params)
-            )
-        else:
-            decodebin.set_property('sink-caps', branch.caps)
+        decodebin.set_property('sink-caps', branch.caps)
         decodebin.set_property('caps', OUT_CAPS)
         self.logger.debug('Built decoder for source %s.', branch.source_id)
 
-        decodebin.connect('element-added', self.on_decodebin_element_added)
+        decodebin.connect('element-added', self.on_decodebin_element_added, branch)
         decodebin.connect('pad-added', self.on_decodebin_pad_added, branch)
 
         sink_pad: Gst.GhostPad = Gst.GhostPad.new(
