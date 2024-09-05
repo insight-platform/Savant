@@ -19,7 +19,7 @@ from savant_rs.utils.symbol_mapper import (
 from savant.base.converter import TensorFormat
 from savant.base.input_preproc import ObjectsPreprocessing
 from savant.base.pyfunc import PyFuncNoopCallException
-from savant.config.schema import FrameParameters, ModelElement
+from savant.config.schema import FramePadding, ModelElement
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
 from savant.deepstream.nvinfer.element_config import MERGED_CLASSES
 from savant.deepstream.nvinfer.model import (
@@ -63,7 +63,7 @@ class NvInferProcessor:
         self,
         element: ModelElement,
         objects_preprocessing: ObjectsPreprocessing,
-        frame_params: FrameParameters,
+        frame_padding: Optional[FramePadding],
         video_pipeline: VideoPipeline,
     ):
         self._logger = get_logger(
@@ -73,20 +73,10 @@ class NvInferProcessor:
         # c++ object preprocessing
         self._objects_preprocessing = objects_preprocessing
 
-        # frame rect to clip objects
-        self._frame_rect = (  # format: left-top-right-bottom
-            0.0,
-            0.0,
-            frame_params.width - 1.0,
-            frame_params.height - 1.0,
-        )
-        if frame_params.padding:
-            self._frame_rect = (
-                self._frame_rect[0] + frame_params.padding.left,
-                self._frame_rect[1] + frame_params.padding.top,
-                self._frame_rect[2] + frame_params.padding.left,
-                self._frame_rect[3] + frame_params.padding.top,
-            )
+        if frame_padding:
+            self._frame_rect_shift = frame_padding.left, frame_padding.top
+        else:
+            self._frame_rect_shift = 0, 0
 
         # video pipeline (frame/source info, telemetry span etc.)
         self._video_pipeline = video_pipeline
@@ -298,6 +288,7 @@ class NvInferProcessor:
         self._model: Union[NvInferAttributeModel, NvInferComplexModel]
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
+            frame_rect = self._frame_rect(nvds_frame_meta)
             for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
                 self._restore_object_meta(nvds_obj_meta)
                 if not self._is_model_input_object(nvds_obj_meta):
@@ -384,18 +375,18 @@ class NvInferProcessor:
                             bbox_tensor[:, 5] += bbox_tensor[:, 3]
 
                             # clip
-                            bbox_tensor[:, 2][
-                                bbox_tensor[:, 2] < self._frame_rect[0]
-                            ] = self._frame_rect[0]
-                            bbox_tensor[:, 3][
-                                bbox_tensor[:, 3] < self._frame_rect[1]
-                            ] = self._frame_rect[1]
-                            bbox_tensor[:, 4][
-                                bbox_tensor[:, 4] > self._frame_rect[2]
-                            ] = self._frame_rect[2]
-                            bbox_tensor[:, 5][
-                                bbox_tensor[:, 5] > self._frame_rect[3]
-                            ] = self._frame_rect[3]
+                            bbox_tensor[:, 2][bbox_tensor[:, 2] < frame_rect[0]] = (
+                                frame_rect[0]
+                            )
+                            bbox_tensor[:, 3][bbox_tensor[:, 3] < frame_rect[1]] = (
+                                frame_rect[1]
+                            )
+                            bbox_tensor[:, 4][bbox_tensor[:, 4] > frame_rect[2]] = (
+                                frame_rect[2]
+                            )
+                            bbox_tensor[:, 5][bbox_tensor[:, 5] > frame_rect[3]] = (
+                                frame_rect[3]
+                            )
 
                             # right to width, bottom to height
                             bbox_tensor[:, 4] -= bbox_tensor[:, 2]
@@ -613,3 +604,17 @@ class NvInferProcessor:
         source_id = video_frame.source_id
 
         return source_id, frame_idx
+
+    def _frame_rect(self, nvds_frame_meta):
+        """Frame rect to clip objects.
+
+        :param nvds_frame_meta: NvDs Frame meta.
+        :return: Tuple (left, top, right, bottom).
+        """
+
+        return (
+            self._frame_rect_shift[0],
+            self._frame_rect_shift[1],
+            nvds_frame_meta.source_frame_width + self._frame_rect_shift[0] - 1.0,
+            nvds_frame_meta.source_frame_height + self._frame_rect_shift[1] - 1.0,
+        )

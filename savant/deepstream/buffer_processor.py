@@ -1,9 +1,8 @@
 """Buffer processor for DeepStream pipeline."""
 
-from collections import deque
 from heapq import heappop, heappush
 from queue import Queue
-from typing import Deque, Dict, Iterator, List, NamedTuple, Optional, Tuple
+from typing import Dict, Iterator, List, NamedTuple, Optional
 
 import pyds
 from pygstsavantframemeta import (
@@ -31,7 +30,6 @@ from savant.api.parser import parse_attribute_value
 from savant.config.schema import FrameParameters
 from savant.deepstream.source_output import (
     SourceOutput,
-    SourceOutputEncoded,
     SourceOutputOnlyMeta,
     SourceOutputWithFrame,
 )
@@ -44,7 +42,6 @@ from savant.gstreamer.buffer_processor import GstBufferProcessor
 from savant.gstreamer.codecs import Codec, CodecInfo
 from savant.meta.constants import PRIMARY_OBJECT_KEY, UNTRACKED_OBJECT_ID
 from savant.meta.type import ObjectSelectionType
-from savant.utils.platform import is_aarch64
 from savant.utils.sink_factories import SinkVideoFrame
 from savant.utils.source_info import SourceInfo, SourceInfoRegistry
 
@@ -88,15 +85,17 @@ class NvDsBufferProcessor(GstBufferProcessor):
 
         super().__init__(queue)
         self._sources = sources
-        self._frame_params = frame_params
         self._queue = queue
         self._video_pipeline = video_pipeline
         self._pass_through_mode = pass_through_mode
 
-        self._scale_transformation = VideoFrameTransformation.scale(
-            frame_params.width,
-            frame_params.height,
-        )
+        if frame_params.width:
+            self._scale_transformation = VideoFrameTransformation.scale(
+                frame_params.width,
+                frame_params.height,
+            )
+        else:
+            self._scale_transformation = None
         if frame_params.padding and frame_params.padding.keep:
             self._padding_transformation = VideoFrameTransformation.padding(
                 frame_params.padding.left,
@@ -173,18 +172,16 @@ class NvDsBufferProcessor(GstBufferProcessor):
 
         # full frame primary object by default
         source_info = self._sources.get_source(video_frame.source_id)
-        self._add_transformations(
-            frame_idx=frame_idx,
-            source_info=source_info,
-            video_frame=video_frame,
+        self._add_transformations(frame_idx=frame_idx, video_frame=video_frame)
+        scale_factor_x = source_info.processing_width / source_info.src_resolution.width
+        scale_factor_y = (
+            source_info.processing_height / source_info.src_resolution.height
         )
-        scale_factor_x = self._frame_params.width / source_info.src_resolution.width
-        scale_factor_y = self._frame_params.height / source_info.src_resolution.height
         primary_bbox = BBox(
-            self._frame_params.width / 2,
-            self._frame_params.height / 2,
-            self._frame_params.width,
-            self._frame_params.height,
+            source_info.processing_width / 2,
+            source_info.processing_height / 2,
+            source_info.processing_width,
+            source_info.processing_height,
         )
         self.logger.debug(
             'Init primary bbox for frame with PTS %s: %s', frame_pts, primary_bbox
@@ -220,9 +217,9 @@ class NvDsBufferProcessor(GstBufferProcessor):
                 selection_type = ObjectSelectionType.REGULAR_BBOX
 
             bbox.scale(scale_factor_x, scale_factor_y)
-            if self._frame_params.padding:
-                bbox.left += self._frame_params.padding.left
-                bbox.top += self._frame_params.padding.top
+            if source_info.padding:
+                bbox.left += source_info.padding.left
+                bbox.top += source_info.padding.top
 
             track_id = obj_meta.track_id
             if track_id is None:
@@ -269,9 +266,9 @@ class NvDsBufferProcessor(GstBufferProcessor):
         # add primary frame object
         model_name, label = parse_compound_key(PRIMARY_OBJECT_KEY)
         model_uid, class_id = get_object_id(model_name, label)
-        if self._frame_params.padding:
-            primary_bbox.xc += self._frame_params.padding.left
-            primary_bbox.yc += self._frame_params.padding.top
+        if source_info.padding:
+            primary_bbox.xc += source_info.padding.left
+            primary_bbox.yc += source_info.padding.top
         self.logger.debug(
             'Add primary object to frame meta with PTS %s, bbox: %s',
             frame_pts,
@@ -293,12 +290,7 @@ class NvDsBufferProcessor(GstBufferProcessor):
 
         nvds_frame_meta.bInferDone = True  # required for tracker (DS 6.0)
 
-    def _add_transformations(
-        self,
-        frame_idx: Optional[int],
-        source_info: SourceInfo,
-        video_frame: VideoFrame,
-    ):
+    def _add_transformations(self, frame_idx: Optional[int], video_frame: VideoFrame):
         if self._pass_through_mode:
             return
 
@@ -309,7 +301,7 @@ class NvDsBufferProcessor(GstBufferProcessor):
             video_frame.pts,
         )
 
-        if source_info.add_scale_transformation:
+        if self._add_scale_transformation(video_frame):
             self.logger.debug(
                 'Adding scale transformation for frame of source %s '
                 'with IDX %s and PTS %s.',
@@ -328,6 +320,27 @@ class NvDsBufferProcessor(GstBufferProcessor):
                 video_frame.pts,
             )
             video_frame.add_transformation(self._padding_transformation)
+
+    def _add_scale_transformation(self, video_frame: VideoFrame) -> bool:
+        """Check if scale transformation is needed and add it to the frame."""
+
+        if not self._scale_transformation:
+            return False
+
+        if not video_frame.transformations:
+            return True
+
+        last_transformation = video_frame.transformations[-1]
+        if last_transformation.is_scale:
+            last_transformation_size = last_transformation.as_scale
+        elif last_transformation.is_initial_size:
+            last_transformation_size = last_transformation.as_initial_size
+        elif last_transformation.is_resulting_size:
+            last_transformation_size = last_transformation.as_resulting_size
+        else:
+            last_transformation_size = 0, 0
+
+        return last_transformation_size != self._scale_transformation.as_scale
 
     def prepare_output(
         self,
@@ -517,8 +530,8 @@ class NvDsBufferProcessor(GstBufferProcessor):
                 video_frame.transcoding_method = VideoFrameTranscodingMethod.Copy
 
             else:
-                video_frame.width = self._frame_params.output_width
-                video_frame.height = self._frame_params.output_height
+                video_frame.width = source_info.output_width
+                video_frame.height = source_info.output_height
                 video_frame.dts = output_frame.dts
                 if output_frame.codec is not None:
                     video_frame.codec = output_frame.codec.name
@@ -526,7 +539,7 @@ class NvDsBufferProcessor(GstBufferProcessor):
                 content = output_frame.frame
                 video_frame.transcoding_method = VideoFrameTranscodingMethod.Encoded
 
-            self._transform_geometry(video_frame)
+            self._transform_geometry(source_info, video_frame)
 
         return SinkVideoFrame(video_frame=video_frame, frame=content)
 
@@ -539,16 +552,16 @@ class NvDsBufferProcessor(GstBufferProcessor):
         span_context = spans[frame_idx].propagate()
         return sink_video_frame._replace(span_context=span_context)
 
-    def _transform_geometry(self, video_frame: VideoFrame):
+    def _transform_geometry(self, source_info: SourceInfo, video_frame: VideoFrame):
         if self._pass_through_mode and (
-            video_frame.width != self._frame_params.width
-            or video_frame.height != self._frame_params.height
+            video_frame.width != source_info.processing_width
+            or video_frame.height != source_info.processing_height
         ):
             video_frame.transform_geometry(
                 [
                     VideoObjectBBoxTransformation.scale(
-                        video_frame.width / self._frame_params.width,
-                        video_frame.height / self._frame_params.height,
+                        video_frame.width / source_info.processing_width,
+                        video_frame.height / source_info.processing_height,
                     )
                 ]
             )
@@ -640,99 +653,6 @@ class NvDsGstBufferProcessor(NvDsBufferProcessor):
             codec=self._codec,
             keyframe=is_keyframe,
         )
-
-
-class NvDsJetsonH26XBufferProcessor(NvDsGstBufferProcessor):
-    def __init__(self, *args, **kwargs):
-        """Buffer processor for DeepStream pipeline.
-
-        Workaround for a bug in h264x encoders on Jetson devices.
-        https://forums.developer.nvidia.com/t/nvv4l2h264enc-returns-frames-in-wrong-order-when-pts-doesnt-align-with-framerate/257363
-
-        Encoder "nvv4l2h26xenc" on Jetson devices produces frames with correct
-        DTS but with PTS and metadata from different frames. We store buffers
-        in a queue and wait for a buffer with correct PTS.
-        """
-
-        # source_id -> (DTS, buffer)
-        self._dts_queues: Dict[str, Deque[Tuple[int, Gst.Buffer]]] = {}
-        # source_id -> (PTS, IDX)
-        self._pts_queues: Dict[str, List[Tuple[int, Optional[int]]]] = {}
-        super().__init__(*args, **kwargs)
-
-    def _iterate_output_frames(
-        self,
-        buffer: Gst.Buffer,
-        source_info: SourceInfo,
-    ) -> Iterator[_OutputFrame]:
-        """Iterate output frames from Gst.Buffer."""
-
-        frame_idx = extract_frame_idx(buffer)
-        dts_queue = self._dts_queues.setdefault(source_info.source_id, deque())
-        pts_queue = self._pts_queues.setdefault(source_info.source_id, [])
-        # When the frame is empty assign DTS=PTS
-        dts = buffer.dts if buffer.get_size() > 0 else buffer.pts
-        if dts_queue or buffer.pts != dts:
-            self.logger.debug(
-                'Storing frame with PTS %s, DTS %s and IDX %s to queue.',
-                buffer.pts,
-                dts,
-                frame_idx,
-            )
-            dts_queue.append((dts, buffer))
-            heappush(pts_queue, (buffer.pts, frame_idx))
-            while dts_queue and dts_queue[0][0] == pts_queue[0][0]:
-                next_dts, next_buf = dts_queue.popleft()
-                next_pts, next_idx = heappop(pts_queue)
-                self.logger.debug(
-                    'Pushing output frame frame with PTS %s, DTS %s and IDX %s.',
-                    next_pts,
-                    next_dts,
-                    next_idx,
-                )
-                yield self._build_output_frame(
-                    idx=next_idx,
-                    pts=next_pts,
-                    dts=next_dts,
-                    buffer=next_buf,
-                )
-        else:
-            self.logger.debug(
-                'PTS and DTS of the frame are the same: %s. Pushing output frame.', dts
-            )
-            yield self._build_output_frame(
-                idx=frame_idx,
-                pts=buffer.pts,
-                dts=dts,
-                buffer=buffer,
-            )
-
-    def on_eos(self, source_info: SourceInfo):
-        """Pipeline EOS handler."""
-        dts_queue = self._dts_queues.pop(source_info.source_id, None)
-        pts_queue = self._pts_queues.pop(source_info.source_id, None)
-        if dts_queue is None:
-            return
-        while dts_queue:
-            dts, buffer = dts_queue.popleft()
-            pts, idx = dts, None
-
-            if pts_queue:
-                while pts_queue and pts_queue[0][0] <= dts:
-                    pts, idx = heappop(pts_queue)
-            if pts != dts:
-                pts = dts
-                idx = None
-
-            output_frame = self._build_output_frame(
-                idx=idx,
-                pts=pts,
-                dts=dts,
-                buffer=buffer,
-            )
-            sink_message = self._build_sink_video_frame(output_frame, source_info)
-            sink_message = self._delete_frame_from_pipeline(idx, sink_message)
-            self._queue.put(sink_message)
 
 
 class NvDsRawBufferProcessor(NvDsBufferProcessor):
@@ -850,16 +770,7 @@ def create_buffer_processor(
             pass_through_mode=pass_through_mode,
         )
 
-    if (
-        is_aarch64()
-        and isinstance(source_output, SourceOutputEncoded)
-        and source_output.encoder in ['nvv4l2h264enc', 'nvv4l2h265enc']
-    ):
-        buffer_processor_class = NvDsJetsonH26XBufferProcessor
-    else:
-        buffer_processor_class = NvDsGstBufferProcessor
-
-    return buffer_processor_class(
+    return NvDsGstBufferProcessor(
         queue=queue,
         sources=sources,
         frame_params=frame_params,

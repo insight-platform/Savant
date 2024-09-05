@@ -105,7 +105,7 @@ Conversion from CuPy array to PyTorch tensor is performed by using standard PyTo
 
     cupy_array = cp.random.randint(0, 255, (10, 20, 3)).astype(cp.uint8)
     # zero-copy, original array format
-    torch_tensor = torch.as_tensor(cupy_array)
+    torch_tensor = torch.as_tensor(cupy_array, device='cuda')
 
 
 Conversion to CuPy Array

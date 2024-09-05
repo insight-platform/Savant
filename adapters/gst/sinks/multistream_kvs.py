@@ -5,7 +5,6 @@ import signal
 import time
 from fractions import Fraction
 from typing import Dict, Optional
-from savant.utils.config import req_config
 
 from pygstsavantframemeta import (
     gst_buffer_add_savant_frame_meta,
@@ -25,7 +24,7 @@ from gst_plugins.python.savant_rs_video_demux_common import FrameParams, build_c
 from savant.api.enums import ExternalFrameType
 from savant.gstreamer import Gst, GstApp
 from savant.gstreamer.codecs import Codec
-from savant.utils.config import opt_config, strtobool
+from savant.utils.config import opt_config, req_config, strtobool
 from savant.utils.logging import get_logger, init_logging
 from savant.utils.zeromq import ZeroMQMessage, ZeroMQSource
 

@@ -1,6 +1,6 @@
 FROM ubuntu:22.04 AS base
 
-ENV DEBIAN_FRONTEND noninteractive
+ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && \
     apt-get install --no-install-recommends -y \
@@ -33,12 +33,12 @@ RUN apt-get update \
 
 # install/upgrade pip and builders
 RUN python3 -m pip install --no-cache-dir --upgrade \
-    build \
-    ninja \
-    pip \
-    scikit-build \
-    setuptools \
-    wheel
+        'build~=1.2.1' \
+        'ninja~=1.11.1.1' \
+        'pip~=24.2' \
+        'scikit-build~=0.18.1' \
+        'setuptools~=73.0.1' \
+        'wheel~=0.44.0'
 
 # install cmake
 ARG TARGETARCH

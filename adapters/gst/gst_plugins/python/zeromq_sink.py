@@ -28,7 +28,7 @@ from savant.api.builder import add_objects_to_video_frame
 from savant.api.constants import DEFAULT_FRAMERATE, DEFAULT_NAMESPACE, DEFAULT_TIME_BASE
 from savant.api.enums import ExternalFrameType
 from savant.gstreamer import GObject, Gst, GstBase
-from savant.gstreamer.codecs import CODEC_BY_CAPS_NAME, Codec
+from savant.gstreamer.codecs import Codec, caps_to_codec
 from savant.gstreamer.event import parse_savant_frame_tags_event
 from savant.gstreamer.utils import (
     gst_post_library_settings_error,
@@ -398,8 +398,8 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
         self.logger.info('Sink caps changed to %s', caps)
         struct: Gst.Structure = caps.get_structure(0)
         try:
-            codec = CODEC_BY_CAPS_NAME[struct.get_name()]
-        except KeyError:
+            codec = caps_to_codec(caps)
+        except ValueError:
             self.logger.error('Not supported caps: %s', caps.to_string())
             return False
         codec_name = codec.value.name

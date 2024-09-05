@@ -19,6 +19,7 @@ ZMQ_SOCKET_BIND="${ZMQ_BIND:="false"}"
 SYNC_OUTPUT="${SYNC_OUTPUT:="false"}"
 FRAMERATE="${FRAMERATE:="30/1"}"
 FPS_OUTPUT="${FPS_OUTPUT:="stdout"}"
+EOS_ON_FRAME_PARAMS_CHANGE="${EOS_ON_FRAME_PARAMS_CHANGE:="true"}"
 if [[ -n "${FPS_PERIOD_SECONDS}" ]]; then
     FPS_PERIOD="period-seconds=${FPS_PERIOD_SECONDS}"
 elif [[ -n "${FPS_PERIOD_FRAMES}" ]]; then
@@ -41,7 +42,7 @@ SINK_PROPERTIES=(
     source-id="${SOURCE_ID}"
     read-metadata="${READ_METADATA}"
     eos-on-file-end="${EOS_ON_FILE_END}"
-    eos-on-frame-params-change=true
+    eos-on-frame-params-change="${EOS_ON_FRAME_PARAMS_CHANGE}"
     socket="${ZMQ_ENDPOINT}"
     socket-type="${ZMQ_SOCKET_TYPE}"
     bind="${ZMQ_SOCKET_BIND}"

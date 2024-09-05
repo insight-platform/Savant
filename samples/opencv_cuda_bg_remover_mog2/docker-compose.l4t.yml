@@ -10,7 +10,7 @@ services:
       - LOCATION=https://eu-central-1.linodeobjects.com/savant-data/demo/road_traffic.mp4
       - DOWNLOAD_PATH=/tmp/video-loop-source-downloads
       - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
-      - SOURCE_ID=road-traffic-processed
+      - SOURCE_ID=road-traffic
       - SYNC_OUTPUT=True
     entrypoint: /opt/savant/adapters/gst/sources/video_loop.sh
     depends_on:

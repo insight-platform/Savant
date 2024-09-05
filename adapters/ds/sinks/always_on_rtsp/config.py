@@ -3,7 +3,6 @@ import os
 from enum import Enum
 from pathlib import Path
 from typing import Optional
-from savant.utils.config import req_config
 
 from savant_rs.pipeline2 import (
     StageFunction,
@@ -14,7 +13,7 @@ from savant_rs.pipeline2 import (
 
 from adapters.ds.sinks.always_on_rtsp.utils import nvidia_runtime_is_available
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
-from savant.utils.config import opt_config, strtobool
+from savant.utils.config import opt_config, req_config, strtobool
 from savant.utils.zeromq import ReceiverSocketTypes
 
 ENCODER_DEFAULT_PROFILES = {
@@ -125,6 +124,8 @@ class Config(CommonStreamConfig):
 
         self.pipeline_source_stage_name = 'source'
         self.pipeline_demux_stage_name = 'source-demux'
+
+        self.low_latency_decoding = opt_config('LOW_LATENCY_DECODING', False, strtobool)
 
         conf = VideoPipelineConfiguration()
         conf.frame_period = opt_config('FPS_PERIOD_FRAMES', 1000, int)

@@ -153,6 +153,12 @@ def files_source(
     default=True,
     show_default=True,
 )
+@click.option(
+    '--eos-on-frame-params-change',
+    help='Send EOS at every video parameters change (resolution, framerate).',
+    default=True,
+    show_default=True,
+)
 @common_options
 @sync_option
 @absolute_ts_option
@@ -173,6 +179,7 @@ def videos_source(
     sort_by_time: bool,
     read_metadata: bool,
     eos_on_file_end: bool,
+    eos_on_frame_params_change: bool,
 ):
     """Read video files from LOCATION.
     LOCATION can be single file, directory or HTTP URL.
@@ -193,6 +200,7 @@ def videos_source(
             f'SORT_BY_TIME={sort_by_time}',
             f'READ_METADATA={read_metadata}',
             f'EOS_ON_FILE_END={eos_on_file_end}',
+            f'EOS_ON_FRAME_PARAMS_CHANGE={eos_on_frame_params_change}',
         ],
         use_absolute_timestamps=use_absolute_timestamps,
     )
@@ -431,6 +439,12 @@ def multi_stream_source(
     default=False,
     show_default=True,
 )
+@click.option(
+    '--eos-on-frame-params-change',
+    help='Send EOS at every image resolution change.',
+    default=True,
+    show_default=True,
+)
 @common_options
 @sync_option
 @absolute_ts_option
@@ -452,6 +466,7 @@ def images_source(
     sort_by_time: bool,
     read_metadata: bool,
     eos_on_file_end: bool,
+    eos_on_frame_params_change: bool,
 ):
     """Read image files from LOCATION.
     LOCATION can be single file, directory or HTTP URL.
@@ -474,6 +489,7 @@ def images_source(
             f'SORT_BY_TIME={sort_by_time}',
             f'READ_METADATA={read_metadata}',
             f'EOS_ON_FILE_END={eos_on_file_end}',
+            f'EOS_ON_FRAME_PARAMS_CHANGE={eos_on_frame_params_change}',
         ],
         use_absolute_timestamps=use_absolute_timestamps,
     )
@@ -949,6 +965,59 @@ def kafka_redis_source(
         zmq_endpoints=[out_endpoint],
         entrypoint='python',
         args=['-m', 'adapters.python.sources.kafka_redis'],
+        envs=envs,
+        docker_image=docker_image,
+    )
+    run_command(cmd)
+
+
+@cli.command('mdp')
+@click.option(
+    '--playlist',
+    required=True,
+    help='Path to the playlist file.',
+)
+@click.option(
+    '--dump-files-dir',
+    required=True,
+    help='Path to the directory with message dump files listed in the playlist.',
+)
+@click.option(
+    '--out-endpoint',
+    default='dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc',
+    help='Adapter output (module input) ZeroMQ socket endpoint.',
+    show_default=True,
+)
+@click.option(
+    '--sync',
+    is_flag=True,
+    default=False,
+    help='Send frames from source synchronously (i.e. at the source file rate).',
+)
+@adapter_docker_image_option('py')
+def message_dump_player_source(
+    out_endpoint: str, docker_image: str, playlist: str, dump_files_dir: str, sync: bool
+):
+    """Plays video dumps sequentially from a playlist file and sends them to a module."""
+
+    envs = build_common_envs(
+        source_id=None,
+        fps_period_frames=None,
+        fps_period_seconds=None,
+        fps_output=None,
+        zmq_endpoint=out_endpoint,
+        zmq_type=None,
+        zmq_bind=None,
+    ) + [
+        f'PLAYLIST_PATH={playlist}',
+        f'SYNC_OUTPUT={sync}',
+    ]
+    cmd = build_docker_run_command(
+        f'source-message-dump-player-{uuid.uuid4().hex}',
+        zmq_endpoints=[out_endpoint],
+        volumes=[f'{playlist}:{playlist}:ro', f'{dump_files_dir}:{dump_files_dir}'],
+        entrypoint='python',
+        args=['-m', 'adapters.python.sources.message_dump_player'],
         envs=envs,
         docker_image=docker_image,
     )

@@ -236,7 +236,8 @@ Currently, the following source adapters are available:
 - GigE (Genicam) industrial cam;
 - FFmpeg;
 - Multi-stream;
-- Kafka-Redis Source.
+- Kafka-Redis Source;
+- Message Dump Player.
 
 Most source adapters accept the following common parameters:
 
@@ -267,6 +268,12 @@ The images are served from:
 .. note::
     The adapter also can be used to implement asynchronous image processing pipelines. Metadata allows passing per-image identification information over the pipeline to access the results when those images are processed.
 
+.. note::
+    It is advisable to have all pictures in the same resolution to avoid issues with the pipeline. Sending images with different resolutions will degrade the performance of the pipeline. To avoid this there are few options:
+        1. Resize all images to the same resolution.
+        2. Set ``EOS_ON_FRAME_PARAMS_CHANGE=True`` in the adapter and ``pipeline.source.properties.eos_on_frame_resolution_change: true`` in module configuration. This should work on dGPU but won't work on Jetson.
+        3. Sort images by resolution. This will decrease the amount of generated EOS.
+
 **Parameters**:
 
 - ``FILE_TYPE``: a flag specifying that the adapter is used for images; it must always be set to ``image``;
@@ -274,6 +281,7 @@ The images are served from:
 - ``FRAMERATE``: a desired framerate for the output video stream generated from image files (the parameter is used only if ``SYNC_OUTPUT=True``);
 - ``SYNC_OUTPUT``: a flag indicating that images are delivered into a module as a video stream; otherwise, the files are sent as fast as the module is capable processing them; default is ``False``;
 - ``EOS_ON_FILE_END``: a flag configuring sending of ``EOS`` message after every image; the ``EOS`` message is important to trackers, helping them to reset tracking when a video stream is no longer continuous; default is ``False``;
+- ``EOS_ON_FRAME_PARAMS_CHANGE``: a flag configuring sending of ``EOS`` message after every change in image resolution; the ``EOS`` message is important to trackers, helping them to reset tracking when a video stream is no longer continuous; default is ``True``;
 - ``SORT_BY_TIME``: a flag specifying sorting by modification time (ascending); by default, it is ``False``, causing the files to be sorted lexicographically;
 - ``READ_METADATA``: a flag specifying the need to augment images with metadata from ``JSON`` files with the corresponding names as the source files; default is ``False``.
 
@@ -314,6 +322,7 @@ The video files are served from:
 - ``FILE_TYPE``: must be set to ``video``;
 - ``LOCATION``: a video file(s) location or URL;
 - ``EOS_ON_FILE_END``: a flag indicating whether to send the ``EOS`` message at the end of each file; default is ``True``; the ``EOS`` message is crucial for trackers to recognize when a video stream is no longer continuous; when sending ordered parts of a single video file without gaps usually must be set to ``False``;
+- ``EOS_ON_FRAME_PARAMS_CHANGE``: a flag indicating whether to send the ``EOS`` message after every change in video parameters (resolution, framerate); default is ``True``; the ``EOS`` message is crucial for trackers to recognize when a video stream is no longer continuous;
 - ``SYNC_OUTPUT``: flag specifying if to send frames synchronously (i.e. at the source file rate); default is ``False``;
 - ``SORT_BY_TIME``: a flag indicating whether files are sorted by modification time (ascending) before sending to a module; by default, it is ``False`` (lexicographical sorting);
 - ``READ_METADATA``: a flag specifying the need to augment video frames with metadata from ``JSON`` files with the corresponding names as the source files; default is ``False``.
@@ -866,6 +875,39 @@ Example:
         "is_playing": false
     }
 
+Message Dump Player Source Adapter
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The Message Dump Player Adapter plays video dumps sequentially from a playlist file and sends them to a module.
+Playlist file contains a list of message dump files, one per line.
+It's one shot adapter, i.e. it stops after playing all files from the playlist.
+
+**Parameters**:
+
+- ``PLAYLIST_PATH``: a path to the playlist file;
+- ``SYNC_OUTPUT``: flag specifying if to send frames synchronously (i.e. at the source file rate); default is ``False``.
+
+Running the adapter with Docker:
+
+.. code-block:: bash
+
+    docker run --rm -it --name message-dump-player-test \
+        --entrypoint python \
+        -e PLAYLIST_PATH=/path/to/playlist/file.txt \
+        -e SYNC_OUTPUT=False \
+        -e ZMQ_ENDPOINT=dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc \
+        -v /path/to/playlist/file.txt:/path/to/playlist/file.txt:ro \
+        -v /path/to/dump/files:/path/to/dump/files \
+        -v /tmp/zmq-sockets:/tmp/zmq-sockets \
+        ghcr.io/insight-platform/savant-adapters-py:latest \
+        -m adapters.python.sources.message_dump_player
+
+Running with the helper script:
+
+.. code-block:: bash
+
+    ./scripts/run_source.py mdp --playlist /path/to/playlist/file.txt --dump-files-dir /path/to/dump/files
+
 Sink Adapters
 -------------
 
@@ -1000,14 +1042,22 @@ The Display Sink Adapter is a visualizing adapter designed for development purpo
 - ``CLOSING_DELAY``: a delay in seconds before closing the window after the video stream has finished, the default value is ``0``;
 - ``SYNC_INPUT``: a flag indicating whether to show the frames on the sink synchronously with the source (i.e., at the source file rate); if you are intending to use ``SYNC`` processing, consider ``DEALER/ROUTER`` or ``REQ/REP`` sockets, because ``PUB/SUB`` may drop packets when queues are overflown;
 - ``SOURCE_ID``: an optional filter to filter out frames with a specific ``source_id`` only;
-- ``SOURCE_ID_PREFIX``: an optional filter to filter out frames with a ``source_id`` prefix only.
+- ``SOURCE_ID_PREFIX``: an optional filter to filter out frames with a ``source_id`` prefix only;
+- ``SOURCE_TIMEOUT``: a timeout before deleting stale source (in seconds); the default value is ``10``;
+- ``SOURCE_EVICTION_INTERVAL``: an interval between source eviction checks (in seconds); the default value is ``1``;
+- ``INGRESS_QUEUE_LENGTH``: a length of the ingress queue in frames; the default value is ``200``;
+- ``INGRESS_QUEUE_BYTE_SIZE``: a size of the ingress queue in bytes; the default value is ``10485760``;
+- ``DECODER_QUEUE_LENGTH``: a length of the queue before decoder in frames; the default value is ``5``;
+- ``DECODER_QUEUE_BYTE_SIZE``: a size of the queue before decoder in bytes; the default value is ``10485760``;
+- ``EGRESS_QUEUE_LENGTH``: a length of the queue after decoder in frames; the default value is ``5``;
+- ``EGRESS_QUEUE_BYTE_SIZE``: a size of the queue after decoder in bytes; the default value is ``10485760``.
 
 Running the adapter with Docker:
 
 .. code-block:: bash
 
     docker run --rm -it --name sink-display \
-        --entrypoint /opt/savant/adapters/ds/sinks/display.sh \
+        --entrypoint /opt/savant/adapters/ds/sinks/display.py \
         -e SYNC_INPUT=False \
         -e ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc \
         -e DISPLAY \
@@ -1162,6 +1212,10 @@ The simplified design of the adapter is depicted in the following diagram:
       - An interval in milliseconds to poll statuses of the streams.
       - ``1000``
       - ``500``
+    * - ``LOW_LATENCY_DECODING``
+      - A flag specifying whether to use low-latency decoding (only for hardware decoder ``nvv4l2decoder``). Do not enable it if input stream contains B-frames.
+      - ``False``
+      - ``True``
 
 When ``DEV_MODE=True`` the stream is available at:
 

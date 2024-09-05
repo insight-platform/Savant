@@ -38,7 +38,8 @@ class AuxiliaryStreamInternal:
         self._logger = get_logger(f'{__name__}.{source_id}')
         self._source_id = source_id
         self._sources = sources
-        self._source_info = sources.init_source(source_id)
+        frame_params = FrameParameters(width=width, height=height)
+        self._source_info = sources.init_source(source_id, frame_params)
         self._width = width
         self._height = height
         self._framerate = framerate
@@ -62,9 +63,7 @@ class AuxiliaryStreamInternal:
         if codec not in AUXILIARY_STREAM_CODECS:
             raise ValueError(f'Unsupported codec: {codec}')
 
-        frame_params = FrameParameters(width=width, height=height)
         self._source_output = create_source_output(
-            frame_params=frame_params,
             output_frame=codec_params,
             video_pipeline=video_pipeline,
             queue_properties={},

@@ -21,7 +21,10 @@ from savant.config.schema import (
     TelemetryParameters,
     get_element_name,
 )
-from savant.deepstream.nvinfer.element_config import nvinfer_element_configurator
+from savant.deepstream.nvinfer.element_config import (
+    nvinfer_element_configurator,
+    nvtracker_element_configurator,
+)
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
 from savant.parameter_storage import init_param_storage
 from savant.utils.logging import get_logger
@@ -172,6 +175,9 @@ def get_schema_configurator(
 
     if element == 'nvinfer':
         return ModelElement, nvinfer_element_configurator
+
+    if element == 'nvtracker':
+        return PipelineElement, nvtracker_element_configurator
 
     if element == 'zeromq_source_bin':
         return SourceElement, source_element_configurator
@@ -389,12 +395,22 @@ def validate_frame_parameters(config: Module):
     """Validate frame parameters."""
 
     frame_parameters: FrameParameters = config.parameters['frame']
-    if frame_parameters.width % frame_parameters.geometry_base != 0:
+    if (frame_parameters.width is None) != (frame_parameters.height is None):
+        raise ModuleConfigException(
+            'Both frame width and height must be either set or unset.'
+        )
+    if (
+        frame_parameters.width is not None
+        and frame_parameters.width % frame_parameters.geometry_base != 0
+    ):
         raise ModuleConfigException(
             f'Frame width ({frame_parameters.width}) '
             f'must be divisible by geometry base ({frame_parameters.geometry_base}).'
         )
-    if frame_parameters.height % frame_parameters.geometry_base != 0:
+    if (
+        frame_parameters.height is not None
+        and frame_parameters.height % frame_parameters.geometry_base != 0
+    ):
         raise ModuleConfigException(
             f'Frame height ({frame_parameters.height}) '
             f'must be divisible by geometry base ({frame_parameters.geometry_base}).'

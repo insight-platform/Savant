@@ -3,7 +3,12 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Optional
 
-from savant_rs.primitives import EndOfStream, VideoFrame, VideoFrameContent
+from savant_rs.primitives import (
+    EndOfStream,
+    VideoFrame,
+    VideoFrameBatch,
+    VideoFrameContent,
+)
 
 from savant.client.log_provider import LogProvider
 from savant.client.runner import LogResult
@@ -17,8 +22,13 @@ logger = get_logger(__name__)
 
 @dataclass
 class SinkResult(LogResult):
-    """Result of receiving a message from ZeroMQ socket."""
+    """Result of receiving a message from ZeroMQ socket.
 
+    frame_batch, frame_meta+frame_content, and eos are mutually exclusive.
+    """
+
+    frame_batch: Optional[VideoFrameBatch]
+    """Video frame batch."""
     frame_meta: Optional[VideoFrame]
     """Video frame metadata."""
     frame_content: Optional[bytes] = field(repr=False)
@@ -40,6 +50,8 @@ class BaseSinkRunner(ABC):
         module_health_check_interval: float,
         receive_timeout: int = Defaults.RECEIVE_TIMEOUT,
         receive_hwm: int = Defaults.RECEIVE_HWM,
+        source_id: Optional[str] = None,
+        source_id_prefix: Optional[str] = None,
     ):
         self._log_provider = log_provider
         self._idle_timeout = idle_timeout if idle_timeout is not None else 10**6
@@ -53,11 +65,24 @@ class BaseSinkRunner(ABC):
             if module_health_check_url is not None
             else None
         )
-        self._source = self._build_zeromq_source(socket, receive_timeout, receive_hwm)
+        self._source = self._build_zeromq_source(
+            socket, receive_timeout, receive_hwm, source_id, source_id_prefix
+        )
         self._source.start()
 
+    def __del__(self):
+        logger.info('Terminating ZeroMQ connection')
+        self._source.terminate()
+
     @abstractmethod
-    def _build_zeromq_source(self, socket: str, receive_timeout: int, receive_hwm: int):
+    def _build_zeromq_source(
+        self,
+        socket: str,
+        receive_timeout: int,
+        receive_hwm: int,
+        source_id: Optional[str],
+        source_id_prefix: Optional[str],
+    ):
         pass
 
     @abstractmethod
@@ -86,6 +111,22 @@ class BaseSinkRunner(ABC):
             return SinkResult(
                 frame_meta=video_frame,
                 frame_content=content,
+                frame_batch=None,
+                eos=None,
+                trace_id=trace_id,
+                log_provider=self._log_provider,
+            )
+
+        if message.is_video_frame_batch():
+            video_frame_batch = message.as_video_frame_batch()
+            logger.debug(
+                'Received video frame batch with %s frames.',
+                len(video_frame_batch.frames),
+            )
+            return SinkResult(
+                frame_meta=None,
+                frame_content=None,
+                frame_batch=video_frame_batch,
                 eos=None,
                 trace_id=trace_id,
                 log_provider=self._log_provider,
@@ -97,6 +138,7 @@ class BaseSinkRunner(ABC):
             return SinkResult(
                 frame_meta=None,
                 frame_content=None,
+                frame_batch=None,
                 eos=eos,
                 trace_id=trace_id,
                 log_provider=self._log_provider,
@@ -108,12 +150,21 @@ class BaseSinkRunner(ABC):
 class SinkRunner(BaseSinkRunner):
     """Receives messages from ZeroMQ socket."""
 
-    def _build_zeromq_source(self, socket: str, receive_timeout: int, receive_hwm: int):
+    def _build_zeromq_source(
+        self,
+        socket: str,
+        receive_timeout: int,
+        receive_hwm: int,
+        source_id: Optional[str],
+        source_id_prefix: Optional[str],
+    ):
         return ZeroMQSource(
             socket=socket,
             receive_timeout=receive_timeout,
             receive_hwm=receive_hwm,
             set_ipc_socket_permissions=False,
+            source_id=source_id,
+            source_id_prefix=source_id_prefix,
         )
 
     def __next__(self) -> SinkResult:
@@ -151,12 +202,21 @@ class AsyncSinkRunner(BaseSinkRunner):
 
     _source: AsyncZeroMQSource
 
-    def _build_zeromq_source(self, socket: str, receive_timeout: int, receive_hwm: int):
+    def _build_zeromq_source(
+        self,
+        socket: str,
+        receive_timeout: int,
+        receive_hwm: int,
+        source_id: Optional[str],
+        source_id_prefix: Optional[str],
+    ):
         return AsyncZeroMQSource(
             socket=socket,
             receive_timeout=receive_timeout,
             receive_hwm=receive_hwm,
             set_ipc_socket_permissions=False,
+            source_id=source_id,
+            source_id_prefix=source_id_prefix,
         )
 
     async def __anext__(self) -> SinkResult:

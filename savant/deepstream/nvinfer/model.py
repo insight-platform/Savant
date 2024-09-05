@@ -59,6 +59,55 @@ class NvInferModelType(Enum):
     """Custom model."""
 
 
+class NvInferScalingComputeHW(Enum):
+    """Enum for hardware to be used for scaling compute."""
+
+    AUTO = 0
+    """Auto select the hardware."""
+
+    GPU = 1
+    """Use GPU for scaling."""
+
+    VIC = 2
+    """Use VIC for scaling."""
+
+
+class NvInferScalingFilter(Enum):
+    """Enum for algorithm to be used for scaling."""
+
+    NEAREST = 0
+    """Nearest neighbor interpolation."""
+
+    BILINEAR = 1
+    """Bilinear interpolation."""
+
+    GPU_CUBIC = 2
+    """GPU cubic interpolation."""
+
+    VIC_5_TAP = 2
+    """VIC-based 5-tap interpolation."""
+
+    GPU_SUPER = 3
+    """GPU super resolution."""
+
+    VIC_10_TAP = 3
+    """VIC-based 10-tap interpolation."""
+
+    GPU_LANCZOS = 4
+    """GPU Lanczos interpolation."""
+
+    VIC_SMART = 4
+    """VIC-based smart interpolation."""
+
+    GPU_IGNORED = 5
+    """Ignore scaling."""
+
+    VIC_NICEST = 5
+    """VIC-based nicest interpolation."""
+
+    AUTO = 6
+
+
 @dataclass
 class NvInferModelInput(ModelInput):
     """`nvinfer` model input configuration template.
@@ -156,9 +205,6 @@ class NvInferModel(Model):
     """Specifies the number of consecutive batches to be skipped for inference."""
 
     # TODO: Add support for Gst-nvinfer props
-    # symmetric-padding (with maintain-aspect-ratio) -
-    #     Indicates whether to pad image symmetrically while scaling input.
-    #     DeepStream pads the images asymmetrically by default.
     # network-input-order - Order of the network input layer
 
     workspace_size: int = 6144
@@ -182,6 +228,14 @@ class NvInferModel(Model):
 
     use_dla_core: Optional[int] = None
     """Specifies the DLA core to be used for inference.
+    """
+
+    scaling_compute_hw: Optional[NvInferScalingComputeHW] = None
+    """Specifies the hardware to be used for scaling compute.
+    """
+
+    scaling_filter: Optional[NvInferScalingFilter] = None
+    """Specifies the algorithm to be used for scaling.
     """
 
 

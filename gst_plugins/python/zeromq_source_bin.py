@@ -92,6 +92,7 @@ class ZeroMQSourceBin(LoggerMixin, Gst.Bin):
         self._ingress_queue_length: int = DEFAULT_INGRESS_QUEUE_LENGTH
         self._ingress_queue_byte_size: int = DEFAULT_INGRESS_QUEUE_SIZE
         self._video_pipeline: Optional[VideoPipeline] = None
+        self._is_running = True
 
         self._source: Gst.Element = Gst.ElementFactory.make('zeromq_src')
         self.add(self._source)
@@ -193,16 +194,21 @@ class ZeroMQSourceBin(LoggerMixin, Gst.Bin):
         for ghost_pad in self.iterate_pads():
             if ghost_pad.get_name() == pad.get_name():
                 self.remove_pad(ghost_pad)
-                return
+                break
+
+        if not self._is_running and not self.srcpads:
+            self.logger.debug('Emitting shutdown signal.')
+            self.emit('shutdown')
 
     def on_shutdown(self, element: Gst.Element):
         """Handle shutdown signal."""
 
-        self.logger.info(
-            'Received shutdown signal from %s. Passing it downstream.',
-            element.get_name(),
-        )
+        self.logger.info('Received shutdown signal from %s.', element.get_name())
         self.emit('shutdown')
+        self._is_running = False
+        if not self.srcpads:
+            self.logger.debug('Emitting shutdown signal.')
+            self.emit('shutdown')
 
 
 # register plugin

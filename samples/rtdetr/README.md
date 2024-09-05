@@ -2,7 +2,7 @@
 
 The sample shows how RT-DETR model can be used in a Savant module.
 
-The detector model was prepared in the ONNX format using instructions from [DeepStream-Yolo repo](https://github.com/marcoslucianops/DeepStream-Yolo/blob/master/docs/RTDETR.md).
+The detector model was prepared in the ONNX format using instructions from [DeepStream-Yolo repo](https://github.com/marcoslucianops/DeepStream-Yolo/blob/master/docs/RTDETR_PyTorch.md).
 
 Weights used: `v0.1/rtdetr_r50vd_6x_coco_from_paddle.pth`  from the [RT-DETR releases](https://github.com/lyuwenyu/storage/releases).
 
@@ -48,6 +48,9 @@ The demo uses models that are compiled into TensorRT engines the first time the 
 
 # if x86
 docker compose -f samples/rtdetr/docker-compose.x86.yml up
+
+# if Jetson
+docker compose -f samples/rtdetr/docker-compose.l4t.yml up
 
 # open 'rtsp://127.0.0.1:554/stream/leeds' in your player
 # or visit 'http://127.0.0.1:888/stream/leeds/' (LL-HLS)

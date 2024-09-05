@@ -1,8 +1,10 @@
 """DeepStream pipeline."""
 
 import logging
+import tempfile
 import time
 from collections import defaultdict
+from fractions import Fraction
 from queue import Queue
 from threading import Lock, Thread
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -97,8 +99,14 @@ class NvDsPipeline(GstPipeline):
         self._frame_params: FrameParameters = kwargs['frame']
 
         self._batch_size = kwargs['batch_size']
+        self._max_same_source_frames = kwargs.get(
+            'max_same_source_frames', self._batch_size
+        )
         self._stream_buffer_pool_size = kwargs.get('stream_buffer_pool_size')
         self._muxer_buffer_pool_size = kwargs.get('muxer_buffer_pool_size')
+        self._min_fps = Fraction(kwargs.get('min_fps', '30/1'))
+        self._max_fps = Fraction(kwargs.get('max_fps', '1000/1'))
+        self._max_fps_control = kwargs.get('max_fps_control', False)
 
         # Timeout in microseconds
         self._batched_push_timeout = kwargs.get('batched_push_timeout', 2000)
@@ -170,7 +178,6 @@ class NvDsPipeline(GstPipeline):
         )
 
         self._source_output = create_source_output(
-            frame_params=self._frame_params,
             output_frame=output_frame,
             video_pipeline=self._video_pipeline,
             queue_properties=self._egress_queue_properties,
@@ -180,9 +187,11 @@ class NvDsPipeline(GstPipeline):
         # the plugin doesn't support some jpg
         #  https://forums.developer.nvidia.com/t/nvvideoconvert-memory-compatibility-error/226138;
         # Set the rank to NONE for the plugin to not use it.
+        # Decodebin will use nvv4l2decoder instead.
         if is_aarch64():
             factory = Gst.ElementFactory.find('nvjpegdec')
-            factory.set_rank(Gst.Rank.NONE)
+            if factory is not None:
+                factory.set_rank(Gst.Rank.NONE)
 
         super().__init__(name, pipeline_cfg, **kwargs)
 
@@ -218,7 +227,7 @@ class NvDsPipeline(GstPipeline):
             nvinfer = NvInferProcessor(
                 element,
                 self._objects_preprocessing,
-                self._frame_params,
+                self._frame_params.padding,
                 self._video_pipeline,
             )
             if nvinfer.preproc is not None:
@@ -333,7 +342,7 @@ class NvDsPipeline(GstPipeline):
         ].startswith('rtsp://')
         if live_source:
             self.add_element(PipelineElement('queue'))
-        self._create_muxer(live_source)
+        self._create_muxer()
 
     # Sink
     def _add_sink(
@@ -385,7 +394,7 @@ class NvDsPipeline(GstPipeline):
         try:
             source_info = self._sources.get_source(source_id)
         except KeyError:
-            source_info = self._sources.init_source(source_id)
+            source_info = self._sources.init_source(source_id, self._frame_params)
         else:
             while self._is_running and not source_info.lock.wait(5):
                 self._logger.debug(
@@ -453,10 +462,6 @@ class NvDsPipeline(GstPipeline):
             with self._source_adding_lock:
                 self._check_pipeline_is_running()
                 source_info.src_resolution = Resolution(width, height)
-                source_info.add_scale_transformation = (
-                    self._frame_params.width != width
-                    or self._frame_params.height != height
-                )
                 self._sources.update_source(source_info)
 
                 if not source_info.after_demuxer:
@@ -537,14 +542,14 @@ class NvDsPipeline(GstPipeline):
                 'Input stream is RGB, using compute-hw=1 as recommended by Nvidia'
             )
             nv_video_converter_props['compute-hw'] = 1
-        if self._frame_params.padding:
+        if source_info.padding:
             dest_crop = ':'.join(
                 str(x)
                 for x in [
-                    self._frame_params.padding.left,
-                    self._frame_params.padding.top,
-                    self._frame_params.width,
-                    self._frame_params.height,
+                    source_info.padding.left,
+                    source_info.padding.top,
+                    source_info.processing_width,
+                    source_info.processing_height,
                 ]
             )
             nv_video_converter_props['dest-crop'] = dest_crop
@@ -585,8 +590,8 @@ class NvDsPipeline(GstPipeline):
                 properties={
                     'caps': (
                         'video/x-raw(memory:NVMM), format=RGBA, '
-                        f'width={self._frame_params.total_width}, '
-                        f'height={self._frame_params.total_height}'
+                        f'width={source_info.total_width}, '
+                        f'height={source_info.total_height}'
                     ),
                 },
             )
@@ -702,6 +707,7 @@ class NvDsPipeline(GstPipeline):
         )
 
         try:
+            self._source_output.remove_output(self._pipeline, source_info)
             for elem in source_info.after_demuxer:
                 self._logger.debug('Removing element %s', elem.get_name())
                 elem.set_locked_state(True)
@@ -827,6 +833,8 @@ class NvDsPipeline(GstPipeline):
                 frame_pts,
             )
 
+        source_info = self._sources.get_source(video_frame.source_id)
+
         def _nvds_obj_id(_obj_meta: pyds.NvDsObjectMeta) -> str:
             return f'{_obj_meta.obj_label}#{_obj_meta.object_id}'
 
@@ -848,12 +856,14 @@ class NvDsPipeline(GstPipeline):
 
             # check if primary object
             if nvds_obj_meta.obj_label == PRIMARY_OBJECT_KEY:
-                bbox = nvds_obj_bbox_output_converter(nvds_obj_meta, self._frame_params)
+                bbox = nvds_obj_bbox_output_converter(
+                    nvds_obj_meta, source_info.padding
+                )
                 dest_res_bbox = RBBox(
-                    self._frame_params.output_width / 2,
-                    self._frame_params.output_height / 2,
-                    self._frame_params.output_width,
-                    self._frame_params.output_height,
+                    source_info.output_width / 2,
+                    source_info.output_height / 2,
+                    source_info.output_width,
+                    source_info.output_height,
                 )
                 if not bbox.almost_eq(dest_res_bbox, 1e-6):
                     if self._logger.isEnabledFor(logging.DEBUG):
@@ -872,7 +882,10 @@ class NvDsPipeline(GstPipeline):
 
             # convert nvds object meta to savant-rs object meta
             obj_meta = nvds_obj_meta_output_converter(
-                nvds_frame_meta, nvds_obj_meta, self._frame_params, video_frame
+                nvds_frame_meta,
+                nvds_obj_meta,
+                source_info.padding,
+                video_frame,
             )
             nvds_object_id_map[_nvds_obj_id(nvds_obj_meta)] = obj_meta.id
             if (
@@ -897,35 +910,20 @@ class NvDsPipeline(GstPipeline):
             video_frame.set_parent_by_id(obj_id, nvds_object_id_map[parent_id])
 
     # Muxer
-    def _create_muxer(self, live_source: bool) -> Gst.Element:
-        """Create nvstreammux element and add it into pipeline.
+    def _create_muxer(self) -> Gst.Element:
+        """Create nvstreammux element and add it into pipeline."""
 
-        :param live_source: Whether source is live or not.
-        """
-
+        config_file = self._create_muxer_config()
+        self._logger.debug('Muxer config file: %s', config_file)
+        with open(config_file) as f:
+            self._logger.debug('Muxer config:\n%s\n-----------', f.read())
         frame_processing_params = {
-            'width': self._frame_params.total_width,
-            'height': self._frame_params.total_height,
             # Allowed range for batch-size: 1 - 1024
             'batch-size': self._batch_size,
-            # Allowed range for buffer-pool-size: 4 - 1024
             'batched-push-timeout': self._batched_push_timeout,
-            'live-source': live_source,  # True for RTSP or USB camera
-            # TODO: remove when the bug with odd will be fixed
-            # https://forums.developer.nvidia.com/t/nvstreammux-error-releasing-cuda-memory/219895/3
-            'interpolation-method': 6,
             'drop-pipeline-eos': self._suppress_eos,
+            'config-file-path': config_file,
         }
-
-        if self._muxer_buffer_pool_size is not None:
-            frame_processing_params['buffer-pool-size'] = max(
-                4, self._muxer_buffer_pool_size
-            )
-
-        if not is_aarch64():
-            frame_processing_params['nvbuf-memory-type'] = int(
-                pyds.NVBUF_MEM_CUDA_UNIFIED
-            )
 
         self._muxer = self.add_element(
             PipelineElement(
@@ -948,6 +946,30 @@ class NvDsPipeline(GstPipeline):
         add_buffer_probe(muxer_src_pad, self._buffer_processor.prepare_input)
 
         return self._muxer
+
+    def _create_muxer_config(self) -> str:
+        file = tempfile.NamedTemporaryFile(
+            prefix='nvstreammux_',
+            suffix='.txt',
+            delete=False,
+        )
+        params = {
+            'algorithm-type': 1,
+            'batch-size': self._batch_size,
+            'max-same-source-frames': self._max_same_source_frames,
+            'adaptive-batching': 0,
+            'max-fps-control': int(self._max_fps_control),
+            'overall-min-fps-n': self._min_fps.numerator,
+            'overall-min-fps-d': self._min_fps.denominator,
+            'overall-max-fps-n': self._max_fps.numerator,
+            'overall-max-fps-d': self._max_fps.denominator,
+        }
+        with open(file.name, 'w') as f:
+            f.write('[property]\n')
+            for key, value in params.items():
+                f.write(f'{key}={value}\n')
+
+        return file.name
 
     def _link_to_muxer(self, pad: Gst.Pad, source_info: SourceInfo):
         """Link src pad to muxer.
@@ -983,7 +1005,7 @@ class NvDsPipeline(GstPipeline):
                 sink_pad_name,
             )
             self._check_pipeline_is_running()
-            sink_pad: Gst.Pad = self._muxer.get_request_pad(sink_pad_name)
+            sink_pad: Gst.Pad = self._muxer.request_pad_simple(sink_pad_name)
 
         return sink_pad
 
@@ -1042,7 +1064,7 @@ class NvDsPipeline(GstPipeline):
 
         pads = []
         for pad_idx in range(n_pads):
-            pad: Gst.Pad = demuxer.get_request_pad(f'src_{pad_idx}')
+            pad: Gst.Pad = demuxer.request_pad_simple(f'src_{pad_idx}')
             add_convert_savant_frame_meta_pad_probe(pad, False)
             pad.add_probe(
                 Gst.PadProbeType.EVENT_DOWNSTREAM,

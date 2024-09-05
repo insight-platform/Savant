@@ -10,15 +10,37 @@ from savant_rs.pipeline2 import (
     VideoPipelineStagePayloadType,
 )
 
+from gst_plugins.python.savant_rs_video_decode_bin import (
+    SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES,
+)
 from gst_plugins.python.zeromq_src import ZEROMQ_SRC_PROPERTIES
 from savant.gstreamer import GLib, GObject, Gst
 from savant.gstreamer.utils import on_pad_event, pad_to_source_id
 from savant.utils.logging import LoggerMixin
+from savant.utils.platform import is_aarch64
+
+# Default values of "queue" element
+DEFAULT_INGRESS_QUEUE_LENGTH = 200
+DEFAULT_INGRESS_QUEUE_SIZE = 10485760
+
+DEFAULT_EGRESS_QUEUE_LENGTH = 5
+DEFAULT_EGRESS_QUEUE_SIZE = 10485760
 
 NESTED_ZEROMQ_SRC_PROPERTIES = {
     k: v
     for k, v in ZEROMQ_SRC_PROPERTIES.items()
     if k not in ['pipeline', 'pipeline-stage-name']
+}
+NESTED_SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES = {
+    k: v
+    for k, v in SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES.items()
+    if k
+    in [
+        'decoder-queue-length',
+        'decoder-queue-byte-size',
+        'source-timeout',
+        'source-eviction-interval',
+    ]
 }
 
 
@@ -46,6 +68,7 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
 
     __gproperties__ = {
         **NESTED_ZEROMQ_SRC_PROPERTIES,
+        **NESTED_SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES,
         'sync': (
             bool,
             'Sync on the clock',
@@ -58,8 +81,44 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
             'Window closing delay',
             'Delay in seconds before closing window after the last frame',
             0,
-            2147483647,
+            GObject.G_MAXINT,
             0,
+            GObject.ParamFlags.READWRITE,
+        ),
+        'ingress-queue-length': (
+            int,
+            'Length of the ingress queue in frames.',
+            'Length of the ingress queue in frames (0 - no limit).',
+            0,
+            GObject.G_MAXINT,
+            DEFAULT_INGRESS_QUEUE_LENGTH,
+            GObject.ParamFlags.READWRITE,
+        ),
+        'ingress-queue-byte-size': (
+            int,
+            'Size of the ingress queue in bytes.',
+            'Size of the ingress queue in bytes (0 - no limit).',
+            0,
+            GObject.G_MAXINT,
+            DEFAULT_INGRESS_QUEUE_SIZE,
+            GObject.ParamFlags.READWRITE,
+        ),
+        'egress-queue-length': (
+            int,
+            'Length of the egress queue in frames.',
+            'Length of the egress queue in frames (0 - no limit).',
+            0,
+            GObject.G_MAXINT,
+            DEFAULT_EGRESS_QUEUE_LENGTH,
+            GObject.ParamFlags.READWRITE,
+        ),
+        'egress-queue-byte-size': (
+            int,
+            'Size of the egress queue in bytes.',
+            'Size of the egress queue in bytes (0 - no limit).',
+            0,
+            GObject.G_MAXINT,
+            DEFAULT_EGRESS_QUEUE_SIZE,
             GObject.ParamFlags.READWRITE,
         ),
     }
@@ -72,6 +131,8 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
         # properties
         self._sync = False
         self._closing_delay = 0
+        self._egress_queue_length = DEFAULT_EGRESS_QUEUE_LENGTH
+        self._egress_queue_byte_size = DEFAULT_EGRESS_QUEUE_SIZE
 
         source_stage_name = 'video-player-source'
         demux_stage_name = 'video-player-demux'
@@ -106,6 +167,10 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
         self._source.set_property('pipeline-stage-name', source_stage_name)
         self.add(self._source)
 
+        self._queue: Gst.Element = Gst.ElementFactory.make('queue')
+        self._queue.set_property('max-size-time', 0)
+        self.add(self._queue)
+
         self._decoder: Gst.Element = Gst.ElementFactory.make(
             'savant_rs_video_decode_bin'
         )
@@ -116,7 +181,8 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
         self.add(self._decoder)
         self._decoder.connect('pad-added', self.on_pad_added)
 
-        assert self._source.link(self._decoder), f'Failed to link source to decoder'
+        assert self._source.link(self._queue), f'Failed to link source to queue'
+        assert self._queue.link(self._decoder), f'Failed to link queue to decoder'
 
     def do_get_property(self, prop):
         """Gst plugin get property function.
@@ -127,8 +193,18 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
             return self._sync
         if prop.name == 'closing-delay':
             return self._closing_delay
+        if prop.name == 'ingress-queue-length':
+            return self._queue.get_property('max-size-buffers')
+        if prop.name == 'ingress-queue-byte-size':
+            return self._queue.get_property('max-size-bytes')
+        if prop.name == 'egress-queue-length':
+            return self._egress_queue_length
+        if prop.name == 'egress-queue-byte-size':
+            return self._egress_queue_byte_size
         if prop.name in NESTED_ZEROMQ_SRC_PROPERTIES:
             return self._source.get_property(prop.name)
+        if prop.name in NESTED_SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES:
+            return self._decoder.get_property(prop.name)
         raise AttributeError(f'Unknown property {prop.name}')
 
     def do_set_property(self, prop, value):
@@ -141,8 +217,18 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
             self._sync = value
         elif prop.name == 'closing-delay':
             self._closing_delay = value
+        elif prop.name == 'ingress-queue-length':
+            self._queue.set_property('max-size-buffers', value)
+        elif prop.name == 'ingress-queue-byte-size':
+            self._queue.set_property('max-size-bytes', value)
+        elif prop.name == 'egress-queue-length':
+            self._egress_queue_length = value
+        elif prop.name == 'egress-queue-byte-size':
+            self._egress_queue_byte_size = value
         elif prop.name in NESTED_ZEROMQ_SRC_PROPERTIES:
             self._source.set_property(prop.name, value)
+        elif prop.name in NESTED_SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES:
+            self._decoder.set_property(prop.name, value)
         else:
             raise AttributeError(f'Unknown property {prop.name}')
 
@@ -178,21 +264,42 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
             'Added pad %s on element %s', new_pad.get_name(), element.get_name()
         )
         branch = BranchInfo(source_id=pad_to_source_id(new_pad))
-        new_pad.add_probe(Gst.PadProbeType.BLOCK_DOWNSTREAM, self._add_branch, branch)
+        caps: Gst.Caps = new_pad.get_current_caps()
+        if caps is not None:
+            self.logger.info('Waiting for caps on pad %s', new_pad.get_name())
+            new_pad.add_probe(
+                Gst.PadProbeType.BLOCK_DOWNSTREAM, self._add_branch, branch
+            )
+        else:
+            self.logger.info('Caps on pad %s: %s', new_pad.get_name(), caps)
+            new_pad.add_probe(
+                Gst.PadProbeType.EVENT_DOWNSTREAM,
+                on_pad_event,
+                {Gst.EventType.CAPS: self.on_caps_change},
+                branch,
+            )
         new_pad.add_probe(Gst.PadProbeType.BUFFER, self.delete_frame_from_pipeline)
 
     def delete_frame_from_pipeline(self, pad: Gst.Pad, info: Gst.PadProbeInfo):
         buffer: Gst.Buffer = info.get_buffer()
         savant_frame_meta = gst_buffer_get_savant_frame_meta(buffer)
+        source_id = pad_to_source_id(pad)
         if savant_frame_meta is None:
             self.logger.warning(
                 'Source %s. No Savant Frame Metadata found on buffer with PTS %s.',
-                pad_to_source_id(pad),
+                source_id,
                 buffer.pts,
             )
             return Gst.PadProbeReturn.PASS
 
+        self.logger.debug(
+            'Deleting frame %s/%s and PTS %s from pipeline',
+            source_id,
+            savant_frame_meta.idx,
+            buffer.pts,
+        )
         self._video_pipeline.delete(savant_frame_meta.idx)
+
         return Gst.PadProbeReturn.OK
 
     def _add_branch(
@@ -211,21 +318,29 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
             )
             lock.wait()
 
+        self.logger.debug('Creating sink bin for source %s', branch.source_id)
         videosink_name = f'videosink_{branch.source_id}'
+        sink_bin_elements = [
+            f'queue max-size-buffers={self._egress_queue_length}'
+            f' max-size-bytes={self._egress_queue_byte_size} max-size-time=0',
+            'nvvideoconvert',
+            'capsfilter caps=video/x-raw(memory:NVMM)',
+            'adjust_timestamps',
+        ]
+        if is_aarch64():
+            sink_bin_elements.append('nvegltransform')
+        sink_bin_elements.append(f'nveglglessink name={videosink_name}')
         branch.sink = Gst.parse_bin_from_description(
-            ' ! '.join(
-                [
-                    'queue',
-                    'nvvideoconvert',
-                    # nveglglessink cannot negotiate with "video/x-raw(memory:NVMM)" on dGPU
-                    'capsfilter caps=video/x-raw',
-                    'adjust_timestamps',
-                    f'autovideosink name={videosink_name}',
-                ]
-            ),
+            ' ! '.join(sink_bin_elements),
             True,
         )
+        self.logger.debug(
+            'Sink bin for source %s created: %s',
+            branch.source_id,
+            branch.sink.get_name(),
+        )
         self.add(branch.sink)
+        self.logger.debug('Sink bin for source %s added', branch.source_id)
         sink: Gst.Element = branch.sink.get_by_name(videosink_name)
         sink.set_property('sync', self._sync)
         if self._sync:
@@ -234,6 +349,11 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
             )
         branch.sink.sync_state_with_parent()
         assert pad.link(branch.sink.get_static_pad('sink')) == Gst.PadLinkReturn.OK
+        self.logger.debug(
+            'Pad %s linked to sink %s',
+            pad.get_name(),
+            branch.sink.get_name(),
+        )
 
         self._elem_to_source_id[branch.sink] = branch.source_id
         self._locks[branch.source_id] = Event()
@@ -243,13 +363,6 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
             {Gst.EventType.EOS: self.on_sink_pad_eos},
             branch,
         )
-        pad.add_probe(
-            Gst.PadProbeType.EVENT_DOWNSTREAM,
-            on_pad_event,
-            {Gst.EventType.CAPS: self.on_caps_change},
-            branch,
-        )
-        self.set_state(Gst.State.PLAYING)
         self.logger.info('Branch with source %s added', branch.source_id)
 
         return Gst.PadProbeReturn.OK
@@ -263,11 +376,11 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
 
     def _remove_branch(self, branch: BranchInfo):
         self.logger.info('Removing branch with source %s', branch.source_id)
+        branch.sink.set_locked_state(True)
         branch.sink.set_state(Gst.State.NULL)
         self.logger.info('Removing element %s', branch.sink.get_name())
         self.remove(branch.sink)
 
-        self.set_state(Gst.State.PLAYING)
         self.logger.info('Branch with source %s removed', branch.source_id)
 
         return False
@@ -278,10 +391,8 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
             'Caps on pad %s changed to %s', pad.get_name(), caps.to_string()
         )
 
-        self.logger.debug('Set state of %s to READY', branch.sink.get_name())
-        branch.sink.set_state(Gst.State.READY)
-        self.logger.debug('Sync state of %s with parent', branch.sink.get_name())
-        branch.sink.sync_state_with_parent()
+        if branch.sink is None:
+            pad.add_probe(Gst.PadProbeType.BLOCK_DOWNSTREAM, self._add_branch, branch)
 
         return Gst.PadProbeReturn.OK
 

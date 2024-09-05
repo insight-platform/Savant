@@ -9,8 +9,9 @@ from pygstsavantframemeta import add_pad_probe_to_move_frame
 from savant_rs.pipeline2 import VideoPipeline
 
 from gst_plugins.python.savant_rs_video_demux import SAVANT_RS_VIDEO_DEMUX_PROPERTIES
+from savant.deepstream.decoding import configure_low_latency_decoding
 from savant.gstreamer import GLib, GObject, Gst  # noqa:F401
-from savant.gstreamer.codecs import CODEC_BY_CAPS_NAME, Codec
+from savant.gstreamer.codecs import Codec, caps_to_codec
 from savant.gstreamer.utils import on_pad_event, pad_to_source_id
 from savant.utils.logging import LoggerMixin
 from savant.utils.platform import is_aarch64
@@ -30,6 +31,7 @@ NESTED_DEMUX_PROPERTIES = {
         'source-eviction-interval',
         'max-parallel-streams',
         'zeromq-reader',
+        'eos-on-frame-resolution-change',
     ]
 }
 SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES = {
@@ -147,6 +149,7 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
         self._elem_to_branch: Dict[Gst.Element, BranchInfo] = {}
         self._branches_lock = Lock()
         self._branches: Dict[str, BranchInfo] = {}
+        self._is_running = True
 
         # properties
         self._low_latency_decoding = False
@@ -362,7 +365,7 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
             time.sleep(5)
 
         branch.caps = caps
-        branch.codec = CODEC_BY_CAPS_NAME[caps[0].get_name()]
+        branch.codec = caps_to_codec(caps)
         branch.src_pad = Gst.GhostPad.new_no_target(
             pad.get_name(), Gst.PadDirection.SRC
         )
@@ -384,6 +387,21 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
         self.logger.info('Branch with source %s added', source_id)
 
         return Gst.PadProbeReturn.OK
+
+    def on_decodebin_element_added(
+        self,
+        decodebin: Gst.Element,
+        new_element: Gst.Element,
+    ):
+        """Handle adding new element to decodebin."""
+
+        self.logger.debug(
+            'Added element %s to %s',
+            new_element.get_name(),
+            decodebin.get_name(),
+        )
+        if self._low_latency_decoding:
+            configure_low_latency_decoding(new_element)
 
     def on_decodebin_pad_added(
         self,
@@ -460,6 +478,9 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
         self.logger.debug(
             'Lock %s of source %s has been released', branch.lock, branch.source_id
         )
+        if not self._is_running and not self._branches:
+            self.logger.debug('Emitting shutdown signal.')
+            self.emit('shutdown')
 
     def build_decoder(self, branch: BranchInfo):
         self.logger.debug('Building decoder for source %s', branch.source_id)
@@ -504,6 +525,7 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
         decodebin.set_property('caps', OUT_CAPS)
         self.logger.debug('Built decoder for source %s.', branch.source_id)
 
+        decodebin.connect('element-added', self.on_decodebin_element_added)
         decodebin.connect('pad-added', self.on_decodebin_pad_added, branch)
 
         sink_pad: Gst.GhostPad = Gst.GhostPad.new(
@@ -517,11 +539,11 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
     def on_shutdown(self, element: Gst.Element):
         """Handle shutdown signal."""
 
-        self.logger.debug(
-            'Received shutdown signal from %s. Passing it downstream.',
-            element.get_name(),
-        )
-        self.emit('shutdown')
+        self.logger.debug('Received shutdown signal from %s.', element.get_name())
+        self._is_running = False
+        if not self._branches:
+            self.logger.debug('Emitting shutdown signal.')
+            self.emit('shutdown')
 
 
 # register plugin

@@ -34,25 +34,24 @@ Known drawbacks:
 |-------------------------------------------------|--------|------------|
 | X86 Driver 525(Datacenter), 530+ Quadro/GeForce | Stable | 6.3        |
 | Jetson Xavier, Orin with JetPack 5.1.2 GA       | Stable | 6.3        |           
+   
+### 0.4.x Current Production Release
 
-### 0.3.11 LTS
-
-This release is recommended for production use with DeepStream 6.4. The release works on dGPU (Turing, Volta, Ampere,
-Ada) and Jetson Orin Nano/NX/AGX hardware (JetPack 6.0 DP). It does not support Jetson Xavier and older devices.
-
-| Requirements                                    | Status | DeepStream |
-|-------------------------------------------------|--------|------------|
-| X86 Driver 525(Datacenter), 530+ Quadro/GeForce | Stable | 6.4        |
-| Jetson Orin JetPack 6.0 DP                      | Stable | 6.4        |           
-
-### 0.4.x Current Develop (Feature Releases)
-
-This branch contains new features. It is a good choice for users requiring functionality missing in 0.2.x and 0.3.x.
+This release contains new features and is tested for production use. It is a choice for users requiring functionality missing in 0.2.x and 0.3.x.
 
 | Requirements                                    | Status | DeepStream |
 |-------------------------------------------------|--------|------------|
 | X86 Driver 525(Datacenter), 530+ Quadro/GeForce | Stable | 6.4        |
-| Jetson Orin JetPack 6.0 DP                      | Stable | 6.4        |
+| Jetson Orin JetPack 6.0                         | Stable | 6.4        |
+
+### 0.5.x Current Development
+
+This release integrates DeepStream 7.0
+
+| Requirements                                    | Status | DeepStream |
+|-------------------------------------------------|--------|------------|
+| X86 Driver 525(Datacenter), 530+ Quadro/GeForce | Stable | 7.0        |
+| Jetson Orin JetPack 6.0                         | Stable | 7.0        |
 
 ## Chat With Us
 
@@ -225,7 +224,8 @@ The following source adapters are available:
 - [Kafka-Redis](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#kafka-redis-source-adapter);
 - [Video loop URL](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#video-loop-source-adapter);
 - [Multi-stream Source](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#multi-stream-source-adapter);
-- [Amazon Kinesis Video Streams Source](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#kinesis-video-stream-source-adapter).
+- [Amazon Kinesis Video Streams Source](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#kinesis-video-stream-source-adapter);
+- [Message Dump Player](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#message-dump-player-source-adapter).
 
 Several sink adapters are implemented:
 

@@ -14,11 +14,10 @@ from gst_plugins.python.savant_rs_video_demux_common import FrameParams, build_c
 from savant.api.parser import convert_ts
 from savant.gstreamer import GLib, Gst, GstApp
 from savant.gstreamer.codecs import Codec
-from savant.utils.config import opt_config, strtobool
+from savant.utils.config import opt_config, req_config, strtobool
 from savant.utils.logging import get_logger, init_logging
 from savant.utils.welcome import get_starting_message
 from savant.utils.zeromq import ZeroMQMessage, ZeroMQSource
-from savant.utils.config import req_config
 
 LOGGER_NAME = 'adapters.video_files_sink'
 DEFAULT_CHUNK_SIZE = 10000
