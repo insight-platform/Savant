@@ -429,37 +429,44 @@ class NvDsPipeline(GstPipeline):
     ):
         """Handle adding caps to video source pad."""
 
-        try:
-            new_pad_caps: Gst.Caps = event.parse_caps()
-            self._logger.debug(
-                'Pad %s.%s has caps %s',
-                new_pad.get_parent().get_name(),
-                new_pad.get_name(),
-                new_pad_caps,
+        self._logger.info('Waiting for global lock (source: %s)', source_info.source_id)
+        with self._source_adding_lock:
+            self._logger.info(
+                'Global lock acquired (source: %s)', source_info.source_id
             )
-            caps_struct: Gst.Structure = new_pad_caps.get_structure(0)
-            parsed, width = caps_struct.get_int('width')
-            assert parsed, f'Failed to parse "width" property of caps "{new_pad_caps}"'
-            parsed, height = caps_struct.get_int('height')
-            assert parsed, f'Failed to parse "height" property of caps "{new_pad_caps}"'
+            try:
+                new_pad_caps: Gst.Caps = event.parse_caps()
+                self._logger.debug(
+                    'Pad %s.%s has caps %s',
+                    new_pad.get_parent().get_name(),
+                    new_pad.get_name(),
+                    new_pad_caps,
+                )
+                caps_struct: Gst.Structure = new_pad_caps.get_structure(0)
+                parsed, width = caps_struct.get_int('width')
+                assert (
+                    parsed
+                ), f'Failed to parse "width" property of caps "{new_pad_caps}"'
+                parsed, height = caps_struct.get_int('height')
+                assert (
+                    parsed
+                ), f'Failed to parse "height" property of caps "{new_pad_caps}"'
 
-            while source_info.pad_idx is None:
-                self._check_pipeline_is_running()
-                try:
-                    with self._source_adding_lock:
+                while source_info.pad_idx is None:
+                    self._check_pipeline_is_running()
+                    try:
                         source_info.pad_idx = self._free_pad_indices.pop(0)
-                except IndexError:
-                    # savant_rs_video_decode_bin already sent EOS for some stream and adding a
-                    # new one, but the former stream did not complete in this pipeline yet.
-                    self._logger.warning(
-                        'Reached maximum number of streams: %s. '
-                        'Waiting resources for source %s.',
-                        self._max_parallel_streams,
-                        source_info.source_id,
-                    )
-                    time.sleep(5)
+                    except IndexError:
+                        # savant_rs_video_decode_bin already sent EOS for some stream and adding a
+                        # new one, but the former stream did not complete in this pipeline yet.
+                        self._logger.warning(
+                            'Reached maximum number of streams: %s. '
+                            'Waiting resources for source %s.',
+                            self._max_parallel_streams,
+                            source_info.source_id,
+                        )
+                        time.sleep(5)
 
-            with self._source_adding_lock:
                 self._check_pipeline_is_running()
                 source_info.src_resolution = Resolution(width, height)
                 self._sources.update_source(source_info)
@@ -486,14 +493,14 @@ class NvDsPipeline(GstPipeline):
                 self._check_pipeline_is_running()
                 self._pipeline.set_state(Gst.State.PLAYING)
 
-        except PipelineIsNotRunningError:
-            self._logger.info(
-                'Pipeline is not running. Cancel adding source %s.',
-                source_info.source_id,
-            )
-            return Gst.PadProbeReturn.REMOVE
+            except PipelineIsNotRunningError:
+                self._logger.info(
+                    'Pipeline is not running. Cancel adding source %s.',
+                    source_info.source_id,
+                )
+                return Gst.PadProbeReturn.REMOVE
 
-        self._logger.info('Added source %s', source_info.source_id)
+            self._logger.info('Added source %s', source_info.source_id)
 
         # Video source has been added, removing probe.
         return Gst.PadProbeReturn.REMOVE
