@@ -9,12 +9,13 @@ from savant.gstreamer import GObject, Gst, GstBase
 from savant.gstreamer.codecs import Codec
 from savant.gstreamer.utils import (
     gst_post_library_settings_error,
-    gst_post_stream_demux_error,
+    gst_post_stream_failed_error,
     required_property,
 )
 from savant.utils.logging import LoggerMixin
 
 DEFAULT_QUEUE_LEN = 100
+DEFAULT_TIMEOUT_MS = 10_000
 DEFAULT_FFMPEG_LOG_LEVEL = 'info'
 STR_TO_FFMPEG_LOG_LEVEL = {
     name.lower(): getattr(FFmpegLogLevel, name)
@@ -60,6 +61,15 @@ FFMPEG_SRC_PROPERTIES = {
         'Decode frames',
         'Decode frames.',
         False,
+        GObject.ParamFlags.READWRITE,
+    ),
+    'timeout-ms': (
+        int,
+        'Timeout on RTSP connection (milliseconds).',
+        'Timeout on RTSP connection (milliseconds).',
+        0,
+        GObject.G_MAXINT,
+        DEFAULT_TIMEOUT_MS,
         GObject.ParamFlags.READWRITE,
     ),
     'loglevel': (
@@ -110,6 +120,7 @@ class FFmpegSrc(LoggerMixin, GstBase.BaseSrc):
         self._params: Dict[str, str] = {}
         self._queue_len: int = DEFAULT_QUEUE_LEN
         self._decode: bool = False
+        self._timeout_ms: int = DEFAULT_TIMEOUT_MS
         self._loglevel: str = DEFAULT_FFMPEG_LOG_LEVEL
 
         self._frame_params: Optional[FrameParams] = None
@@ -132,6 +143,8 @@ class FFmpegSrc(LoggerMixin, GstBase.BaseSrc):
             return self._queue_len
         if prop.name == 'decode':
             return self._decode
+        if prop.name == 'timeout-ms':
+            return self._timeout_ms
         if prop.name == 'loglevel':
             return self._loglevel
         raise AttributeError(f'Unknown property {prop.name}')
@@ -152,6 +165,8 @@ class FFmpegSrc(LoggerMixin, GstBase.BaseSrc):
             self._queue_len = value
         elif prop.name == 'decode':
             self._decode = value
+        elif prop.name == 'timeout-ms':
+            self._timeout_ms = value
         elif prop.name == 'loglevel':
             self._loglevel = value
         else:
@@ -165,12 +180,13 @@ class FFmpegSrc(LoggerMixin, GstBase.BaseSrc):
             self.logger.info('Creating FFMpegSource.')
             self._ffmpeg_source = FFMpegSource(
                 self._uri,
-                params=self._params,
+                params=list(self._params.items()),
                 queue_len=self._queue_len,
                 decode=self._decode,
                 ffmpeg_log_level=STR_TO_FFMPEG_LOG_LEVEL[self._loglevel.lower()],
                 autoconvert_raw_formats_to_rgb24=True,
             )
+            assert self._ffmpeg_source.is_running, 'Failed to start FFMpegSource.'
 
         except Exception as exc:
             self.logger.exception('Failed to start element: %s.', exc, exc_info=True)
@@ -185,7 +201,23 @@ class FFmpegSrc(LoggerMixin, GstBase.BaseSrc):
 
         self.logger.debug('Receiving next frame')
 
-        frame: VideoFrameEnvelope = self._ffmpeg_source.video_frame()
+        try:
+            assert self._ffmpeg_source.is_running, 'FFMpegSource is not running.'
+            frame: VideoFrameEnvelope = self._ffmpeg_source.video_frame(
+                self._timeout_ms
+            )
+        except Exception as exc:
+            self.logger.exception('Failed to receive frame: %s', exc, exc_info=True)
+            code_frame = inspect.currentframe()
+            gst_post_stream_failed_error(
+                self,
+                code_frame,
+                __file__,
+                text='Failed to receive frame.',
+                debug=str(exc),
+            )
+            return Gst.FlowReturn.ERROR, None
+
         self.logger.debug(
             'Received frame with codec %s, PTS %s and DTS %s.',
             frame.codec,
@@ -243,7 +275,7 @@ class FFmpegSrc(LoggerMixin, GstBase.BaseSrc):
             error = f'Unsupported codec {frame_params.codec_name!r}.'
             self.logger.error(error)
             frame = inspect.currentframe()
-            gst_post_stream_demux_error(
+            gst_post_stream_failed_error(
                 gst_element=self,
                 frame=frame,
                 file_path=__file__,
