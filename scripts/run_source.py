@@ -519,6 +519,12 @@ def images_source(
     show_default=True,
 )
 @click.option(
+    '--ffmpeg-timeout-ms',
+    default=10000,
+    help='Timeout in milliseconds for FFmpeg to wait for a frame.',
+    show_default=True,
+)
+@click.option(
     '--ffmpeg-loglevel',
     default='info',
     help='Log level for FFmpeg.',
@@ -535,6 +541,7 @@ def rtsp_source(
     sync: bool,
     sync_delay: Optional[int],
     buffer_len: int,
+    ffmpeg_timeout_ms: int,
     ffmpeg_loglevel: str,
     rtsp_transport: str,
     use_absolute_timestamps: Optional[bool],
@@ -559,6 +566,7 @@ def rtsp_source(
         f'RTSP_URI={rtsp_uri}',
         f'RTSP_TRANSPORT={rtsp_transport}',
         f'BUFFER_LEN={buffer_len}',
+        f'FFMPEG_TIMEOUT_MS={ffmpeg_timeout_ms}',
         f'FFMPEG_LOGLEVEL={ffmpeg_loglevel}',
     ]
     if sync and sync_delay is not None:
@@ -755,6 +763,12 @@ def gige_cam_source(
     show_default=True,
 )
 @click.option(
+    '--ffmpeg-timeout-ms',
+    default=10000,
+    help='Timeout in milliseconds for FFmpeg to wait for a frame.',
+    show_default=True,
+)
+@click.option(
     '--ffmpeg-loglevel',
     default='info',
     help='Log level for FFmpeg.',
@@ -776,6 +790,7 @@ def ffmpeg_source(
     sync_delay: Optional[int],
     ffmpeg_params: Optional[str],
     buffer_len: int,
+    ffmpeg_timeout_ms: int,
     ffmpeg_loglevel: str,
     device: Optional[str],
     use_absolute_timestamps: Optional[bool],
@@ -799,6 +814,7 @@ def ffmpeg_source(
     ) + [
         f'URI={uri}',
         f'BUFFER_LEN={buffer_len}',
+        f'FFMPEG_TIMEOUT_MS={ffmpeg_timeout_ms}',
         f'FFMPEG_LOGLEVEL={ffmpeg_loglevel}',
     ]
     if sync and sync_delay is not None:

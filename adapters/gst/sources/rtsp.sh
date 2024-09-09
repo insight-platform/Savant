@@ -40,10 +40,19 @@ SINK_PROPERTIES=(
     sync="${SYNC_OUTPUT}"
     ts-offset="${SYNC_DELAY}"
 )
+FFMPEG_SRC=(
+    ffmpeg_src
+    uri="${RTSP_URI}"
+    params="rtsp_transport=${RTSP_TRANSPORT}"
+    queue-len="${BUFFER_LEN}"
+    loglevel="${FFMPEG_LOGLEVEL}"
+)
+if [[ -n "${FFMPEG_TIMEOUT_MS}" ]]; then
+    FFMPEG_SRC+=("timeout-ms=${FFMPEG_TIMEOUT_MS}")
+fi
 
 PIPELINE=(
-    ffmpeg_src uri="${RTSP_URI}" params="rtsp_transport=${RTSP_TRANSPORT}"
-    queue-len="${BUFFER_LEN}" loglevel="${FFMPEG_LOGLEVEL}" !
+    "${FFMPEG_SRC[@]}" !
     savant_parse_bin !
 )
 if [[ "${USE_ABSOLUTE_TIMESTAMPS,,}" == "true" ]]; then
