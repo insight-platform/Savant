@@ -44,6 +44,9 @@ FFMPEG_SRC=(ffmpeg_src uri="${URI}" queue-len="${BUFFER_LEN}" loglevel="${FFMPEG
 if [[ -n "${FFMPEG_PARAMS}" ]]; then
     FFMPEG_SRC+=("params=${FFMPEG_PARAMS}")
 fi
+if [[ -n "${FFMPEG_TIMEOUT_MS}" ]]; then
+    FFMPEG_SRC+=("timeout-ms=${FFMPEG_TIMEOUT_MS}")
+fi
 PIPELINE=(
     "${FFMPEG_SRC[@]}" !
     savant_parse_bin !

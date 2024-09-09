@@ -408,7 +408,8 @@ The adapter delivers video stream using FFmpeg library. It can be used to read v
 * ``FFMPEG_LOGLEVEL``: a log level for FFmpeg; default is ``info``;
 * ``BUFFER_LEN``: a maximum amount of frames in FFmpeg buffer; default is ``50``;
 * ``SYNC_OUTPUT``: a flag indicating the need to send frames from source synchronously (i.e. at the source file rate); default is ``False``;
-* ``SYNC_DELAY``: a delay in seconds before sending frames; default is ``0``.
+* ``SYNC_DELAY``: a delay in seconds before sending frames; default is ``0``;
+* ``FFMPEG_TIMEOUT_MS``: a timeout in milliseconds for FFmpeg to wait for a frame; default is ``10000``.
 
 Running the adapter with Docker:
 
@@ -441,6 +442,7 @@ The RTSP Source Adapter delivers RTSP stream to a module.
 - ``SYNC_DELAY``: a delay in seconds before sending frames; when the source has ``B``-frames the flag allows avoiding sending frames in batches; default is ``0``;
 - ``RTSP_TRANSPORT``: a transport protocol to use; default is ``tcp``;
 - ``BUFFER_LEN``: a maximum amount of frames in the buffer; default is ``50``;
+- ``FFMPEG_TIMEOUT_MS``: a timeout in milliseconds for FFmpeg to wait for a frame; default is ``10000``.
 
 Running the adapter with Docker:
 
