@@ -50,7 +50,7 @@ services:
       - CODEC=jpeg
       - METRICS_TIME_PERIOD=1
       - LOGLEVEL=debug
-      - GST_DEBUG=2,GST_TRACER:7
+      - GST_DEBUG=2,GST_TRACER:7,GST_ELEMENT_FACTORY:4
       - GST_TRACERS=stats
       - GST_DEBUG_NO_COLOR=1
     runtime: nvidia
