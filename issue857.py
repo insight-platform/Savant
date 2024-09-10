@@ -54,6 +54,10 @@ def create_source(
             f'video/x-raw,format=RGBA,width={width},height={height},framerate={framerate}'
         ),
     )
+    appsrc.set_property("emit-signals", False)
+    appsrc.set_property("format", Gst.Format.TIME)
+    appsrc.set_property("max-buffers", 1)
+    appsrc.set_property("block", True)
     logger.info('[%s] Created %s', idx, appsrc.get_name())
 
     nvvideoconvert: Gst.Element = Gst.ElementFactory.make(
