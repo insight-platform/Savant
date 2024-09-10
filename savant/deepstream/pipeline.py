@@ -752,6 +752,31 @@ class NvDsPipeline(GstPipeline):
             output_queue.get_name(),
             source_info.source_id,
         )
+
+        output_queue_caps = (
+            'video/x-raw(memory:NVMM), format=RGBA, '
+            f'width={source_info.total_width}, '
+            f'height={source_info.total_height}'
+        )
+        self._logger.debug(
+            'Adding capsfilter for source %s with caps %s',
+            source_info.source_id,
+            output_queue_caps,
+        )
+        output_queue_capsfilter = self._element_factory.create(
+            PipelineElement(
+                'capsfilter',
+                properties={'caps': output_queue_caps},
+            )
+        )
+        output_queue_capsfilter.sync_state_with_parent()
+        source_info.after_demuxer.append(output_queue_capsfilter)
+        self._logger.debug(
+            'Added capsfilter %s for source %s',
+            output_queue_capsfilter.get_name(),
+            source_info.source_id,
+        )
+
         output_queue_sink_pad: Gst.Pad = output_queue.get_static_pad('sink')
         add_pad_probe_to_move_frame(
             output_queue_sink_pad,
@@ -768,7 +793,7 @@ class NvDsPipeline(GstPipeline):
         output_pad: Gst.Pad = source_output.add_output(
             pipeline=self,
             source_info=source_info,
-            input_pad=output_queue.get_static_pad('src'),
+            input_pad=output_queue_capsfilter.get_static_pad('src'),
         )
         self._logger.debug('Added source output for %s', source_info.source_id)
         self._check_pipeline_is_running()
