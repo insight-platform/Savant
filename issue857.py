@@ -231,17 +231,19 @@ def main():
         appsrc_1, src1_pad = create_source(pipeline, 0, 640, 480, '30/1')
         link_source(pipeline, 0, src1_pad, 640, 480)
 
+        appsrc_1.push_buffer(Gst.Buffer.new_wrapped(b'\x00' * 640 * 480 * 4))
         sink2_pad = create_sink(pipeline, 1)
         link_sink(pipeline, 1, sink2_pad)
 
+        appsrc_1.push_buffer(Gst.Buffer.new_wrapped(b'\x00' * 640 * 480 * 4))
         appsrc_2, src2_pad = create_source(pipeline, 1, 1280, 720, '25/1')
         link_source(pipeline, 1, src2_pad, 1280, 720)
 
+        appsrc_1.push_buffer(Gst.Buffer.new_wrapped(b'\x00' * 640 * 480 * 4))
         time.sleep(1)
 
         for i in range(10):
             logger.info('Running iteration %s', i)
-            appsrc_1: GstApp.AppSrc
             appsrc_1.push_buffer(Gst.Buffer.new_wrapped(b'\x00' * 640 * 480 * 4))
             time.sleep(0.5)
     logger.info('Exiting...')
