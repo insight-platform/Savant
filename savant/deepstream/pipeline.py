@@ -484,7 +484,7 @@ class NvDsPipeline(GstPipeline):
                 )
                 self._link_to_muxer(input_src_pad, source_info)
                 self._check_pipeline_is_running()
-                # self._pipeline.set_state(Gst.State.PLAYING)
+                self._pipeline.set_state(Gst.State.PLAYING)
 
         except PipelineIsNotRunningError:
             self._logger.info(
@@ -645,7 +645,7 @@ class NvDsPipeline(GstPipeline):
             'source-capsfilter',
         )
 
-        capsfilter.sync_state_with_parent()
+        capsfilter.set_state(Gst.State.PLAYING)
         self._pipeline.add(capsfilter)
         source_info.before_muxer.append(capsfilter)
         self._logger.debug(
