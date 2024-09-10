@@ -118,6 +118,7 @@ def link_source(
     logger.info('[%s] Linking source to pipeline', idx)
 
     queue: Gst.Element = Gst.ElementFactory.make('queue', f'queue-mux-{idx}')
+    queue.set_property('max-size-buffers', 1)
     logger.info('[%s] Created %s', idx, queue.get_name())
 
     nvvideoconvert: Gst.Element = Gst.ElementFactory.make(
