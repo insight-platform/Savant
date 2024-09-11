@@ -9,7 +9,7 @@ parameters:
   #   height:
   output_frame:
     codec: ${oc.env:CODEC, 'h264'}
-#  draw_func: {}
+  draw_func: {}
   batch_size: 1
   detected_object:
     id: 0
