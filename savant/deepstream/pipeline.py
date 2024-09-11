@@ -464,6 +464,8 @@ class NvDsPipeline(GstPipeline):
                 source_info.src_resolution = Resolution(width, height)
                 self._sources.update_source(source_info)
 
+                if not source_info.after_demuxer:
+                    self._add_source_output(source_info)
                 input_src_pad = self._add_input_converter(
                     new_pad,
                     new_pad_caps,
@@ -482,10 +484,6 @@ class NvDsPipeline(GstPipeline):
                 )
                 self._link_to_muxer(input_src_pad, source_info)
                 self._check_pipeline_is_running()
-
-                if not source_info.after_demuxer:
-                    self._add_source_output(source_info)
-
                 self._pipeline.set_state(Gst.State.PLAYING)
 
         except PipelineIsNotRunningError:
@@ -507,14 +505,8 @@ class NvDsPipeline(GstPipeline):
         source_info: SourceInfo,
         add_frames_to_pipeline: bool,
     ) -> Gst.Pad:
-        self._logger.debug(
-            'Adding input converter for source %s', source_info.source_id
-        )
         self._check_pipeline_is_running()
         if add_frames_to_pipeline:
-            self._logger.debug(
-                'Adding savant_rs_add_frames for source %s', source_info.source_id
-            )
             # Add savant frames to VideoPipeline when source element is not zeromq_source_bin
             # (e.g. uridecodebin).
             # Cannot add frames with a probe since Gst.Buffer is not writable,
@@ -537,13 +529,7 @@ class NvDsPipeline(GstPipeline):
             )
             assert new_pad.link(savant_rs_add_frames_sink) == Gst.PadLinkReturn.OK
             new_pad = savant_rs_add_frames.get_static_pad('src')
-            self._logger.debug(
-                'Added savant_rs_add_frames for source %s', source_info.source_id
-            )
 
-        self._logger.debug(
-            'Adding pad probe to move frame for source %s', source_info.source_id
-        )
         add_pad_probe_to_move_frame(new_pad, self._video_pipeline, 'source-convert')
 
         nv_video_converter_props = {}
@@ -568,11 +554,6 @@ class NvDsPipeline(GstPipeline):
             )
             nv_video_converter_props['dest-crop'] = dest_crop
 
-        self._logger.debug(
-            'Adding nvvideoconvert for source %s with properties %s',
-            source_info.source_id,
-            nv_video_converter_props,
-        )
         nv_video_converter = self._element_factory.create(
             PipelineElement('nvvideoconvert', properties=nv_video_converter_props)
         )
@@ -580,12 +561,6 @@ class NvDsPipeline(GstPipeline):
         self._check_pipeline_is_running()
         self._pipeline.add(nv_video_converter)
         nv_video_converter.sync_state_with_parent()
-        self._logger.debug(
-            'Added nvvideoconvert %s for source %s',
-            nv_video_converter.get_name(),
-            source_info.source_id,
-        )
-
         video_converter_sink: Gst.Pad = nv_video_converter.get_static_pad('sink')
         if not video_converter_sink.query_accept_caps(new_pad_caps):
             self._logger.debug(
@@ -606,39 +581,19 @@ class NvDsPipeline(GstPipeline):
         source_info.before_muxer.append(nv_video_converter)
         self._check_pipeline_is_running()
         # TODO: send EOS to video_converter on unlink if source didn't
-        self._logger.debug(
-            'Linking %s.%s to %s.%s for source %s',
-            new_pad.get_parent().get_name(),
-            new_pad.get_name(),
-            nv_video_converter.get_name(),
-            video_converter_sink.get_name(),
-            source_info.source_id,
-        )
         assert new_pad.link(video_converter_sink) == Gst.PadLinkReturn.OK
-        self._logger.debug(
-            'Linked %s.%s to %s.%s for source %s',
-            new_pad.get_parent().get_name(),
-            new_pad.get_name(),
-            nv_video_converter.get_name(),
-            video_converter_sink.get_name(),
-            source_info.source_id,
-        )
 
         self._check_pipeline_is_running()
-        muxer_caps = (
-            'video/x-raw(memory:NVMM), format=RGBA, '
-            f'width={source_info.total_width}, '
-            f'height={source_info.total_height}'
-        )
-        self._logger.debug(
-            'Adding capsfilter for source %s with caps %s',
-            source_info.source_id,
-            muxer_caps,
-        )
         capsfilter = self._element_factory.create(
             PipelineElement(
                 'capsfilter',
-                properties={'caps': muxer_caps},
+                properties={
+                    'caps': (
+                        'video/x-raw(memory:NVMM), format=RGBA, '
+                        f'width={source_info.total_width}, '
+                        f'height={source_info.total_height}'
+                    ),
+                },
             )
         )
         add_pad_probe_to_move_frame(
@@ -650,20 +605,7 @@ class NvDsPipeline(GstPipeline):
         capsfilter.set_state(Gst.State.PLAYING)
         self._pipeline.add(capsfilter)
         source_info.before_muxer.append(capsfilter)
-        self._logger.debug(
-            'Added capsfilter %s for source %s',
-            capsfilter.get_name(),
-            source_info.source_id,
-        )
         assert nv_video_converter.link(capsfilter)
-        self._logger.debug(
-            'Linked %s to %s for source %s',
-            nv_video_converter.get_name(),
-            capsfilter.get_name(),
-            source_info.source_id,
-        )
-
-        self._logger.debug('Added input converter for source %s', source_info.source_id)
 
         return capsfilter.get_static_pad('src')
 
@@ -701,11 +643,7 @@ class NvDsPipeline(GstPipeline):
         source_output: Optional[SourceOutput] = None,
         buffer_processor: Optional[GstBufferProcessor] = None,
     ) -> Gst.Pad:
-        self._logger.debug(
-            'Adding output elements for source %s', source_info.source_id
-        )
         self._check_pipeline_is_running()
-        self._logger.debug('Adding fakesink for source %s', source_info.source_id)
         fakesink = super()._add_sink(
             PipelineElement(
                 element='fakesink',
@@ -722,11 +660,6 @@ class NvDsPipeline(GstPipeline):
         )
         fakesink_pad: Gst.Pad = fakesink.get_static_pad('sink')
         fakesink.sync_state_with_parent()
-        self._logger.debug(
-            'Added fakesink %s for source %s',
-            fakesink.get_name(),
-            source_info.source_id,
-        )
 
         self._check_pipeline_is_running()
         fakesink_pad.add_probe(
@@ -735,25 +668,14 @@ class NvDsPipeline(GstPipeline):
             {Gst.EventType.EOS: self.on_last_pad_eos},
             source_info,
         )
-        self._logger.debug(
-            'Added EOS probe for fakesink %s for source %s',
-            fakesink.get_name(),
-            source_info.source_id,
-        )
 
         self._check_pipeline_is_running()
-        self._logger.debug('Adding output queue for source %s', source_info.source_id)
         output_queue = self.add_element(
             PipelineElement('queue', properties=self._egress_queue_properties),
             link=False,
         )
         output_queue.sync_state_with_parent()
         source_info.after_demuxer.append(output_queue)
-        self._logger.debug(
-            'Added output queue %s for source %s',
-            output_queue.get_name(),
-            source_info.source_id,
-        )
         output_queue_sink_pad: Gst.Pad = output_queue.get_static_pad('sink')
         add_pad_probe_to_move_frame(
             output_queue_sink_pad,
@@ -766,27 +688,15 @@ class NvDsPipeline(GstPipeline):
         self._check_pipeline_is_running()
         if source_output is None:
             source_output = self._source_output
-        self._logger.debug('Adding source output for %s', source_info.source_id)
         output_pad: Gst.Pad = source_output.add_output(
             pipeline=self,
             source_info=source_info,
             input_pad=output_queue.get_static_pad('src'),
         )
-        self._logger.debug('Added source output for %s', source_info.source_id)
         self._check_pipeline_is_running()
         assert output_pad.link(fakesink_pad) == Gst.PadLinkReturn.OK
-        self._logger.debug(
-            'Linked %s.%s to %s.%s for source %s',
-            output_pad.get_parent().get_name(),
-            output_pad.get_name(),
-            fakesink_pad.get_parent().get_name(),
-            fakesink_pad.get_name(),
-            source_info.source_id,
-        )
 
         source_info.after_demuxer.append(fakesink)
-
-        self._logger.debug('Added output elements for source %s', source_info.source_id)
 
         return output_queue_sink_pad
 
@@ -1219,23 +1129,9 @@ class NvDsPipeline(GstPipeline):
         :param source_info: Video source info.
         """
 
-        self._logger.debug(
-            'Linking demuxer to %s.%s for source %s',
-            pad.get_parent().get_name(),
-            pad.get_name(),
-            source_info.source_id,
-        )
         self._check_pipeline_is_running()
         demuxer_src_pad = self._demuxer_src_pads[source_info.pad_idx]
         assert demuxer_src_pad.link(pad) == Gst.PadLinkReturn.OK
-        self._logger.debug(
-            'Linked %s.%s to %s.%s for source %s',
-            demuxer_src_pad.get_parent().get_name(),
-            demuxer_src_pad.get_name(),
-            pad.get_parent().get_name(),
-            pad.get_name(),
-            source_info.source_id,
-        )
 
     def _check_pipeline_is_running(self):
         """Raise an exception if pipeline is not running."""
