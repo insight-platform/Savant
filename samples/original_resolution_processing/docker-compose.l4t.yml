@@ -47,7 +47,7 @@ services:
       - DOWNLOAD_PATH=/cache/downloads/peoplenet_detector
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
-#      - CODEC=jpeg
+      - CODEC=raw-rgba
       - METRICS_TIME_PERIOD=1
 #      - LOGLEVEL=debug
 #      - GST_DEBUG=2,GST_TRACER:7,GST_ELEMENT_FACTORY:4
