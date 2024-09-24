@@ -12,6 +12,7 @@ from adapters.python.sinks.metadata_json import (
     MetadataJsonWriter,
     Patterns,
     frame_has_objects,
+    get_location,
     get_tag_location,
 )
 from savant.api.enums import ExternalFrameType
@@ -112,7 +113,7 @@ class ImageFilesSink:
         writer = self.writers.get(video_frame.source_id)
         if writer is None:
             src_file_location = get_tag_location(video_frame) or ''
-            base_location = MetadataJsonSink.get_location(
+            base_location = get_location(
                 self.location, video_frame.source_id, src_file_location
             )
             if self.chunk_size > 0 and Patterns.CHUNK_IDX not in base_location:

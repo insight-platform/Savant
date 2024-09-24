@@ -13,6 +13,7 @@ from adapters.python.sinks.metadata_json import (
     MetadataJsonSink,
     MetadataJsonWriter,
     Patterns,
+    get_location,
     get_tag_location,
 )
 from gst_plugins.python.savant_rs_video_demux_common import FrameParams, build_caps
@@ -371,7 +372,7 @@ class VideoFilesSink:
         writer = self.writers.get(video_frame.source_id)
         if writer is None:
             src_file_location = get_tag_location(video_frame) or ''
-            base_location = MetadataJsonSink.get_location(
+            base_location = get_location(
                 self.location, video_frame.source_id, src_file_location
             )
             if self.chunk_size > 0 and Patterns.CHUNK_IDX not in base_location:
