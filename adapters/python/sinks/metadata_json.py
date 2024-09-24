@@ -34,8 +34,9 @@ class Patterns:
 
 class MetadataJsonWriter(ChunkWriter):
     def __init__(self, pattern: str, chunk_size: int):
-        self.pattern = pattern
         super().__init__(chunk_size, logger_prefix=LOGGER_NAME)
+        self.pattern = pattern
+        self.logger.info(f'File name pattern is {self.pattern}')
 
     def _write_video_frame(
         self,
@@ -43,7 +44,8 @@ class MetadataJsonWriter(ChunkWriter):
         content: Optional[bytes],
         frame_num: int,
     ) -> bool:
-        metadata = parse_video_frame(frame)
+        metadata: Dict[str, str] = dict()
+        metadata['frame'] = json.loads(frame.json_pretty)
         metadata['schema'] = 'VideoFrame'
         return self._write_meta_to_file(metadata, frame_num)
 
@@ -60,7 +62,7 @@ class MetadataJsonWriter(ChunkWriter):
         if frame_num is not None:
             metadata['frame_num'] = frame_num
         try:
-            json.dump(metadata, self.file)
+            json.dump(metadata, self.file, indent=4)
             self.file.write('\n')
         except Exception:
             traceback.print_exc()
@@ -177,13 +179,13 @@ def get_tag_location(frame: VideoFrame):
 
 def main():
     init_logging()
-    # To gracefully shutdown the adapter on SIGTERM (raise KeyboardInterrupt)
+    # To gracefully shut down the adapter on SIGTERM (raise KeyboardInterrupt)
     signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
 
     logger = get_logger(LOGGER_NAME)
     logger.info(get_starting_message('metadata sink adapter'))
 
-    location = req_config('LOCATION')
+    location = req_config('FILENAME_PATTERN')
     zmq_endpoint = req_config('ZMQ_ENDPOINT')
     zmq_socket_type = opt_config('ZMQ_TYPE', 'SUB')
     zmq_bind = opt_config('ZMQ_BIND', False, strtobool)

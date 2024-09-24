@@ -942,11 +942,50 @@ The JSON Metadata Sink Adapter writes received messages as newline-delimited JSO
 
 **Parameters**:
 
-- ``DIR_LOCATION``: a location to write files to; can be a plain location or a pattern; supported substitution parameters are ``%source_id`` and ``%src_filename``;
+- ``FILENAME_PATTERN``: a filesystem pattern to write files to; can be a plain location or a pattern; supported substitution parameters are ``%source_id``, ``%src_filename``, and ``%chunk_idx``;
 - ``CHUNK_SIZE``: a chunk size in a number of frames; the stream is split into chunks and is written to separate folders with consecutive numbering; default is ``10000``; a value of ``0`` disables chunking, resulting in a continuous stream of frames by ``source_id``;
 - ``SKIP_FRAMES_WITHOUT_OBJECTS``: a flag indicating whether frames without detected objects are ignored in output; the default value is ``False``;
 - ``SOURCE_ID``: an optional filter to filter out frames with a specific ``source_id`` only;
 - ``SOURCE_ID_PREFIX`` an optional filter to filter out frames with a matching ``source_id`` prefix only.
+
+If the ``FILENAME_PATTERN`` contains an extension (e.g., ``.json-stream``) it is extracted and used in the final file name. if the extension is missing, the system will add ``.json``.
+
+When the ``FILENAME_PATTERN`` contains ``%chunk_idx`` the pattern will be used as is, for example:
+
+.. code-block::
+
+    /out/%source_id/%chunk_idx/metadata.json
+
+
+or
+
+
+.. code-block::
+
+    /out/%source_id/%chunk_idx/metadata # .json will be added
+
+
+If the ``FILENAME_PATTERN`` does not contain ``%chunk_idx`` and the ``CHUNK_SIZE`` is set to a value greater than ``0``, the filename is constructed as:
+
+.. code-block::
+
+    {FILENAME_PATTERN}_{CHUNK_IDX}.{EXTENSION}
+
+    e.g.
+
+    /out/camera1/metadata_0000.json
+
+
+When the ``CHUNK_SIZE`` is set to ``0``, the name is built as:
+
+.. code-block::
+
+    {FILENAME_PATTERN}.json
+
+    e.g.
+
+    /out/camera1/metadata.json
+
 
 Running the adapter with Docker:
 
@@ -955,7 +994,7 @@ Running the adapter with Docker:
     docker run --rm -it --name sink-meta-json \
     --entrypoint /opt/savant/adapters/python/sinks/metadata_json.py \
     -e ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc \
-    -e LOCATION=/path/to/output/%source_id-%src_filename \
+    -e FILENAME_PATTERN=/path/to/output/%source_id-%src_filename \
     -e CHUNK_SIZE=0 \
     -v /path/to/output/:/path/to/output/ \
     -v /tmp/zmq-sockets:/tmp/zmq-sockets \
