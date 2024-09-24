@@ -10,6 +10,7 @@ from savant_rs.primitives import EndOfStream, VideoFrame
 
 from adapters.python.sinks.chunk_writer import ChunkWriter, CompositeChunkWriter
 from adapters.python.sinks.metadata_json import (
+    MetadataJsonSink,
     MetadataJsonWriter,
     Patterns,
     get_tag_location,
@@ -370,7 +371,9 @@ class VideoFilesSink:
         writer = self.writers.get(video_frame.source_id)
         if writer is None:
             src_file_location = get_tag_location(video_frame) or ''
-            base_location = self.get_location(video_frame.source_id, src_file_location)
+            base_location = MetadataJsonSink.get_location(
+                self.location, video_frame.source_id, src_file_location
+            )
             if self.chunk_size > 0 and Patterns.CHUNK_IDX not in base_location:
                 base_location = os.path.join(base_location, Patterns.CHUNK_IDX)
 
@@ -402,16 +405,6 @@ class VideoFilesSink:
         writer.write_eos(eos)
         writer.close()
         return True
-
-    def get_location(
-        self,
-        source_id: str,
-        src_file_location: str,
-    ):
-        location = self.location.replace(Patterns.SOURCE_ID, source_id)
-        src_filename = os.path.splitext(os.path.basename(src_file_location))[0]
-        location = location.replace(Patterns.SRC_FILENAME, src_filename)
-        return location
 
     def terminate(self):
         for file_writer in self.writers.values():
