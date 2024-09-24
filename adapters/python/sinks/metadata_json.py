@@ -44,7 +44,6 @@ class MetadataJsonWriter(ChunkWriter):
         content: Optional[bytes],
         frame_num: int,
     ) -> bool:
-        metadata: Dict[str, str] = dict()
         metadata = parse_video_frame(frame)
         metadata['schema'] = 'VideoFrame'
         return self._write_meta_to_file(metadata, frame_num)
