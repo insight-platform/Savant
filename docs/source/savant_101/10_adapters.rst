@@ -973,7 +973,7 @@ If the ``FILENAME_PATTERN`` does not contain ``%chunk_idx`` and the ``CHUNK_SIZE
 
     e.g.
 
-    /out/camera1/metadata_0000.json
+    /out/camera1/metadata_00000001.json
 
 
 When the ``CHUNK_SIZE`` is set to ``0``, the name is built as:

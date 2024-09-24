@@ -45,7 +45,7 @@ class MetadataJsonWriter(ChunkWriter):
         frame_num: int,
     ) -> bool:
         metadata: Dict[str, str] = dict()
-        metadata['frame'] = json.loads(frame.json_pretty)
+        metadata = parse_video_frame(frame)
         metadata['schema'] = 'VideoFrame'
         return self._write_meta_to_file(metadata, frame_num)
 
@@ -79,7 +79,7 @@ class MetadataJsonWriter(ChunkWriter):
         self.file.close()
 
     def _open(self):
-        self.location = self.pattern.replace(Patterns.CHUNK_IDX, f'{self.chunk_idx:04}')
+        self.location = self.pattern.replace(Patterns.CHUNK_IDX, f'{self.chunk_idx:08}')
         self.lines = 0
         self.logger.info('Opening file %s', self.location)
         os.makedirs(os.path.dirname(self.location), exist_ok=True)
