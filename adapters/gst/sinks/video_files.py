@@ -9,7 +9,11 @@ from typing import Dict, Optional
 from savant_rs.primitives import EndOfStream, VideoFrame
 
 from adapters.python.sinks.chunk_writer import ChunkWriter, CompositeChunkWriter
-from adapters.python.sinks.metadata_json import MetadataJsonWriter, Patterns, get_tag_location
+from adapters.python.sinks.metadata_json import (
+    MetadataJsonWriter,
+    Patterns,
+    get_tag_location,
+)
 from gst_plugins.python.savant_rs_video_demux_common import FrameParams, build_caps
 from savant.api.parser import convert_ts
 from savant.gstreamer import GLib, Gst, GstApp
@@ -370,7 +374,6 @@ class VideoFilesSink:
             if self.chunk_size > 0 and Patterns.CHUNK_IDX not in base_location:
                 base_location = os.path.join(base_location, Patterns.CHUNK_IDX)
 
-
             video_writer = VideoFilesWriter(
                 base_location,
                 video_frame.source_id,
@@ -409,7 +412,6 @@ class VideoFilesSink:
         src_filename = os.path.splitext(os.path.basename(src_file_location))[0]
         location = location.replace(Patterns.SRC_FILENAME, src_filename)
         return location
-
 
     def terminate(self):
         for file_writer in self.writers.values():
