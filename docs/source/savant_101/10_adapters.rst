@@ -1052,10 +1052,14 @@ The video file sink adapter extends the JSON metadata adapter by writing video f
 
 **Parameters**:
 
-- ``DIR_LOCATION``: a location to write files to; can be a regular path or a path template; supported substitution parameters are ``%source_id`` and ``%src_filename``;
+- ``DIR_LOCATION``: a location to write files to; can be a regular path or a path template; supported substitution parameters are ``%source_id``, ``%src_filename``, and ``%chunk_idx``;
 - ``CHUNK_SIZE``: a chunk size in a number of frames; the stream is split into chunks and is written to separate folders with consecutive numbering; default is ``10000``; A value of ``0`` disables limit for number of frames in a chunk: the stream will be split into chunks only by EOS messages;
 - ``SOURCE_ID``: an optional filter to filter out frames with a specific ``source_id`` only;
 - ``SOURCE_ID_PREFIX`` an optional filter to filter out frames with a matching ``source_id`` prefix only.
+
+
+If ``DIR_LOCATION`` does not contain ``%chunk_idx`` it is created as a subdirectory containing: ``metadata.json`` file and ``media`` directory with video. Otherwise, extra directory is not created.
+
 
 Running the adapter with Docker:
 

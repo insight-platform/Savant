@@ -9,7 +9,7 @@ from typing import Dict, Optional
 from savant_rs.primitives import EndOfStream, VideoFrame
 
 from adapters.python.sinks.chunk_writer import ChunkWriter, CompositeChunkWriter
-from adapters.python.sinks.metadata_json import MetadataJsonWriter, Patterns
+from adapters.python.sinks.metadata_json import MetadataJsonWriter, Patterns, get_tag_location
 from gst_plugins.python.savant_rs_video_demux_common import FrameParams, build_caps
 from savant.api.parser import convert_ts
 from savant.gstreamer import GLib, Gst, GstApp
@@ -286,10 +286,11 @@ class VideoFilesWriter(ChunkWriter):
         self.appsrc.set_caps(self.caps)
 
         filesink: Gst.Element = self.pipeline.get_by_name(filesink_name)
-        os.makedirs(self.base_location, exist_ok=True)
-        dst_location = os.path.join(
-            self.base_location, f'{self.chunk_idx:04}.{file_ext}'
+        dst_location = self.base_location.replace(
+            Patterns.CHUNK_IDX, f'{self.chunk_idx:0{self.chunk_size_digits}}'
         )
+        os.makedirs(dst_location, exist_ok=True)
+        dst_location = os.path.join(dst_location, f'video.{file_ext}')
         self.logger.info(
             'Writing video from source %s to file %s', self.source_id, dst_location
         )
@@ -364,8 +365,12 @@ class VideoFilesSink:
 
         writer = self.writers.get(video_frame.source_id)
         if writer is None:
-            base_location = os.path.join(self.location, video_frame.source_id)
-            json_filename_pattern = f'{Patterns.CHUNK_IDX}.json'
+            src_file_location = get_tag_location(video_frame) or ''
+            base_location = self.get_location(video_frame.source_id, src_file_location)
+            if self.chunk_size > 0 and Patterns.CHUNK_IDX not in base_location:
+                base_location = os.path.join(base_location, Patterns.CHUNK_IDX)
+
+
             video_writer = VideoFilesWriter(
                 base_location,
                 video_frame.source_id,
@@ -376,7 +381,7 @@ class VideoFilesSink:
                 [
                     video_writer,
                     MetadataJsonWriter(
-                        os.path.join(base_location, json_filename_pattern),
+                        os.path.join(base_location, 'metadata.json'),
                         self.chunk_size,
                     ),
                 ],
@@ -394,6 +399,17 @@ class VideoFilesSink:
         writer.write_eos(eos)
         writer.close()
         return True
+
+    def get_location(
+        self,
+        source_id: str,
+        src_file_location: str,
+    ):
+        location = self.location.replace(Patterns.SOURCE_ID, source_id)
+        src_filename = os.path.splitext(os.path.basename(src_file_location))[0]
+        location = location.replace(Patterns.SRC_FILENAME, src_filename)
+        return location
+
 
     def terminate(self):
         for file_writer in self.writers.values():
