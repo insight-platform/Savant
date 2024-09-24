@@ -1015,11 +1015,15 @@ The image file sink adapter extends the JSON metadata adapter by writing image f
 
 **Parameters**:
 
-- ``DIR_LOCATION``: a location to write files to; can be a regular path or a path template; supported substitution parameters are ``%source_id`` and ``%src_filename``;
+- ``DIR_LOCATION``: a location to write files to; can be a regular path or a path template; supported substitution parameters are ``%source_id``, ``%src_filename``, and ``%chunk_idx``;
 - ``CHUNK_SIZE``: a chunk size in a number of frames; the stream is split into chunks and is written to separate directories with consecutive numbering; default is ``10000``; A value of ``0`` disables chunking, resulting in a continuous stream of frames by ``source_id``;
 - ``SKIP_FRAMES_WITHOUT_OBJECTS``: a flag indicating whether frames without objects are ignored in output; the default value is ``False``;
 - ``SOURCE_ID``: an optional filter to filter out frames with a specific ``source_id`` only;
 - ``SOURCE_ID_PREFIX`` an optional filter to filter out frames with a matching ``source_id`` prefix only.
+
+
+If ``DIR_LOCATION`` does not contain ``%chunk_idx`` it is created as a subdirectory containing: ``metadata.json`` file and ``media`` directory with images. Otherwise, extra directory is not created.
+
 
 Running the adapter with Docker:
 

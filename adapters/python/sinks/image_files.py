@@ -11,6 +11,7 @@ from adapters.python.sinks.metadata_json import (
     MetadataJsonWriter,
     Patterns,
     frame_has_objects,
+    get_tag_location,
 )
 from savant.api.enums import ExternalFrameType
 from savant.utils.config import opt_config, req_config, strtobool
@@ -67,13 +68,9 @@ class ImageFilesWriter(ChunkWriter):
         return True
 
     def _open(self):
-        if self.chunk_size > 0:
-            self.chunk_location = os.path.join(
-                self.base_location,
-                f'{self.chunk_idx:04}',
-            )
-        else:
-            self.chunk_location = self.base_location
+        self.chunk_location = self.base_location.replace(
+            Patterns.CHUNK_IDX, f'{self.chunk_idx:0{self.chunk_size_digits}}'
+        )
         self.logger.info('Creating directory %s', self.chunk_location)
         os.makedirs(self.chunk_location, exist_ok=True)
 
@@ -113,16 +110,17 @@ class ImageFilesSink:
             return False
         writer = self.writers.get(video_frame.source_id)
         if writer is None:
-            base_location = os.path.join(self.location, video_frame.source_id)
-            if self.chunk_size > 0:
-                json_filename_pattern = f'{Patterns.CHUNK_IDX}.json'
-            else:
-                json_filename_pattern = 'meta.json'
+            src_file_location = get_tag_location(video_frame) or ''
+            base_location = self.get_location(video_frame.source_id, src_file_location)
+            if self.chunk_size > 0 and Patterns.CHUNK_IDX not in base_location:
+                base_location = os.path.join(base_location, Patterns.CHUNK_IDX)
             writer = CompositeChunkWriter(
                 [
-                    ImageFilesWriter(base_location, self.chunk_size),
+                    ImageFilesWriter(
+                        os.path.join(base_location, 'media'), self.chunk_size
+                    ),
                     MetadataJsonWriter(
-                        os.path.join(base_location, json_filename_pattern),
+                        os.path.join(base_location, 'metadata.json'),
                         self.chunk_size,
                     ),
                 ],
@@ -140,6 +138,16 @@ class ImageFilesSink:
         writer.flush()
         return True
 
+    def get_location(
+        self,
+        source_id: str,
+        src_file_location: str,
+    ):
+        location = self.location.replace(Patterns.SOURCE_ID, source_id)
+        src_filename = os.path.splitext(os.path.basename(src_file_location))[0]
+        location = location.replace(Patterns.SRC_FILENAME, src_filename)
+        return location
+
     def terminate(self):
         for file_writer in self.writers.values():
             file_writer.close()
@@ -147,7 +155,7 @@ class ImageFilesSink:
 
 def main():
     init_logging()
-    # To gracefully shutdown the adapter on SIGTERM (raise KeyboardInterrupt)
+    # To gracefully shut down the adapter on SIGTERM (raise KeyboardInterrupt)
     signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
 
     logger = get_logger(LOGGER_NAME)
