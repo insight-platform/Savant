@@ -1022,7 +1022,7 @@ The image file sink adapter extends the JSON metadata adapter by writing image f
 - ``SOURCE_ID_PREFIX`` an optional filter to filter out frames with a matching ``source_id`` prefix only.
 
 
-If ``DIR_LOCATION`` does not contain ``%chunk_idx`` it is created as a subdirectory containing: ``metadata.json`` file and ``media`` directory with images. Otherwise, extra directory is not created.
+If ``DIR_LOCATION`` does not contain ``%chunk_idx`` it is created as a subdirectory containing: ``metadata.json`` file and ``images`` directory with images. Otherwise, extra directory is not created.
 
 
 Running the adapter with Docker:
@@ -1058,7 +1058,7 @@ The video file sink adapter extends the JSON metadata adapter by writing video f
 - ``SOURCE_ID_PREFIX`` an optional filter to filter out frames with a matching ``source_id`` prefix only.
 
 
-If ``DIR_LOCATION`` does not contain ``%chunk_idx`` it is created as a subdirectory containing: ``metadata.json`` file and ``media`` directory with video. Otherwise, extra directory is not created.
+If ``DIR_LOCATION`` does not contain ``%chunk_idx`` it is created as a subdirectory containing: ``metadata.json`` and ``video.{mov, webm}`` files. Otherwise, extra directory is not created.
 
 
 Running the adapter with Docker:
