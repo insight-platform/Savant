@@ -46,6 +46,20 @@ class FramePadding:
 
 
 @dataclass
+class IngressConverter:
+    """Pipeline ingress converter configuration template."""
+
+    module: str
+    """Module name to import."""
+
+    class_name: str
+    """Python class name to instantiate."""
+
+    kwargs: Optional[Dict[str, Any]] = None
+    """Keyword arguments for the converter."""
+
+
+@dataclass
 class FrameParameters:
     """Pipeline processing frame parameters"""
 
@@ -60,6 +74,9 @@ class FrameParameters:
 
     geometry_base: int = 8
     """Base value for frame parameters. All frame parameters must be divisible by this value."""
+
+    ingress_converter: Optional[IngressConverter] = None
+    """Ingress converter for the pipeline."""
 
 
 @dataclass

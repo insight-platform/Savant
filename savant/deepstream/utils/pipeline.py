@@ -147,6 +147,12 @@ def build_pipeline_stages(element_stages: List[Union[str, List[str]]]):
             StageFunction.none(),
         ),
         (
+            'ingress-converter',
+            VideoPipelineStagePayloadType.Frame,
+            StageFunction.none(),
+            StageFunction.none(),
+        ),
+        (
             'muxer',
             VideoPipelineStagePayloadType.Frame,
             StageFunction.none(),

@@ -1,5 +1,6 @@
 """DeepStream pipeline."""
 
+import importlib
 import logging
 import tempfile
 import time
@@ -29,6 +30,7 @@ from savant.config.schema import (
     BufferQueuesParameters,
     DrawFunc,
     FrameParameters,
+    IngressConverter,
     ModelElement,
     Pipeline,
     PipelineElement,
@@ -40,6 +42,7 @@ from savant.deepstream.buffer_processor import (
     create_buffer_processor,
 )
 from savant.deepstream.element_factory import NvDsElementFactory
+from savant.deepstream.ingress_converter import BaseIngressConverter
 from savant.deepstream.metadata import (
     nvds_attr_meta_output_converter,
     nvds_obj_bbox_output_converter,
@@ -193,7 +196,19 @@ class NvDsPipeline(GstPipeline):
             if factory is not None:
                 factory.set_rank(Gst.Rank.NONE)
 
+        self._ingress_converter: Optional[BaseIngressConverter] = None
+        if self._frame_params.ingress_converter:
+            self._ingress_converter = self._init_ingress_converter(
+                self._frame_params.ingress_converter
+            )
+
         super().__init__(name, pipeline_cfg, **kwargs)
+
+    def _init_ingress_converter(self, config: IngressConverter) -> BaseIngressConverter:
+        # TODO: make initializing similar to pyfunc
+        ing_conv_module = importlib.import_module(config.module)
+        ing_conv_class = getattr(ing_conv_module, config.class_name)
+        return ing_conv_class(**(config.kwargs or {}))
 
     def _build_buffer_processor(self, queue: Queue) -> NvDsBufferProcessor:
         """Create buffer processor."""
@@ -602,12 +617,35 @@ class NvDsPipeline(GstPipeline):
             'source-capsfilter',
         )
 
-        capsfilter.set_state(Gst.State.PLAYING)
         self._pipeline.add(capsfilter)
+        capsfilter.sync_state_with_parent()
         source_info.before_muxer.append(capsfilter)
         assert nv_video_converter.link(capsfilter)
+        src_pad = capsfilter.get_static_pad('src')
 
-        return capsfilter.get_static_pad('src')
+        if self._ingress_converter is not None:
+            ingress_converter = self._element_factory.create(
+                PipelineElement(
+                    'ingress_converter',
+                    properties={
+                        'source_id': source_info.source_id,
+                        'converter': self._ingress_converter,
+                        'pipeline': self._video_pipeline,
+                    },
+                )
+            )
+            add_pad_probe_to_move_frame(
+                ingress_converter.get_static_pad('sink'),
+                self._video_pipeline,
+                'ingress-converter',
+            )
+            self._pipeline.add(ingress_converter)
+            ingress_converter.sync_state_with_parent()
+            source_info.before_muxer.append(ingress_converter)
+            assert capsfilter.link(ingress_converter)
+            src_pad = ingress_converter.get_static_pad('src')
+
+        return src_pad
 
     def _remove_input_elements(self, source_info: SourceInfo):
         self._logger.debug(
