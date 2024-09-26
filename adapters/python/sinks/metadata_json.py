@@ -36,7 +36,7 @@ class MetadataJsonWriter(ChunkWriter):
     def __init__(self, pattern: str, chunk_size: int):
         super().__init__(chunk_size, logger_prefix=LOGGER_NAME)
         self.pattern = pattern
-        self.logger.info(f'File name pattern is {self.pattern}')
+        self.logger.info('File name pattern is %s', self.pattern)
 
     def _write_video_frame(
         self,
