@@ -61,7 +61,7 @@ class MetadataJsonWriter(ChunkWriter):
         if frame_num is not None:
             metadata['frame_num'] = frame_num
         try:
-            json.dump(metadata, self.file, indent=4)
+            json.dump(metadata, self.file)
             self.file.write('\n')
         except Exception:
             traceback.print_exc()
