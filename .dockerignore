@@ -15,6 +15,7 @@ Makefile
 cache/
 var/
 data/
+downloads/
 logs/
 .venv/
 env/

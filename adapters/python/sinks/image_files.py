@@ -89,6 +89,7 @@ class ImageFilesSink:
         self.chunk_size = chunk_size
         self.skip_frames_without_objects = skip_frames_without_objects
         self.writers: Dict[str, ChunkWriter] = {}
+        self.last_writer_per_source: Dict[str, (str, ChunkWriter)] = {}
 
     def write(self, zmq_message: ZeroMQMessage):
         message = zmq_message.message
@@ -110,27 +111,49 @@ class ImageFilesSink:
                 video_frame.pts,
             )
             return False
-        writer = self.writers.get(video_frame.source_id)
+        src_file_location = get_tag_location(video_frame) or 'unknown'
+        location = get_location(self.location, video_frame.source_id, src_file_location)
+        if self.chunk_size > 0 and Patterns.CHUNK_IDX not in location:
+            location = os.path.join(location, Patterns.CHUNK_IDX)
+        writer = self.writers.get(location)
+        last_source_location, last_source_writer = self.last_writer_per_source.get(
+            video_frame.source_id
+        ) or (None, None)
+
         if writer is None:
-            src_file_location = get_tag_location(video_frame) or ''
-            base_location = get_location(
-                self.location, video_frame.source_id, src_file_location
-            )
-            if self.chunk_size > 0 and Patterns.CHUNK_IDX not in base_location:
-                base_location = os.path.join(base_location, Patterns.CHUNK_IDX)
             writer = CompositeChunkWriter(
                 [
-                    ImageFilesWriter(
-                        os.path.join(base_location, 'images'), self.chunk_size
-                    ),
+                    ImageFilesWriter(os.path.join(location, 'images'), self.chunk_size),
                     MetadataJsonWriter(
-                        os.path.join(base_location, 'metadata.json'),
+                        os.path.join(location, 'metadata.json'),
                         self.chunk_size,
                     ),
                 ],
                 self.chunk_size,
             )
-            self.writers[video_frame.source_id] = writer
+            self.writers[location] = writer
+            if writer is not last_source_writer:
+                if last_source_writer is not None:
+                    self.logger.info(
+                        'Flushing previous writer for source=%s, location=%s',
+                        video_frame.source_id,
+                        last_source_location,
+                    )
+                    last_source_writer.flush()
+                    self.logger.info(
+                        'Removing previous writer for source=%s, location=%s',
+                        video_frame.source_id,
+                        last_source_location,
+                    )
+                    del self.writers[last_source_location]
+                self.logger.info(
+                    'New writer for source=%s, location=%s is initialized, amount of resident writers is %d',
+                    video_frame.source_id,
+                    location,
+                    len(self.writers),
+                )
+                self.last_writer_per_source[video_frame.source_id] = (location, writer)
+
         return writer.write_video_frame(video_frame, content, video_frame.keyframe)
 
     def _write_eos(self, eos: EndOfStream):
