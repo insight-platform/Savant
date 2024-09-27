@@ -12,10 +12,7 @@ class ChunkWriter:
     def __init__(self, chunk_size: int, logger_prefix: str = __name__):
         self.logger = get_logger(f'{logger_prefix}.{self.__class__.__name__}')
         self.chunk_size = chunk_size
-        if chunk_size > 0:
-            self.chunk_size_digits = int(math.log10(chunk_size)) + 1
-        else:
-            self.chunk_size_digits = 6
+        self.chunk_size_digits = 8
         self.chunk_idx = -1
         self.frames_in_chunk = 0
         self.opened = False

@@ -8,9 +8,12 @@ from savant_rs.primitives import EndOfStream, VideoFrame
 
 from adapters.python.sinks.chunk_writer import ChunkWriter, CompositeChunkWriter
 from adapters.python.sinks.metadata_json import (
+    MetadataJsonSink,
     MetadataJsonWriter,
     Patterns,
     frame_has_objects,
+    get_location,
+    get_tag_location,
 )
 from savant.api.enums import ExternalFrameType
 from savant.utils.config import opt_config, req_config, strtobool
@@ -67,13 +70,9 @@ class ImageFilesWriter(ChunkWriter):
         return True
 
     def _open(self):
-        if self.chunk_size > 0:
-            self.chunk_location = os.path.join(
-                self.base_location,
-                f'{self.chunk_idx:04}',
-            )
-        else:
-            self.chunk_location = self.base_location
+        self.chunk_location = self.base_location.replace(
+            Patterns.CHUNK_IDX, f'{self.chunk_idx:0{self.chunk_size_digits}}'
+        )
         self.logger.info('Creating directory %s', self.chunk_location)
         os.makedirs(self.chunk_location, exist_ok=True)
 
@@ -90,6 +89,7 @@ class ImageFilesSink:
         self.chunk_size = chunk_size
         self.skip_frames_without_objects = skip_frames_without_objects
         self.writers: Dict[str, ChunkWriter] = {}
+        self.last_writer_per_source: Dict[str, (str, ChunkWriter)] = {}
 
     def write(self, zmq_message: ZeroMQMessage):
         message = zmq_message.message
@@ -111,24 +111,49 @@ class ImageFilesSink:
                 video_frame.pts,
             )
             return False
-        writer = self.writers.get(video_frame.source_id)
+        src_file_location = get_tag_location(video_frame) or 'unknown'
+        location = get_location(self.location, video_frame.source_id, src_file_location)
+        if self.chunk_size > 0 and Patterns.CHUNK_IDX not in location:
+            location = os.path.join(location, Patterns.CHUNK_IDX)
+        writer = self.writers.get(location)
+        last_source_location, last_source_writer = self.last_writer_per_source.get(
+            video_frame.source_id
+        ) or (None, None)
+
         if writer is None:
-            base_location = os.path.join(self.location, video_frame.source_id)
-            if self.chunk_size > 0:
-                json_filename_pattern = f'{Patterns.CHUNK_IDX}.json'
-            else:
-                json_filename_pattern = 'meta.json'
             writer = CompositeChunkWriter(
                 [
-                    ImageFilesWriter(base_location, self.chunk_size),
+                    ImageFilesWriter(os.path.join(location, 'images'), self.chunk_size),
                     MetadataJsonWriter(
-                        os.path.join(base_location, json_filename_pattern),
+                        os.path.join(location, 'metadata.json'),
                         self.chunk_size,
                     ),
                 ],
                 self.chunk_size,
             )
-            self.writers[video_frame.source_id] = writer
+            self.writers[location] = writer
+            if writer is not last_source_writer:
+                if last_source_writer is not None:
+                    self.logger.info(
+                        'Flushing previous writer for source=%s, location=%s',
+                        video_frame.source_id,
+                        last_source_location,
+                    )
+                    last_source_writer.flush()
+                    self.logger.info(
+                        'Removing previous writer for source=%s, location=%s',
+                        video_frame.source_id,
+                        last_source_location,
+                    )
+                    del self.writers[last_source_location]
+                self.logger.info(
+                    'New writer for source=%s, location=%s is initialized, amount of resident writers is %d',
+                    video_frame.source_id,
+                    location,
+                    len(self.writers),
+                )
+                self.last_writer_per_source[video_frame.source_id] = (location, writer)
+
         return writer.write_video_frame(video_frame, content, video_frame.keyframe)
 
     def _write_eos(self, eos: EndOfStream):
@@ -147,7 +172,7 @@ class ImageFilesSink:
 
 def main():
     init_logging()
-    # To gracefully shutdown the adapter on SIGTERM (raise KeyboardInterrupt)
+    # To gracefully shut down the adapter on SIGTERM (raise KeyboardInterrupt)
     signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
 
     logger = get_logger(LOGGER_NAME)
