@@ -34,8 +34,9 @@ class Patterns:
 
 class MetadataJsonWriter(ChunkWriter):
     def __init__(self, pattern: str, chunk_size: int):
-        self.pattern = pattern
         super().__init__(chunk_size, logger_prefix=LOGGER_NAME)
+        self.pattern = pattern
+        self.logger.info('File name pattern is %s', self.pattern)
 
     def _write_video_frame(
         self,
@@ -77,7 +78,9 @@ class MetadataJsonWriter(ChunkWriter):
         self.file.close()
 
     def _open(self):
-        self.location = self.pattern.replace(Patterns.CHUNK_IDX, f'{self.chunk_idx:04}')
+        self.location = self.pattern.replace(
+            Patterns.CHUNK_IDX, f'{self.chunk_idx:0{self.chunk_size_digits}}'
+        )
         self.lines = 0
         self.logger.info('Opening file %s', self.location)
         os.makedirs(os.path.dirname(self.location), exist_ok=True)
@@ -97,7 +100,7 @@ class MetadataJsonSink:
         self.skip_frames_without_objects = skip_frames_without_objects
         self.chunk_size = chunk_size
         self.writers: Dict[str, MetadataJsonWriter] = {}
-        self.last_writer_per_source: Dict[str, MetadataJsonWriter] = {}
+        self.last_writer_per_source: Dict[str, (str, MetadataJsonWriter)] = {}
 
         path, ext = os.path.splitext(location)
         ext = ext or '.json'
@@ -118,28 +121,49 @@ class MetadataJsonSink:
             return self._write_eos(message.as_end_of_stream())
         self.logger.debug('Unsupported message type for message %r', message)
 
-    def _write_video_frame(self, frame: VideoFrame):
-        if self.skip_frames_without_objects and not frame_has_objects(frame):
+    def _write_video_frame(self, video_frame: VideoFrame):
+        if self.skip_frames_without_objects and not frame_has_objects(video_frame):
             self.logger.debug(
                 'Frame %s from source %s does not have objects. Skipping it.',
-                frame.source_id,
-                frame.pts,
+                video_frame.source_id,
+                video_frame.pts,
             )
             return False
 
-        src_file_location = get_tag_location(frame) or ''
-        location = self.get_location(frame.source_id, src_file_location)
+        src_file_location = get_tag_location(video_frame) or 'unknown'
+        location = get_location(self.location, video_frame.source_id, src_file_location)
         writer = self.writers.get(location)
-        last_writer = self.last_writer_per_source.get(frame.source_id)
+        last_source_location, last_source_writer = self.last_writer_per_source.get(
+            video_frame.source_id
+        ) or (None, None)
+
         if writer is None:
             writer = MetadataJsonWriter(location, self.chunk_size)
             self.writers[location] = writer
-        if writer is not last_writer:
-            if last_writer is not None:
-                last_writer.flush()
-            self.last_writer_per_source[frame.source_id] = writer
+        if writer is not last_source_writer:
+            if last_source_writer is not None:
+                self.logger.info(
+                    'Flushing previous writer for source=%s, location=%s',
+                    video_frame.source_id,
+                    last_source_location,
+                )
+                last_source_writer.flush()
+                self.logger.info(
+                    'Removing previous writer for source=%s, location=%s',
+                    video_frame.source_id,
+                    last_source_location,
+                )
+                del self.writers[last_source_location]
 
-        return writer.write_video_frame(frame, None, frame.keyframe)
+            self.logger.info(
+                'New writer for source=%s, location=%s is initialized, amount of resident writers is %d',
+                video_frame.source_id,
+                location,
+                len(self.writers),
+            )
+            self.last_writer_per_source[video_frame.source_id] = (location, writer)
+
+        return writer.write_video_frame(video_frame, None, video_frame.keyframe)
 
     def _write_eos(self, eos: EndOfStream):
         self.logger.info('Received EOS from source %s.', eos.source_id)
@@ -150,15 +174,17 @@ class MetadataJsonSink:
         writer.flush()
         return result
 
-    def get_location(
-        self,
-        source_id: str,
-        src_file_location: str,
-    ):
-        location = self.location.replace(Patterns.SOURCE_ID, source_id)
-        src_filename = os.path.splitext(os.path.basename(src_file_location))[0]
-        location = location.replace(Patterns.SRC_FILENAME, src_filename)
-        return location
+
+def get_location(
+    location_pattern,
+    source_id: str,
+    src_file_location: str,
+):
+    src_filename = os.path.splitext(os.path.basename(src_file_location))[0]
+    location = location_pattern.replace(Patterns.SOURCE_ID, source_id).replace(
+        Patterns.SRC_FILENAME, src_filename
+    )
+    return location
 
 
 def frame_has_objects(frame: VideoFrame):
@@ -177,13 +203,13 @@ def get_tag_location(frame: VideoFrame):
 
 def main():
     init_logging()
-    # To gracefully shutdown the adapter on SIGTERM (raise KeyboardInterrupt)
+    # To gracefully shut down the adapter on SIGTERM (raise KeyboardInterrupt)
     signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
 
     logger = get_logger(LOGGER_NAME)
     logger.info(get_starting_message('metadata sink adapter'))
 
-    location = req_config('LOCATION')
+    location = req_config('FILENAME_PATTERN')
     zmq_endpoint = req_config('ZMQ_ENDPOINT')
     zmq_socket_type = opt_config('ZMQ_TYPE', 'SUB')
     zmq_bind = opt_config('ZMQ_BIND', False, strtobool)
