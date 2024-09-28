@@ -1,4 +1,4 @@
-FROM ghcr.io/insight-platform/savant-deepstream:latest
+FROM ghcr.io/insight-platform/savant-deepstream:0.4.6-6.4
 
 COPY requirements.txt requirements.txt
 RUN python -m pip install -r requirements.txt
