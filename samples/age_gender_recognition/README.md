@@ -10,8 +10,8 @@ Preview:
 
 Tested on platforms:
 
-- Xavier NX, Xavier AGX;
-- Nvidia Turing, Ampere.
+- Nvidia Turing
+- Nvidia Jetson Orin family
 
 Demonstrated operational modes:
 

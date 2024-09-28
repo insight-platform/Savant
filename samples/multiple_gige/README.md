@@ -4,6 +4,11 @@ A simple pipeline demonstrates how GigE Vision Source Adapter works in Savant. I
 
 The resulting streams can be accessed via LL-HLS on `http://locahost:888/stream/gige-raw` (raw-rgba frames) and `http://locahost:888/stream/gige-encoded` (HEVC-encoded frames).
 
+Tested on platforms:
+
+- Nvidia Turing
+- Nvidia Jetson Orin family
+
 Run the demo:
 
 ```bash

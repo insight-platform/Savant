@@ -8,8 +8,8 @@ Weights used: `v0.1/rtdetr_r50vd_6x_coco_from_paddle.pth`  from the [RT-DETR rel
 
 Tested on platforms:
 
-- Nvidia Turing;
-- Nvidia Jetson Orin Nano.
+- Nvidia Turing
+- Nvidia Jetson Orin family
 
 Demonstrated operational modes:
 

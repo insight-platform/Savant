@@ -4,6 +4,11 @@ A pipeline demonstrating how to capture MJPEG from a USB camera. MJPEG is a comm
 
 The resulting stream can be accessed via LL-HLS on `http://locahost:888/stream/video`
 
+Tested on platforms:
+
+- Nvidia Turing
+- Nvidia Jetson Orin family
+
 ## Hardware Acceleration Notes
 
 On X86, JPEG decoding and encoding is done in software (or hardware-assisted if dGPU and drivers support it). On Jetson, JPEG decoding and decoding is done in hardware with NVJPEG.

@@ -2,6 +2,11 @@
 
 A pipeline demonstrates how to send frames to and receive from Kinesis Video Stream. Pipeline consists of two parts: exporter and importer. Exporter processes frames from a video file, sends metadata to MongoDB and sends frames to Kinesis Video Stream. Importer receives frames from Kinesis Video Stream, retrieves metadata from MongoDB and draw bboxes on frames.
 
+Tested on platforms:
+
+- Nvidia Turing
+- Nvidia Jetson Orin family
+
 ## Prerequisites
 
 ```bash

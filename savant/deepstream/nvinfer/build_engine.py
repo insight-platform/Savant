@@ -35,16 +35,15 @@ def build_engine(element: ModelElement, rebuild: bool = True):
     pipeline: Gst.Pipeline = Gst.Pipeline()
     elements = [
         PipelineElement(
-            'videotestsrc',
-            properties={'num-buffers': model.batch_size},
+            'nvvideotestsrc',
+            properties={
+                'num-buffers': model.batch_size,
+            },
         ),
-        PipelineElement('nvvideoconvert'),
         PipelineElement(
             element='nvstreammux',
             name='muxer',
             properties={
-                'width': model.input.width if model.input.width else 1280,
-                'height': model.input.height if model.input.height else 720,
                 'batch-size': 1,
             },
         ),
