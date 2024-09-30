@@ -4,6 +4,11 @@ A pipeline demonstrates how Buffer Adapter works in Savant. In the demo video fr
 
 The buffer adapter metrics are stored in Prometheus and displayed on a Grafana dashboard.
 
+Tested on platforms:
+
+- Nvidia Turing
+- Nvidia Jetson Orin family
+
 ## Prerequisites
 
 ```bash

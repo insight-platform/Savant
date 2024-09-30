@@ -2,6 +2,11 @@
 
 A pipeline demonstrates processing of streams at the original resolution, i.e. without scaling to a single resolution. `parameters.frame` in  [module.yml](module.yml) is not specified. The sample sends two streams with resolutions 1280x720 and 1920x1080 to the module.
 
+Tested on platforms:
+
+- Nvidia Turing
+- Nvidia Jetson Orin family
+
 ## Prerequisites
 
 ```bash

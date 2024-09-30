@@ -6,6 +6,11 @@ It uses NVDEC and NVENC internally and Savant protocol. Thus, if the pipeline wo
 
 The resulting video is broadcast in 640x360 resolution. You can access it at `http://<ip>:888/stream/test`.
 
+Tested on platforms:
+
+- Nvidia Turing
+- Nvidia Jetson Orin family
+
 ## Specifying the RTSP URL
 
 Edit `.env` file and set the `URI` variable to the RTSP URL of the camera.

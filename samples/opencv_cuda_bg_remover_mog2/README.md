@@ -23,8 +23,8 @@ step-by-step [tutorial](https://blog.savant-ai.io/building-a-500-fps-accelerated
 
 Tested on platforms:
 
-- Xavier NX, Xavier AGX;
-- Nvidia Turing, Ampere.
+- Nvidia Turing
+- Nvidia Jetson Orin family
 
 Demonstrated operational modes:
 

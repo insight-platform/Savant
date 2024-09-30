@@ -6,6 +6,11 @@ Preview:
 
 ![](assets/conditional-video-processing.webp)
 
+Tested on platforms:
+
+- Nvidia Turing
+- Nvidia Jetson Orin family
+
 ## Prerequisites
 
 ```bash

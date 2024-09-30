@@ -4,6 +4,11 @@ A simple pipeline demonstrates how multiplexed processing works in Savant. In th
 
 The resulting streams can be accessed via LL-HLS on `http://locahost:888/stream/city-traffic` and `http://locahost:888/stream/town-centre`.
 
+Tested on platforms:
+
+- Nvidia Turing
+- Nvidia Jetson Orin family
+
 ## Prerequisites
 
 ```bash
