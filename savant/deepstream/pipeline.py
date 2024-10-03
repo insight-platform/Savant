@@ -626,7 +626,7 @@ class NvDsPipeline(GstPipeline):
         if self._ingress_converter is not None:
             ingress_converter = self._element_factory.create(
                 PipelineElement(
-                    'ingress_converter',
+                    'ingress_converter_bin',
                     properties={
                         'source_id': source_info.source_id,
                         'converter': self._ingress_converter,

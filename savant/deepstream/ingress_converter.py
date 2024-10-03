@@ -4,15 +4,21 @@ from typing import Optional, Tuple
 import cv2
 from savant_rs.primitives import VideoFrame
 
+from savant.utils.logging import get_logger
+
 
 class BaseIngressConverter(ABC):
+    def __init__(self):
+        self.logger = get_logger(self.__module__)
+
     @abstractmethod
     def convert(
         self,
         source_id: str,
         meta: VideoFrame,
-        frame: cv2.cuda.GpuMat,
-    ) -> cv2.cuda.GpuMat:
+        in_frame: 'cv2.cuda.GpuMat',
+        out_frame: 'cv2.cuda.GpuMat',
+    ):
         pass
 
     @abstractmethod
