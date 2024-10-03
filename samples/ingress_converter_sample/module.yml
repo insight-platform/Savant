@@ -1,0 +1,27 @@
+# module name, required
+name: ingress_converter_sample
+
+# base module parameters
+parameters:
+  # pipeline processing frame parameters
+  frame:
+#    width: 1280
+#    height: 720
+#    # Add paddings to the frame before processing
+#    padding:
+#      # Paddings are kept on the output frame
+#      keep: true
+#      left: 0
+#      right: 0
+#      # Padding size is 180px on the top of the frame
+#      top: 180
+#      bottom: 0
+#    geometry_base: 4
+    ingress_converter:
+      module: samples.ingress_converter_sample.ingress_converter
+      class_name: IngressConverter
+#  output_frame:
+#    # Frame is output without any encoding
+#    # this is to circumvent 3 hardware decoding processes limit on NVIDIA consumer hardware
+#    codec: ${oc.env:CODEC, 'raw-rgba'}
+  batch_size: 1
