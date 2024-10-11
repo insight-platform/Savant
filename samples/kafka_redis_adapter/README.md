@@ -4,6 +4,11 @@ A pipeline demonstrates how Kafka-Redis adapters works in Savant. In the demo vi
 
 ![kafka-redis-adapter-demo.png](assets/kafka-redis-adapter-demo.png)
 
+Tested on platforms:
+
+- Nvidia Turing
+- Nvidia Jetson Orin family
+
 ## Prerequisites
 
 ```bash

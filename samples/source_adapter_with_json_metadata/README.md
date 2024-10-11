@@ -8,6 +8,11 @@ In the demo it is assumed that there is only one person in the picture and
 the IOU of the true box and from the Yolo detection model is calculated. 
 The IOU value is added as a tag to the frame metadata.
 
+Tested on platforms:
+
+- Nvidia Turing
+- Nvidia Jetson Orin family
+
 ## Prerequisites
 
 ```bash

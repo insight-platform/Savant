@@ -12,6 +12,11 @@ The modules performance is also stored in Prometheus and displayed on a Grafana 
 
 Detector and tracker are running in pass-through mode (`codec: copy`). Draw-func encodes frames to H264.
 
+Tested on platforms:
+
+- Nvidia Turing
+- Nvidia Jetson Orin family
+
 ## Prerequisites
 
 ```bash

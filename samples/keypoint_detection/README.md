@@ -10,8 +10,8 @@ Preview:
 
 Tested on platforms:
 
-- Nvidia Jetson (Xavier NX, Xavier AGX, Orin family);
-- Nvidia Turing, Ampere.
+- Nvidia Turing
+- Nvidia Jetson Orin family
 
 Demonstrated adapters:
 

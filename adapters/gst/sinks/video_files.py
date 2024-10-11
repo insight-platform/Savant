@@ -9,7 +9,13 @@ from typing import Dict, Optional
 from savant_rs.primitives import EndOfStream, VideoFrame
 
 from adapters.python.sinks.chunk_writer import ChunkWriter, CompositeChunkWriter
-from adapters.python.sinks.metadata_json import MetadataJsonWriter, Patterns
+from adapters.python.sinks.metadata_json import (
+    MetadataJsonSink,
+    MetadataJsonWriter,
+    Patterns,
+    get_location,
+    get_tag_location,
+)
 from gst_plugins.python.savant_rs_video_demux_common import FrameParams, build_caps
 from savant.api.parser import convert_ts
 from savant.gstreamer import GLib, Gst, GstApp
@@ -286,10 +292,11 @@ class VideoFilesWriter(ChunkWriter):
         self.appsrc.set_caps(self.caps)
 
         filesink: Gst.Element = self.pipeline.get_by_name(filesink_name)
-        os.makedirs(self.base_location, exist_ok=True)
-        dst_location = os.path.join(
-            self.base_location, f'{self.chunk_idx:04}.{file_ext}'
+        dst_location = self.base_location.replace(
+            Patterns.CHUNK_IDX, f'{self.chunk_idx:0{self.chunk_size_digits}}'
         )
+        os.makedirs(dst_location, exist_ok=True)
+        dst_location = os.path.join(dst_location, f'video.{file_ext}')
         self.logger.info(
             'Writing video from source %s to file %s', self.source_id, dst_location
         )
@@ -329,6 +336,7 @@ class VideoFilesSink:
         self.location = location
         self.chunk_size = chunk_size
         self.writers: Dict[str, ChunkWriter] = {}
+        self.last_writer_per_source: Dict[str, (str, ChunkWriter)] = {}
 
     def write(self, zmq_message: ZeroMQMessage):
         message = zmq_message.message
@@ -362,12 +370,20 @@ class VideoFilesSink:
             )
             return False
 
-        writer = self.writers.get(video_frame.source_id)
+        src_file_location = get_tag_location(video_frame) or 'unknown'
+        location = get_location(self.location, video_frame.source_id, src_file_location)
+        if self.chunk_size > 0 and Patterns.CHUNK_IDX not in location:
+            location = os.path.join(location, Patterns.CHUNK_IDX)
+
+        writer = self.writers.get(location)
+        last_source_location, last_source_writer = self.last_writer_per_source.get(
+            video_frame.source_id
+        ) or (None, None)
+
         if writer is None:
-            base_location = os.path.join(self.location, video_frame.source_id)
-            json_filename_pattern = f'{Patterns.CHUNK_IDX}.json'
+
             video_writer = VideoFilesWriter(
-                base_location,
+                location,
                 video_frame.source_id,
                 self.chunk_size,
                 frame_params,
@@ -376,13 +392,34 @@ class VideoFilesSink:
                 [
                     video_writer,
                     MetadataJsonWriter(
-                        os.path.join(base_location, json_filename_pattern),
+                        os.path.join(location, 'metadata.json'),
                         self.chunk_size,
                     ),
                 ],
                 self.chunk_size,
             )
-            self.writers[video_frame.source_id] = writer
+            self.writers[location] = writer
+            if writer is not last_source_writer:
+                if last_source_writer is not None:
+                    self.logger.info(
+                        'Flushing previous writer for source=%s, location=%s',
+                        video_frame.source_id,
+                        last_source_location,
+                    )
+                    last_source_writer.flush()
+                    self.logger.info(
+                        'Removing previous writer for source=%s, location=%s',
+                        video_frame.source_id,
+                        last_source_location,
+                    )
+                    del self.writers[last_source_location]
+                self.logger.info(
+                    'New writer for source=%s, location=%s is initialized, amount of resident writers is %d',
+                    video_frame.source_id,
+                    location,
+                    len(self.writers),
+                )
+                self.last_writer_per_source[video_frame.source_id] = (location, writer)
 
         return writer.write_video_frame(video_frame, content, video_frame.keyframe)
 

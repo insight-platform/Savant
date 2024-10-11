@@ -2,6 +2,11 @@
 
 A pipeline demonstrating the use of Auxiliary Streams in Savant. The pipeline contains element, [Multiple Resolutions](multiple_resolutions.py). It scales the frame to multiple resolution and sends the frames to the auxiliary streams.
 
+Tested on platforms:
+
+- Nvidia Turing
+- Nvidia Jetson Orin family
+
 ## Prerequisites
 
 ```bash

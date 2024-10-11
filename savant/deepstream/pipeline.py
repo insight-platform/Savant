@@ -479,8 +479,6 @@ class NvDsPipeline(GstPipeline):
                 source_info.src_resolution = Resolution(width, height)
                 self._sources.update_source(source_info)
 
-                if not source_info.after_demuxer:
-                    self._add_source_output(source_info)
                 input_src_pad = self._add_input_converter(
                     new_pad,
                     new_pad_caps,
@@ -499,6 +497,10 @@ class NvDsPipeline(GstPipeline):
                 )
                 self._link_to_muxer(input_src_pad, source_info)
                 self._check_pipeline_is_running()
+
+                if not source_info.after_demuxer:
+                    self._add_source_output(source_info)
+
                 self._pipeline.set_state(Gst.State.PLAYING)
 
         except PipelineIsNotRunningError:

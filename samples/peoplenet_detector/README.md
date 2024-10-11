@@ -28,8 +28,8 @@ step-by-step [tutorial](https://blog.savant-ai.io/meet-savant-a-new-high-perform
 
 Tested on platforms:
 
-- Xavier NX, Xavier AGX;
-- Nvidia Ampere.
+- Nvidia Turing
+- Nvidia Jetson Orin family
 
 Demonstrated operational modes:
 
