@@ -11,7 +11,6 @@ services:
       - SOURCE_ID=coco-images
       - LOCATION=/data
       - FILE_TYPE=image
-      - EOS_ON_FILE_END=True
     entrypoint: /opt/savant/adapters/gst/sources/media_files.sh
     depends_on:
       module:
