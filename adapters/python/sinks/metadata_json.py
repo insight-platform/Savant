@@ -167,7 +167,7 @@ class MetadataJsonSink:
 
     def _write_eos(self, eos: EndOfStream):
         self.logger.info('Received EOS from source %s.', eos.source_id)
-        writer = self.last_writer_per_source.get(eos.source_id)
+        _, writer = self.last_writer_per_source.get(eos.source_id) or (None, None)
         if writer is None:
             return False
         result = writer.write_eos(eos)
