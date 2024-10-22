@@ -211,7 +211,7 @@ ENTRYPOINT ["python", "-m", "savant.entrypoint"]
 FROM base AS adapters
 ARG TARGETARCH
 
-ARG MEDIAMTX_VERSION="v1.5.1"
+ARG MEDIAMTX_VERSION="v1.9.3"
 RUN mkdir mediamtx && \
     if [ "$TARGETARCH" = "amd64" ]; then \
       wget -qO- "https://github.com/bluenviron/mediamtx/releases/download/${MEDIAMTX_VERSION}/mediamtx_${MEDIAMTX_VERSION}_linux_amd64.tar.gz" | tar xz -C mediamtx; \
