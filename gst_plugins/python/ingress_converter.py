@@ -10,6 +10,7 @@ from pygstsavantframemeta import (
     gst_buffer_get_savant_frame_meta,
 )
 from savant_rs.pipeline2 import VideoPipeline
+from savant_rs.primitives import VideoFrame, VideoFrameTransformation
 
 # from savant.deepstream.ingress_converter import BaseIngressConverter
 from savant.gstreamer import GLib, GObject, Gst, GstBase  # noqa: F401
@@ -248,6 +249,7 @@ class IngressConverter(LoggerMixin, Gst.Element):
             )
             return Gst.FlowReturn.ERROR
 
+        video_frame: VideoFrame
         video_frame, _ = self._video_pipeline.get_independent_frame(
             savant_frame_meta.idx
         )
@@ -255,7 +257,17 @@ class IngressConverter(LoggerMixin, Gst.Element):
         with nvds_to_gpu_mat(orig_buffer, batch_id=0) as in_mat:
             with nvds_to_gpu_mat(conv_buffer, batch_id=0) as out_mat:
                 # TODO: use opencv stream?
-                self._converter.convert(self._source_id, video_frame, in_mat, out_mat)
+                self._converter.convert(
+                    self._source_id, video_frame.copy(), in_mat, out_mat
+                )
+                new_width, new_height = out_mat.size()
+                if in_mat.size() != (new_width, new_height):
+                    # TODO: paddings?
+                    video_frame.add_transformation(
+                        VideoFrameTransformation.scale(new_width, new_height)
+                    )
+                    video_frame.width = new_width
+                    video_frame.height = new_height
 
         conv_buffer.pts = orig_buffer.pts
         conv_buffer.dts = orig_buffer.dts
