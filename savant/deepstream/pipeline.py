@@ -1,5 +1,6 @@
 """DeepStream pipeline."""
 
+import importlib
 import logging
 import tempfile
 import time
@@ -25,6 +26,7 @@ from savant_rs.primitives.geometry import RBBox
 
 from savant.base.input_preproc import ObjectsPreprocessing
 from savant.base.model import AttributeModel, ComplexModel
+from savant.base.source_shaper import BaseSourceShaper, DefaultSourceShaper
 from savant.config.schema import (
     BufferQueuesParameters,
     DrawFunc,
@@ -33,6 +35,7 @@ from savant.config.schema import (
     Pipeline,
     PipelineElement,
     PyFuncElement,
+    SourceShaper,
     TelemetryParameters,
 )
 from savant.deepstream.buffer_processor import (
@@ -74,7 +77,12 @@ from savant.gstreamer.utils import add_buffer_probe, on_pad_event, pad_to_source
 from savant.meta.constants import PRIMARY_OBJECT_KEY, UNTRACKED_OBJECT_ID
 from savant.utils.platform import is_aarch64
 from savant.utils.sink_factories import SinkEndOfStream
-from savant.utils.source_info import Resolution, SourceInfo, SourceInfoRegistry
+from savant.utils.source_info import (
+    Resolution,
+    SourceInfo,
+    SourceInfoRegistry,
+    SourceShape,
+)
 
 
 class NvDsPipeline(GstPipeline):
@@ -96,7 +104,7 @@ class NvDsPipeline(GstPipeline):
         **kwargs,
     ):
         # pipeline internal processing frame params
-        self._frame_params: FrameParameters = kwargs['frame']
+        frame_params: FrameParameters = kwargs['frame']
 
         self._batch_size = kwargs['batch_size']
         self._max_same_source_frames = kwargs.get(
@@ -193,7 +201,42 @@ class NvDsPipeline(GstPipeline):
             if factory is not None:
                 factory.set_rank(Gst.Rank.NONE)
 
+        if frame_params.shaper:
+            self._source_shaper = self._init_source_shaper(frame_params.shaper)
+        else:
+            self._source_shaper = DefaultSourceShaper(frame_params=frame_params)
+
         super().__init__(name, pipeline_cfg, **kwargs)
+
+    def _init_source_shaper(self, config: SourceShaper) -> BaseSourceShaper:
+        # TODO: make initializing similar to pyfunc
+        ing_conv_module = importlib.import_module(config.module)
+        ing_conv_class = getattr(ing_conv_module, config.class_name)
+        return ing_conv_class(**(config.kwargs or {}))
+
+    def _get_source_shape(
+        self,
+        source_id: str,
+        width: int,
+        height: int,
+        frame_meta: VideoFrame,
+    ) -> SourceShape:
+        """Get the source shape for the given source.
+
+        :param source_id: Source ID
+        :param width: Source width
+        :param height: Source height
+        :param frame_meta: Metadata of the first frame in the source.
+        """
+
+        self._logger.debug('Getting source shape for %s', source_id)
+        shape = self._source_shaper(source_id, width, height, frame_meta)
+        # TODO: validate
+        if shape is None:
+            shape = SourceShape(width=width, height=height)
+        self._logger.debug('Source shape for %s: %s', source_id, shape)
+
+        return shape
 
     def _build_buffer_processor(self, queue: Queue) -> NvDsBufferProcessor:
         """Create buffer processor."""
@@ -201,7 +244,6 @@ class NvDsPipeline(GstPipeline):
         return create_buffer_processor(
             queue=queue,
             sources=self._sources,
-            frame_params=self._frame_params,
             source_output=self._source_output,
             video_pipeline=self._video_pipeline,
             pass_through_mode=self._pass_through_mode,
@@ -227,7 +269,7 @@ class NvDsPipeline(GstPipeline):
             nvinfer = NvInferProcessor(
                 element,
                 self._objects_preprocessing,
-                self._frame_params.padding,
+                self._sources,
                 self._video_pipeline,
             )
             if nvinfer.preproc is not None:
@@ -394,7 +436,7 @@ class NvDsPipeline(GstPipeline):
         try:
             source_info = self._sources.get_source(source_id)
         except KeyError:
-            source_info = self._sources.init_source(source_id, self._frame_params)
+            source_info = self._sources.init_source(source_id, None)
         else:
             while self._is_running and not source_info.lock.wait(5):
                 self._logger.debug(
@@ -442,6 +484,12 @@ class NvDsPipeline(GstPipeline):
             assert parsed, f'Failed to parse "width" property of caps "{new_pad_caps}"'
             parsed, height = caps_struct.get_int('height')
             assert parsed, f'Failed to parse "height" property of caps "{new_pad_caps}"'
+            source_info.shape = self._get_source_shape(
+                source_id=source_info.source_id,
+                width=width,
+                height=height,
+                frame_meta=None,  # TODO: get meta of the first frame
+            )
 
             while source_info.pad_idx is None:
                 self._check_pipeline_is_running()

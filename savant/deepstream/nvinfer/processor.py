@@ -52,6 +52,7 @@ from savant.meta.errors import UIDError
 from savant.meta.object import ObjectMeta
 from savant.meta.type import ObjectSelectionType
 from savant.utils.logging import get_logger
+from savant.utils.source_info import SourceInfoRegistry
 
 
 class NvInferProcessor:
@@ -63,7 +64,7 @@ class NvInferProcessor:
         self,
         element: ModelElement,
         objects_preprocessing: ObjectsPreprocessing,
-        frame_padding: Optional[FramePadding],
+        sources: SourceInfoRegistry,
         video_pipeline: VideoPipeline,
     ):
         self._logger = get_logger(
@@ -73,10 +74,7 @@ class NvInferProcessor:
         # c++ object preprocessing
         self._objects_preprocessing = objects_preprocessing
 
-        if frame_padding:
-            self._frame_rect_shift = frame_padding.left, frame_padding.top
-        else:
-            self._frame_rect_shift = 0, 0
+        self._sources = sources
 
         # video pipeline (frame/source info, telemetry span etc.)
         self._video_pipeline = video_pipeline
@@ -288,7 +286,12 @@ class NvInferProcessor:
         self._model: Union[NvInferAttributeModel, NvInferComplexModel]
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
-            frame_rect = self._frame_rect(nvds_frame_meta)
+            source_id, frame_idx = self._get_frame_source_id_and_idx(
+                buffer,
+                nvds_frame_meta,
+            )
+            source_info = self._sources.get_source(source_id)
+            frame_rect = self._frame_rect(nvds_frame_meta, source_info.padding)
             for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
                 self._restore_object_meta(nvds_obj_meta)
                 if not self._is_model_input_object(nvds_obj_meta):
@@ -605,16 +608,22 @@ class NvInferProcessor:
 
         return source_id, frame_idx
 
-    def _frame_rect(self, nvds_frame_meta):
+    def _frame_rect(self, nvds_frame_meta, frame_padding: Optional[FramePadding]):
         """Frame rect to clip objects.
 
         :param nvds_frame_meta: NvDs Frame meta.
+        :param frame_padding: Frame padding.
         :return: Tuple (left, top, right, bottom).
         """
 
+        if frame_padding:
+            frame_rect_shift = frame_padding.left, frame_padding.top
+        else:
+            frame_rect_shift = 0, 0
+
         return (
-            self._frame_rect_shift[0],
-            self._frame_rect_shift[1],
-            nvds_frame_meta.source_frame_width + self._frame_rect_shift[0] - 1.0,
-            nvds_frame_meta.source_frame_height + self._frame_rect_shift[1] - 1.0,
+            frame_rect_shift[0],
+            frame_rect_shift[1],
+            nvds_frame_meta.source_frame_width + frame_rect_shift[0] - 1.0,
+            nvds_frame_meta.source_frame_height + frame_rect_shift[1] - 1.0,
         )

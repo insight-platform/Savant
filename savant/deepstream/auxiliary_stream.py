@@ -9,14 +9,14 @@ from savant_rs.pipeline2 import VideoPipeline
 from savant_rs.primitives import VideoFrame, VideoFrameContent
 
 from savant.api.constants import DEFAULT_TIME_BASE
-from savant.config.schema import FrameParameters, PipelineElement
+from savant.config.schema import PipelineElement
 from savant.deepstream.buffer_processor import create_buffer_processor
 from savant.deepstream.pipeline import NvDsPipeline
 from savant.deepstream.source_output import create_source_output
 from savant.gstreamer import Gst
 from savant.gstreamer.codecs import AUXILIARY_STREAM_CODECS, CODEC_BY_NAME
 from savant.utils.logging import get_logger
-from savant.utils.source_info import SourceInfoRegistry
+from savant.utils.source_info import SourceInfoRegistry, SourceShape
 
 
 class AuxiliaryStreamInternal:
@@ -38,8 +38,8 @@ class AuxiliaryStreamInternal:
         self._logger = get_logger(f'{__name__}.{source_id}')
         self._source_id = source_id
         self._sources = sources
-        frame_params = FrameParameters(width=width, height=height)
-        self._source_info = sources.init_source(source_id, frame_params)
+        source_shape = SourceShape(width=width, height=height)
+        self._source_info = sources.init_source(source_id, source_shape)
         self._width = width
         self._height = height
         self._framerate = framerate
@@ -71,7 +71,6 @@ class AuxiliaryStreamInternal:
         self._buffer_processor = create_buffer_processor(
             queue=gst_pipeline._queue,
             sources=sources,
-            frame_params=frame_params,
             source_output=self._source_output,
             video_pipeline=video_pipeline,
             pass_through_mode=False,

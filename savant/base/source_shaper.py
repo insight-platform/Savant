@@ -1,0 +1,62 @@
+from abc import ABC, abstractmethod
+from typing import Optional
+
+from savant_rs.primitives import VideoFrame
+
+from savant.config.schema import FrameParameters
+from savant.utils.logging import get_logger
+from savant.utils.source_info import SourceShape
+
+
+class BaseSourceShaper(ABC):
+    """Base class to define a source shape.
+
+    :param kwargs: Custom keyword arguments.
+        They will be available inside the class instance,
+        as fields with the argument name.
+    """
+
+    def __init__(self, **kwargs):
+        for name, value in kwargs.items():
+            setattr(self, name, value)
+        self.logger = get_logger(self.__module__)
+
+    @abstractmethod
+    def __call__(
+        self,
+        source_id: str,
+        width: int,
+        height: int,
+        frame_meta: VideoFrame,
+    ) -> Optional[SourceShape]:
+        """Get the source shape for the given source.
+
+        :param source_id: Source ID
+        :param width: Source width
+        :param height: Source height
+        :param frame_meta: Metadata of the first frame in the source.
+        """
+        pass
+
+
+class DefaultSourceShaper(BaseSourceShaper):
+    """Default source shaper.
+
+    Uses the frame parameters from configuration to determine the source shape.
+    """
+
+    frame_params: FrameParameters
+
+    def __call__(
+        self,
+        source_id: str,
+        width: int,
+        height: int,
+        frame_meta: VideoFrame,
+    ) -> Optional[SourceShape]:
+        if self.frame_params.width and self.frame_params.height:
+            return SourceShape(
+                width=self.frame_params.width,
+                height=self.frame_params.height,
+                padding=self.frame_params.padding,
+            )

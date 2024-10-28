@@ -46,8 +46,35 @@ class FramePadding:
 
 
 @dataclass
+class SourceShaper:
+    """A class that will use an object implementing
+    :py:class:`~savant.base.source_shaper.BaseSourceShaper` to define a source shape for each source.
+
+    For example,
+
+    .. code-block:: yaml
+
+        - element: pyfunc
+          module: module.source_shaper_example_module
+          class_name: SourceShaperExampleClass
+    """
+
+    module: str
+    """Module name to import."""
+
+    class_name: str
+    """Python class name to instantiate."""
+
+    kwargs: Optional[Dict[str, Any]] = None
+    """Keyword arguments for the shaper."""
+
+
+@dataclass
 class FrameParameters:
-    """Pipeline processing frame parameters"""
+    """Pipeline processing frame parameters.
+
+    .. note:: When ``shaper`` is specified, ``width``, ``height`` and ``padding`` must be not set.
+    """
 
     width: Optional[int] = None
     """Pipeline processing frame width"""
@@ -60,6 +87,9 @@ class FrameParameters:
 
     geometry_base: int = 8
     """Base value for frame parameters. All frame parameters must be divisible by this value."""
+
+    shaper: Optional[SourceShaper] = None
+    """Custom source shaper definition."""
 
 
 @dataclass

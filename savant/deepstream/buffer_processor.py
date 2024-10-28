@@ -27,7 +27,6 @@ from savant_rs.utils.symbol_mapper import (
 )
 
 from savant.api.parser import parse_attribute_value
-from savant.config.schema import FrameParameters
 from savant.deepstream.source_output import (
     SourceOutput,
     SourceOutputOnlyMeta,
@@ -70,7 +69,6 @@ class NvDsBufferProcessor(GstBufferProcessor):
         self,
         queue: Queue,
         sources: SourceInfoRegistry,
-        frame_params: FrameParameters,
         video_pipeline: VideoPipeline,
         pass_through_mode: bool,
     ):
@@ -78,7 +76,6 @@ class NvDsBufferProcessor(GstBufferProcessor):
 
         :param queue: Queue for output data.
         :param sources: Source info registry.
-        :param frame_params: Processing frame parameters (after nvstreammux).
         :param video_pipeline: Video pipeline.
         :param pass_through_mode: Video pass through mode.
         """
@@ -88,23 +85,6 @@ class NvDsBufferProcessor(GstBufferProcessor):
         self._queue = queue
         self._video_pipeline = video_pipeline
         self._pass_through_mode = pass_through_mode
-
-        if frame_params.width:
-            self._scale_transformation = VideoFrameTransformation.scale(
-                frame_params.width,
-                frame_params.height,
-            )
-        else:
-            self._scale_transformation = None
-        if frame_params.padding and frame_params.padding.keep:
-            self._padding_transformation = VideoFrameTransformation.padding(
-                frame_params.padding.left,
-                frame_params.padding.top,
-                frame_params.padding.right,
-                frame_params.padding.bottom,
-            )
-        else:
-            self._padding_transformation = None
 
         self._last_frame_id: Dict[str, int] = {}
         self._pending_frames: Dict[str, List[_PendingFrame]] = {}
@@ -172,7 +152,11 @@ class NvDsBufferProcessor(GstBufferProcessor):
 
         # full frame primary object by default
         source_info = self._sources.get_source(video_frame.source_id)
-        self._add_transformations(frame_idx=frame_idx, video_frame=video_frame)
+        self._add_transformations(
+            frame_idx=frame_idx,
+            video_frame=video_frame,
+            source_info=source_info,
+        )
         scale_factor_x = source_info.processing_width / source_info.src_resolution.width
         scale_factor_y = (
             source_info.processing_height / source_info.src_resolution.height
@@ -290,7 +274,12 @@ class NvDsBufferProcessor(GstBufferProcessor):
 
         nvds_frame_meta.bInferDone = True  # required for tracker (DS 6.0)
 
-    def _add_transformations(self, frame_idx: Optional[int], video_frame: VideoFrame):
+    def _add_transformations(
+        self,
+        frame_idx: Optional[int],
+        video_frame: VideoFrame,
+        source_info: SourceInfo,
+    ):
         if self._pass_through_mode:
             return
 
@@ -301,46 +290,70 @@ class NvDsBufferProcessor(GstBufferProcessor):
             video_frame.pts,
         )
 
-        if self._add_scale_transformation(video_frame):
+        scale_transformation = self._get_scale_transformation(video_frame, source_info)
+        if scale_transformation is not None:
             self.logger.debug(
-                'Adding scale transformation for frame of source %s '
+                'Adding scale transformation %s for frame of source %s '
                 'with IDX %s and PTS %s.',
+                scale_transformation,
                 video_frame.source_id,
                 frame_idx,
                 video_frame.pts,
             )
-            video_frame.add_transformation(self._scale_transformation)
+            video_frame.add_transformation(scale_transformation)
 
-        if self._padding_transformation is not None:
+        padding_transformation = self._get_padding_transformation(source_info)
+        if padding_transformation is not None:
             self.logger.debug(
-                'Adding padding transformation for frame of source %s '
+                'Adding padding transformation %s for frame of source %s '
                 'with IDX %s and PTS %s.',
+                padding_transformation,
                 video_frame.source_id,
                 frame_idx,
                 video_frame.pts,
             )
-            video_frame.add_transformation(self._padding_transformation)
+            video_frame.add_transformation(padding_transformation)
 
-    def _add_scale_transformation(self, video_frame: VideoFrame) -> bool:
+    def _get_scale_transformation(
+        self,
+        video_frame: VideoFrame,
+        source_info: SourceInfo,
+    ) -> Optional[VideoFrameTransformation]:
         """Check if scale transformation is needed and add it to the frame."""
 
-        if not self._scale_transformation:
-            return False
+        if video_frame.transformations:
+            last_transformation = video_frame.transformations[-1]
+            if last_transformation.is_scale:
+                last_transformation_size = last_transformation.as_scale
+            elif last_transformation.is_initial_size:
+                last_transformation_size = last_transformation.as_initial_size
+            elif last_transformation.is_resulting_size:
+                last_transformation_size = last_transformation.as_resulting_size
+            else:
+                last_transformation_size = 0, 0
 
-        if not video_frame.transformations:
-            return True
+            if last_transformation_size == (
+                source_info.processing_width,
+                source_info.processing_height,
+            ):
+                return
 
-        last_transformation = video_frame.transformations[-1]
-        if last_transformation.is_scale:
-            last_transformation_size = last_transformation.as_scale
-        elif last_transformation.is_initial_size:
-            last_transformation_size = last_transformation.as_initial_size
-        elif last_transformation.is_resulting_size:
-            last_transformation_size = last_transformation.as_resulting_size
-        else:
-            last_transformation_size = 0, 0
+        return VideoFrameTransformation.scale(
+            source_info.processing_width,
+            source_info.processing_height,
+        )
 
-        return last_transformation_size != self._scale_transformation.as_scale
+    def _get_padding_transformation(
+        self,
+        source_info: SourceInfo,
+    ) -> Optional[VideoFrameTransformation]:
+        if source_info.padding and source_info.padding.keep:
+            return VideoFrameTransformation.padding(
+                source_info.padding.left,
+                source_info.padding.top,
+                source_info.padding.right,
+                source_info.padding.bottom,
+            )
 
     def prepare_output(
         self,
@@ -596,7 +609,6 @@ class NvDsGstBufferProcessor(NvDsBufferProcessor):
         self,
         queue: Queue,
         sources: SourceInfoRegistry,
-        frame_params: FrameParameters,
         codec: CodecInfo,
         video_pipeline: VideoPipeline,
     ):
@@ -604,7 +616,6 @@ class NvDsGstBufferProcessor(NvDsBufferProcessor):
 
         :param queue: Queue for output data.
         :param sources: Source info registry.
-        :param frame_params: Processing frame parameters (after nvstreammux).
         :param codec: Codec of the output frames.
         """
 
@@ -612,7 +623,6 @@ class NvDsGstBufferProcessor(NvDsBufferProcessor):
         super().__init__(
             queue=queue,
             sources=sources,
-            frame_params=frame_params,
             video_pipeline=video_pipeline,
             pass_through_mode=False,
         )
@@ -660,7 +670,6 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
         self,
         queue: Queue,
         sources: SourceInfoRegistry,
-        frame_params: FrameParameters,
         output_frame: bool,
         video_pipeline: VideoPipeline,
         pass_through_mode: bool,
@@ -669,7 +678,6 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
 
         :param queue: Queue for output data.
         :param sources: Source info registry.
-        :param frame_params: Processing frame parameters (after nvstreammux).
         :param output_frame: Whether to output frame or not.
         :param video_pipeline: Video pipeline.
         :param pass_through_mode: Video pass through mode.
@@ -680,7 +688,6 @@ class NvDsRawBufferProcessor(NvDsBufferProcessor):
         super().__init__(
             queue=queue,
             sources=sources,
-            frame_params=frame_params,
             video_pipeline=video_pipeline,
             pass_through_mode=pass_through_mode,
         )
@@ -742,7 +749,6 @@ def extract_frame_idx(buffer: Gst.Buffer) -> Optional[int]:
 def create_buffer_processor(
     queue: Queue,
     sources: SourceInfoRegistry,
-    frame_params: FrameParameters,
     source_output: SourceOutput,
     video_pipeline: VideoPipeline,
     pass_through_mode: bool,
@@ -751,7 +757,6 @@ def create_buffer_processor(
 
     :param queue: Queue for output data.
     :param sources: Source info registry.
-    :param frame_params: Processing frame parameters (after nvstreammux).
     :param source_output: Source output.
     :param video_pipeline: Video pipeline.
     :param pass_through_mode: Video pass through mode.
@@ -764,7 +769,6 @@ def create_buffer_processor(
         return NvDsRawBufferProcessor(
             queue=queue,
             sources=sources,
-            frame_params=frame_params,
             output_frame=isinstance(source_output, SourceOutputWithFrame),
             video_pipeline=video_pipeline,
             pass_through_mode=pass_through_mode,
@@ -773,7 +777,6 @@ def create_buffer_processor(
     return NvDsGstBufferProcessor(
         queue=queue,
         sources=sources,
-        frame_params=frame_params,
         codec=source_output.codec,
         video_pipeline=video_pipeline,
     )

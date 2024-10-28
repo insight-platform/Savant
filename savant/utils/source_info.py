@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from threading import Event
 from typing import Dict, List, Optional
 
-from savant.config.schema import FramePadding, FrameParameters
+from savant.config.schema import FramePadding
 from savant.gstreamer import Gst
 from savant.utils.singleton import SingletonMeta
 
@@ -16,13 +16,27 @@ class Resolution:
 
 
 @dataclass
+class SourceShape:
+    """Pipeline processing frame shape"""
+
+    width: int
+    """Pipeline processing frame width"""
+
+    height: int
+    """Pipeline processing frame height"""
+
+    padding: Optional[FramePadding] = None
+    """Add paddings to the frame before processing"""
+
+
+@dataclass
 class SourceInfo:
     """Source info."""
 
     source_id: str
     pad_idx: Optional[int]
     src_resolution: Optional[Resolution]
-    frame_params: FrameParameters
+    shape: Optional[SourceShape]
     before_muxer: List[Gst.Element]
     source_output_elements: List[Gst.Element]
     after_demuxer: List[Gst.Element]
@@ -32,39 +46,35 @@ class SourceInfo:
     def processing_width(self):
         """Width of the frame that will be processed by the pipeline."""
 
-        if self.frame_params.width:
-            return self.frame_params.width
-        return self.src_resolution.width
+        return self.shape.width
 
     @property
     def processing_height(self):
         """Height of the frame that will be processed by the pipeline."""
 
-        if self.frame_params.height:
-            return self.frame_params.height
-        return self.src_resolution.height
+        return self.shape.height
 
     @property
     def total_width(self) -> int:
         """Total frame width including paddings."""
 
-        if self.frame_params.padding is not None:
-            return self.processing_width + self.frame_params.padding.width
+        if self.shape.padding is not None:
+            return self.processing_width + self.shape.padding.width
         return self.processing_width
 
     @property
     def total_height(self) -> int:
         """Total frame height including paddings."""
 
-        if self.frame_params.padding is not None:
-            return self.processing_height + self.frame_params.padding.height
+        if self.shape.padding is not None:
+            return self.processing_height + self.shape.padding.height
         return self.processing_height
 
     @property
     def output_width(self) -> int:
         """Width of the output frame. Includes paddings if they are set to keep."""
 
-        if self.frame_params.padding is not None and self.frame_params.padding.keep:
+        if self.shape.padding is not None and self.shape.padding.keep:
             return self.total_width
         return self.processing_width
 
@@ -72,14 +82,14 @@ class SourceInfo:
     def output_height(self) -> int:
         """Height of the output frame. Includes paddings if they are set to keep."""
 
-        if self.frame_params.padding is not None and self.frame_params.padding.keep:
+        if self.shape.padding is not None and self.shape.padding.keep:
             return self.total_height
         return self.processing_height
 
     @property
     def padding(self) -> Optional[FramePadding]:
         """Frame padding."""
-        return self.frame_params.padding
+        return self.shape.padding
 
 
 class SourceInfoRegistry(metaclass=SingletonMeta):
@@ -91,12 +101,12 @@ class SourceInfoRegistry(metaclass=SingletonMeta):
         self._sources: Dict[str, SourceInfo] = {}
         self._source_id_by_index: Dict[int, str] = {}
 
-    def init_source(self, source_id: str, frame_params: FrameParameters) -> SourceInfo:
+    def init_source(self, source_id: str, shape: Optional[SourceShape]) -> SourceInfo:
         source_info = SourceInfo(
             source_id=source_id,
             pad_idx=None,
             src_resolution=None,
-            frame_params=frame_params,
+            shape=shape,
             before_muxer=[],
             source_output_elements=[],
             after_demuxer=[],
