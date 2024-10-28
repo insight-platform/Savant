@@ -92,6 +92,12 @@ SAVANT_RS_VIDEO_DEMUX_PROPERTIES = {
         'ZeroMQ reader from savant-rs. Needed to blacklist sources.',
         GObject.ParamFlags.READWRITE,
     ),
+    'first-frame-id': (
+        object,
+        'ID of the first frame in a stream (a dict source_id -> frame_id).',
+        'ID of the first frame in a stream (a dict source_id -> frame_id).',
+        GObject.ParamFlags.READWRITE,
+    ),
 }
 
 
@@ -177,6 +183,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
         self.video_pipeline: Optional[VideoPipeline] = None
         self.pipeline_stage_name: Optional[str] = None
         self.zeromq_reader: Optional[Union[BlockingReader, NonBlockingReader]] = None
+        self.first_frame_id: Optional[Dict[str, int]] = None
 
         self.sink_pad: Gst.Pad = Gst.Pad.new_from_template(
             Gst.PadTemplate.new(
@@ -239,6 +246,8 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             return self.pipeline_stage_name
         if prop.name == 'zeromq-reader':
             return self.zeromq_reader
+        if prop.name == 'first-frame-id':
+            return self.first_frame_id
         raise AttributeError(f'Unknown property {prop.name}')
 
     def do_set_property(self, prop, value):
@@ -259,6 +268,8 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             self.pipeline_stage_name = value
         elif prop.name == 'zeromq-reader':
             self.zeromq_reader = value
+        elif prop.name == 'first-frame-id':
+            self.first_frame_id = value
         else:
             raise AttributeError(f'Unknown property {prop.name}')
 
@@ -339,6 +350,10 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
                 source_info.last_dts = buffer.dts
             if source_info.src_pad is None:
                 if video_frame.keyframe:
+                    if self.first_frame_id is not None:
+                        self.first_frame_id[
+                            video_frame.source_id
+                        ] = savant_frame_meta.idx
                     self.add_source(video_frame.source_id, source_info)
                 else:
                     self.logger.warning(

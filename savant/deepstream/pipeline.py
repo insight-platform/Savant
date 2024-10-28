@@ -174,6 +174,7 @@ class NvDsPipeline(GstPipeline):
         else:
             root_span_name = name
 
+        self._first_frame_id: Dict[str, int] = {}
         self._video_pipeline = VideoPipeline(
             root_span_name,
             pipeline_stages,
@@ -363,6 +364,7 @@ class NvDsPipeline(GstPipeline):
         _source = self.add_element(source)
         if source.element == 'zeromq_source_bin':
             _source.set_property('pipeline', self._video_pipeline)
+            _source.set_property('first-frame-id', self._first_frame_id)
             _source.set_property('pass-through-mode', self._pass_through_mode)
             _source.connect('shutdown', self._on_shutdown_signal)
             add_frames_to_pipeline = False
@@ -484,11 +486,20 @@ class NvDsPipeline(GstPipeline):
             assert parsed, f'Failed to parse "width" property of caps "{new_pad_caps}"'
             parsed, height = caps_struct.get_int('height')
             assert parsed, f'Failed to parse "height" property of caps "{new_pad_caps}"'
+            frame_id = self._first_frame_id.pop(source_info.source_id, None)
+            self._logger.debug(
+                'Source %s has resolution %sx%s and the first frame is %s',
+                source_info.source_id,
+                width,
+                height,
+                frame_id,
+            )
+            frame_meta, _ = self._video_pipeline.get_independent_frame(frame_id)
             source_info.shape = self._get_source_shape(
                 source_id=source_info.source_id,
                 width=width,
                 height=height,
-                frame_meta=None,  # TODO: get meta of the first frame
+                frame_meta=frame_meta,
             )
 
             while source_info.pad_idx is None:

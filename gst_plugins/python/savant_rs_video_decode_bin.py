@@ -32,6 +32,7 @@ NESTED_DEMUX_PROPERTIES = {
         'max-parallel-streams',
         'zeromq-reader',
         'eos-on-frame-resolution-change',
+        'first-frame-id',
     ]
 }
 SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES = {
