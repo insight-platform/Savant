@@ -400,11 +400,11 @@ def validate_frame_parameters(config: Module):
         raise ModuleConfigException(
             'Both frame width and height must be either set or unset.'
         )
-    if (frame_parameters.shaper is None) and (frame_parameters.width is None):
+    if (frame_parameters.shaper is not None) and (frame_parameters.width is not None):
         raise ModuleConfigException(
             'Frame shaper and frame resolution are mutually exclusive.'
         )
-    if (frame_parameters.shaper is None) and (frame_parameters.padding is None):
+    if (frame_parameters.shaper is not None) and (frame_parameters.padding is not None):
         raise ModuleConfigException(
             'Frame shaper and frame padding are mutually exclusive.'
         )
