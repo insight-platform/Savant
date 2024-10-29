@@ -72,7 +72,7 @@ services:
       - SOURCE_IDS=city-traffic,town-centre
       - FRAMERATE=25/1
       - SYNC_INPUT=True
-      - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x900.jpeg
+      - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x720.jpeg
       - DEV_MODE=True
     command: python -m adapters.ds.sinks.always_on_rtsp
     deploy:

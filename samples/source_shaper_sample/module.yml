@@ -5,24 +5,31 @@ name: source_shaper_sample
 parameters:
   # pipeline processing frame parameters
   frame:
+    # custom frame shaper implementation
     shaper:
       module: samples.source_shaper_sample.custom_source_shaper
       class_name: CustomSourceShaper
       kwargs:
         sources:
           city-traffic:
+            # original resolution: 1920x1080
             width: 1440
             height: 800
             padding:
-              right: 80
               top: 160
+              right: 80
           town-centre:
+            # original resolution: 1280x720
             width: 960
             height: 544
             padding:
               left: 64
+  draw_func:
+    # the draw_func colors the frame paddings with the specified color
+    module: samples.source_shaper_sample.overlay
+    class_name: Overlay
+    kwargs:
+      color: [0, 0, 255, 255]
   output_frame:
-    # Frame is output without any encoding
-    # this is to circumvent 3 hardware decoding processes limit on NVIDIA consumer hardware
     codec: ${oc.env:CODEC, 'h264'}
   batch_size: 1

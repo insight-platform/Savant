@@ -40,12 +40,13 @@ class CustomSourceShaper(BaseSourceShaper):
         )
 
         self.logger.info(
-            'Source %s with original resolution %sx%s shaped to %s',
+            'Source %s with original resolution %sx%s shaped to %s. Original codec: %s, transformations: %s.',
             source_id,
             width,
             height,
             shape,
+            frame_meta.codec,
+            frame_meta.transformations,
         )
-        # TODO: use the frame metadata in some way (at least log something)
 
         return shape
