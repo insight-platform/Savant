@@ -5,23 +5,24 @@ name: source_shaper_sample
 parameters:
   # pipeline processing frame parameters
   frame:
-#    width: 1280
-#    height: 720
-#    # Add paddings to the frame before processing
-#    padding:
-#      # Paddings are kept on the output frame
-#      keep: true
-#      left: 0
-#      right: 0
-#      # Padding size is 180px on the top of the frame
-#      top: 180
-#      bottom: 0
-#    geometry_base: 4
     shaper:
-      module: samples.source_shaper_sample.source_shaper
-      class_name: SourceShaper
+      module: samples.source_shaper_sample.custom_source_shaper
+      class_name: CustomSourceShaper
+      kwargs:
+        sources:
+          city-traffic:
+            width: 1440
+            height: 800
+            padding:
+              right: 80
+              top: 160
+          town-centre:
+            width: 960
+            height: 544
+            padding:
+              left: 64
   output_frame:
     # Frame is output without any encoding
     # this is to circumvent 3 hardware decoding processes limit on NVIDIA consumer hardware
-    codec: ${oc.env:CODEC, 'raw-rgba'}
+    codec: ${oc.env:CODEC, 'h264'}
   batch_size: 1
