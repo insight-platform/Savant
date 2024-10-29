@@ -37,6 +37,9 @@ class BaseSourceShaper(ABC):
         :param width: Source width
         :param height: Source height
         :param frame_meta: Metadata of the first frame in the source.
+        :return: Shape of the source or None. When None is returned, the source shape will not be modified.
+
+        .. note:: The source shape should be divisible by the geometry base.
         """
         pass
 

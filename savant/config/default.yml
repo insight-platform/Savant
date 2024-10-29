@@ -38,6 +38,13 @@ parameters:
     # Base value for frame parameters. All frame parameters must be divisible by this value.
     # Default is 8.
     # geometry_base: 8
+    # Custom source shaper parameters.
+    # The class must implement savant.base.source_shaper.BaseSourceShaper.
+    # shaper:
+    #   module: samples.source_shaper_sample.custom_source_shaper
+    #   class_name: CustomSourceShaper
+    #   kwargs:
+    #     foo: bar
 
   # Maximum number of frames from the same source to process in a batch. Default is equal to batch_size.
   # max_same_source_frames: 1

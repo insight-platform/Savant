@@ -108,6 +108,37 @@ When the developer specifies the frame dimensions do not fit the ``geometry_base
 
     When scaling to a common resolution is disabled, the ``geometry_base`` parameter is used only for paddings.
 
+Custom Source Shaping
+---------------------
+
+You can shape each stream independently. To do so, you need to implement ``savant.base.source_shaper.BaseSourceShaper`` class and specify it in the module manifest by defining ``parameters.frame.shaper``, e.g.:
+
+.. code-block:: python
+
+    class CustomSourceShaper(BaseSourceShaper):
+        def __call__(
+            self,
+            source_id: str,
+            width: int,
+            height: int,
+            frame_meta: VideoFrame,
+        ) -> Optional[SourceShape]:
+            return SourceShape(width=1280, height=720)
+
+.. code-block:: yaml
+
+    # base module parameters
+    parameters:
+      # pipeline processing frame parameters
+      frame:
+        shaper:
+          module: custom_source_shaper
+          class_name: CustomSourceShaper
+
+.. note:: ``parameters.frame.shaper`` is mutually exclusive with ``parameters.frame.width``, ``parameters.frame.height``, ``parameters.frame.padding``.
+
+An example of using custom source shaper can be found in a dedicated Savant `sample <https://github.com/insight-platform/Savant/tree/develop/samples/source_shaper_sample>`__.
+
 Multiplexing
 ------------
 
