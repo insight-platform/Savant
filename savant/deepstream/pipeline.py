@@ -1,6 +1,7 @@
 """DeepStream pipeline."""
 
 import importlib
+import inspect
 import logging
 import tempfile
 import time
@@ -27,6 +28,7 @@ from savant_rs.primitives.geometry import RBBox
 from savant.base.input_preproc import ObjectsPreprocessing
 from savant.base.model import AttributeModel, ComplexModel
 from savant.base.source_shaper import BaseSourceShaper, DefaultSourceShaper
+from savant.config.module_config import ModuleConfigException, validate_geometry_base
 from savant.config.schema import (
     BufferQueuesParameters,
     DrawFunc,
@@ -73,7 +75,12 @@ from savant.deepstream.utils.pipeline import (
 from savant.gstreamer import GLib, Gst  # noqa:F401
 from savant.gstreamer.buffer_processor import GstBufferProcessor
 from savant.gstreamer.pipeline import GstPipeline
-from savant.gstreamer.utils import add_buffer_probe, on_pad_event, pad_to_source_id
+from savant.gstreamer.utils import (
+    add_buffer_probe,
+    gst_post_stream_failed_error,
+    on_pad_event,
+    pad_to_source_id,
+)
 from savant.meta.constants import PRIMARY_OBJECT_KEY, UNTRACKED_OBJECT_ID
 from savant.utils.platform import is_aarch64
 from savant.utils.sink_factories import SinkEndOfStream
@@ -104,7 +111,7 @@ class NvDsPipeline(GstPipeline):
         **kwargs,
     ):
         # pipeline internal processing frame params
-        frame_params: FrameParameters = kwargs['frame']
+        self._frame_params: FrameParameters = kwargs['frame']
 
         self._batch_size = kwargs['batch_size']
         self._max_same_source_frames = kwargs.get(
@@ -202,10 +209,13 @@ class NvDsPipeline(GstPipeline):
             if factory is not None:
                 factory.set_rank(Gst.Rank.NONE)
 
-        if frame_params.shaper:
-            self._source_shaper = self._init_source_shaper(frame_params.shaper)
+        if self._frame_params.shaper:
+            self._source_shaper = self._init_source_shaper(self._frame_params.shaper)
         else:
-            self._source_shaper = DefaultSourceShaper(frame_params=frame_params)
+            self._source_shaper = DefaultSourceShaper(
+                geometry_base=self._frame_params.geometry_base,
+                frame_params=self._frame_params,
+            )
 
         super().__init__(name, pipeline_cfg, **kwargs)
 
@@ -213,7 +223,10 @@ class NvDsPipeline(GstPipeline):
         # TODO: make initializing similar to pyfunc
         ing_conv_module = importlib.import_module(config.module)
         ing_conv_class = getattr(ing_conv_module, config.class_name)
-        return ing_conv_class(**(config.kwargs or {}))
+        return ing_conv_class(
+            geometry_base=self._frame_params.geometry_base,
+            **(config.kwargs or {}),
+        )
 
     def _get_source_shape(
         self,
@@ -232,9 +245,16 @@ class NvDsPipeline(GstPipeline):
 
         self._logger.debug('Getting source shape for %s', source_id)
         shape = self._source_shaper(source_id, width, height, frame_meta)
-        # TODO: validate
-        if shape is None:
+        if shape is not None:
+            validate_geometry_base(
+                width=shape.width,
+                height=shape.height,
+                padding=shape.padding,
+                geometry_base=self._frame_params.geometry_base,
+            )
+        else:
             shape = SourceShape(width=width, height=height)
+
         self._logger.debug('Source shape for %s: %s', source_id, shape)
 
         return shape
@@ -495,12 +515,19 @@ class NvDsPipeline(GstPipeline):
                 frame_id,
             )
             frame_meta, _ = self._video_pipeline.get_independent_frame(frame_id)
-            source_info.shape = self._get_source_shape(
-                source_id=source_info.source_id,
-                width=width,
-                height=height,
-                frame_meta=frame_meta,
-            )
+            try:
+                source_info.shape = self._get_source_shape(
+                    source_id=source_info.source_id,
+                    width=width,
+                    height=height,
+                    frame_meta=frame_meta,
+                )
+            except ModuleConfigException as e:
+                error_msg = f'Source shape of {source_info.source_id} is invalid: {e}'
+                self._logger.error(error_msg)
+                frame = inspect.currentframe()
+                gst_post_stream_failed_error(self.pipeline, frame, __file__, error_msg)
+                return Gst.PadProbeReturn.REMOVE
 
             while source_info.pad_idx is None:
                 self._check_pipeline_is_running()

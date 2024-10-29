@@ -351,9 +351,9 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             if source_info.src_pad is None:
                 if video_frame.keyframe:
                     if self.first_frame_id is not None:
-                        self.first_frame_id[
-                            video_frame.source_id
-                        ] = savant_frame_meta.idx
+                        self.first_frame_id[video_frame.source_id] = (
+                            savant_frame_meta.idx
+                        )
                     self.add_source(video_frame.source_id, source_info)
                 else:
                     self.logger.warning(

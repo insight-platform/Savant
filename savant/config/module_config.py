@@ -10,6 +10,7 @@ from savant.config.schema import (
     BufferQueuesParameters,
     DrawFunc,
     ElementGroup,
+    FramePadding,
     FrameParameters,
     ModelElement,
     Module,
@@ -407,44 +408,52 @@ def validate_frame_parameters(config: Module):
         raise ModuleConfigException(
             'Frame shaper and frame padding are mutually exclusive.'
         )
-    if (
-        frame_parameters.width is not None
-        and frame_parameters.width % frame_parameters.geometry_base != 0
-    ):
-        raise ModuleConfigException(
-            f'Frame width ({frame_parameters.width}) '
-            f'must be divisible by geometry base ({frame_parameters.geometry_base}).'
-        )
-    if (
-        frame_parameters.height is not None
-        and frame_parameters.height % frame_parameters.geometry_base != 0
-    ):
-        raise ModuleConfigException(
-            f'Frame height ({frame_parameters.height}) '
-            f'must be divisible by geometry base ({frame_parameters.geometry_base}).'
-        )
-    if frame_parameters.padding is None:
-        return
+    validate_geometry_base(
+        width=frame_parameters.width,
+        height=frame_parameters.height,
+        padding=frame_parameters.padding,
+        geometry_base=frame_parameters.geometry_base,
+    )
 
-    if frame_parameters.padding.left % frame_parameters.geometry_base != 0:
+
+def validate_geometry_base(
+    width: Optional[int],
+    height: Optional[int],
+    padding: Optional[FramePadding],
+    geometry_base: int,
+):
+    if width is not None and width % geometry_base != 0:
         raise ModuleConfigException(
-            f'Left padding ({frame_parameters.padding.left}) '
-            f'must be divisible by geometry base ({frame_parameters.geometry_base}).'
+            f'Frame width ({width}) '
+            f'must be divisible by geometry base ({geometry_base}).'
         )
-    if frame_parameters.padding.right % frame_parameters.geometry_base != 0:
+    if height is not None and height % geometry_base != 0:
         raise ModuleConfigException(
-            f'Right padding ({frame_parameters.padding.right}) '
-            f'must be divisible by geometry base ({frame_parameters.geometry_base}).'
+            f'Frame height ({height}) '
+            f'must be divisible by geometry base ({geometry_base}).'
         )
-    if frame_parameters.padding.top % frame_parameters.geometry_base != 0:
+
+    if padding is None:
+        return
+    if padding.left % geometry_base != 0:
         raise ModuleConfigException(
-            f'Top padding ({frame_parameters.padding.top}) '
-            f'must be divisible by geometry base ({frame_parameters.geometry_base}).'
+            f'Left padding ({padding.left}) '
+            f'must be divisible by geometry base ({geometry_base}).'
         )
-    if frame_parameters.padding.bottom % frame_parameters.geometry_base != 0:
+    if padding.right % geometry_base != 0:
         raise ModuleConfigException(
-            f'Bottom padding ({frame_parameters.padding.bottom}) '
-            f'must be divisible by geometry base ({frame_parameters.geometry_base}).'
+            f'Right padding ({padding.right}) '
+            f'must be divisible by geometry base ({geometry_base}).'
+        )
+    if padding.top % geometry_base != 0:
+        raise ModuleConfigException(
+            f'Top padding ({padding.top}) '
+            f'must be divisible by geometry base ({geometry_base}).'
+        )
+    if padding.bottom % geometry_base != 0:
+        raise ModuleConfigException(
+            f'Bottom padding ({padding.bottom}) '
+            f'must be divisible by geometry base ({geometry_base}).'
         )
 
 

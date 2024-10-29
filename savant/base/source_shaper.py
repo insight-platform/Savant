@@ -11,12 +11,14 @@ from savant.utils.source_info import SourceShape
 class BaseSourceShaper(ABC):
     """Base class to define a source shape.
 
+    :param geometry_base: Base value for frame parameters. All frame parameters must be divisible by this value.
     :param kwargs: Custom keyword arguments.
         They will be available inside the class instance,
         as fields with the argument name.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, geometry_base: int, **kwargs):
+        self.geometry_base = geometry_base
         for name, value in kwargs.items():
             setattr(self, name, value)
         self.logger = get_logger(self.__module__)
