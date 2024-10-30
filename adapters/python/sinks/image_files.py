@@ -158,9 +158,10 @@ class ImageFilesSink:
 
     def _write_eos(self, eos: EndOfStream):
         self.logger.info('Received EOS from source %s.', eos.source_id)
-        writer = self.writers.get(eos.source_id)
-        if writer is None:
+        location_with_writer = self.last_writer_per_source.get(eos.source_id)
+        if location_with_writer is None:
             return False
+        location, writer = location_with_writer
         writer.write_eos(eos)
         writer.flush()
         return True
