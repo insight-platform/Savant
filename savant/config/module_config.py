@@ -408,6 +408,13 @@ def validate_frame_parameters(config: Module):
         raise ModuleConfigException(
             'Frame shaper and frame padding are mutually exclusive.'
         )
+    if (frame_parameters.shaper is not None) and (
+        config.pipeline.source.element != 'zeromq_source_bin'
+    ):
+        raise ModuleConfigException(
+            'Frame shaper is only supported with zeromq_source_bin source.'
+        )
+
     validate_geometry_base(
         width=frame_parameters.width,
         height=frame_parameters.height,

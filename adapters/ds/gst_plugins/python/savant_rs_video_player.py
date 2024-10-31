@@ -15,7 +15,7 @@ from gst_plugins.python.savant_rs_video_decode_bin import (
 )
 from gst_plugins.python.zeromq_src import ZEROMQ_SRC_PROPERTIES
 from savant.gstreamer import GLib, GObject, Gst
-from savant.gstreamer.utils import on_pad_event, pad_to_source_id
+from savant.gstreamer.utils import on_pad_event, parse_pad_name
 from savant.utils.logging import LoggerMixin
 from savant.utils.platform import is_aarch64
 
@@ -263,7 +263,8 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
         self.logger.info(
             'Added pad %s on element %s', new_pad.get_name(), element.get_name()
         )
-        branch = BranchInfo(source_id=pad_to_source_id(new_pad))
+        source_id, first_frame_id = parse_pad_name(new_pad)
+        branch = BranchInfo(source_id=source_id)
         caps: Gst.Caps = new_pad.get_current_caps()
         if caps is not None:
             self.logger.info('Waiting for caps on pad %s', new_pad.get_name())
@@ -283,7 +284,7 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
     def delete_frame_from_pipeline(self, pad: Gst.Pad, info: Gst.PadProbeInfo):
         buffer: Gst.Buffer = info.get_buffer()
         savant_frame_meta = gst_buffer_get_savant_frame_meta(buffer)
-        source_id = pad_to_source_id(pad)
+        source_id, first_frame_id = parse_pad_name(pad)
         if savant_frame_meta is None:
             self.logger.warning(
                 'Source %s. No Savant Frame Metadata found on buffer with PTS %s.',

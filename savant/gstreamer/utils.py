@@ -3,7 +3,7 @@
 import inspect
 from contextlib import contextmanager
 from types import FrameType
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from gi.repository import Gst  # noqa:F401
 from savant_rs.utils import ByteBuffer
@@ -50,6 +50,15 @@ def pad_to_source_id(pad: Gst.Pad) -> str:
     Pad should be named with pattern "src_<source_id>" (eg "src_cam-1").
     """
     return pad.get_name()[4:]
+
+
+def parse_pad_name(pad: Gst.Pad) -> Tuple[str, int]:
+    """Extract source ID and first frame ID from the pad name.
+
+    Pad should be named with pattern "src_<source_id>_<first_frame_id>" (eg "src_cam-1_362").
+    """
+    source_id, first_frame_id = pad.get_name()[4:].rsplit('_', 1)
+    return source_id, int(first_frame_id)
 
 
 def on_pad_event(

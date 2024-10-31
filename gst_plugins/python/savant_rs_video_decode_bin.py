@@ -12,7 +12,7 @@ from gst_plugins.python.savant_rs_video_demux import SAVANT_RS_VIDEO_DEMUX_PROPE
 from savant.deepstream.decoding import configure_low_latency_decoding
 from savant.gstreamer import GLib, GObject, Gst  # noqa:F401
 from savant.gstreamer.codecs import Codec, caps_to_codec
-from savant.gstreamer.utils import on_pad_event, pad_to_source_id
+from savant.gstreamer.utils import on_pad_event, parse_pad_name
 from savant.utils.logging import LoggerMixin
 from savant.utils.platform import is_aarch64
 
@@ -32,7 +32,6 @@ NESTED_DEMUX_PROPERTIES = {
         'max-parallel-streams',
         'zeromq-reader',
         'eos-on-frame-resolution-change',
-        'first-frame-id',
     ]
 }
 SAVANT_RS_VIDEO_DECODE_BIN_PROPERTIES = {
@@ -98,7 +97,7 @@ SAVANT_RS_VIDEO_DECODE_BIN_SINK_PAD_TEMPLATE = Gst.PadTemplate.new(
     Gst.Caps.new_any(),
 )
 SAVANT_RS_VIDEO_DECODE_BIN_SRC_PAD_TEMPLATE = Gst.PadTemplate.new(
-    'src_%s',
+    'src_%s_%u',
     Gst.PadDirection.SRC,
     Gst.PadPresence.SOMETIMES,
     OUT_CAPS,
@@ -132,7 +131,7 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
         'Savant-rs video decode bin',
         'Bin/Decoder',
         'Decodes savant-rs video stream. '
-        'Outputs decoded video frames to src pad "src_<source_id>".',
+        'Outputs decoded video frames to src pad "src_<source_id>_<first_frame_id>".',
         'Pavel Tomskikh <tomskih_pa@bw-sw.com>',
     )
 
@@ -317,12 +316,13 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
                 self._video_pipeline,
                 self._pipeline_decoder_stage_name,
             )
-        source_id = pad_to_source_id(new_pad)
+        source_id, first_frame_id = parse_pad_name(new_pad)
         caps = new_pad.get_pad_template_caps()
         new_pad.add_probe(
             Gst.PadProbeType.BLOCK_DOWNSTREAM,
             self._add_branch,
             source_id,
+            first_frame_id,
             caps,
         )
 
@@ -331,9 +331,15 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
         pad: Gst.Pad,
         probe_info: Gst.PadProbeInfo,
         source_id: str,
+        first_frame_id: int,
         caps: Gst.Caps,
     ):
-        self.logger.info('Adding branch with source %s. Caps: %s', source_id, caps)
+        self.logger.info(
+            'Adding branch with source %s. First frame ID: %s. Caps: %s',
+            source_id,
+            first_frame_id,
+            caps,
+        )
         pad.remove_probe(probe_info.id)
 
         branch = self._branches.get(source_id)

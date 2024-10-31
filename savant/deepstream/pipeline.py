@@ -80,6 +80,7 @@ from savant.gstreamer.utils import (
     gst_post_stream_failed_error,
     on_pad_event,
     pad_to_source_id,
+    parse_pad_name,
 )
 from savant.meta.constants import PRIMARY_OBJECT_KEY, UNTRACKED_OBJECT_ID
 from savant.utils.platform import is_aarch64
@@ -181,7 +182,6 @@ class NvDsPipeline(GstPipeline):
         else:
             root_span_name = name
 
-        self._first_frame_id: Dict[str, int] = {}
         self._video_pipeline = VideoPipeline(
             root_span_name,
             pipeline_stages,
@@ -384,7 +384,6 @@ class NvDsPipeline(GstPipeline):
         _source = self.add_element(source)
         if source.element == 'zeromq_source_bin':
             _source.set_property('pipeline', self._video_pipeline)
-            _source.set_property('first-frame-id', self._first_frame_id)
             _source.set_property('pass-through-mode', self._pass_through_mode)
             _source.connect('shutdown', self._on_shutdown_signal)
             add_frames_to_pipeline = False
@@ -449,10 +448,18 @@ class NvDsPipeline(GstPipeline):
         if caps and not caps.get_structure(0).get_name().startswith('video'):
             return
 
-        # new_pad.name example `src_camera1` => source_id == `camera1` (real source_id)
-        source_id = pad_to_source_id(new_pad)
+        if add_frames_to_pipeline:
+            # new_pad.name example `src_camera1` => source_id == `camera1` (real source_id)
+            source_id = pad_to_source_id(new_pad)
+            first_frame_id = None
+        else:
+            # new_pad.name example `src_camera1_362` => source_id == `camera1` (real source_id), first_frame_id == 362
+            source_id, first_frame_id = parse_pad_name(new_pad)
         self._logger.debug(
-            'Adding source %s. Pad name: %s.', source_id, new_pad.get_name()
+            'Adding source %s. First frame ID: %s. Pad name: %s.',
+            source_id,
+            first_frame_id,
+            new_pad.get_name(),
         )
 
         try:
@@ -481,6 +488,7 @@ class NvDsPipeline(GstPipeline):
             on_pad_event,
             {Gst.EventType.CAPS: self._on_source_caps},
             source_info,
+            first_frame_id,
             add_frames_to_pipeline,
         )
 
@@ -489,6 +497,7 @@ class NvDsPipeline(GstPipeline):
         new_pad: Gst.Pad,
         event: Gst.Event,
         source_info: SourceInfo,
+        first_frame_id: int,
         add_frames_to_pipeline: bool,
     ):
         """Handle adding caps to video source pad."""
@@ -506,15 +515,19 @@ class NvDsPipeline(GstPipeline):
             assert parsed, f'Failed to parse "width" property of caps "{new_pad_caps}"'
             parsed, height = caps_struct.get_int('height')
             assert parsed, f'Failed to parse "height" property of caps "{new_pad_caps}"'
-            frame_id = self._first_frame_id.pop(source_info.source_id, None)
             self._logger.debug(
                 'Source %s has resolution %sx%s and the first frame is %s',
                 source_info.source_id,
                 width,
                 height,
-                frame_id,
+                first_frame_id,
             )
-            frame_meta, _ = self._video_pipeline.get_independent_frame(frame_id)
+            if first_frame_id is not None:
+                frame_meta, _ = self._video_pipeline.get_independent_frame(
+                    first_frame_id
+                )
+            else:
+                frame_meta = None
             try:
                 source_info.shape = self._get_source_shape(
                     source_id=source_info.source_id,
