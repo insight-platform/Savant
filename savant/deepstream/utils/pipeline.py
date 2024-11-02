@@ -1,23 +1,14 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Union
 
-from savant_rs import init_jaeger_tracer, init_noop_tracer
-from savant_rs.pipeline2 import (
-    StageFunction,
-    VideoPipeline,
-    VideoPipelineStagePayloadType,
-)
+from savant_rs.pipeline2 import StageFunction, VideoPipelineStagePayloadType
 
 from savant.config.schema import (
     BufferQueuesParameters,
     ElementGroup,
-    MetricsParameters,
     Pipeline,
     PipelineElement,
     PyFuncElement,
-    TracingParameters,
 )
-from savant.metrics.base import BaseMetricsExporter
-from savant.metrics.prometheus import ModuleMetricsCollector, PrometheusMetricsExporter
 from savant.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -257,51 +248,3 @@ def build_pipeline_stages(element_stages: List[Union[str, List[str]]]):
     )
 
     return pipeline_stages
-
-
-def init_tracing(module_name: str, tracing: TracingParameters):
-    """Initialize tracing provider."""
-
-    provider_params = tracing.provider_params or {}
-    if tracing.provider == 'jaeger':
-        service_name = provider_params.get('service_name', module_name)
-        try:
-            endpoint = provider_params['endpoint']
-        except KeyError:
-            raise ValueError(
-                'Jaeger endpoint is not specified. Please specify it in the config file.'
-            )
-        logger.info(
-            'Initializing Jaeger tracer with service name %r and endpoint %r.',
-            service_name,
-            endpoint,
-        )
-        init_jaeger_tracer(service_name, endpoint)
-
-    elif tracing.provider is not None:
-        raise ValueError(f'Unknown tracing provider: {tracing.provider}')
-
-    else:
-        logger.info('No tracing provider specified. Using noop tracer.')
-        init_noop_tracer()
-
-
-def build_metrics_exporter(
-    pipeline: VideoPipeline,
-    params: MetricsParameters,
-) -> Optional[BaseMetricsExporter]:
-    """Build metrics exporter."""
-
-    if params.provider is None:
-        return None
-
-    if params.provider == 'prometheus':
-        return PrometheusMetricsExporter(
-            params.provider_params,
-            ModuleMetricsCollector(
-                pipeline,
-                params.provider_params.get('labels') or {},
-            ),
-        )
-
-    raise ValueError(f'Unknown metrics provider: {params.provider}')

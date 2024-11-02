@@ -64,14 +64,14 @@ from savant.deepstream.utils.iterator import (
     nvds_frame_meta_iterator,
     nvds_obj_meta_iterator,
 )
+from savant.deepstream.utils.metrics import build_metrics_exporter
 from savant.deepstream.utils.object import nvds_is_empty_object_meta
 from savant.deepstream.utils.pipeline import (
     add_queues_to_pipeline,
-    build_metrics_exporter,
     build_pipeline_stages,
     get_pipeline_element_stages,
-    init_tracing,
 )
+from savant.deepstream.utils.telemetry import init_tracing, shutdown_tracing
 from savant.gstreamer import GLib, Gst  # noqa:F401
 from savant.gstreamer.buffer_processor import GstBufferProcessor
 from savant.gstreamer.pipeline import GstPipeline
@@ -331,6 +331,7 @@ class NvDsPipeline(GstPipeline):
         self._video_pipeline.log_final_fps()
         if self._metrics_exporter is not None:
             self._metrics_exporter.stop()
+        shutdown_tracing()
         super().on_shutdown()
 
     def _on_shutdown_signal(self, element: Gst.Element):

@@ -15,6 +15,7 @@ Source usage example:
 .. code-block:: python
 
     import time
+    # TODO: update
     from savant_rs import init_jaeger_tracer
     from savant.client import JaegerLogProvider, JpegSource, SourceBuilder
 
@@ -65,6 +66,7 @@ Async example (both source and sink):
 .. code-block:: python
 
     import asyncio
+    # TODO: update
     from savant_rs import init_jaeger_tracer
     from savant.client import JaegerLogProvider, JpegSource, SinkBuilder, SourceBuilder
 

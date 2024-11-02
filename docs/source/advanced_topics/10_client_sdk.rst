@@ -61,6 +61,7 @@ Sources ingest frames and their metadata to a running module.
 .. code-block:: python
 
     import time
+    # TODO: update
     from savant_rs import init_jaeger_tracer
     from savant_rs.primitives import VideoFrameBatch, VideoFrameContent
     from savant.client import JaegerLogProvider, JpegSource, SourceBuilder
