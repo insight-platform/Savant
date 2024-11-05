@@ -15,13 +15,33 @@ Source usage example:
 .. code-block:: python
 
     import time
-    # TODO: update
-    from savant_rs import init_jaeger_tracer
+    from savant_rs.telemetry import (
+        ContextPropagationFormat,
+        Protocol,
+        TelemetryConfiguration,
+        TracerConfiguration,
+    )
     from savant.client import JaegerLogProvider, JpegSource, SourceBuilder
 
     # Initialize Jaeger tracer to send metrics and logs to Jaeger.
     # Note: the Jaeger tracer also should be configured in the module.
-    init_jaeger_tracer('savant-client', 'localhost:6831')
+    telemetry_config = TelemetryConfiguration(
+        context_propagation_format=ContextPropagationFormat.Jaeger,
+        tracer=TracerConfiguration(
+            service_name='savant-client',
+            protocol=Protocol.Grpc,
+            endpoint='http://jaeger:4317',
+            # tls=ClientTlsConfig(
+            #     certificate='/path/to/server.crt',
+            #     identity=Identity(
+            #         certificate='/path/to/client.crt',
+            #         key='/path/to/client.key',
+            #     ),
+            # ),
+            # timeout=5000,  # milliseconds
+        ),
+    )
+    telemetry.init(telemetry_config)
 
     # Build the source
     source = (
@@ -38,6 +58,9 @@ Source usage example:
     print(result.status)
     time.sleep(1)  # Wait for the module to process the frame
     result.logs().pretty_print()
+
+    # Shutdown the Jaeger tracer
+    telemetry.shutdown()
 
 Sink usage example:
 
@@ -66,8 +89,12 @@ Async example (both source and sink):
 .. code-block:: python
 
     import asyncio
-    # TODO: update
-    from savant_rs import init_jaeger_tracer
+    from savant_rs.telemetry import (
+        ContextPropagationFormat,
+        Protocol,
+        TelemetryConfiguration,
+        TracerConfiguration,
+    )
     from savant.client import JaegerLogProvider, JpegSource, SinkBuilder, SourceBuilder
 
 
@@ -104,8 +131,28 @@ Async example (both source and sink):
     async def main():
         # Initialize Jaeger tracer to send metrics and logs to Jaeger.
         # Note: the Jaeger tracer also should be configured in the module.
-        init_jaeger_tracer('savant-client', 'localhost:6831')
+        telemetry_config = TelemetryConfiguration(
+            context_propagation_format=ContextPropagationFormat.Jaeger,
+            tracer=TracerConfiguration(
+                service_name='savant-client',
+                protocol=Protocol.Grpc,
+                endpoint='http://jaeger:4317',
+                # tls=ClientTlsConfig(
+                #     certificate='/path/to/server.crt',
+                #     identity=Identity(
+                #         certificate='/path/to/client.crt',
+                #         key='/path/to/client.key',
+                #     ),
+                # ),
+                # timeout=5000,  # milliseconds
+            ),
+        )
+        telemetry.init(telemetry_config)
+
         await asyncio.gather(run_sink(), run_source())
+
+        # Shutdown the Jaeger tracer
+        telemetry.shutdown()
 
 
     asyncio.run(main())

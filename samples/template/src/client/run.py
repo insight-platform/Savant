@@ -4,9 +4,13 @@ import time
 
 import cv2
 import numpy as np
-
-# TODO: update
-from savant_rs import init_jaeger_tracer
+from savant_rs import telemetry
+from savant_rs.telemetry import (
+    ContextPropagationFormat,
+    Protocol,
+    TelemetryConfiguration,
+    TracerConfiguration,
+)
 
 from savant.api.builder import build_bbox
 from savant.client import JaegerLogProvider, JpegSource, SinkBuilder, SourceBuilder
@@ -14,7 +18,23 @@ from savant.client import JaegerLogProvider, JpegSource, SinkBuilder, SourceBuil
 print('Starting Savant client...')
 # Initialize Jaeger tracer to send metrics and logs to Jaeger.
 # Note: the Jaeger tracer also should be configured in the module.
-init_jaeger_tracer('savant-client', 'jaeger:6831')
+telemetry_config = TelemetryConfiguration(
+    context_propagation_format=ContextPropagationFormat.Jaeger,
+    tracer=TracerConfiguration(
+        service_name='savant-client',
+        protocol=Protocol.Grpc,
+        endpoint='http://jaeger:4317',
+        # tls=ClientTlsConfig(
+        #     certificate='/path/to/server.crt',
+        #     identity=Identity(
+        #         certificate='/path/to/client.crt',
+        #         key='/path/to/client.key',
+        #     ),
+        # ),
+        # timeout=5000,  # milliseconds
+    ),
+)
+telemetry.init(telemetry_config)
 
 module_hostname = os.environ.get('MODULE_HOSTNAME', 'localhost')
 jaeger_endpoint = 'http://jaeger:16686'
@@ -101,4 +121,6 @@ for result in sink:
     print('Logs from the module:')
     result.logs().pretty_print()
 
+# Shutdown the Jaeger tracer
+telemetry.shutdown()
 print('Done.')

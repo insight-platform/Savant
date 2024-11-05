@@ -130,7 +130,14 @@ class TracingParameters:
         provider: jaeger
         provider_params:
           service_name: demo-pipeline
-          endpoint: jaeger:6831
+          protocol: grpc
+          endpoint: "http://jaeger:4317"
+          timeout: 5000 # milliseconds
+          tls:
+            certificate: /path/to/server.crt
+            identity:
+                certificate: /path/to/client.crt
+                key: /path/to/client.key
 
     """
 
@@ -195,7 +202,14 @@ class TelemetryParameters:
           provider: jaeger
           provider_params:
             service_name: demo-pipeline
-            endpoint: jaeger:6831
+            protocol: grpc
+            endpoint: "http://jaeger:4317"
+            timeout: 5000 # milliseconds
+            tls:
+              certificate: /path/to/server.crt
+              identity:
+                  certificate: /path/to/client.crt
+                  key: /path/to/client.key
         metrics:
           frame_period: 1000
           time_period: 1

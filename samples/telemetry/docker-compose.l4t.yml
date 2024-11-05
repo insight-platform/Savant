@@ -26,7 +26,9 @@ services:
     command: samples/telemetry/module.yml
     environment:
       - TRACING_PROVIDER=jaeger
-      - TRACING_PROVIDER_PARAMS={"endpoint":"jaeger:6831"}
+      - TRACING_PROVIDER_ENDPOINT=http://jaeger:4317
+      - TRACING_PROVIDER_PROTOCOL=grpc
+      #- TRACING_PROVIDER_TLS={"certificate":"/path/to/server.crt","identity"{"certificate":"/path/to/client.crt","key":"/path/to/client.key"}}
       - TRACING_SAMPLING_PERIOD=100
       - TRACING_APPEND_FRAME_META_TO_SPAN=True
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc

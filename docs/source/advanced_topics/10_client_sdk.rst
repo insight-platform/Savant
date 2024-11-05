@@ -61,14 +61,35 @@ Sources ingest frames and their metadata to a running module.
 .. code-block:: python
 
     import time
-    # TODO: update
-    from savant_rs import init_jaeger_tracer
+    from savant_rs import telemetry
+    from savant_rs.telemetry import (
+        ContextPropagationFormat,
+        Protocol,
+        TelemetryConfiguration,
+        TracerConfiguration,
+    )
     from savant_rs.primitives import VideoFrameBatch, VideoFrameContent
     from savant.client import JaegerLogProvider, JpegSource, SourceBuilder
 
     # Initialize Jaeger tracer to send metrics and logs to Jaeger.
     # Note: the Jaeger tracer also should be configured in the module.
-    init_jaeger_tracer('savant-client', 'localhost:6831')
+    telemetry_config = TelemetryConfiguration(
+        context_propagation_format=ContextPropagationFormat.Jaeger,
+        tracer=TracerConfiguration(
+            service_name='savant-client',
+            protocol=Protocol.Grpc,
+            endpoint='http://jaeger:4317',
+            # tls=ClientTlsConfig(
+            #     certificate='/path/to/server.crt',
+            #     identity=Identity(
+            #         certificate='/path/to/client.crt',
+            #         key='/path/to/client.key',
+            #     ),
+            # ),
+            # timeout=5000,  # milliseconds
+        ),
+    )
+    telemetry.init(telemetry_config)
 
     # Build the source
     source = (
@@ -97,6 +118,8 @@ Sources ingest frames and their metadata to a running module.
     time.sleep(1)  # Wait for the module to process the batch
     result.logs().pretty_print()
 
+    # Shutdown the Jaeger tracer
+    telemetry.shutdown()
 
 Sink Example
 ^^^^^^^^^^^^
