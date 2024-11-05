@@ -54,7 +54,7 @@ The following parameters are defined for a Savant module by default:
 
 .. literalinclude:: ../../../savant/config/default.yml
   :language: YAML
-  :lines: 1-188
+  :lines: 1-195
 
 .. note::
 
@@ -210,7 +210,14 @@ Example:
         provider: jaeger
         provider_params:
           service_name: demo-pipeline
-          endpoint: jaeger:6831
+          protocol: grpc
+          endpoint: "http://jaeger:4317"
+          timeout: 5000 # milliseconds
+          tls:
+            certificate: /path/to/server.crt
+            identity:
+                certificate: /path/to/client.crt
+                key: /path/to/client.key
 
 Read more on OpenTelemetry in :doc:`/advanced_topics/9_open_telemetry`.
 

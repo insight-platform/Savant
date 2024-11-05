@@ -58,7 +58,14 @@ Use ``params.telemetry.tracing`` to configure OpenTelemetry for the module.
           provider: jaeger
           provider_params:
             service_name: demo-pipeline
-            endpoint: jaeger:6831
+            protocol: grpc
+            endpoint: "http://jaeger:4317"
+            timeout: 5000 # milliseconds
+            tls:
+              certificate: /path/to/server.crt
+              identity:
+                  certificate: /path/to/client.crt
+                  key: /path/to/client.key
 
 .. note::
 
