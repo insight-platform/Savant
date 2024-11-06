@@ -28,7 +28,7 @@ services:
       - TRACING_PROVIDER=jaeger
       - TRACING_PROVIDER_ENDPOINT=http://jaeger:4317
       - TRACING_PROVIDER_PROTOCOL=grpc
-      #- TRACING_PROVIDER_TLS={"certificate":"/path/to/server.crt","identity"{"certificate":"/path/to/client.crt","key":"/path/to/client.key"}}
+      #- TRACING_PROVIDER_TLS={"certificate":"/path/to/ca.crt","identity"{"certificate":"/path/to/client.crt","key":"/path/to/client.key"}}
       - TRACING_SAMPLING_PERIOD=100
       - TRACING_APPEND_FRAME_META_TO_SPAN=True
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
@@ -71,7 +71,7 @@ services:
   # All-in-One Jaeger
   # https://www.jaegertracing.io/docs/1.48/getting-started/#all-in-one
   jaeger:
-    image: jaegertracing/all-in-one:1.48
+    image: jaegertracing/all-in-one:1.62.0
     restart: unless-stopped
     ports:
       - "6831:6831/udp"  # agent

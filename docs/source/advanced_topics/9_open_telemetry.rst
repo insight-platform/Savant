@@ -62,7 +62,7 @@ Use ``params.telemetry.tracing`` to configure OpenTelemetry for the module.
             endpoint: "http://jaeger:4317"
             timeout: 5000 # milliseconds
             tls:
-              certificate: /path/to/server.crt
+              certificate: /path/to/ca.crt
               identity:
                   certificate: /path/to/client.crt
                   key: /path/to/client.key
@@ -85,6 +85,6 @@ Use ``params.telemetry.tracing`` to configure OpenTelemetry for the module.
           -p 14268:14268 \
           -p 14269:14269 \
           -p 9411:9411 \
-          jaegertracing/all-in-one:1.48
+          jaegertracing/all-in-one:1.62.0
 
 .. youtube:: DkNifuKg-kY

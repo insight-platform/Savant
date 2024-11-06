@@ -32,7 +32,7 @@ Source usage example:
             protocol=Protocol.Grpc,
             endpoint='http://jaeger:4317',
             # tls=ClientTlsConfig(
-            #     certificate='/path/to/server.crt',
+            #     certificate='/path/to/ca.crt',
             #     identity=Identity(
             #         certificate='/path/to/client.crt',
             #         key='/path/to/client.key',
@@ -138,7 +138,7 @@ Async example (both source and sink):
                 protocol=Protocol.Grpc,
                 endpoint='http://jaeger:4317',
                 # tls=ClientTlsConfig(
-                #     certificate='/path/to/server.crt',
+                #     certificate='/path/to/ca.crt',
                 #     identity=Identity(
                 #         certificate='/path/to/client.crt',
                 #         key='/path/to/client.key',

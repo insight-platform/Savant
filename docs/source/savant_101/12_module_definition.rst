@@ -214,7 +214,7 @@ Example:
           endpoint: "http://jaeger:4317"
           timeout: 5000 # milliseconds
           tls:
-            certificate: /path/to/server.crt
+            certificate: /path/to/ca.crt
             identity:
                 certificate: /path/to/client.crt
                 key: /path/to/client.key

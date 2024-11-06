@@ -66,7 +66,7 @@ services:
       - network
 
   jaeger:
-    image: jaegertracing/all-in-one:1.49
+    image: jaegertracing/all-in-one:1.62.0
     environment:
       - COLLECTOR_ZIPKIN_HOST_PORT=:9411
     ports:
