@@ -26,7 +26,7 @@ services:
     command: samples/telemetry/module.yml
     environment:
       - TRACING_PROVIDER=jaeger
-      - TRACING_PROVIDER_ENDPOINT=http://jaeger:4317
+      - TRACING_PROVIDER_ENDPOINT=https://jaeger:4317
       - TRACING_PROVIDER_PROTOCOL=grpc
       - TRACING_PROVIDER_TLS={"certificate":"/opt/savant/samples/telemetry/certs/ca.crt","identity":{"certificate":"/opt/savant/samples/telemetry/certs/client.crt","key":"/opt/savant/samples/telemetry/certs/client.key"}}
       # Remove "identity" key to disable client authentication
