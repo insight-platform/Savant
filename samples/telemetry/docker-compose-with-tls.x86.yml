@@ -1,7 +1,7 @@
 services:
 
   video-loop-source:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:latest
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -18,7 +18,7 @@ services:
         condition: service_healthy
 
   module:
-    image: ghcr.io/insight-platform/savant-deepstream-l4t:latest
+    image: ghcr.io/insight-platform/savant-deepstream:latest
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -26,18 +26,26 @@ services:
     command: samples/telemetry/module.yml
     environment:
       - TRACING_PROVIDER=jaeger
-      - TRACING_PROVIDER_ENDPOINT=http://jaeger:4317
+      - TRACING_PROVIDER_ENDPOINT=https://jaeger:4317
       - TRACING_PROVIDER_PROTOCOL=grpc
+      - TRACING_PROVIDER_TLS={"certificate":"/opt/savant/samples/telemetry/certs/ca.crt","identity":{"certificate":"/opt/savant/samples/telemetry/certs/client.crt","key":"/opt/savant/samples/telemetry/certs/client.key"}}
+      # Remove "identity" key to disable client authentication
+      # - TRACING_PROVIDER_TLS={"certificate":"/opt/savant/samples/telemetry/certs/ca.crt"}
       - TRACING_SAMPLING_PERIOD=100
       - TRACING_APPEND_FRAME_META_TO_SPAN=True
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
       - METRICS_FRAME_PERIOD=1000
-      - CODEC=jpeg
-    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
 
   always-on-sink:
-    image: ghcr.io/insight-platform/savant-adapters-deepstream-l4t:latest
+    image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
     restart: unless-stopped
     ports:
       - "554:554"    # RTSP
@@ -54,6 +62,13 @@ services:
       - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x720.jpeg
       - DEV_MODE=True
     command: python -m adapters.ds.sinks.always_on_rtsp
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
 
   # All-in-One Jaeger
   # https://www.jaegertracing.io/docs/1.62/getting-started/#all-in-one
@@ -70,6 +85,14 @@ services:
       - "9411:9411"
     environment:
       - COLLECTOR_ZIPKIN_HOST_PORT=:9411
+      - COLLECTOR_OTLP_ENABLED=true
+      - COLLECTOR_OTLP_GRPC_TLS_ENABLED=true
+      - COLLECTOR_OTLP_GRPC_TLS_CERT=/certs/server.crt
+      - COLLECTOR_OTLP_GRPC_TLS_KEY=/certs/server.key
+      # Remove the following line to disable client authentication
+      - COLLECTOR_OTLP_GRPC_TLS_CLIENT_CA=/certs/ca.crt
+    volumes:
+      - ./certs:/certs
 
 volumes:
   zmq_sockets:

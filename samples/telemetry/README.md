@@ -1,6 +1,6 @@
 # OpenTelemetry Example
 
-A simple pipeline demonstrating the use of OpenTelemetry in Savant. The pipeline contains one element, [Blur PyFunc](blur.py). It applies gaussian blur to the frame and contains OpenTelemetry instrumenting code. OpenTelemetry instrumenting is initialized with environment variables: see compose files for details. The telemetry is collected by the all-in-one Jaeger [container](https://www.jaegertracing.io/docs/1.48/getting-started/#all-in-one). The container also includes the Jaeger UI.
+A simple pipeline demonstrating the use of OpenTelemetry in Savant. The pipeline contains one element, [Blur PyFunc](blur.py). It applies gaussian blur to the frame and contains OpenTelemetry instrumenting code. OpenTelemetry instrumenting is initialized with environment variables: see compose files for details. The telemetry is collected by the all-in-one Jaeger [container](https://www.jaegertracing.io/docs/1.62/getting-started/#all-in-one). The container also includes the Jaeger UI.
 
 Below are a few screenshots from the Jaeger UI.
 
@@ -55,6 +55,86 @@ docker compose -f samples/telemetry/docker-compose.x86.yml up
 
 # if Jetson
 docker compose -f samples/telemetry/docker-compose.l4t.yml up
+
+# open 'rtsp://127.0.0.1:554/stream/0' in your player
+# or visit 'http://127.0.0.1:888/stream/0/' (LL-HLS)
+
+# navigate to 'http://localhost:16686' to access the Jaeger UI
+
+# Ctrl+C to stop running the compose bundle
+```
+
+## Running Jaeger with TLS
+
+Jaeger and Savant support TLS for telemetry collection. [docker-compose-with-tls.x86.yml](docker-compose-with-tls.x86.yml) and [docker-compose-with-tls.l4t.yml](docker-compose-with-tls.l4t.yml) compose files demonstrate how to run Jaeger with TLS enabled (for both Jaeger and Savant authentication).
+
+### Generate Certificates
+
+Create directory for certificates:
+
+```bash
+mkdir samples/telemetry/certs
+```
+
+Generate CA:
+
+```bash
+openssl genpkey -algorithm RSA -out samples/telemetry/certs/ca.key
+openssl req -new -x509 -days 365 \
+    -key samples/telemetry/certs/ca.key \
+    -out samples/telemetry/certs/ca.crt \
+    -subj "/CN=jaeger-ca"
+```
+
+Generate server key and certificate:
+
+```bash
+openssl genpkey -algorithm RSA -out samples/telemetry/certs/server.key
+openssl req -new \
+    -key samples/telemetry/certs/server.key \
+    -out samples/telemetry/certs/server.csr \
+    -subj "/CN=jaeger"
+openssl x509 -req -days 365 \
+    -in samples/telemetry/certs/server.csr \
+    -CA samples/telemetry/certs/ca.crt \
+    -CAkey samples/telemetry/certs/ca.key \
+    -CAcreateserial \
+    -out samples/telemetry/certs/server.crt \
+    -extfile <(echo "subjectAltName=DNS:jaeger")
+```
+
+Make the server key readable by the container:
+
+```bash
+chmod +r samples/telemetry/certs/server.key
+```
+
+Generate client key and certificate:
+
+```bash
+openssl genpkey -algorithm RSA -out samples/telemetry/certs/client.key
+openssl req -new \
+    -key samples/telemetry/certs/client.key \
+    -out samples/telemetry/certs/client.csr \
+    -subj "/CN=module"
+openssl x509 -req -days 365 \
+    -in samples/telemetry/certs/client.csr \
+    -CA samples/telemetry/certs/ca.crt \
+    -CAkey samples/telemetry/certs/ca.key \
+    -CAcreateserial \
+    -out samples/telemetry/certs/client.crt
+```
+
+### Run Demo with TLS
+
+```bash
+# you are expected to be in Savant/ directory
+
+# if x86
+docker compose -f samples/telemetry/docker-compose-with-tls.x86.yml up
+
+# if Jetson
+docker compose -f samples/telemetry/docker-compose-with-tls.l4t.yml up
 
 # open 'rtsp://127.0.0.1:554/stream/0' in your player
 # or visit 'http://127.0.0.1:888/stream/0/' (LL-HLS)

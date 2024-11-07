@@ -28,6 +28,9 @@ services:
       - TRACING_PROVIDER=jaeger
       - TRACING_PROVIDER_ENDPOINT=http://jaeger:4317
       - TRACING_PROVIDER_PROTOCOL=grpc
+      - TRACING_PROVIDER_TLS={"certificate":"/opt/savant/samples/telemetry/certs/ca.crt","identity":{"certificate":"/opt/savant/samples/telemetry/certs/client.crt","key":"/opt/savant/samples/telemetry/certs/client.key"}}
+      # Remove "identity" key to disable client authentication
+      # - TRACING_PROVIDER_TLS={"certificate":"/opt/savant/samples/telemetry/certs/ca.crt"}
       - TRACING_SAMPLING_PERIOD=100
       - TRACING_APPEND_FRAME_META_TO_SPAN=True
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
@@ -70,6 +73,14 @@ services:
       - "9411:9411"
     environment:
       - COLLECTOR_ZIPKIN_HOST_PORT=:9411
+      - COLLECTOR_OTLP_ENABLED=true
+      - COLLECTOR_OTLP_GRPC_TLS_ENABLED=true
+      - COLLECTOR_OTLP_GRPC_TLS_CERT=/certs/server.crt
+      - COLLECTOR_OTLP_GRPC_TLS_KEY=/certs/server.key
+      # Remove the following line to disable client authentication
+      - COLLECTOR_OTLP_GRPC_TLS_CLIENT_CA=/certs/ca.crt
+    volumes:
+      - ./certs:/certs
 
 volumes:
   zmq_sockets:

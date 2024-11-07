@@ -26,7 +26,7 @@ class JaegerLogProvider(LogProvider):
 
     def _fetch_logs(self, trace_id: str) -> List[LogEntry]:
         # TODO: use gRPC API since HTTP is internal
-        # https://www.jaegertracing.io/docs/1.48/apis/#grpcprotobuf-stable
+        # https://www.jaegertracing.io/docs/1.62/apis/#grpcprotobuf-stable
         response = requests.get(f'{self._endpoint}/api/traces/{trace_id}')
         response.raise_for_status()
         logs = []

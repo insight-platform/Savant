@@ -64,3 +64,6 @@ data
 
 # logs (perf measurement)
 logs
+
+# certificates
+certs
