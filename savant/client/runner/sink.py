@@ -96,7 +96,7 @@ class BaseSinkRunner(ABC):
             if not zmq_message.content:
                 content = None
                 if video_frame.content.is_internal():
-                    content = video_frame.content.get_data_as_bytes()
+                    content = video_frame.content.get_data()
                     video_frame.content = VideoFrameContent.none()
             return SinkResult(
                 frame_meta=video_frame,

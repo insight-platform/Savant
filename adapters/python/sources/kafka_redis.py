@@ -198,7 +198,7 @@ class KafkaRedisSource(BaseKafkaRedisAdapter):
         """Fetch frame content from Redis and update frame metadata."""
 
         if video_frame.content.is_internal():
-            content = video_frame.content.get_data_as_bytes()
+            content = video_frame.content.get_data()
 
         elif video_frame.content.is_external():
             if video_frame.content.get_method() != ExternalFrameType.REDIS.value:

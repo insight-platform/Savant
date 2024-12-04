@@ -327,7 +327,7 @@ class MultiStreamKvsSink:
             return True
 
         if frame.content.is_internal():
-            content = frame.content.get_data_as_bytes()
+            content = frame.content.get_data()
             self.logger.debug(
                 'Received frame %s from source %s, size: %s bytes',
                 frame.pts,
