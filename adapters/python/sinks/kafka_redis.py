@@ -58,7 +58,7 @@ class Config(BaseConfig):
         self.kafka = KafkaConfig()
         try:
             self.redis = RedisConfig()
-        except KeyError:
+        except ValueError:
             self.redis = None
 
 

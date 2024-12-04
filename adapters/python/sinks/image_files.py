@@ -48,7 +48,7 @@ class ImageFilesWriter(ChunkWriter):
                 )
                 return False
         elif frame.content.is_internal():
-            content = frame.content.get_data_as_bytes()
+            content = frame.content.get_data()
         else:
             return True
 

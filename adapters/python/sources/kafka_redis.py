@@ -161,8 +161,8 @@ class KafkaRedisSource(BaseKafkaRedisAdapter):
         try:
             async for result in self._source.send_iter(self.video_frame_iterator()):
                 self._logger.debug(
-                    'Status of sending frame for source %s: %s.',
-                    result.source_id,
+                    'Status of sending frame for sources %s: %s.',
+                    result.source_ids,
                     result.status,
                 )
         except Exception as e:
@@ -198,7 +198,7 @@ class KafkaRedisSource(BaseKafkaRedisAdapter):
         """Fetch frame content from Redis and update frame metadata."""
 
         if video_frame.content.is_internal():
-            content = video_frame.content.get_data_as_bytes()
+            content = video_frame.content.get_data()
 
         elif video_frame.content.is_external():
             if video_frame.content.get_method() != ExternalFrameType.REDIS.value:
