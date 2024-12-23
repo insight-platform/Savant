@@ -92,7 +92,7 @@ def nvds_obj_meta_output_converter(
             track_box=track_box,
             attributes=[],
         ),
-        IdCollisionResolutionPolicy.Error,
+        IdCollisionResolutionPolicy.GenerateNewId,
     )
 
 
