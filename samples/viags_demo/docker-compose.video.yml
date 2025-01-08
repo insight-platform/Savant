@@ -1,0 +1,159 @@
+services:
+
+  video-loop-source-1:
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    restart: unless-stopped
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - /tmp/video-loop-source-downloads:/tmp/video-loop-source-downloads
+      - ../../cache/videos:/videos
+    environment:
+      - LOCATION=/videos/cam_1_sample_savant_1_part_1.mp4
+      - DOWNLOAD_PATH=/tmp/video-loop-source-downloads
+      - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
+      - SOURCE_ID=video1
+      - SYNC_OUTPUT=True
+    entrypoint: /opt/savant/adapters/gst/sources/video_loop.sh
+    depends_on:
+      module:
+        condition: service_healthy
+
+  # video-loop-source-2:
+  #   image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+  #   restart: unless-stopped
+  #   volumes:
+  #     - zmq_sockets:/tmp/zmq-sockets
+  #     - /tmp/video-loop-source-downloads:/tmp/video-loop-source-downloads
+  #     - ../../cache/videos:/videos
+  #   environment:
+  #     - LOCATION=/videos/cam_1_sample_savant_1_part_2.mp4
+  #     - DOWNLOAD_PATH=/tmp/video-loop-source-downloads
+  #     - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
+  #     - SOURCE_ID=video2
+  #     - SYNC_OUTPUT=True
+  #   entrypoint: /opt/savant/adapters/gst/sources/video_loop.sh
+  #   depends_on:
+  #     module:
+  #       condition: service_healthy
+
+  # video-loop-source-3:
+  #   image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+  #   restart: unless-stopped
+  #   volumes:
+  #     - zmq_sockets:/tmp/zmq-sockets
+  #     - /tmp/video-loop-source-downloads:/tmp/video-loop-source-downloads
+  #     - ../../cache/videos:/videos
+  #   environment:
+  #     - LOCATION=/videos/cam_1_sample_savant_1_part_3.mp4
+  #     - DOWNLOAD_PATH=/tmp/video-loop-source-downloads
+  #     - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
+  #     - SOURCE_ID=video3
+  #     - SYNC_OUTPUT=True
+  #   entrypoint: /opt/savant/adapters/gst/sources/video_loop.sh
+  #   depends_on:
+  #     module:
+  #       condition: service_healthy
+
+  # video-loop-source-4:
+  #   image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+  #   restart: unless-stopped
+  #   volumes:
+  #     - zmq_sockets:/tmp/zmq-sockets
+  #     - /tmp/video-loop-source-downloads:/tmp/video-loop-source-downloads
+  #     - ../../cache/videos:/videos
+  #   environment:
+  #     - LOCATION=/videos/cam_1_sample_savant_1_part_4.mp4
+  #     - DOWNLOAD_PATH=/tmp/video-loop-source-downloads
+  #     - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
+  #     - SOURCE_ID=video4
+  #     - SYNC_OUTPUT=True
+  #   entrypoint: /opt/savant/adapters/gst/sources/video_loop.sh
+  #   depends_on:
+  #     module:
+  #       condition: service_healthy
+
+  # video-loop-source-5:
+  #   image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+  #   restart: unless-stopped
+  #   volumes:
+  #     - zmq_sockets:/tmp/zmq-sockets
+  #     - /tmp/video-loop-source-downloads:/tmp/video-loop-source-downloads
+  #     - ../../cache/videos:/videos
+  #   environment:
+  #     - LOCATION=/videos/cam_1_sample_savant_1_part_5.mp4
+  #     - DOWNLOAD_PATH=/tmp/video-loop-source-downloads
+  #     - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
+  #     - SOURCE_ID=video5
+  #     - SYNC_OUTPUT=True
+  #   entrypoint: /opt/savant/adapters/gst/sources/video_loop.sh
+  #   depends_on:
+  #     module:
+  #       condition: service_healthy
+
+  module:
+    build:
+      context: .
+      dockerfile: Dockerfile.x86
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ../../cache:/cache
+      - ..:/opt/savant/samples
+    command: samples/viags_demo/module.yml
+    environment:
+      - MODEL_PATH=/cache/models/viags_demo
+      - DOWNLOAD_PATH=/cache/downloads/viags_demo
+      - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
+      - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
+      - METRICS_FRAME_PERIOD=1000
+      - LOG_LEVEL=DEBUG
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+
+  always-on-sink:
+    image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
+    restart: unless-stopped
+    ports:
+      - "554:554"    # RTSP
+      - "1935:1935"  # RTMP
+      - "888:888"    # HLS
+      - "8889:8889"  # WebRTC
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ../assets/stub_imgs:/stub_imgs
+    environment:
+      - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
+      - SOURCE_IDS=video1
+      - FRAMERATE=25/1
+      - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x720.jpeg
+      - DEV_MODE=True
+    command: python -m adapters.ds.sinks.always_on_rtsp
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+  graphite:
+    image: graphiteapp/graphite-statsd
+
+  grafana:
+    image: grafana/grafana-oss
+    volumes:
+      - ./grafana_datasources:/etc/grafana/provisioning/datasources/
+      - ./grafana_dashboards:/etc/grafana/provisioning/dashboards/
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_NAME=Main Org.
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+
+volumes:
+  zmq_sockets:
+

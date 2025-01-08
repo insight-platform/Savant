@@ -1,0 +1,14 @@
+--- nvdsinfer_model_builder.cpp	2023-04-20 13:36:23.753901493 +0700
++++ nvdsinfer_model_builder_new.cpp	2023-04-20 13:44:18.230221914 +0700
+@@ -830,6 +830,11 @@
+     suggestedPathName =
+         modelPath + "_b" + std::to_string(initParams.maxBatchSize) + "_" +
+         devId + "_" + networkMode2Str(networkMode) + ".engine";
++    /* Workaround for predictable engine file path. */
++    if (!string_empty(initParams.modelEngineFilePath))
++    {
++        suggestedPathName = initParams.modelEngineFilePath;
++    }
+     return engine;
+ }
+ 

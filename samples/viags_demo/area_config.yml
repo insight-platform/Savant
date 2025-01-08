@@ -1,0 +1,120 @@
+# Video source id
+cam1:
+  # Area name
+  checkin-zone:
+    # The points define a polygon in the frame that delimits the target area
+    # Coordinates should be integer
+    points:
+      - [212, 140]
+      - [532, 156]
+      - [842, 194]
+      - [1045, 234]
+      - [1154, 264]
+      - [1183, 277]
+      - [1153, 401]
+      - [721, 322]
+      - [433, 279]
+      - [219, 246]
+    # Color used to draw the area and marks the objects that are inside it
+    # RGBA, int values in range [0;255]
+    color: [255, 0, 0, 255]
+
+video1:
+  # Area name
+  checkin-zone:
+    # The points define a polygon in the frame that delimits the target area
+    # Coordinates should be integer
+    points:
+      - [212, 140]
+      - [532, 156]
+      - [842, 194]
+      - [1045, 234]
+      - [1154, 264]
+      - [1183, 277]
+      - [1153, 401]
+      - [721, 322]
+      - [433, 279]
+      - [219, 246]
+    # Color used to draw the area and marks the objects that are inside it
+    # RGBA, int values in range [0;255]
+    color: [255, 0, 0, 255]
+
+video2:
+  # Area name
+  checkin-zone:
+    # The points define a polygon in the frame that delimits the target area
+    # Coordinates should be integer
+    points:
+      - [212, 140]
+      - [532, 156]
+      - [842, 194]
+      - [1045, 234]
+      - [1154, 264]
+      - [1183, 277]
+      - [1153, 401]
+      - [721, 322]
+      - [433, 279]
+      - [219, 246]
+    # Color used to draw the area and marks the objects that are inside it
+    # RGBA, int values in range [0;255]
+    color: [255, 0, 0, 255]
+
+video3:
+  # Area name
+  checkin-zone:
+    # The points define a polygon in the frame that delimits the target area
+    # Coordinates should be integer
+    points:
+      - [212, 140]
+      - [532, 156]
+      - [842, 194]
+      - [1045, 234]
+      - [1154, 264]
+      - [1183, 277]
+      - [1153, 401]
+      - [721, 322]
+      - [433, 279]
+      - [219, 246]
+    # Color used to draw the area and marks the objects that are inside it
+    # RGBA, int values in range [0;255]
+    color: [255, 0, 0, 255]
+
+video4:
+  # Area name
+  checkin-zone:
+    # The points define a polygon in the frame that delimits the target area
+    # Coordinates should be integer
+    points:
+      - [212, 140]
+      - [532, 156]
+      - [842, 194]
+      - [1045, 234]
+      - [1154, 264]
+      - [1183, 277]
+      - [1153, 401]
+      - [721, 322]
+      - [433, 279]
+      - [219, 246]
+    # Color used to draw the area and marks the objects that are inside it
+    # RGBA, int values in range [0;255]
+    color: [255, 0, 0, 255]
+
+video5:
+  # Area name
+  checkin-zone:
+    # The points define a polygon in the frame that delimits the target area
+    # Coordinates should be integer
+    points:
+      - [212, 140]
+      - [532, 156]
+      - [842, 194]
+      - [1045, 234]
+      - [1154, 264]
+      - [1183, 277]
+      - [1153, 401]
+      - [721, 322]
+      - [433, 279]
+      - [219, 246]
+    # Color used to draw the area and marks the objects that are inside it
+    # RGBA, int values in range [0;255]
+    color: [255, 0, 0, 255]
