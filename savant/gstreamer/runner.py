@@ -13,6 +13,7 @@ from savant.healthcheck.status import ModuleStatus, set_module_status
 from savant.utils.logging import get_logger
 
 from .pipeline import GstPipeline
+from savant_rs.webserver import set_status_running
 
 logger = get_logger(__name__)
 
@@ -113,6 +114,7 @@ class GstPipelineRunner:
 
         self._start_time = end_time
         if self._status_filepath is not None:
+            set_status_running()
             set_module_status(self._status_filepath, ModuleStatus.RUNNING)
 
     def shutdown(self):

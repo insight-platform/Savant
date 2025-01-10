@@ -28,8 +28,7 @@ from savant_rs.zmq import (
 )
 
 from adapters.shared.thread import BaseThreadWorker
-from savant.metrics import Counter, Gauge
-from savant.metrics.prometheus import BaseMetricsCollector, PrometheusMetricsExporter
+from savant.metrics.prometheus import PrometheusMetricsExporter
 from savant.utils.config import opt_config, req_config, strtobool
 from savant.utils.logging import get_logger, init_logging
 from savant.utils.welcome import get_starting_message

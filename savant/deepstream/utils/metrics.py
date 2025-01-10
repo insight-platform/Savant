@@ -4,7 +4,7 @@ from savant_rs.pipeline2 import VideoPipeline
 
 from savant.config.schema import MetricsParameters
 from savant.metrics.base import BaseMetricsExporter
-from savant.metrics.prometheus import ModuleMetricsCollector, PrometheusMetricsExporter
+from savant.metrics.prometheus import PrometheusMetricsExporter
 
 
 def build_metrics_exporter(
@@ -19,10 +19,6 @@ def build_metrics_exporter(
     if params.provider == 'prometheus':
         return PrometheusMetricsExporter(
             params.provider_params,
-            ModuleMetricsCollector(
-                pipeline,
-                params.provider_params.get('labels') or {},
-            ),
         )
 
     raise ValueError(f'Unknown metrics provider: {params.provider}')
