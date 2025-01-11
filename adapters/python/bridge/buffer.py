@@ -2,10 +2,11 @@ import json
 import os
 import signal
 import time
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, Union
 
 import msgpack
 from rocksq.blocking import PersistentQueueWithCapacity
+from savant_rs.metrics import *
 from savant_rs.pipeline2 import (
     StageFunction,
     VideoPipeline,
@@ -18,6 +19,7 @@ from savant_rs.utils.serialization import (
     load_message_from_bytes,
     save_message_to_bytes,
 )
+from savant_rs.webserver import set_status_running as set_ws_pipeline_status_running
 from savant_rs.zmq import (
     BlockingWriter,
     WriterConfigBuilder,
@@ -28,6 +30,7 @@ from savant_rs.zmq import (
 )
 
 from adapters.shared.thread import BaseThreadWorker
+from savant.metrics import get_or_create_counter, get_or_create_gauge
 from savant.metrics.prometheus import PrometheusMetricsExporter
 from savant.utils.config import opt_config, req_config, strtobool
 from savant.utils.logging import get_logger, init_logging
@@ -467,48 +470,75 @@ class StatsLogger(BaseThreadWorker):
         )
 
 
-class AdapterMetricsCollector(BaseMetricsCollector):
+class AdapterMetricsCollector(BaseThreadWorker):
     """Adapter metrics collector for Prometheus."""
 
-    def __init__(
-        self,
-        metrics_aggregator: StatsAggregator,
-        extra_labels: Dict[str, str],
-    ):
-        super().__init__(extra_labels)
-        self._metrics_aggregator = metrics_aggregator
-        self.register_metric(
-            Counter('received_messages', 'Number of messages received by the adapter')
+    def counter(self, name: str, description: str):
+        """Create a counter."""
+        self._metrics[name] = get_or_create_counter(name, description)
+
+    def gauge(self, name: str, description: str):
+        """Create a gauge."""
+        self._metrics[name] = get_or_create_gauge(name, description)
+
+    def __init__(self, aggregator: StatsAggregator):
+        super().__init__(
+            thread_name='StatsLogger',
+            logger_name=f'{LOGGER_NAME}.{self.__class__.__name__}',
+            daemon=True,
         )
-        self.register_metric(
-            Counter('pushed_messages', 'Number of messages pushed to the buffer')
+        self._stats_aggregator = aggregator
+        self._metrics: Dict[str, Union[CounterFamily, GaugeFamily]] = dict()
+        self.counter(
+            'received_messages',
+            'Number of messages received by the adapter',
         )
-        self.register_metric(
-            Counter('dropped_messages', 'Number of messages dropped by the buffer')
+        self.counter(
+            'pushed_messages',
+            'Number of messages pushed by the adapter',
         )
-        self.register_metric(
-            Counter('sent_messages', 'Number of messages sent by the adapter')
+        self.counter(
+            'dropped_messages',
+            'Number of messages dropped by the adapter',
         )
-        self.register_metric(Gauge('buffer_size', 'Number of messages in the buffer'))
-        self.register_metric(
-            Gauge('payload_size', 'Size of the queue in bytes (only payload)')
+        self.counter(
+            'sent_messages',
+            'Number of messages sent to the sink ZeroMQ socket',
         )
-        self.register_metric(
-            Gauge('last_received_message', 'Timestamp of the last received message')
+        self.gauge(
+            'buffer_size',
+            'Number of messages in the buffer',
         )
-        self.register_metric(
-            Gauge('last_pushed_message', 'Timestamp of the last pushed message')
+        self.gauge(
+            'payload_size',
+            'Number of messages in the buffer',
         )
-        self.register_metric(
-            Gauge('last_dropped_message', 'Timestamp of the last dropped message')
+        self.gauge(
+            'last_received_message',
+            'Number of messages received from the adapter',
         )
-        self.register_metric(
-            Gauge('last_sent_message', 'Timestamp of the last sent message')
+        self.gauge(
+            'last_pushed_message',
+            'Number of messages pushed from the adapter',
+        )
+        self.gauge(
+            'last_dropped_message',
+            'Number of messages dropped by the adapter',
+        )
+        self.gauge(
+            'last_sent_message',
+            'Number of messages sent to the sink ZeroMQ socket',
         )
 
     def update_all_metrics(self):
-        for k, v in self._metrics_aggregator.get_stats().items():
-            self._metrics[k].set(v)
+        for k, v in self._stats_aggregator.get_stats().items():
+            self.logger.debug('Updating metrics %s=%s', k, v)
+            self._metrics[k].set(v, label_values=[])
+
+    def workload(self):
+        while self.is_running:
+            time.sleep(1)
+            self.update_all_metrics()
 
 
 def build_video_pipeline(config: Config):
@@ -540,7 +570,7 @@ def build_video_pipeline(config: Config):
 def main():
     init_logging()
     logger.info(get_starting_message('buffer bridge adapter'))
-    # To gracefully shutdown the adapter on SIGTERM (raise KeyboardInterrupt)
+    # To gracefully shut down the adapter on SIGTERM (raise KeyboardInterrupt)
     signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
     config = Config()
     queue = PersistentQueueWithCapacity(
@@ -555,21 +585,28 @@ def main():
     stats_logger = StatsLogger(stats_aggregator, config)
     if config.metrics.provider is None:
         metrics_exporter = None
+        metrics_collector = None
     elif config.metrics.provider == 'prometheus':
-        metrics_exporter = PrometheusMetricsExporter(
-            config.metrics.provider_params,
-            AdapterMetricsCollector(
-                stats_aggregator,
-                config.metrics.provider_params.get('labels') or {},
-            ),
-        )
+        metrics_exporter = PrometheusMetricsExporter(config.metrics.provider_params)
+        metrics_collector = AdapterMetricsCollector(stats_aggregator)
     else:
         raise ValueError(f'Unsupported metrics provider: {config.metrics.provider}')
 
     if metrics_exporter is not None:
+        logger.info('Starting metrics exporter')
         metrics_exporter.start()
+
     threads = [ingress, egress, stats_logger]
+    if metrics_collector is not None:
+        threads.append(metrics_collector)
+
+    try:
+        set_ws_pipeline_status_running()
+    except ValueError:
+        logger.debug('Webserver is not running, unable to update the status.')
+
     for thread in threads:
+        logger.info('Starting thread %s', thread.thread_name)
         thread.start()
     try:
         while all(thread.is_running for thread in threads):

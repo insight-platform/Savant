@@ -1,26 +1,23 @@
 """Example of how to use metrics in PyFunc."""
 
-from savant_rs.metrics import CounterFamily, GaugeFamily
-
 from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.deepstream.pyfunc import NvDsPyFuncPlugin
 from savant.gstreamer import Gst
+from savant.metrics import get_or_create_counter, get_or_create_gauge
 
 
 def get_gauge():
-    return GaugeFamily.get_or_create_gauge_family(
+    return get_or_create_gauge(
         name='total_queue_length',
         description='The total queue length for the pipeline',
-        # There are no labels for this metric
-        label_names=[],
+        # Labels are optional, by default there are no labels
     )
 
 
 def get_counter():
-    return CounterFamily.get_or_create_counter_family(
+    return get_or_create_counter(
         name='frames_per_source',
         description='Number of processed frames per source',
-        # Labels are optional, by default there are no labels
         label_names=['source_id'],
     )
 
@@ -45,7 +42,6 @@ class PyFuncMetricsExample(NvDsPyFuncPlugin):
     def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
         # Count the frame for this source
         get_counter().inc(
-            1,
             label_values=[frame_meta.source_id],
         )
         try:
@@ -57,4 +53,4 @@ class PyFuncMetricsExample(NvDsPyFuncPlugin):
             queue_length = 0
 
         # Set the total queue length for this source
-        get_gauge().set(queue_length, label_values=[])  # The new gauge value
+        get_gauge().set(queue_length)  # The new gauge value

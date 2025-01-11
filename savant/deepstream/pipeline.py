@@ -24,6 +24,9 @@ from pygstsavantframemeta import (
 from savant_rs.pipeline2 import VideoPipeline, VideoPipelineConfiguration
 from savant_rs.primitives import EndOfStream, VideoFrame
 from savant_rs.primitives.geometry import RBBox
+from savant_rs.webserver import (
+    set_shutdown_token as set_ws_pipeline_shutdown_auth_token,
+)
 
 from savant.base.input_preproc import ObjectsPreprocessing
 from savant.base.model import AttributeModel, ComplexModel
@@ -170,6 +173,10 @@ class NvDsPipeline(GstPipeline):
             shutdown_auth = kwargs.get('shutdown_auth')
             if shutdown_auth is not None:
                 pipeline_cfg.source.properties['shutdown-auth'] = shutdown_auth
+                # setting a token, allowing to shut the pipeline down with a webserver feature
+                # /shutdown/{token}/signal
+                # /shutdown/{token}/graceful
+                set_ws_pipeline_shutdown_auth_token(shutdown_auth)
 
         buffer_queues: Optional[BufferQueuesParameters] = kwargs.get('buffer_queues')
         if buffer_queues is not None:

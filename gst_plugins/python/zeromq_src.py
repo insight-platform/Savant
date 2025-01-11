@@ -15,6 +15,7 @@ from savant_rs.primitives import (
     VideoFrameTransformation,
 )
 from savant_rs.utils import PropagatedContext
+from savant_rs.webserver import is_shutdown_set as is_ws_shutdown_set
 
 from gst_plugins.python.pyfunc_common import handle_non_fatal_error, init_pyfunc
 from gst_plugins.python.zeromq_properties import ZEROMQ_PROPERTIES, socket_type_property
@@ -436,6 +437,8 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
             return self.handle_eos(message.as_end_of_stream())
         if message.is_shutdown():
             return self.handle_shutdown(message.as_shutdown())
+        if is_ws_shutdown_set():
+            return self.handle_ws_shutdown()
         self.logger.warning('Unsupported message type for message %r', message)
 
     def handle_video_frame(
@@ -632,6 +635,14 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
         if not self.srcpad.push_event(savant_eos_event):
             self.logger.error('Failed to push savant-eos event to the pipeline')
             return Gst.FlowReturn.ERROR, None
+
+    def handle_ws_shutdown(self):
+        """Handle WebServer-initiated shutdown."""
+        self.logger.info(
+            'The graceful shutdown state was initiated with the embedded webserver.'
+        )
+        self.srcpad.push_event(Gst.Event.new_eos())
+        return Gst.FlowReturn.EOS, None
 
     def handle_shutdown(self, shutdown: Shutdown) -> HandlerResult:
         """Handle Shutdown message."""
