@@ -420,6 +420,8 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
         return self.handle_message(zmq_message)
 
     def handle_message(self, zmq_message: ZeroMQMessage) -> HandlerResult:
+        if is_ws_shutdown_set():
+            return self.handle_ws_shutdown()
         message = zmq_message.message
         message.validate_seq_id()
         if message.is_video_frame():
@@ -437,8 +439,6 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
             return self.handle_eos(message.as_end_of_stream())
         if message.is_shutdown():
             return self.handle_shutdown(message.as_shutdown())
-        if is_ws_shutdown_set():
-            return self.handle_ws_shutdown()
         self.logger.warning('Unsupported message type for message %r', message)
 
     def handle_video_frame(
