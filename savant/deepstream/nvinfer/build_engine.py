@@ -63,7 +63,7 @@ def build_engine(element: ModelElement, rebuild: bool = True):
         gst_element = (
             GstElementFactory.create_element(element)
             if element.element != 'capsfilter'
-            else GstElementFactory().create_caps_filter(element)
+            else GstElementFactory.create_caps_filter(element)
         )
         pipeline.add(gst_element)
         if last_gst_element is not None:
