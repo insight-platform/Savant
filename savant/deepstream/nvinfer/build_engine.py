@@ -40,6 +40,7 @@ def build_engine(element: ModelElement, rebuild: bool = True):
                 'num-buffers': model.batch_size,
             },
         ),
+        PipelineElement('nvvideoconvert'),
         PipelineElement(
             element='nvstreammux',
             name='muxer',
