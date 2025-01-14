@@ -35,7 +35,7 @@ def build_engine(element: ModelElement, rebuild: bool = True):
     pipeline: Gst.Pipeline = Gst.Pipeline()
     elements = [
         PipelineElement(
-            'nvvideotestsrc',
+            'videotestsrc',
             properties={
                 'num-buffers': model.batch_size,
             },

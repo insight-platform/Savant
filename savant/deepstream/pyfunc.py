@@ -182,7 +182,7 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
         """Process gstreamer buffer and frame metadata. Throws an exception if fatal
         error has occurred.
 
-        Use `savant.deepstream.utils.get_nvds_buf_surface` to get a frame image.
+        Use `savant.deepstream.utils.surface.get_nvds_buf_surface` to get a frame image.
 
         :param buffer: Gstreamer buffer.
         :param frame_meta: Frame metadata for a frame in a batch.

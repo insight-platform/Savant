@@ -20,6 +20,8 @@ project = 'Savant'
 copyright = '2020-2023 BWSoft Management, LLC'
 # author = 'BWSoft'
 
+favicon_url = 'https://avatars.githubusercontent.com/u/102944477?s=48&v=4'
+
 # The full version, including alpha/beta/rc tags
 from savant import __version__
 

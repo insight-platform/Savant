@@ -400,12 +400,6 @@ class NvDsPipeline(GstPipeline):
         # to prevent pipeline from shutting down
         self._suppress_eos = source.element == 'zeromq_source_bin'
         # nvstreammux is required for NvDs pipeline
-        # add queue and set live-source for rtsp
-        live_source = source.element == 'uridecodebin' and source.properties[
-            'uri'
-        ].startswith('rtsp://')
-        if live_source:
-            self.add_element(PipelineElement('queue'))
         self._create_muxer()
 
     # Sink
