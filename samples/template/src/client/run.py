@@ -38,7 +38,7 @@ telemetry.init(telemetry_config)
 
 module_hostname = os.environ.get('MODULE_HOSTNAME', 'localhost')
 jaeger_endpoint = 'http://jaeger:16686'
-healthcheck_url = f'http://{module_hostname}:8888/healthcheck'
+healthcheck_url = f'http://{module_hostname}:8888/status'
 source_id = 'test-source'
 shutdown_auth = 'shutdown'
 parent_dir = os.path.dirname(os.path.dirname(__file__))

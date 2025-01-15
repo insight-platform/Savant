@@ -97,7 +97,7 @@ Sources ingest frames and their metadata to a running module.
         .with_log_provider(JaegerLogProvider('http://localhost:16686'))
         .with_socket('pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc')
         # Note: healthcheck port should be configured in the module.
-        .with_module_health_check_url('http://module:8888/healthcheck')
+        .with_module_health_check_url('http://module:8888/status')
         .build()
     )
 
@@ -137,7 +137,7 @@ Sinks retrieve results from a module.
         .with_idle_timeout(60)
         .with_log_provider(JaegerLogProvider('http://localhost:16686'))
         # Note: healthcheck port should be configured in the module.
-        .with_module_health_check_url('http://module:8888/healthcheck')
+        .with_module_health_check_url('http://module:8888/status')
         .build()
     )
 

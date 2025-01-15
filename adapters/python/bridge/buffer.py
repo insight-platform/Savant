@@ -19,7 +19,9 @@ from savant_rs.utils.serialization import (
     load_message_from_bytes,
     save_message_to_bytes,
 )
+from savant_rs.webserver import init_webserver
 from savant_rs.webserver import set_status_running as set_ws_pipeline_status_running
+from savant_rs.webserver import stop_webserver
 from savant_rs.zmq import (
     BlockingWriter,
     WriterConfigBuilder,
@@ -31,7 +33,6 @@ from savant_rs.zmq import (
 
 from adapters.shared.thread import BaseThreadWorker
 from savant.metrics import get_or_create_counter, get_or_create_gauge
-from savant.metrics.prometheus import PrometheusMetricsExporter
 from savant.utils.config import opt_config, req_config, strtobool
 from savant.utils.logging import get_logger, init_logging
 from savant.utils.welcome import get_starting_message
@@ -50,10 +51,7 @@ class MetricsConfig:
         self.frame_period = opt_config('METRICS_FRAME_PERIOD', 1000, int)
         self.time_period = opt_config('METRICS_TIME_PERIOD', convert=float)
         self.history = opt_config('METRICS_HISTORY', 100, int)
-        self.provider = opt_config('METRICS_PROVIDER')
-        self.provider_params: dict = opt_config(
-            'METRICS_PROVIDER_PARAMS', {}, json.loads
-        )
+        self.extra_labels: dict = opt_config('METRICS_EXTRA_LABELS', {}, json.loads)
 
 
 class MessageDumpConfig:
@@ -92,6 +90,7 @@ class Config:
     """Configuration for the adapter."""
 
     def __init__(self):
+        self.webserver_port = opt_config('WEBSERVER_PORT', 8080, int)
         self.zmq_src_endpoint = req_config('ZMQ_SRC_ENDPOINT')
         self.zmq_sink_endpoint = req_config('ZMQ_SINK_ENDPOINT')
         self.buffer = BufferConfig()
@@ -583,23 +582,10 @@ def main():
     egress = Egress(queue, pipeline, config)
     stats_aggregator = StatsAggregator(queue, ingress, egress)
     stats_logger = StatsLogger(stats_aggregator, config)
-    if config.metrics.provider is None:
-        metrics_exporter = None
-        metrics_collector = None
-    elif config.metrics.provider == 'prometheus':
-        metrics_exporter = PrometheusMetricsExporter(config.metrics.provider_params)
-        metrics_collector = AdapterMetricsCollector(stats_aggregator)
-    else:
-        raise ValueError(f'Unsupported metrics provider: {config.metrics.provider}')
-
-    if metrics_exporter is not None:
-        logger.info('Starting metrics exporter')
-        metrics_exporter.start()
-
-    threads = [ingress, egress, stats_logger]
-    if metrics_collector is not None:
-        threads.append(metrics_collector)
-
+    metrics_collector = AdapterMetricsCollector(stats_aggregator)
+    set_extra_labels(config.metrics.extra_labels)
+    init_webserver(config.webserver_port)
+    threads = [ingress, egress, stats_logger, metrics_collector]
     try:
         set_ws_pipeline_status_running()
     except ValueError:
@@ -618,8 +604,7 @@ def main():
     for thread in threads:
         thread.join(3)
     stats_logger.log_stats()
-    if metrics_exporter is not None:
-        metrics_exporter.stop()
+    stop_webserver()
     for thread in threads:
         if thread.error is not None:
             logger.error(thread.error)

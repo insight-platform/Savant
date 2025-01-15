@@ -167,9 +167,9 @@ class MetricsParameters:
         frame_period: 1000
         time_period: 1
         history: 100
-        provider: prometheus
-        provider_params:
-          port: 8000
+        extra_labels:
+          label1: value1
+          label2: value2
     """
 
     frame_period: Optional[int] = None
@@ -181,11 +181,8 @@ class MetricsParameters:
     history: int = 100
     """How many last stats to keep in the memory."""
 
-    provider: Optional[str] = None
-    """Metrics provider name."""
-
-    provider_params: Optional[Dict[str, Any]] = None
-    """Parameters for metrics provider."""
+    extra_labels: Optional[Dict[str, str]] = None
+    """Extra labels to add."""
 
 
 @dataclass

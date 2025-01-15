@@ -21,12 +21,15 @@ from pygstsavantframemeta import (
     gst_buffer_get_savant_batch_meta,
     nvds_frame_meta_get_nvds_savant_frame_meta,
 )
+from savant_rs.metrics import set_extra_labels
 from savant_rs.pipeline2 import VideoPipeline, VideoPipelineConfiguration
 from savant_rs.primitives import EndOfStream, VideoFrame
 from savant_rs.primitives.geometry import RBBox
+from savant_rs.webserver import init_webserver
 from savant_rs.webserver import (
     set_shutdown_token as set_ws_pipeline_shutdown_auth_token,
 )
+from savant_rs.webserver import stop_webserver
 
 from savant.base.input_preproc import ObjectsPreprocessing
 from savant.base.model import AttributeModel, ComplexModel
@@ -67,7 +70,6 @@ from savant.deepstream.utils.iterator import (
     nvds_frame_meta_iterator,
     nvds_obj_meta_iterator,
 )
-from savant.deepstream.utils.metrics import build_metrics_exporter
 from savant.deepstream.utils.object import nvds_is_empty_object_meta
 from savant.deepstream.utils.pipeline import (
     add_queues_to_pipeline,
@@ -139,6 +141,7 @@ class NvDsPipeline(GstPipeline):
             'max-size-bytes': self._egress_queue_byte_size,
             'max-size-time': 0,
         }
+        self._webserver_port = kwargs.get('webserver_port')
 
         self._source_adding_lock = Lock()
         self._sources = SourceInfoRegistry()
@@ -195,10 +198,8 @@ class NvDsPipeline(GstPipeline):
             build_video_pipeline_conf(telemetry),
         )
         self._video_pipeline.sampling_period = telemetry.tracing.sampling_period
-        self._metrics_exporter = build_metrics_exporter(
-            self._video_pipeline,
-            telemetry.metrics,
-        )
+        set_extra_labels(telemetry.metrics.extra_labels or {})
+        init_webserver(self._webserver_port)
 
         self._source_output = create_source_output(
             output_frame=output_frame,
@@ -324,8 +325,6 @@ class NvDsPipeline(GstPipeline):
         return gst_element
 
     def on_startup(self):
-        if self._metrics_exporter is not None:
-            self._metrics_exporter.start()
         super().on_startup()
 
     def before_shutdown(self):
@@ -334,8 +333,7 @@ class NvDsPipeline(GstPipeline):
 
     def on_shutdown(self):
         self._video_pipeline.log_final_fps()
-        if self._metrics_exporter is not None:
-            self._metrics_exporter.stop()
+        stop_webserver()
         shutdown_tracing()
         super().on_shutdown()
 

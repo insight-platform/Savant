@@ -3,9 +3,8 @@ from http import HTTPStatus
 from typing import List, Optional
 
 import requests
-from requests import RequestException
+from requests import JSONDecodeError, RequestException
 
-from savant.healthcheck.status import ModuleStatus
 from savant.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -25,16 +24,14 @@ class HealthCheck:
         url: str,
         interval: float,
         timeout: float,
-        ready_statuses: List[ModuleStatus],
     ):
         self._url = url
         self._check_interval = interval
         self._wait_timeout = timeout
-        self._ready_statuses = ready_statuses
         self._last_check_ts = 0
         self._last_status = None
 
-    def check(self) -> Optional[ModuleStatus]:
+    def check(self) -> Optional[str]:
         """Check the health of the module."""
 
         logger.debug('Checking module status.')
@@ -50,14 +47,18 @@ class HealthCheck:
                 f'Health check failed. Status code: {response.status_code}.'
             )
 
-        status = response.text.strip()
+        try:
+            status = response.json()
+        except JSONDecodeError:
+            status = None
+
         if not status:
             logger.debug('Module has no status yet.')
             return None
 
         logger.debug('Module status: %s.', status)
         try:
-            return ModuleStatus(status)
+            return status
         except ValueError:
             logger.warning('Unknown status: %s.', status)
             return None
@@ -70,7 +71,7 @@ class HealthCheck:
             self._last_check_ts = time.time()
 
         time_limit = time.time() + self._wait_timeout
-        while self._last_status not in self._ready_statuses:
+        while self._last_status != 'running':
             if time.time() > time_limit:
                 raise TimeoutError(
                     f'Module is not ready after {self._wait_timeout} seconds.'
