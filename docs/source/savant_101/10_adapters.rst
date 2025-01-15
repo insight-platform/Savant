@@ -529,7 +529,7 @@ The adapter is designed to take video streams from Ethernet GigE Vision industri
 * ``WIDTH``: the width of the video frame, in pixels;
 * ``HEIGHT``: the height of the video frame, in pixels;
 * ``FRAMERATE``: the framerate of the video stream, in frames per second;
-* ``INPUT_CAPS``: the format of the video stream, in GStreamer caps format (e.g. video/x-raw,format=RGB);
+* ``INPUT_CAPS``: the format of the video stream, in GStreamer caps format (e.g. ``video/x-raw,format=RGB``);
 * ``PACKET_SIZE``: the packet size for GigEVision cameras, in bytes;
 * ``AUTO_PACKET_SIZE``: whether to negotiate the packet size automatically for GigEVision cameras;
 * ``EXPOSURE``: the exposure time for the camera, in microseconds;
