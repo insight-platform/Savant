@@ -38,8 +38,7 @@ services:
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/detector-output.ipc
       - METRICS_FRAME_PERIOD=1000
       - METRICS_TIME_PERIOD=1
-      - METRICS_PROVIDER=prometheus
-      - METRICS_PROVIDER_PARAMS={"port":8000, "labels":{"module_stage":"detector"}}
+      - METRICS_EXTRA_LABELS={"module_stage":"detector"}
     runtime: nvidia
 
   module-tracker:
@@ -57,8 +56,7 @@ services:
       - DOWNLOAD_PATH=/cache/downloads/peoplenet_detector
       - METRICS_FRAME_PERIOD=1000
       - METRICS_TIME_PERIOD=1
-      - METRICS_PROVIDER=prometheus
-      - METRICS_PROVIDER_PARAMS={"port":8000, "labels":{"module_stage":"tracker"}}
+      - METRICS_EXTRA_LABELS={"module_stage":"tracker"}
       - ZMQ_SRC_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/detector-output.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/tracker-output.ipc
     runtime: nvidia
@@ -76,8 +74,7 @@ services:
       - MODULE_STAGE=draw-func
       - METRICS_FRAME_PERIOD=1000
       - METRICS_TIME_PERIOD=1
-      - METRICS_PROVIDER=prometheus
-      - METRICS_PROVIDER_PARAMS={"port":8000, "labels":{"module_stage":"draw-func"}}
+      - METRICS_EXTRA_LABELS={"module_stage":"draw-func"}
       # Use default draw_func (savant.deepstream.drawfunc.NvDsDrawFunc)
       - DRAW_FUNC={}
       - CODEC=jpeg

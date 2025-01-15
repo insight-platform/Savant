@@ -29,10 +29,8 @@ parameters:
   #     time_period: ${oc.decode:${oc.env:METRICS_TIME_PERIOD, null}}
   #     # How many last stats to keep in the memory
   #     history: ${oc.decode:${oc.env:METRICS_HISTORY, 100}}
-  #     # Metrics provider name
-  #     provider: ${oc.decode:${oc.env:METRICS_PROVIDER, null}}
-  #     # Parameters for metrics provider
-  #     provider_params: ${json:${oc.env:METRICS_PROVIDER_PARAMS, null}}
+  #     # Metrics extra labels
+  #     extra_labels: ${json:${oc.env:METRICS_EXTRA_LABELS, null}}
 
 # pipeline definition
 pipeline:

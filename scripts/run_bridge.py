@@ -123,8 +123,7 @@ def buffer_bridge(
     metrics_frame_period: int,
     metrics_time_period: Optional[float],
     metrics_history: int,
-    metrics_provider: Optional[str],
-    metrics_provider_params: str,
+    metrics_extra_labels: str,
     docker_image: str,
     buffer_path: str,
 ):
@@ -152,10 +151,8 @@ def buffer_bridge(
         f'STATS_LOG_INTERVAL={stats_log_interval}',
         f'METRICS_FRAME_PERIOD={metrics_frame_period}',
         f'METRICS_HISTORY={metrics_history}',
-        f'METRICS_PROVIDER_PARAMS={metrics_provider_params}',
+        f'METRICS_EXTRA_LABELS={metrics_extra_labels}',
     ]
-    if metrics_provider:
-        envs.append(f'METRICS_PROVIDER={metrics_provider}')
     if metrics_time_period:
         envs.append(f'METRICS_TIME_PERIOD={metrics_time_period}')
 
