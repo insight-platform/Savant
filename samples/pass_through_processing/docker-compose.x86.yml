@@ -34,11 +34,11 @@ services:
       - MODULE_STAGE=detector
       - MODEL_PATH=/cache/models/peoplenet_detector
       - DOWNLOAD_PATH=/cache/downloads/peoplenet_detector
+      - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
+      - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/detector-output.ipc
       - METRICS_FRAME_PERIOD=1000
       - METRICS_TIME_PERIOD=1
       - METRICS_EXTRA_LABELS={"module_stage":"detector"}
-      - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
-      - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/detector-output.ipc
     deploy:
       resources:
         reservations:
@@ -50,8 +50,6 @@ services:
   module-tracker:
     image: ghcr.io/insight-platform/savant-deepstream:latest
     restart: unless-stopped
-    ports:
-      - "8000:8000"
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../cache:/cache
