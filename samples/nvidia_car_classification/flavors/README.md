@@ -100,16 +100,3 @@ Run this sample config with
 ```bash
 python scripts/run_module.py samples/nvidia_car_classification/module.yml
 ```
-
-## Module configuration using etlt models
-
-It is also simple enough to swap the models in the pipeline for other ones. For example,
-replace the sample models from the DeepStream SDK with TAO models available from [Nvidia NGC](https://catalog.ngc.nvidia.com/).
-
-Config file that uses etlt models for this sample is provided in the [module-etlt-config.yml](module-etlt-config.yml).
-
-Run this sample config with
-
-```bash
-python scripts/run_module.py samples/nvidia_car_classification/flavors/module-etlt-config.yml
-```

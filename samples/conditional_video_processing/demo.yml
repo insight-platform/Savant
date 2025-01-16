@@ -52,9 +52,6 @@ pipeline:
           checksum_url: s3://savant-data/models/peoplenet/peoplenet_pruned_v2.0.md5
           parameters:
             endpoint: https://eu-central-1.linodeobjects.com
-          # or get the model directly from NGC API
-          # peoplenet v2.0
-          # url: "https://api.ngc.nvidia.com/v2/models/nvidia/tao/peoplenet/versions/pruned_v2.0/zip"
 
         # model file name, without location
         model_file: resnet34_peoplenet_pruned.etlt  # v2.0 Accuracy: 84.3 Size 20.9 MB

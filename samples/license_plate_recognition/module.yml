@@ -73,11 +73,12 @@ pipeline:
       name: LPDNet
       model:
         remote:
-          url: https://api.ngc.nvidia.com/v2/models/nvidia/tao/lpdnet/versions/pruned_v2.2/zip
+          url: s3://savant-data/models/lpdnet/lpdnet_v2.2.zip
+          checksum_url: s3://savant-data/models/lpdnet/lpdnet_v2.2.md5
+          parameters:
+            endpoint: https://eu-central-1.linodeobjects.com
         format: onnx
         model_file: LPDNet_usa_pruned_tao5.onnx
-        precision: int8
-        int8_calib_file: usa_cal_8.6.1.bin
         batch_size: 16
         input:
           object: yolov8n.Car
