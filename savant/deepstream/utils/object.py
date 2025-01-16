@@ -1,11 +1,12 @@
 """DeepStream object utils."""
+
 from random import randrange
 from typing import Optional, Tuple, Union
 
 import pyds
-from atomic_counter import Counter as AtomicCounter
 from pysavantboost import NvRBboxCoords, add_rbbox_to_object_meta, get_rbbox
 from savant_rs.primitives.geometry import BBox, RBBox
+from savant_rs.utils import AtomicCounter
 
 from savant.deepstream.meta.constants import MAX_LABEL_SIZE
 from savant.meta.constants import DEFAULT_CONFIDENCE, UNTRACKED_OBJECT_ID
@@ -122,7 +123,7 @@ def nvds_set_obj_uid(
     """
     if obj_meta.misc_obj_info[InformationType.OBJECT_HASH_KEY]:
         raise UIDError('The object already has a unique key')
-    obj_uid = OBJECT_ID_GENERATOR.next()
+    obj_uid = OBJECT_ID_GENERATOR.next
     obj_meta.misc_obj_info[InformationType.OBJECT_HASH_KEY] = obj_uid
 
     return obj_uid

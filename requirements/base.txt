@@ -3,7 +3,6 @@ numpy>=1.22.4,<2.0
 cupy-cuda12x
 numba~=0.57
 scipy~=1.10
-atomic-counter==0.1.4
 
 # yaml config
 omegaconf~=2.3
