@@ -16,7 +16,6 @@ class HealthCheck:
     :param url: URL of the health check endpoint.
     :param interval: Interval between health checks in seconds.
     :param timeout: Timeout for waiting the module to be ready in seconds.
-    :param ready_statuses: List of statuses that indicate the module is ready.
     """
 
     def __init__(
@@ -41,15 +40,20 @@ class HealthCheck:
             logger.warning('Health check failed. Error: %s.', e)
             return None
 
-        if response.status_code not in [HTTPStatus.OK, HTTPStatus.SERVICE_UNAVAILABLE]:
-            # Only OK and SERVICE_UNAVAILABLE status codes are expected.
-            raise RuntimeError(
-                f'Health check failed. Status code: {response.status_code}.'
+        if response.status_code != HTTPStatus.OK:
+            logger.warning(
+                'Health check failed (Expected HTTP 200 OK): unexpected HTTP status code: %s.',
+                response.status_code,
             )
+            return None
 
         try:
             status = response.json()
         except JSONDecodeError:
+            logger.warning(
+                'Failed to decode JSON status. Raw health check status: %s',
+                response.text,
+            )
             status = None
 
         if not status:
@@ -57,11 +61,7 @@ class HealthCheck:
             return None
 
         logger.debug('Module status: %s.', status)
-        try:
-            return status
-        except ValueError:
-            logger.warning('Unknown status: %s.', status)
-            return None
+        return status
 
     def wait_module_is_ready(self):
         """Wait until the module is ready."""
