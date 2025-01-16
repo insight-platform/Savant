@@ -12,6 +12,7 @@ from savant.api.builder import build_attribute_value
 from savant.api.constants import DEFAULT_NAMESPACE
 from savant.api.parser import parse_attribute_value
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
+from savant.deepstream.utils.attribute import nvds_remove_obj_attrs
 from savant.meta.errors import MetaValueError
 from savant.meta.object import ObjectMeta
 from savant.utils.logging import LoggerMixin
@@ -218,6 +219,9 @@ class NvDsFrameMeta(AbstractContextManager, LoggerMixin):
             if object_meta.uid in self._objects:
                 del self._objects[object_meta.uid]
             if object_meta.object_meta_impl:
+                nvds_remove_obj_attrs(
+                    self.frame_meta, object_meta.object_meta_impl.ds_object_meta
+                )
                 pyds.nvds_remove_obj_meta_from_frame(
                     self.frame_meta, object_meta.object_meta_impl.ds_object_meta
                 )
