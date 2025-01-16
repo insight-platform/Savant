@@ -16,7 +16,6 @@ from gst_plugins.python.pyfunc_common import (
 )
 from savant.base.pyfunc import BasePyFuncPlugin, PyFunc
 from savant.gstreamer import GLib, GObject, Gst, GstBase  # noqa: F401
-from savant.metrics.base import BaseMetricsExporter
 from savant.utils.logging import LoggerMixin
 
 # RGBA format is required to access the frame (pyds.get_nvds_buf_surface)
@@ -86,12 +85,6 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             'GstPipeline object.',
             GObject.ParamFlags.READWRITE,
         ),
-        'metrics-exporter': (
-            object,
-            'Metrics exporter.',
-            'Metrics exporter.',
-            GObject.ParamFlags.READWRITE,
-        ),
         'stream-pool-size': (
             int,
             'Max stream pool size',
@@ -121,7 +114,6 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
         self.kwargs: Optional[str] = None
         self.video_pipeline: Optional[VideoPipeline] = None
         self.gst_pipeline: Optional['GstPipeline'] = None
-        self.metrics_exporter: Optional[BaseMetricsExporter] = None
         self.dev_mode: bool = False
         self.max_stream_pool_size: int = 1
         # pyfunc object
@@ -143,8 +135,6 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             return self.video_pipeline
         if prop.name == 'gst-pipeline':
             return self.gst_pipeline
-        if prop.name == 'metrics-exporter':
-            return self.metrics_exporter
         if prop.name == 'stream-pool-size':
             return self.max_stream_pool_size
         if prop.name == 'dev-mode':
@@ -167,8 +157,6 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             self.video_pipeline = value
         elif prop.name == 'gst-pipeline':
             self.gst_pipeline = value
-        elif prop.name == 'metrics-exporter':
-            self.metrics_exporter = value
         elif prop.name == 'stream-pool-size':
             self.max_stream_pool_size = value
         elif prop.name == 'dev-mode':

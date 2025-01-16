@@ -529,7 +529,7 @@ The adapter is designed to take video streams from Ethernet GigE Vision industri
 * ``WIDTH``: the width of the video frame, in pixels;
 * ``HEIGHT``: the height of the video frame, in pixels;
 * ``FRAMERATE``: the framerate of the video stream, in frames per second;
-* ``INPUT_CAPS``: the format of the video stream, in GStreamer caps format (e.g. video/x-raw,format=RGB);
+* ``INPUT_CAPS``: the format of the video stream, in GStreamer caps format (e.g. ``video/x-raw,format=RGB``);
 * ``PACKET_SIZE``: the packet size for GigEVision cameras, in bytes;
 * ``AUTO_PACKET_SIZE``: whether to negotiate the packet size automatically for GigEVision cameras;
 * ``EXPOSURE``: the exposure time for the camera, in microseconds;
@@ -1690,8 +1690,7 @@ The Buffer Bridge Adapter buffers messages from a source and sends them to a mod
 - ``METRICS_FRAME_PERIOD``: output FPS stats after every N frames; default is ``1000``;
 - ``METRICS_TIME_PERIOD``: output FPS stats after every N seconds;
 - ``METRICS_HISTORY``: how many last FPS stats to keep in the memory; default is ``100``;
-- ``METRICS_PROVIDER``: a metrics provider name; only ``prometheus`` is supported;
-- ``METRICS_PROVIDER_PARAMS``: a json dict of metrics provider parameters; default is ``{}``. The ``port`` in ``METRICS_PROVIDER_PARAMS`` is required when ``METRICS_PROVIDER`` is set to ``'prometheus'``. ``labels`` in ``METRICS_PROVIDER_PARAMS`` defines extra labels added to the metrics;
+- ``METRICS_EXTRA_LABELS``: a json dict of additional static labels to add to metrics; default is ``{}``;
 - ``MESSAGE_DUMP_ENABLED``: a flag indicating whether to dump messages to a file; default is ``False``;
 - ``MESSAGE_DUMP_PATH``: a directory to dump message segment files; default is ``/tmp/buffer-adapter-dump``;
 - ``MESSAGE_DUMP_SEGMENT_DURATION``: a duration of a message segment in seconds; default is ``60``.
@@ -1714,8 +1713,7 @@ Running the adapter with Docker:
         -e METRICS_FRAME_PERIOD=1000 \
         -e METRICS_TIME_PERIOD=10 \
         -e METRICS_HISTORY=100 \
-        -e METRICS_PROVIDER=prometheus \
-        -e METRICS_PROVIDER_PARAMS='{"port": 8000, "labels":{"adapter":"buffer"}}' \
+        -e METRICS_EXTRA_LABELS='{"adapter":"buffer"}' \
         -v /tmp/zmq-sockets:/tmp/zmq-sockets \
         -v /tmp/savant/buffer:/tmp/savant/buffer \
         ghcr.io/insight-platform/savant-adapters-py:latest \

@@ -3,6 +3,7 @@ name: peoplenet_detector
 
 # base module parameters
 parameters:
+  shutdown_auth: ${oc.env:SHUTDOWN_AUTH, 'shutdown'}
   # pipeline processing frame parameters
   frame:
     width: 1280

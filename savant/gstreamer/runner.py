@@ -8,6 +8,7 @@ from time import time
 from typing import Optional, Union
 
 from gi.repository import GLib, Gst  # noqa:F401
+from savant_rs.webserver import set_status_running as set_ws_pipeline_status_running
 
 from savant.healthcheck.status import ModuleStatus, set_module_status
 from savant.utils.logging import get_logger
@@ -113,6 +114,10 @@ class GstPipelineRunner:
 
         self._start_time = end_time
         if self._status_filepath is not None:
+            try:
+                set_ws_pipeline_status_running()
+            except ValueError:
+                logger.debug('Webserver is not running, unable to update the status.')
             set_module_status(self._status_filepath, ModuleStatus.RUNNING)
 
     def shutdown(self):

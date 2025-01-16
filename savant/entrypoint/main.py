@@ -17,8 +17,7 @@ from savant.deepstream.nvinfer.model import NvInferModel
 from savant.deepstream.pipeline import NvDsPipeline
 from savant.deepstream.runner import NvDsPipelineRunner
 from savant.gstreamer.codecs import AUXILIARY_STREAM_CODECS
-from savant.healthcheck.server import HealthCheckHttpServer
-from savant.healthcheck.status import ModuleStatus, set_module_status
+from savant.healthcheck.status import set_module_status, ModuleStatus
 from savant.utils.check_display import check_display_env
 from savant.utils.logging import get_logger, init_logging, update_logging
 from savant.utils.sink_factories import sink_factory
@@ -56,21 +55,6 @@ def main(module_config: Union[str, Path, IO[Any]]):
     update_logging(config.parameters['log_level'])
 
     check_display_env(logger)
-
-    if status_filepath is not None:
-        healthcheck_port = config.parameters.get('healthcheck_port')
-        if healthcheck_port:
-            healthcheck_server = HealthCheckHttpServer(
-                host='',
-                port=healthcheck_port,
-                http_path='/healthcheck',
-                status_filepath=status_filepath,
-            )
-            healthcheck_thread = Thread(
-                target=healthcheck_server.serve_forever,
-                daemon=True,
-            )
-            healthcheck_thread.start()
 
     # possible exceptions will cause app to crash and log error by default
     # no need to handle exceptions here

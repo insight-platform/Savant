@@ -20,17 +20,21 @@ services:
   module:
     image: ghcr.io/insight-platform/savant-deepstream:latest
     restart: unless-stopped
+    ports:
+      - "8080:8080"
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../cache:/cache
       - ..:/opt/savant/samples
     command: samples/peoplenet_detector/module.yml
     environment:
+      - SHUTDOWN_AUTH=shutdown
       - MODEL_PATH=/cache/models/peoplenet_detector
       - DOWNLOAD_PATH=/cache/downloads/peoplenet_detector
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
       - METRICS_FRAME_PERIOD=1000
+
     deploy:
       resources:
         reservations:

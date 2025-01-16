@@ -24,9 +24,6 @@ Pipeline Idle Monitor is designed to detect the following conditions based on sp
 
 There can be multiple buffer adapters in the pipeline, and each of them is monitored separately by a single Pipeline Idle Monitor.
 
-.. note::
-    Buffer adapter must be properly configured to use **Prometheus** as a metric provider.
-
 The source code and further details can be found in the `PipelineWatchdog <https://github.com/insight-platform/PipelineWatchdog>`__ repository.
 
 Using Pipeline Idle Monitor

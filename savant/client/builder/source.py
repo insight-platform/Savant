@@ -19,7 +19,7 @@ class SourceBuilder:
             .with_log_provider(JaegerLogProvider('http://localhost:16686'))
             .with_socket('req+connect:ipc:///tmp/zmq-sockets/input-video.ipc')
             # Note: healthcheck port should be configured in the module.
-            .with_module_health_check_url('http://172.17.0.1:8888/healthcheck')
+            .with_module_health_check_url('http://172.17.0.1:8888/status')
             .build()
         )
         result = source(JpegSource('cam-1', 'data/AVG-TownCentre.jpeg'))

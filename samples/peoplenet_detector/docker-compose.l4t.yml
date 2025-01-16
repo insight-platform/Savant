@@ -20,12 +20,15 @@ services:
   module:
     image: ghcr.io/insight-platform/savant-deepstream-l4t:latest
     restart: unless-stopped
+    ports:
+      - "8080:8080"
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../cache:/cache
       - ..:/opt/savant/samples
     command: samples/peoplenet_detector/module.yml
     environment:
+      - SHUTDOWN_AUTH=shutdown
       - MODEL_PATH=/cache/models/peoplenet_detector
       - DOWNLOAD_PATH=/cache/downloads/peoplenet_detector
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
@@ -49,6 +52,7 @@ services:
       - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
       - SOURCE_ID=city-traffic
       - FRAMERATE=25/1
+      - SYNC_INPUT=True
       - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x900.jpeg
       - DEV_MODE=True
     command: python -m adapters.ds.sinks.always_on_rtsp

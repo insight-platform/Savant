@@ -67,3 +67,5 @@ logs
 
 # certificates
 certs
+
+local_wheels/savant_rs/*.whl

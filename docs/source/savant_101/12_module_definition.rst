@@ -235,11 +235,8 @@ Example:
         frame_period: 1000
         time_period: 1
         history: 100
-        provider: prometheus
-        provider_params:
-          port: 8000
-          labels:
-            module_type: detector
+        extra_labels:
+          module_type: detector
 
 DevServer Configuration
 ^^^^^^^^^^^^^^^^^^^^^^^

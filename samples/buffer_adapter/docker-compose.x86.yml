@@ -23,7 +23,7 @@ services:
     image: ghcr.io/insight-platform/savant-adapters-py:latest
     #restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "8080:8080"
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - buffer:/tmp/savant-adapter/buffer
@@ -37,8 +37,7 @@ services:
       - METRICS_FRAME_PERIOD=1000
       - METRICS_TIME_PERIOD=10
       - STATS_LOG_INTERVAL=10
-      - METRICS_PROVIDER=prometheus
-      - METRICS_PROVIDER_PARAMS={"port":8000, "labels":{"adapter":"buffer"}}
+      - METRICS_EXTRA_LABELS={"adapter":"buffer"}
       - MESSAGE_DUMP_ENABLED=False # Set to True to enable message dumping for later analysis
       - MESSAGE_DUMP_SEGMENT_DURATION=30
       - MESSAGE_DUMP_PATH=/tmp/message-dump

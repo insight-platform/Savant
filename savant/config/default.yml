@@ -9,6 +9,10 @@ parameters:
   # e.g. "info", or "info,insight::savant::target=debug"
   log_level: ${oc.env:LOGLEVEL, 'INFO'}
 
+  # the port which embedded web server binds
+  #
+  webserver_port: ${oc.decode:${oc.env:WEBSERVER_PORT, 8080}}
+
   # required paths
   # the path to the models directory within the module container
   model_path: ${oc.env:MODEL_PATH, /models}
@@ -174,10 +178,8 @@ parameters:
       time_period: ${oc.decode:${oc.env:METRICS_TIME_PERIOD, null}}
       # How many last stats to keep in the memory
       history: ${oc.decode:${oc.env:METRICS_HISTORY, 100}}
-      # Metrics provider name
-      provider: ${oc.decode:${oc.env:METRICS_PROVIDER, null}}
       # Parameters for metrics provider
-      provider_params: ${json:${oc.env:METRICS_PROVIDER_PARAMS, null}}
+      extra_labels: ${json:${oc.env:METRICS_EXTRA_LABELS, null}}
 
   # Flag controls whether user python modules (pyfuncs and drawfuncs)
   # are monitored for changes during runtime
@@ -187,10 +189,6 @@ parameters:
   # Shutdown authorization key. If set, module will shutdown when it receives
   # a Shutdown message with this key.
   # shutdown_auth: "shutdown-auth"
-
-  # Healthcheck port. If set, module will listen on this port and return its status.
-  healthcheck_port: ${oc.decode:${oc.env:HEALTHCHECK_PORT, null}}
-
 
 # pipeline definition
 pipeline:

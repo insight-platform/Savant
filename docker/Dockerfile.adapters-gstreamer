@@ -151,6 +151,7 @@ RUN python3 -m pip install --no-cache-dir -r requirements.txt
 ARG SAVANT_RS_VERSION
 ARG SAVANT_RS_GH_REPO=insight-platform/savant-rs
 ARG SAVANT_RS_GH_TOKEN
+COPY local_wheels local_wheels
 COPY utils/install_savant_rs.py utils/install_savant_rs.py
 RUN ./utils/install_savant_rs.py $SAVANT_RS_VERSION ./utils && \
     rm -rf ./utils
@@ -206,6 +207,7 @@ RUN python -m pip install --no-cache-dir /libs/gstsavantframemeta/dist/*.whl
 ARG SAVANT_RS_VERSION
 ARG SAVANT_RS_GH_REPO=insight-platform/savant-rs
 ARG SAVANT_RS_GH_TOKEN
+COPY local_wheels local_wheels
 COPY utils/install_savant_rs.py utils/install_savant_rs.py
 RUN ./utils/install_savant_rs.py $SAVANT_RS_VERSION ./utils && \
     rm -rf ./utils

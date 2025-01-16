@@ -69,19 +69,39 @@ def install(package):
 
 
 def main():
+    python_short_version = f'cp{sys.version_info.major}{sys.version_info.minor}'
+    arch = os.uname().machine
+
     if len(sys.argv) != 3:
         print_usage()
         sys.exit(1)
+
+    # get wheels in local_wheels
+    excludes = []
+    for name in os.listdir('local_wheels/savant_rs'):
+        print(f'Checking {name}')
+        if not name.endswith('.whl'):
+            print(f'Skipping {name} because it is not a .whl file.')
+            continue
+        if arch not in name:
+            print(
+                f'Skipping {name} because it does not relate to the target architecture {arch}.'
+            )
+            continue
+        if python_short_version not in name:
+            print(
+                f'Skipping {name} because it does not match Python version {python_short_version}.'
+            )
+            continue
+        print(f'Installing {name}')
+        install(os.path.join('local_wheels/savant_rs', name))
+        excludes.append(name)
 
     gh_token = os.environ.get('GITHUB_TOKEN')
     gh_repo = os.environ.get('GITHUB_REPOSITORY', 'insight-platform/savant-rs')
 
     release_tag = sys.argv[1]
     download_path = sys.argv[2]
-
-    python_short_version = f'cp{sys.version_info.major}{sys.version_info.minor}'
-
-    arch = os.uname().machine
 
     assets = get_release_assets(release_tag, gh_repo, gh_token)
     if not assets:
@@ -90,6 +110,8 @@ def main():
     asset_path = None
     for asset in assets:
         name = asset['name']
+        if name in excludes:
+            continue
         # if not name.startswith('savant_rs'):
         #     continue
         if not name.endswith('.whl'):
@@ -102,7 +124,7 @@ def main():
         print(f'Downloaded {asset_path}.')
         install(asset_path)
 
-    if asset_path is None:
+    if asset_path is None and len(excludes) == 0:
         sys.exit(
             f'No savant_rs package found for tag {release_tag} in repository {gh_repo}.'
         )
