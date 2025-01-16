@@ -510,7 +510,7 @@ class AdapterMetricsCollector(BaseThreadWorker):
         )
         self.gauge(
             'payload_size',
-            'Number of messages in the buffer',
+            'Size of messages in the buffer',
         )
         self.gauge(
             'last_received_message',
