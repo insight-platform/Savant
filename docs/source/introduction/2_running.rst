@@ -32,5 +32,6 @@ The Savant module image provides a healthcheck to indicate when the module is re
 Also an HTTP healthcheck endpoint can be enabled by setting ``webserver_port`` parameter in the module configuration (``WEBSERVER_PORT`` env). The healthcheck endpoint is available at ``http://<module_host>:<webserver_port>/status``.
 
 The healthcheck endpoint responses with the following statuses:
-- ``running`` (``200 OK``) - the module and is ready to receive frames;
+- ``running`` (``200 OK``) - the module is up and ready to handle messages.
+
 
