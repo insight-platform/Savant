@@ -324,9 +324,6 @@ class NvDsPipeline(GstPipeline):
 
         return gst_element
 
-    def on_startup(self):
-        super().on_startup()
-
     def before_shutdown(self):
         super().before_shutdown()
         self._disable_eos_suppression()

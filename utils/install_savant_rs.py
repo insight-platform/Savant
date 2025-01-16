@@ -84,10 +84,14 @@ def main():
             print(f'Skipping {name} because it is not a .whl file.')
             continue
         if arch not in name:
-            print(f'Skipping {name} because it does not relate to the target architecture {arch}.')
+            print(
+                f'Skipping {name} because it does not relate to the target architecture {arch}.'
+            )
             continue
         if python_short_version not in name:
-            print(f'Skipping {name} because it does not match Python version {python_short_version}.')
+            print(
+                f'Skipping {name} because it does not match Python version {python_short_version}.'
+            )
             continue
         print(f'Installing {name}')
         install(os.path.join('local_wheels/savant_rs', name))
