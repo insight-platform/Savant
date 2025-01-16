@@ -1,5 +1,5 @@
 """DeepStream object utils."""
-
+from random import randrange
 from typing import Optional, Tuple, Union
 
 import pyds
@@ -20,7 +20,7 @@ from savant.meta.type import InformationType, ObjectSelectionType
 from .iterator import nvds_obj_user_meta_iterator
 from .meta_types import OBJ_DRAW_LABEL_META_TYPE
 
-OBJECT_ID_GENERATOR = AtomicCounter()
+OBJECT_ID_GENERATOR = AtomicCounter(randrange(0, 1_000_000_000))
 
 
 class IncorrectBBoxType(Exception):
