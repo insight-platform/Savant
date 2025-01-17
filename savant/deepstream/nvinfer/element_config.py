@@ -372,12 +372,11 @@ def nvinfer_element_configurator(
     if model_config.format == NvInferModelFormat.EMBEDDED:
         validate_embedded_model(model_config, logger)
     else:
+        if model_config.engine_file:
+            parse_and_compare_engine_filename(model_config, model_config_original, logger)
         # model or engine file must be specified
         model_file_required = True
         if model_config.engine_file:
-            parse_and_compare_engine_filename(
-                model_config, model_config_original, logger
-            )
             engine_file_path = model_path / model_config.engine_file
             if engine_file_path.is_file():
                 model_file_required = False
