@@ -17,18 +17,21 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
     def __init__(
         self,
         confidence_threshold: float = 0.25,
-        top_k: int = 3000,
         nms_iou_threshold: float = 0.0,
+        top_k: int = 3000,
+        class_ids: Tuple[int] = None,
     ):
         """
         :param confidence_threshold: Select detections with confidence
             greater than specified.
-        :param top_k: Maximum number of output detections.
         :param nms_iou_threshold: Class agnostic NMS IoU threshold.
+        :param top_k: Maximum number of output detections.
+        :param class_ids: Filter detections by class.
         """
         self.confidence_threshold = confidence_threshold
         self.nms_iou_threshold = nms_iou_threshold
         self.top_k = top_k
+        self.class_ids = class_ids
         super().__init__()
 
     def __call__(
@@ -89,6 +92,13 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
             bboxes[:, 0] += bboxes[:, 2] / 2
             bboxes[:, 1] += bboxes[:, 3] / 2
 
+        # filter by class
+        if self.class_ids:
+            class_mask = np.isin(class_ids, self.class_ids)
+            bboxes = bboxes[class_mask]
+            class_ids = class_ids[class_mask]
+            confidences = confidences[class_mask]
+
         # filter by confidence
         if self.confidence_threshold:
             conf_mask = confidences > self.confidence_threshold
@@ -96,7 +106,7 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
             class_ids = class_ids[conf_mask]
             confidences = confidences[conf_mask]
 
-        # TODO: ability to filter by class, by size (width, height) and aspect ratio
+        # TODO: ability to filter by size (width, height) and aspect ratio
         # apply class agnostic NMS (all classes are treated as one)
         if self.nms_iou_threshold > 0 and len(confidences) > 1:
             nms_mask = nms_cpu(bboxes, confidences, self.nms_iou_threshold, self.top_k)
