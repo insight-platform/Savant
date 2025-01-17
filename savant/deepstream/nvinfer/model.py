@@ -38,7 +38,10 @@ class NvInferModelFormat(Enum):
     CUSTOM = 4  # YOLO?
     """Custom format. Requires custom deepstream library that builds the engine."""
 
-    EMBEDDED = 5
+    ENGINE = 5
+    """Pre-built TensorRT engine file."""
+
+    EMBEDDED = 6
     """Placeholder for a possible future format. Currently not supported."""
 
 

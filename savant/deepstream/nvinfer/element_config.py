@@ -235,6 +235,11 @@ def fill_model_format(model_config: DictConfig):
 
     if model_config.model_file:
         model_config.format = recognize_format_by_file_name(model_config.model_file)
+        return
+
+    if model_config.engine_file:
+        model_config.format = NvInferModelFormat.ENGINE
+        return
 
     if not model_config.format:
         raise NvInferConfigException(
@@ -373,7 +378,9 @@ def nvinfer_element_configurator(
         validate_embedded_model(model_config, logger)
     else:
         if model_config.engine_file:
-            parse_and_compare_engine_filename(model_config, model_config_original, logger)
+            parse_and_compare_engine_filename(
+                model_config, model_config_original, logger
+            )
         # model or engine file must be specified
         model_file_required = True
         if model_config.engine_file:
