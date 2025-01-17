@@ -118,6 +118,22 @@ class NvInferConfig:
         prefix = model_file if model_file else 'model'
         return f'{prefix}_b{batch_size}_{device_id}_{precision.name.lower()}.engine'
 
+    @staticmethod
+    def generate_embedded_loader_spec(
+        model_name: str, license_path: str, license_key: str, device_id: str
+    ) -> str:
+        """Generate embedded model config string."""
+        start = 'savant_embedded'
+        return '&'.join(
+            [
+                f'{start}',
+                f'mname=={model_name}',
+                f'lpath=={license_path}',
+                f'lkey=={license_key}',
+                f'devid=={device_id}',
+            ]
+        )
+
     @dataclass
     class _FieldMap:
         """Mapping Gst-nvinfer configuration file properties to model config
@@ -266,6 +282,20 @@ class NvInferConfig:
                 NvInferModelFormat.CAFFE,
                 NvInferModelFormat.CUSTOM,
             ):
+                continue
+
+            if (
+                field.property_name == 'engine-create-func-name'
+                and model_config.format == NvInferModelFormat.EMBEDDED
+            ):
+                config['property'][field.property_name] = (
+                    NvInferConfig.generate_embedded_loader_spec(
+                        model_config.embedded_model_name,
+                        model_config.embedded_license_path,
+                        model_config.embedded_license_key,
+                        model_config.embedded_device_id,
+                    )
+                )
                 continue
 
             value = model_config
