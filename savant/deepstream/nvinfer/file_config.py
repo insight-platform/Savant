@@ -127,10 +127,10 @@ class NvInferConfig:
         return '&'.join(
             [
                 f'{start}',
-                f'mname=={model_name}',
-                f'lpath=={license_path}',
-                f'lkey=={license_key}',
-                f'devid=={device_id}',
+                f'mname={model_name}',
+                f'lpath={license_path}',
+                f'lkey={license_key}',
+                f'devid={device_id}',
             ]
         )
 
