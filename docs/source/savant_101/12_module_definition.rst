@@ -18,7 +18,7 @@ Modules are executed within specially prepared docker containers. If a module do
 
         docker pull ghcr.io/insight-platform/savant-deepstream:latest
 
-* Deepstream 6.4 capable Nvidia edge devices (Jetson AGX Orin, Orin NX, Orin Nano)
+* Deepstream 7.0 capable Nvidia edge devices (Jetson AGX Orin, Orin NX, Orin Nano)
 
    .. code-block:: bash
 
@@ -54,7 +54,7 @@ The following parameters are defined for a Savant module by default:
 
 .. literalinclude:: ../../../savant/config/default.yml
   :language: YAML
-  :lines: 1-195
+  :lines: 1-193
 
 .. note::
 

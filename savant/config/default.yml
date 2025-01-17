@@ -5,7 +5,7 @@ name: ${oc.env:MODULE_NAME}
 parameters:
   # Logging specification string in the rust env_logger's format
   # https://docs.rs/env_logger/latest/env_logger/
-  # The string is parsed and Python logging is setup accordingly
+  # The string is parsed and Python logging is set up accordingly
   # e.g. "info", or "info,insight::savant::target=debug"
   log_level: ${oc.env:LOGLEVEL, 'INFO'}
 
@@ -186,7 +186,7 @@ parameters:
   # and reloaded in case changes are detected
   dev_mode: ${oc.decode:${oc.env:DEV_MODE, False}}
 
-  # Shutdown authorization key. If set, module will shutdown when it receives
+  # Shutdown authorization key. If set, module will shut down when it receives
   # a Shutdown message with this key.
   # shutdown_auth: "shutdown-auth"
 
