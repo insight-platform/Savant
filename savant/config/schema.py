@@ -48,7 +48,8 @@ class FramePadding:
 @dataclass
 class SourceShaper:
     """A class that will use an object implementing
-    :py:class:`~savant.base.source_shaper.BaseSourceShaper` to define a source shape for each source.
+    :py:class:`~savant.base.source_shaper.BaseSourceShaper` to define a source shape
+    for each source.
 
     For example,
 
@@ -73,7 +74,8 @@ class SourceShaper:
 class FrameParameters:
     """Pipeline processing frame parameters.
 
-    .. note:: When ``shaper`` is specified, ``width``, ``height`` and ``padding`` must be not set.
+    .. note:: When ``shaper`` is specified, ``width``, ``height`` and ``padding``
+    must be not set.
     """
 
     width: Optional[int] = None
@@ -86,7 +88,9 @@ class FrameParameters:
     """Add paddings to the frame before processing"""
 
     geometry_base: int = 8
-    """Base value for frame parameters. All frame parameters must be divisible by this value."""
+    """Base value for frame parameters. 
+    All frame parameters must be divisible by this value.
+    """
 
     shaper: Optional[SourceShaper] = None
     """Custom source shaper definition."""
@@ -585,6 +589,18 @@ class Pipeline:
 
     sink: List[SinkElement] = field(default_factory=list)
     """Sink elements of a pipeline."""
+
+    pipeline_class: Optional[str] = None
+    """Pipeline class name with full module path, 
+    e.g. ``savant.deepstream.pipeline.NvDsPipeline``. 
+    If not set, the default pipeline class specified in the entrypoint will be used.
+    """
+
+    runner_class: Optional[str] = None
+    """Pipeline runner class name with full module path,
+    e.g. ``savant.deepstream.runner.NvDsPipelineRunner``.
+    If not set, the default runner class specified in the entrypoint will be used.
+    """
 
 
 @dataclass

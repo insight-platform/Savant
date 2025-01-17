@@ -2,15 +2,15 @@
 isort:skip_file
 """
 
+import importlib
 import os
 import signal
 from pathlib import Path
-from threading import Thread
-from typing import IO, Any, Union
+from typing import IO, Any, Union, Type
 
 from savant.gstreamer import Gst  # should be first
 from savant.config import ModuleConfig
-from savant.config.schema import ElementGroup, ModelElement
+from savant.config.schema import ElementGroup, ModelElement, Module
 from savant.deepstream.encoding import check_encoder_is_available
 from savant.deepstream.nvinfer.build_engine import build_engine
 from savant.deepstream.nvinfer.model import NvInferModel
@@ -49,7 +49,19 @@ def main(module_config: Union[str, Path, IO[Any]]):
     logger.info(get_starting_message('module'))
 
     # load module config
-    config = ModuleConfig().load(module_config)
+    config: Module = ModuleConfig().load(module_config)
+
+    PipelineClass: Type[NvDsPipeline] = NvDsPipeline
+    if config.pipeline.pipeline_class:
+        pipeline_class_path = config.pipeline.pipeline_class.split('.')
+        pipeline_module = importlib.import_module('.'.join(pipeline_class_path[:-1]))
+        PipelineClass = getattr(pipeline_module, pipeline_class_path[-1])
+
+    RunnerClass: Type[NvDsPipelineRunner] = NvDsPipelineRunner
+    if config.pipeline.runner_class:
+        runner_class_path = config.pipeline.runner_class.split('.')
+        runner_module = importlib.import_module('.'.join(runner_class_path[:-1]))
+        RunnerClass = getattr(runner_module, runner_class_path[-1])
 
     # reconfigure savant logger with updated loglevel
     update_logging(config.parameters['log_level'])
@@ -75,19 +87,19 @@ def main(module_config: Union[str, Path, IO[Any]]):
             ):
                 return False
 
-    pipeline = NvDsPipeline(
+    pipeline = PipelineClass(
         config.name,
         config.pipeline,
         **config.parameters,
     )
 
     try:
-        with NvDsPipelineRunner(pipeline, status_filepath) as runner:
+        with RunnerClass(pipeline, status_filepath) as runner:
             try:
                 for msg in pipeline.stream():
                     sink(msg, **dict(module_name=config.name))
             except KeyboardInterrupt:
-                logger.info('Shutting down.')
+                logger.info('Shutting down module "%s".', config.name)
             except Exception as exc:  # pylint: disable=broad-except
                 logger.error(exc, exc_info=True)
                 # TODO: Sometimes pipeline hangs when exit(1) or not exit at all is called.
@@ -95,7 +107,7 @@ def main(module_config: Union[str, Path, IO[Any]]):
                 #       sink adapter is not available.
                 os._exit(1)  # pylint: disable=protected-access
     except Exception as exc:  # pylint: disable=broad-except
-        logger.error(exc, exc_info=True)
+        logger.error('Module "%s" error %s', config.name, exc, exc_info=True)
         exit(1)
 
     if runner.error is not None:

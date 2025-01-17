@@ -164,7 +164,7 @@ run-dev:
 		-v `pwd`/var:$(PROJECT_PATH)/var \
 		-v /tmp/zmq-sockets:/tmp/zmq-sockets \
 		--entrypoint /bin/bash \
-		savant-deepstream$(PLATFORM_SUFFIX)-extra
+		savant-deepstream$(PLATFORM_SUFFIX)
 
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} \+
