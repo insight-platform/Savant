@@ -375,7 +375,7 @@ def nvinfer_element_configurator(
     fill_model_format(model_config)
 
     if model_config.format == NvInferModelFormat.EMBEDDED:
-        validate_embedded_model(model_config, logger)
+        validate_embedded_model(model_config)
     else:
         if model_config.engine_file:
             parse_and_compare_engine_filename(
