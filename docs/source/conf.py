@@ -44,6 +44,7 @@ extensions = [
     'sphinxcontrib.youtube',
     'repo_link',
     'sphinxcontrib.images',
+    'sphinxcontrib.httpdomain',
 ]
 
 images_config = {
@@ -101,7 +102,6 @@ autodoc_mock_imports = [
 # html_theme = 'alabaster'
 html_theme = "sphinx_rtd_theme"
 html_theme_options = {
-    'display_version': True,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
