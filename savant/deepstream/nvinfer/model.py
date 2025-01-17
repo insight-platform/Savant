@@ -36,7 +36,13 @@ class NvInferModelFormat(Enum):
     """Nvidia TAO model."""
 
     CUSTOM = 4  # YOLO?
-    """Other format."""
+    """Custom format. Requires custom deepstream library that builds the engine."""
+
+    ENGINE = 5
+    """Pre-built TensorRT engine file."""
+
+    EMBEDDED = 6
+    """Placeholder for a possible future format. Currently not supported."""
 
 
 class NvInferModelType(Enum):
@@ -237,6 +243,18 @@ class NvInferModel(Model):
     scaling_filter: Optional[NvInferScalingFilter] = None
     """Specifies the algorithm to be used for scaling.
     """
+
+    embedded_model_name: Optional[str] = None
+    """Name of the embedded model. Currently not supported."""
+
+    embedded_license_path: Optional[str] = None
+    """Path to the license file for the embedded model. Currently not supported."""
+
+    embedded_license_key: Optional[str] = None
+    """License key for the embedded model license. Currently not supported."""
+
+    embedded_device_id: Optional[str] = None
+    """Device ID for the embedded model license. Currently not supported."""
 
 
 NVINFER_DEFAULT_OBJECT_SELECTOR = PyFunc(

@@ -61,6 +61,214 @@ def recognize_format_by_file_name(model_file: str):
     return NvInferModelFormat.CUSTOM
 
 
+def parse_and_compare_engine_filename(
+    model_config: DictConfig, model_config_original: DictConfig, logger: logging.Logger
+):
+    """Try to parse engine file name and compare it with model configuration.
+    If engine options are not set explicitly get their values from engine file name.
+    """
+
+    parse_result = NvInferConfig.parse_model_engine_file(model_config.engine_file)
+    if parse_result:
+        if (
+            not hasattr(model_config_original, 'batch_size')
+            or model_config_original.batch_size is None
+        ):
+            model_config.batch_size = parse_result['batch_size']
+            logger.debug(
+                'Model batch size is taken from engine file name and set to %d',
+                parse_result['batch_size'],
+            )
+        if (
+            not hasattr(model_config_original, 'gpu_id')
+            or model_config_original.gpu_id is None
+        ):
+            model_config.gpu_id = parse_result['gpu_id']
+            logger.debug(
+                'Model gpu_id is taken from engine file name and set to %d',
+                parse_result['gpu_id'],
+            )
+        if (
+            not hasattr(model_config_original, 'precision')
+            or model_config_original.precision is None
+        ):
+            model_config.precision = parse_result['precision']
+            logger.debug(
+                'Model precision is taken from engine file name and set to %s',
+                parse_result['precision'].name,
+            )
+
+        if (
+            model_config.batch_size,
+            model_config.gpu_id,
+            model_config.precision,
+        ) != (
+            parse_result['batch_size'],
+            parse_result['gpu_id'],
+            parse_result['precision'],
+        ):
+            logger.info(
+                'Specified engine file "%s" does not match configuration: '
+                'batch_size=%d, gpu_id=%d, precision=%s.',
+                model_config.engine_file,
+                model_config.batch_size,
+                model_config.gpu_id,
+                model_config.precision.name,
+            )
+            model_config.engine_file = None
+
+
+def validate_caffe_engine_build(
+    model_config: DictConfig, model_path: str, logger: logging.Logger
+):
+    """Check Caffe-specific parameters required to build TRT engine."""
+    if not model_config.proto_file:
+        model_config.proto_file = Path(model_config.model_file).with_suffix('.prototxt')
+        logger.warning(
+            'Caffe model prototxt file has been set to "%s".',
+            model_config.proto_file,
+        )
+    proto_file_path = model_path / model_config.proto_file
+    if not proto_file_path.is_file():
+        raise NvInferConfigException(
+            f'Caffe model prototxt file "{proto_file_path}" not found.'
+        )
+    validate_output(model_config)
+
+
+def validate_custom_engine_build(
+    model_config: DictConfig, model_path: str, logger: logging.Logger
+):
+    """Check Custom-specific parameters required to build TRT engine."""
+    if not model_config.custom_config_file:
+        model_config.custom_config_file = Path(model_config.model_file).with_suffix(
+            '.cfg'
+        )
+        logger.warning(
+            'Custom model configuration file has been set to "%s".',
+            model_config.custom_config_file,
+        )
+    custom_config_file_path = model_path / model_config.custom_config_file
+    if not custom_config_file_path.is_file():
+        raise NvInferConfigException(
+            f'Custom model cfg file "{custom_config_file_path}" not found.'
+        )
+    # use abs path for custom config file
+    model_config.custom_config_file = str(custom_config_file_path.resolve())
+
+    if model_config.custom_lib_path is None:
+        raise NvInferConfigException('model.custom_lib_path is required.')
+    try:
+        lib_path = Path(model_config.custom_lib_path)
+        if not lib_path.is_file():
+            raise NvInferConfigException(
+                f'model.custom_lib_path "{lib_path}" not found.'
+            )
+    except TypeError as exception:
+        raise NvInferConfigException(
+            f'model.custom_lib_path "{model_config.custom_lib_path}"' ' is invalid.'
+        ) from exception
+
+    if model_config.engine_create_func_name is None:
+        raise NvInferConfigException('model.engine_create_func_name is required.')
+
+
+def validate_etlt_engine_build(
+    model_config: DictConfig, model_path: str, logger: logging.Logger
+):
+    """Check ETLT-specific parameters required to build TRT engine."""
+    if not model_config.tlt_model_key:
+        model_config.tlt_model_key = 'tlt_encode'  # or 'nvidia_tlt'
+        logger.warning(
+            'Key for the TAO encoded model (model.tlt_model_key) '
+            'has been set to "%s".',
+            model_config.tlt_model_key,
+        )
+    validate_input(model_config)
+    validate_output(model_config)
+
+
+def validate_uff_engine_build(
+    model_config: DictConfig, model_path: str, logger: logging.Logger
+):
+    """Check UFF-specific parameters required to build TRT engine."""
+    validate_input(model_config)
+    validate_output(model_config)
+
+
+def validate_output(model_config: DictConfig):
+    if not model_config.output.layer_names:
+        raise NvInferConfigException(
+            'Model output layer names (model.output.layer_names) required.'
+        )
+
+
+def validate_input(model_config: DictConfig):
+    """UFF model requirements (some ETLT models are UFF originally, e.g. peoplenet)"""
+    if not model_config.input.layer_name:
+        raise NvInferConfigException(
+            'Model input layer name (model.input.layer_name) required.'
+        )
+    if not model_config.input.shape:
+        raise NvInferConfigException('Model input shape (model.input.shape) required.')
+
+
+def validate_int8_engine_build(
+    model_config: DictConfig, model_path: str, logger: logging.Logger
+):
+    """Calibration file is required to build TRT engine in INT8."""
+    if not model_config.int8_calib_file:
+        raise NvInferConfigException(
+            'INT8 calibration file (model.int8_calib_file) required.'
+        )
+    int8_calib_file_path = model_path / model_config.int8_calib_file
+    if not int8_calib_file_path.is_file():
+        raise NvInferConfigException(
+            f'INT8 calibration file "{int8_calib_file_path}" not found.'
+        )
+
+
+def fill_model_format(model_config: DictConfig):
+    """Fill model format if not set explicitly."""
+    if model_config.format:
+        return
+
+    if model_config.model_file:
+        model_config.format = recognize_format_by_file_name(model_config.model_file)
+        return
+
+    if model_config.engine_file:
+        model_config.format = NvInferModelFormat.ENGINE
+        return
+
+    if not model_config.format:
+        raise NvInferConfigException(
+            'Model format cannot be recognized. Please specify it explicitly'
+            ' or provide a model file with a known extension.'
+        )
+
+
+def validate_embedded_model(model_config: DictConfig):
+    """Check embedded model-specific parameters."""
+
+    if model_config.engine_create_func_name is not None:
+        raise NvInferConfigException(
+            'model.engine_create_func_name is reserved for loader spec.'
+        )
+
+    if model_config.embedded_model_name is None:
+        raise NvInferConfigException('model.embedded_model_name is required.')
+
+    if model_config.embedded_license_path is None:
+        raise NvInferConfigException('model.embedded_license_path is required.')
+
+    if model_config.embedded_license_key is None:
+        raise NvInferConfigException('model.embedded_license_key is required.')
+
+    if model_config.embedded_device_id is None:
+        raise NvInferConfigException('model.embedded_device_id is required.')
+
+
 def nvinfer_element_configurator(
     element_config: DictConfig, module_config: DictConfig
 ) -> DictConfig:
@@ -164,195 +372,69 @@ def nvinfer_element_configurator(
     model_config = OmegaConf.merge(model, model_config)
     logger.trace('Merging complete, result\n%s', model_config)
 
-    # try to parse engine file and check for a match
-    if model_config.engine_file:
-        parse_result = NvInferConfig.parse_model_engine_file(model_config.engine_file)
-        if parse_result:
-            # if engine options are not set explicitly
-            # get their values from engine file name
-            if (
-                not hasattr(model_config_original, 'batch_size')
-                or model_config_original.batch_size is None
-            ):
-                model_config.batch_size = parse_result['batch_size']
-                logger.debug(
-                    'Model batch size is taken from engine file name and set to %d',
-                    parse_result['batch_size'],
-                )
-            if (
-                not hasattr(model_config_original, 'gpu_id')
-                or model_config_original.gpu_id is None
-            ):
-                model_config.gpu_id = parse_result['gpu_id']
-                logger.debug(
-                    'Model gpu_id is taken from engine file name and set to %d',
-                    parse_result['gpu_id'],
-                )
-            if (
-                not hasattr(model_config_original, 'precision')
-                or model_config_original.precision is None
-            ):
-                model_config.precision = parse_result['precision']
-                logger.debug(
-                    'Model precision is taken from engine file name and set to %s',
-                    parse_result['precision'].name,
-                )
+    fill_model_format(model_config)
 
-            if (
-                model_config.batch_size,
-                model_config.gpu_id,
-                model_config.precision,
-            ) != (
-                parse_result['batch_size'],
-                parse_result['gpu_id'],
-                parse_result['precision'],
-            ):
-                logger.info(
-                    'Specified engine file "%s" does not match configuration: '
-                    'batch_size=%d, gpu_id=%d, precision=%s.',
-                    model_config.engine_file,
-                    model_config.batch_size,
-                    model_config.gpu_id,
-                    model_config.precision.name,
-                )
-                model_config.engine_file = None
+    if model_config.format == NvInferModelFormat.EMBEDDED:
+        validate_embedded_model(model_config)
+    else:
+        if model_config.engine_file:
+            parse_and_compare_engine_filename(
+                model_config, model_config_original, logger
+            )
+        # model or engine file must be specified
+        model_file_required = True
+        if model_config.engine_file:
+            engine_file_path = model_path / model_config.engine_file
+            if engine_file_path.is_file():
+                model_file_required = False
+            else:
+                logger.warning('Model engine file "%s" not found.', engine_file_path)
 
-    # model or engine file must be specified
-    model_file_required = True
-    if model_config.engine_file:
-        engine_file_path = model_path / model_config.engine_file
-        if engine_file_path.is_file():
-            model_file_required = False
+        if model_config.model_file:
+            model_file_path = model_path / model_config.model_file
+            if not model_file_path.is_file():
+                model_config.model_file = None
+                if model_file_required:
+                    raise NvInferConfigException(
+                        f'Model file "{model_file_path}" not found.'
+                    )
         else:
-            logger.warning('Model engine file "%s" not found.', engine_file_path)
-
-    if model_config.model_file:
-        model_file_path = model_path / model_config.model_file
-        if not model_file_path.is_file():
-            model_config.model_file = None
             if model_file_required:
                 raise NvInferConfigException(
-                    f'Model file "{model_file_path}" not found.'
+                    'Model file (model.model_file) or '
+                    'engine file (model.engine_file) required.'
                 )
-    else:
-        if model_file_required:
-            raise NvInferConfigException(
-                'Model file (model.model_file) or '
-                'engine file (model.engine_file) required.'
+
+        # generate model-engine-file if not set
+        if not model_config.engine_file:
+            device_id = None
+            if model_config.enable_dla:
+                device_id = f'dla{model_config.use_dla_core}'
+            else:
+                device_id = f'gpu{model_config.gpu_id}'
+            model_config.engine_file = NvInferConfig.generate_model_engine_file(
+                model_config.model_file,
+                model_config.batch_size,
+                device_id,
+                model_config.precision,
+            )
+            logger.info(
+                'Model engine file has been set to "%s".', model_config.engine_file
             )
 
-    # generate model-engine-file if not set
-    if not model_config.engine_file:
-        device_id = None
-        if model_config.enable_dla:
-            device_id = f'dla{model_config.use_dla_core}'
-        else:
-            device_id = f'gpu{model_config.gpu_id}'
-        model_config.engine_file = NvInferConfig.generate_model_engine_file(
-            model_config.model_file,
-            model_config.batch_size,
-            device_id,
-            model_config.precision,
-        )
-        logger.info('Model engine file has been set to "%s".', model_config.engine_file)
+        # check model format-specific parameters required to build the engine
+        if model_file_required:
+            if model_config.format == NvInferModelFormat.CAFFE:
+                validate_caffe_engine_build(model_config, model_path, logger)
+            elif model_config.format == NvInferModelFormat.CUSTOM:
+                validate_custom_engine_build(model_config, model_path, logger)
+            elif model_config.format == NvInferModelFormat.ETLT:
+                validate_etlt_engine_build(model_config, model_path, logger)
+            elif model_config.format == NvInferModelFormat.UFF:
+                validate_uff_engine_build(model_config, model_path, logger)
 
-    # check model format-specific parameters required to build the engine
-    if model_file_required:
-        if not model_config.format:
-            model_config.format = recognize_format_by_file_name(model_config.model_file)
-
-        if model_config.format == NvInferModelFormat.CAFFE:
-            if not model_config.proto_file:
-                model_config.proto_file = Path(model_config.model_file).with_suffix(
-                    '.prototxt'
-                )
-                logger.warning(
-                    'Caffe model prototxt file has been set to "%s".',
-                    model_config.proto_file,
-                )
-            proto_file_path = model_path / model_config.proto_file
-            if not proto_file_path.is_file():
-                raise NvInferConfigException(
-                    f'Caffe model prototxt file "{proto_file_path}" not found.'
-                )
-
-        elif model_config.format == NvInferModelFormat.CUSTOM:
-            if not model_config.custom_config_file:
-                model_config.custom_config_file = Path(
-                    model_config.model_file
-                ).with_suffix('.cfg')
-                logger.warning(
-                    'Custom model configuration file has been set to "%s".',
-                    model_config.custom_config_file,
-                )
-            custom_config_file_path = model_path / model_config.custom_config_file
-            if not custom_config_file_path.is_file():
-                raise NvInferConfigException(
-                    f'Custom model cfg file "{custom_config_file_path}" not found.'
-                )
-            # use abs path for custom config file
-            model_config.custom_config_file = str(custom_config_file_path.resolve())
-
-            if model_config.custom_lib_path is None:
-                raise NvInferConfigException('model.custom_lib_path is required.')
-            try:
-                lib_path = Path(model_config.custom_lib_path)
-                if not lib_path.is_file():
-                    raise NvInferConfigException(
-                        f'model.custom_lib_path "{lib_path}" not found.'
-                    )
-            except TypeError as exception:
-                raise NvInferConfigException(
-                    f'model.custom_lib_path "{model_config.custom_lib_path}"'
-                    ' is invalid.'
-                ) from exception
-
-            if model_config.engine_create_func_name is None:
-                raise NvInferConfigException(
-                    'model.engine_create_func_name is required.'
-                )
-
-        elif model_config.format == NvInferModelFormat.ETLT:
-            if not model_config.tlt_model_key:
-                model_config.tlt_model_key = 'tlt_encode'  # or 'nvidia_tlt'
-                logger.warning(
-                    'Key for the TAO encoded model (model.tlt_model_key) '
-                    'has been set to "%s".',
-                    model_config.tlt_model_key,
-                )
-
-        # UFF model requirements (some ETLT models are UFF originally, e.g. peoplenet)
-        if model_config.format in (NvInferModelFormat.UFF, NvInferModelFormat.ETLT):
-            if not model_config.input.layer_name:
-                raise NvInferConfigException(
-                    'Model input layer name (model.input.layer_name) required.'
-                )
-            if not model_config.input.shape:
-                raise NvInferConfigException(
-                    'Model input shape (model.input.shape) required.'
-                )
-
-        if model_config.format in (
-            NvInferModelFormat.CAFFE,
-            NvInferModelFormat.UFF,
-            NvInferModelFormat.ETLT,
-        ):
-            if not model_config.output.layer_names:
-                raise NvInferConfigException(
-                    'Model output layer names (model.output.layer_names) required.'
-                )
-
-        # calibration file is required to build model in INT8
-        if model_config.precision == ModelPrecision.INT8:
-            if not model_config.int8_calib_file:
-                raise NvInferConfigException(
-                    'INT8 calibration file (model.int8_calib_file) required.'
-                )
-            int8_calib_file_path = model_path / model_config.int8_calib_file
-            if not int8_calib_file_path.is_file():
-                raise NvInferConfigException(
-                    f'INT8 calibration file "{int8_calib_file_path}" not found.'
-                )
+            if model_config.precision == ModelPrecision.INT8:
+                validate_int8_engine_build(model_config, model_path, logger)
 
     if model_config.output.converter:
         logger.info('Model output converter will be used.')
@@ -538,7 +620,10 @@ def nvinfer_element_configurator(
 
     # save resulting nvinfer config file
     # build config file name using required model engine file
-    model_name = model_config.engine_file.split('.')[0]
+    if model_config.engine_file:
+        model_name = model_config.engine_file.split('.')[0]
+    else:
+        model_name = element_config.name
     config_file = f'{model_name}_config_savant.txt'
     config_file_path = Path(model_config.local_path) / config_file
     NvInferConfig.write_file(nvinfer_config, config_file_path)
