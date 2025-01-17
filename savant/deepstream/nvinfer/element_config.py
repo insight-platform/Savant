@@ -61,7 +61,9 @@ def recognize_format_by_file_name(model_file: str):
     return NvInferModelFormat.CUSTOM
 
 
-def parse_and_compare_engine_filename(model_config, model_config_original, logger):
+def parse_and_compare_engine_filename(
+    model_config: DictConfig, model_config_original: DictConfig, logger: logging.Logger
+):
     """Try to parse engine file name and compare it with model configuration.
     If engine options are not set explicitly get their values from engine file name.
     """
@@ -116,7 +118,9 @@ def parse_and_compare_engine_filename(model_config, model_config_original, logge
             model_config.engine_file = None
 
 
-def validate_caffe_engine_build(model_config, model_path, logger):
+def validate_caffe_engine_build(
+    model_config: DictConfig, model_path: str, logger: logging.Logger
+):
     """Check Caffe-specific parameters required to build TRT engine."""
     if not model_config.proto_file:
         model_config.proto_file = Path(model_config.model_file).with_suffix('.prototxt')
@@ -132,7 +136,9 @@ def validate_caffe_engine_build(model_config, model_path, logger):
     validate_output(model_config)
 
 
-def validate_custom_engine_build(model_config, model_path, logger):
+def validate_custom_engine_build(
+    model_config: DictConfig, model_path: str, logger: logging.Logger
+):
     """Check Custom-specific parameters required to build TRT engine."""
     if not model_config.custom_config_file:
         model_config.custom_config_file = Path(model_config.model_file).with_suffix(
@@ -167,7 +173,9 @@ def validate_custom_engine_build(model_config, model_path, logger):
         raise NvInferConfigException('model.engine_create_func_name is required.')
 
 
-def validate_etlt_engine_build(model_config, model_path, logger):
+def validate_etlt_engine_build(
+    model_config: DictConfig, model_path: str, logger: logging.Logger
+):
     """Check ETLT-specific parameters required to build TRT engine."""
     if not model_config.tlt_model_key:
         model_config.tlt_model_key = 'tlt_encode'  # or 'nvidia_tlt'
@@ -180,20 +188,22 @@ def validate_etlt_engine_build(model_config, model_path, logger):
     validate_output(model_config)
 
 
-def validate_uff_engine_build(model_config, model_path, logger):
+def validate_uff_engine_build(
+    model_config: DictConfig, model_path: str, logger: logging.Logger
+):
     """Check UFF-specific parameters required to build TRT engine."""
     validate_input(model_config)
     validate_output(model_config)
 
 
-def validate_output(model_config):
+def validate_output(model_config: DictConfig):
     if not model_config.output.layer_names:
         raise NvInferConfigException(
             'Model output layer names (model.output.layer_names) required.'
         )
 
 
-def validate_input(model_config):
+def validate_input(model_config: DictConfig):
     """UFF model requirements (some ETLT models are UFF originally, e.g. peoplenet)"""
     if not model_config.input.layer_name:
         raise NvInferConfigException(
@@ -203,7 +213,9 @@ def validate_input(model_config):
         raise NvInferConfigException('Model input shape (model.input.shape) required.')
 
 
-def validate_int8_engine_build(model_config, model_path, logger):
+def validate_int8_engine_build(
+    model_config: DictConfig, model_path: str, logger: logging.Logger
+):
     """Calibration file is required to build TRT engine in INT8."""
     if not model_config.int8_calib_file:
         raise NvInferConfigException(
@@ -216,7 +228,7 @@ def validate_int8_engine_build(model_config, model_path, logger):
         )
 
 
-def fill_model_format(model_config):
+def fill_model_format(model_config: DictConfig):
     """Fill model format if not set explicitly."""
     if model_config.format:
         return
@@ -231,7 +243,7 @@ def fill_model_format(model_config):
         )
 
 
-def validate_embedded_model(model_config, logger):
+def validate_embedded_model(model_config: DictConfig):
     """Check embedded model-specific parameters."""
 
     if model_config.engine_create_func_name is not None:
