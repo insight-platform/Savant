@@ -30,7 +30,7 @@ to the pipeline. The API supports two variants of the shutdown behavior:
 * ``signal``: the shutdown happens immediately, the pipeline receives SIGINT or another signal configured with
   `savant-rs <https://insight-platform.github.io/savant-rs/modules/savant_rs/webserver.html#savant_rs.webserver.set_shutdown_signal>`__.
 
-.. http:post:: /shutdown/(str:shutdown_auth)/(str:shutdown_type)
+.. http:post:: /shutdown/(str: shutdown_auth)/(str: shutdown_type)
 
    :param shutdown_auth: the token to be used for the shutdown message
    :type shutdown_auth: str

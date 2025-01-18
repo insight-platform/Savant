@@ -1,7 +1,7 @@
 Embedded Key-Value Store
 --------------------------
 
-Savant pipeline provides and embedded key-value store available through:
+Savant pipeline provides an embedded key-value store available through:
 
 * ABI for internal access (Python or Rust code);
 * REST API for external access.
