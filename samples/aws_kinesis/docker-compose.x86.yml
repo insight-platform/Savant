@@ -1,7 +1,7 @@
 services:
 
   video-loop-source:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:latest
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -21,13 +21,13 @@ services:
   module:
     build:
       context: .
-      dockerfile: docker/Dockerfile.l4t
+      dockerfile: docker/Dockerfile.x86
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../cache:/cache
       - ..:/opt/savant/samples
-    command: samples/kvs/module.yml
+    command: samples/aws_kinesis/module.yml
     environment:
       - MODEL_PATH=/cache/models/peoplenet_detector
       - DOWNLOAD_PATH=/cache/downloads/peoplenet_detector
@@ -36,14 +36,19 @@ services:
       - MONGO_URI=mongodb://admin:admin@mongo:27017
       - MONGO_DB=kvs_sample
       - MONGO_COLLECTION=kvs_sample
-      - CODEC=copy
     depends_on:
       mongo:
         condition: service_healthy
-    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
 
   kvs-sink:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:latest
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -57,7 +62,7 @@ services:
     entrypoint: /opt/savant/adapters/gst/sinks/multistream_kvs.py
 
   kvs-source:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:latest
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
     restart: unless-stopped
     ports:
       - "18367:18367" # API
@@ -81,27 +86,32 @@ services:
   draw-func:
     build:
       context: .
-      dockerfile: docker/Dockerfile.l4t
+      dockerfile: docker/Dockerfile.x86
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../cache:/cache
       - ..:/opt/savant/samples
-    command: samples/kvs/draw_func.yml
+    command: samples/aws_kinesis/draw_func.yml
     environment:
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/draw-func-input.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/draw-func-output.ipc
       - MONGO_URI=mongodb://admin:admin@mongo:27017
       - MONGO_DB=kvs_sample
       - MONGO_COLLECTION=kvs_sample
-      - CODEC=jpeg
     depends_on:
       mongo:
         condition: service_healthy
-    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
 
   always-on-sink:
-    image: ghcr.io/insight-platform/savant-adapters-deepstream-l4t:latest
+    image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
     restart: unless-stopped
     ports:
       - "554:554"    # RTSP
@@ -118,6 +128,13 @@ services:
       - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x720.jpeg
       - DEV_MODE=True
     command: python -m adapters.ds.sinks.always_on_rtsp
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
 
   mongo:
     image: mongo:7.0.8

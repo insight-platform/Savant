@@ -30,16 +30,16 @@ The demo uses models that are compiled into TensorRT engines the first time the 
 
 ## Run Demo
 
-Before running the demo, set AWS credentials in the [samples/kvs/.env](.env) file.
+Before running the demo, set AWS credentials in the [samples/aws_kinesis/.env](.env) file.
 
 ```bash
 # you are expected to be in Savant/ directory
 
 # if x86
-docker compose -f samples/kvs/docker-compose.x86.yml up --build
+docker compose -f samples/aws_kinesis/docker-compose.x86.yml up --build
 
 # if Jetson
-docker compose -f samples/kvs/docker-compose.l4t.yml up --build
+docker compose -f samples/aws_kinesis/docker-compose.l4t.yml up --build
 
 # Wait for 1 minute after kvs-sink starts to send frames to Kinesis Video Stream:
 # in kvs-sink logs, you will see "Creating Kinesis Video Client" message.
