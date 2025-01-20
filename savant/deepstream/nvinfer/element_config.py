@@ -344,15 +344,12 @@ def nvinfer_element_configurator(
 
         # calibration file is required to build model in INT8
         if model_config.precision == ModelPrecision.INT8:
-            if not model_config.int8_calib_file:
-                raise NvInferConfigException(
-                    'INT8 calibration file (model.int8_calib_file) required.'
-                )
-            int8_calib_file_path = model_path / model_config.int8_calib_file
-            if not int8_calib_file_path.is_file():
-                raise NvInferConfigException(
-                    f'INT8 calibration file "{int8_calib_file_path}" not found.'
-                )
+            if model_config.int8_calib_file:
+                int8_calib_file_path = model_path / model_config.int8_calib_file
+                if not int8_calib_file_path.is_file():
+                    raise NvInferConfigException(
+                        f'INT8 calibration file "{int8_calib_file_path}" not found.'
+                    )
 
     if model_config.output.converter:
         logger.info('Model output converter will be used.')
@@ -373,11 +370,7 @@ def nvinfer_element_configurator(
 
     label_file = model_config.get(
         'label_file',
-        (
-            nvinfer_config['property'].get('labelfile-path')
-            if nvinfer_config
-            else None
-        ),
+        (nvinfer_config['property'].get('labelfile-path') if nvinfer_config else None),
     )
     label_file_path = model_path / label_file if label_file else None
     if label_file and not label_file_path.is_file():
@@ -387,7 +380,9 @@ def nvinfer_element_configurator(
     if issubclass(model_type, AttributeModel):
         if label_file:
             with open(label_file_path, encoding='utf8') as file_obj:
-                attr_labels = [line.split(';') for line in file_obj.read().splitlines() if line]
+                attr_labels = [
+                    line.split(';') for line in file_obj.read().splitlines() if line
+                ]
             if not attr_labels:
                 raise NvInferConfigException(
                     'No labels found in label file "%s".', label_file
@@ -435,9 +430,7 @@ def nvinfer_element_configurator(
                     '(model_config.output.num_detected_classes) '
                     'because labelfile is used.'
                 )
-            model_config.output.num_detected_classes = len(
-                model_config.output.objects
-            )
+            model_config.output.num_detected_classes = len(model_config.output.objects)
             logger.info(
                 'Model object labels have been loaded from "%s".',
                 label_file_path,
