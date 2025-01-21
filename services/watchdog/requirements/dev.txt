@@ -1,0 +1,6 @@
+-r common.txt
+black~=24.4.2
+unify~=0.5
+pytest~=8.2.2
+pytest-asyncio~=0.23.8
+isort~=5.13.2

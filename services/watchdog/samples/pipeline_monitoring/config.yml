@@ -1,0 +1,22 @@
+watch:
+  - buffer: 127.0.0.1:8000
+    queue:
+      action: stop
+      length: 999
+      cooldown: 60s
+      polling_interval: 10s
+      container:
+        - labels: [queue-client-label1, queue-client-label2=2]
+    egress:
+      action: restart
+      cooldown: 60s
+      idle: 100s
+      container:
+        - labels: egress-client-label=egress-client-value
+        - labels: some-label
+    ingress:
+      action: restart
+      cooldown: 30s
+      idle: 60s
+      container:
+        - labels: ingress-client-label=3

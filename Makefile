@@ -182,12 +182,12 @@ check-isort:
 check: check-black check-unify check-isort
 
 run-unify:
-	unify --in-place --recursive savant adapters gst_plugins samples scripts tests utils
+	unify --in-place --recursive savant adapters gst_plugins samples scripts tests utils services
 
 run-black:
 	black .
 
 run-isort:
-	isort savant adapters gst_plugins samples scripts tests utils
+	isort savant adapters gst_plugins samples scripts tests utils services
 
 reformat: run-unify run-black run-isort
