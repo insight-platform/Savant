@@ -64,7 +64,8 @@ class NvInferConfig:
 
         config_parser = ConfigParser()
         config_parser.read_dict(_to_str(cfg))
-
+        config_file_path = Path(config_file_path)
+        config_file_path.parent.mkdir(parents=True, exist_ok=True)
         with open(config_file_path, 'w', encoding='utf8') as configfile:
             config_parser.write(configfile)
 
