@@ -19,11 +19,12 @@ endif
 
 PROJECT_PATH := /opt/savant
 
-publish-local: build build-adapters-deepstream build-adapters-gstreamer build-adapters-py
+publish-local: build build-adapters-all build-watchdog
 	docker tag savant-deepstream$(PLATFORM_SUFFIX) ghcr.io/insight-platform/savant-deepstream$(PLATFORM_SUFFIX)
 	docker tag savant-adapters-deepstream$(PLATFORM_SUFFIX) ghcr.io/insight-platform/savant-adapters-deepstream$(PLATFORM_SUFFIX)
 	docker tag savant-adapters-gstreamer$(PLATFORM_SUFFIX) ghcr.io/insight-platform/savant-adapters-gstreamer$(PLATFORM_SUFFIX)
 	docker tag savant-adapters-py$(PLATFORM_SUFFIX) ghcr.io/insight-platform/savant-adapters-py$(PLATFORM_SUFFIX)
+	docker tag savant-watchdog$(PLATFORM_SUFFIX) ghcr.io/insight-platform/savant-watchdog$(PLATFORM_SUFFIX)
 
 publish-local-extra: build-extra
 	docker tag savant-deepstream$(PLATFORM_SUFFIX)-extra ghcr.io/insight-platform/savant-deepstream$(PLATFORM_SUFFIX)-extra
@@ -61,6 +62,12 @@ build-adapters-py:
 		-t savant-adapters-py$(PLATFORM_SUFFIX) .
 
 build-adapters-all: build-adapters-py build-adapters-gstreamer build-adapters-deepstream
+
+build-watchdog:
+	docker build \
+		-f services/watchdog/Dockerfile \
+		-t savant-watchdog$(PLATFORM_SUFFIX) \
+		services/watchdog
 
 build-extra-packages:
 	docker build \
