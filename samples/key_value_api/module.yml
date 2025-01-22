@@ -1,0 +1,16 @@
+# module name, required
+name: ${oc.env:MODULE_NAME, 'telemetry-demo'}
+
+# base module parameters
+parameters:
+  batch_size: 1
+  output_frame:
+    codec: ${oc.env:CODEC, 'h264'}
+
+# pipeline definition
+pipeline:
+  elements:
+    # simple pyfunc blurring frames
+    - element: pyfunc
+      module: samples.key_value_api.counter
+      class_name: Counter

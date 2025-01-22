@@ -23,10 +23,9 @@ docker compose -f samples/key_value_api/docker-compose.l4t.yml up
 The key-value store is accessible via REST API. Use the script to read and write data to the store:
 
 ```bash
-# set key-value pair
-./scripts/set_float_attribute_with_ttl.py namespace attribute 0.1 ttl
-./scripts/get_float_with_ttl.py namespace attribute
-./scripts/get_frame_counter.py
-./scripts/search_attributes.py
+# retrieve the value of the key 'frame_counter' through HTTP API request
+docker compose -f samples/key_value_api/docker-compose.x86.yml exec -it module python /scripts/get_frame_counter.py
 ```
+
+The documentation for the Key-Value API is available at the Savant documentation [website](https://docs.savant-ai.io/develop/advanced_topics/15_embedded_kvs.html).
 

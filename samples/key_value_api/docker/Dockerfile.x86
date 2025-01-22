@@ -1,0 +1,3 @@
+FROM ghcr.io/insight-platform/savant-deepstream:latest
+
+COPY scripts/ /scripts/
