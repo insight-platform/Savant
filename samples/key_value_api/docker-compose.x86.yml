@@ -23,7 +23,7 @@ services:
       dockerfile: docker/Dockerfile.x86
     restart: unless-stopped
     ports:
-      - 8080:8080
+      - "8080:8080"
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ..:/opt/savant/samples
