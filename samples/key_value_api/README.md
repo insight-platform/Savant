@@ -10,12 +10,11 @@ Tested on platforms:
 
 ## How To Run The Demo
 
+The demo implemented only for X86, for Jetson the use is the same, consult other samples for specifics.
+
 ```bash
 # if x86
 docker compose -f samples/key_value_api/docker-compose.x86.yml up
-
-# if Jetson
-docker compose -f samples/key_value_api/docker-compose.l4t.yml up
 ```
 
 ## How To Access The Key-Value Store With REST API
