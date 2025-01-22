@@ -217,8 +217,17 @@ def nvinfer_element_configurator(
                 )
                 model_config.engine_file = None
 
-    # model or engine file must be specified
-    model_file_required = True
+    if (
+        model_config.engine_create_func_name
+        and model_config.engine_create_func_name.startswith('savant_embedded')
+    ):
+        # This is to allow loading the model in a non-standard way
+        # Not a supported feature, it is not advisable to rely on this interaction
+        model_file_required = False
+    else:
+        # model or engine file must be specified
+        model_file_required = True
+
     if model_config.engine_file:
         engine_file_path = model_path / model_config.engine_file
         if engine_file_path.is_file():
