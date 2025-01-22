@@ -19,7 +19,7 @@ docker compose -f samples/key_value_api/docker-compose.x86.yml up
 
 ## How To Access The Key-Value Store With REST API
 
-The key-value store is accessible via REST API. Use the script to read and write data to the store:
+The key-value store is accessible via REST API. Use the script to read from the store:
 
 ```bash
 # retrieve the value of the key 'frame_counter' through HTTP API request
