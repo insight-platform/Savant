@@ -1,0 +1,43 @@
+services:
+
+  video-loop-source:
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    restart: unless-stopped
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - /tmp/video-loop-source-downloads:/tmp/video-loop-source-downloads
+    environment:
+      - LOCATION=https://eu-central-1.linodeobjects.com/savant-data/demo/shuffle_dance.mp4
+      - DOWNLOAD_PATH=/tmp/video-loop-source-downloads
+      - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
+      - SOURCE_ID=0
+      - SYNC_OUTPUT=True
+    entrypoint: /opt/savant/adapters/gst/sources/video_loop.sh
+    depends_on:
+      module:
+        condition: service_healthy
+
+  module:
+    image: ghcr.io/insight-platform/savant-deepstream:latest
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ./scripts:/scripts
+      - ..:/opt/savant/samples
+    command: samples/key_value_api/module.yml
+    environment:
+      - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
+      - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+
+
+volumes:
+  zmq_sockets:

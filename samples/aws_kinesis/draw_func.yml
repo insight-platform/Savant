@@ -1,5 +1,5 @@
 # module name, required
-name: kvs-sample
+name: aws-kinesis-sample
 
 # base module parameters
 parameters:
