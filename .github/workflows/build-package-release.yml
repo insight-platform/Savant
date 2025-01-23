@@ -22,7 +22,7 @@ jobs:
       - name: Build wheel package
         run: python -m build --wheel
       - name: Upload wheels to artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: wheels
           path: dist/*.whl
