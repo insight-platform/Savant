@@ -18,14 +18,13 @@ services:
         condition: service_healthy
 
   module:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.x86
+    image: ghcr.io/insight-platform/savant-deepstream:latest
     restart: unless-stopped
     ports:
       - "8080:8080"
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
+      - ./scripts:/scripts
       - ..:/opt/savant/samples
     command: samples/key_value_api/module.yml
     environment:

@@ -5,7 +5,6 @@ A pipeline demonstrating how to work with the embedded Key-Value store.
 Tested on platforms:
 
 - Nvidia Turing, Ampere
-- Nvidia Jetson Orin family
 
 
 ## How To Run The Demo
