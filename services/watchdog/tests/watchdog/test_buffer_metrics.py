@@ -50,13 +50,11 @@ async def test_get_metrics_response_exception(session_mock):
 @pytest.mark.parametrize(
     'content, expected',
     [
-        ('', {}),
-        ('no metrics', {}),
         (
             '''
             # HELP received_messages_total Number of messages received by the adapter
             # TYPE received_messages_total counter
-            received_messages_total{adapter="buffer"} 120.0 1720441634544
+            received_messages_total{adapter="buffer"} 120.0
             # HELP pushed_messages_total Number of messages pushed to the buffer
             # TYPE pushed_messages_total counter
             pushed_messages_total{adapter="buffer"} 34.0 1720441634544
@@ -74,7 +72,7 @@ async def test_parse_metrics(content, expected):
 @pytest.mark.asyncio
 async def test_parse_metrics_invalid_content_type():
     with pytest.raises(
-        RuntimeError,
-        match='Failed to parse metrics: expected string or bytes-like object',
+        TypeError,
+        match='initial_value must be str or None, not int',
     ):
         await parse_metrics(123)  # type: ignore

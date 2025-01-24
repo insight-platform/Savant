@@ -11,7 +11,7 @@ from aiodocker import DockerError
 from aiodocker.containers import DockerContainer
 
 from .buffer_metrics import get_metrics, parse_metrics
-from .config.parser import ConfigParser
+from .config.parser import Config, ConfigParser
 from .config.schema import Action, FlowConfig, QueueConfig, WatchConfig
 from .config.validator import validate
 
@@ -171,6 +171,16 @@ async def watch_buffer(docker_client: DockerClient, config: WatchConfig):
     await asyncio.gather(*watches)
 
 
+async def watch(config: Config):
+    docker_client = DockerClient()
+
+    await asyncio.gather(
+        *[watch_buffer(docker_client, x) for x in config.watch_configs]
+    )
+
+    await docker_client.close()
+
+
 def main():
     # To gracefully shut down on SIGTERM (raise KeyboardInterrupt)
     signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
@@ -191,19 +201,7 @@ def main():
         logger.error('Invalid configuration. %s: %s', type(e).__name__, e)
         exit(1)
 
-    docker_client = DockerClient()
-
-    loop = asyncio.get_event_loop()
-    futures = asyncio.gather(
-        *[watch_buffer(docker_client, x) for x in config.watch_configs]
-    )
-    try:
-        loop.run_until_complete(futures)
-    except KeyboardInterrupt:
-        logger.error('Shutting down the pipeline watchdog')
-    finally:
-        loop.close()
-        asyncio.run(docker_client.close())
+    asyncio.run(watch(config))
 
 
 if __name__ == '__main__':
