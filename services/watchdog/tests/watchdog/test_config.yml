@@ -1,0 +1,25 @@
+watch:
+  - buffer: buffer1:8000
+    queue:
+      action: restart
+      length: 18
+      cooldown: 60s
+      polling_interval: 10s
+      container:
+        - labels: [label1, label2=2]
+        - labels: some-label
+    egress:
+      action: stop
+      cooldown: 60s
+      idle: 100s
+      polling_interval: ${oc.env:POLLING_INTERVAL}
+      container:
+        - labels: egress-label=egress-value
+        - labels: [some-label]
+    ingress:
+      action: restart
+      cooldown: 30s
+      idle: 60s
+      container:
+        - labels: some-label
+  - buffer: buffer2:8002

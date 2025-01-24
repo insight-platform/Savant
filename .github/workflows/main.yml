@@ -65,7 +65,9 @@ jobs:
   # build deepstream dockers
   build-savant-deepstream:
     needs: init
-    runs-on: self-hosted
+    runs-on:
+      - self-hosted
+      - ${{ matrix.runner }}
     permissions:
       contents: read
       packages: write
@@ -76,28 +78,20 @@ jobs:
         include:
           - docker_file: docker/Dockerfile.deepstream
             docker_image_suffix: deepstream
-            arch: linux/amd64
+            runner: X64
           - docker_file: docker/Dockerfile.deepstream
             docker_image_suffix: deepstream-l4t
-            arch: linux/arm64
+            runner: ARM64
 
     steps:
       - uses: actions/checkout@v4
 
-      # setup-docker action ---
       - name: Log in to the container registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ github.token }}
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up docker buildx
-        uses: docker/setup-buildx-action@v3
-      # --- setup-docker action
 
       # base image
       - name: Build and push savant-deepstream docker image
@@ -110,7 +104,6 @@ jobs:
             SAVANT_VERSION=${{ needs.init.outputs.savant-version }}
             SAVANT_RS_VERSION=${{ needs.init.outputs.savant-rs-version }}
             DEEPSTREAM_VERSION=${{ needs.init.outputs.deepstream-version }}
-          platforms: ${{ matrix.arch }}
           target: base
           push: true
 
@@ -125,7 +118,6 @@ jobs:
             SAVANT_VERSION=${{ needs.init.outputs.savant-version }}
             SAVANT_RS_VERSION=${{ needs.init.outputs.savant-rs-version }}
             DEEPSTREAM_VERSION=${{ needs.init.outputs.deepstream-version }}
-          platforms: ${{ matrix.arch }}
           target: adapters
           push: true
 
@@ -140,14 +132,15 @@ jobs:
             SAVANT_VERSION=${{ needs.init.outputs.savant-version }}
             SAVANT_RS_VERSION=${{ needs.init.outputs.savant-rs-version }}
             DEEPSTREAM_VERSION=${{ needs.init.outputs.deepstream-version }}
-          platforms: ${{ matrix.arch }}
           target: ${{ matrix.docker_image_suffix }}-extra
           push: true
 
   # build adapter's dockers (except deepstream adapters)
   build-savant-adapters:
     needs: init
-    runs-on: ubuntu-latest
+    runs-on:
+      - self-hosted
+      - ${{ matrix.runner }}
     permissions:
       contents: read
       packages: write
@@ -158,15 +151,56 @@ jobs:
         include:
           - docker_file: docker/Dockerfile.adapters-gstreamer
             docker_image: savant-adapters-gstreamer
-            arch: linux/amd64
+            runner: X64
           - docker_file: docker/Dockerfile.adapters-gstreamer
             docker_image: savant-adapters-gstreamer-l4t
-            arch: linux/arm64
+            runner: ARM64
           - docker_file: docker/Dockerfile.adapters-py
             docker_image: savant-adapters-py
-            arch: linux/amd64
+            runner: X64
           - docker_file: docker/Dockerfile.adapters-py
             docker_image: savant-adapters-py-l4t
+            runner: ARM64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to the container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Build and push docker image
+        uses: docker/build-push-action@v5
+        with:
+          file: ${{ matrix.docker_file }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.docker_image }}:${{ needs.init.outputs.savant-adapters-tag }}
+          build-args: |
+            SAVANT_VERSION=${{ needs.init.outputs.savant-version }}
+            SAVANT_RS_VERSION=${{ needs.init.outputs.savant-rs-version }}
+            DEEPSTREAM_VERSION=${{ needs.init.outputs.deepstream-version }}
+          push: true
+
+  # build watchdog
+  build-savant-watchdog:
+    needs: init
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - docker_file: services/watchdog/Dockerfile
+            docker_image: savant-watchdog
+            arch: linux/amd64
+          - docker_file: services/watchdog/Dockerfile
+            docker_image: savant-watchdog-l4t
             arch: linux/arm64
 
     steps:
@@ -193,12 +227,9 @@ jobs:
           file: ${{ matrix.docker_file }}
           tags: |
             ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.docker_image }}:${{ needs.init.outputs.savant-adapters-tag }}
-          build-args: |
-            SAVANT_VERSION=${{ needs.init.outputs.savant-version }}
-            SAVANT_RS_VERSION=${{ needs.init.outputs.savant-rs-version }}
-            DEEPSTREAM_VERSION=${{ needs.init.outputs.deepstream-version }}
           platforms: ${{ matrix.arch }}
           push: true
+          context: services/watchdog
 
   # build documentation
   build-docs:

@@ -19,22 +19,23 @@ endif
 
 PROJECT_PATH := /opt/savant
 
-publish-local: build build-adapters-deepstream build-adapters-gstreamer build-adapters-py
+publish-local: build build-adapters-all build-watchdog
 	docker tag savant-deepstream$(PLATFORM_SUFFIX) ghcr.io/insight-platform/savant-deepstream$(PLATFORM_SUFFIX)
 	docker tag savant-adapters-deepstream$(PLATFORM_SUFFIX) ghcr.io/insight-platform/savant-adapters-deepstream$(PLATFORM_SUFFIX)
 	docker tag savant-adapters-gstreamer$(PLATFORM_SUFFIX) ghcr.io/insight-platform/savant-adapters-gstreamer$(PLATFORM_SUFFIX)
 	docker tag savant-adapters-py$(PLATFORM_SUFFIX) ghcr.io/insight-platform/savant-adapters-py$(PLATFORM_SUFFIX)
+	docker tag savant-watchdog$(PLATFORM_SUFFIX) ghcr.io/insight-platform/savant-watchdog$(PLATFORM_SUFFIX)
 	docker tag savant-deepstream$(PLATFORM_SUFFIX) ghcr.io/insight-platform/savant-deepstream$(PLATFORM_SUFFIX):$(SAVANT_VERSION)-$(DEEPSTREAM_VERSION)
 	docker tag savant-adapters-deepstream$(PLATFORM_SUFFIX) ghcr.io/insight-platform/savant-adapters-deepstream$(PLATFORM_SUFFIX):$(SAVANT_VERSION)-$(DEEPSTREAM_VERSION)
 	docker tag savant-adapters-gstreamer$(PLATFORM_SUFFIX) ghcr.io/insight-platform/savant-adapters-gstreamer$(PLATFORM_SUFFIX):$(SAVANT_VERSION)
 	docker tag savant-adapters-py$(PLATFORM_SUFFIX) ghcr.io/insight-platform/savant-adapters-py$(PLATFORM_SUFFIX):$(SAVANT_VERSION)
+	docker tag savant-watchdog$(PLATFORM_SUFFIX) ghcr.io/insight-platform/savant-watchdog$(PLATFORM_SUFFIX):$(SAVANT_VERSION)
 
 publish-local-extra: build-extra
 	docker tag savant-deepstream$(PLATFORM_SUFFIX)-extra ghcr.io/insight-platform/savant-deepstream$(PLATFORM_SUFFIX)-extra
 
 build:
 	docker build \
-		--platform $(PLATFORM) \
 		--target base \
 		--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
 		--build-arg SAVANT_RS_VERSION=$(SAVANT_RS_VERSION) \
@@ -43,7 +44,6 @@ build:
 
 build-adapters-deepstream:
 	docker build \
-		--platform $(PLATFORM) \
 		--target adapters \
 		--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
 		--build-arg SAVANT_RS_VERSION=$(SAVANT_RS_VERSION) \
@@ -52,22 +52,26 @@ build-adapters-deepstream:
 
 build-adapters-gstreamer:
 	docker build \
-		--platform $(PLATFORM) \
 		--build-arg SAVANT_RS_VERSION=$(SAVANT_RS_VERSION) \
 		-f docker/Dockerfile.adapters-gstreamer \
 		-t savant-adapters-gstreamer$(PLATFORM_SUFFIX) .
 
 build-adapters-py:
 	docker build \
-		--platform $(PLATFORM) \
 		--build-arg SAVANT_RS_VERSION=$(SAVANT_RS_VERSION) \
 		-f docker/Dockerfile.adapters-py \
 		-t savant-adapters-py$(PLATFORM_SUFFIX) .
 
 build-adapters-all: build-adapters-py build-adapters-gstreamer build-adapters-deepstream
 
-build-extra-packages:
+build-watchdog:
 	docker build \
+		-f services/watchdog/Dockerfile \
+		-t savant-watchdog$(PLATFORM_SUFFIX) \
+		services/watchdog
+
+build-extra-packages:
+	docker buildx build --load \
 		--platform $(PLATFORM) \
 		--target extra$(PLATFORM_SUFFIX)-builder \
 		--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
@@ -83,7 +87,6 @@ build-extra-packages:
 
 build-extra:
 	docker build \
-		--platform $(PLATFORM) \
 		--target deepstream$(PLATFORM_SUFFIX)-extra \
 		--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
 		--build-arg SAVANT_RS_VERSION=$(SAVANT_RS_VERSION) \
@@ -186,12 +189,12 @@ check-isort:
 check: check-black check-unify check-isort
 
 run-unify:
-	unify --in-place --recursive savant adapters gst_plugins samples scripts tests utils
+	unify --in-place --recursive savant adapters gst_plugins samples scripts tests utils services
 
 run-black:
 	black .
 
 run-isort:
-	isort savant adapters gst_plugins samples scripts tests utils
+	isort savant adapters gst_plugins samples scripts tests utils services
 
 reformat: run-unify run-black run-isort
