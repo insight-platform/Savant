@@ -1,5 +1,4 @@
 aiohttp~=3.11
 aiodocker~=0.22.1
-typing-extensions~=4.12.2
 omegaconf~=2.3.0
 prometheus-client~=0.21.1
