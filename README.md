@@ -39,8 +39,7 @@ This release contains stable features and is tested for production use.
 
 ### 0.5.x Current Production Release
 
-This release is recommended for production use. The release works on dGPU (Turing, Volta, Ampere, Ada) and 
-Jetson Orin (Nano/NX/AGX) hardware.
+This release is recommended for production use. The release works on dGPU (Turing, Volta, Ampere, Ada) and Jetson Orin (Nano/NX/AGX) hardware.
 
 This release is based on DeepStream 7.0.
 
