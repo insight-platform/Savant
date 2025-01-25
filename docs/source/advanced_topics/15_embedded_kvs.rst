@@ -25,6 +25,8 @@ KVS has the following properties:
 * an entry can have expiration TTL or be stored indefinitely;
 * user can operate with exact keys or use glob search patterns;
 * external API works on protocol buffers. Those, who use non-Rust/Python languages, can generate the client code from the protocol buffer `definition <https://github.com/insight-platform/savant-protobuf/blob/main/src/savant_rs.proto#L155>`__.
+* external watch API provides JSON messages via Websocket protocol for Set and Delete events; TTL expiration events are not tracked;
+* internal watch API provides a ready-to-use Python objects containing corresponding :py:class:`savant_rs.primitives.Attribute` for Set and Delete events; TTL expiration events are not tracked.
 
 Examples of Python-based API/ABI can be found `here <https://github.com/insight-platform/savant-rs/blob/main/python/webserver_kvs.py>`__.
 
@@ -113,6 +115,7 @@ Getting Attributes by Glob
         serialized AttributeSet
 
 Getting Attributes by Exact Match
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. http:get:: /kvs/get/(str: namespace)/(str: name)
 
@@ -127,3 +130,29 @@ Getting Attributes by Exact Match
         HTTP/1.1 200 OK
 
         serialized AttributeSet
+
+Watching for updates With Websocket Subscription
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+.. code-block:: bash
+
+    websocat -U --ping-interval 1 --ping-timeout 2 ws://localhost:8080/kvs/events
+
+
+Returns messages in JSON format:
+
+
+.. code-block:: json
+
+    {
+        "name":"frame_counter",
+        "namespace":"counter",
+        "operation":"set",
+        "timestamp": {
+            "nanos_since_epoch": 825169275,
+            "secs_since_epoch": 1737820251
+        },
+        "ttl":null
+    }
