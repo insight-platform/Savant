@@ -21,37 +21,34 @@ computer vision and video analytics applications.
 Savant depends on Nvidia DeepStream and JetPack versions (Jetson). The following tables show the compatibility of Savant
 versions with DeepStream versions.
 
-### 0.2.11 LTS
-
-This release is recommended for production use. It uses the time-proven DeepStream 6.3. The release works on dGPU (
-Turing, Volta, Ampere, Ada) and Jetson (Xavier NX/AGX, Orin Nano/NX/AGX) hardware.
-
-Known drawbacks:
-
-- NVJPEG caps on 115MHz on Jetson Orin Nano in JPEG decoding.
+### 0.2.11 (Jetpack 5.1+) Production Release (Outdated)
 
 | Requirements                                    | Status | DeepStream |
 |-------------------------------------------------|--------|------------|
 | X86 Driver 525(Datacenter), 530+ Quadro/GeForce | Stable | 6.3        |
 | Jetson Xavier, Orin with JetPack 5.1.2 GA       | Stable | 6.3        |           
    
-### 0.4.x Current Production Release
+### 0.4.x Previous Production Release (Outdated)
 
-This release contains new features and is tested for production use. It is a choice for users requiring functionality missing in 0.2.x and 0.3.x.
+This release contains stable features and is tested for production use.
 
 | Requirements                                    | Status | DeepStream |
 |-------------------------------------------------|--------|------------|
 | X86 Driver 525(Datacenter), 530+ Quadro/GeForce | Stable | 6.4        |
 | Jetson Orin JetPack 6.0                         | Stable | 6.4        |
 
-### 0.5.x Current Development
+### 0.5.x Current Production Release
 
-This release integrates DeepStream 7.0
+This release is recommended for production use. The release works on dGPU (Turing, Volta, Ampere, Ada) and 
+Jetson Orin (Nano/NX/AGX) hardware.
+
+This release is based on DeepStream 7.0.
 
 | Requirements                                    | Status | DeepStream |
 |-------------------------------------------------|--------|------------|
 | X86 Driver 525(Datacenter), 530+ Quadro/GeForce | Stable | 7.0        |
 | Jetson Orin JetPack 6.0                         | Stable | 7.0        |
+
 
 ## Chat With Us
 
