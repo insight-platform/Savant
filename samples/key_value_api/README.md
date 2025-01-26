@@ -27,3 +27,22 @@ docker compose -f samples/key_value_api/docker-compose.x86.yml exec -it module p
 
 The documentation for the Key-Value API is available at the Savant documentation [website](https://docs.savant-ai.io/develop/advanced_topics/15_embedded_kvs.html).
 
+## How to Access the Key-Value Subscription With REST API
+
+The key-value store is accessible via REST API. To test how to subscribe to the key-value store, 
+use the [websocat](https://github.com/vi/websocat) tool or similar:
+
+Only metadata in JSON format:
+
+```bash
+websocat -U --ping-interval 1 --ping-timeout 2 ws://localhost:8080/kvs/events/meta
+```
+
+Metadata in JSON and Attributes in binary format:
+
+```bash
+# be aware that the terminal may not display the binary data correctly
+websocat -U --ping-interval 1 --ping-timeout 2 ws://localhost:8080/kvs/events/full
+```
+
+The binary data contain Attributes in the protobuf-serialized format. Take a look at the [script](scripts/get_frame_counter.py) showing how to deserialize them.

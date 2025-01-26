@@ -25,7 +25,7 @@ KVS has the following properties:
 * an entry can have expiration TTL or be stored indefinitely;
 * user can operate with exact keys or use glob search patterns;
 * external API works on protocol buffers. Those, who use non-Rust/Python languages, can generate the client code from the protocol buffer `definition <https://github.com/insight-platform/savant-protobuf/blob/main/src/savant_rs.proto#L155>`__.
-* external watch API provides JSON messages via Websocket protocol for Set and Delete events; TTL expiration events are not tracked;
+* external watch API provides JSON messages (and optionally serialized :py:class:`savant_rs.primitives.Attribute`) via Websocket protocol for Set and Delete events; TTL expiration events are not tracked;
 * internal watch API provides a ready-to-use Python objects containing corresponding :py:class:`savant_rs.primitives.Attribute` for Set and Delete events; TTL expiration events are not tracked.
 
 Examples of Python-based API/ABI can be found `here <https://github.com/insight-platform/savant-rs/blob/main/python/webserver_kvs.py>`__.
@@ -43,7 +43,7 @@ Setting Keys
 
 .. http:post:: /kvs/set
 
-    :form body: list of :py:class:`savant_rs.primitives.Attribute` serialized to protocol buffer ``AttributeSet`` message
+    :form body: list of :py:class:`savant_rs.primitives.Attribute` serialized to protocol buffer :py:class:`savant_rs.primitives.AttributeSet` message
     :status 200: when the keys are set
     :status 400: when the keys are not set due to an deserialization error
 
@@ -53,7 +53,7 @@ Setting Keys with TTL
 .. http:post:: /kvs/set-with-ttl/(int: ttl)
 
     :param ttl: time to live in milliseconds (non-negative)
-    :form body: list of :py:class:`savant_rs.primitives.Attribute` serialized to protocol buffer ``AttributeSet`` message
+    :form body: list of :py:class:`savant_rs.primitives.Attribute` serialized to protocol buffer :py:class:`savant_rs.primitives.AttributeSet` message
     :status 200: when the keys are set
     :status 400: when the keys are not set due to an deserialization error
 
@@ -134,11 +134,11 @@ Getting Attributes by Exact Match
 Watching for updates With Websocket Subscription
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-
+To receive only key names and operation types, use the following endpoint:
 
 .. code-block:: bash
 
-    websocat -U --ping-interval 1 --ping-timeout 2 ws://localhost:8080/kvs/events
+    websocat -U --ping-interval 1 --ping-timeout 2 ws://localhost:8080/kvs/events/meta
 
 
 Returns messages in JSON format:
@@ -146,7 +146,7 @@ Returns messages in JSON format:
 
 .. code-block:: json
 
-    {
+    [{
         "name":"frame_counter",
         "namespace":"counter",
         "operation":"set",
@@ -155,4 +155,39 @@ Returns messages in JSON format:
             "secs_since_epoch": 1737820251
         },
         "ttl":null
-    }
+    }]
+
+
+To receive key names, operation types and serialized attributes, use the following endpoint:
+
+.. code-block:: bash
+
+    websocat -U --ping-interval 1 --ping-timeout 2 ws://localhost:8080/kvs/events/full
+
+
+Returns messages in pairs (JSON - for metadata, serialized AttributeSet - for attributes):
+
+
+.. code-block:: json
+
+    [{
+        "name":"frame_counter",
+        "namespace":"counter",
+        "operation":"set",
+        "timestamp": {
+            "nanos_since_epoch": 825169275,
+            "secs_since_epoch": 1737820251
+        },
+        "ttl":null
+    }]
+
+.. code-block::
+
+    <protobuf-serialized AttributeSet>
+    ...
+
+
+.. note::
+
+    Take a look at Python-based `API/ABI <https://github.com/insight-platform/savant-rs/blob/main/python/webserver_kvs.py>`__ to
+    know how to decode the serialized :py:class:`savant_rs.primitives.AttributeSet`.
