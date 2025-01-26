@@ -15,5 +15,4 @@ The watchdog can monitor the following conditions:
 
 The watchdog documentation is available on `GitHub <https://github.com/insight-platform/Savant/tree/develop/services/watchdog>`__.
 
-The samples directory contains a `sample <https://github.com/insight-platform/Savant/tree/develop/samples/pipeline_watchdog>`__
-showing how to use the watchdog service with the pipeline.
+The samples directory contains a `sample <https://github.com/insight-platform/Savant/tree/develop/samples/pipeline_watchdog>`__ showing how to use the watchdog service with the pipeline.

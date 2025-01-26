@@ -189,5 +189,4 @@ Returns messages in pairs (JSON - for metadata, serialized AttributeSet - for at
 
 .. note::
 
-    Take a look at Python-based `API/ABI <https://github.com/insight-platform/savant-rs/blob/main/python/webserver_kvs.py>`__ to
-    know how to decode the serialized :py:class:`savant_rs.primitives.AttributeSet`.
+    Take a look at Python-based `API/ABI <https://github.com/insight-platform/savant-rs/blob/main/python/webserver_kvs.py>`__ to learn how to decode the serialized :py:class:`savant_rs.primitives.AttributeSet`.
