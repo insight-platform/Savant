@@ -22,8 +22,6 @@ services:
   buffer:
     image: ghcr.io/insight-platform/savant-adapters-py:latest
     restart: unless-stopped
-    ports:
-      - "8000:8000"
     volumes:
       - /tmp/zmq-sockets:/tmp/zmq-sockets
       - /tmp/savant-adapter/buffer:/tmp/savant-adapter/buffer
@@ -61,12 +59,8 @@ services:
         condition: service_started
 
   pipeline-watchdog:
-    container_name: pipeline-watchdog
-    build:
-      context: ../../
-      dockerfile: Dockerfile
+    image: ghcr.io/insight-platform/savant-watchdog:latest
     restart: unless-stopped
-    network_mode: host
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./config.yml:/app/config.yml

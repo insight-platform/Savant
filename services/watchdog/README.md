@@ -59,7 +59,7 @@ Where:
 
 **Note**: For each buffer, at least one of the `queue`, `ingress`, or `egress` sections must be present.
 
-You can find an example configuration file in the [samples](samples/pipeline_monitoring/config.yml) folder.
+You can find an example configuration file in the [samples](../../samples/pipeline_monitoring/config.yml) folder.
 
 ### Interpolation
 
@@ -111,7 +111,7 @@ After starting the pipeline, you can check the logs of the client container:
 docker logs -f pipeline_monitoring-client-1
 ```
 
-When the client stops processing messages for more than `egress.idle` seconds (see [config](samples/pipeline_monitoring/config.yml))
+When the client stops processing messages for more than `egress.idle` seconds (see [config](../../samples/pipeline_monitoring/config.yml))
 you will see the following logs in the client container, and the container itself will be restarted:
 
 ```

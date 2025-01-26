@@ -1,5 +1,5 @@
 watch:
-  - buffer: 127.0.0.1:8000
+  - buffer: buffer:8000
     queue:
       action: stop
       length: 999
