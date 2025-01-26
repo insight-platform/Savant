@@ -1,16 +1,18 @@
 # Watchdog
-This service watches the health of pipeline by monitoring one or more buffers in parallel.
-It will stop or restart designated pipeline services if the buffer queue length exceeds a threshold value or the time since the last output or input message exceeds a specified time. 
-Queue monitoring helps detect the slow processing of messages, and ingress and egress monitoring is helpful in detecting how pipeline services are processing messages. 
-In other words, the service can detect if the pipeline is not processing messages at the expected rate or if the pipeline is not processing messages at all.
+
+This service watches the health of pipeline by monitoring one or more buffers in parallel. It will stop or restart designated pipeline services if the buffer queue length exceeds a threshold value or the time since the last output or input message exceeds a specified time. 
+
+Queue monitoring helps detect the slow processing of messages, and ingress and egress monitoring is helpful in detecting how pipeline services are processing messages. In other words, the service can detect if the pipeline is not processing messages at the expected rate or if the pipeline is not processing messages at all.
 
 ## Configuration
 
 The watchdog service is configured using the following environment variables:
+
 * `CONFIG_FILE_PATH` - The path to the configuration file. Required.
 * `LOGLEVEL` - The log level for the service. Default is `INFO`.
 
 Configuration file is YAML file with the following structure:
+
 ```yaml
 watch:
     - buffer: <str>
@@ -41,6 +43,7 @@ watch:
 ```
 
 Where:
+
 * `buffer` - url of the buffer to watch.
 * `queue` - configuration for the buffer queue. Optional.
   * `action` - action to take when the queue length exceeds the length threshold. It can be `restart` or `stop`.
@@ -64,19 +67,21 @@ You can find an example configuration file in the [samples](../../samples/pipeli
 ### Interpolation
 
 The configuration file supports variable interpolation. You can use a path to another node or environment variable in the configuration file by wrapping it in `${}`. For example:
+
 * `${oc.env:BUFFER_URL}` - will be replaced with the value of the `BUFFER_URL` environment variable.
 * `${.idle}` - will be replaced with the value of the `idle` key in the same section.
 
 For more information, refer to the [OmegaConf documentation](https://omegaconf.readthedocs.io/en/2.3_branch/usage.html#variable-interpolation).
 
-
 ## Usage
 
 You can find the watchdog service image on:
+
 * for x86: [GitHub Packages](https://github.com/insight-platform/Savant/pkgs/container/savant-watchdog)
 * for l4t: [GitHub Packages](https://github.com/insight-platform/Savant/pkgs/container/savant-watchdog-l4t)
 
-Configuration of a docker service might be as follows
+Configuration of a docker service might be as follows:
+
 ```yaml
   pipeline-watchdog:
     image: ghcr.io/insight-platform/savant-watchdog-l4t:0.5.0
