@@ -203,6 +203,7 @@ Savant supports processing parallelization; it helps to utilize the available re
    advanced_topics/14_jetson_dla.rst
    advanced_topics/15_managed_pipeline_shutdown.rst
    advanced_topics/15_embedded_kvs.rst
+   advanced_topics/16_pipeline_watchdog.rst
 
 .. toctree::
    :maxdepth: 0
