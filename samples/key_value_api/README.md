@@ -45,4 +45,4 @@ Metadata in JSON and Attributes in binary format:
 websocat -U --ping-interval 1 --ping-timeout 2 ws://localhost:8080/kvs/events/full
 ```
 
-The binary data contain Attributes in the protobuf-serialized format. Take a look at the [script](scripts/get_frame_counter.py) showing how to deserialize them.
+The binary data contains Attributes in the protobuf-serialized format. Take a look at the [script](scripts/get_frame_counter.py) showing how to deserialize them.
