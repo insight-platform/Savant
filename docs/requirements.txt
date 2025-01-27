@@ -1,5 +1,5 @@
 Sphinx~=7.4
-sphinx_rtd_theme~=3.0
+sphinx_rtd_theme~=2.0
 sphinxcontrib-youtube~=1.4
 sphinxcontrib-images~=0.9
 sphinxcontrib-httpdomain~=1.8
