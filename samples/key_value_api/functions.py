@@ -1,3 +1,5 @@
+import time
+
 import savant_rs.webserver.kvs as kvs
 from savant_rs.primitives import Attribute, AttributeValue
 
@@ -55,6 +57,7 @@ class Second(NvDsPyFuncPlugin):
     def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
         self._counter += 1
         if self._counter % 100 == 0:
+            now = time.time()
             attr = Attribute(
                 namespace='second',
                 name='frame_counter',
@@ -64,6 +67,7 @@ class Second(NvDsPyFuncPlugin):
                 ],
             )
             binary_attributes = kvs.serialize_attributes([attr])
-
             response = requests.post(f'http://first:8080/kvs/set', data=binary_attributes)
             assert response.status_code == 200
+            elapsed = float(int((time.time() - now) * 100_000) / 100)
+            self.logger.info(f"Sent event to the upstream (first) module. Elapsed time: {elapsed} ms")
