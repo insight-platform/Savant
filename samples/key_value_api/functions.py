@@ -1,5 +1,6 @@
 import time
 
+import requests
 import savant_rs.webserver.kvs as kvs
 from savant_rs.primitives import Attribute, AttributeValue
 
@@ -7,7 +8,6 @@ from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.deepstream.pyfunc import NvDsPyFuncPlugin
 from savant.gstreamer import Gst
 
-import requests
 
 class First(NvDsPyFuncPlugin):
     """Apply gaussian blur to the frame."""
@@ -15,10 +15,11 @@ class First(NvDsPyFuncPlugin):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._counter = 0
-        self._subscription = kvs.KvsSubscription("events", 100)
+        self._subscription = kvs.KvsSubscription('events', 100)
 
     def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
         self._counter += 1
+        now = time.time()
         attr = Attribute(
             namespace='counter',
             name='frame_counter',
@@ -35,16 +36,17 @@ class First(NvDsPyFuncPlugin):
         if maybe_second is not None:
             events.append(maybe_second)
 
-        if len(events) == 2: # we have an event from the downstream pipeline
+        if len(events) == 2:  # we have an event from the downstream pipeline
             for e in events:
                 attributes = e.attributes
                 # filter only attributes with namespace 'second'
                 second_attributes = [a for a in attributes if a.namespace == 'second']
                 if len(second_attributes) > 0:
-                    self.logger.info(f"Received events from the downstream pipeline")
+                    elapsed_time = float(int((time.time() - now) * 100_000) / 100)
                     for a in second_attributes:
-                        self.logger.info(f"Downstream attribute value (second): {a.values[0].as_integer()}")
-
+                        self.logger.info(
+                            f'Downstream attribute value (second): {a.values[0].as_integer()}, Elapsed time: {elapsed_time} ms'
+                        )
 
 
 class Second(NvDsPyFuncPlugin):
@@ -67,7 +69,11 @@ class Second(NvDsPyFuncPlugin):
                 ],
             )
             binary_attributes = kvs.serialize_attributes([attr])
-            response = requests.post(f'http://first:8080/kvs/set', data=binary_attributes)
+            response = requests.post(
+                f'http://first:8080/kvs/set', data=binary_attributes
+            )
             assert response.status_code == 200
             elapsed = float(int((time.time() - now) * 100_000) / 100)
-            self.logger.info(f"Sent event to the upstream (first) module. Elapsed time: {elapsed} ms")
+            self.logger.info(
+                f'Sent event to the upstream (first) module. Elapsed time: {elapsed} ms'
+            )
