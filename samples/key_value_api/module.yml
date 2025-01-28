@@ -1,14 +1,35 @@
 # module name, required
-name: ${oc.env:MODULE_NAME, 'telemetry-demo'}
+name: ${oc.env:MODULE_NAME, 'key-value-api'}
 
 # base module parameters
 parameters:
   batch_size: 1
+  output_frame:
+    # "copy" codec means the pipeline works in pass-through mode
+    codec: ${oc.env:CODEC, 'copy'}
+
 
 # pipeline definition
 pipeline:
   elements:
-    # simple pyfunc blurring frames
-    - element: pyfunc
-      module: samples.key_value_api.counter
-      class_name: Counter
+    - group:
+        # enabled if env var MODULE_STAGE==detector
+        init_condition:
+          expr: ${oc.env:MODULE_STAGE}
+          value: first
+        elements:
+          # simple pyfunc blurring frames
+          - element: pyfunc
+            module: samples.key_value_api.functions
+            class_name: First
+
+    - group:
+        # enabled if env var MODULE_STAGE==detector
+        init_condition:
+          expr: ${oc.env:MODULE_STAGE}
+          value: second
+        elements:
+          # simple pyfunc blurring frames
+          - element: pyfunc
+            module: samples.key_value_api.functions
+            class_name: Second

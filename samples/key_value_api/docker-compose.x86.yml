@@ -14,10 +14,10 @@ services:
       - SYNC_OUTPUT=True
     entrypoint: /opt/savant/adapters/gst/sources/video_loop.sh
     depends_on:
-      module:
+      first:
         condition: service_healthy
 
-  module:
+  first:
     image: ghcr.io/insight-platform/savant-deepstream:latest
     restart: unless-stopped
     ports:
@@ -28,8 +28,36 @@ services:
       - ..:/opt/savant/samples
     command: samples/key_value_api/module.yml
     environment:
+      - LOGLEVEL=info,savant_core::pipeline::stats=error
+      - MODULE_STAGE=first
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
-      - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
+      - ZMQ_SINK_ENDPOINT=dealer+connect:ipc:///tmp/zmq-sockets/first-output.ipc
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+    depends_on:
+      second:
+        condition: service_healthy
+
+
+  second:
+    image: ghcr.io/insight-platform/savant-deepstream:latest
+    restart: unless-stopped
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ./scripts:/scripts
+      - ..:/opt/savant/samples
+    command: samples/key_value_api/module.yml
+    environment:
+      - LOGLEVEL=info,savant_core::pipeline::stats=error
+      - MODULE_STAGE=second
+      - ZMQ_SRC_ENDPOINT=router+bind:ipc:///tmp/zmq-sockets/first-output.ipc
+      - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/second-output.ipc
+
     deploy:
       resources:
         reservations:

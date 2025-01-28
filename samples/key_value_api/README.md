@@ -22,7 +22,7 @@ The key-value store is accessible via REST API. Use the script to read from the 
 
 ```bash
 # retrieve the value of the key 'frame_counter' through HTTP API request
-docker compose -f samples/key_value_api/docker-compose.x86.yml exec -it module python /scripts/get_frame_counter.py
+docker compose -f samples/key_value_api/docker-compose.x86.yml exec -it first python /scripts/get_frame_counter.py
 ```
 
 The documentation for the Key-Value API is available at the Savant documentation [website](https://docs.savant-ai.io/develop/advanced_topics/15_embedded_kvs.html).
