@@ -67,13 +67,3 @@ class Second(NvDsPyFuncPlugin):
 
             response = requests.post(f'http://first:8080/kvs/set', data=binary_attributes)
             assert response.status_code == 200
-
-        # attr = Attribute(
-        #     namespace='counter',
-        #     name='frame_counter',
-        #     hint='This attribute is set on every frame change',
-        #     values=[
-        #         AttributeValue.integer(self._counter),
-        #     ],
-        # )
-        # kvs.set_attributes([attr], ttl=None)
