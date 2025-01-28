@@ -5,6 +5,15 @@ on:
   push:
     tags: ['v*.*.*']
     branches: ['develop']
+    paths-ignore:
+      - '.devcontainer'
+      - 'samples'
+      - 'tests'
+      - 'CODE_OF_CONDUCT.md'
+      - 'README.md'
+      - 'PREPARE_RELEASE.md'
+      - 'docs/performance.md'
+      - 'docs/README.md'
 
   # to run this workflow manually from the Actions tab
   # the init job fails if branch is different from 'releases/*.*.*' or 'develop'
