@@ -110,12 +110,12 @@ for result in sink:
     # get the result image
     # the image will be in RGBA format, as specified in the module config
     img = np.frombuffer(result.frame_content, dtype=np.uint8)
-    img = img.reshape(result.frame_meta.height, result.frame_meta.width, 4)
+    img = cv2.imdecode(img, cv2.IMREAD_COLOR)
 
     # save the result image
     # the image will anything that the module has drawn on top of the input image
     print(f'Saving result image to {result_img_path}')
-    cv2.imwrite(result_img_path, cv2.cvtColor(img, cv2.COLOR_RGBA2BGRA))
+    cv2.imwrite(result_img_path, img)
 
     # print the processing logs from the module
     print('Logs from the module:')

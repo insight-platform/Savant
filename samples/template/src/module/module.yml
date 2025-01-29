@@ -30,7 +30,7 @@ parameters:
     height: 720
     # Add paddings to the frame before processing
   output_frame:
-    codec: raw-rgba
+    codec: jpeg
   # custom drawing on frames function
   draw_func:
     module: src.module.overlay_draw_spec
