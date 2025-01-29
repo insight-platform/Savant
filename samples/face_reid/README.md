@@ -12,7 +12,7 @@ The sample is split into two parts: Index Builder and Demo modules.
 
 Tested on platforms:
 
-- Nvidia Turing
+- Nvidia Turing, Ampere
 - Nvidia Jetson Orin family
 
 ## Index Builder

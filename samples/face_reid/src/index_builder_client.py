@@ -135,7 +135,7 @@ def main(args):
             person_names.append(person_name)
 
         img = np.frombuffer(result.frame_content, dtype=np.uint8)
-        img = img.reshape(result.frame_meta.height, result.frame_meta.width, 4)
+        img = cv2.imdecode(img, cv2.IMREAD_COLOR)
 
         for obj in objs:
             feature_attr = obj.get_attribute(args.feature_namespace, args.feature_name)
@@ -153,7 +153,6 @@ def main(args):
             except IndexError:
                 logger.error('%s: detection box out of image bounds.', file_name)
             else:
-                face_img = cv2.cvtColor(face_img, cv2.COLOR_RGBA2BGR)
                 img_path = os.path.join(
                     processed_gallery_dir,
                     f'{person_name}_{person_id:03d}_{img_n:03d}.jpeg',
