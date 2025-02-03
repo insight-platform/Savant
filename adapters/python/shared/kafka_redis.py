@@ -1,6 +1,5 @@
 import asyncio
 import json
-import os
 import signal
 import time
 from abc import ABC, abstractmethod
