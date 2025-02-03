@@ -13,7 +13,7 @@ class AnimeganConverter(BaseAttributeModelOutputConverter):
         *output_layers: np.ndarray,
         model: AttributeModel,
         roi: Tuple[float, float, float, float],
-    ) -> List[Tuple[str, Any, Optional[float]]]:
+    ) -> Optional[List[Tuple[str, Any, float]]]:
 
         img = output_layers[0]
         # from [-1, 1] to [0, 255]
@@ -23,5 +23,5 @@ class AnimeganConverter(BaseAttributeModelOutputConverter):
         img = np.transpose(img, (1, 2, 0))
         img = cv2.cvtColor(img, cv2.COLOR_RGB2RGBA)
         return [
-            (model.output.attributes[0].name, img, None),
+            (model.output.attributes[0].name, img, 1.0),
         ]

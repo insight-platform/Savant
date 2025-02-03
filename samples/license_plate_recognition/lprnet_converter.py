@@ -22,9 +22,8 @@ class LPRNetOutputConverter(BaseAttributeModelOutputConverter):
         *output_layers: np.ndarray,
         model: AttributeModel,
         roi: Tuple[float, float, float, float],
-    ) -> List[Tuple[str, Any, Optional[float]]]:
+    ) -> Optional[List[Tuple[str, Any, float]]]:
         """Converts output tensors to attribute values.
-        TODO: numba?
 
         :param output_layers: Model output layer tensors
         :param model: Attribute model
@@ -57,6 +56,6 @@ class LPRNetOutputConverter(BaseAttributeModelOutputConverter):
                 prev_char_idx = curr_char_idx
 
         if len(text) <= 3 or prob < model.output.attributes[0].threshold:
-            return []
+            return
 
         return [(model.output.attributes[0].name, text, prob)]

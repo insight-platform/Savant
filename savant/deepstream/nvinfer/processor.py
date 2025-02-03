@@ -328,14 +328,7 @@ class NvInferProcessor:
                         if self._model.output.converter.dev_mode:
                             if not isinstance(exc, PyFuncNoopCallException):
                                 self._logger.exception('Error calling converter')
-                            # provide some placeholders
-                            # so that the pipeline processing can continue
-                            if self._is_complex_model:
-                                outputs = np.zeros((0, 6)), np.zeros((0, 1))
-                            elif self._is_object_model:
-                                outputs = np.zeros((0, 6))
-                            else:
-                                outputs = np.zeros((0, 1))
+                            outputs = None
                         else:
                             raise exc
                     # for object/complex models output - `bbox_tensor` and
@@ -344,6 +337,10 @@ class NvInferProcessor:
                     bbox_tensor: Optional[np.ndarray] = None
                     selected_bboxes: Optional[List] = None
                     values: Optional[List] = None
+
+                    if outputs is None:
+                        continue
+
                     # complex model
                     if self._is_complex_model:
                         # output converter returns tensor and attribute values
