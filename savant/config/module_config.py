@@ -241,11 +241,11 @@ def configure_module_parameters(module_cfg: DictConfig) -> None:
     :param module_cfg: Module config.
     """
     if 'parameters' not in module_cfg or module_cfg.parameters is None:
-        module_cfg.parameters = {}
+        module_cfg.parameters = DictConfig({})
         return
 
     def apply_schema(
-        cfg: dict, node: str, schema_class: Any, default: Any = None
+        cfg: DictConfig, node: str, schema_class: Any, default: Any = None
     ) -> None:
         if node not in cfg or cfg[node] is None:
             cfg[node] = default

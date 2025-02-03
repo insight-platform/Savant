@@ -159,7 +159,7 @@ class ZeroMQSinkFactory(SinkFactory):
         sink_name: str,
         egress_pyfunc: PyFunc,
         socket: str,
-        socket_type: str = SenderSocketTypes.PUB.name,
+        socket_type: Union[str, SenderSocketTypes] = SenderSocketTypes.PUB.name,
         bind: bool = True,
         send_hwm: int = Defaults.SEND_HWM,
         receive_timeout: int = Defaults.SENDER_RECEIVE_TIMEOUT,

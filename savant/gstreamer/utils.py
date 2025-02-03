@@ -17,7 +17,7 @@ logger = get_logger(__name__)
 
 @contextmanager
 def map_gst_buffer(
-    gst_buffer: Gst.Buffer, flags: int = Gst.MapFlags.READ
+    gst_buffer: Gst.Buffer, flags: Gst.MapFlags = Gst.MapFlags.READ
 ) -> GstMapInfo:
     """Check if the buffer is writable and try to map it. Unmap at context
     exit.
