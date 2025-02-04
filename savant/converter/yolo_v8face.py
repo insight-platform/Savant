@@ -3,7 +3,7 @@
 Based on code from https://github.com/derronqi/yolov8-face>
 """
 
-from typing import Any, List, Tuple, Optional
+from typing import Any, List, Optional, Tuple
 
 import numpy as np
 

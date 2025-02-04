@@ -1,4 +1,3 @@
-import math
 from typing import List, Optional
 
 from savant_rs.primitives import EndOfStream, VideoFrame

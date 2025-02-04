@@ -1,8 +1,9 @@
 """Tensor to bounding box converter."""
 
-from typing import Tuple, Optional
+from typing import Optional, Tuple
 
 import numpy as np
+
 # import numba as nb
 from pysavantboost import nms
 

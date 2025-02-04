@@ -1,6 +1,6 @@
 """YOLOv8-seg postprocessing (converter)."""
 
-from typing import Any, List, Tuple, Optional
+from typing import Any, List, Optional, Tuple
 
 import cupy as cp
 import cv2

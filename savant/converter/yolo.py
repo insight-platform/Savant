@@ -2,7 +2,7 @@
 TODO: Add `symmetric-padding` support.
 """
 
-from typing import Tuple, Optional
+from typing import Optional, Tuple
 
 import numpy as np
 

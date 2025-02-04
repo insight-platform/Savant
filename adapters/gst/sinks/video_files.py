@@ -10,7 +10,6 @@ from savant_rs.primitives import EndOfStream, VideoFrame
 
 from adapters.python.sinks.chunk_writer import ChunkWriter, CompositeChunkWriter
 from adapters.python.sinks.metadata_json import (
-    MetadataJsonSink,
     MetadataJsonWriter,
     Patterns,
     get_location,

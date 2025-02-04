@@ -1,6 +1,6 @@
 """YOLOv8Pose postprocessing (converter)."""
 
-from typing import Any, Tuple, List, Optional
+from typing import Any, List, Optional, Tuple
 
 import numpy as np
 

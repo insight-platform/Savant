@@ -37,4 +37,7 @@ class TensorToItemConverter(BaseAttributeModelOutputConverter):
         roi: Tuple[float, float, float, float],
     ) -> Optional[List[Tuple[str, float, float]]]:
         """Converts output arrays to floats."""
-        return [(attr.name, out.item(), 1.0) for out, attr in zip(output_layers, model.output.attributes)]
+        return [
+            (attr.name, out.item(), 1.0)
+            for out, attr in zip(output_layers, model.output.attributes)
+        ]

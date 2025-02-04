@@ -6,7 +6,7 @@ from typing import Dict, Optional, Tuple, Union
 
 import msgpack
 from rocksq.blocking import PersistentQueueWithCapacity
-from savant_rs.metrics import *
+from savant_rs.metrics import CounterFamily, GaugeFamily, set_extra_labels
 from savant_rs.pipeline2 import (
     StageFunction,
     VideoPipeline,
