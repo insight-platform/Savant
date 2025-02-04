@@ -54,7 +54,7 @@ COPY savant savant
 
 ARG CYTHONIZE
 RUN --mount=type=bind,source=utils/cythonize.sh,target=./cythonize.sh \
-    if [[ -z "$CYTHONIZE" ]]; then ./cythonize.sh; fi
+    if [ -n "$CYTHONIZE" ]; then ./cythonize.sh; fi
 
 RUN python3 -m build --wheel
 
@@ -200,7 +200,7 @@ COPY adapters/gst/sources adapters/gst/sources
 
 ARG CYTHONIZE
 RUN --mount=type=bind,source=utils/cythonize.sh,target=./cythonize.sh \
-    if [[ -z "$CYTHONIZE" ]]; then ./cythonize.sh; fi
+    if [ -n "$CYTHONIZE" ]; then ./cythonize.sh; fi
 
 COPY scripts/uri-input.py scripts/
 ENV PATH=$PROJECT_PATH/scripts:$PATH \
@@ -244,7 +244,7 @@ ENV GST_PLUGIN_PATH=$GST_PLUGIN_PATH:$PROJECT_PATH/adapters/ds/gst_plugins
 
 ARG CYTHONIZE
 RUN --mount=type=bind,source=utils/cythonize.sh,target=./cythonize.sh \
-    if [[ -z "$CYTHONIZE" ]]; then ./cythonize.sh; fi
+    if [[ -n "$CYTHONIZE" ]]; then ./cythonize.sh; fi
 
 ENTRYPOINT []
 

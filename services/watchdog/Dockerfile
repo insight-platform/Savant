@@ -8,6 +8,6 @@ COPY services/watchdog/watchdog .
 
 ARG CYTHONIZE
 RUN --mount=type=bind,source=utils/cythonize.sh,target=./cythonize.sh \
-    if [[ -z "$CYTHONIZE" ]]; then ./cythonize.sh; fi
+    if [[ -n "$CYTHONIZE" ]]; then ./cythonize.sh; fi
 
 ENTRYPOINT ["python", "-m", "watchdog"]

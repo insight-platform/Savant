@@ -37,6 +37,6 @@ ENV LOGLEVEL=info
 
 ARG CYTHONIZE
 RUN --mount=type=bind,source=utils/cythonize.sh,target=./cythonize.sh \
-    if [[ -z "$CYTHONIZE" ]]; then ./cythonize.sh; fi
+    if [ -n "$CYTHONIZE" ]; then ./cythonize.sh; fi
 
 RUN echo 'python3 -c "from savant.utils.welcome import get_welcome_message; print(get_welcome_message())"' >> /etc/bash.bashrc
