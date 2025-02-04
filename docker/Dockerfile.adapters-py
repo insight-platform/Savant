@@ -6,18 +6,22 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONPATH=$PROJECT_PATH
 WORKDIR $PROJECT_PATH
 
-RUN export DEBIAN_FRONTEND=noninteractive \
-    && apt-get update \
-    && apt-get install --no-install-recommends -y \
+RUN export DEBIAN_FRONTEND=noninteractive && \
+    apt-get update && \
+    apt-get install --no-install-recommends -y \
         libmagic1 \
-    && rm -rf /var/lib/apt/lists/*
+        build-essential \
+        python3-dev && \
+    rm -rf /var/lib/apt/lists/*
 
-COPY adapters/requirements.txt adapters/requirements.txt
-RUN python -m pip install --no-cache-dir -r adapters/requirements.txt
-COPY adapters/requirements-py.txt adapters/requirements-py.txt
-RUN python -m pip install --no-cache-dir -r adapters/requirements-py.txt
+RUN --mount=type=bind,source=adapters/requirements.txt,target=/tmp/requirements.txt \
+    python -m pip install --no-cache-dir -r /tmp/requirements.txt
+
+RUN --mount=type=bind,source=adapters/requirements-py.txt,target=/tmp/requirements.txt \
+    python -m pip install --no-cache-dir -r /tmp/requirements.txt
 
 # install savant-rs
+# TODO: Do not copy local wheels in image. Avoid SecretsUsedInArgOrEnv for "SAVANT_RS_GH_TOKEN"
 ARG SAVANT_RS_VERSION
 ARG SAVANT_RS_GH_REPO=insight-platform/savant-rs
 ARG SAVANT_RS_GH_TOKEN
@@ -30,5 +34,9 @@ COPY savant savant
 COPY adapters/shared adapters/shared
 COPY adapters/python adapters/python
 ENV LOGLEVEL=info
+
+ARG CYTHONIZE
+RUN --mount=type=bind,source=utils/cythonize.sh,target=./cythonize.sh \
+    if [[ -z "$CYTHONIZE" ]]; then ./cythonize.sh; fi
 
 RUN echo 'python3 -c "from savant.utils.welcome import get_welcome_message; print(get_welcome_message())"' >> /etc/bash.bashrc

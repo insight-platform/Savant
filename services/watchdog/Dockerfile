@@ -1,10 +1,13 @@
 FROM python:3.10.12-slim
 
-COPY requirements/common.txt requirements.txt
-RUN python -m pip install --no-cache-dir -r requirements.txt && \
-    rm -rf requirements.txt
+RUN --mount=type=bind,source=services/watchdog/requirements/common.txt,target=/tmp/requirements.txt \
+    python -m pip install --no-cache-dir -r /tmp/requirements.txt
 
 WORKDIR /app
-COPY watchdog/ watchdog/
+COPY services/watchdog/watchdog .
 
-ENTRYPOINT ["python", "-m", "watchdog.run"]
+ARG CYTHONIZE
+RUN --mount=type=bind,source=utils/cythonize.sh,target=./cythonize.sh \
+    if [[ -z "$CYTHONIZE" ]]; then ./cythonize.sh; fi
+
+ENTRYPOINT ["python", "-m", "watchdog"]

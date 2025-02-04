@@ -51,9 +51,11 @@ WORKDIR /tmp/build
 COPY pyproject.toml README.md LICENSE ./
 COPY requirements/base.txt requirements/base.txt
 COPY savant savant
-RUN python3 -m pip install --no-cache-dir cython
-RUN find savant -name "*.py" ! -name "__main__.py" -print | xargs cythonize -i -3
-RUN find savant -name "*.py" ! -name "__main__.py" -delete
+
+ARG CYTHONIZE
+RUN --mount=type=bind,source=utils/cythonize.sh,target=./cythonize.sh \
+    if [[ -z "$CYTHONIZE" ]]; then ./cythonize.sh; fi
+
 RUN python3 -m build --wheel
 
 
@@ -162,10 +164,10 @@ RUN --mount=from=savant-boost-builder,source=/libs/savantboost/dist,target=/tmp/
     python -m pip install --no-cache-dir /tmp/dist/*.whl
 
 # install savant-rs
+# TODO: Do not copy local wheels in image. Avoid SecretsUsedInArgOrEnv for "SAVANT_RS_GH_TOKEN"
 ARG SAVANT_RS_VERSION
 ARG SAVANT_RS_GH_REPO=insight-platform/savant-rs
 ARG SAVANT_RS_GH_TOKEN
-# TODO: Do not copy local wheels in image
 COPY local_wheels local_wheels
 COPY utils/install_savant_rs.py utils/install_savant_rs.py
 RUN ./utils/install_savant_rs.py $SAVANT_RS_VERSION ./utils && \
@@ -195,6 +197,10 @@ COPY gst_plugins gst_plugins
 COPY adapters/gst/gst_plugins adapters/gst/gst_plugins
 RUN rm -f adapters/gst/gst_plugins/python/video_files_sink.py
 COPY adapters/gst/sources adapters/gst/sources
+
+ARG CYTHONIZE
+RUN --mount=type=bind,source=utils/cythonize.sh,target=./cythonize.sh \
+    if [[ -z "$CYTHONIZE" ]]; then ./cythonize.sh; fi
 
 COPY scripts/uri-input.py scripts/
 ENV PATH=$PROJECT_PATH/scripts:$PATH \
@@ -235,6 +241,10 @@ COPY adapters/ds adapters/ds
 # To avoid ImportError when Nvidia runtime is not available
 RUN rm gst_plugins/python/frame_tag_filter.py
 ENV GST_PLUGIN_PATH=$GST_PLUGIN_PATH:$PROJECT_PATH/adapters/ds/gst_plugins
+
+ARG CYTHONIZE
+RUN --mount=type=bind,source=utils/cythonize.sh,target=./cythonize.sh \
+    if [[ -z "$CYTHONIZE" ]]; then ./cythonize.sh; fi
 
 ENTRYPOINT []
 

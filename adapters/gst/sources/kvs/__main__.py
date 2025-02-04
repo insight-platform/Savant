@@ -15,7 +15,7 @@ def main():
     logger = get_logger(LOGGER_PREFIX)
     logger.info('Starting the adapter')
 
-    # To gracefully shutdown the adapter on SIGTERM (raise KeyboardInterrupt)
+    # To gracefully shut down the adapter on SIGTERM (raise KeyboardInterrupt)
     signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
 
     config = Config()
