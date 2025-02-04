@@ -10,7 +10,7 @@ standard `torch.onnx.export`). For more details, please refer to the [export ONN
 
 Tested on platforms:
 
-- Nvidia Turing
+- Nvidia Turing, Ampere
 - Nvidia Jetson Orin family
 
 ## Prerequisites

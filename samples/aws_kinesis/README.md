@@ -4,7 +4,7 @@ A pipeline demonstrates how to send frames to and receive from Kinesis Video Str
 
 Tested on platforms:
 
-- Nvidia Turing
+- Nvidia Turing, Ampere
 - Nvidia Jetson Orin family
 
 ## Prerequisites

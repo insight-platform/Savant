@@ -39,7 +39,7 @@ pipeline:
               label: person
 
     - element: pyfunc
-      module: samples.kvs.mongo_meta_exporter
+      module: samples.aws_kinesis.mongo_meta_exporter
       class_name: MongoMetaExporter
       kwargs:
         uri: ${oc.decode:${oc.env:MONGO_URI}}

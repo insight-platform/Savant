@@ -10,7 +10,7 @@ Preview:
 
 Tested on platforms:
 
-- Nvidia Turing
+- Nvidia Turing, Ampere
 - Nvidia Jetson Orin family
 
 Demonstrated adapters:
@@ -70,7 +70,7 @@ https://eu-central-1.linodeobjects.com/savant-data/demo/shuffle_dance.mp4
 Now you are ready to run the performance benchmark with the following command:
 
 ```bash
-./samples/yolov8_seg/run_perf.sh 
+./samples/keypoint_detection/run_perf.sh 
 ```
 
 **Note**: Change the value of the `DATA_LOCATION` variable in the `run_perf.sh` script if you changed the video.

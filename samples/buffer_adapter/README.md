@@ -6,7 +6,7 @@ The buffer adapter metrics are stored in Prometheus and displayed on a Grafana d
 
 Tested on platforms:
 
-- Nvidia Turing
+- Nvidia Turing, Ampere
 - Nvidia Jetson Orin family
 
 ## Prerequisites
@@ -38,7 +38,7 @@ docker compose -f samples/buffer_adapter/docker-compose.l4t.yml up
 # http://127.0.0.1:3000/d/89571523-ad22-4df2-bb09-df20b18bd5ee/buffer-metrics?orgId=1&refresh=5s
 
 # for the buffer adapter metrics visit
-# http://127.0.0.1:8000/metrics
+# http://127.0.0.1:8080/metrics
 
 
 # Ctrl+C to stop running the compose bundle

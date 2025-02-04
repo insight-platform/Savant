@@ -8,7 +8,7 @@ Preview:
 
 Tested on platforms:
 
-- Nvidia Turing
+- Nvidia Turing, Ampere
 - Nvidia Jetson Orin family
 
 Demonstrated operational modes:
