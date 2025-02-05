@@ -151,10 +151,9 @@ RUN python3 -m pip install --no-cache-dir -r requirements.txt
 ARG SAVANT_RS_VERSION
 ARG SAVANT_RS_GH_REPO=insight-platform/savant-rs
 ARG SAVANT_RS_GH_TOKEN
-COPY local_wheels local_wheels
-COPY utils/install_savant_rs.py utils/install_savant_rs.py
-RUN ./utils/install_savant_rs.py $SAVANT_RS_VERSION ./utils && \
-    rm -rf ./utils
+RUN --mount=type=bind,source=local_wheels,target=local_wheels \
+    --mount=type=bind,source=utils/install_savant_rs.py,target=utils/install_savant_rs.py \
+    ./utils/install_savant_rs.py $SAVANT_RS_VERSION ./tmp && rm -rf ./tmp
 
 COPY libs/gstsavantframemeta .
 RUN python3 -m build --wheel --no-isolation && rm -rf _skbuild
@@ -208,14 +207,13 @@ RUN --mount=from=savant-meta-builder,source=/libs/gstsavantframemeta/dist,target
     python -m pip install --no-cache-dir /tmp/dist/*.whl
 
 # install savant-rs
-# TODO: Do not copy local wheels in image. Avoid SecretsUsedInArgOrEnv for "SAVANT_RS_GH_TOKEN"
+# TODO: Fix SecretsUsedInArgOrEnv for "SAVANT_RS_GH_TOKEN", replace arg with secret
 ARG SAVANT_RS_VERSION
 ARG SAVANT_RS_GH_REPO=insight-platform/savant-rs
 ARG SAVANT_RS_GH_TOKEN
-COPY local_wheels local_wheels
-COPY utils/install_savant_rs.py utils/install_savant_rs.py
-RUN ./utils/install_savant_rs.py $SAVANT_RS_VERSION ./utils && \
-    rm -rf ./utils
+RUN --mount=type=bind,source=local_wheels,target=local_wheels \
+    --mount=type=bind,source=utils/install_savant_rs.py,target=utils/install_savant_rs.py \
+    ./utils/install_savant_rs.py $SAVANT_RS_VERSION ./tmp && rm -rf ./tmp
 
 # copy savant and plugins - they are used in imports
 COPY savant savant

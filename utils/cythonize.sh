@@ -25,3 +25,4 @@ fi
 
 find . -name "*.c" -type f -delete
 find . -name "build" -type d -print0 | xargs -0 rm -rf
+find . -name "__pycache__" -type d -print0 | xargs -0 rm -rf

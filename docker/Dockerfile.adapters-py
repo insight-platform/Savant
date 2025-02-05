@@ -21,14 +21,13 @@ RUN --mount=type=bind,source=adapters/requirements-py.txt,target=/tmp/requiremen
     python -m pip install --no-cache-dir -r /tmp/requirements.txt
 
 # install savant-rs
-# TODO: Do not copy local wheels in image. Avoid SecretsUsedInArgOrEnv for "SAVANT_RS_GH_TOKEN"
+# TODO: Fix SecretsUsedInArgOrEnv for "SAVANT_RS_GH_TOKEN", replace arg with secret
 ARG SAVANT_RS_VERSION
 ARG SAVANT_RS_GH_REPO=insight-platform/savant-rs
 ARG SAVANT_RS_GH_TOKEN
-COPY local_wheels local_wheels
-COPY utils/install_savant_rs.py utils/install_savant_rs.py
-RUN ./utils/install_savant_rs.py $SAVANT_RS_VERSION ./utils && \
-    rm -rf ./utils
+RUN --mount=type=bind,source=local_wheels,target=local_wheels \
+    --mount=type=bind,source=utils/install_savant_rs.py,target=utils/install_savant_rs.py \
+    ./utils/install_savant_rs.py $SAVANT_RS_VERSION ./tmp && rm -rf ./tmp
 
 COPY savant savant
 COPY adapters/shared adapters/shared
