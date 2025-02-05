@@ -77,7 +77,7 @@ def process_logs_file(logs_file_path: Path, stats_vars: List[str]) -> Dict[str, 
 
     # remove perhaps outliers
     if len(fps_list) > 2:
-        fps_list = sorted(fps_list)[1:-1]
+        fps_list = fps_list[1:-1]
     # average
     if len(fps_list) > 1:
         num_frames = sum([num for num, _ in fps_list])
@@ -260,6 +260,8 @@ def main():
         if not fps_list:
             print('fail')
             continue
+        if len(fps_list) > 3:
+            fps_list = sorted(fps_list)[1:-1]
 
         fps = sum(fps_list) / len(fps_list)
         fps_list = [round(fps, 2) for fps in fps_list]
