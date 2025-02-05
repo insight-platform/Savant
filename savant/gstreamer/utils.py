@@ -108,7 +108,7 @@ def gst_post_library_settings_error(
         frame=frame,
         file_path=file_path,
         domain=Gst.LibraryError.quark(),
-        code=Gst.LibraryError.SETTINGS,
+        code=int(Gst.LibraryError.SETTINGS),
         text=text,
         debug=debug,
     )
@@ -190,7 +190,7 @@ def gst_post_stream_failed_error(
         frame=frame,
         file_path=file_path,
         domain=Gst.StreamError.quark(),
-        code=Gst.StreamError.FAILED,
+        code=int(Gst.StreamError.FAILED),
         text=text,
         debug=debug,
     )
@@ -209,14 +209,14 @@ def gst_post_stream_demux_error(
         frame=frame,
         file_path=file_path,
         domain=Gst.StreamError.quark(),
-        code=Gst.StreamError.DEMUX,
+        code=int(Gst.StreamError.DEMUX),
         text=text,
         debug=debug,
     )
 
 
 def gst_post_message(
-    msg_type: int,
+    msg_type: Gst.MessageType,
     gst_element: Gst.Element,
     frame: Optional[FrameType],
     file_path: str,
