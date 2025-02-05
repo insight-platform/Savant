@@ -492,7 +492,7 @@ class NvDsPipeline(GstPipeline):
         new_pad: Gst.Pad,
         event: Gst.Event,
         source_info: SourceInfo,
-        first_frame_id: int,
+        first_frame_id: Optional[int],
         add_frames_to_pipeline: bool,
     ):
         """Handle adding caps to video source pad."""
