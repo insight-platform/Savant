@@ -16,8 +16,8 @@ Preview:
 
 Tested on platforms:
 
-- Nvidia Turing
-- Nvidia Jetson Orin family
+- Nvidia Turing, Ampere (CPU and dGPU converter)
+- Nvidia Jetson Orin family (CPU converter)
 
 ## Prerequisites
 
