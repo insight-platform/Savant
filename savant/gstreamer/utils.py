@@ -171,7 +171,7 @@ def gst_post_stream_failed_warning(
         frame=frame,
         file_path=file_path,
         domain=Gst.StreamError.quark(),
-        code=Gst.StreamError.FAILED,
+        code=int(Gst.StreamError.FAILED),
         text=text,
         debug=debug,
     )
