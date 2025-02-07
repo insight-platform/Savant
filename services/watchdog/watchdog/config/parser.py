@@ -1,4 +1,4 @@
-from omegaconf import DictConfig, OmegaConf, ListConfig
+from omegaconf import DictConfig, ListConfig, OmegaConf
 from omegaconf.errors import ConfigKeyError
 
 from .schema import Action, Config, FlowConfig, QueueConfig, WatchConfig

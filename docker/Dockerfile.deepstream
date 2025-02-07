@@ -50,11 +50,11 @@ RUN apt-get update && \
 WORKDIR /tmp/build
 COPY pyproject.toml README.md LICENSE ./
 COPY requirements/base.txt requirements/base.txt
-COPY savant savant
 
 ARG CYTHONIZE
-RUN --mount=type=bind,source=utils/cythonize.sh,target=./cythonize.sh \
-    if [ -n "$CYTHONIZE" ]; then ./cythonize.sh; fi
+RUN --mount=type=bind,source=savant,target=/tmp/savant \
+    --mount=type=bind,source=utils/copy_code.sh,target=/tmp/copy_code.sh \
+    /tmp/copy_code.sh /tmp/savant /tmp/build/savant $CYTHONIZE
 
 RUN python3 -m build --wheel
 
@@ -194,11 +194,11 @@ COPY gst_plugins gst_plugins
 
 COPY adapters/gst/gst_plugins adapters/gst/gst_plugins
 RUN rm -f adapters/gst/gst_plugins/python/video_files_sink.py
-COPY adapters/gst/sources adapters/gst/sources
 
 ARG CYTHONIZE
-RUN --mount=type=bind,source=utils/cythonize.sh,target=./cythonize.sh \
-    if [ -n "$CYTHONIZE" ]; then ./cythonize.sh; fi
+RUN --mount=type=bind,source=adapters/gst/sources,target=/tmp/adapters/gst/sources \
+    --mount=type=bind,source=utils/copy_code.sh,target=/tmp/copy_code.sh \
+    /tmp/copy_code.sh /tmp/adapters/gst/sources $PROJECT_PATH/adapters/gst/sources $CYTHONIZE
 
 COPY scripts/uri-input.py scripts/
 ENV PATH=$PROJECT_PATH/scripts:$PATH \
@@ -234,15 +234,18 @@ RUN --mount=type=bind,source=adapters/requirements-ds.txt,target=/tmp/requiremen
 
 HEALTHCHECK NONE
 
-COPY adapters/shared adapters/shared
-COPY adapters/ds adapters/ds
+ARG CYTHONIZE
+RUN --mount=type=bind,source=adapters/shared,target=/tmp/adapters/shared \
+    --mount=type=bind,source=utils/copy_code.sh,target=/tmp/copy_code.sh \
+    /tmp/copy_code.sh /tmp/adapters/shared $PROJECT_PATH/adapters/shared $CYTHONIZE
+
+RUN --mount=type=bind,source=adapters/ds,target=/tmp/adapters/ds \
+    --mount=type=bind,source=utils/copy_code.sh,target=/tmp/copy_code.sh \
+    /tmp/copy_code.sh /tmp/adapters/ds $PROJECT_PATH/adapters/ds $CYTHONIZE
+
 # To avoid ImportError when Nvidia runtime is not available
 RUN rm gst_plugins/python/frame_tag_filter.py
 ENV GST_PLUGIN_PATH=$GST_PLUGIN_PATH:$PROJECT_PATH/adapters/ds/gst_plugins
-
-ARG CYTHONIZE
-RUN --mount=type=bind,source=utils/cythonize.sh,target=./cythonize.sh \
-    if [[ -n "$CYTHONIZE" ]]; then ./cythonize.sh; fi
 
 ENTRYPOINT []
 

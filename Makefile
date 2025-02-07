@@ -19,6 +19,7 @@ endif
 
 PROJECT_PATH := /opt/savant
 
+# TODO: Unset by default
 CYTHONIZE := 1
 #BUILD_PROGRESS := plain
 BUILD_PROGRESS := auto

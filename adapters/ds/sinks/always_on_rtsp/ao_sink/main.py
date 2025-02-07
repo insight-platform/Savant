@@ -68,7 +68,3 @@ def ao_sink_loop(
         input_pipeline_thread.start()
         while input_pipeline_thread.is_running and output_pipeline_thread.is_running:
             time.sleep(1)
-
-
-if __name__ == '__main__':
-    run_ao_sink()

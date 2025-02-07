@@ -29,13 +29,18 @@ RUN --mount=type=bind,source=local_wheels,target=local_wheels \
     --mount=type=bind,source=utils/install_savant_rs.py,target=utils/install_savant_rs.py \
     ./utils/install_savant_rs.py $SAVANT_RS_VERSION ./tmp && rm -rf ./tmp
 
-COPY savant savant
-COPY adapters/shared adapters/shared
-COPY adapters/python adapters/python
-ENV LOGLEVEL=info
-
+# copy savant
 ARG CYTHONIZE
-RUN --mount=type=bind,source=utils/cythonize.sh,target=./cythonize.sh \
-    if [ -n "$CYTHONIZE" ]; then ./cythonize.sh; fi
+RUN --mount=type=bind,source=savant,target=/tmp/savant \
+    --mount=type=bind,source=utils/copy_code.sh,target=/tmp/copy_code.sh \
+    /tmp/copy_code.sh /tmp/savant $PROJECT_PATH/savant $CYTHONIZE
+
+# copy adapters
+RUN --mount=type=bind,source=adapters/shared,target=/tmp/adapters/shared \
+    --mount=type=bind,source=adapters/python,target=/tmp/adapters/python \
+    --mount=type=bind,source=utils/copy_code.sh,target=/tmp/copy_code.sh \
+    /tmp/copy_code.sh /tmp/adapters $PROJECT_PATH/adapters $CYTHONIZE
+
+ENV LOGLEVEL=info
 
 RUN echo 'python3 -c "from savant.utils.welcome import get_welcome_message; print(get_welcome_message())"' >> /etc/bash.bashrc

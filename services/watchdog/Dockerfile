@@ -11,10 +11,10 @@ RUN --mount=type=bind,source=services/watchdog/requirements/common.txt,target=/t
     python -m pip install --no-cache-dir -r /tmp/requirements.txt
 
 WORKDIR /app
-COPY services/watchdog/watchdog watchdog
 
 ARG CYTHONIZE
-RUN --mount=type=bind,source=utils/cythonize.sh,target=./cythonize.sh \
-    if [ -n "$CYTHONIZE" ]; then ./cythonize.sh; fi
+RUN --mount=type=bind,source=services/watchdog/watchdog,target=/tmp/watchdog \
+    --mount=type=bind,source=utils/copy_code.sh,target=/tmp/copy_code.sh \
+    /tmp/copy_code.sh /tmp/watchdog /app/watchdog $CYTHONIZE
 
 ENTRYPOINT ["python", "-m", "watchdog"]

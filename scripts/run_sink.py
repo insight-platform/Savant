@@ -224,7 +224,7 @@ def display_sink(
         'sink-display',
         zmq_endpoints=[in_endpoint],
         sync_input=sync,
-        entrypoint='/opt/savant/adapters/ds/sinks/display.py',
+        entrypoint='/opt/savant/adapters/ds/sinks/display.sh',
         envs=envs,
         volumes=[f'{xsock}:{xsock}', f'{xauth}:{xauth}'],
         with_gpu=True,
