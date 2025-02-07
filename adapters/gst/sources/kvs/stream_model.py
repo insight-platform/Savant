@@ -30,12 +30,12 @@ class StreamModel(BaseModel):
         description='Whether the stream is playing.',
     )
 
-    def without_credentials(self):
-        """Return a copy of the stream configuration without credentials."""
 
-        return StreamModel(
-            name=self.name,
-            source_id=self.source_id,
-            timestamp=self.timestamp,
-            is_playing=self.is_playing,
-        )
+def copy_stream_model_without_credentials(self):
+    """Return a copy of the stream configuration without credentials."""
+    return StreamModel(
+        name=self.name,
+        source_id=self.source_id,
+        timestamp=self.timestamp,
+        is_playing=self.is_playing,
+    )

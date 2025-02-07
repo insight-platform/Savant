@@ -1,6 +1,6 @@
 splitstream==1.2.6
 boto3~=1.24.89
-fastapi==0.110.0
+fastapi~=0.115
 uvicorn[standard]==0.27.1
 
 # ffmpeg-input

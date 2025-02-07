@@ -24,7 +24,7 @@ logger = get_logger(LOGGER_NAME)
 
 
 def main():
-    # To gracefully shutdown the adapter on SIGTERM (raise KeyboardInterrupt)
+    # To gracefully shut down the adapter on SIGTERM (raise KeyboardInterrupt)
     signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
 
     init_logging()

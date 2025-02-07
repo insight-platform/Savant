@@ -10,7 +10,7 @@ from savant.utils.logger import get_logger
 from . import LOGGER_PREFIX
 from .config import Config
 from .stream_manager import KvsStreamNotFoundError, StreamManager
-from .stream_model import StreamModel
+from .stream_model import StreamModel, copy_stream_model_without_credentials
 
 logger = get_logger(f'{LOGGER_PREFIX}.api')
 
@@ -38,14 +38,14 @@ class Api:
                 detail='Stream not configured.',
             )
 
-        return stream.without_credentials()
+        return copy_stream_model_without_credentials(stream)
 
     def update_stream(self, stream: StreamModel) -> StreamModel:
         """Update stream configuration."""
 
         logger.info(
             'Updating stream configuration to: %r',
-            stream.without_credentials(),
+            copy_stream_model_without_credentials(stream),
         )
 
         try:
