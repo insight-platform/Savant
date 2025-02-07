@@ -298,7 +298,7 @@ jobs:
 
       - name: Upload pages artifact
         if: github.ref_name == 'develop'
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-pages-artifact@v3
         with:
           path: docs/root
       # --- develop
