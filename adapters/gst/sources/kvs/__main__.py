@@ -2,7 +2,7 @@ import signal
 import time
 
 from savant.gstreamer import Gst
-from savant.utils.logging import get_logger, init_logging
+from savant.utils.logger import get_logger, init_logging
 
 from . import LOGGER_PREFIX
 from .api import Api

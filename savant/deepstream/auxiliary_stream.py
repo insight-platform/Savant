@@ -15,7 +15,7 @@ from savant.deepstream.pipeline import NvDsPipeline
 from savant.deepstream.source_output import create_source_output
 from savant.gstreamer import Gst
 from savant.gstreamer.codecs import AUXILIARY_STREAM_CODECS, CODEC_BY_NAME
-from savant.utils.logging import get_logger
+from savant.utils.logger import get_logger
 from savant.utils.source_info import SourceInfoRegistry, SourceShape
 
 

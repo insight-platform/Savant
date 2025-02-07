@@ -51,7 +51,7 @@ from savant.gstreamer import Gst  # noqa:F401
 from savant.meta.errors import UIDError
 from savant.meta.object import ObjectMeta
 from savant.meta.type import ObjectSelectionType
-from savant.utils.logging import get_logger
+from savant.utils.logger import get_logger
 from savant.utils.source_info import SourceInfoRegistry
 
 

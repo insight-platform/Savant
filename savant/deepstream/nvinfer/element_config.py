@@ -33,7 +33,7 @@ from savant.deepstream.nvinfer.model import (
 )
 from savant.parameter_storage import param_storage
 from savant.remote_file import process_remote
-from savant.utils.logging import get_logger
+from savant.utils.logger import get_logger
 
 __all__ = ['nvinfer_element_configurator', 'MERGED_CLASSES']
 
@@ -219,8 +219,9 @@ def nvinfer_element_configurator(
 
     # This is to allow loading the model in a non-standard way
     # Not a supported feature, it is not advisable to rely on this interaction
-    embedded_model = model_config.get('engine_create_func_name', '').startswith(
-        'savant_embedded'
+    embedded_model = (
+        model_config.engine_create_func_name
+        and model_config.engine_create_func_name.startswith('savant_embedded')
     )
     model_file_required = not embedded_model
 

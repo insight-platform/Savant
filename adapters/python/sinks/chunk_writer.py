@@ -2,7 +2,7 @@ from typing import List, Optional
 
 from savant_rs.primitives import EndOfStream, VideoFrame
 
-from savant.utils.logging import get_logger
+from savant.utils.logger import get_logger
 
 
 class ChunkWriter:

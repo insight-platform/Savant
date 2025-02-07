@@ -15,7 +15,7 @@ from savant.deepstream.meta.object import _NvDsObjectMetaImpl
 from savant.deepstream.utils.attribute import nvds_remove_obj_attrs
 from savant.meta.errors import MetaValueError
 from savant.meta.object import ObjectMeta
-from savant.utils.logging import LoggerMixin
+from savant.utils.logger import LoggerMixin
 
 
 def nvds_obj_meta_generator(

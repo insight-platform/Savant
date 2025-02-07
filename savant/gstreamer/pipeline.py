@@ -11,7 +11,7 @@ from savant.config.schema import ElementGroup, Pipeline, PipelineElement
 from savant.gstreamer.buffer_processor import GstBufferProcessor
 from savant.gstreamer.element_factory import CreateElementException, GstElementFactory
 from savant.gstreamer.utils import add_buffer_probe
-from savant.utils.logging import get_logger
+from savant.utils.logger import get_logger
 from savant.utils.sink_factories import SinkMessage
 
 

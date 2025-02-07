@@ -34,7 +34,7 @@ from savant_rs.zmq import (
 from adapters.shared.thread import BaseThreadWorker
 from savant.metrics import get_or_create_counter, get_or_create_gauge
 from savant.utils.config import opt_config, req_config, strtobool
-from savant.utils.logging import get_logger, init_logging
+from savant.utils.logger import get_logger, init_logging
 from savant.utils.welcome import get_starting_message
 from savant.utils.zeromq import ZeroMQMessage, ZeroMQSource
 

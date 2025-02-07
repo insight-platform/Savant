@@ -10,7 +10,7 @@ from typing import Dict, Optional
 
 from inotify_simple import INotify, flags
 
-from savant.utils.logging import get_logger
+from savant.utils.logger import get_logger
 from savant.utils.singleton import SingletonMeta
 
 

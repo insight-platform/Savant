@@ -1,7 +1,7 @@
 from typing import Any
 
 from savant.gstreamer import GObject, Gst, GstBase
-from savant.utils.logging import LoggerMixin
+from savant.utils.logger import LoggerMixin
 
 
 class ShiftTimestamps(LoggerMixin, GstBase.BaseTransform):

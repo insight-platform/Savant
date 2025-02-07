@@ -17,7 +17,7 @@ from savant.api.enums import ExternalFrameType
 from savant.api.parser import convert_ts
 from savant.base.pyfunc import PyFunc
 from savant.config.schema import SinkElement
-from savant.utils.logging import get_logger
+from savant.utils.logger import get_logger
 from savant.utils.registry import Registry
 from savant.utils.zeromq import Defaults, SenderSocketTypes, get_zmq_socket_uri_options
 

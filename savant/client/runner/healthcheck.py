@@ -5,7 +5,7 @@ from typing import List, Optional
 import requests
 from requests import JSONDecodeError, RequestException
 
-from savant.utils.logging import get_logger
+from savant.utils.logger import get_logger
 
 logger = get_logger(__name__)
 

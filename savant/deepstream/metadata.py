@@ -18,7 +18,7 @@ from savant.config.schema import FramePadding
 from savant.deepstream.utils.object import nvds_get_obj_bbox, nvds_get_obj_uid
 from savant.meta.attribute import AttributeMeta
 from savant.meta.constants import UNTRACKED_OBJECT_ID
-from savant.utils.logging import get_logger
+from savant.utils.logger import get_logger
 
 logger = get_logger(__name__)
 

@@ -9,7 +9,7 @@ from savant.config.schema import (
     PipelineElement,
     PyFuncElement,
 )
-from savant.utils.logging import get_logger
+from savant.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
