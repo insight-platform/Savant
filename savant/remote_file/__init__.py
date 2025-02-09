@@ -10,7 +10,7 @@ from savant.remote_file.http import HTTPFileHandler
 from savant.remote_file.s3 import S3FileHandler
 from savant.remote_file.schema import RemoteFile
 from savant.remote_file.utils import read_file_checksum, unpack_archive
-from savant.utils.logger import get_logger
+from savant.utils.log import get_logger
 
 __all__ = ['process_remote', 'RemoteFile']
 

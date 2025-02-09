@@ -27,7 +27,7 @@ from adapters.ds.sinks.always_on_rtsp.stream_manager import (
 )
 from adapters.ds.sinks.always_on_rtsp.utils import check_codec_is_available
 from savant.gstreamer.codecs import CODEC_BY_NAME
-from savant.utils.logger import get_logger
+from savant.utils.log import get_logger
 
 logger = get_logger('adapters.ao_sink.api')
 

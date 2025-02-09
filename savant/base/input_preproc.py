@@ -18,7 +18,7 @@ from savant.deepstream.utils.iterator import (
 from savant.gstreamer import Gst
 from savant.meta.object import ObjectMeta
 from savant.utils.image import GPUImage
-from savant.utils.logger import get_logger
+from savant.utils.log import get_logger
 
 
 class BasePreprocessObjectMeta(BasePyFuncCallableImpl):

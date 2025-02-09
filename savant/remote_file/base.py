@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 from omegaconf import DictConfig
 
 from savant.remote_file.schema import RemoteFile
-from savant.utils.logger import get_logger
+from savant.utils.log import get_logger
 
 __all__ = ['RemoteFileManagerType', 'RemoteFileHandler', 'RemoteFileError']
 

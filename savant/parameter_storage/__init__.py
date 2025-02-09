@@ -14,7 +14,7 @@ from savant_rs.match_query import (
     register_utility_resolver,
 )
 
-from savant.utils.logger import get_logger
+from savant.utils.log import get_logger
 
 __all__ = ['param_storage', 'init_param_storage']
 

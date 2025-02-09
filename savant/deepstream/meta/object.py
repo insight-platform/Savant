@@ -35,7 +35,7 @@ from savant.meta.attribute import AttributeMeta
 from savant.meta.constants import DEFAULT_CONFIDENCE, UNTRACKED_OBJECT_ID
 from savant.meta.errors import MetaValueError
 from savant.meta.object import BaseObjectMetaImpl, ObjectMeta
-from savant.utils.logger import LoggerMixin
+from savant.utils.log import LoggerMixin
 
 
 class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):

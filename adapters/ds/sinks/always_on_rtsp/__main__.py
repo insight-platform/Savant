@@ -16,7 +16,7 @@ from adapters.ds.sinks.always_on_rtsp.utils import (
 )
 from adapters.ds.sinks.always_on_rtsp.zeromq_proxy import ZeroMqProxy
 from savant.gstreamer import Gst
-from savant.utils.logger import get_logger, init_logging
+from savant.utils.log import get_logger, init_logging
 from savant.utils.welcome import get_starting_message
 
 LOGGER_NAME = 'adapters.ao_sink.entrypoint'

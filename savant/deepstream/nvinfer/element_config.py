@@ -33,7 +33,7 @@ from savant.deepstream.nvinfer.model import (
 )
 from savant.parameter_storage import param_storage
 from savant.remote_file import process_remote
-from savant.utils.logger import get_logger
+from savant.utils.log import get_logger
 
 __all__ = ['nvinfer_element_configurator', 'MERGED_CLASSES']
 

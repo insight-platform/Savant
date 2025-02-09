@@ -13,7 +13,7 @@ from savant_rs.primitives import (
 from savant.client.log_provider import LogProvider
 from savant.client.runner import LogResult
 from savant.client.runner.healthcheck import HealthCheck
-from savant.utils.logger import get_logger
+from savant.utils.log import get_logger
 from savant.utils.zeromq import AsyncZeroMQSource, Defaults, ZeroMQMessage, ZeroMQSource
 
 logger = get_logger(__name__)

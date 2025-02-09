@@ -20,7 +20,7 @@ from savant_rs.zmq import (
     WriterSocketType,
 )
 
-from savant.utils.logger import get_logger
+from savant.utils.log import get_logger
 
 from .re_patterns import socket_uri_pattern
 

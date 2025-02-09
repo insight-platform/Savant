@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 
 from savant.gstreamer import Gst
-from savant.utils.logger import get_logger
+from savant.utils.log import get_logger
 
 logger = get_logger(__name__)
 

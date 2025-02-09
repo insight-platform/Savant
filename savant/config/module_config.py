@@ -28,7 +28,7 @@ from savant.deepstream.nvinfer.element_config import (
 )
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
 from savant.parameter_storage import init_param_storage
-from savant.utils.logger import get_logger
+from savant.utils.log import get_logger
 from savant.utils.singleton import SingletonMeta
 from savant.utils.sink_factories import SINK_REGISTRY
 
