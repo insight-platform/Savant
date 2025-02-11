@@ -3,7 +3,7 @@ import os
 import re
 from typing import Optional
 
-from savant.utils.config import strtobool
+from .config import strtobool
 
 
 def check_display_env(logger: logging.Logger, unset: Optional[bool] = None):

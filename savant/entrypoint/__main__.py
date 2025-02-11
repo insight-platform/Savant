@@ -16,7 +16,7 @@ parameters:
 import argparse
 import sys
 
-from savant.entrypoint.main import build_module_engines, main
+from .main import build_module_engines, main
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='python -m savant.entrypoint')

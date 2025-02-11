@@ -11,7 +11,8 @@ from typing import Dict, Optional
 from inotify_simple import INotify, flags
 
 from savant.utils.log import get_logger
-from savant.utils.singleton import SingletonMeta
+
+from .singleton import SingletonMeta
 
 
 def import_module(spec: ModuleSpec) -> ModuleType:

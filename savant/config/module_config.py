@@ -6,7 +6,17 @@ from typing import IO, Any, Callable, Iterable, Optional, Tuple, Type, Union
 
 from omegaconf import DictConfig, OmegaConf
 
-from savant.config.schema import (
+from savant.deepstream.nvinfer.element_config import (
+    nvinfer_element_configurator,
+    nvtracker_element_configurator,
+)
+from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
+from savant.parameter_storage import init_param_storage
+from savant.utils.log import get_logger
+from savant.utils.singleton import SingletonMeta
+from savant.utils.sink_factories import SINK_REGISTRY
+
+from .schema import (
     BufferQueuesParameters,
     DrawFunc,
     ElementGroup,
@@ -22,15 +32,6 @@ from savant.config.schema import (
     TelemetryParameters,
     get_element_name,
 )
-from savant.deepstream.nvinfer.element_config import (
-    nvinfer_element_configurator,
-    nvtracker_element_configurator,
-)
-from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
-from savant.parameter_storage import init_param_storage
-from savant.utils.log import get_logger
-from savant.utils.singleton import SingletonMeta
-from savant.utils.sink_factories import SINK_REGISTRY
 
 logger = get_logger(__name__)
 

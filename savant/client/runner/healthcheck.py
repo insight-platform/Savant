@@ -1,6 +1,6 @@
 import time
 from http import HTTPStatus
-from typing import List, Optional
+from typing import Optional
 
 import requests
 from requests import JSONDecodeError, RequestException

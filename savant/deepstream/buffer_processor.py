@@ -27,15 +27,6 @@ from savant_rs.utils.symbol_mapper import (
 )
 
 from savant.api.parser import parse_attribute_value
-from savant.deepstream.source_output import (
-    SourceOutput,
-    SourceOutputOnlyMeta,
-    SourceOutputWithFrame,
-)
-from savant.deepstream.utils.attribute import nvds_add_attr_meta_to_obj
-from savant.deepstream.utils.iterator import nvds_frame_meta_iterator
-from savant.deepstream.utils.object import nvds_add_obj_meta_to_frame
-from savant.deepstream.utils.surface import get_nvds_buf_surface
 from savant.gstreamer import Gst  # noqa:F401
 from savant.gstreamer.buffer_processor import GstBufferProcessor
 from savant.gstreamer.codecs import Codec, CodecInfo
@@ -43,6 +34,12 @@ from savant.meta.constants import PRIMARY_OBJECT_KEY, UNTRACKED_OBJECT_ID
 from savant.meta.type import ObjectSelectionType
 from savant.utils.sink_factories import SinkVideoFrame
 from savant.utils.source_info import SourceInfo, SourceInfoRegistry
+
+from .source_output import SourceOutput, SourceOutputOnlyMeta, SourceOutputWithFrame
+from .utils.attribute import nvds_add_attr_meta_to_obj
+from .utils.iterator import nvds_frame_meta_iterator
+from .utils.object import nvds_add_obj_meta_to_frame
+from .utils.surface import get_nvds_buf_surface
 
 
 class _OutputFrame(NamedTuple):

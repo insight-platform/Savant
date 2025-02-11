@@ -20,10 +20,11 @@ from savant_rs.zmq import (
 
 from savant.client.frame_source import FrameSource
 from savant.client.log_provider import LogProvider
-from savant.client.runner import LogResult
-from savant.client.runner.healthcheck import HealthCheck
 from savant.utils.log import get_logger
 from savant.utils.zeromq import Defaults
+
+from .healthcheck import HealthCheck
+from .log_result import LogResult
 
 logger = get_logger(__name__)
 

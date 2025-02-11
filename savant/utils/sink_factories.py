@@ -18,8 +18,9 @@ from savant.api.parser import convert_ts
 from savant.base.pyfunc import PyFunc
 from savant.config.schema import SinkElement
 from savant.utils.log import get_logger
-from savant.utils.registry import Registry
-from savant.utils.zeromq import Defaults, SenderSocketTypes, get_zmq_socket_uri_options
+
+from .registry import Registry
+from .zeromq import Defaults, SenderSocketTypes, get_zmq_socket_uri_options
 
 logger = get_logger(__name__)
 

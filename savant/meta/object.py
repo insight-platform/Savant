@@ -5,14 +5,14 @@ from typing import Any, Iterable, List, Optional, Union
 
 from savant_rs.primitives.geometry import BBox, RBBox
 
-from savant.meta.attribute import AttributeMeta
-from savant.meta.constants import (
+from .attribute import AttributeMeta
+from .constants import (
     DEFAULT_CONFIDENCE,
     DEFAULT_MODEL_NAME,
     PRIMARY_OBJECT_LABEL,
     UNTRACKED_OBJECT_ID,
 )
-from savant.meta.errors import MetaValueError
+from .errors import MetaValueError
 
 
 class BaseObjectMetaImpl(ABC):

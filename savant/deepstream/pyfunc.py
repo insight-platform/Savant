@@ -12,13 +12,16 @@ from savant_rs.pipeline2 import VideoPipeline
 
 from savant.api.constants import DEFAULT_FRAMERATE
 from savant.base.pyfunc import BasePyFuncPlugin
-from savant.deepstream.auxiliary_stream import (
+from savant.gstreamer import Gst  # noqa: F401
+from savant.utils.source_info import SourceInfoRegistry
+
+from .auxiliary_stream import (
     AuxiliaryStream,
     AuxiliaryStreamInternal,
     AuxiliaryStreamRegistry,
 )
-from savant.deepstream.meta.frame import NvDsFrameMeta
-from savant.deepstream.utils.event import (
+from .meta.frame import NvDsFrameMeta
+from .utils.event import (
     GST_NVEVENT_PAD_ADDED,
     GST_NVEVENT_PAD_DELETED,
     GST_NVEVENT_STREAM_EOS,
@@ -26,9 +29,7 @@ from savant.deepstream.utils.event import (
     gst_nvevent_parse_pad_deleted,
     gst_nvevent_parse_stream_eos,
 )
-from savant.deepstream.utils.iterator import nvds_frame_meta_iterator
-from savant.gstreamer import Gst  # noqa: F401
-from savant.utils.source_info import SourceInfoRegistry
+from .utils.iterator import nvds_frame_meta_iterator
 
 
 class NvDsPyFuncPlugin(BasePyFuncPlugin):

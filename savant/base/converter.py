@@ -7,8 +7,8 @@ from typing import Any, List, Optional, Tuple, Union
 import cupy as cp
 import numpy as np
 
-from savant.base.model import AttributeModel, ComplexModel, ObjectModel
-from savant.base.pyfunc import BasePyFuncCallableImpl
+from .model import AttributeModel, ComplexModel, ObjectModel
+from .pyfunc import BasePyFuncCallableImpl
 
 
 class TensorFormat(Enum):

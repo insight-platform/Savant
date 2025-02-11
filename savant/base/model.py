@@ -7,9 +7,10 @@ from typing import List, Optional, Tuple
 import cv2
 from omegaconf import MISSING
 
-from savant.base.pyfunc import PyFunc
 from savant.meta.constants import PRIMARY_OBJECT_KEY
 from savant.remote_file.schema import RemoteFile
+
+from .pyfunc import PyFunc
 
 
 class ModelPrecision(Enum):

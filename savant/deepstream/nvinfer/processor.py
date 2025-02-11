@@ -21,12 +21,6 @@ from savant.base.input_preproc import ObjectsPreprocessing
 from savant.base.pyfunc import PyFuncNoopCallException
 from savant.config.schema import FramePadding, ModelElement
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
-from savant.deepstream.nvinfer.element_config import MERGED_CLASSES
-from savant.deepstream.nvinfer.model import (
-    NvInferAttributeModel,
-    NvInferComplexModel,
-    NvInferDetector,
-)
 from savant.deepstream.utils.attribute import (
     nvds_add_attr_meta_to_obj,
     nvds_attr_meta_iterator,
@@ -53,6 +47,9 @@ from savant.meta.object import ObjectMeta
 from savant.meta.type import ObjectSelectionType
 from savant.utils.log import get_logger
 from savant.utils.source_info import SourceInfoRegistry
+
+from .element_config import MERGED_CLASSES
+from .model import NvInferAttributeModel, NvInferComplexModel, NvInferDetector
 
 
 class NvInferProcessor:

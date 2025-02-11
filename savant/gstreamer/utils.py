@@ -9,8 +9,9 @@ from gi.repository import Gst  # noqa:F401
 from savant_rs.utils import ByteBuffer
 from savant_rs.utils.serialization import Message, load_message_from_bytebuffer
 
-from savant.gstreamer.ffi import LIBGST, GstMapInfo
 from savant.utils.log import get_logger
+
+from .ffi import LIBGST, GstMapInfo
 
 logger = get_logger(__name__)
 
