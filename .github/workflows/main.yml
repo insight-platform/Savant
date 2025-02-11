@@ -104,7 +104,7 @@ jobs:
 
       # base image
       - name: Build and push savant-deepstream docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           file: ${{ matrix.docker_file }}
           tags: |
@@ -118,7 +118,7 @@ jobs:
 
       # adapters image
       - name: Build and push savant-adapters-deepstream docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           file: ${{ matrix.docker_file }}
           tags: |
@@ -132,7 +132,7 @@ jobs:
 
       # extra image
       - name: Build and push savant-deepstream-extra docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           file: ${{ matrix.docker_file }}
           tags: |
@@ -182,7 +182,7 @@ jobs:
           password: ${{ github.token }}
 
       - name: Build and push docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           file: ${{ matrix.docker_file }}
           tags: |
@@ -231,7 +231,7 @@ jobs:
       # --- setup-docker action
 
       - name: Build and push docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           file: ${{ matrix.docker_file }}
           tags: |
@@ -317,9 +317,9 @@ jobs:
 
     steps:
       - name: Setup Pages
-        uses: actions/configure-pages@v1
+        uses: actions/configure-pages@v5
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v1
+        uses: actions/deploy-pages@v4
   # --- develop
