@@ -26,7 +26,7 @@ def get_bottom_left_point(
 ) -> Tuple[int, int]:
     """Calculate text origin coordinates.
 
-    :param anchor_point_type: Anchor point type of a rectangle with text.
+    :param anchor_point_type: Anchor point type of rectangle with text.
     :param anchor: Anchor point X,Y coordinates.
     :param box_size: Box width and height.
     :param baseline: y-coordinate of the baseline relative to the bottom-most box point.
@@ -37,21 +37,23 @@ def get_bottom_left_point(
     anchor_x, anchor_y = anchor
     if anchor_point_type == Position.CENTER:
         left, bottom = anchor_x - box_w / 2, anchor_y + box_h / 2
-    if anchor_point_type == Position.LEFT_TOP:
+    elif anchor_point_type == Position.LEFT_TOP:
         left, bottom = anchor_x, anchor_y + box_h
-    if anchor_point_type == Position.CENTER_TOP:
+    elif anchor_point_type == Position.CENTER_TOP:
         left, bottom = anchor_x - box_w / 2, anchor_y + box_h
-    if anchor_point_type == Position.RIGHT_TOP:
+    elif anchor_point_type == Position.RIGHT_TOP:
         left, bottom = anchor_x - box_w, anchor_y + box_h - baseline / 2
-    if anchor_point_type == Position.LEFT_CENTER:
+    elif anchor_point_type == Position.LEFT_CENTER:
         left, bottom = anchor_x, anchor_y + box_h / 2 - baseline / 2
-    if anchor_point_type == Position.RIGHT_CENTER:
+    elif anchor_point_type == Position.RIGHT_CENTER:
         left, bottom = anchor_x - box_w, anchor_y + box_h / 2 - baseline / 2
-    if anchor_point_type == Position.LEFT_BOTTOM:
+    elif anchor_point_type == Position.LEFT_BOTTOM:
         left, bottom = anchor_x, anchor_y - baseline
-    if anchor_point_type == Position.CENTER_BOTTOM:
+    elif anchor_point_type == Position.CENTER_BOTTOM:
         left, bottom = anchor_x - box_w / 2, anchor_y - baseline
-    if anchor_point_type == Position.RIGHT_BOTTOM:
+    # elif anchor_point_type == Position.RIGHT_BOTTOM:
+    # replaced elif with else to avoid UnboundLocalError
+    else:
         left, bottom = anchor_x - box_w, anchor_y - baseline
 
     return int(left), int(bottom)

@@ -16,7 +16,7 @@ Article on Medium: [Link](https://blog.savant-ai.io/efficient-city-traffic-meter
 
 Tested on platforms:
 
-- Nvidia Turing
+- Nvidia Turing, Ampere
 - Nvidia Jetson Orin family
 
 Demonstrated operational modes:
