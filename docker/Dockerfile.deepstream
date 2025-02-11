@@ -51,10 +51,9 @@ WORKDIR /tmp/build
 COPY pyproject.toml README.md LICENSE ./
 COPY requirements/base.txt requirements/base.txt
 
-ARG CYTHONIZE
 RUN --mount=type=bind,source=savant,target=/tmp/savant \
     --mount=type=bind,source=utils/copy_code.sh,target=/tmp/copy_code.sh \
-    /tmp/copy_code.sh /tmp/savant /tmp/build/savant $CYTHONIZE
+    /tmp/copy_code.sh /tmp/savant /tmp/build/savant
 
 RUN python3 -m build --wheel
 
@@ -195,10 +194,9 @@ COPY gst_plugins gst_plugins
 COPY adapters/gst/gst_plugins adapters/gst/gst_plugins
 RUN rm -f adapters/gst/gst_plugins/python/video_files_sink.py
 
-ARG CYTHONIZE
 RUN --mount=type=bind,source=adapters/gst/sources,target=/tmp/adapters/gst/sources \
     --mount=type=bind,source=utils/copy_code.sh,target=/tmp/copy_code.sh \
-    /tmp/copy_code.sh /tmp/adapters/gst/sources $PROJECT_PATH/adapters/gst/sources $CYTHONIZE
+    /tmp/copy_code.sh /tmp/adapters/gst/sources $PROJECT_PATH/adapters/gst/sources
 
 COPY scripts/uri-input.py scripts/
 ENV PATH=$PROJECT_PATH/scripts:$PATH \
@@ -234,14 +232,13 @@ RUN --mount=type=bind,source=adapters/requirements-ds.txt,target=/tmp/requiremen
 
 HEALTHCHECK NONE
 
-ARG CYTHONIZE
 RUN --mount=type=bind,source=adapters/shared,target=/tmp/adapters/shared \
     --mount=type=bind,source=utils/copy_code.sh,target=/tmp/copy_code.sh \
-    /tmp/copy_code.sh /tmp/adapters/shared $PROJECT_PATH/adapters/shared $CYTHONIZE
+    /tmp/copy_code.sh /tmp/adapters/shared $PROJECT_PATH/adapters/shared
 
 RUN --mount=type=bind,source=adapters/ds,target=/tmp/adapters/ds \
     --mount=type=bind,source=utils/copy_code.sh,target=/tmp/copy_code.sh \
-    /tmp/copy_code.sh /tmp/adapters/ds $PROJECT_PATH/adapters/ds $CYTHONIZE
+    /tmp/copy_code.sh /tmp/adapters/ds $PROJECT_PATH/adapters/ds
 
 # To avoid ImportError when Nvidia runtime is not available
 RUN rm gst_plugins/python/frame_tag_filter.py

@@ -99,12 +99,7 @@ class NvDsPipeline(GstPipeline):
 
     _element_factory = NvDsElementFactory()
 
-    def __init__(
-        self,
-        name: str,
-        pipeline_cfg: Pipeline,
-        **kwargs,
-    ):
+    def __init__(self, name: str, pipeline_cfg: Pipeline, **kwargs):
         # pipeline internal processing frame params
         self._frame_params: FrameParameters = kwargs['frame']
 

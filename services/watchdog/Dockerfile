@@ -12,9 +12,8 @@ RUN --mount=type=bind,source=services/watchdog/requirements/common.txt,target=/t
 
 WORKDIR /app
 
-ARG CYTHONIZE
 RUN --mount=type=bind,source=services/watchdog/watchdog,target=/tmp/watchdog \
     --mount=type=bind,source=utils/copy_code.sh,target=/tmp/copy_code.sh \
-    /tmp/copy_code.sh /tmp/watchdog /app/watchdog $CYTHONIZE
+    /tmp/copy_code.sh /tmp/watchdog /app/watchdog
 
 ENTRYPOINT ["python", "-m", "watchdog"]

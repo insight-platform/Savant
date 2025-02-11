@@ -216,10 +216,9 @@ RUN --mount=type=bind,source=local_wheels,target=local_wheels \
     ./utils/install_savant_rs.py $SAVANT_RS_VERSION ./tmp && rm -rf ./tmp
 
 # copy savant and plugins - they are used in imports
-ARG CYTHONIZE
 RUN --mount=type=bind,source=savant,target=/tmp/savant \
     --mount=type=bind,source=utils/copy_code.sh,target=/tmp/copy_code.sh \
-    /tmp/copy_code.sh /tmp/savant $PROJECT_PATH/savant $CYTHONIZE
+    /tmp/copy_code.sh /tmp/savant $PROJECT_PATH/savant
 
 COPY gst_plugins gst_plugins
 
@@ -228,7 +227,7 @@ RUN --mount=type=bind,source=adapters/shared,target=/tmp/adapters/shared \
     --mount=type=bind,source=adapters/python,target=/tmp/adapters/python \
     --mount=type=bind,source=adapters/gst,target=/tmp/adapters/gst \
     --mount=type=bind,source=utils/copy_code.sh,target=/tmp/copy_code.sh \
-    /tmp/copy_code.sh /tmp/adapters $PROJECT_PATH/adapters $CYTHONIZE
+    /tmp/copy_code.sh /tmp/adapters $PROJECT_PATH/adapters
 
 COPY gst_plugins/python/logger.py adapters/gst/gst_plugins/python/
 

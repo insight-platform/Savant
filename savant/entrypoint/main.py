@@ -93,10 +93,8 @@ def main(module_config: Union[str, Path, IO[Any]]):
         **config.parameters,
     )
 
-    logger.info('Starting module "%s".', config.name)
     try:
         with RunnerClass(pipeline, status_filepath) as runner:
-            logger.info('Module "%s" started.', config.name)
             try:
                 for msg in pipeline.stream():
                     sink(msg, **dict(module_name=config.name))
@@ -111,8 +109,6 @@ def main(module_config: Union[str, Path, IO[Any]]):
     except Exception as exc:  # pylint: disable=broad-except
         logger.error('Module "%s" error %s', config.name, exc, exc_info=True)
         exit(1)
-    finally:
-        logger.info('Module "%s" stopped.', config.name)
 
     if runner.error is not None:
         exit(1)

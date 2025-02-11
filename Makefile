@@ -19,8 +19,6 @@ endif
 
 PROJECT_PATH := /opt/savant
 
-# TODO: Unset by default
-CYTHONIZE := 1
 #BUILD_PROGRESS := plain
 BUILD_PROGRESS := auto
 
@@ -44,7 +42,6 @@ build:
 		--target base \
 		--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
 		--build-arg SAVANT_RS_VERSION=$(SAVANT_RS_VERSION) \
-		--build-arg CYTHONIZE=$(CYTHONIZE) \
 		-f docker/$(DOCKER_FILE) \
 		-t savant-deepstream$(PLATFORM_SUFFIX) .
 
@@ -53,21 +50,18 @@ build-adapters-deepstream:
 		--target adapters \
 		--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
 		--build-arg SAVANT_RS_VERSION=$(SAVANT_RS_VERSION) \
-		--build-arg CYTHONIZE=$(CYTHONIZE) \
 		-f docker/$(DOCKER_FILE) \
 		-t savant-adapters-deepstream$(PLATFORM_SUFFIX) .
 
 build-adapters-gstreamer:
 	docker build --progress=$(BUILD_PROGRESS) \
 		--build-arg SAVANT_RS_VERSION=$(SAVANT_RS_VERSION) \
-		--build-arg CYTHONIZE=$(CYTHONIZE) \
 		-f docker/Dockerfile.adapters-gstreamer \
 		-t savant-adapters-gstreamer$(PLATFORM_SUFFIX) .
 
 build-adapters-py:
 	docker build --progress=$(BUILD_PROGRESS) \
 		--build-arg SAVANT_RS_VERSION=$(SAVANT_RS_VERSION) \
-		--build-arg CYTHONIZE=$(CYTHONIZE) \
 		-f docker/Dockerfile.adapters-py \
 		-t savant-adapters-py$(PLATFORM_SUFFIX) .
 
@@ -75,7 +69,6 @@ build-adapters-all: build-adapters-py build-adapters-gstreamer build-adapters-de
 
 build-watchdog:
 	docker build --progress=$(BUILD_PROGRESS) \
-		--build-arg CYTHONIZE=$(CYTHONIZE) \
 		-f services/watchdog/Dockerfile \
 		-t savant-watchdog$(PLATFORM_SUFFIX) .
 

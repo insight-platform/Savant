@@ -28,12 +28,7 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
     # pipeline element factory
     _element_factory = GstElementFactory()
 
-    def __init__(
-        self,
-        name: str,
-        pipeline_cfg: Pipeline,
-        **kwargs,
-    ):
+    def __init__(self, name: str, pipeline_cfg: Pipeline, **kwargs):
         self._logger = get_logger(name)
 
         # output messages queue
