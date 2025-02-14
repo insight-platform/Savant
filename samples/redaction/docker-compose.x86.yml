@@ -1,0 +1,41 @@
+services:
+
+  client:
+    image: ghcr.io/insight-platform/savant-deepstream:0.5.2-7.0
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ./data:/data
+      - ./client.py:/opt/savant/client.py
+    entrypoint: python /opt/savant/client.py
+    environment:
+      - MODULE_HOSTNAME=module
+    depends_on:
+      module:
+        condition: service_healthy
+
+  module:
+    image: ghcr.io/insight-platform/savant-deepstream:0.5.2-7.0
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ./models_cache:/models
+#      - ./downloads_cache:/downloads
+      - ./module:/opt/savant/module
+#      - ./data:/data
+    environment:
+      - WEBSERVER_PORT=8888
+      - ZMQ_SRC_ENDPOINT=router+bind:ipc:///tmp/zmq-sockets/input-video.ipc
+      - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
+      - LOGLEVEL=INFO
+    ports:
+      - "8888:8888"
+    command: module/module.yml
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+
+volumes:
+  zmq_sockets:
