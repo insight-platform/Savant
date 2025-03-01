@@ -3,6 +3,9 @@ name: ${oc.env:MODULE_NAME, 'template'}
 
 # base module parameters
 parameters:
+  max_parallel_streams: 16
+  detector: yolov8n-pose
+  batch_size: 1
   # DevMode (hot Python code reload on file change)
   dev_mode: True
   # Allows sending shutdown message to the module with the auth-key (see below)
@@ -25,82 +28,118 @@ parameters:
         #       key: /path/to/client.key
 
   # pipeline processing frame parameters
-  frame:
-    width: 1280
-    height: 720
+  #  frame:
+  #    width: 1280
+  #    height: 720
     # Add paddings to the frame before processing
   output_frame:
     codec: jpeg
-  # custom drawing on frames function
-  draw_func:
-    module: src.module.overlay_draw_spec
-    class_name: Overlay
-    #kwargs:
-    rendered_objects:
-      peoplenet:
-        person:
-        face:
+#  # custom drawing on frames function
+#  draw_func:
+#    module: src.module.overlay_draw_spec
+#    class_name: Overlay
+#    #kwargs:
+#    rendered_objects:
+#      peoplenet:
+#        person:
+#        face:
 
 
 # pipeline definition
 pipeline:
   # define pipeline's main elements
   elements:
-    # primary detector element, inference is provided by the nvinfer Deepstream element
-    # model type is detector (other available types are: classifier, custom)
-    - element: nvinfer@detector
-      # Model's name in the pipeline, mandatory
-      name: peoplenet
-      # model definition
-      model:
-        # format of the provided model file
-        format: etlt
-        # remote storage where the model files can be found
-        # skip if providing model files locally
-        remote:
-          url: s3://savant-data/models/peoplenet/peoplenet_pruned_v2.0.zip
-          checksum_url: s3://savant-data/models/peoplenet/peoplenet_pruned_v2.0.md5
-          parameters:
-            endpoint: https://eu-central-1.linodeobjects.com
+#    - element: nvinfer@complex_model
+#      name: ${parameters.detector}
+#      model:
+#        remote:
+#          url: s3://savant-data/models/yolov8-pose/${parameters.detector}.zip
+#          checksum_url: s3://savant-data/models/yolov8-pose/${parameters.detector}.md5
+#          parameters:
+#            endpoint: https://eu-central-1.linodeobjects.com
+#        format: onnx
+#        model_file: ${parameters.detector}-simplify-dynamic.onnx
+#        batch_size: 1
+#        input:
+#          shape: [3, 384, 640]
+#          maintain_aspect_ratio: true
+#          scale_factor: 0.0039215697906911373
+#        output:
+#          layer_names: ['output0']
+#          converter:
+#            module: src.module.converter
+#            class_name: YoloV8PoseConverter
+#            kwargs:
+#              confidence_threshold: 0.6
+#              nms_iou_threshold: 0.45
+#              top_k: 10
+#          objects:
+#            - class_id: 0
+#              label: person
+#              selector:
+#                module: savant.selector.detector
+#                class_name: MinMaxSizeBBoxSelector
+#                kwargs:
+#                  min_width: 40
+#                  min_height: 40
+#          attributes:
+#            - name: keypoints
+#              internal: true
 
-        # model file name, without location
-        model_file: resnet34_peoplenet_pruned.etlt  # v2.0 Accuracy: 84.3 Size 20.9 MB
 
-        # configuration of input data and custom preprocessing methods
-        input:
-          # model input layer name
-          layer_name: input_1
-          # model input layer shape
-          shape: [3, 544, 960]
-          # pixel scaling/normalization factor
-          scale_factor: 0.0039215697906911373
-
-        # configuration of model output
-        output:
-          # model output layer names
-          layer_names: [output_bbox/BiasAdd, output_cov/Sigmoid]
-          # number of detected classes for detector model
-          num_detected_classes: 3
-          # specify which detected objects are included in output
-          objects:
-            # object class id
-            - class_id: 0
-              # label assigned to objects of this class id
-              label: person
-              selector:
-                kwargs:
-                  # minimal width of the objects of this class to be included in output
-                  min_width: 32
-                  # minimal height of the objects of this class to be included in output
-                  min_height: 32
-            - class_id: 2
-              label: face
-              selector:
-                kwargs:
-                  # minimal width of the objects of this class to be included in output
-                  min_width: 16
-                  # minimal height of the objects of this class to be included in output
-                  min_height: 16
+#    - element: nvinfer@detector
+#      # Model's name in the pipeline, mandatory
+#      name: peoplenet
+#      # model definition
+#      model:
+#        # format of the provided model file
+#        format: etlt
+#        # remote storage where the model files can be found
+#        # skip if providing model files locally
+#        remote:
+#          url: s3://savant-data/models/peoplenet/peoplenet_pruned_v2.0.zip
+#          checksum_url: s3://savant-data/models/peoplenet/peoplenet_pruned_v2.0.md5
+#          parameters:
+#            endpoint: https://eu-central-1.linodeobjects.com
+#
+#        # model file name, without location
+#        model_file: resnet34_peoplenet_pruned.etlt  # v2.0 Accuracy: 84.3 Size 20.9 MB
+#
+#        # configuration of input data and custom preprocessing methods
+#        input:
+#          # model input layer name
+#          layer_name: input_1
+#          # model input layer shape
+#          shape: [3, 544, 960]
+#          # pixel scaling/normalization factor
+#          scale_factor: 0.0039215697906911373
+#
+#        # configuration of model output
+#        output:
+#          # model output layer names
+#          layer_names: [output_bbox/BiasAdd, output_cov/Sigmoid]
+#          # number of detected classes for detector model
+#          num_detected_classes: 3
+#          # specify which detected objects are included in output
+#          objects:
+#            # object class id
+#            - class_id: 0
+#              # label assigned to objects of this class id
+#              label: person
+#              selector:
+#                kwargs:
+#                  # minimal width of the objects of this class to be included in output
+#                  min_width: 32
+#                  # minimal height of the objects of this class to be included in output
+#                  min_height: 32
+#            - class_id: 2
+#              label: face
+#              selector:
+#                kwargs:
+#                  # minimal width of the objects of this class to be included in output
+#                  min_width: 16
+#                  # minimal height of the objects of this class to be included in output
+#                  min_height: 16
 
     # custom pyfunc element
     - element: pyfunc

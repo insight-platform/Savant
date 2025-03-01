@@ -26,7 +26,7 @@ services:
       - scripts/uri-input.py
       - /test_data/elon_musk_perf.mp4
       - --socket
-      - pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
+      - dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc
       - --sync
     deploy:
       resources:
@@ -49,8 +49,9 @@ services:
       - ./src/module:/opt/savant/src/module
     environment:
       - WEBSERVER_PORT=8888
-      - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
+      - ZMQ_SRC_ENDPOINT=router+bind:ipc:///tmp/zmq-sockets/input-video.ipc
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
+      - SOURCE_TIMEOUT=1
     ports:
       - "8888:8888"
     deploy:
@@ -92,7 +93,7 @@ services:
       - zmq_sockets:/tmp/zmq-sockets
       - ./assets/stub_imgs:/stub_imgs
     environment:
-      - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
+      - ZMQ_ENDPOINT=router+connect:ipc:///tmp/zmq-sockets/output-video.ipc
       - SOURCE_ID=test
       - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x720.jpeg
       - DEV_MODE=True

@@ -253,6 +253,7 @@ def bus_call(bus, message, loop):
 
 
 def main(args):
+    Glib.threads_init()
     assert (
         len(args) > 2
     ), 'Usage: ./benchmark.py <benchmark-name> <cpu|gpu> [n-frames] [output-filename]'
