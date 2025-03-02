@@ -19,7 +19,7 @@ pipeline:
   # define pipeline's main elements
   elements:
     - element: pyfunc
-      module: samples.kvs.mongo_meta_importer
+      module: samples.aws_kinesis.mongo_meta_importer
       class_name: MongoMetaImporter
       kwargs:
         uri: ${oc.decode:${oc.env:MONGO_URI}}

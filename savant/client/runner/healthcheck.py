@@ -1,11 +1,11 @@
 import time
 from http import HTTPStatus
-from typing import List, Optional
+from typing import Optional
 
 import requests
 from requests import JSONDecodeError, RequestException
 
-from savant.utils.logging import get_logger
+from savant.utils.log import get_logger
 
 logger = get_logger(__name__)
 
@@ -78,4 +78,27 @@ class HealthCheck:
                 )
             time.sleep(self._check_interval)
             self._last_status = self.check()
+            self._last_check_ts = time.time()
+
+    async def async_check(self) -> Optional[str]:
+        import asyncio
+
+        return await asyncio.get_running_loop().run_in_executor(None, self.check)
+
+    async def async_wait_module_is_ready(self):
+        """Wait until the module is ready. Async version."""
+        import asyncio
+
+        if time.time() - self._last_check_ts >= self._check_interval:
+            self._last_status = await self.async_check()
+            self._last_check_ts = time.time()
+
+        time_limit = time.time() + self._wait_timeout
+        while self._last_status != 'running':
+            if time.time() > time_limit:
+                raise TimeoutError(
+                    f'Module is not ready after {self._wait_timeout} seconds.'
+                )
+            await asyncio.sleep(self._check_interval)
+            self._last_status = await self.async_check()
             self._last_check_ts = time.time()

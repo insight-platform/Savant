@@ -70,7 +70,6 @@ services:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../cache:/cache
       - ./src:/opt/savant/samples/face_reid/
-      - ./src/config_tracker_NvDCF_perf.yml:/opt/savant/samples/face_reid/src/config_tracker_NvDCF_perf.yml
       - ./index_files:/index
     command: samples/face_reid/module.yml
     environment:

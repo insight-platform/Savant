@@ -7,8 +7,8 @@ from typing import Any, List, Optional, Tuple, Union
 import cupy as cp
 import numpy as np
 
-from savant.base.model import AttributeModel, ComplexModel, ObjectModel
-from savant.base.pyfunc import BasePyFuncCallableImpl
+from .model import AttributeModel, ComplexModel, ObjectModel
+from .pyfunc import BasePyFuncCallableImpl
 
 
 class TensorFormat(Enum):
@@ -49,7 +49,7 @@ class BaseObjectModelOutputConverter(BaseOutputConverter):
         *output_layers: Union[np.ndarray, cp.ndarray],
         model: ObjectModel,
         roi: Tuple[float, float, float, float],
-    ) -> np.ndarray:
+    ) -> Optional[np.ndarray]:
         """Converts raw model output tensors to a numpy array that represents a
         list of detected bboxes in the format ``(class_id, confidence, xc, yc,
         width, height, [angle])`` in absolute coordinates computed with ``ROI``
@@ -74,7 +74,7 @@ class BaseAttributeModelOutputConverter(BaseOutputConverter):
         *output_layers: Union[np.ndarray, cp.ndarray],
         model: AttributeModel,
         roi: Tuple[float, float, float, float],
-    ) -> List[Tuple[str, Any, Optional[float]]]:
+    ) -> Optional[List[Tuple[str, Any, float]]]:
         """Converts raw model output tensors to a list of values in several
         formats:
 
@@ -104,7 +104,7 @@ class BaseComplexModelOutputConverter(BaseOutputConverter):
         *output_layers: Union[np.ndarray, cp.ndarray],
         model: ComplexModel,
         roi: Tuple[float, float, float, float],
-    ) -> Tuple[np.ndarray, List[List[Tuple[str, Any, float]]]]:
+    ) -> Optional[Tuple[np.ndarray, List[List[Tuple[str, Any, float]]]]]:
         """Converts raw model output tensors to Savant format.
 
         :param output_layers: Model output layer tensors

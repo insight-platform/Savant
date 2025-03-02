@@ -2,7 +2,7 @@ import signal
 import time
 
 from savant.gstreamer import Gst
-from savant.utils.logging import get_logger, init_logging
+from savant.utils.log import get_logger, init_logging
 
 from . import LOGGER_PREFIX
 from .api import Api
@@ -15,7 +15,7 @@ def main():
     logger = get_logger(LOGGER_PREFIX)
     logger.info('Starting the adapter')
 
-    # To gracefully shutdown the adapter on SIGTERM (raise KeyboardInterrupt)
+    # To gracefully shut down the adapter on SIGTERM (raise KeyboardInterrupt)
     signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
 
     config = Config()

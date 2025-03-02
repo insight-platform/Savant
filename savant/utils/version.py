@@ -2,9 +2,9 @@
 
 from pathlib import Path
 
-from savant.utils.singleton import SingletonMeta
+from .singleton import SingletonMeta
 
-VERSION_FILE_PATH = Path(__file__).parent.parent / 'VERSION'
+VERSION_FILE_PATH = str(Path(__file__).parent.parent / 'VERSION')
 
 
 __all__ = ['version']

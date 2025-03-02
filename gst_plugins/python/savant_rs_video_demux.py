@@ -23,7 +23,7 @@ from savant.gstreamer.utils import (
     on_pad_event,
     required_property,
 )
-from savant.utils.logging import LoggerMixin
+from savant.utils.log import LoggerMixin
 
 DEFAULT_SOURCE_TIMEOUT = 60
 DEFAULT_SOURCE_EVICTION_INTERVAL = 15

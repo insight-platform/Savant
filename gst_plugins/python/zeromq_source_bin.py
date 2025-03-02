@@ -10,7 +10,7 @@ from gst_plugins.python.savant_rs_video_decode_bin import (
 )
 from gst_plugins.python.zeromq_src import ZEROMQ_SRC_PROPERTIES
 from savant.gstreamer import GObject, Gst
-from savant.utils.logging import LoggerMixin
+from savant.utils.log import LoggerMixin
 
 # Default values of "queue" element
 DEFAULT_INGRESS_QUEUE_LENGTH = 200

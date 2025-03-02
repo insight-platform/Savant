@@ -7,8 +7,6 @@ import cv2
 import pyds
 from savant_rs.primitives.geometry import BBox
 
-from savant.base.model import OutputImage
-from savant.base.pyfunc import BasePyFuncCallableImpl, PyFuncNoopCallException
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
 from savant.deepstream.opencv_utils import nvds_to_gpu_mat
 from savant.deepstream.utils.iterator import (
@@ -18,7 +16,10 @@ from savant.deepstream.utils.iterator import (
 from savant.gstreamer import Gst
 from savant.meta.object import ObjectMeta
 from savant.utils.image import GPUImage
-from savant.utils.logging import get_logger
+from savant.utils.log import get_logger
+
+from .model import OutputImage
+from .pyfunc import BasePyFuncCallableImpl, PyFuncNoopCallException
 
 
 class BasePreprocessObjectMeta(BasePyFuncCallableImpl):

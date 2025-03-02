@@ -46,37 +46,6 @@ from savant.config.schema import (
     SourceShaper,
     TelemetryParameters,
 )
-from savant.deepstream.buffer_processor import (
-    NvDsBufferProcessor,
-    create_buffer_processor,
-)
-from savant.deepstream.element_factory import NvDsElementFactory
-from savant.deepstream.metadata import (
-    nvds_attr_meta_output_converter,
-    nvds_obj_bbox_output_converter,
-    nvds_obj_meta_output_converter,
-)
-from savant.deepstream.nvinfer.processor import NvInferProcessor
-from savant.deepstream.source_output import SourceOutput, create_source_output
-from savant.deepstream.utils.attribute import (
-    nvds_attr_meta_iterator,
-    nvds_remove_obj_attrs,
-)
-from savant.deepstream.utils.event import (
-    GST_NVEVENT_STREAM_EOS,
-    gst_nvevent_parse_stream_eos,
-)
-from savant.deepstream.utils.iterator import (
-    nvds_frame_meta_iterator,
-    nvds_obj_meta_iterator,
-)
-from savant.deepstream.utils.object import nvds_is_empty_object_meta
-from savant.deepstream.utils.pipeline import (
-    add_queues_to_pipeline,
-    build_pipeline_stages,
-    get_pipeline_element_stages,
-)
-from savant.deepstream.utils.telemetry import init_tracing, shutdown_tracing
 from savant.gstreamer import GLib, Gst  # noqa:F401
 from savant.gstreamer.buffer_processor import GstBufferProcessor
 from savant.gstreamer.pipeline import GstPipeline
@@ -97,6 +66,26 @@ from savant.utils.source_info import (
     SourceShape,
 )
 
+from .buffer_processor import NvDsBufferProcessor, create_buffer_processor
+from .element_factory import NvDsElementFactory
+from .metadata import (
+    nvds_attr_meta_output_converter,
+    nvds_obj_bbox_output_converter,
+    nvds_obj_meta_output_converter,
+)
+from .nvinfer.processor import NvInferProcessor
+from .source_output import SourceOutput, create_source_output
+from .utils.attribute import nvds_attr_meta_iterator, nvds_remove_obj_attrs
+from .utils.event import GST_NVEVENT_STREAM_EOS, gst_nvevent_parse_stream_eos
+from .utils.iterator import nvds_frame_meta_iterator, nvds_obj_meta_iterator
+from .utils.object import nvds_is_empty_object_meta
+from .utils.pipeline import (
+    add_queues_to_pipeline,
+    build_pipeline_stages,
+    get_pipeline_element_stages,
+)
+from .utils.telemetry import init_tracing, shutdown_tracing
+
 
 class NvDsPipeline(GstPipeline):
     """Base class for managing the DeepStream Pipeline.
@@ -110,12 +99,7 @@ class NvDsPipeline(GstPipeline):
 
     _element_factory = NvDsElementFactory()
 
-    def __init__(
-        self,
-        name: str,
-        pipeline_cfg: Pipeline,
-        **kwargs,
-    ):
+    def __init__(self, name: str, pipeline_cfg: Pipeline, **kwargs):
         # pipeline internal processing frame params
         self._frame_params: FrameParameters = kwargs['frame']
 
@@ -492,7 +476,7 @@ class NvDsPipeline(GstPipeline):
         new_pad: Gst.Pad,
         event: Gst.Event,
         source_info: SourceInfo,
-        first_frame_id: int,
+        first_frame_id: Optional[int],
         add_frames_to_pipeline: bool,
     ):
         """Handle adding caps to video source pad."""

@@ -9,15 +9,16 @@ from gi.repository import Gst  # noqa:F401
 from savant_rs.utils import ByteBuffer
 from savant_rs.utils.serialization import Message, load_message_from_bytebuffer
 
-from savant.gstreamer.ffi import LIBGST, GstMapInfo
-from savant.utils.logging import get_logger
+from savant.utils.log import get_logger
+
+from .ffi import LIBGST, GstMapInfo
 
 logger = get_logger(__name__)
 
 
 @contextmanager
 def map_gst_buffer(
-    gst_buffer: Gst.Buffer, flags: int = Gst.MapFlags.READ
+    gst_buffer: Gst.Buffer, flags: Gst.MapFlags = Gst.MapFlags.READ
 ) -> GstMapInfo:
     """Check if the buffer is writable and try to map it. Unmap at context
     exit.
@@ -108,7 +109,7 @@ def gst_post_library_settings_error(
         frame=frame,
         file_path=file_path,
         domain=Gst.LibraryError.quark(),
-        code=Gst.LibraryError.SETTINGS,
+        code=int(Gst.LibraryError.SETTINGS),
         text=text,
         debug=debug,
     )
@@ -171,7 +172,7 @@ def gst_post_stream_failed_warning(
         frame=frame,
         file_path=file_path,
         domain=Gst.StreamError.quark(),
-        code=Gst.StreamError.FAILED,
+        code=int(Gst.StreamError.FAILED),
         text=text,
         debug=debug,
     )
@@ -190,7 +191,7 @@ def gst_post_stream_failed_error(
         frame=frame,
         file_path=file_path,
         domain=Gst.StreamError.quark(),
-        code=Gst.StreamError.FAILED,
+        code=int(Gst.StreamError.FAILED),
         text=text,
         debug=debug,
     )
@@ -209,14 +210,14 @@ def gst_post_stream_demux_error(
         frame=frame,
         file_path=file_path,
         domain=Gst.StreamError.quark(),
-        code=Gst.StreamError.DEMUX,
+        code=int(Gst.StreamError.DEMUX),
         text=text,
         debug=debug,
     )
 
 
 def gst_post_message(
-    msg_type: int,
+    msg_type: Gst.MessageType,
     gst_element: Gst.Element,
     frame: Optional[FrameType],
     file_path: str,

@@ -112,7 +112,10 @@ class NvInferConfig:
 
     @staticmethod
     def generate_model_engine_file(
-        model_file: str, batch_size: int, device_id: str, precision: ModelPrecision
+        model_file: Optional[str],
+        batch_size: int,
+        device_id: str,
+        precision: ModelPrecision,
     ) -> str:
         """Generate ``model-engine-file`` according to default Deepstream
         engine naming scheme."""

@@ -14,7 +14,7 @@ from savant.gstreamer.utils import (
     gst_post_library_settings_error,
     required_property,
 )
-from savant.utils.logging import LoggerMixin
+from savant.utils.log import LoggerMixin
 
 
 class FrameParams(NamedTuple):

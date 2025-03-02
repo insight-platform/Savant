@@ -19,12 +19,12 @@ class TensorToVectorConverter(BaseAttributeModelOutputConverter):
         *output_layers: np.ndarray,
         model: AttributeModel,
         roi: Tuple[float, float, float, float],
-    ) -> List[Tuple[List[float], Optional[float]]]:
+    ) -> Optional[List[Tuple[str, List[float], float]]]:
         """Converts output array to Python list."""
         output_layer = output_layers[0]
         attr_config = model.output.attributes[0]
 
-        return [(attr_config.name, output_layer.tolist(), None)]
+        return [(attr_config.name, output_layer.tolist(), 1.0)]
 
 
 class TensorToItemConverter(BaseAttributeModelOutputConverter):
@@ -35,6 +35,9 @@ class TensorToItemConverter(BaseAttributeModelOutputConverter):
         *output_layers: np.ndarray,
         model: AttributeModel,
         roi: Tuple[float, float, float, float],
-    ) -> List[Tuple[float, Optional[float]]]:
+    ) -> Optional[List[Tuple[str, float, float]]]:
         """Converts output arrays to floats."""
-        return [(out.item(), None) for out in output_layers]
+        return [
+            (attr.name, out.item(), 1.0)
+            for out, attr in zip(output_layers, model.output.attributes)
+        ]

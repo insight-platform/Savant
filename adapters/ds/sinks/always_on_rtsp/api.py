@@ -27,7 +27,7 @@ from adapters.ds.sinks.always_on_rtsp.stream_manager import (
 )
 from adapters.ds.sinks.always_on_rtsp.utils import check_codec_is_available
 from savant.gstreamer.codecs import CODEC_BY_NAME
-from savant.utils.logging import get_logger
+from savant.utils.log import get_logger
 
 logger = get_logger('adapters.ao_sink.api')
 
@@ -50,22 +50,21 @@ class StreamStatusModel(BaseModel):
         description='Exit code of the stream process.',
     )
 
-    @staticmethod
-    def from_stream(stream: Stream):
-        """Build a StreamStatusModel from a Stream object."""
 
-        return StreamStatusModel(
-            is_alive=stream.exit_code is None,
-            exit_code=stream.exit_code,
-        )
+def _stream_status_to_dict(status: StreamStatusModel) -> dict:
+    """Convert the model to a dictionary."""
+    return {
+        'is_alive': status.is_alive,
+        'exit_code': status.exit_code,
+    }
 
-    def to_dict(self):
-        """Convert the model to a dictionary."""
 
-        return {
-            'is_alive': self.is_alive,
-            'exit_code': self.exit_code,
-        }
+def _stream_status_from_stream(stream: Stream) -> StreamStatusModel:
+    """Build a StreamStatusModel from a Stream object."""
+    return StreamStatusModel(
+        is_alive=stream.exit_code is None,
+        exit_code=stream.exit_code,
+    )
 
 
 class StreamModel(BaseModel):
@@ -138,68 +137,68 @@ class StreamModel(BaseModel):
         description='Status of the stream.',
     )
 
-    def to_stream(self):
-        """Convert the model to a Stream object."""
 
-        codec = None
-        if self.codec is not None:
-            codec = CODEC_BY_NAME[self.codec.value]
+def _stream_model_to_stream(stream: StreamModel) -> Stream:
+    """Convert the model to a Stream object."""
 
-        return Stream(
-            stub_file=self.stub_file,
-            framerate=self.framerate,
-            idr_period=self.idr_period,
-            codec=codec,
-            bitrate=self.bitrate,
-            profile=self.profile,
-            max_delay_ms=self.max_delay_ms,
-            latency_ms=self.latency_ms,
-            transfer_mode=self.transfer_mode,
-            rtsp_keep_alive=self.rtsp_keep_alive,
-            metadata_output=self.metadata_output,
-            sync_input=self.sync_input,
-        )
+    codec = None
+    if stream.codec is not None:
+        codec = CODEC_BY_NAME[stream.codec.value]
 
-    @staticmethod
-    def from_stream(stream: Stream):
-        """Build a StreamModel from a Stream object."""
+    return Stream(
+        stub_file=stream.stub_file,
+        framerate=stream.framerate,
+        idr_period=stream.idr_period,
+        codec=codec,
+        bitrate=stream.bitrate,
+        profile=stream.profile,
+        max_delay_ms=stream.max_delay_ms,
+        latency_ms=stream.latency_ms,
+        transfer_mode=stream.transfer_mode,
+        rtsp_keep_alive=stream.rtsp_keep_alive,
+        metadata_output=stream.metadata_output,
+        sync_input=stream.sync_input,
+    )
 
-        return StreamModel(
-            stub_file=stream.stub_file,
-            framerate=stream.framerate,
-            idr_period=stream.idr_period,
-            codec=stream.codec.value.name if stream.codec is not None else None,
-            bitrate=stream.bitrate,
-            profile=stream.profile,
-            max_delay_ms=stream.max_delay_ms,
-            latency_ms=stream.latency_ms,
-            transfer_mode=stream.transfer_mode,
-            rtsp_keep_alive=stream.rtsp_keep_alive,
-            metadata_output=stream.metadata_output,
-            sync_input=stream.sync_input,
-            status=StreamStatusModel.from_stream(stream),
-        )
 
-    def to_dict(self):
-        """Convert the model to a dictionary."""
+def _stream_model_from_stream(stream: Stream) -> StreamModel:
+    """Build a StreamModel from a Stream object."""
+    return StreamModel(
+        stub_file=stream.stub_file,
+        framerate=stream.framerate,
+        idr_period=stream.idr_period,
+        codec=stream.codec.value.name if stream.codec is not None else None,
+        bitrate=stream.bitrate,
+        profile=stream.profile,
+        max_delay_ms=stream.max_delay_ms,
+        latency_ms=stream.latency_ms,
+        transfer_mode=stream.transfer_mode,
+        rtsp_keep_alive=stream.rtsp_keep_alive,
+        metadata_output=stream.metadata_output,
+        sync_input=stream.sync_input,
+        status=_stream_status_from_stream(stream),
+    )
 
-        return {
-            'stub_file': str(self.stub_file) if self.stub_file else None,
-            'framerate': self.framerate,
-            'idr_period': self.idr_period,
-            'codec': self.codec.value if self.codec else None,
-            'bitrate': self.bitrate,
-            'profile': self.profile,
-            'max_delay_ms': self.max_delay_ms,
-            'latency_ms': self.latency_ms,
-            'transfer_mode': self.transfer_mode.value if self.transfer_mode else None,
-            'rtsp_keep_alive': self.rtsp_keep_alive,
-            'metadata_output': (
-                self.metadata_output.value if self.metadata_output else None
-            ),
-            'sync_input': self.sync_input,
-            'status': self.status.to_dict() if self.status else None,
-        }
+
+def _stream_model_to_dict(stream: StreamModel) -> dict:
+    """Convert the model to a dictionary."""
+    return {
+        'stub_file': str(stream.stub_file) if stream.stub_file else None,
+        'framerate': stream.framerate,
+        'idr_period': stream.idr_period,
+        'codec': stream.codec.value if stream.codec else None,
+        'bitrate': stream.bitrate,
+        'profile': stream.profile,
+        'max_delay_ms': stream.max_delay_ms,
+        'latency_ms': stream.latency_ms,
+        'transfer_mode': stream.transfer_mode.value if stream.transfer_mode else None,
+        'rtsp_keep_alive': stream.rtsp_keep_alive,
+        'metadata_output': (
+            stream.metadata_output.value if stream.metadata_output else None
+        ),
+        'sync_input': stream.sync_input,
+        'status': _stream_status_to_dict(stream.status) if stream.status else None,
+    }
 
 
 class Api:
@@ -228,12 +227,12 @@ class Api:
         """List all configured streams."""
 
         response = {
-            source_id: StreamModel.from_stream(stream)
+            source_id: _stream_model_from_stream(stream)
             for source_id, stream in self._stream_manager.get_all_streams().items()
         }
         if format == OutputFormat.YAML:
             response_content = yaml.dump(
-                {k: v.to_dict() for k, v in response.items()},
+                {k: _stream_model_to_dict(v) for k, v in response.items()},
                 sort_keys=False,
             )
             response = Response(
@@ -257,9 +256,11 @@ class Api:
                 detail=f'Stream {source_id} not found.',
             )
 
-        response = StreamModel.from_stream(stream)
+        response = _stream_model_from_stream(stream)
         if format == OutputFormat.YAML:
-            response_content = yaml.dump(response.to_dict(), sort_keys=False)
+            response_content = yaml.dump(
+                _stream_model_to_dict(response), sort_keys=False
+            )
             response = Response(
                 content=response_content,
                 media_type='application/x-yaml',
@@ -272,7 +273,7 @@ class Api:
 
         self.validate_stream(stream)
         try:
-            self._stream_manager.add_stream(source_id, stream.to_stream())
+            self._stream_manager.add_stream(source_id, _stream_model_to_stream(stream))
         except StreamAlreadyExistsError:
             raise HTTPException(
                 status_code=HTTPStatus.BAD_REQUEST,
@@ -286,7 +287,7 @@ class Api:
 
         created_stream = self._stream_manager.get_stream(source_id)
 
-        return StreamModel.from_stream(created_stream)
+        return _stream_model_from_stream(created_stream)
 
     def delete_stream(self, source_id: str):
         """Stop and delete a stream."""

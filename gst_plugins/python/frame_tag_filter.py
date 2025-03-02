@@ -19,7 +19,7 @@ from savant.gstreamer.utils import (
     on_pad_event,
     required_property,
 )
-from savant.utils.logging import LoggerMixin
+from savant.utils.log import LoggerMixin
 
 SINK_PAD_TEMPLATE = Gst.PadTemplate.new(
     'sink',

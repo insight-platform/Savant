@@ -1,8 +1,6 @@
-import logging
 import os
-import sys
 
-from savant.utils.logging import get_logger
+from savant.utils.log import get_logger
 
 logger = get_logger(__name__)
 
@@ -15,15 +13,15 @@ def req_config(name):
     val = os.environ.get(name)
     if val is None:
         logger.error(
-            f"Mandatory environment configuration variable '{name}' not found."
+            'Mandatory environment configuration variable "%s" not found.', name
         )
         logger.error('Configured environment variables:')
         for k, v in os.environ.items():
-            logger.error(f'\t{k}={v}')
+            logger.error('\t%s=%s', k, v)
         raise ValueError(
             f'Configuration Value Not Found in environment variables: {name}'
         )
-    logger.info(f'Applying Configuration Value: {name}={val}')
+    logger.info('Applying Configuration Value: %s=%s', name, val)
     return val
 
 
@@ -39,7 +37,7 @@ def opt_config(name, default=None, convert=None):
     val = default
     if conf_str:
         val = convert(conf_str) if convert else conf_str
-    logger.info(f'Applying Configuration Value: {name}={val}')
+    logger.info('Applying Configuration Value: %s=%s', name, val)
     return val
 
 

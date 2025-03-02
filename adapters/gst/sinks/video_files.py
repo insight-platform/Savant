@@ -10,7 +10,6 @@ from savant_rs.primitives import EndOfStream, VideoFrame
 
 from adapters.python.sinks.chunk_writer import ChunkWriter, CompositeChunkWriter
 from adapters.python.sinks.metadata_json import (
-    MetadataJsonSink,
     MetadataJsonWriter,
     Patterns,
     get_location,
@@ -21,7 +20,7 @@ from savant.api.parser import convert_ts
 from savant.gstreamer import GLib, Gst, GstApp
 from savant.gstreamer.codecs import Codec
 from savant.utils.config import opt_config, req_config, strtobool
-from savant.utils.logging import get_logger, init_logging
+from savant.utils.log import get_logger, init_logging
 from savant.utils.welcome import get_starting_message
 from savant.utils.zeromq import ZeroMQMessage, ZeroMQSource
 

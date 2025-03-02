@@ -3,7 +3,7 @@
 Based on code from https://github.com/derronqi/yolov8-face>
 """
 
-from typing import Any, List, Tuple
+from typing import Any, List, Optional, Tuple
 
 import numpy as np
 
@@ -32,7 +32,7 @@ class YoloV8faceConverter(BaseComplexModelOutputConverter):
         *output_layers: np.ndarray,
         model: ComplexModel,
         roi: Tuple[float, float, float, float],
-    ) -> Tuple[np.ndarray, List[List[Tuple[str, Any, float]]]]:
+    ) -> Optional[Tuple[np.ndarray, List[List[Tuple[str, Any, float]]]]]:
         """Converts detector output layer tensor to bbox tensor and addition
         attribute(landmark).
 
@@ -60,7 +60,7 @@ class YoloV8faceConverter(BaseComplexModelOutputConverter):
             raw_predictions[:, 4] > self.confidence_threshold
         ]
         if selected_predictions.shape[0] == 0:
-            return np.float32([]), []
+            return
 
         keep = nms_cpu(
             selected_predictions[:, :4],
@@ -71,7 +71,7 @@ class YoloV8faceConverter(BaseComplexModelOutputConverter):
 
         selected_nms_predictions = selected_predictions[keep]
         if selected_nms_predictions.shape[0] == 0:
-            return np.float32([]), []
+            return
 
         xywh = selected_nms_predictions[:, :4]
         conf = selected_nms_predictions[:, 4:5]

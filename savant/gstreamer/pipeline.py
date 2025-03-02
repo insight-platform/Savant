@@ -8,11 +8,12 @@ from typing import Any, Generator, List, Optional, Tuple, Union
 from gi.repository import Gst  # noqa:F401
 
 from savant.config.schema import ElementGroup, Pipeline, PipelineElement
-from savant.gstreamer.buffer_processor import GstBufferProcessor
-from savant.gstreamer.element_factory import CreateElementException, GstElementFactory
-from savant.gstreamer.utils import add_buffer_probe
-from savant.utils.logging import get_logger
+from savant.utils.log import get_logger
 from savant.utils.sink_factories import SinkMessage
+
+from .buffer_processor import GstBufferProcessor
+from .element_factory import CreateElementException, GstElementFactory
+from .utils import add_buffer_probe
 
 
 class GstPipeline:  # pylint: disable=too-many-instance-attributes
@@ -27,12 +28,7 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
     # pipeline element factory
     _element_factory = GstElementFactory()
 
-    def __init__(
-        self,
-        name: str,
-        pipeline_cfg: Pipeline,
-        **kwargs,
-    ):
+    def __init__(self, name: str, pipeline_cfg: Pipeline, **kwargs):
         self._logger = get_logger(name)
 
         # output messages queue

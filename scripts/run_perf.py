@@ -260,6 +260,8 @@ def main():
         if not fps_list:
             print('fail')
             continue
+        if len(fps_list) > 3:
+            fps_list = sorted(fps_list)[1:-1]
 
         fps = sum(fps_list) / len(fps_list)
         fps_list = [round(fps, 2) for fps in fps_list]

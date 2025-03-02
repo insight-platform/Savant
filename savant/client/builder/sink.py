@@ -2,7 +2,7 @@ from typing import Optional
 
 from savant.client.log_provider import LogProvider
 from savant.client.runner.sink import AsyncSinkRunner, SinkRunner
-from savant.utils.logging import get_logger
+from savant.utils.log import get_logger
 
 logger = get_logger(__name__)
 

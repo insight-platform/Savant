@@ -10,7 +10,7 @@ from adapters.ds.sinks.always_on_rtsp.app_config import AppConfig
 from adapters.ds.sinks.always_on_rtsp.config import MetadataOutput, TransferMode
 from adapters.ds.sinks.always_on_rtsp.utils import process_is_alive
 from savant.gstreamer.codecs import Codec
-from savant.utils.logging import get_logger
+from savant.utils.log import get_logger
 
 logger = get_logger('adapters.ao_sink.stream_manager')
 

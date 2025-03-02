@@ -11,7 +11,7 @@ from gi.repository import GLib, Gst  # noqa:F401
 from savant_rs.webserver import set_status_running as set_ws_pipeline_status_running
 
 from savant.healthcheck.status import ModuleStatus, set_module_status
-from savant.utils.logging import get_logger
+from savant.utils.log import get_logger
 
 from .pipeline import GstPipeline
 

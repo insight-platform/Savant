@@ -10,8 +10,9 @@ from savant_rs.primitives import (
 )
 from savant_rs.primitives.geometry import RBBox
 
-from savant.api.constants import DEFAULT_NAMESPACE, DEFAULT_TIME_BASE
 from savant.meta.constants import UNTRACKED_OBJECT_ID
+
+from .constants import DEFAULT_NAMESPACE, DEFAULT_TIME_BASE
 
 _python_to_attribute_value = {
     bool: AttributeValue.boolean,

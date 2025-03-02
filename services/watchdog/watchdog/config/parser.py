@@ -1,4 +1,4 @@
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import DictConfig, ListConfig, OmegaConf
 from omegaconf.errors import ConfigKeyError
 
 from .schema import Action, Config, FlowConfig, QueueConfig, WatchConfig
@@ -19,7 +19,7 @@ class ConfigParser:
         self._config_path = config_path
 
     @staticmethod
-    def __parse_labels(labels_list: list) -> list:
+    def __parse_labels(labels_list: ListConfig) -> list:
         container_labels = []
         for label_dict in OmegaConf.to_object(labels_list):
             labels = label_dict.get('labels')
@@ -31,7 +31,7 @@ class ConfigParser:
         return container_labels
 
     @staticmethod
-    def __parse_queue_config(queue_config: dict):
+    def __parse_queue_config(queue_config: DictConfig):
         if queue_config is None:
             return None
 
@@ -44,7 +44,7 @@ class ConfigParser:
         )
 
     @staticmethod
-    def __parse_flow_config(flow_config: dict):
+    def __parse_flow_config(flow_config: DictConfig):
         if flow_config is None:
             return None
 
@@ -62,7 +62,7 @@ class ConfigParser:
         )
 
     @staticmethod
-    def __parse_watch_config(watch_config: dict):
+    def __parse_watch_config(watch_config: DictConfig):
         return WatchConfig(
             buffer=watch_config['buffer'],
             queue=ConfigParser.__parse_queue_config(watch_config.get('queue')),

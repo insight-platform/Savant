@@ -1,7 +1,7 @@
 """Logging setup utils."""
 
 import logging
-import logging.config
+from logging.config import dictConfig
 from typing import Optional
 
 from savant_rs.logging import LogLevel
@@ -77,4 +77,4 @@ def apply_log_spec(log_spec_dict: dict):
     """
     set_savant_rs_loglevel(log_spec_dict)
     log_config = get_log_conf(log_spec_dict)
-    logging.config.dictConfig(log_config)
+    dictConfig(log_config)

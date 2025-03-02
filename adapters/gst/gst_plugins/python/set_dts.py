@@ -3,7 +3,7 @@ from collections import deque
 from typing import Deque, List
 
 from savant.gstreamer import GObject, Gst
-from savant.utils.logging import LoggerMixin
+from savant.utils.log import LoggerMixin
 
 SINK_PAD_TEMPLATE = Gst.PadTemplate.new(
     'sink',

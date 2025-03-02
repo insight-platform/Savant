@@ -10,13 +10,14 @@ from savant_rs.primitives import VideoFrame, VideoFrameContent
 
 from savant.api.constants import DEFAULT_TIME_BASE
 from savant.config.schema import PipelineElement
-from savant.deepstream.buffer_processor import create_buffer_processor
-from savant.deepstream.pipeline import NvDsPipeline
-from savant.deepstream.source_output import create_source_output
 from savant.gstreamer import Gst
 from savant.gstreamer.codecs import AUXILIARY_STREAM_CODECS, CODEC_BY_NAME
-from savant.utils.logging import get_logger
+from savant.utils.log import get_logger
 from savant.utils.source_info import SourceInfoRegistry, SourceShape
+
+from .buffer_processor import create_buffer_processor
+from .pipeline import NvDsPipeline
+from .source_output import create_source_output
 
 
 class AuxiliaryStreamInternal:

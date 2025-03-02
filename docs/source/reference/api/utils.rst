@@ -18,7 +18,7 @@ General utilities
     image.GPUImage
     artist.Position
     artist.Artist
-    logging.LoggerMixin
+    log.LoggerMixin
 
 GPU Memory Formats
 ------------------

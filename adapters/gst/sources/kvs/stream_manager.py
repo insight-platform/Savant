@@ -4,7 +4,7 @@ from typing import Optional
 
 from botocore.exceptions import ClientError
 
-from savant.utils.logging import get_logger
+from savant.utils.log import get_logger
 
 from . import LOGGER_PREFIX
 from .config import Config

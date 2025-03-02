@@ -15,10 +15,11 @@ from savant_rs.utils.symbol_mapper import parse_compound_key
 
 from savant.api.builder import build_attribute_value
 from savant.config.schema import FramePadding
-from savant.deepstream.utils.object import nvds_get_obj_bbox, nvds_get_obj_uid
 from savant.meta.attribute import AttributeMeta
 from savant.meta.constants import UNTRACKED_OBJECT_ID
-from savant.utils.logging import get_logger
+from savant.utils.log import get_logger
+
+from .utils.object import nvds_get_obj_bbox, nvds_get_obj_uid
 
 logger = get_logger(__name__)
 

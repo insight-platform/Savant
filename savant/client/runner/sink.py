@@ -11,10 +11,11 @@ from savant_rs.primitives import (
 )
 
 from savant.client.log_provider import LogProvider
-from savant.client.runner import LogResult
-from savant.client.runner.healthcheck import HealthCheck
-from savant.utils.logging import get_logger
+from savant.utils.log import get_logger
 from savant.utils.zeromq import AsyncZeroMQSource, Defaults, ZeroMQMessage, ZeroMQSource
+
+from .healthcheck import HealthCheck
+from .log_result import LogResult
 
 logger = get_logger(__name__)
 
@@ -160,7 +161,7 @@ class SinkRunner(BaseSinkRunner):
             socket=socket,
             receive_timeout=receive_timeout,
             receive_hwm=receive_hwm,
-            set_ipc_socket_permissions=False,
+            set_ipc_socket_permissions=None,
             source_id=source_id,
             source_id_prefix=source_id_prefix,
         )
@@ -212,7 +213,7 @@ class AsyncSinkRunner(BaseSinkRunner):
             socket=socket,
             receive_timeout=receive_timeout,
             receive_hwm=receive_hwm,
-            set_ipc_socket_permissions=False,
+            set_ipc_socket_permissions=None,
             source_id=source_id,
             source_id_prefix=source_id_prefix,
         )
@@ -225,7 +226,7 @@ class AsyncSinkRunner(BaseSinkRunner):
         """
 
         if self._health_check is not None:
-            self._health_check.wait_module_is_ready()
+            await self._health_check.async_wait_module_is_ready()
 
         wait_until = time.time() + self._idle_timeout
         result = None

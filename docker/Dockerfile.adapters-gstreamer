@@ -18,8 +18,8 @@ RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 10
 
 FROM base AS base-builder
 
-RUN apt-get update \
-    && apt-get install -y \
+RUN apt-get update && \
+    apt-get install -y \
         build-essential \
         cmake \
         git \
@@ -28,8 +28,8 @@ RUN apt-get update \
         pkg-config \
         python3-dev \
         python3-pip \
-        wget \
-    && rm -rf /var/lib/apt/lists/*
+        wget && \
+    rm -rf /var/lib/apt/lists/*
 
 # install/upgrade pip and builders
 RUN python3 -m pip install --no-cache-dir --upgrade \
@@ -44,20 +44,20 @@ RUN python3 -m pip install --no-cache-dir --upgrade \
 ARG TARGETARCH
 ARG CMAKE_VER=3.27.7
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
-      wget -nv -O /tmp/cmake.sh https://github.com/Kitware/CMake/releases/download/v$CMAKE_VER/cmake-$CMAKE_VER-linux-x86_64.sh \
-      && sh /tmp/cmake.sh --skip-license --prefix=/usr/local \
-      && rm -f /tmp/cmake.sh; \
+      wget -nv -O /tmp/cmake.sh https://github.com/Kitware/CMake/releases/download/v$CMAKE_VER/cmake-$CMAKE_VER-linux-x86_64.sh; \
+      sh /tmp/cmake.sh --skip-license --prefix=/usr/local; \
+      rm -f /tmp/cmake.sh; \
     elif [ "$TARGETARCH" = "arm64" ]; then \
-      wget -nv -O /tmp/cmake.sh https://github.com/Kitware/CMake/releases/download/v$CMAKE_VER/cmake-$CMAKE_VER-linux-aarch64.sh \
-      && sh /tmp/cmake.sh --skip-license --prefix=/usr/local \
-      && rm -f /tmp/cmake.sh; \
+      wget -nv -O /tmp/cmake.sh https://github.com/Kitware/CMake/releases/download/v$CMAKE_VER/cmake-$CMAKE_VER-linux-aarch64.sh; \
+      sh /tmp/cmake.sh --skip-license --prefix=/usr/local; \
+      rm -f /tmp/cmake.sh; \
     fi
 
 
 FROM base-builder AS aravis-builder
 
-RUN apt-get update \
-    && apt-get install -y \
+RUN apt-get update && \
+    apt-get install -y \
         gettext \
         gobject-introspection \
         gtk-doc-tools \
@@ -69,8 +69,8 @@ RUN apt-get update \
         libgtk-3-dev \
         libusb-1.0-0-dev \
         libxml2-dev \
-        xsltproc \
-    && rm -rf /var/lib/apt/lists/*
+        xsltproc && \
+    rm -rf /var/lib/apt/lists/*
 
 RUN python -m pip install --no-cache-dir meson==0.63.3
 
@@ -83,22 +83,22 @@ RUN meson build \
         -Dgst-plugin=enabled \
         -Dviewer=disabled  \
         -Dpacket-socket=disabled  \
-        -Dtests=false \
-    && cd build \
-    && ninja \
-    && ninja install \
-    && cd .. \
-    && rm -rf build
+        -Dtests=false && \
+    cd build && \
+    ninja && \
+    ninja install && \
+    cd .. && \
+    rm -rf build
 
 
 FROM base-builder AS kvs-sdk-builder
 
-RUN apt-get update \
-    && apt-get install -y \
+RUN apt-get update && \
+    apt-get install -y \
         libcurl4-openssl-dev \
         liblog4cplus-dev \
-        libssl-dev \
-    && rm -rf /var/lib/apt/lists/*
+        libssl-dev && \
+    rm -rf /var/lib/apt/lists/*
 
 # Build KVS SDK
 ARG KVS_SDK_VERSION=v3.4.1
@@ -109,10 +109,10 @@ RUN cmake \
         -DBUILD_DEPENDENCIES=OFF \
         -DBUILD_JNI=OFF \
         -DCMAKE_INSTALL_PREFIX=../dist \
-        .. \
-    && make \
-    && make install \
-    && find dependency -name "*.so" -exec cp {} ../dist/lib/ \;
+        .. && \
+    make && \
+    make install && \
+    find dependency -name "*.so" -exec cp {} ../dist/lib/ \;
 
 # Build bindings for KVS SDK
 WORKDIR /opt/pykvssdk
@@ -121,27 +121,27 @@ RUN python3 -m pip install --no-cache-dir -r requirements.txt
 COPY libs/pykvssdk /opt/pykvssdk
 RUN python3 setup.py bdist_wheel -- \
       -DBUILD_TYPE=Release \
-      -DKVS_SDK_BASE_DIR=/opt/amazon-kvs-sdk \
-    && rm -rf _skbuild *.egg-info
+      -DKVS_SDK_BASE_DIR=/opt/amazon-kvs-sdk && \
+    rm -rf _skbuild *.egg-info
 
 
 FROM base-builder AS kvs-consumer-builder
 
 RUN git clone \
         https://github.com/aws-samples/amazon-kinesis-video-streams-consumer-library-for-python.git \
-        /opt/amazon-kinesis-video-streams-consumer-library-for-python \
-    && cd /opt/amazon-kinesis-video-streams-consumer-library-for-python \
-    && git checkout c97c13029163fe83b6904b5a594d6d7f697bdcb8 \
-    && rm -rf .git
+        /opt/amazon-kinesis-video-streams-consumer-library-for-python && \
+    cd /opt/amazon-kinesis-video-streams-consumer-library-for-python && \
+    git checkout c97c13029163fe83b6904b5a594d6d7f697bdcb8 && \
+    rm -rf .git
 
 
 FROM base-builder AS savant-meta-builder
 
-RUN apt-get update \
-    && apt-get install -y \
+RUN apt-get update && \
+    apt-get install -y \
         libglib2.0-dev \
-        libgstreamer1.0-dev \
-    && rm -rf /var/lib/apt/lists/*
+        libgstreamer1.0-dev && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /libs/gstsavantframemeta
 COPY libs/gstsavantframemeta/requirements.txt .
@@ -151,10 +151,9 @@ RUN python3 -m pip install --no-cache-dir -r requirements.txt
 ARG SAVANT_RS_VERSION
 ARG SAVANT_RS_GH_REPO=insight-platform/savant-rs
 ARG SAVANT_RS_GH_TOKEN
-COPY local_wheels local_wheels
-COPY utils/install_savant_rs.py utils/install_savant_rs.py
-RUN ./utils/install_savant_rs.py $SAVANT_RS_VERSION ./utils && \
-    rm -rf ./utils
+RUN --mount=type=bind,source=local_wheels,target=local_wheels \
+    --mount=type=bind,source=utils/install_savant_rs.py,target=utils/install_savant_rs.py \
+    ./utils/install_savant_rs.py $SAVANT_RS_VERSION ./tmp && rm -rf ./tmp
 
 COPY libs/gstsavantframemeta .
 RUN python3 -m build --wheel --no-isolation && rm -rf _skbuild
@@ -170,18 +169,22 @@ WORKDIR $PROJECT_PATH
 
 RUN apt-get update && \
     apt-get install --no-install-recommends -y \
-      gdb \
-      libcurl4 \
-      libice6 \
-      liblog4cplus-2.0.5 \
-      libsm6 \
-      strace \
-    && rm -rf /var/lib/apt/lists/*
+        gdb \
+        libcurl4 \
+        libice6 \
+        liblog4cplus-2.0.5 \
+        libsm6 \
+        strace \
+        build-essential \
+        python3-dev && \
+    rm -rf /var/lib/apt/lists/*
 
-COPY adapters/requirements.txt adapters/requirements-gst.txt adapters/
-RUN python -m pip install --no-cache-dir \
-    -r adapters/requirements.txt \
-    -r adapters/requirements-gst.txt
+RUN --mount=type=bind,source=adapters/requirements.txt,target=/tmp/requirements.txt \
+    python -m pip install --no-cache-dir -r /tmp/requirements.txt
+
+RUN --mount=type=bind,source=adapters/requirements-gst.txt,target=/tmp/requirements.txt \
+    python -m pip install --no-cache-dir -r /tmp/requirements.txt
+
 RUN if [ "$(arch)" = "aarch64" ]; then \
         rm /usr/lib/aarch64-linux-gnu/gio/modules/libgiolibproxy.so; \
     else \
@@ -193,34 +196,41 @@ COPY --from=aravis-builder /build/aravis/dist /usr
 COPY --from=kvs-sdk-builder /opt/amazon-kvs-sdk/dist/lib /opt/amazon-kvs-sdk/lib
 ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/opt/amazon-kvs-sdk/lib"
 
-COPY --from=kvs-sdk-builder /opt/pykvssdk/dist /opt/pykvssdk/dist
-RUN python -m pip install --no-cache-dir /opt/pykvssdk/dist/*.whl
+RUN --mount=from=kvs-sdk-builder,source=/opt/pykvssdk/dist,target=/tmp/dist \
+    python -m pip install --no-cache-dir /tmp/dist/*.whl
 
 COPY --from=kvs-consumer-builder /opt/amazon-kinesis-video-streams-consumer-library-for-python /opt/amazon-kinesis-video-streams-consumer-library-for-python
 RUN python -m pip install --no-cache-dir -r /opt/amazon-kinesis-video-streams-consumer-library-for-python/requirements.txt
 ENV PYTHONPATH="${PYTHONPATH}:/opt/amazon-kinesis-video-streams-consumer-library-for-python"
 
-COPY --from=savant-meta-builder /libs/gstsavantframemeta/dist /libs/gstsavantframemeta/dist
-RUN python -m pip install --no-cache-dir /libs/gstsavantframemeta/dist/*.whl
+RUN --mount=from=savant-meta-builder,source=/libs/gstsavantframemeta/dist,target=/tmp/dist \
+    python -m pip install --no-cache-dir /tmp/dist/*.whl
 
 # install savant-rs
+# TODO: Fix SecretsUsedInArgOrEnv for "SAVANT_RS_GH_TOKEN", replace arg with secret
 ARG SAVANT_RS_VERSION
 ARG SAVANT_RS_GH_REPO=insight-platform/savant-rs
 ARG SAVANT_RS_GH_TOKEN
-COPY local_wheels local_wheels
-COPY utils/install_savant_rs.py utils/install_savant_rs.py
-RUN ./utils/install_savant_rs.py $SAVANT_RS_VERSION ./utils && \
-    rm -rf ./utils
+RUN --mount=type=bind,source=local_wheels,target=local_wheels \
+    --mount=type=bind,source=utils/install_savant_rs.py,target=utils/install_savant_rs.py \
+    ./utils/install_savant_rs.py $SAVANT_RS_VERSION ./tmp && rm -rf ./tmp
 
 # copy savant and plugins - they are used in imports
-COPY savant savant
+RUN --mount=type=bind,source=savant,target=/tmp/savant \
+    --mount=type=bind,source=utils/copy_code.sh,target=/tmp/copy_code.sh \
+    /tmp/copy_code.sh /tmp/savant $PROJECT_PATH/savant
+
 COPY gst_plugins gst_plugins
 
-# copy necessary gst plugins and set plugin path correctly
-COPY adapters/shared adapters/shared
-COPY adapters/python adapters/python
-COPY adapters/gst adapters/gst
+# copy adapters
+RUN --mount=type=bind,source=adapters/shared,target=/tmp/adapters/shared \
+    --mount=type=bind,source=adapters/python,target=/tmp/adapters/python \
+    --mount=type=bind,source=adapters/gst,target=/tmp/adapters/gst \
+    --mount=type=bind,source=utils/copy_code.sh,target=/tmp/copy_code.sh \
+    /tmp/copy_code.sh /tmp/adapters $PROJECT_PATH/adapters
+
 COPY gst_plugins/python/logger.py adapters/gst/gst_plugins/python/
+
 ENV GST_PLUGIN_PATH=$PROJECT_PATH/adapters/gst/gst_plugins \
     LOGLEVEL=info
 

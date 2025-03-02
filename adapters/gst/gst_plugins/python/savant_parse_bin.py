@@ -5,7 +5,7 @@ from typing import Optional
 from savant.gstreamer import GObject, Gst  # noqa:F401
 from savant.gstreamer.codecs import Codec, CodecInfo, caps_to_codec
 from savant.gstreamer.utils import on_pad_event
-from savant.utils.logging import LoggerMixin
+from savant.utils.log import LoggerMixin
 
 SINK_PAD_TEMPLATE = Gst.PadTemplate.new(
     'sink',

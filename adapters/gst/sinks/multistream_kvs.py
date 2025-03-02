@@ -25,7 +25,7 @@ from savant.api.enums import ExternalFrameType
 from savant.gstreamer import Gst, GstApp
 from savant.gstreamer.codecs import Codec
 from savant.utils.config import opt_config, req_config, strtobool
-from savant.utils.logging import get_logger, init_logging
+from savant.utils.log import get_logger, init_logging
 from savant.utils.zeromq import ZeroMQMessage, ZeroMQSource
 
 LOGGER_PREFIX = 'adapters.multistream_kvs_sink'

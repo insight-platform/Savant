@@ -1,16 +1,17 @@
 """Tensor to bounding box converter."""
 
-from typing import Tuple
+from typing import Optional, Tuple
 
 import numpy as np
-from numba import float32, njit, void
+
+# import numba as nb
 from pysavantboost import nms
 
 from savant.base.converter import BaseObjectModelOutputConverter
 from savant.base.model import ObjectModel
 
 
-@njit(void(float32[:, :], float32, float32), nogil=True)
+# @nb.njit('void(f4[:, :], f4, f4)', nogil=True, cache=True)
 def scale_rbbox(
     bboxes: np.ndarray, scale_factor_x: float, scale_factor_y: float
 ) -> np.ndarray:
@@ -77,7 +78,7 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
         *output_layers: np.ndarray,
         model: ObjectModel,
         roi: Tuple[float, float, float, float],
-    ) -> np.ndarray:
+    ) -> Optional[np.ndarray]:
         """Converts RAPiD detector output layer tensor to bbox tensor.
 
         :param output_layers: Output layer tensor
@@ -89,7 +90,7 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
             in roi scale
         """
         if not output_layers[0].shape[0]:
-            return np.empty((0, 7), dtype=np.float32)
+            return
 
         bboxes = nms(
             output_layers[0],
@@ -99,7 +100,7 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
         )
 
         if not bboxes.shape[0]:
-            return np.empty((0, 7), dtype=np.float32)
+            return
 
         roi_left, roi_top, roi_width, roi_height = roi
 

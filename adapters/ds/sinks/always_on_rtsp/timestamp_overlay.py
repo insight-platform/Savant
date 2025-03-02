@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 
 from adapters.ds.sinks.always_on_rtsp.last_frame import Frame
-from savant.utils.logging import get_logger
+from savant.utils.log import get_logger
 
 
 class TimestampOverlay:

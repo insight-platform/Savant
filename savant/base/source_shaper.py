@@ -4,7 +4,7 @@ from typing import Optional
 from savant_rs.primitives import VideoFrame
 
 from savant.config.schema import FrameParameters
-from savant.utils.logging import get_logger
+from savant.utils.log import get_logger
 from savant.utils.source_info import SourceShape
 
 

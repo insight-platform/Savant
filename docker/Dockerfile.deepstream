@@ -50,7 +50,11 @@ RUN apt-get update && \
 WORKDIR /tmp/build
 COPY pyproject.toml README.md LICENSE ./
 COPY requirements/base.txt requirements/base.txt
-COPY savant savant
+
+RUN --mount=type=bind,source=savant,target=/tmp/savant \
+    --mount=type=bind,source=utils/copy_code.sh,target=/tmp/copy_code.sh \
+    /tmp/copy_code.sh /tmp/savant /tmp/build/savant
+
 RUN python3 -m build --wheel
 
 
@@ -65,10 +69,9 @@ RUN python3 -m pip install --no-cache-dir -r requirements.txt
 ARG SAVANT_RS_VERSION
 ARG SAVANT_RS_GH_REPO=insight-platform/savant-rs
 ARG SAVANT_RS_GH_TOKEN
-COPY local_wheels local_wheels
-COPY utils/install_savant_rs.py utils/install_savant_rs.py
-RUN ./utils/install_savant_rs.py $SAVANT_RS_VERSION ./utils && \
-    rm -rf ./utils
+RUN --mount=type=bind,source=local_wheels,target=local_wheels \
+    --mount=type=bind,source=utils/install_savant_rs.py,target=utils/install_savant_rs.py \
+    ./utils/install_savant_rs.py $SAVANT_RS_VERSION ./tmp && rm -rf ./tmp
 
 COPY libs/gstsavantframemeta .
 RUN python3 -m build --wheel --no-isolation && rm -rf _skbuild
@@ -88,7 +91,7 @@ RUN python3 -m build --wheel --no-isolation && rm -rf _skbuild
 # Savant boost(cuda) library builder
 FROM builder AS savant-boost-builder
 
-WORKDIR /libs/savanboost
+WORKDIR /libs/savantboost
 COPY libs/savantboost/requirements.txt .
 RUN python3 -m pip install --no-cache-dir -r requirements.txt
 
@@ -107,16 +110,16 @@ ARG PACKAGES_URL=https://eu-central-1.linodeobjects.com/savant-data/packages/${T
 RUN /opt/nvidia/deepstream/deepstream/user_additional_install.sh
 RUN apt-get update && \
     apt-get install --no-install-recommends -y \
-      file \
-      gdb \
-      strace \
-      libmagic1 \
-      libcairo2-dev \
-      python3-pip \
-      python3-dev \
-      python-gi-dev \
-      python3-gst-1.0 \
-      gstreamer1.0-python3-plugin-loader && \
+        file \
+        gdb \
+        strace \
+        libmagic1 \
+        libcairo2-dev \
+        python3-pip \
+        python3-dev \
+        python-gi-dev \
+        python3-gst-1.0 \
+        gstreamer1.0-python3-plugin-loader && \
     apt-get autoremove -y && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
@@ -136,7 +139,7 @@ ENV PYTHONUNBUFFERED=1 \
     CUPY_CACHE_DIR=/cache/cupy
 WORKDIR $PROJECT_PATH
 
-# add deepstream libs to path, so that ctypes can load them
+# add deepstream libs to path
 ENV LD_LIBRARY_PATH=/opt/nvidia/deepstream/deepstream/lib:$LD_LIBRARY_PATH
 
 # python to python3 by default
@@ -152,29 +155,29 @@ RUN wget -qO- \
     dpkg -i OpenCV* && \
     rm OpenCV*
 
-COPY requirements/base.txt requirements.txt
-RUN python -m pip install --no-cache-dir -r requirements.txt && rm requirements.txt
+RUN --mount=type=bind,source=requirements/base.txt,target=/tmp/requirements.txt \
+    python -m pip install --no-cache-dir -r /tmp/requirements.txt
 
-COPY --from=savant-boost-builder /libs/savanboost/dist /libs/savanboost/dist
-RUN python -m pip install --no-cache-dir /libs/savanboost/dist/*.whl
+RUN --mount=from=savant-boost-builder,source=/libs/savantboost/dist,target=/tmp/dist \
+    python -m pip install --no-cache-dir /tmp/dist/*.whl
 
 # install savant-rs
+# TODO: Fix SecretsUsedInArgOrEnv for "SAVANT_RS_GH_TOKEN", replace arg with secret
 ARG SAVANT_RS_VERSION
 ARG SAVANT_RS_GH_REPO=insight-platform/savant-rs
 ARG SAVANT_RS_GH_TOKEN
-COPY local_wheels local_wheels
-COPY utils/install_savant_rs.py utils/install_savant_rs.py
-RUN ./utils/install_savant_rs.py $SAVANT_RS_VERSION ./utils && \
-    rm -rf ./utils
+RUN --mount=type=bind,source=local_wheels,target=local_wheels \
+    --mount=type=bind,source=utils/install_savant_rs.py,target=utils/install_savant_rs.py \
+    ./utils/install_savant_rs.py $SAVANT_RS_VERSION ./tmp && rm -rf ./tmp
 
-COPY --from=savant-meta-builder /libs/gstsavantframemeta/dist /libs/gstsavantframemeta/dist
-RUN python -m pip install --no-cache-dir /libs/gstsavantframemeta/dist/*.whl
+RUN --mount=from=savant-meta-builder,source=/libs/gstsavantframemeta/dist,target=/tmp/dist \
+    python -m pip install --no-cache-dir /tmp/dist/*.whl
 
-COPY --from=nv-buf-surface-generator-builder /libs/nvbufsurfacegenerator/dist /libs/nvbufsurfacegenerator/dist
-RUN python -m pip install --no-cache-dir /libs/nvbufsurfacegenerator/dist/*.whl
+RUN --mount=from=nv-buf-surface-generator-builder,source=/libs/nvbufsurfacegenerator/dist,target=/tmp/dist \
+    python -m pip install --no-cache-dir /tmp/dist/*.whl
 
-COPY --from=savant-package-builder /tmp/build/dist /libs/savant/dist
-RUN python -m pip install --no-cache-dir /libs/savant/dist/*.whl
+RUN --mount=from=savant-package-builder,source=/tmp/build/dist,target=/tmp/dist \
+    python -m pip install --no-cache-dir /tmp/dist/*.whl
 
 # TODO: install yq?
 #ARG YQ_VERSION=4.35.2
@@ -190,7 +193,10 @@ COPY gst_plugins gst_plugins
 
 COPY adapters/gst/gst_plugins adapters/gst/gst_plugins
 RUN rm -f adapters/gst/gst_plugins/python/video_files_sink.py
-COPY adapters/gst/sources adapters/gst/sources
+
+RUN --mount=type=bind,source=adapters/gst/sources,target=/tmp/adapters/gst/sources \
+    --mount=type=bind,source=utils/copy_code.sh,target=/tmp/copy_code.sh \
+    /tmp/copy_code.sh /tmp/adapters/gst/sources $PROJECT_PATH/adapters/gst/sources
 
 COPY scripts/uri-input.py scripts/
 ENV PATH=$PROJECT_PATH/scripts:$PATH \
@@ -221,13 +227,19 @@ RUN mkdir mediamtx && \
       wget -qO- "https://github.com/bluenviron/mediamtx/releases/download/${MEDIAMTX_VERSION}/mediamtx_${MEDIAMTX_VERSION}_linux_armv7.tar.gz" | tar xz -C mediamtx; \
     fi
 
-COPY adapters/requirements-ds.txt adapters/requirements-ds.txt
-RUN python -m pip install --no-cache-dir -r adapters/requirements-ds.txt
+RUN --mount=type=bind,source=adapters/requirements-ds.txt,target=/tmp/requirements.txt \
+    python -m pip install --no-cache-dir -r /tmp/requirements.txt
 
 HEALTHCHECK NONE
 
-COPY adapters/shared adapters/shared
-COPY adapters/ds adapters/ds
+RUN --mount=type=bind,source=adapters/shared,target=/tmp/adapters/shared \
+    --mount=type=bind,source=utils/copy_code.sh,target=/tmp/copy_code.sh \
+    /tmp/copy_code.sh /tmp/adapters/shared $PROJECT_PATH/adapters/shared
+
+RUN --mount=type=bind,source=adapters/ds,target=/tmp/adapters/ds \
+    --mount=type=bind,source=utils/copy_code.sh,target=/tmp/copy_code.sh \
+    /tmp/copy_code.sh /tmp/adapters/ds $PROJECT_PATH/adapters/ds
+
 # To avoid ImportError when Nvidia runtime is not available
 RUN rm gst_plugins/python/frame_tag_filter.py
 ENV GST_PLUGIN_PATH=$GST_PLUGIN_PATH:$PROJECT_PATH/adapters/ds/gst_plugins
@@ -242,16 +254,15 @@ HEALTHCHECK NONE
 
 RUN apt-get update && \
     apt-get install --no-install-recommends -y \
-      graphviz && \
+        graphviz && \
     apt-get autoremove -y && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 COPY samples samples
 
-COPY docs/requirements.txt requirements.txt
-RUN python -m pip install --no-cache-dir -r requirements.txt && \
-    rm requirements.txt
+RUN --mount=type=bind,source=docs/requirements.txt,target=/tmp/requirements.txt \
+    python -m pip install --no-cache-dir -r /tmp/requirements.txt
 
 ARG USERNAME=container_user
 # UID should be set to the same value as host OS UID
@@ -306,8 +317,8 @@ ARG ORT_VERSION=1.17.1
 RUN python -m pip install --no-cache-dir onnx onnxruntime-gpu --extra-index-url https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/onnxruntime-cuda-12/pypi/simple/
 
 # cython, polars, scikit-learn, jupyter, etc.
-COPY requirements/extra.txt requirements.txt
-RUN python -m pip install --no-cache-dir -r requirements.txt && rm requirements.txt
+RUN --mount=type=bind,source=requirements/extra.txt,target=/tmp/requirements.txt \
+    python -m pip install --no-cache-dir -r /tmp/requirements.txt
 
 
 # Extra l4t container
@@ -316,17 +327,18 @@ FROM base AS deepstream-l4t-extra
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-            libopenblas-dev \
-            libopenmpi-dev \
-            openmpi-bin \
-            openmpi-common \
-            libomp-dev \
-            libjpeg-dev \
-            libpng-dev \
-            zlib1g-dev \
-            cmake \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
+        libopenblas-dev \
+        libopenmpi-dev \
+        openmpi-bin \
+        openmpi-common \
+        libomp-dev \
+        libjpeg-dev \
+        libpng-dev \
+        zlib1g-dev \
+        cmake && \
+    apt-get autoremove -y && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # torch, torchvision, torchaudio
 COPY --from=builder /usr/local/cuda-12.2/targets/aarch64-linux/lib/libcupti.* /usr/local/cuda-12.2/targets/aarch64-linux/lib/
@@ -380,5 +392,5 @@ RUN wget -nv -O ${ORT_WHL} ${ORT_URL} && \
     python -m pip install --no-cache-dir onnx ${ORT_WHL}
 
 # cython, polars, scikit-learn, jupyter, etc.
-COPY requirements/extra.txt requirements.txt
-RUN python -m pip install --no-cache-dir -r requirements.txt && rm requirements.txt
+RUN --mount=type=bind,source=requirements/extra.txt,target=/tmp/requirements.txt \
+    python -m pip install --no-cache-dir -r /tmp/requirements.txt

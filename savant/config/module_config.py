@@ -6,7 +6,17 @@ from typing import IO, Any, Callable, Iterable, Optional, Tuple, Type, Union
 
 from omegaconf import DictConfig, OmegaConf
 
-from savant.config.schema import (
+from savant.deepstream.nvinfer.element_config import (
+    nvinfer_element_configurator,
+    nvtracker_element_configurator,
+)
+from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
+from savant.parameter_storage import init_param_storage
+from savant.utils.log import get_logger
+from savant.utils.singleton import SingletonMeta
+from savant.utils.sink_factories import SINK_REGISTRY
+
+from .schema import (
     BufferQueuesParameters,
     DrawFunc,
     ElementGroup,
@@ -22,15 +32,6 @@ from savant.config.schema import (
     TelemetryParameters,
     get_element_name,
 )
-from savant.deepstream.nvinfer.element_config import (
-    nvinfer_element_configurator,
-    nvtracker_element_configurator,
-)
-from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
-from savant.parameter_storage import init_param_storage
-from savant.utils.logging import get_logger
-from savant.utils.singleton import SingletonMeta
-from savant.utils.sink_factories import SINK_REGISTRY
 
 logger = get_logger(__name__)
 
@@ -241,11 +242,11 @@ def configure_module_parameters(module_cfg: DictConfig) -> None:
     :param module_cfg: Module config.
     """
     if 'parameters' not in module_cfg or module_cfg.parameters is None:
-        module_cfg.parameters = {}
+        module_cfg.parameters = DictConfig({})
         return
 
     def apply_schema(
-        cfg: dict, node: str, schema_class: Any, default: Any = None
+        cfg: DictConfig, node: str, schema_class: Any, default: Any = None
     ) -> None:
         if node not in cfg or cfg[node] is None:
             cfg[node] = default

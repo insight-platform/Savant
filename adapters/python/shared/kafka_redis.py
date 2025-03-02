@@ -1,6 +1,5 @@
 import asyncio
 import json
-import os
 import signal
 import time
 from abc import ABC, abstractmethod
@@ -11,7 +10,7 @@ from confluent_kafka.admin import AdminClient, ClusterMetadata, NewTopic
 
 from savant.utils.config import opt_config, req_config, strtobool
 from savant.utils.fps_meter import FPSMeter
-from savant.utils.logging import get_logger, init_logging
+from savant.utils.log import get_logger, init_logging
 from savant.utils.welcome import get_starting_message
 
 LOGGER_NAME = 'adapters.kafka_redis'

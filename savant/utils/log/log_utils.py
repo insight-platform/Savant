@@ -104,7 +104,7 @@ def get_log_conf(log_spec_dict: dict) -> dict:
         'formatters': {},
         'handlers': {
             'savantrs': {
-                'class': 'savant.utils.logging.savant_rs_handler.SavantRsLoggingHandler',
+                'class': 'savant.utils.log.savant_rs_handler.SavantRsLoggingHandler',
             },
         },
         'loggers': loggers,

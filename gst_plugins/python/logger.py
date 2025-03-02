@@ -1,5 +1,5 @@
 from savant.gstreamer import GObject, Gst, GstBase
-from savant.utils.logging import LoggerMixin
+from savant.utils.log import LoggerMixin
 
 
 class Logger(LoggerMixin, GstBase.BaseTransform):

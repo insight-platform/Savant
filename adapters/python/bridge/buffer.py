@@ -6,7 +6,7 @@ from typing import Dict, Optional, Tuple, Union
 
 import msgpack
 from rocksq.blocking import PersistentQueueWithCapacity
-from savant_rs.metrics import *
+from savant_rs.metrics import CounterFamily, GaugeFamily, set_extra_labels
 from savant_rs.pipeline2 import (
     StageFunction,
     VideoPipeline,
@@ -34,7 +34,7 @@ from savant_rs.zmq import (
 from adapters.shared.thread import BaseThreadWorker
 from savant.metrics import get_or_create_counter, get_or_create_gauge
 from savant.utils.config import opt_config, req_config, strtobool
-from savant.utils.logging import get_logger, init_logging
+from savant.utils.log import get_logger, init_logging
 from savant.utils.welcome import get_starting_message
 from savant.utils.zeromq import ZeroMQMessage, ZeroMQSource
 

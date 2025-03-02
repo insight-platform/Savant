@@ -3,7 +3,7 @@ from typing import Any, Optional
 
 from savant.gstreamer import GObject, Gst, GstBase
 from savant.utils.fps_meter import FPSMeter
-from savant.utils.logging import LoggerMixin
+from savant.utils.log import LoggerMixin
 
 
 class Output(Enum):

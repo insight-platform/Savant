@@ -2,12 +2,13 @@ import time
 from typing import Any, Dict, List, Optional
 
 from savant.config.schema import PipelineElement
-from savant.deepstream.element_factory import NvDsElementFactory
-from savant.deepstream.runner import NvDsPipelineRunner
 from savant.gstreamer import Gst  # noqa:F401
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
 from savant.gstreamer.element_factory import GstElementFactory
-from savant.utils.logging import get_logger
+from savant.utils.log import get_logger
+
+from .element_factory import NvDsElementFactory
+from .runner import NvDsPipelineRunner
 
 
 def check_encoder_is_available(
