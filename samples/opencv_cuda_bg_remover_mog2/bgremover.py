@@ -88,7 +88,6 @@ class BgRemover(NvDsPyFuncPlugin):
         """
         stream = self.get_cuda_stream(frame_meta)
         with nvds_to_gpu_mat(buffer, frame_meta.frame_meta) as frame_mat:
-            self.logger.info(f'Buffer is {buffer}')
             result_stream = self.result_aux_streams[frame_meta.source_id]
             # Created frame will be sent automatically
             result_frame, result_buffer = result_stream.create_frame(
