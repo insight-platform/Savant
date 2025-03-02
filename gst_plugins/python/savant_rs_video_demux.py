@@ -25,8 +25,8 @@ from savant.gstreamer.utils import (
 )
 from savant.utils.log import LoggerMixin
 
-DEFAULT_SOURCE_TIMEOUT = 1
-DEFAULT_SOURCE_EVICTION_INTERVAL = 1
+DEFAULT_SOURCE_TIMEOUT = 60
+DEFAULT_SOURCE_EVICTION_INTERVAL = 15
 DEFAULT_EOS_ON_FRAME_RESOLUTION_CHANGE = True
 OUT_CAPS = Gst.Caps.from_string(';'.join(x.value.caps_with_params for x in Codec))
 
