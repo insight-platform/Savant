@@ -1106,7 +1106,7 @@ Running the adapter with Docker:
 .. code-block:: bash
 
     docker run --rm -it --name sink-display \
-        --entrypoint /opt/savant/adapters/ds/sinks/display.py \
+        --entrypoint /opt/savant/adapters/ds/sinks/display.sh \
         -e SYNC_INPUT=False \
         -e ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc \
         -e DISPLAY \

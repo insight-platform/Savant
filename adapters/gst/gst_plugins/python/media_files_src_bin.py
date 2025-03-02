@@ -11,7 +11,7 @@ from savant.gstreamer import GLib, GObject, Gst
 from savant.gstreamer.codecs import Codec, caps_to_codec
 from savant.gstreamer.utils import on_pad_event
 from savant.utils.file_types import FileType, parse_mime_types
-from savant.utils.logging import LoggerMixin
+from savant.utils.log import LoggerMixin
 
 MIME_TYPE_REGEX = {
     FileType.VIDEO: re.compile(r'video/.*'),

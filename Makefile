@@ -19,6 +19,9 @@ endif
 
 PROJECT_PATH := /opt/savant
 
+#BUILD_PROGRESS := plain
+BUILD_PROGRESS := auto
+
 publish-local: build build-adapters-all build-watchdog
 	docker tag savant-deepstream$(PLATFORM_SUFFIX) ghcr.io/insight-platform/savant-deepstream$(PLATFORM_SUFFIX)
 	docker tag savant-adapters-deepstream$(PLATFORM_SUFFIX) ghcr.io/insight-platform/savant-adapters-deepstream$(PLATFORM_SUFFIX)
@@ -35,7 +38,7 @@ publish-local-extra: build-extra
 	docker tag savant-deepstream$(PLATFORM_SUFFIX)-extra ghcr.io/insight-platform/savant-deepstream$(PLATFORM_SUFFIX)-extra
 
 build:
-	docker build \
+	docker build --progress=$(BUILD_PROGRESS) \
 		--target base \
 		--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
 		--build-arg SAVANT_RS_VERSION=$(SAVANT_RS_VERSION) \
@@ -43,7 +46,7 @@ build:
 		-t savant-deepstream$(PLATFORM_SUFFIX) .
 
 build-adapters-deepstream:
-	docker build \
+	docker build --progress=$(BUILD_PROGRESS) \
 		--target adapters \
 		--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
 		--build-arg SAVANT_RS_VERSION=$(SAVANT_RS_VERSION) \
@@ -51,13 +54,13 @@ build-adapters-deepstream:
 		-t savant-adapters-deepstream$(PLATFORM_SUFFIX) .
 
 build-adapters-gstreamer:
-	docker build \
+	docker build --progress=$(BUILD_PROGRESS) \
 		--build-arg SAVANT_RS_VERSION=$(SAVANT_RS_VERSION) \
 		-f docker/Dockerfile.adapters-gstreamer \
 		-t savant-adapters-gstreamer$(PLATFORM_SUFFIX) .
 
 build-adapters-py:
-	docker build \
+	docker build --progress=$(BUILD_PROGRESS) \
 		--build-arg SAVANT_RS_VERSION=$(SAVANT_RS_VERSION) \
 		-f docker/Dockerfile.adapters-py \
 		-t savant-adapters-py$(PLATFORM_SUFFIX) .
@@ -65,10 +68,9 @@ build-adapters-py:
 build-adapters-all: build-adapters-py build-adapters-gstreamer build-adapters-deepstream
 
 build-watchdog:
-	docker build \
+	docker build --progress=$(BUILD_PROGRESS) \
 		-f services/watchdog/Dockerfile \
-		-t savant-watchdog$(PLATFORM_SUFFIX) \
-		services/watchdog
+		-t savant-watchdog$(PLATFORM_SUFFIX) .
 
 build-extra-packages:
 	docker buildx build --load \
@@ -86,7 +88,7 @@ build-extra-packages:
 		savant-extra$(PLATFORM_SUFFIX)-builder
 
 build-extra:
-	docker build \
+	docker build --progress=$(BUILD_PROGRESS) \
 		--target deepstream$(PLATFORM_SUFFIX)-extra \
 		--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
 		--build-arg SAVANT_RS_VERSION=$(SAVANT_RS_VERSION) \
@@ -119,7 +121,7 @@ build-opencv-arm64:
 
 build-docs:
 	rm -rf docs/source/reference/api/generated
-	docker build \
+	docker build --progress=$(BUILD_PROGRESS) \
 		--target docs \
 		--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
 		--build-arg SAVANT_RS_VERSION=$(SAVANT_RS_VERSION) \

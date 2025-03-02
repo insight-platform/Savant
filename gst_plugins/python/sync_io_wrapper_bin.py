@@ -8,7 +8,7 @@ from savant.gstreamer.utils import (
     gst_post_library_settings_error,
     required_property,
 )
-from savant.utils.logging import LoggerMixin
+from savant.utils.log import LoggerMixin
 
 DEFAULT_MAX_QUEUE = 1
 WAIT_QUEUE_INTERVAL = 0.1

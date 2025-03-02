@@ -1,7 +1,7 @@
 from enum import Enum
 from pathlib import Path
 
-from savant.utils.logging import get_logger
+from savant.utils.log import get_logger
 
 logger = get_logger(__name__)
 

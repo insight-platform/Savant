@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Union
 from omegaconf import MISSING, DictConfig, OmegaConf
 
 from savant.base.pyfunc import PyFunc
-from savant.utils.logging import get_logger
+from savant.utils.log import get_logger
 
 logger = get_logger(__name__)
 

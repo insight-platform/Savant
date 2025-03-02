@@ -1,6 +1,6 @@
 """YOLOv8-seg postprocessing (converter)."""
 
-from typing import Any, List, Tuple
+from typing import Any, List, Optional, Tuple
 
 import cupy as cp
 import cv2
@@ -41,7 +41,7 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
         *output_layers: cp.ndarray,
         model: NvInferInstanceSegmentation,
         roi: Tuple[float, float, float, float],
-    ) -> Tuple[np.ndarray, List[List[Tuple[str, Any, float]]]]:
+    ) -> Optional[Tuple[np.ndarray, List[List[Tuple[str, Any, float]]]]]:
         """Converts model output layer tensors to bbox/seg tensors.
 
         :param output_layers: Output layer tensor
@@ -63,7 +63,7 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
         )
 
         if tensors.shape[0] == 0:
-            return tensors.get(), []
+            return
 
         roi_left, roi_top, roi_width, roi_height = roi
 

@@ -11,7 +11,7 @@ from urllib.parse import urlparse
 import click
 
 from savant.utils.file_types import FileType, parse_mime_types
-from savant.utils.logging import get_logger, init_logging
+from savant.utils.log import get_logger, init_logging
 
 logger = get_logger('uri-input')
 

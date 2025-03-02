@@ -15,7 +15,7 @@ from savant_rs.primitives import Attribute, AttributeValue, VideoFrameUpdate
 
 from savant.client import JpegSource, SinkBuilder, SourceBuilder
 from savant.client.utils import resize_preserving_aspect
-from savant.utils.logging import get_logger, init_logging
+from savant.utils.log import get_logger, init_logging
 
 
 def parse_args():

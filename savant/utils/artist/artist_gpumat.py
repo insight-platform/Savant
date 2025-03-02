@@ -54,7 +54,7 @@ class ArtistGPUMat(AbstractContextManager):
         padding: Tuple[int, int, int, int] = (0, 0, 0, 0),
         anchor_point_type: Position = Position.CENTER,
     ) -> Tuple[Tuple[int, int], int]:
-        """Draw text, text backround box and text background box border on the frame.
+        """Draw text, text background box and text background box border on the frame.
         Does not draw anything if text is empty.
 
         :param text: Display text.
@@ -278,7 +278,7 @@ class ArtistGPUMat(AbstractContextManager):
 
     def add_polygon(
         self,
-        vertices: List[Tuple[int, int]],
+        vertices: Union[np.ndarray, List[Tuple[int, int]]],
         line_width: int = 3,
         line_color: Tuple[int, int, int, int] = (255, 0, 0, 255),  # RGBA, Red
         bg_color: Optional[Tuple[int, int, int, int]] = None,  # RGBA

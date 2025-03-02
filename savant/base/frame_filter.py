@@ -4,7 +4,7 @@ from abc import abstractmethod
 
 from savant_rs.primitives import VideoFrame
 
-from savant.base.pyfunc import BasePyFuncCallableImpl
+from .pyfunc import BasePyFuncCallableImpl
 
 
 class BaseFrameFilter(BasePyFuncCallableImpl):

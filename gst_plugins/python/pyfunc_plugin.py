@@ -16,7 +16,7 @@ from gst_plugins.python.pyfunc_common import (
 )
 from savant.base.pyfunc import BasePyFuncPlugin, PyFunc
 from savant.gstreamer import GLib, GObject, Gst, GstBase  # noqa: F401
-from savant.utils.logging import LoggerMixin
+from savant.utils.log import LoggerMixin
 
 # RGBA format is required to access the frame (pyds.get_nvds_buf_surface)
 CAPS = Gst.Caps.from_string(

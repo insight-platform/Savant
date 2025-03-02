@@ -11,7 +11,7 @@ from savant.gstreamer.utils import (
     gst_post_library_settings_error,
     gst_post_stream_failed_error,
 )
-from savant.utils.logging import LoggerMixin
+from savant.utils.log import LoggerMixin
 
 try:
     from savant.deepstream.opencv_utils import nvds_to_gpu_mat

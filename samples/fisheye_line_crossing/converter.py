@@ -1,6 +1,6 @@
 """YOLOv7 OBB detector output to bbox converter."""
 
-from typing import Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 
@@ -34,7 +34,7 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
         *output_layers: np.ndarray,
         model: ObjectModel,
         roi: Tuple[float, float, float, float],
-    ) -> np.ndarray:
+    ) -> Optional[np.ndarray]:
         """Converts detector output layer tensor to bbox tensor.
 
         Converter is suitable for PyTorch YOLOv8 models.
@@ -56,7 +56,7 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
         # confidence threshold filter
         keep = preds[:, 4] > self.confidence_threshold
         if not keep.any():
-            return np.float32([])
+            return
         preds = preds[keep]
 
         keep = nms_cpu(
@@ -66,7 +66,7 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
             self.top_k,
         )
         if not keep.any():
-            return np.float32([])
+            return
         preds = preds[keep]
 
         confs = preds[:, 4:5]

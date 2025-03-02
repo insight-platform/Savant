@@ -12,7 +12,6 @@ from savant_rs.utils.symbol_mapper import (
     parse_compound_key,
 )
 
-from savant.deepstream.meta.constants import MAX_LABEL_SIZE
 from savant.deepstream.utils.attribute import (
     nvds_add_attr_meta_to_obj,
     nvds_get_obj_attr_meta,
@@ -35,7 +34,9 @@ from savant.meta.attribute import AttributeMeta
 from savant.meta.constants import DEFAULT_CONFIDENCE, UNTRACKED_OBJECT_ID
 from savant.meta.errors import MetaValueError
 from savant.meta.object import BaseObjectMetaImpl, ObjectMeta
-from savant.utils.logging import LoggerMixin
+from savant.utils.log import LoggerMixin
+
+from .constants import MAX_LABEL_SIZE
 
 
 class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):

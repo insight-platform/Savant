@@ -22,8 +22,12 @@ from savant.base.model import (
     ObjectModel,
 )
 from savant.config.schema import get_element_name
-from savant.deepstream.nvinfer.file_config import NvInferConfig, NvInferConfigType
-from savant.deepstream.nvinfer.model import (
+from savant.parameter_storage import param_storage
+from savant.remote_file import process_remote
+from savant.utils.log import get_logger
+
+from .file_config import NvInferConfig, NvInferConfigType
+from .model import (
     NVINFER_MODEL_TYPE_REGISTRY,
     NvInferInstanceSegmentation,
     NvInferModel,
@@ -31,11 +35,12 @@ from savant.deepstream.nvinfer.model import (
     NvInferModelType,
     NvInferObjectModelOutputObject,
 )
-from savant.parameter_storage import param_storage
-from savant.remote_file import process_remote
-from savant.utils.logging import get_logger
 
-__all__ = ['nvinfer_element_configurator', 'MERGED_CLASSES']
+__all__ = [
+    'nvinfer_element_configurator',
+    'MERGED_CLASSES',
+    'nvtracker_element_configurator',
+]
 
 MERGED_CLASSES = defaultdict(dict)
 
@@ -217,16 +222,13 @@ def nvinfer_element_configurator(
                 )
                 model_config.engine_file = None
 
-    if (
+    # This is to allow loading the model in a non-standard way
+    # Not a supported feature, it is not advisable to rely on this interaction
+    embedded_model = (
         model_config.engine_create_func_name
         and model_config.engine_create_func_name.startswith('savant_embedded')
-    ):
-        # This is to allow loading the model in a non-standard way
-        # Not a supported feature, it is not advisable to rely on this interaction
-        model_file_required = False
-    else:
-        # model or engine file must be specified
-        model_file_required = True
+    )
+    model_file_required = not embedded_model
 
     if model_config.engine_file:
         engine_file_path = model_path / model_config.engine_file
@@ -252,7 +254,6 @@ def nvinfer_element_configurator(
 
     # generate model-engine-file if not set
     if not model_config.engine_file:
-        device_id = None
         if model_config.enable_dla:
             device_id = f'dla{model_config.use_dla_core}'
         else:

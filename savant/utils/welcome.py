@@ -1,4 +1,4 @@
-from savant.utils.version import version
+from .version import version
 
 
 def get_welcome_message() -> str:

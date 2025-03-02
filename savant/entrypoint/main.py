@@ -19,7 +19,7 @@ from savant.deepstream.runner import NvDsPipelineRunner
 from savant.gstreamer.codecs import AUXILIARY_STREAM_CODECS
 from savant.healthcheck.status import set_module_status, ModuleStatus
 from savant.utils.check_display import check_display_env
-from savant.utils.logging import get_logger, init_logging, update_logging
+from savant.utils.log import get_logger, init_logging, update_logging
 from savant.utils.sink_factories import sink_factory
 from savant.utils.welcome import get_starting_message
 

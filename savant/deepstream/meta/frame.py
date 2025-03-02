@@ -11,11 +11,12 @@ from savant_rs.utils import TelemetrySpan
 from savant.api.builder import build_attribute_value
 from savant.api.constants import DEFAULT_NAMESPACE
 from savant.api.parser import parse_attribute_value
-from savant.deepstream.meta.object import _NvDsObjectMetaImpl
 from savant.deepstream.utils.attribute import nvds_remove_obj_attrs
 from savant.meta.errors import MetaValueError
 from savant.meta.object import ObjectMeta
-from savant.utils.logging import LoggerMixin
+from savant.utils.log import LoggerMixin
+
+from .object import _NvDsObjectMetaImpl
 
 
 def nvds_obj_meta_generator(

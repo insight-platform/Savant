@@ -6,7 +6,7 @@ from typing import Iterator
 
 from gi.repository import Gst
 
-from savant.utils.logging import get_logger
+from savant.utils.log import get_logger
 from savant.utils.sink_factories import SinkMessage
 
 

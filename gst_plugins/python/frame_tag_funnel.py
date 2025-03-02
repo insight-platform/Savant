@@ -5,7 +5,7 @@ from typing import Deque, Optional, Tuple
 from gst_plugins.python.frame_tag_filter_common import parse_stream_part_event
 from savant.gstreamer import GLib, GObject, Gst
 from savant.gstreamer.utils import on_pad_event
-from savant.utils.logging import LoggerMixin
+from savant.utils.log import LoggerMixin
 
 DEFAULT_QUEUE_SIZE = 50
 SINK_TAGGED_PAD_TEMPLATE = Gst.PadTemplate.new(

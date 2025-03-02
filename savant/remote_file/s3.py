@@ -9,7 +9,7 @@ from botocore import UNSIGNED
 from botocore.config import Config
 from tqdm import tqdm
 
-from savant.remote_file.base import RemoteFileError, RemoteFileHandler
+from .base import RemoteFileError, RemoteFileHandler
 
 __all__ = ['S3FileHandler']
 

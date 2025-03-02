@@ -8,7 +8,7 @@ from savant.deepstream.decoding import configure_low_latency_decoding
 from savant.gstreamer import Gst
 from savant.gstreamer.codecs import caps_to_codec
 from savant.gstreamer.element_factory import GstElementFactory
-from savant.utils.logging import get_logger
+from savant.utils.log import get_logger
 
 LOGGER_NAME = 'adapters.ao_sink.input_pipeline'
 logger = get_logger(LOGGER_NAME)

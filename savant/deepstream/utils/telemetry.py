@@ -10,7 +10,7 @@ from savant_rs.telemetry import (
 )
 
 from savant.config.schema import TracingParameters
-from savant.utils.logging import get_logger
+from savant.utils.log import get_logger
 
 logger = get_logger(__name__)
 

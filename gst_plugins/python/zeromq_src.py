@@ -30,7 +30,7 @@ from savant.gstreamer.utils import (
     gst_post_stream_failed_error,
     required_property,
 )
-from savant.utils.logging import LoggerMixin
+from savant.utils.log import LoggerMixin
 from savant.utils.zeromq import (
     Defaults,
     ReceiverSocketTypes,

@@ -8,7 +8,7 @@ from adapters.ds.sinks.always_on_rtsp.pipeline import PipelineThread
 from adapters.ds.sinks.always_on_rtsp.utils import nvidia_runtime_is_available
 from savant.gstreamer import Gst
 from savant.gstreamer.element_factory import GstElementFactory
-from savant.utils.logging import get_logger, init_logging
+from savant.utils.log import get_logger, init_logging
 
 LOGGER_NAME = 'adapters.ao_sink'
 logger = get_logger(LOGGER_NAME)
@@ -68,7 +68,3 @@ def ao_sink_loop(
         input_pipeline_thread.start()
         while input_pipeline_thread.is_running and output_pipeline_thread.is_running:
             time.sleep(1)
-
-
-if __name__ == '__main__':
-    run_ao_sink()

@@ -6,7 +6,8 @@ from typing import Dict, List, Optional
 
 from savant.config.schema import FramePadding
 from savant.gstreamer import Gst
-from savant.utils.singleton import SingletonMeta
+
+from .singleton import SingletonMeta
 
 
 @dataclass

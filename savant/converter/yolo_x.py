@@ -1,12 +1,13 @@
 """YOLOX detector postprocessing (converter)."""
 
 from functools import lru_cache
-from typing import Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 
 from savant.base.model import ObjectModel
-from savant.converter.yolo import TensorToBBoxConverter as YoloTensorToBBoxConverter
+
+from .yolo import TensorToBBoxConverter as YoloTensorToBBoxConverter
 
 
 class TensorToBBoxConverter(YoloTensorToBBoxConverter):
@@ -41,7 +42,7 @@ class TensorToBBoxConverter(YoloTensorToBBoxConverter):
         *output_layers: np.ndarray,
         model: ObjectModel,
         roi: Tuple[float, float, float, float],
-    ) -> np.ndarray:
+    ) -> Optional[np.ndarray]:
         """Converts YOLOX detector output layer tensor to bbox tensor.
 
         :param output_layers: Output layer tensor

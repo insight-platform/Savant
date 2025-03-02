@@ -1,10 +1,7 @@
 import cv2
 import torch
 
-from savant.utils.memory_repr import (
-    OpenCVGpuMatCudaArrayInterface,
-    cuda_array_as_opencv_gpu_mat,
-)
+from .memory_repr import OpenCVGpuMatCudaArrayInterface, cuda_array_as_opencv_gpu_mat
 
 
 def opencv_gpu_mat_as_pytorch_tensor(gpu_mat: cv2.cuda.GpuMat) -> torch.Tensor:

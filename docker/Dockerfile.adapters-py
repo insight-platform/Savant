@@ -6,29 +6,40 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONPATH=$PROJECT_PATH
 WORKDIR $PROJECT_PATH
 
-RUN export DEBIAN_FRONTEND=noninteractive \
-    && apt-get update \
-    && apt-get install --no-install-recommends -y \
+RUN export DEBIAN_FRONTEND=noninteractive && \
+    apt-get update && \
+    apt-get install --no-install-recommends -y \
         libmagic1 \
-    && rm -rf /var/lib/apt/lists/*
+        build-essential \
+        python3-dev && \
+    rm -rf /var/lib/apt/lists/*
 
-COPY adapters/requirements.txt adapters/requirements.txt
-RUN python -m pip install --no-cache-dir -r adapters/requirements.txt
-COPY adapters/requirements-py.txt adapters/requirements-py.txt
-RUN python -m pip install --no-cache-dir -r adapters/requirements-py.txt
+RUN --mount=type=bind,source=adapters/requirements.txt,target=/tmp/requirements.txt \
+    python -m pip install --no-cache-dir -r /tmp/requirements.txt
+
+RUN --mount=type=bind,source=adapters/requirements-py.txt,target=/tmp/requirements.txt \
+    python -m pip install --no-cache-dir -r /tmp/requirements.txt
 
 # install savant-rs
+# TODO: Fix SecretsUsedInArgOrEnv for "SAVANT_RS_GH_TOKEN", replace arg with secret
 ARG SAVANT_RS_VERSION
 ARG SAVANT_RS_GH_REPO=insight-platform/savant-rs
 ARG SAVANT_RS_GH_TOKEN
-COPY local_wheels local_wheels
-COPY utils/install_savant_rs.py utils/install_savant_rs.py
-RUN ./utils/install_savant_rs.py $SAVANT_RS_VERSION ./utils && \
-    rm -rf ./utils
+RUN --mount=type=bind,source=local_wheels,target=local_wheels \
+    --mount=type=bind,source=utils/install_savant_rs.py,target=utils/install_savant_rs.py \
+    ./utils/install_savant_rs.py $SAVANT_RS_VERSION ./tmp && rm -rf ./tmp
 
-COPY savant savant
-COPY adapters/shared adapters/shared
-COPY adapters/python adapters/python
+# copy savant
+RUN --mount=type=bind,source=savant,target=/tmp/savant \
+    --mount=type=bind,source=utils/copy_code.sh,target=/tmp/copy_code.sh \
+    /tmp/copy_code.sh /tmp/savant $PROJECT_PATH/savant
+
+# copy adapters
+RUN --mount=type=bind,source=adapters/shared,target=/tmp/adapters/shared \
+    --mount=type=bind,source=adapters/python,target=/tmp/adapters/python \
+    --mount=type=bind,source=utils/copy_code.sh,target=/tmp/copy_code.sh \
+    /tmp/copy_code.sh /tmp/adapters $PROJECT_PATH/adapters
+
 ENV LOGLEVEL=info
 
 RUN echo 'python3 -c "from savant.utils.welcome import get_welcome_message; print(get_welcome_message())"' >> /etc/bash.bashrc

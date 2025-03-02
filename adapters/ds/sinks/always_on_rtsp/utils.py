@@ -4,7 +4,7 @@ from typing import Optional
 
 from savant.gstreamer import Gst
 from savant.gstreamer.codecs import Codec
-from savant.utils.logging import get_logger
+from savant.utils.log import get_logger
 
 logger = get_logger('adapters.ao_sink.utils')
 

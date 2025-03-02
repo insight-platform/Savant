@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from threading import Thread
 from typing import Optional
 
-from savant.utils.logging import get_logger
+from savant.utils.log import get_logger
 
 
 class BaseThreadWorker(ABC):

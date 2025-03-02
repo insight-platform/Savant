@@ -3,10 +3,11 @@ import time
 from pathlib import Path
 
 from savant.config.schema import ModelElement, PipelineElement
-from savant.deepstream.nvinfer.model import NvInferModel
 from savant.deepstream.runner import NvDsPipelineRunner
 from savant.gstreamer import Gst  # noqa:F401
 from savant.gstreamer.element_factory import CreateElementException, GstElementFactory
+
+from .model import NvInferModel
 
 
 class BuildEngineException(Exception):

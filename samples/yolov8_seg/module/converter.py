@@ -1,6 +1,6 @@
 """YOLOv8-seg postprocessing (converter)."""
 
-from typing import Any, List, Tuple
+from typing import Any, List, Optional, Tuple
 
 import cv2
 import numba as nb
@@ -8,7 +8,6 @@ import numpy as np
 
 from savant.base.converter import BaseComplexModelOutputConverter
 from savant.deepstream.nvinfer.model import NvInferInstanceSegmentation
-from savant.utils.nms import nms_cpu
 
 
 class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
@@ -35,7 +34,7 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
         *output_layers: np.ndarray,
         model: NvInferInstanceSegmentation,
         roi: Tuple[float, float, float, float],
-    ) -> Tuple[np.ndarray, List[List[Tuple[str, Any, float]]]]:
+    ) -> Optional[Tuple[np.ndarray, List[List[Tuple[str, Any, float]]]]]:
         """Converts model output layer tensors to bbox/seg tensors.
 
         :param output_layers: Output layer tensor
@@ -57,7 +56,7 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
         )
 
         if tensors.shape[0] == 0:
-            return tensors, []
+            return
 
         roi_left, roi_top, roi_width, roi_height = roi
 
@@ -109,7 +108,10 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
         return tensors, mask_list
 
 
-@nb.njit('Tuple((u2[:], f4[:]))(f4[:, :])', nogil=True, cache=True)
+jit_kwargs = dict(nogil=True, cache=True, fastmath=True)
+
+
+@nb.njit('Tuple((u2[:], f4[:]))(f4[:, :])', **jit_kwargs)
 def _parse_scores(scores: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     class_ids = np.empty(scores.shape[0], dtype=np.uint16)
     confidences = np.empty(scores.shape[0], dtype=scores.dtype)
@@ -119,16 +121,65 @@ def _parse_scores(scores: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     return class_ids, confidences
 
 
-@nb.njit('f4[:, ::1](f4[:, :])', nogil=True, cache=True)
+@nb.njit('f4[:, ::1](f4[:, :])', **jit_kwargs)
 def sigmoid(a: np.ndarray) -> np.ndarray:
     ones = np.ones(a.shape, dtype=np.float32)
     return np.divide(ones, (ones + np.exp(-a)))
 
 
+@nb.njit('u4[:](f4[:, :], f4[:], f4, u2)', **jit_kwargs)
+def nms_cpu(
+    bboxes: np.ndarray, confidences: np.ndarray, threshold: float, top_k: int = 300
+) -> np.ndarray:
+    """Performs non-maximum suppression (NMS) on the boxes according
+    to their intersection-over-union (IoU). NumPy (CPU) version.
+
+    :param bboxes: Boxes to perform NMS on.
+        They are expected to be in (xc, yc, width, height) format.
+    :param confidences: Scores for each one of the boxes.
+    :param threshold: IoU threshold.
+        Discards all overlapping boxes with IoU > threshold.
+    :param top_k: Returns only K with max confidence/score.
+    :return: Indices of the boxes that have been kept by NMS,
+        sorted in decreasing order of scores.
+    """
+    x_left = bboxes[:, 0]
+    y_top = bboxes[:, 1]
+    x_right = bboxes[:, 0] + bboxes[:, 2]
+    y_bottom = bboxes[:, 1] + bboxes[:, 3]
+
+    areas = (x_right - x_left) * (y_bottom - y_top)
+    order = confidences.argsort()[::-1].astype(np.uint32)
+
+    mask = np.zeros((min(bboxes.shape[0], top_k),), dtype=np.uint32)
+    mask_idx = 0
+    while order.size > 0 and mask_idx < top_k:
+        idx_self = order[0]
+        idx_other = order[1:]
+
+        mask[mask_idx] = idx_self
+        mask_idx += 1
+
+        xx1 = np.maximum(x_left[idx_self], x_left[idx_other])
+        yy1 = np.maximum(y_top[idx_self], y_top[idx_other])
+        xx2 = np.minimum(x_right[idx_self], x_right[idx_other])
+        yy2 = np.minimum(y_bottom[idx_self], y_bottom[idx_other])
+
+        width = np.maximum(0.0, xx2 - xx1)
+        height = np.maximum(0.0, yy2 - yy1)
+        inter = width * height
+
+        over = inter / (areas[idx_self] + areas[idx_other] - inter)
+
+        indices = np.where(over <= threshold)[0]
+        order = order[indices + 1]
+
+    return mask[:mask_idx]
+
+
 @nb.njit(
     'Tuple((f4[:, ::1], f4[:, :, ::1]))(f4[:, ::1], f4[:, :, ::1], u2, f4, f4, u2)',
-    nogil=True,
-    cache=True,
+    **jit_kwargs,
 )
 def _postproc(
     output: np.ndarray,

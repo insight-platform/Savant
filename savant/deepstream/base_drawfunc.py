@@ -4,9 +4,10 @@ from abc import abstractmethod
 from typing import Any, Dict
 
 from savant.config.schema import FrameProcessingCondition
-from savant.deepstream.meta.frame import NvDsFrameMeta
-from savant.deepstream.pyfunc import NvDsPyFuncPlugin
 from savant.gstreamer import Gst  # noqa: F401
+
+from .meta.frame import NvDsFrameMeta
+from .pyfunc import NvDsPyFuncPlugin
 
 
 class BaseNvDsDrawFunc(NvDsPyFuncPlugin):

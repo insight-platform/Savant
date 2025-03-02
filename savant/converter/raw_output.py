@@ -20,7 +20,7 @@ class ModelCudaRawOutputConverter(BaseAttributeModelOutputConverter):
         *output_layers: cp.ndarray,
         model: AttributeModel,
         roi: Tuple[float, float, float, float],
-    ) -> List[Tuple[str, Any, Optional[float]]]:
+    ) -> Optional[List[Tuple[str, Any, float]]]:
         """Returns raw model output tensors as attributes.
 
         :param output_layers: Model output layer tensors
@@ -44,7 +44,7 @@ class ModelRawOutputConverter(BaseAttributeModelOutputConverter):
         *output_layers: np.ndarray,
         model: AttributeModel,
         roi: Tuple[float, float, float, float],
-    ) -> List[Tuple[str, Any, Optional[float]]]:
+    ) -> Optional[List[Tuple[str, Any, float]]]:
         """Returns raw model output tensors as attributes.
 
         :param output_layers: Model output layer tensors

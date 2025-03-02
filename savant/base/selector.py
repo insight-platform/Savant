@@ -4,7 +4,7 @@ from abc import abstractmethod
 
 import numpy as np
 
-from savant.base.pyfunc import BasePyFuncCallableImpl
+from .pyfunc import BasePyFuncCallableImpl
 
 
 class BaseSelector(BasePyFuncCallableImpl):

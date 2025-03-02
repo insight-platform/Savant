@@ -21,12 +21,12 @@ class AgeGenderConverter(BaseAttributeModelOutputConverter):
         *output_layers: np.ndarray,
         model: AttributeModel,
         roi: Tuple[float, float, float, float],
-    ) -> List[Tuple[str, Any, Optional[float]]]:
+    ) -> Optional[List[Tuple[str, Any, float]]]:
         """Converts age gender model output vector to age and gender attribute."""
         age = np.sum(np.multiply(output_layers[0], age_range)).item()
         gen = int(np.argmax(output_layers[1]).item())
         return [
-            (model.output.attributes[0].name, age, None),
+            (model.output.attributes[0].name, age, 1.0),
             (
                 model.output.attributes[1].name,
                 GENDER_MAPPING[gen],

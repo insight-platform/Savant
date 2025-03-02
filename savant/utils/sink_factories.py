@@ -17,9 +17,10 @@ from savant.api.enums import ExternalFrameType
 from savant.api.parser import convert_ts
 from savant.base.pyfunc import PyFunc
 from savant.config.schema import SinkElement
-from savant.utils.logging import get_logger
-from savant.utils.registry import Registry
-from savant.utils.zeromq import Defaults, SenderSocketTypes, get_zmq_socket_uri_options
+from savant.utils.log import get_logger
+
+from .registry import Registry
+from .zeromq import Defaults, SenderSocketTypes, get_zmq_socket_uri_options
 
 logger = get_logger(__name__)
 
@@ -159,12 +160,12 @@ class ZeroMQSinkFactory(SinkFactory):
         sink_name: str,
         egress_pyfunc: PyFunc,
         socket: str,
-        socket_type: str = SenderSocketTypes.PUB.name,
+        socket_type: Union[str, SenderSocketTypes] = SenderSocketTypes.PUB.name,
         bind: bool = True,
         send_hwm: int = Defaults.SEND_HWM,
         receive_timeout: int = Defaults.SENDER_RECEIVE_TIMEOUT,
         req_receive_retries: int = Defaults.RECEIVE_RETRIES,
-        set_ipc_socket_permissions: bool = True,
+        set_ipc_socket_permissions: Optional[int] = None,
     ):
         super().__init__(sink_name, egress_pyfunc)
         logger.debug(
@@ -197,11 +198,11 @@ class ZeroMQSinkFactory(SinkFactory):
             config_builder.with_socket_type(self.socket_type.value)
         if self.bind is not None:
             config_builder.with_bind(bool(self.bind))  # in case "bind" is "int"
+            if self.set_ipc_socket_permissions:
+                config_builder.with_fix_ipc_permissions(self.set_ipc_socket_permissions)
         writer = BlockingWriter(config_builder.build())
         writer.start()
 
-        # if self.set_ipc_socket_permissions and self.bind:
-        #     ipc_socket_chmod(self.socket)
 
         def send_message(
             msg: SinkMessage,

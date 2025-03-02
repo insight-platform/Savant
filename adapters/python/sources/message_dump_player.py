@@ -7,7 +7,7 @@ from savant_rs.utils.serialization import Message, load_message_from_bytes
 from savant_rs.zmq import BlockingWriter, WriterConfigBuilder
 
 from savant.utils.config import opt_config, req_config, strtobool
-from savant.utils.logging import get_logger, init_logging
+from savant.utils.log import get_logger, init_logging
 from savant.utils.welcome import get_starting_message
 
 LOGGER_NAME = 'adapters.message_dump_player'

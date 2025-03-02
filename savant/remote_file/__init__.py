@@ -5,12 +5,13 @@ from typing import Union
 
 from omegaconf import DictConfig, OmegaConf
 
-from savant.remote_file.base import RemoteFileError, RemoteFileManagerType
-from savant.remote_file.http import HTTPFileHandler
-from savant.remote_file.s3 import S3FileHandler
-from savant.remote_file.schema import RemoteFile
-from savant.remote_file.utils import read_file_checksum, unpack_archive
-from savant.utils.logging import get_logger
+from savant.utils.log import get_logger
+
+from .base import RemoteFileError, RemoteFileManagerType
+from .http import HTTPFileHandler
+from .s3 import S3FileHandler
+from .schema import RemoteFile
+from .utils import read_file_checksum, unpack_archive
 
 __all__ = ['process_remote', 'RemoteFile']
 

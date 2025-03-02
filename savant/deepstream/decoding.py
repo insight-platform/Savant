@@ -1,5 +1,5 @@
 from savant.gstreamer import GLib, GObject, Gst  # noqa:F401
-from savant.utils.logging import get_logger
+from savant.utils.log import get_logger
 from savant.utils.platform import is_aarch64
 
 logger = get_logger(__name__)

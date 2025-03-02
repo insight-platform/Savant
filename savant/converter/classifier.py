@@ -23,7 +23,7 @@ class TensorToLabelConverter(BaseAttributeModelOutputConverter):
         *output_layers: np.ndarray,
         model: AttributeModel,
         roi: Tuple[float, float, float, float],
-    ) -> List[Tuple[str, str, Optional[float]]]:
+    ) -> Optional[List[Tuple[str, str, float]]]:
         """Converts attribute (complex) model output layer values to
         ``(attr_name, label, confidence)`` tuples."""
         result = []

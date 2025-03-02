@@ -16,7 +16,7 @@ from gst_plugins.python.savant_rs_video_decode_bin import (
 from gst_plugins.python.zeromq_src import ZEROMQ_SRC_PROPERTIES
 from savant.gstreamer import GLib, GObject, Gst
 from savant.gstreamer.utils import on_pad_event, parse_pad_name
-from savant.utils.logging import LoggerMixin
+from savant.utils.log import LoggerMixin
 from savant.utils.platform import is_aarch64
 
 # Default values of "queue" element

@@ -13,7 +13,7 @@ from savant.deepstream.decoding import configure_low_latency_decoding
 from savant.gstreamer import GLib, GObject, Gst  # noqa:F401
 from savant.gstreamer.codecs import Codec, caps_to_codec
 from savant.gstreamer.utils import on_pad_event, parse_pad_name
-from savant.utils.logging import LoggerMixin
+from savant.utils.log import LoggerMixin
 from savant.utils.platform import is_aarch64
 
 OUT_CAPS = Gst.Caps.from_string('video/x-raw(memory:NVMM);video/x-raw')

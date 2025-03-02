@@ -8,7 +8,7 @@ from pygstsavantframemeta import add_pad_probe_to_remove_tracker_objs
 from savant.config.schema import PipelineElement
 from savant.gstreamer import Gst  # noqa: F401
 from savant.gstreamer.element_factory import GstElementFactory
-from savant.utils.logging import get_logger
+from savant.utils.log import get_logger
 from savant.utils.platform import is_aarch64
 
 logger = get_logger(__name__)

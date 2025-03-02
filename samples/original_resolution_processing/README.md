@@ -25,7 +25,7 @@ The demo uses models that are compiled into TensorRT engines the first time the 
 ```bash
 # you are expected to be in Savant/ directory
 
-./scripts/run_module.py --build-engines samples/peoplenet_detector/module.yml
+./scripts/run_module.py --build-engines samples/original_resolution_processing/module.yml
 ```
 
 ## Run Demo
@@ -34,13 +34,13 @@ The demo uses models that are compiled into TensorRT engines the first time the 
 # you are expected to be in Savant/ directory
 
 # if x86
-docker compose -f samples/different_resolutions/docker-compose.x86.yml up
+docker compose -f samples/original_resolution_processing/docker-compose.x86.yml up
 
 # if Jetson
-docker compose -f samples/different_resolutions/docker-compose.l4t.yml up
+docker compose -f samples/original_resolution_processing/docker-compose.l4t.yml up
 
 # open 'rtsp://127.0.0.1:554/stream/video-720p' and 'rtsp://127.0.0.1:554/stream/video-1080p' in your player
-# or visit 'http://127.0.0.1:888/stream/video-720p/' and 'http://127.0.0.1:888/stream/video-720p/' (LL-HLS)
+# or visit 'http://127.0.0.1:888/stream/video-720p/' and 'http://127.0.0.1:888/stream/video-1080p/' (LL-HLS)
 
 # Ctrl+C to stop running the compose bundle
 ```

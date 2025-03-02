@@ -2,7 +2,7 @@
 TODO: Add `symmetric-padding` support.
 """
 
-from typing import Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 
@@ -39,7 +39,7 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
         *output_layers: np.ndarray,
         model: ObjectModel,
         roi: Tuple[float, float, float, float],
-    ) -> np.ndarray:
+    ) -> Optional[np.ndarray]:
         """Converts detector output layer tensor to bbox tensor.
 
         Converter is suitable for PyTorch YOLOv5/v6/v7/v8 models.

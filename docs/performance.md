@@ -26,6 +26,7 @@
 | [#785](https://github.com/insight-platform/Savant/issues/785)                   | 333.17 |           | 79.88     |
 | [#679](https://github.com/insight-platform/Savant/issues/679)                   | 332.82 |           | 79.34     |
 | [#844](https://github.com/insight-platform/Savant/issues/844)                   | 330.36 |           | 79.45     |
+| [#852](https://github.com/insight-platform/Savant/issues/852)                   | 348.86 |           | 80.46     | 
 
 ### conditional_video_processing
 
@@ -60,6 +61,7 @@
 | [#785](https://github.com/insight-platform/Savant/issues/785) | 217.75 |           | 54.88     |
 | [#679](https://github.com/insight-platform/Savant/issues/679) | 214.66 |           | 54.41     |
 | [#844](https://github.com/insight-platform/Savant/issues/844) | 212.96 |           | 54.10     |
+| [#852](https://github.com/insight-platform/Savant/issues/852) | 210.27 |           | 54.09     |
 
 ### fisheye_line_crossing
 
@@ -72,17 +74,7 @@
 | [#785](https://github.com/insight-platform/Savant/issues/785) | 86.63 |           | 34.93     |
 | [#679](https://github.com/insight-platform/Savant/issues/679) | 86.63 |           | 34.91     |
 | [#844](https://github.com/insight-platform/Savant/issues/844) | 86.63 |           | 35.44     |
-
-### keypoint_detection
-
-| Savant ver.                                                   | A4000  | Xavier NX | Orin Nano |
-|---------------------------------------------------------------|--------|-----------|-----------|
-| [#641](https://github.com/insight-platform/Savant/issues/641) | 284.19 | 58.85     | 79.34     |
-| [#692](https://github.com/insight-platform/Savant/issues/692) | 758.62 |           | 202.09    |
-| [#783](https://github.com/insight-platform/Savant/issues/783) | 690.44 |           | 203.47    |
-| [#785](https://github.com/insight-platform/Savant/issues/785) | 684.67 |           | 205.34    |
-| [#679](https://github.com/insight-platform/Savant/issues/679) | 743.31 |           | 206.89    |
-| [#844](https://github.com/insight-platform/Savant/issues/844) | 699.06 |           | 204.59    |
+| [#852](https://github.com/insight-platform/Savant/issues/852) | 86.63 |           | 35.43     |
 
 ### intersection_traffic_meter (yolov8m)
 
@@ -98,6 +90,19 @@
 | [#785](https://github.com/insight-platform/Savant/issues/785) | 262.47 |           | 42.92     |
 | [#679](https://github.com/insight-platform/Savant/issues/679) | 264.45 |           | 43.02     |
 | [#844](https://github.com/insight-platform/Savant/issues/844) | 261.96 |           | 43.10     |
+| [#852](https://github.com/insight-platform/Savant/issues/852) | 246.49 |           | 43.27     |
+
+### keypoint_detection
+
+| Savant ver.                                                   | A4000  | Xavier NX | Orin Nano |
+|---------------------------------------------------------------|--------|-----------|-----------|
+| [#641](https://github.com/insight-platform/Savant/issues/641) | 284.19 | 58.85     | 79.34     |
+| [#692](https://github.com/insight-platform/Savant/issues/692) | 758.62 |           | 202.09    |
+| [#783](https://github.com/insight-platform/Savant/issues/783) | 690.44 |           | 203.47    |
+| [#785](https://github.com/insight-platform/Savant/issues/785) | 684.67 |           | 205.34    |
+| [#679](https://github.com/insight-platform/Savant/issues/679) | 743.31 |           | 206.89    |
+| [#844](https://github.com/insight-platform/Savant/issues/844) | 699.06 |           | 204.59    |
+| [#852](https://github.com/insight-platform/Savant/issues/852) | 782.94 |           | 203.10    |
 
 ### license_plate_recognition
 
@@ -114,6 +119,7 @@
 | [#785](https://github.com/insight-platform/Savant/issues/785) | 310.04 |           | 62.57     |
 | [#679](https://github.com/insight-platform/Savant/issues/679) | 307.23 |           | 62.52     |
 | [#844](https://github.com/insight-platform/Savant/issues/844) | 304.67 |           | 65.78     |
+| [#852](https://github.com/insight-platform/Savant/issues/852) | 296.08 |           | 59.31     |
 
 ### nvidia_car_classification
 
@@ -137,6 +143,7 @@
 | [#785](https://github.com/insight-platform/Savant/issues/785)                   | 461.14 |           | 138.96    |
 | [#679](https://github.com/insight-platform/Savant/issues/679)                   | 455.11 |           | 137.86    |
 | [#844](https://github.com/insight-platform/Savant/issues/844)                   | 452.87 |           | 137.46    |
+| [#852](https://github.com/insight-platform/Savant/issues/852)                   | 605.69 |           | 147.21    |
 
 ### opencv_cuda_bg_remover_mog2
 
@@ -160,12 +167,12 @@
 
 ### opencv_cuda_bg_remover_mog2 (with auxiliary stream)
 
-
 | Savant ver.                                                   | A4000   |
 |---------------------------------------------------------------|---------|
 | [#785](https://github.com/insight-platform/Savant/issues/785) | 1053.21 |
 | [#679](https://github.com/insight-platform/Savant/issues/679) | 1032.96 |
 | [#844](https://github.com/insight-platform/Savant/issues/844) | 1043.97 |
+| [#852](https://github.com/insight-platform/Savant/issues/852) | 1029.62 | 
 
 ### opencv_cuda_bg_remover_mog2 (multi-stream)
 
@@ -189,6 +196,7 @@
 | [#785](https://github.com/insight-platform/Savant/issues/785) | 49.33 |           |           |
 | [#679](https://github.com/insight-platform/Savant/issues/679) | 50.19 |           |           |
 | [#844](https://github.com/insight-platform/Savant/issues/844) | 47.83 |           |           |
+| [#852](https://github.com/insight-platform/Savant/issues/852) | 51.42 |           | 10.60     |
 
 ### peoplenet_detector
 
@@ -212,6 +220,7 @@
 | [#785](https://github.com/insight-platform/Savant/issues/785)                   | 388.26 |           | 112.07    |
 | [#679](https://github.com/insight-platform/Savant/issues/679)                   | 402.21 |           | 111.92    |
 | [#844](https://github.com/insight-platform/Savant/issues/844)                   | 378.10 |           | 112.04    |
+| [#852](https://github.com/insight-platform/Savant/issues/852)                   | 550.01 |           | 112.04    |
 
 ### RTDETR R50
 
@@ -225,6 +234,7 @@
 | [#785](https://github.com/insight-platform/Savant/issues/785) | 116.72 |           | 25.45     |
 | [#679](https://github.com/insight-platform/Savant/issues/679) | 117.00 |           | 25.46     |
 | [#844](https://github.com/insight-platform/Savant/issues/844) | 116.03 |           | 25.49     |
+| [#852](https://github.com/insight-platform/Savant/issues/852) | 116.66 |           | 25.51     |
 
 ### traffic_meter (yolov8m)
 
@@ -248,6 +258,7 @@
 | [#785](https://github.com/insight-platform/Savant/issues/785)                   | 259.70 |           | 43.14     |
 | [#679](https://github.com/insight-platform/Savant/issues/679)                   | 256.11 |           | 43.21     |
 | [#844](https://github.com/insight-platform/Savant/issues/844)                   | 250.89 |           | 43.14     |
+| [#852](https://github.com/insight-platform/Savant/issues/852)                   | 232.74 |           | 43.29     |
 
 ### yolov8_seg
 
@@ -270,3 +281,4 @@ Note: `yolov8_seg` always has a queue length of 10.
 | [#785](https://github.com/insight-platform/Savant/issues/785) | 76.90 |           | 35.86     |
 | [#679](https://github.com/insight-platform/Savant/issues/679) | 77.33 |           | 35.91     |
 | [#844](https://github.com/insight-platform/Savant/issues/844) | 76.59 |           | 37.15     |
+| [#852](https://github.com/insight-platform/Savant/issues/852) | 78.80 |           | 37.13     |

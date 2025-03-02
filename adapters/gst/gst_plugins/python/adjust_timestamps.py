@@ -1,7 +1,7 @@
 from typing import Any
 
 from savant.gstreamer import GObject, Gst, GstBase
-from savant.utils.logging import LoggerMixin
+from savant.utils.log import LoggerMixin
 
 
 class AdjustTimestamps(LoggerMixin, GstBase.BaseTransform):

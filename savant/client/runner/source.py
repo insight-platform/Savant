@@ -20,10 +20,11 @@ from savant_rs.zmq import (
 
 from savant.client.frame_source import FrameSource
 from savant.client.log_provider import LogProvider
-from savant.client.runner import LogResult
-from savant.client.runner.healthcheck import HealthCheck
-from savant.utils.logging import get_logger
+from savant.utils.log import get_logger
 from savant.utils.zeromq import Defaults
+
+from .healthcheck import HealthCheck
+from .log_result import LogResult
 
 logger = get_logger(__name__)
 
@@ -332,7 +333,7 @@ class AsyncSourceRunner(SourceRunner):
 
     async def send(self, source: Source, send_eos: bool = True) -> SourceResult:
         if self._health_check is not None:
-            self._health_check.wait_module_is_ready()
+            await self._health_check.async_wait_module_is_ready()
 
         if isinstance(source, tuple) and isinstance(source[0], VideoFrameBatch):
             batch, source_id = source
@@ -365,7 +366,7 @@ class AsyncSourceRunner(SourceRunner):
 
     async def send_eos(self, source_id: str) -> SourceResult:
         if self._health_check is not None:
-            self._health_check.wait_module_is_ready()
+            await self._health_check.async_wait_module_is_ready()
 
         message, result = self._prepare_eos(source_id)
         await self._send_zmq_message(source_id, message)
@@ -376,7 +377,7 @@ class AsyncSourceRunner(SourceRunner):
 
     async def send_shutdown(self, zmq_topic: str, auth: str) -> SourceResult:
         if self._health_check is not None:
-            self._health_check.wait_module_is_ready()
+            await self._health_check.async_wait_module_is_ready()
 
         message, result = self._prepare_shutdown(zmq_topic, auth)
         await self._send_zmq_message(zmq_topic, message)

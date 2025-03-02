@@ -1,5 +1,4 @@
 import asyncio
-import os
 import time
 from asyncio import Queue
 from typing import Tuple

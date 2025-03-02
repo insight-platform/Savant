@@ -202,7 +202,3 @@ def main():
         exit(1)
 
     asyncio.run(watch(config))
-
-
-if __name__ == '__main__':
-    main()

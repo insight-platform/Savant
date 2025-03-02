@@ -1,11 +1,10 @@
-#!/usr/bin/env python3
 import signal
 import time
 
 from savant.gstreamer import Gst
 from savant.gstreamer.runner import GstPipelineRunner
 from savant.utils.config import opt_config, req_config, strtobool
-from savant.utils.logging import get_logger, init_logging
+from savant.utils.log import get_logger, init_logging
 from savant.utils.platform import is_aarch64
 from savant.utils.welcome import get_starting_message
 
