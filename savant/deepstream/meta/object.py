@@ -242,6 +242,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
                 self.ds_object_meta.obj_label = obj_key[:MAX_LABEL_SIZE]
             else:
                 self.ds_object_meta.obj_label = obj_key
+            self.ds_object_meta.class_id = get_object_id(self.element_name, value)[1]
         else:
             raise MetaValueError(
                 'The label property can only be a string, '
@@ -329,6 +330,11 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
     def element_name(self) -> str:
         """Returns the identifier of the element that created this object."""
         return get_model_name(model_id=self.ds_object_meta.unique_component_id)
+
+    @element_name.setter
+    def element_name(self, value: str):
+        """Changes the identifier of the element that created this object."""
+        self.ds_object_meta.unique_component_id = get_object_id(value, self.label)[0]
 
     @classmethod
     def from_nv_ds_object_meta(

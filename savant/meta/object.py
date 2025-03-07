@@ -322,7 +322,7 @@ class ObjectMeta:
         :param value: Unique integer element identifier.
         """
         if self.object_meta_impl:
-            self.object_meta_impl = value
+            self.object_meta_impl.element_name = value
         self._element_name = value
 
     @property
