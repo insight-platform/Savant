@@ -397,7 +397,7 @@ class NvDsPipeline(GstPipeline):
         """Adds sink elements."""
 
         self._create_demuxer(link)
-        self._free_pad_indices = list(range(len(self._demuxer_src_pads)))
+        self._free_pad_indices = list(range(self._max_parallel_streams))
 
     # Input
     def on_source_added(  # pylint: disable=unused-argument
@@ -561,8 +561,8 @@ class NvDsPipeline(GstPipeline):
                 self._link_to_muxer(input_src_pad, source_info)
                 self._check_pipeline_is_running()
 
-                if not source_info.after_demuxer:
-                    self._add_source_output(source_info)
+                # if not source_info.after_demuxer:
+                #     self._add_source_output(source_info)
 
                 self._pipeline.set_state(Gst.State.PLAYING)
 
@@ -713,6 +713,10 @@ class NvDsPipeline(GstPipeline):
         self._logger.debug(
             'Input elements for source %s removed', source_info.source_id
         )
+
+        if source_info.pad_idx is not None:
+            self._free_pad_indices.append(source_info.pad_idx)
+
         return False
 
     # Output
@@ -1117,13 +1121,15 @@ class NvDsPipeline(GstPipeline):
 
         demuxer = self.add_element(
             PipelineElement(
-                element='nvstreamdemux',
-                name='demuxer',
+                element='fakesink',
+                name='sink',
+                properties={
+                    'sync': 0,
+                    'qos': 0,
+                    'enable-last-sample': 0,
+                },
             ),
             link=link,
-        )
-        self._demuxer_src_pads = self._allocate_demuxer_pads(
-            demuxer, self._max_parallel_streams
         )
         sink_peer_pad: Gst.Pad = demuxer.get_static_pad('sink').get_peer()
         add_pad_probe_to_move_batch(
