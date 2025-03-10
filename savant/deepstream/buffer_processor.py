@@ -363,20 +363,25 @@ class NvDsBufferProcessor(GstBufferProcessor):
         :param source_info: output source info
         """
 
-        self.logger.debug(
-            'Preparing output for buffer with PTS %s and DTS %s for source %s.',
-            buffer.pts,
-            buffer.dts,
-            source_info.source_id,
-        )
-        for output_frame in self._iterate_output_frames(buffer, source_info):
-            sink_video_frame = self._build_sink_video_frame(output_frame, source_info)
-            for frame_idx, sink_message in self._fix_frames_order(
-                source_info.source_id,
-                output_frame.idx,
-                sink_video_frame,
-            ):
-                yield self._delete_frame_from_pipeline(frame_idx, sink_message)
+        # self.logger.debug(
+        #     'Preparing output for buffer with PTS %s and DTS %s for source %s.',
+        #     buffer.pts,
+        #     buffer.dts,
+        #     source_info.source_id,
+        # )
+
+        nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
+        for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
+            source_info = self._sources.get_source(self._sources.get_id_by_pad_index(nvds_frame_meta.pad_index))
+
+            for output_frame in self._iterate_output_frames(buffer, source_info):
+                sink_video_frame = self._build_sink_video_frame(output_frame, source_info)
+                for frame_idx, sink_message in self._fix_frames_order(
+                    source_info.source_id,
+                    output_frame.idx,
+                    sink_video_frame,
+                ):
+                    yield self._delete_frame_from_pipeline(frame_idx, sink_message)
 
     def _fix_frames_order(
         self,
