@@ -10,7 +10,6 @@ parameters:
   log_level: ${oc.env:LOGLEVEL, 'INFO'}
 
   # the port which embedded web server binds
-  #
   webserver_port: ${oc.decode:${oc.env:WEBSERVER_PORT, 8080}}
 
   # required paths
@@ -27,7 +26,7 @@ parameters:
   #  # Path in Etcd to watch changes
   #  watch_path: savant
 
-  # pipeline processing frame parameters, default 720p
+  # pipeline processing frame parameters, use the source resolution if not set
   frame:
     width: ${oc.decode:${oc.env:FRAME_WIDTH, null}}
     height: ${oc.decode:${oc.env:FRAME_HEIGHT, null}}
@@ -61,6 +60,9 @@ parameters:
 
   # pipeline output queue max size
   queue_maxsize: 100
+
+  # Maximum number of parallel source streams to process.
+  max_parallel_streams: 64
 
   # Configuration of the queues in GStreamer pipeline after demuxer.
   # Length of the egress queue in frames (0 - no limit, default 200).

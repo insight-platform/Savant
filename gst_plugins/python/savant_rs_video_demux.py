@@ -19,7 +19,6 @@ from savant.gstreamer.event import parse_savant_eos_event
 from savant.gstreamer.utils import (
     RequiredPropertyError,
     gst_post_library_settings_error,
-    gst_post_stream_demux_error,
     on_pad_event,
     required_property,
 )
