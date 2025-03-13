@@ -3,7 +3,7 @@
 import logging
 from queue import Empty as EmptyException
 from queue import Queue
-from typing import Any, Generator, List, Optional, Tuple, Union
+from typing import Any, Generator, Optional, Tuple, Union
 
 from gi.repository import Gst  # noqa:F401
 
@@ -40,9 +40,6 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
         # init pipeline
         self._pipeline: Gst.Pipeline = Gst.Pipeline(name)
 
-        # explicitly added elements container
-        self._elements: List[Tuple[PipelineElement, Gst.Element]] = []
-
         # last added element - to link elements properly
         # `last_element.link(new_element)`
         self._last_element: Gst.Element = None
@@ -66,10 +63,51 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
         self._is_running = False
 
     def __str__(self) -> str:
-        elements = ' -> '.join([e.full_name for e, _ in self.elements])
-        if not elements:
-            elements = 'no elements'
-        return f'{self._pipeline.name}<{self.__class__.__name__}>: {elements}'
+        return (
+            f'{self._pipeline.name}<{self.__class__.__name__}>: '
+            f'{self.get_pipeline_structure()}'
+        )
+
+    def get_pipeline_structure(self) -> str:
+        connections = {}  # {src_element: [dst1, dst2, ...]}
+        element_types = {}
+
+        for element in self._pipeline.iterate_elements():
+            name = element.get_name()
+            factory = element.get_factory()
+            element_type = factory.get_name() if factory else 'unknown'
+            element_types[name] = element_type
+            connections[name] = []
+            for pad in element.iterate_src_pads():
+                if pad.is_linked():
+                    peer = pad.get_peer().get_parent()
+                    if peer:
+                        peer_name = peer.get_name()
+                        connections[name].append(peer_name)
+
+        # find sources
+        all_targets = {target for targets in connections.values() for target in targets}
+        sources = [elem for elem in connections.keys() if elem not in all_targets]
+        # TODO: There is no connections from sources to muxer, how to separate them?
+        #   workaround: move muxer to the end
+        if 'muxer' in sources:
+            sources.remove('muxer')
+            sources.append('muxer')
+
+        def traverse(node: str, visited: set, chain: list):
+            if node in visited:
+                return
+            visited.add(node)
+            chain.append(f'{element_types[node]}({node})')
+            for next_node in connections.get(node, []):
+                traverse(next_node, visited, chain)
+
+        visited = set()
+        chain = []
+        for src in sources:
+            traverse(src, visited, chain)
+
+        return ' -> '.join(chain)
 
     def add_element(
         self,
@@ -89,7 +127,6 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
             self.link_element(gst_element)
         self._last_element = gst_element
 
-        self._elements.append((element, gst_element))
         self._logger.debug('Added element %s: %s.', element.full_name, element)
 
         return gst_element
@@ -145,14 +182,6 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
 
     def on_shutdown(self):
         """Callback called after pipeline is set to NULL."""
-
-    @property
-    def elements(self) -> List[Tuple[PipelineElement, Gst.Element]]:
-        """Pipeline elements.
-
-        :return: Pipeline elements.
-        """
-        return self._elements
 
     @property
     def pipeline(self) -> Gst.Pipeline:
