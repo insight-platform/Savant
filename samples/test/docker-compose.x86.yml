@@ -1,0 +1,44 @@
+services:
+
+  video-source-camera-1:
+#    image: ghcr.io/insight-platform/savant-adapters-gstreamer:0.4.7
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:0.5.5
+#    restart: unless-stopped
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ./downloads_cache:/tmp/video-loop-source-downloads
+      - ../../data:/data
+    environment:
+      - LOCATION=/data/shuffle_dance.mp4
+      - SOURCE_ID=camera-1
+      - DOWNLOAD_PATH=/tmp/video-loop-source-downloads
+      - ZMQ_ENDPOINT=dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc
+      - FILE_TYPE=video
+      - READ_METADATA=FALSE
+      - SYNC_OUTPUT=False
+      - EOS_ON_LOOP_END=True
+    entrypoint: /opt/savant/adapters/gst/sources/video_loop.sh
+    depends_on:
+      module:
+        condition: service_healthy
+
+  module:
+#    image: ghcr.io/insight-platform/savant-deepstream:0.4.7-6.4
+    image: ghcr.io/insight-platform/savant-deepstream:0.5.5-7.0
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+    entrypoint: >
+      bash -c "echo '
+        name: test-module
+        parameters:
+          batch_size: 1' | python -m savant.entrypoint
+      "
+    environment:
+      - LOGLEVEL=info
+      - ZMQ_SRC_ENDPOINT=router+bind:ipc:///tmp/zmq-sockets/input-video.ipc
+      - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
+      - METRICS_TIME_PERIOD=30
+    runtime: nvidia
+
+volumes:
+  zmq_sockets:
