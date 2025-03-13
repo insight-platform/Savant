@@ -13,7 +13,7 @@ from savant.utils.sink_factories import SinkMessage
 
 from .buffer_processor import GstBufferProcessor
 from .element_factory import CreateElementException, GstElementFactory
-from .utils import add_buffer_probe
+from .utils import add_buffer_probe, get_elements
 
 
 class GstPipeline:  # pylint: disable=too-many-instance-attributes
@@ -63,51 +63,17 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
         self._is_running = False
 
     def __str__(self) -> str:
-        return (
-            f'{self._pipeline.name}<{self.__class__.__name__}>: '
-            f'{self.get_pipeline_structure()}'
-        )
-
-    def get_pipeline_structure(self) -> str:
-        connections = {}  # {src_element: [dst1, dst2, ...]}
-        element_types = {}
-
-        for element in self._pipeline.iterate_elements():
+        elements = []
+        for element in get_elements(self._pipeline):
             name = element.get_name()
             factory = element.get_factory()
             element_type = factory.get_name() if factory else 'unknown'
-            element_types[name] = element_type
-            connections[name] = []
-            for pad in element.iterate_src_pads():
-                if pad.is_linked():
-                    peer = pad.get_peer().get_parent()
-                    if peer:
-                        peer_name = peer.get_name()
-                        connections[name].append(peer_name)
-
-        # find sources
-        all_targets = {target for targets in connections.values() for target in targets}
-        sources = [elem for elem in connections.keys() if elem not in all_targets]
-        # TODO: There is no connections from sources to muxer, how to separate them?
-        #   workaround: move muxer to the end
-        if 'muxer' in sources:
-            sources.remove('muxer')
-            sources.append('muxer')
-
-        def traverse(node: str, visited: set, chain: list):
-            if node in visited:
-                return
-            visited.add(node)
-            chain.append(f'{element_types[node]}({node})')
-            for next_node in connections.get(node, []):
-                traverse(next_node, visited, chain)
-
-        visited = set()
-        chain = []
-        for src in sources:
-            traverse(src, visited, chain)
-
-        return ' -> '.join(chain)
+            elements.append(f'{element_type}({name})')
+        if elements:
+            elements = ' -> '.join(elements)
+        else:
+            elements = 'no elements'
+        return f'{self._pipeline.name}<{self.__class__.__name__}>: {elements}'
 
     def add_element(
         self,
