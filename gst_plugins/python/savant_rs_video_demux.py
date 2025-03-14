@@ -19,7 +19,6 @@ from savant.gstreamer.event import parse_savant_eos_event
 from savant.gstreamer.utils import (
     RequiredPropertyError,
     gst_post_library_settings_error,
-    gst_post_stream_demux_error,
     on_pad_event,
     required_property,
 )
@@ -411,20 +410,12 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
                 self.max_parallel_streams
                 and len(self.sources) >= self.max_parallel_streams
             ):
-                self.is_running = False
-                error = (
-                    f'Failed to add source {frame_info.video_frame.source_id!r}: reached maximum '
-                    f'number of streams: {self.max_parallel_streams}.'
+                message = (
+                    f'Failed to add source {frame_info.video_frame.source_id!r}: '
+                    f'reached maximum number of streams: {self.max_parallel_streams}.'
                 )
-                self.logger.error(error)
-                frame = inspect.currentframe()
-                gst_post_stream_demux_error(
-                    gst_element=self,
-                    frame=frame,
-                    file_path=__file__,
-                    text=error,
-                )
-                return Gst.FlowReturn.ERROR
+                self.logger.warning(message)
+                return Gst.FlowReturn.OK
 
             if not frame_info.video_frame.keyframe:
                 self.logger.warning(

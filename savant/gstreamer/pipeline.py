@@ -3,7 +3,7 @@
 import logging
 from queue import Empty as EmptyException
 from queue import Queue
-from typing import Any, Generator, List, Optional, Tuple, Union
+from typing import Any, Generator, Optional, Tuple, Union
 
 from gi.repository import Gst  # noqa:F401
 
@@ -13,7 +13,7 @@ from savant.utils.sink_factories import SinkMessage
 
 from .buffer_processor import GstBufferProcessor
 from .element_factory import CreateElementException, GstElementFactory
-from .utils import add_buffer_probe
+from .utils import add_buffer_probe, get_elements
 
 
 class GstPipeline:  # pylint: disable=too-many-instance-attributes
@@ -40,9 +40,6 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
         # init pipeline
         self._pipeline: Gst.Pipeline = Gst.Pipeline(name)
 
-        # explicitly added elements container
-        self._elements: List[Tuple[PipelineElement, Gst.Element]] = []
-
         # last added element - to link elements properly
         # `last_element.link(new_element)`
         self._last_element: Gst.Element = None
@@ -66,8 +63,15 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
         self._is_running = False
 
     def __str__(self) -> str:
-        elements = ' -> '.join([e.full_name for e, _ in self.elements])
-        if not elements:
+        elements = []
+        for element in get_elements(self._pipeline):
+            name = element.get_name()
+            factory = element.get_factory()
+            element_type = factory.get_name() if factory else 'unknown'
+            elements.append(f'{element_type}({name})')
+        if elements:
+            elements = ' -> '.join(elements)
+        else:
             elements = 'no elements'
         return f'{self._pipeline.name}<{self.__class__.__name__}>: {elements}'
 
@@ -89,7 +93,6 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
             self.link_element(gst_element)
         self._last_element = gst_element
 
-        self._elements.append((element, gst_element))
         self._logger.debug('Added element %s: %s.', element.full_name, element)
 
         return gst_element
@@ -145,14 +148,6 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
 
     def on_shutdown(self):
         """Callback called after pipeline is set to NULL."""
-
-    @property
-    def elements(self) -> List[Tuple[PipelineElement, Gst.Element]]:
-        """Pipeline elements.
-
-        :return: Pipeline elements.
-        """
-        return self._elements
 
     @property
     def pipeline(self) -> Gst.Pipeline:

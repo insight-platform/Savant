@@ -203,7 +203,6 @@ class ZeroMQSinkFactory(SinkFactory):
         writer = BlockingWriter(config_builder.build())
         writer.start()
 
-
         def send_message(
             msg: SinkMessage,
             **kwargs,

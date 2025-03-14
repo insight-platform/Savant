@@ -829,6 +829,12 @@ class NvDsPipeline(GstPipeline):
 
         try:
             self._check_pipeline_is_running()
+            # send GST_EVENT_STREAM_START because demuxer blocks it
+            # if it has already been sent to this pad
+            # (required to reset EOS and make pad live)
+            demuxer_src_pad = self._demuxer_src_pads[source_info.pad_idx]
+            stream_id = source_info.source_id
+            demuxer_src_pad.push_event(Gst.Event.new_stream_start(stream_id))
             GLib.idle_add(self._remove_output_elements, source_info)
         except PipelineIsNotRunningError:
             self._logger.info(
