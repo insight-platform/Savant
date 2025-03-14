@@ -356,10 +356,14 @@ class AsyncSourceRunner(SourceRunner):
         source_ids = set()
         if isinstance(sources, AsyncIterable):
             async for source in sources:
-                yield await self._send_iter_item(source, source_ids)
+                result = await self._send_iter_item(source, source_ids)
+                if result is not None:
+                    yield result
         else:
             for source in sources:
-                yield await self._send_iter_item(source, source_ids)
+                result = await self._send_iter_item(source, source_ids)
+                if result is not None:
+                    yield result
         if send_eos:
             for source_id in source_ids:
                 await self.send_eos(source_id)
@@ -417,8 +421,9 @@ class AsyncSourceRunner(SourceRunner):
     ) -> Union[SourceResult, None]:
         if isinstance(source, EndOfStream):
             await self.send_eos(source.source_id)
-            source_ids.remove(source.source_id)
-            return
+            if source.source_id in source_ids:
+                source_ids.remove(source.source_id)
+            return None
 
         result = await self.send(source, send_eos=False)
         source_ids.update(result.source_ids)
