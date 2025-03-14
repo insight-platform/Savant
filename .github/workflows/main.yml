@@ -240,18 +240,25 @@ jobs:
           push: true
 
   # retag replay containers
-  retag-replay-containers:
+  retag-savant-rs-containers:
     needs: init
-    runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')  # Only run for version tags like v0.5.4
+
     permissions:
       packages: write
+
     strategy:
       fail-fast: false
       matrix:
         include:
           - image: savant-replay-x86
+            runner: X64
           - image: savant-replay-arm64
+            runner: ARM64
+    runs-on:
+      - self-hosted
+      - ${{ matrix.runner }}
+        
     steps:
       - name: Log in to the container registry
         uses: docker/login-action@v3
