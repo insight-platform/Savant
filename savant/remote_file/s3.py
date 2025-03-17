@@ -28,6 +28,9 @@ class S3Config:
     secret_key: Optional[str] = None
     """S3 Secret Access Key."""
 
+    session_token: Optional[str] = None
+    """S3 Session Token."""
+
     endpoint: Optional[str] = None
     """Endpoint URL to access S3."""
 
@@ -49,6 +52,7 @@ class S3FileHandler(RemoteFileHandler):
                     's3',
                     aws_access_key_id=config.access_key,
                     aws_secret_access_key=config.secret_key,
+                    aws_session_token=config.session_token,
                     endpoint_url=config.endpoint,
                     region_name=config.region,
                 )
