@@ -155,15 +155,11 @@ def build_common_envs(
     fps_period_seconds: Optional[float],
     fps_output: Optional[str],
     zmq_endpoint: str,
-    zmq_type: Optional[str],
-    zmq_bind: Optional[bool],
     use_absolute_timestamps: Optional[bool] = None,
 ):
     """Generate env var run options."""
     envs = build_zmq_endpoint_envs(
         zmq_endpoint=zmq_endpoint,
-        zmq_type=zmq_type,
-        zmq_bind=zmq_bind,
     )
     if source_id:
         envs.append(f'SOURCE_ID={source_id}')
@@ -198,15 +194,9 @@ def build_fps_meter_envs(
 
 def build_zmq_endpoint_envs(
     zmq_endpoint: str,
-    zmq_type: Optional[str],
-    zmq_bind: Optional[bool],
 ):
     """Generate env var options for zmq endpoint."""
     envs = [f'ZMQ_ENDPOINT={zmq_endpoint}']
-    if zmq_type is not None:
-        envs.append(f'ZMQ_TYPE={zmq_type}')
-    if zmq_bind is not None:
-        envs.append(f'ZMQ_BIND={zmq_bind}')
     return envs
 
 

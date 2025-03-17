@@ -14,8 +14,6 @@ required_env LOCATION
 required_env ZMQ_ENDPOINT
 required_env DOWNLOAD_PATH
 
-ZMQ_SOCKET_TYPE="${ZMQ_TYPE:="DEALER"}"
-ZMQ_SOCKET_BIND="${ZMQ_BIND:="false"}"
 SYNC_OUTPUT="${SYNC_OUTPUT:="false"}"
 FPS_OUTPUT="${FPS_OUTPUT:="stdout"}"
 if [[ -n "${FPS_PERIOD_SECONDS}" ]]; then
@@ -34,8 +32,6 @@ SINK_PROPERTIES=(
     eos-on-loop-end="${EOS_ON_LOOP_END}"
     read-metadata="${READ_METADATA}"
     socket="${ZMQ_ENDPOINT}"
-    socket-type="${ZMQ_SOCKET_TYPE}"
-    bind="${ZMQ_SOCKET_BIND}"
     sync="${SYNC_OUTPUT}"
 )
 

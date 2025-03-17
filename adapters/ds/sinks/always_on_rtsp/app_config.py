@@ -19,12 +19,6 @@ class AppConfig(CommonStreamConfig):
             self.source_ids = [self.source_id]
 
         self.zmq_endpoint = req_config('ZMQ_ENDPOINT')
-        self.zmq_socket_type = opt_config(
-            'ZMQ_TYPE',
-            ReceiverSocketTypes.SUB,
-            ReceiverSocketTypes.__getitem__,
-        )
-        self.zmq_socket_bind = opt_config('ZMQ_BIND', False, strtobool)
 
         self.rtsp_uri = opt_config('RTSP_URI')
         if self.dev_mode:

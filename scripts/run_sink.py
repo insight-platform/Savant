@@ -28,23 +28,8 @@ def common_options(func):
     """Common Click sink adapter options."""
     func = click.option(
         '--in-endpoint',
-        default='ipc:///tmp/zmq-sockets/output-video.ipc',
+        default='router+connect:ipc:///tmp/zmq-sockets/output-video.ipc',
         help='Adapter input (module output) ZeroMQ socket endpoint.',
-        show_default=True,
-    )(func)
-    func = click.option(
-        '--in-type',
-        default='SUB',
-        help='Adapter input (module output) ZeroMQ socket type.',
-        show_default=True,
-    )(func)
-    func = click.option(
-        '--in-bind',
-        default=False,
-        help=(
-            'Adapter input (module output) ZeroMQ socket bind/connect mode '
-            '(bind if True).'
-        ),
         show_default=True,
     )(func)
     return func
@@ -62,14 +47,10 @@ def build_common_sink_envs(
     source_id: Optional[str],
     source_id_prefix: Optional[str],
     zmq_endpoint: str,
-    zmq_type: Optional[str],
-    zmq_bind: Optional[bool],
 ):
     """Generate env var run options."""
     envs = build_zmq_endpoint_envs(
         zmq_endpoint=zmq_endpoint,
-        zmq_type=zmq_type,
-        zmq_bind=zmq_bind,
     )
     if source_id:
         envs.append(f'SOURCE_ID={source_id}')
@@ -160,8 +141,6 @@ def chunk_size_option(default=10000):
 @adapter_docker_image_option('deepstream')
 def display_sink(
     in_endpoint: str,
-    in_type: str,
-    in_bind: bool,
     sync: bool,
     docker_image: str,
     closing_delay: int,
@@ -198,8 +177,6 @@ def display_sink(
         source_id=source_id,
         source_id_prefix=source_id_prefix,
         zmq_endpoint=in_endpoint,
-        zmq_type=in_type,
-        zmq_bind=in_bind,
     ) + [
         'DISPLAY',
         f'XAUTHORITY={xauth}',
@@ -243,8 +220,6 @@ def display_sink(
 @click.argument('location', required=True)
 def meta_json_sink(
     in_endpoint: str,
-    in_type: str,
-    in_bind: bool,
     docker_image: str,
     skip_frames_without_objects: bool,
     chunk_size: int,
@@ -266,8 +241,6 @@ def meta_json_sink(
         source_id=source_id,
         source_id_prefix=source_id_prefix,
         zmq_endpoint=in_endpoint,
-        zmq_type=in_type,
-        zmq_bind=in_bind,
     ) + [
         f'LOCATION={location}',
         f'SKIP_FRAMES_WITHOUT_OBJECTS={skip_frames_without_objects}',
@@ -295,8 +268,6 @@ def meta_json_sink(
 @click.argument('location', required=True)
 def image_files_sink(
     in_endpoint: str,
-    in_type: str,
-    in_bind: bool,
     docker_image: str,
     skip_frames_without_objects: bool,
     chunk_size: int,
@@ -316,8 +287,6 @@ def image_files_sink(
         source_id=source_id,
         source_id_prefix=source_id_prefix,
         zmq_endpoint=in_endpoint,
-        zmq_type=in_type,
-        zmq_bind=in_bind,
     ) + [
         f'DIR_LOCATION={location}',
         f'SKIP_FRAMES_WITHOUT_OBJECTS={skip_frames_without_objects}',
@@ -344,8 +313,6 @@ def image_files_sink(
 @click.argument('location', required=True)
 def video_files_sink(
     in_endpoint: str,
-    in_type: str,
-    in_bind: bool,
     docker_image: str,
     chunk_size: int,
     location: str,
@@ -360,8 +327,6 @@ def video_files_sink(
         source_id=source_id,
         source_id_prefix=source_id_prefix,
         zmq_endpoint=in_endpoint,
-        zmq_type=in_type,
-        zmq_bind=in_bind,
     ) + [
         f'DIR_LOCATION={location}',
         f'CHUNK_SIZE={chunk_size}',
@@ -555,8 +520,6 @@ def video_files_sink(
 @click.argument('rtsp_uri', required=False)
 def always_on_rtsp_sink(
     in_endpoint: str,
-    in_type: str,
-    in_bind: bool,
     docker_image: str,
     source_id: Optional[str],
     source_ids: Optional[str],
@@ -620,8 +583,6 @@ def always_on_rtsp_sink(
         fps_period_seconds=fps_period_seconds,
         fps_output=None,
         zmq_endpoint=in_endpoint,
-        zmq_type=in_type,
-        zmq_bind=in_bind,
     ) + [
         f'STUB_FILE_LOCATION={stub_file_location}',
         f'MAX_DELAY_MS={max_delay_ms}',
@@ -805,8 +766,6 @@ def kafka_redis_sink(
         fps_period_seconds=fps_period_seconds,
         fps_output=fps_output,
         zmq_endpoint=in_endpoint,
-        zmq_type=None,
-        zmq_bind=None,
     ) + [
         f'KAFKA_BROKERS={brokers}',
         f'KAFKA_TOPIC={topic}',
@@ -917,8 +876,6 @@ def multistream_kvs_sink(
             source_id=source_id,
             source_id_prefix=source_id_prefix,
             zmq_endpoint=in_endpoint,
-            zmq_type=None,
-            zmq_bind=None,
         )
         + build_fps_meter_envs(
             fps_period_frames=fps_period_frames,

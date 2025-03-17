@@ -63,8 +63,6 @@ class BaseZeroMQSource(ABC):
     """Base ZeroMQ Source class.
 
     :param socket: zmq socket endpoint
-    :param socket_type: zmq socket type
-    :param bind: zmq socket mode (bind or connect)
     :param receive_timeout: receive timeout socket option
     :param receive_hwm: high watermark for inbound messages
     :param source_id: filter inbound messages by source ID
@@ -76,8 +74,6 @@ class BaseZeroMQSource(ABC):
     def __init__(
         self,
         socket: str,
-        socket_type: str = ReceiverSocketTypes.ROUTER.name,
-        bind: bool = True,
         receive_timeout: int = Defaults.RECEIVE_TIMEOUT,
         receive_hwm: int = Defaults.RECEIVE_HWM,
         source_id: Optional[str] = None,
@@ -87,19 +83,15 @@ class BaseZeroMQSource(ABC):
         blacklist_ttl: int = Defaults.BLACKLIST_TTL,
     ):
         logger.debug(
-            'Initializing ZMQ source: socket %s, type %s, bind %s.',
+            'Initializing ZMQ source: socket %s',
             socket,
-            socket_type,
-            bind,
         )
 
         config_builder = ReaderConfigBuilder(socket)
-        socket_options = get_zmq_socket_uri_options(socket)
-        if socket_options:
-            bind = 'bind' in socket_options
-        else:
-            config_builder.with_socket_type(ReceiverSocketTypes[socket_type].value)
-            config_builder.with_bind(bool(bind))  # in case "bind" is "int"
+        temp_conf = ReaderConfigBuilder(socket).build()
+        if temp_conf.bind:
+            config_builder.with_fix_ipc_permissions(set_ipc_socket_permissions)
+
         if source_id:
             config_builder.with_topic_prefix_spec(TopicPrefixSpec.source_id(source_id))
         elif source_id_prefix:
@@ -108,9 +100,6 @@ class BaseZeroMQSource(ABC):
             )
         config_builder.with_receive_hwm(receive_hwm)
         config_builder.with_receive_timeout(receive_timeout)
-        if bind:
-            # IPC permissions can only be set for bind sockets.
-            config_builder.with_fix_ipc_permissions(set_ipc_socket_permissions)
         config_builder.with_source_blacklist_size(blacklist_size)
         config_builder.with_source_blacklist_ttl(blacklist_ttl)
 

@@ -447,8 +447,6 @@ def main():
 
     dir_location = req_config('DIR_LOCATION')
     zmq_endpoint = req_config('ZMQ_ENDPOINT')
-    zmq_socket_type = opt_config('ZMQ_TYPE', 'SUB')
-    zmq_bind = opt_config('ZMQ_BIND', False, strtobool)
     chunk_size = opt_config('CHUNK_SIZE', DEFAULT_CHUNK_SIZE, int)
     source_id = opt_config('SOURCE_ID')
     source_id_prefix = opt_config('SOURCE_ID_PREFIX')
@@ -457,8 +455,6 @@ def main():
     # no need to handle exceptions here
     source = ZeroMQSource(
         zmq_endpoint,
-        zmq_socket_type,
-        zmq_bind,
         source_id=source_id,
         source_id_prefix=source_id_prefix,
     )

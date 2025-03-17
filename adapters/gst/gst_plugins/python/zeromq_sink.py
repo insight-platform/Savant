@@ -23,7 +23,7 @@ from savant_rs.zmq import (
 )
 from splitstream import splitfile
 
-from gst_plugins.python.zeromq_properties import ZEROMQ_PROPERTIES, socket_type_property
+from gst_plugins.python.zeromq_properties import ZEROMQ_PROPERTIES
 from savant.api.builder import add_objects_to_video_frame
 from savant.api.constants import DEFAULT_FRAMERATE, DEFAULT_NAMESPACE, DEFAULT_TIME_BASE
 from savant.api.enums import ExternalFrameType
@@ -79,7 +79,6 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
 
     __gproperties__ = {
         **ZEROMQ_PROPERTIES,
-        'socket-type': socket_type_property(SenderSocketTypes),
         'send-hwm': (
             int,
             'High watermark for outbound messages',
@@ -204,8 +203,6 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
 
         # properties
         self.socket: str = None
-        self.socket_type: str = SenderSocketTypes.DEALER.name
-        self.bind: bool = True
         self.source_id: Optional[str] = None
         self.eos_on_file_end: bool = True
         self.eos_on_loop_end: bool = False
@@ -245,10 +242,6 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
 
         if prop.name == 'socket':
             return self.socket
-        if prop.name == 'socket-type':
-            return self.socket_type
-        if prop.name == 'bind':
-            return self.bind
         if prop.name == 'send-hwm':
             return self.send_hwm
         if prop.name == 'receive-timeout':
@@ -292,10 +285,6 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
         self.logger.debug('Setting property "%s" to "%s".', prop.name, value)
         if prop.name == 'socket':
             self.socket = value
-        elif prop.name == 'socket-type':
-            self.socket_type = value
-        elif prop.name == 'bind':
-            self.bind = value
         elif prop.name == 'send-hwm':
             self.send_hwm = value
         elif prop.name == 'receive-timeout':
@@ -369,11 +358,6 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
         try:
             required_property('socket', self.socket)
             config_builder = WriterConfigBuilder(self.socket)
-            if not get_zmq_socket_uri_options(self.socket):
-                config_builder.with_socket_type(
-                    SenderSocketTypes[self.socket_type].value
-                )
-                config_builder.with_bind(self.bind)
             config_builder.with_send_hwm(self.send_hwm)
             config_builder.with_receive_timeout(self.receive_timeout)
             config_builder.with_receive_retries(self.receive_retries)
