@@ -113,12 +113,6 @@ class Config(CommonStreamConfig):
         self.source_id = req_config('SOURCE_ID')
 
         self.zmq_endpoint = req_config('ZMQ_ENDPOINT')
-        self.zmq_socket_type = opt_config(
-            'ZMQ_TYPE',
-            ReceiverSocketTypes.SUB,
-            ReceiverSocketTypes.__getitem__,
-        )
-        self.zmq_socket_bind = opt_config('ZMQ_BIND', False, strtobool)
 
         self.rtsp_uri = req_config('RTSP_URI')
 

@@ -39,8 +39,6 @@ def main():
     zmq_reader_endpoint = f'sub+connect:{internal_socket}'
     zmq_proxy = ZeroMqProxy(
         input_socket=config.zmq_endpoint,
-        input_socket_type=config.zmq_socket_type,
-        input_bind=config.zmq_socket_bind,
         output_socket=f'pub+bind:{internal_socket}',
     )
     zmq_proxy.start()

@@ -17,8 +17,6 @@ DEFAULT_SOURCE_EVICTION_INTERVAL = 1
 class Config:
     def __init__(self):
         self.zmq_endpoint = req_config('ZMQ_ENDPOINT')
-        self.zmq_type = opt_config('ZMQ_TYPE', 'SUB')
-        self.zmq_bind = opt_config('ZMQ_BIND', False, strtobool)
         self.source_id = opt_config('SOURCE_ID')
         self.source_id_prefix = opt_config('SOURCE_ID_PREFIX')
         self.sync_input = opt_config('SYNC_INPUT', False, strtobool)
@@ -64,8 +62,6 @@ def main():
         'savant_rs_video_player'
     )
     savant_rs_video_player.set_property('socket', config.zmq_endpoint)
-    savant_rs_video_player.set_property('socket-type', config.zmq_type)
-    savant_rs_video_player.set_property('bind', config.zmq_bind)
     if config.source_id:
         savant_rs_video_player.set_property('source-id', config.source_id)
     if config.source_id_prefix:

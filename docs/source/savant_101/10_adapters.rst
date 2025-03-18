@@ -83,10 +83,6 @@ When the transports are specified  with the environment variables it looks like:
     # Unix domain socket communication
     ZMQ_ENDPOINT="dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc"
 
-    # which is equal to
-    ZMQ_ENDPOINT="ipc:///tmp/zmq-sockets/input-video.ipc"
-    ZMQ_TYPE="DEALER"
-    ZMQ_BIND="False"
 
 Or:
 
@@ -95,10 +91,6 @@ Or:
     # tcp socket communication
     ZMQ_ENDPOINT="pub+bind:tcp://1.1.1.1:3333"
 
-    # which is equal to
-    ZMQ_ENDPOINT="tcp://1.1.1.1:3333"
-    ZMQ_TYPE="PUB"
-    ZMQ_BIND="True"
 
 
 Not all socket pairs form "sane" communication patterns, so, you must use combinations colored green:
@@ -243,8 +235,6 @@ Most source adapters accept the following common parameters:
 
 - ``SOURCE_ID``: a string identifier for a stream processed; this option is **required**; every stream must have a unique identifier, if identifiers collide, processing may cause unpredictable results; the identifier may encode user-defined semantics in a prefix, like ``rtsp.stream.1``; many sink adapters can filter out streams by prefix or full ``SOURCE_ID``;
 - ``ZMQ_ENDPOINT``: adapter's socket where it sends media stream; it must form a valid ZeroMQ pair with module's input socket; the endpoint coding scheme is ``[<socket_type>+(bind|connect):]<endpoint>``;
-- ``ZMQ_TYPE``: a socket type; default is ``DEALER``, also can be set to ``PUB`` or ``REQ``; **warning**: this parameter is deprecated, consider encoding the type in ``ZMQ_ENDPOINT``;
-- ``ZMQ_BIND``; a socket mode (the ``bind`` mode is when the parameter is set to ``True``); default is ``False``; **warning**: this parameter is deprecated, consider encoding the type in ``ZMQ_ENDPOINT``;
 - ``FPS_PERIOD_FRAMES``; a number of frames between FPS reports; FPS reporting helps to estimate the performance of the pipeline components deployed; default is ``1000``;
 - ``FPS_PERIOD_SECONDS``; a number of seconds between FPS reports; default is ``None`` which means that FPS reporting uses ``FPS_PERIOD_FRAMES``;
 - ``FPS_OUTPUT``; a path to the file for FPS reports; default is ``stdout``;
@@ -642,7 +632,7 @@ The Kafka-Redis Source Adapter takes video stream metadata from Kafka and fetche
 - ``QUEUE_SIZE``: a maximum amount of messages in the queue; default is ``50``.
 
 .. note::
-    The adapter doesn't have ``SOURCE_ID``, ``ZMQ_TYPE``, ``ZMQ_BIND``, ``USE_ABSOLUTE_TIMESTAMPS`` parameters.
+    The adapter doesn't have ``SOURCE_ID``, ``USE_ABSOLUTE_TIMESTAMPS`` parameters.
 
 Running the adapter with Docker:
 
@@ -724,7 +714,7 @@ The Kinesis Video Stream Source Adapter takes video frames from Kinesis Video St
       - ``/foo/bar.json``
 
 .. note::
-    The adapter doesn't have ``ZMQ_TYPE``, ``ZMQ_BIND``, ``USE_ABSOLUTE_TIMESTAMPS`` parameters.
+    The adapter doesn't have ``USE_ABSOLUTE_TIMESTAMPS`` parameter.
 
 Running the adapter with Docker:
 
@@ -926,8 +916,6 @@ There is a number of sink adapters implemented:
 All sync adapters accept the following parameters:
 
 - ``ZMQ_ENDPOINT``: a ZeroMQ socket for data input matching the one specified in module's output;  the endpoint coding scheme is ``[<socket_type>+(bind|connect):]<endpoint>``;
-- ``ZMQ_TYPE``: a ZeroMQ socket type for the adapter's input; the default value is ``SUB``, can also be set to ROUTER or ``REP``; **warning**: this parameter is deprecated, consider encoding the type in ``ZMQ_ENDPOINT``;
-- ``ZMQ_BIND``: a parameter specifying whether the adapter's input should be bound or connected to the specified endpoint; If ``True``, the input is bound; otherwise, it's connected; the default value is ``False``; **warning**: this parameter is deprecated, consider encoding the type in ``ZMQ_ENDPOINT``.
 
 JSON Metadata Sink Adapter
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1549,8 +1537,6 @@ Running the adapter with Docker:
         ghcr.io/insight-platform/savant-adapters-py:latest \
         -m adapters.python.sinks.kafka_redis
 
-.. note::
-    The adapter doesn't have ``ZMQ_TYPE``, ``ZMQ_BIND`` parameters.
 
 Running the adapter with the helper script:
 
@@ -1647,9 +1633,6 @@ Running with the helper script:
         --aws-access-key='AKIAIOSFODNN7EXAMPLE' \
         --aws-secret-key='wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY'
 
-.. note::
-
-    The adapter doesn't have ``ZMQ_TYPE``, ``ZMQ_BIND`` parameters.
 
 .. note::
 

@@ -12,8 +12,6 @@ required_env() {
 required_env LOCATION
 required_env ZMQ_ENDPOINT
 
-ZMQ_SOCKET_TYPE="${ZMQ_TYPE:="DEALER"}"
-ZMQ_SOCKET_BIND="${ZMQ_BIND:="false"}"
 SYNC_OUTPUT="${SYNC_OUTPUT:="false"}"
 FPS_OUTPUT="${FPS_OUTPUT:="stdout"}"
 if [[ -n "${FPS_PERIOD_SECONDS}" ]]; then
@@ -44,8 +42,6 @@ SINK_PROPERTIES=(
     enable-multistream=true
     number-of-streams="${NUMBER_OF_STREAMS}"
     socket="${ZMQ_ENDPOINT}"
-    socket-type="${ZMQ_SOCKET_TYPE}"
-    bind="${ZMQ_SOCKET_BIND}"
     sync="${SYNC_OUTPUT}"
 )
 if [[ -n "${RECEIVE_TIMEOUT}" ]]; then

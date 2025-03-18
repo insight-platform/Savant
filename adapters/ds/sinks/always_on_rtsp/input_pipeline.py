@@ -153,8 +153,6 @@ def build_input_pipeline(
     zeromq_src_properties = {
         'source-id': config.source_id,
         'socket': config.zmq_endpoint,
-        'socket-type': config.zmq_socket_type.name,
-        'bind': config.zmq_socket_bind,
         'max-width': config.max_allowed_resolution[0],
         'max-height': config.max_allowed_resolution[1],
         'pipeline': config.video_pipeline,

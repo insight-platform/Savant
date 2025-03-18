@@ -150,8 +150,6 @@ class ZeroMQSinkFactory(SinkFactory):
     """ZeroMQ sink factory.
 
     :param socket: zeromq socket.
-    :param socket_type: zeromq socket type.
-    :param bind: indicates whether the client should bind or connect to zeromq socket.
     :param send_hwm: high watermark for outbound messages.
     """
 
@@ -160,8 +158,6 @@ class ZeroMQSinkFactory(SinkFactory):
         sink_name: str,
         egress_pyfunc: PyFunc,
         socket: str,
-        socket_type: Union[str, SenderSocketTypes] = SenderSocketTypes.PUB.name,
-        bind: bool = True,
         send_hwm: int = Defaults.SEND_HWM,
         receive_timeout: int = Defaults.SENDER_RECEIVE_TIMEOUT,
         req_receive_retries: int = Defaults.RECEIVE_RETRIES,
@@ -169,37 +165,24 @@ class ZeroMQSinkFactory(SinkFactory):
     ):
         super().__init__(sink_name, egress_pyfunc)
         logger.debug(
-            'Initializing ZMQ sink: socket %s, type %s, bind %s.',
+            'Initializing ZMQ sink: socket %s',
             socket,
-            socket_type,
-            bind,
         )
-        socket_type = SenderSocketTypes[socket_type]
 
         self.receive_timeout = receive_timeout
         self.req_receive_retries = req_receive_retries
         self.set_ipc_socket_permissions = set_ipc_socket_permissions
         self.socket = socket
-        if get_zmq_socket_uri_options(socket):
-            self.socket_type = None
-            self.bind = None
-        else:
-            self.socket_type = socket_type
-            self.bind = bind
-
         self.send_hwm = send_hwm
 
     def get_sink(self) -> SinkCallable:
         config_builder = WriterConfigBuilder(self.socket)
+        temp_conf = WriterConfigBuilder(self.socket).build()
         config_builder.with_send_hwm(self.send_hwm)
         config_builder.with_receive_timeout(self.receive_timeout)
         config_builder.with_receive_retries(self.req_receive_retries)
-        if self.socket_type is not None:
-            config_builder.with_socket_type(self.socket_type.value)
-        if self.bind is not None:
-            config_builder.with_bind(bool(self.bind))  # in case "bind" is "int"
-            if self.set_ipc_socket_permissions:
-                config_builder.with_fix_ipc_permissions(self.set_ipc_socket_permissions)
+        if self.set_ipc_socket_permissions and temp_conf.bind:
+            config_builder.with_fix_ipc_permissions(self.set_ipc_socket_permissions)
         writer = BlockingWriter(config_builder.build())
         writer.start()
 

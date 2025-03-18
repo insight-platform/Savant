@@ -13,14 +13,10 @@ class ZeroMqProxy:
     def __init__(
         self,
         input_socket: str,
-        input_socket_type: Optional[ReceiverSocketTypes],
-        input_bind: Optional[bool],
         output_socket: str,
     ):
         self.source = ZeroMQSource(
             socket=input_socket,
-            socket_type=input_socket_type.name,
-            bind=input_bind,
         )
         writer_config_builder = WriterConfigBuilder(output_socket)
         self.writer_config = writer_config_builder.build()
