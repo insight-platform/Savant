@@ -1,6 +1,39 @@
 ARG DEEPSTREAM_VERSION=7.0
 ARG DEEPSTREAM_DEVEL_IMAGE=$DEEPSTREAM_VERSION-triton-multiarch
 ARG DEEPSTREAM_BASE_IMAGE=$DEEPSTREAM_VERSION-samples-multiarch
+
+FROM ubuntu:22.04 AS glib-builder
+ARG GLIB_VERSION=2.84.0
+
+# Set non-interactive frontend to avoid interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt update && apt install -y \
+    python3-pip libcairo2-dev libcairo2 pkg-config python3-dev protobuf-compiler libyaml-cpp-dev libmpg123-0 libmpeg2-4 libavcodec58 \
+    pkg-config python3-dev libffi-dev libmount-dev ninja-build wget git rsync
+
+RUN python3 -m pip install meson ninja packaging
+
+WORKDIR /opt/build
+
+RUN wget https://github.com/GNOME/glib/archive/refs/tags/${GLIB_VERSION}.tar.gz
+RUN tar -xzvf ${GLIB_VERSION}.tar.gz
+RUN rm -r glib-${GLIB_VERSION}/subprojects/gvdb
+
+# Building GLib 2.76.6 (required for DS 6.4)
+# Change into the extracted directory
+WORKDIR /opt/build/glib-${GLIB_VERSION}
+# Configure the build
+RUN meson _build
+# Build GLib
+RUN ninja -C _build
+# Install GLib
+RUN ninja -C _build install
+# Copy library files to "standard path"
+# RUN rsync -av /usr/local/lib/x86_64-linux-gnu/ /usr/lib/x86_64-linux-gnu/
+RUN tar -czvf /glib-${GLIB_VERSION}.tar.gz /usr/local/lib/x86_64-linux-gnu
+
+
 FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_DEVEL_IMAGE AS builder
 ARG TARGETARCH
 
@@ -16,24 +49,24 @@ RUN python3 -m pip install --no-cache-dir --upgrade \
 # install cmake
 ARG CMAKE_VER=3.27.7
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
-      wget -nv -O /tmp/cmake.sh https://github.com/Kitware/CMake/releases/download/v$CMAKE_VER/cmake-$CMAKE_VER-linux-x86_64.sh; \
-      sh /tmp/cmake.sh --skip-license --prefix=/usr/local; \
-      rm -f /tmp/cmake.sh; \
+    wget -nv -O /tmp/cmake.sh https://github.com/Kitware/CMake/releases/download/v$CMAKE_VER/cmake-$CMAKE_VER-linux-x86_64.sh; \
+    sh /tmp/cmake.sh --skip-license --prefix=/usr/local; \
+    rm -f /tmp/cmake.sh; \
     elif [ "$TARGETARCH" = "arm64" ]; then \
-      wget -nv -O /tmp/cmake.sh https://github.com/Kitware/CMake/releases/download/v$CMAKE_VER/cmake-$CMAKE_VER-linux-aarch64.sh; \
-      sh /tmp/cmake.sh --skip-license --prefix=/usr/local; \
-      rm -f /tmp/cmake.sh; \
+    wget -nv -O /tmp/cmake.sh https://github.com/Kitware/CMake/releases/download/v$CMAKE_VER/cmake-$CMAKE_VER-linux-aarch64.sh; \
+    sh /tmp/cmake.sh --skip-license --prefix=/usr/local; \
+    rm -f /tmp/cmake.sh; \
     fi
 
 # TODO: Determine JetPack release (replace `r36.2`)
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
-      echo "deb [trusted=yes] https://repo.download.nvidia.com/jetson/t234 r36.2 main" \
-        > /etc/apt/sources.list.d/nvidia-l4t-apt-source.list \
-      && rm /etc/ld.so.conf.d/nvidia-tegra.conf \
-      && mkdir -p /opt/nvidia/l4t-packages/ \
-      && touch /opt/nvidia/l4t-packages/.nv-l4t-disable-boot-fw-update-in-preinstall \
-      && apt-get update \
-      && apt-get install --no-install-recommends -y nvidia-l4t-multimedia; \
+    echo "deb [trusted=yes] https://repo.download.nvidia.com/jetson/t234 r36.2 main" \
+    > /etc/apt/sources.list.d/nvidia-l4t-apt-source.list \
+    && rm /etc/ld.so.conf.d/nvidia-tegra.conf \
+    && mkdir -p /opt/nvidia/l4t-packages/ \
+    && touch /opt/nvidia/l4t-packages/.nv-l4t-disable-boot-fw-update-in-preinstall \
+    && apt-get update \
+    && apt-get install --no-install-recommends -y nvidia-l4t-multimedia; \
     fi
 
 # extra packages builders
@@ -110,25 +143,26 @@ ARG PACKAGES_URL=https://eu-central-1.linodeobjects.com/savant-data/packages/${T
 RUN /opt/nvidia/deepstream/deepstream/user_additional_install.sh
 RUN apt-get update && \
     apt-get install --no-install-recommends -y \
-        file \
-        gdb \
-        strace \
-        libmagic1 \
-        libcairo2-dev \
-        python3-pip \
-        python3-dev \
-        python-gi-dev \
-        python3-gst-1.0 \
-        gstreamer1.0-python3-plugin-loader && \
+    file \
+    gdb \
+    strace \
+    rsync \
+    libmagic1 \
+    libcairo2-dev \
+    python3-pip \
+    python3-dev \
+    python-gi-dev \
+    python3-gst-1.0 \
+    gstreamer1.0-python3-plugin-loader && \
     apt-get autoremove -y && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 # ao-rtsp bug fix
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
-      rm /usr/lib/x86_64-linux-gnu/gio/modules/libgiolibproxy.so; \
+    rm /usr/lib/x86_64-linux-gnu/gio/modules/libgiolibproxy.so; \
     elif [ "$TARGETARCH" = "arm64" ]; then \
-      rm /usr/lib/aarch64-linux-gnu/gio/modules/libgiolibproxy.so; \
+    rm /usr/lib/aarch64-linux-gnu/gio/modules/libgiolibproxy.so; \
     fi
 
 ARG PROJECT_PATH=/opt/savant
@@ -212,6 +246,12 @@ HEALTHCHECK --interval=5s --timeout=5s --start-period=30m --retries=3 \
 RUN echo 'python3 -c "from savant.utils.welcome import get_welcome_message; print(get_welcome_message())"' >> /etc/bash.bashrc
 ENV USE_NEW_NVSTREAMMUX=yes
 
+RUN --mount=from=glib-builder,source=/,target=/tmp/glib /bin/ls
+RUN --mount=from=glib-builder,source=/,target=/tmp/glib \
+    tar -xzvf /tmp/glib/glib-*.tar.gz && \
+    rsync -av usr/local/lib/x86_64-linux-gnu/ /usr/lib/x86_64-linux-gnu/ && \
+    rm -rf usr
+
 ENTRYPOINT ["python", "-m", "savant.entrypoint"]
 
 
@@ -222,9 +262,9 @@ ARG TARGETARCH
 ARG MEDIAMTX_VERSION="v1.11.3"
 RUN mkdir mediamtx && \
     if [ "$TARGETARCH" = "amd64" ]; then \
-      wget -qO- "https://github.com/bluenviron/mediamtx/releases/download/${MEDIAMTX_VERSION}/mediamtx_${MEDIAMTX_VERSION}_linux_amd64.tar.gz" | tar xz -C mediamtx; \
+    wget -qO- "https://github.com/bluenviron/mediamtx/releases/download/${MEDIAMTX_VERSION}/mediamtx_${MEDIAMTX_VERSION}_linux_amd64.tar.gz" | tar xz -C mediamtx; \
     elif [ "$TARGETARCH" = "arm64" ]; then \
-      wget -qO- "https://github.com/bluenviron/mediamtx/releases/download/${MEDIAMTX_VERSION}/mediamtx_${MEDIAMTX_VERSION}_linux_armv7.tar.gz" | tar xz -C mediamtx; \
+    wget -qO- "https://github.com/bluenviron/mediamtx/releases/download/${MEDIAMTX_VERSION}/mediamtx_${MEDIAMTX_VERSION}_linux_armv7.tar.gz" | tar xz -C mediamtx; \
     fi
 
 RUN --mount=type=bind,source=adapters/requirements-ds.txt,target=/tmp/requirements.txt \
@@ -254,7 +294,7 @@ HEALTHCHECK NONE
 
 RUN apt-get update && \
     apt-get install --no-install-recommends -y \
-        graphviz && \
+    graphviz && \
     apt-get autoremove -y && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
@@ -270,7 +310,7 @@ ARG USER_UID=1001
 ARG USER_GID=$USER_UID
 # Create the user
 RUN groupadd --gid $USER_GID $USERNAME && \
-	useradd --uid $USER_UID --gid $USER_GID -m $USERNAME
+    useradd --uid $USER_UID --gid $USER_GID -m $USERNAME
 
 RUN chown -R $USER_UID:$USER_GID $PROJECT_PATH
 USER $USERNAME
@@ -327,15 +367,15 @@ FROM base AS deepstream-l4t-extra
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        libopenblas-dev \
-        libopenmpi-dev \
-        openmpi-bin \
-        openmpi-common \
-        libomp-dev \
-        libjpeg-dev \
-        libpng-dev \
-        zlib1g-dev \
-        cmake && \
+    libopenblas-dev \
+    libopenmpi-dev \
+    openmpi-bin \
+    openmpi-common \
+    libomp-dev \
+    libjpeg-dev \
+    libpng-dev \
+    zlib1g-dev \
+    cmake && \
     apt-get autoremove -y && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*

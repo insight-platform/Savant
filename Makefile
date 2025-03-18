@@ -19,8 +19,8 @@ endif
 
 PROJECT_PATH := /opt/savant
 
-#BUILD_PROGRESS := plain
-BUILD_PROGRESS := auto
+BUILD_PROGRESS := plain
+# BUILD_PROGRESS := auto
 
 publish-local: build build-adapters-all build-watchdog
 	docker tag savant-deepstream$(PLATFORM_SUFFIX) ghcr.io/insight-platform/savant-deepstream$(PLATFORM_SUFFIX)
