@@ -269,8 +269,8 @@ jobs:
           
       - name: Pull and retag container
         run: |
-          docker pull ${{ env.REGISTRY }}/insight-platform/${{ matrix.image }}:${{ needs.init.outputs.savant-rs-version }}
-          docker tag ${{ env.REGISTRY }}/insight-platform/${{ matrix.image }}:${{ needs.init.outputs.savant-rs-version }} ${{ env.REGISTRY }}/insight-platform/${{ matrix.image }}:v${{ needs.init.outputs.savant-version }}
+          docker pull ${{ env.REGISTRY }}/insight-platform/${{ matrix.image }}:${{ needs.init.outputs.savant-rs-version }}-rolling
+          docker tag ${{ env.REGISTRY }}/insight-platform/${{ matrix.image }}:${{ needs.init.outputs.savant-rs-version }}-rolling ${{ env.REGISTRY }}/insight-platform/${{ matrix.image }}:v${{ needs.init.outputs.savant-version }}
           docker push ${{ env.REGISTRY }}/insight-platform/${{ matrix.image }}:v${{ needs.init.outputs.savant-version }}
 
   # build documentation
