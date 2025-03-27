@@ -11,6 +11,7 @@ from .base import RemoteFileError, RemoteFileManagerType
 from .gcs import GCSFileHandler
 from .http import HTTPFileHandler
 from .s3 import S3FileHandler
+from .gcs import GCSFileHandler
 from .schema import RemoteFile
 from .utils import read_file_checksum, unpack_archive
 
