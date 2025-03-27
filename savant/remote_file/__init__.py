@@ -10,6 +10,7 @@ from savant.utils.log import get_logger
 from .base import RemoteFileError, RemoteFileManagerType
 from .http import HTTPFileHandler
 from .s3 import S3FileHandler
+from .gcs import GCSFileHandler
 from .schema import RemoteFile
 from .utils import read_file_checksum, unpack_archive
 
@@ -18,6 +19,7 @@ __all__ = ['process_remote', 'RemoteFile']
 
 RemoteFileManagerType.add_handler(S3FileHandler)
 RemoteFileManagerType.add_handler(HTTPFileHandler)
+RemoteFileManagerType.add_handler(GCSFileHandler)
 logger = get_logger(__name__)
 
 
