@@ -17,6 +17,7 @@ pretty-traceback==2023.1019
 # remote file support
 requests~=2.32
 boto3~=1.23
+google-cloud-storage~=3.1.0
 tqdm~=4.64
 
 # ClientSDK JpegSource, PngSource
