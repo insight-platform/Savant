@@ -201,7 +201,6 @@ class FFmpegSrc(LoggerMixin, GstBase.BaseSrc):
 
         self.logger.debug('Receiving next frame')
 
-
         while True:
             try:
                 assert self._ffmpeg_source.is_running, 'FFMpegSource is not running.'
