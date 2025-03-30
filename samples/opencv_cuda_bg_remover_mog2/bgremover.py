@@ -29,12 +29,14 @@ class BgRemover(NvDsPyFuncPlugin):
         self.codec_params = codec_params
         self.result_aux_streams: Dict[str, AuxiliaryStream] = {}
         self.back_subtractors = {}
+        
         self.gaussian_filter = cv2.cuda.createGaussianFilter(
             cv2.CV_8UC4, cv2.CV_8UC4, (9, 9), 2
         )
 
     def on_source_add(self, source_id: str):
         """Initialize an auxiliary stream for background removal result."""
+
         self.logger.info('Source %s added.', source_id)
         if source_id in self.result_aux_streams:
             self.logger.info('Source %s already has a result stream.', source_id)
