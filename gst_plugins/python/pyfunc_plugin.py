@@ -180,15 +180,7 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
             self, self.logger, self.module, self.class_name, self.kwargs, self.dev_mode
         )
         if self.pyfunc is None:
-            return handle_fatal_error(
-                self,
-                self.logger,
-                None,
-                f'Failed to initialize PyFunc "{self.module}.{self.class_name}"',
-                self.dev_mode,
-                return_ok=True,
-                return_err=False,
-            )
+            return False
         try:
             assert isinstance(
                 self.pyfunc.instance, BasePyFuncPlugin
