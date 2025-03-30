@@ -73,6 +73,7 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
                 return
             source_id = self._sources.get_id_by_pad_index(pad_idx)
             self.on_source_add(source_id)
+
         elif event.type == GST_NVEVENT_PAD_DELETED:
             pad_idx = gst_nvevent_parse_pad_deleted(event)
             if self._is_processed(event, pad_idx):
