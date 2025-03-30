@@ -36,7 +36,6 @@ class BgRemover(NvDsPyFuncPlugin):
 
     def on_source_add(self, source_id: str):
         """Initialize an auxiliary stream for background removal result."""
-
         self.logger.info('Source %s added.', source_id)
         if source_id in self.result_aux_streams:
             self.logger.info('Source %s already has a result stream.', source_id)
@@ -86,6 +85,7 @@ class BgRemover(NvDsPyFuncPlugin):
         :param buffer: Gstreamer buffer with this frame's data.
         :param frame_meta: This frame's metadata.
         """
+
         stream = self.get_cuda_stream(frame_meta)
         with nvds_to_gpu_mat(buffer, frame_meta.frame_meta) as frame_mat:
             result_stream = self.result_aux_streams[frame_meta.source_id]

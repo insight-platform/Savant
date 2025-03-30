@@ -215,13 +215,17 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
         try:
             self.pyfunc.instance.on_event(event)
         except Exception as exc:
-            handle_non_fatal_error(
+            res = handle_fatal_error(
                 self,
                 self.logger,
                 exc,
                 f'Error in do_sink_event() call for {self.pyfunc}.',
                 self.dev_mode,
+                return_ok=True,
+                return_err=False,
             )
+            if not res:
+                return False
         return self.srcpad.push_event(event)
 
     def do_transform_ip(self, buffer: Gst.Buffer):
