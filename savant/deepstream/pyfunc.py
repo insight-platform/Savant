@@ -166,7 +166,6 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
                     telemetry_span,
                 ) as frame_meta:
                     self.process_frame(buffer, frame_meta)
-                        
 
         for stream in self._stream_pool:
             stream.waitForCompletion()
