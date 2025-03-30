@@ -174,8 +174,6 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
                 None,
                 'Module and class name should be specified.',
                 self.dev_mode,
-                True,
-                False,
             )
 
         self.pyfunc = init_pyfunc(
@@ -195,8 +193,6 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
                 exc,
                 f'Error in on_start() call for {self.pyfunc}',
                 self.dev_mode,
-                True,
-                False,
             )
 
     def do_stop(self):
@@ -211,8 +207,6 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
                 exc,
                 f'Error in do_stop() call for {self.pyfunc}',
                 self.dev_mode,
-                True,
-                False,
             )
 
     def do_sink_event(self, event: Gst.Event) -> bool:
@@ -242,8 +236,6 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
                 exc,
                 f'Error in process_buffer() call for {self.pyfunc}.',
                 self.dev_mode,
-                True,
-                False,
             )
 
         return Gst.FlowReturn.OK

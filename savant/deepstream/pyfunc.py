@@ -1,5 +1,8 @@
 """Base implementation of user-defined PyFunc class."""
 
+import os
+import signal
+import sys
 from typing import Any, Dict, Optional
 
 import cv2
@@ -72,21 +75,50 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
             if self._is_processed(event, pad_idx):
                 return
             source_id = self._sources.get_id_by_pad_index(pad_idx)
-            self.on_source_add(source_id)
-
+            try:
+                self.on_source_add(source_id)
+            except Exception as e:
+                self.logger.critical(e, exc_info=True)
+                self.logger.error(
+                    'Fatal error in source add event for source %s. '
+                    'Sending SIGKILL to self to terminate the process.',
+                    source_id,
+                )
+                # send sigkill to self
+                os.kill(os.getpid(), signal.SIGKILL)
         elif event.type == GST_NVEVENT_PAD_DELETED:
             pad_idx = gst_nvevent_parse_pad_deleted(event)
             if self._is_processed(event, pad_idx):
                 return
             source_id = self._sources.get_id_by_pad_index(pad_idx)
-            self.on_source_delete(source_id)
+            try:
+                self.on_source_delete(source_id)
+            except Exception as e:
+                self.logger.critical(e, exc_info=True)
+                self.logger.error(
+                    'Fatal error in source delete event for source %s. '
+                    'Sending SIGKILL to self to terminate the process.',
+                    source_id,
+                )
+                # send sigkill to self
+                os.kill(os.getpid(), signal.SIGKILL)
 
         elif event.type == GST_NVEVENT_STREAM_EOS:
             pad_idx = gst_nvevent_parse_stream_eos(event)
             if self._is_processed(event, pad_idx):
                 return
             source_id = self._sources.get_id_by_pad_index(pad_idx)
-            self.on_source_eos(source_id)
+            try:
+                self.on_source_eos(source_id)
+            except Exception as e:
+                self.logger.critical(e, exc_info=True)
+                self.logger.error(
+                    'Fatal error in source EOS event for source %s. '
+                    'Sending SIGKILL to self to terminate the process.',
+                    source_id,
+                )
+                # send sigkill to self
+                os.kill(os.getpid(), signal.SIGKILL)
 
     def on_source_add(self, source_id: str):
         """On source add event callback."""
@@ -167,6 +199,7 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
                     telemetry_span,
                 ) as frame_meta:
                     self.process_frame(buffer, frame_meta)
+                        
 
         for stream in self._stream_pool:
             stream.waitForCompletion()

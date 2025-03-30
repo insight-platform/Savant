@@ -30,8 +30,6 @@ def init_pyfunc(
                 exc,
                 f'Failed to parse kwargs for "{module}.{class_name}" pyfunc.',
                 dev_mode,
-                True,
-                False,
             )
     else:
         kwargs = None
@@ -50,8 +48,6 @@ def init_pyfunc(
             exc,
             f'Failed to initialize "{module}.{class_name}" pyfunc.',
             dev_mode,
-            True,
-            False,
         )
 
     try:
@@ -63,8 +59,6 @@ def init_pyfunc(
             exc,
             f'Failed to load user code for {pyfunc}.',
             dev_mode,
-            True,
-            False,
         )
 
     return pyfunc

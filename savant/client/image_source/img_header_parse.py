@@ -17,7 +17,7 @@ def get_image_size_codec(file: Union[str, PathLike, BinaryIO]) -> Tuple[int, int
     """
     if hasattr(file, 'read') and hasattr(file, 'seek'):
         # read only the first 512 KB of the file hoping that the SOF header segment is there
-        magic_out = magic.from_buffer(file.read(512*1024))
+        magic_out = magic.from_buffer(file.read(512 * 1024))
         file.seek(0)
     elif isinstance(file, (str, PathLike)):
         magic_out = magic.from_file(file)
