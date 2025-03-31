@@ -170,13 +170,14 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
                 None,
                 'Module and class name should be specified.',
                 self.dev_mode,
-                return_ok=True,
-                return_err=False,
+                True,
+                False,
             )
 
         self.pyfunc = init_pyfunc(
             self, self.logger, self.module, self.class_name, self.kwargs, self.dev_mode
         )
+
         try:
             assert isinstance(
                 self.pyfunc.instance, BasePyFuncPlugin
@@ -190,8 +191,8 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
                 exc,
                 f'Error in on_start() call for {self.pyfunc}',
                 self.dev_mode,
-                return_ok=True,
-                return_err=False,
+                True,
+                False,
             )
 
     def do_stop(self) -> bool:
@@ -206,8 +207,8 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
                 exc,
                 f'Error in do_stop() call for {self.pyfunc}',
                 self.dev_mode,
-                return_ok=True,
-                return_err=False,
+                True,
+                False,
             )
 
     def do_sink_event(self, event: Gst.Event) -> bool:
@@ -222,8 +223,8 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
                 exc,
                 f'Error in do_sink_event() call for {self.pyfunc}.',
                 self.dev_mode,
-                return_ok=True,
-                return_err=False,
+                True,
+                False,
             )
             if not res:
                 return False
@@ -241,8 +242,8 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
                 exc,
                 f'Error in process_buffer() call for {self.pyfunc}.',
                 self.dev_mode,
-                return_ok=Gst.FlowReturn.OK,
-                return_err=Gst.FlowReturn.ERROR,
+                Gst.FlowReturn.OK,
+                Gst.FlowReturn.ERROR,
             )
 
         return Gst.FlowReturn.OK
