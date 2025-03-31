@@ -9,11 +9,7 @@ from typing import Any, Optional
 
 from savant_rs.pipeline2 import VideoPipeline
 
-from gst_plugins.python.pyfunc_common import (
-    handle_fatal_error,
-    handle_non_fatal_error,
-    init_pyfunc,
-)
+from gst_plugins.python.pyfunc_common import handle_fatal_error, init_pyfunc
 from savant.base.pyfunc import BasePyFuncPlugin, PyFunc
 from savant.gstreamer import GLib, GObject, Gst, GstBase  # noqa: F401
 from savant.utils.log import LoggerMixin
@@ -164,7 +160,7 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
         else:
             raise AttributeError(f'Unknown property {prop.name}.')
 
-    def do_start(self):
+    def do_start(self) -> bool:
         """Do on plugin start."""
 
         if not self.module or not self.class_name:
@@ -174,14 +170,13 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
                 None,
                 'Module and class name should be specified.',
                 self.dev_mode,
+                return_ok=True,
+                return_err=False,
             )
 
         self.pyfunc = init_pyfunc(
             self, self.logger, self.module, self.class_name, self.kwargs, self.dev_mode
         )
-        if self.pyfunc is None:
-            self.logger.error(f'Failed to initialize pyfunc with module {self.module} and class {self.class_name}.')
-            return False
         try:
             assert isinstance(
                 self.pyfunc.instance, BasePyFuncPlugin
@@ -195,9 +190,11 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
                 exc,
                 f'Error in on_start() call for {self.pyfunc}',
                 self.dev_mode,
+                return_ok=True,
+                return_err=False,
             )
 
-    def do_stop(self):
+    def do_stop(self) -> bool:
         """Do on plugin stop."""
         # pylint: disable=broad-exception-caught
         try:
@@ -209,6 +206,8 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
                 exc,
                 f'Error in do_stop() call for {self.pyfunc}',
                 self.dev_mode,
+                return_ok=True,
+                return_err=False,
             )
 
     def do_sink_event(self, event: Gst.Event) -> bool:
@@ -242,6 +241,8 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
                 exc,
                 f'Error in process_buffer() call for {self.pyfunc}.',
                 self.dev_mode,
+                return_ok=Gst.FlowReturn.OK,
+                return_err=Gst.FlowReturn.ERROR,
             )
 
         return Gst.FlowReturn.OK

@@ -76,8 +76,8 @@ def handle_fatal_error(
     exc: BaseException,
     msg: str,
     dev_mode: bool,
-    return_ok: Any = Gst.FlowReturn.OK,
-    return_err: Any = Gst.FlowReturn.ERROR,
+    return_ok: Any,
+    return_err: Any,
 ) -> Any:
     if dev_mode:
         if not isinstance(exc, PyFuncNoopCallException):
