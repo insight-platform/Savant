@@ -35,6 +35,9 @@ telemetry_config = TelemetryConfiguration(
     ),
 )
 telemetry.init(telemetry_config)
+# or 
+# use x509 provider config file (take a look at samples/telemetry/otlp/x509_provider_config.json)
+# telemetry.init_from_file('/path/to/x509_provider_config.json')
 
 module_hostname = os.environ.get('MODULE_HOSTNAME', 'localhost')
 jaeger_endpoint = 'http://jaeger:16686'

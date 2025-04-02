@@ -36,7 +36,7 @@ def init_tracing(module_name: str, tracing: TracingParameters):
             logger.info('Initializing tracing provider from JSON file %r.', provider_params_config)
             if provider_params:
                 logger.warning('Provider params from config attributes will be ignored because JSON file is specified.')
-            init_from_file(str(provider_params_config))
+            init_from_file(str(provider_params_config)) 
         else:
             logger.info('Initializing tracing provider from config attributes.')
             
