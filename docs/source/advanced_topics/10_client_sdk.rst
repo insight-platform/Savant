@@ -32,8 +32,6 @@ When the frame is sent, the :py:class:`savant.client.runner.source.SourceResult`
 
 When the frame processing result is retrieved from the module, the developer can request the frame, metadata and logs collected by OpenTelemetry.
 
-
-
 Remote Development
 ^^^^^^^^^^^^^^^^^^
 
