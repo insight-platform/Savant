@@ -1,0 +1,11 @@
+{
+    "tracer": {
+        "service_name": "savant-core",
+        "protocol": "grpc",
+        "endpoint": "http://jaeger:4317",
+        "timeout": {
+            "secs": 10,
+            "nanos": 0
+        }
+    }
+}
