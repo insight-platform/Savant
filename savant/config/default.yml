@@ -148,7 +148,7 @@ parameters:
   #       endpoint: "http://jaeger:4317"
   #       timeout: 5000 # milliseconds
   #       tls:
-  #         certificate: /path/to/ca.crt
+  #         ca: /path/to/ca.crt
   #         identity:
   #             certificate: /path/to/client.crt
   #             key: /path/to/client.key
@@ -172,6 +172,7 @@ parameters:
       provider: ${oc.decode:${oc.env:TRACING_PROVIDER, null}}
       # Parameters for tracing provider
       provider_params: ${json:${oc.env:TRACING_PROVIDER_PARAMS, null}}
+      provider_params_config: ${oc.decode:${oc.env:TRACING_PROVIDER_PARAMS_CONFIG, null}}
     # Configure metrics
     metrics:
       # Output stats after every N frames

@@ -2,6 +2,7 @@
 
 import json
 from dataclasses import asdict, dataclass, field
+import pathlib
 from typing import Any, Dict, List, Optional, Union
 
 from omegaconf import MISSING, DictConfig, OmegaConf
@@ -131,18 +132,20 @@ class TracingParameters:
         sampling_period: 100
         append_frame_meta_to_span: False
         root_span_name: demo-pipeline-root
-        provider: jaeger
+        provider: opentelemetry
+        # or (checked first)
+        provider_params_config: /path/to/provider_params.json
+        # or (checked second)
         provider_params:
           service_name: demo-pipeline
           protocol: grpc
           endpoint: "http://jaeger:4317"
           timeout: 5000 # milliseconds
           tls:
-            certificate: /path/to/ca.crt
+            ca: /path/to/ca.crt
             identity:
                 certificate: /path/to/client.crt
                 key: /path/to/client.key
-
     """
 
     sampling_period: int = 100
@@ -160,6 +163,8 @@ class TracingParameters:
     provider_params: Optional[Dict[str, Any]] = None
     """Parameters for tracing provider."""
 
+    provider_params_config: Optional[pathlib.Path] = None
+    """JSON file path to the file with tracing provider parameters."""
 
 @dataclass
 class MetricsParameters:
@@ -200,14 +205,14 @@ class TelemetryParameters:
           sampling_period: 100
           append_frame_meta_to_span: False
           root_span_name: demo-pipeline-root
-          provider: jaeger
+          provider: opentelemetry
           provider_params:
             service_name: demo-pipeline
             protocol: grpc
             endpoint: "http://jaeger:4317"
             timeout: 5000 # milliseconds
             tls:
-              certificate: /path/to/ca.crt
+              ca: /path/to/ca.crt
               identity:
                   certificate: /path/to/client.crt
                   key: /path/to/client.key

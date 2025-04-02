@@ -20,8 +20,7 @@ Developers can attach auxiliary information to a span: attributes, events, span 
 
 Savant automatically creates spans for every pipeline stage and gives developer API to create nested spans in their Python code.
 
-OpenTelemetry send tracing information to a trace collector. Currently, Savant integrates with `Jaeger <https://www.jaegertracing.io/>`_: a widely-used open-source tracing solution. Jaeger not only gathers traces but has RESTful API and WebUI to access and analyze tracing information.
-
+OpenTelemetry send tracing information to a trace collector. Currently, Savant integrates with any OpenTelemetry-compatible trace collector.
 .. image:: ../../../samples/telemetry/assets/01-trace.png
 
 OpenTelemetry Sampling
@@ -55,7 +54,7 @@ Use ``params.telemetry.tracing`` to configure OpenTelemetry for the module.
         tracing:
           sampling_period: 100
           root_span_name: pipeline
-          provider: jaeger
+          provider: opentelemetry
           provider_params:
             service_name: demo-pipeline
             # Available protocols: grpc, http_binary, http_json.
@@ -65,14 +64,14 @@ Use ``params.telemetry.tracing`` to configure OpenTelemetry for the module.
             endpoint: "http://jaeger:4317"
             timeout: 5000 # milliseconds
             tls:
-              certificate: /path/to/ca.crt
+              ca: /path/to/ca.crt
               identity:
                   certificate: /path/to/client.crt
                   key: /path/to/client.key
 
 .. note::
 
-    The module `template <https://github.com/insight-platform/Savant/tree/develop/samples/template>`_ already has valid configuration, considering that the Jaeger is launched in the all-in-one mode recommended on the Jaeger `website <https://www.jaegertracing.io/docs/1.62/getting-started/>`_:
+    The module `template <https://github.com/insight-platform/Savant/tree/develop/samples/template>`_ demonstrates a valid configuration, considering that the Jaeger is launched in the all-in-one mode recommended on the Jaeger `website <https://www.jaegertracing.io/docs/1.62/getting-started/>`_:
 
     .. code-block:: bash
 

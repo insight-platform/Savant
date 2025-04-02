@@ -207,14 +207,14 @@ Example:
         sampling_period: 100
         append_frame_meta_to_span: false
         root_span_name: demo-pipeline-root
-        provider: jaeger
+        provider: opentelemetry
         provider_params:
           service_name: demo-pipeline
           protocol: grpc
           endpoint: "http://jaeger:4317"
           timeout: 5000 # milliseconds
           tls:
-            certificate: /path/to/ca.crt
+            ca: /path/to/ca.crt
             identity:
                 certificate: /path/to/client.crt
                 key: /path/to/client.key

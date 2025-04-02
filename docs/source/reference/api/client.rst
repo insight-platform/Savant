@@ -23,16 +23,16 @@ Source usage example:
     )
     from savant.client import JaegerLogProvider, JpegSource, SourceBuilder
 
-    # Initialize Jaeger tracer to send metrics and logs to Jaeger.
-    # Note: the Jaeger tracer also should be configured in the module.
+    # Initialize OTLP tracer to send metrics and logs to Jaeger.
+    # Note: the same OTLP tracer also should be configured in the module.
     telemetry_config = TelemetryConfiguration(
-        context_propagation_format=ContextPropagationFormat.Jaeger,
+        context_propagation_format=ContextPropagationFormat.W3C,
         tracer=TracerConfiguration(
             service_name='savant-client',
             protocol=Protocol.Grpc,
             endpoint='http://jaeger:4317',
             # tls=ClientTlsConfig(
-            #     certificate='/path/to/ca.crt',
+            #     ca='/path/to/ca.crt',
             #     identity=Identity(
             #         certificate='/path/to/client.crt',
             #         key='/path/to/client.key',
@@ -59,7 +59,7 @@ Source usage example:
     time.sleep(1)  # Wait for the module to process the frame
     result.logs().pretty_print()
 
-    # Shutdown the Jaeger tracer
+    # Shutdown the the tracer
     telemetry.shutdown()
 
 Sink usage example:
@@ -129,16 +129,16 @@ Async example (both source and sink):
 
 
     async def main():
-        # Initialize Jaeger tracer to send metrics and logs to Jaeger.
+        # Initialize the OTLP tracer to send metrics and logs to Jaeger.
         # Note: the Jaeger tracer also should be configured in the module.
         telemetry_config = TelemetryConfiguration(
-            context_propagation_format=ContextPropagationFormat.Jaeger,
+            context_propagation_format=ContextPropagationFormat.W3C,
             tracer=TracerConfiguration(
                 service_name='savant-client',
                 protocol=Protocol.Grpc,
                 endpoint='http://jaeger:4317',
                 # tls=ClientTlsConfig(
-                #     certificate='/path/to/ca.crt',
+                #     ca='/path/to/ca.crt',
                 #     identity=Identity(
                 #         certificate='/path/to/client.crt',
                 #         key='/path/to/client.key',
