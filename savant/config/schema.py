@@ -134,7 +134,7 @@ class TracingParameters:
         root_span_name: demo-pipeline-root
         provider: opentelemetry
         # or (mutually exclusive with provider_params, high priority)
-        provider_params_config: /path/to/provider_params.json
+        provider_params_config: '/path/to/provider_params.json'
         # or (mutually exclusive with provider_params_config, low priority)
         provider_params:
           service_name: demo-pipeline
