@@ -37,8 +37,8 @@ Trace Propagation
 
 Trace propagation is a mechanism of passing traces between distributed, decoupled systems. Savant supports trace propagation.
 
-OpenTelemetry Configuration
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OpenTelemetry Configuration (module)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Use ``params.telemetry.tracing`` to configure OpenTelemetry for the module.
 
@@ -55,6 +55,11 @@ Use ``params.telemetry.tracing`` to configure OpenTelemetry for the module.
           sampling_period: 100
           root_span_name: pipeline
           provider: opentelemetry
+          # or (mutually exclusive with provider_params, high priority)
+          # use provider config file (take a look at samples/telemetry/otlp/x509_provider_config.json)
+          provider_params_config: /path/to/x509_provider_config.json
+          # or (mutually exclusive with provider_params_config, low priority)
+          # use provider config attributes
           provider_params:
             service_name: demo-pipeline
             # Available protocols: grpc, http_binary, http_json.
@@ -69,21 +74,50 @@ Use ``params.telemetry.tracing`` to configure OpenTelemetry for the module.
                   certificate: /path/to/client.crt
                   key: /path/to/client.key
 
-.. note::
+OpenTelemetry Configuration (JSON file)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    The module `template <https://github.com/insight-platform/Savant/tree/develop/samples/template>`_ demonstrates a valid configuration, considering that the Jaeger is launched in the all-in-one mode recommended on the Jaeger `website <https://www.jaegertracing.io/docs/1.62/getting-started/>`_:
+Full example of the OpenTelemetry configuration file with TLS configuration:
 
-    .. code-block:: bash
+.. code-block:: json
 
-        docker run -d --name jaeger \
-          -e COLLECTOR_ZIPKIN_HOST_PORT=:9411 \
-          -p 16686:16686 \
-          -p 4317:4317 \
-          -p 4318:4318 \
-          -p 14250:14250 \
-          -p 14268:14268 \
-          -p 14269:14269 \
-          -p 9411:9411 \
-          jaegertracing/all-in-one:1.62.0
+    {
+      "tracer": {
+          "service_name": "savant-core",
+          "protocol": "grpc",
+          "endpoint": "https://jaeger:4317",
+          "timeout": {
+              "secs": 10,
+              "nanos": 0
+          },
+          "tls": {
+              "ca": "/opt/savant/samples/telemetry/certs/ca.crt",
+              "identity": {
+                  "key": "/opt/savant/samples/telemetry/certs/client.key",
+                  "certificate": "/opt/savant/samples/telemetry/certs/client.crt"
+              }
+          }
+      },
+      "context_propagation_format": "w3c"
+    }
+
+
+An example of the OpenTelemetry configuration file without TLS configuration:
+
+.. code-block:: json
+
+    {
+      "tracer": {
+          "service_name": "savant-core",
+          "protocol": "grpc",
+          "endpoint": "http://jaeger:4317",
+          "timeout": {
+              "secs": 10,
+              "nanos": 0
+          }
+      },
+      "context_propagation_format": "w3c"
+    }
+
 
 .. youtube:: DkNifuKg-kY

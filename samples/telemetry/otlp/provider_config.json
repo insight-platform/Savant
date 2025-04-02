@@ -7,5 +7,6 @@
             "secs": 10,
             "nanos": 0
         }
-    }
+    },
+    "context_propagation_format": "w3c"
 }

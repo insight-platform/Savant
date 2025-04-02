@@ -133,9 +133,9 @@ class TracingParameters:
         append_frame_meta_to_span: False
         root_span_name: demo-pipeline-root
         provider: opentelemetry
-        # or (checked first)
+        # or (mutually exclusive with provider_params, high priority)
         provider_params_config: /path/to/provider_params.json
-        # or (checked second)
+        # or (mutually exclusive with provider_params_config, low priority)
         provider_params:
           service_name: demo-pipeline
           protocol: grpc
@@ -206,6 +206,9 @@ class TelemetryParameters:
           append_frame_meta_to_span: False
           root_span_name: demo-pipeline-root
           provider: opentelemetry
+          # or (mutually exclusive with provider_params, high priority)
+          provider_params_config: /path/to/provider_params.json
+          # or (mutually exclusive with provider_params_config, low priority)
           provider_params:
             service_name: demo-pipeline
             protocol: grpc

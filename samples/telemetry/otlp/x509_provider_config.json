@@ -14,5 +14,6 @@
                 "certificate": "/opt/savant/samples/telemetry/certs/client.crt"
             }
         }
-    }
+    },
+    "context_propagation_format": "w3c"
 }
