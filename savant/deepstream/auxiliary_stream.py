@@ -12,6 +12,7 @@ from savant.api.constants import DEFAULT_TIME_BASE
 from savant.config.schema import PipelineElement
 from savant.gstreamer import Gst
 from savant.gstreamer.codecs import AUXILIARY_STREAM_CODECS, CODEC_BY_NAME
+from savant.gstreamer.event import build_savant_eos_event
 from savant.utils.log import get_logger
 from savant.utils.source_info import SourceInfoRegistry, SourceShape
 
@@ -139,13 +140,24 @@ class AuxiliaryStreamInternal:
 
         return frame, buffer
 
-    def eos(self) -> bool:
+    def eos(self, savant_eos: bool = True) -> bool:
         if not self._is_opened:
             self._logger.warning('Auxiliary stream is not opened')
             return False
         if self._pending_buffers:
             self.flush()
-        self._logger.info('Sending EOS to auxiliary stream')
+        self._logger.info(
+            'Sending %sEOS to auxiliary stream',
+            'Savant ' if savant_eos else '',
+        )
+        if savant_eos:
+            return self._pad.push_event(build_savant_eos_event(self._source_id))
+
+        # may result in loss of buffers
+        # TODO: Provide a method to check for buffers in the auxiliary stream pipeline
+        self._pad.push_event(Gst.Event.new_flush_start())
+        self._pad.push_event(Gst.Event.new_flush_stop(True))
+
         return self._pad.push_event(Gst.Event.new_eos())
 
     def flush(self) -> Gst.FlowReturn:
@@ -280,6 +292,6 @@ class AuxiliaryStream:
         """Remove the auxiliary stream."""
 
         self._internal.flush()
-        self._internal.eos()
+        self._internal.eos(savant_eos=False)
         self._internal.close()
         self._registry.remove_stream(self._internal._source_id)
