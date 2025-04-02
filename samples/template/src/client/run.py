@@ -35,7 +35,7 @@ telemetry_config = TelemetryConfiguration(
     ),
 )
 telemetry.init(telemetry_config)
-# or 
+# or
 # use x509 provider config file (take a look at samples/telemetry/otlp/x509_provider_config.json)
 # telemetry.init_from_file('/path/to/x509_provider_config.json')
 

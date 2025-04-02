@@ -1,8 +1,8 @@
 """Module and pipeline elements configuration templates."""
 
 import json
-from dataclasses import asdict, dataclass, field
 import pathlib
+from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List, Optional, Union
 
 from omegaconf import MISSING, DictConfig, OmegaConf
@@ -165,6 +165,7 @@ class TracingParameters:
 
     provider_params_config: Optional[pathlib.Path] = None
     """JSON file path to the file with tracing provider parameters."""
+
 
 @dataclass
 class MetricsParameters:

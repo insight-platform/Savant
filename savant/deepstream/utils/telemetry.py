@@ -26,20 +26,27 @@ def init_tracing(module_name: str, tracing: TracingParameters):
     """Initialize tracing provider."""
     if tracing.provider == 'jaeger' or tracing.provider == 'opentelemetry':
         if tracing.provider == 'jaeger':
-            logger.warning('Jaeger provider is deprecated. Use "opentelemetry" instead.')
+            logger.warning(
+                'Jaeger provider is deprecated. Use "opentelemetry" instead.'
+            )
         else:
             logger.info('Using OpenTelemetry provider.')
 
         provider_params_config = tracing.provider_params_config
         provider_params = tracing.provider_params or {}
         if provider_params_config:
-            logger.info('Initializing tracing provider from JSON file %r.', provider_params_config)
+            logger.info(
+                'Initializing tracing provider from JSON file %r.',
+                provider_params_config,
+            )
             if provider_params:
-                logger.warning('Provider params from config attributes will be ignored because JSON file is specified.')
-            init_from_file(str(provider_params_config)) 
+                logger.warning(
+                    'Provider params from config attributes will be ignored because JSON file is specified.'
+                )
+            init_from_file(str(provider_params_config))
         else:
             logger.info('Initializing tracing provider from config attributes.')
-            
+
             service_name = provider_params.get('service_name', module_name)
 
             endpoint = provider_params.get('endpoint')
@@ -67,10 +74,14 @@ def init_tracing(module_name: str, tracing: TracingParameters):
 
                 ca = tls.get('ca')
                 if ca is None:
-                    ca = tls.get('certificate') # deprecated, for compatibility reasons. 
-                                                # TODO: remove in Savant 0.6
+                    ca = tls.get(
+                        'certificate'
+                    )  # deprecated, for compatibility reasons.
+                    # TODO: remove in Savant 0.6
                     if ca:
-                        logger.warning('The "tls.certificate" key is deprecated. Use "tls.ca" instead.')
+                        logger.warning(
+                            'The "tls.certificate" key is deprecated. Use "tls.ca" instead.'
+                        )
 
                 tls_config = ClientTlsConfig(
                     ca=ca,
