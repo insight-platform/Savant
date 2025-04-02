@@ -201,69 +201,83 @@ class FFmpegSrc(LoggerMixin, GstBase.BaseSrc):
 
         self.logger.debug('Receiving next frame')
 
-        try:
-            assert self._ffmpeg_source.is_running, 'FFMpegSource is not running.'
-            frame: VideoFrameEnvelope = self._ffmpeg_source.video_frame(
-                self._timeout_ms
+        while True:
+            try:
+                assert self._ffmpeg_source.is_running, 'FFMpegSource is not running.'
+                frame: VideoFrameEnvelope = self._ffmpeg_source.video_frame(
+                    self._timeout_ms
+                )
+            except Exception as exc:
+                self.logger.exception('Failed to receive frame: %s', exc, exc_info=True)
+                code_frame = inspect.currentframe()
+                gst_post_stream_failed_error(
+                    self,
+                    code_frame,
+                    __file__,
+                    text='Failed to receive frame.',
+                    debug=str(exc),
+                )
+                return Gst.FlowReturn.ERROR, None
+
+            self.logger.debug(
+                'Received frame with codec %s, PTS %s and DTS %s.',
+                frame.codec,
+                frame.pts,
+                frame.dts,
             )
-        except Exception as exc:
-            self.logger.exception('Failed to receive frame: %s', exc, exc_info=True)
-            code_frame = inspect.currentframe()
-            gst_post_stream_failed_error(
-                self,
-                code_frame,
-                __file__,
-                text='Failed to receive frame.',
-                debug=str(exc),
+
+            if frame.corrupted:
+                self.logger.warning(
+                    'Corrupted frame received. Skipping. PTS: %s, DTS: %s, codec: %s, width: %s, height: %s, fps: %s',
+                    frame.pts,
+                    frame.dts,
+                    frame.codec,
+                    frame.frame_width,
+                    frame.frame_height,
+                    frame.fps,
+                )
+                continue
+
+            pts = 0 if frame.pts is None else frame.pts
+            dts = 0 if frame.dts is None else frame.dts
+
+            self.logger.debug(
+                '%s frames in queue, %s frames skipped.',
+                frame.queue_len,
+                frame.queue_full_skipped_count,
             )
-            return Gst.FlowReturn.ERROR, None
-
-        self.logger.debug(
-            'Received frame with codec %s, PTS %s and DTS %s.',
-            frame.codec,
-            frame.pts,
-            frame.dts,
-        )
-        pts = 0 if frame.pts is None else frame.pts
-        dts = 0 if frame.dts is None else frame.dts
-
-        self.logger.debug(
-            '%s frames in queue, %s frames skipped.',
-            frame.queue_len,
-            frame.queue_full_skipped_count,
-        )
-        if frame.queue_full_skipped_count > self._last_skipped_frames:
-            self.logger.warning(
-                'Skipped %s frames due to queue overflow.',
-                frame.queue_full_skipped_count - self._last_skipped_frames,
+            if frame.queue_full_skipped_count > self._last_skipped_frames:
+                self.logger.warning(
+                    'Skipped %s frames due to queue overflow.',
+                    frame.queue_full_skipped_count - self._last_skipped_frames,
+                )
+                self._last_skipped_frames = frame.queue_full_skipped_count
+            frame_params = FrameParams(
+                codec_name=frame.codec,
+                width=frame.frame_width,
+                height=frame.frame_height,
+                framerate=frame.fps,
             )
-            self._last_skipped_frames = frame.queue_full_skipped_count
-        frame_params = FrameParams(
-            codec_name=frame.codec,
-            width=frame.frame_width,
-            height=frame.frame_height,
-            framerate=frame.fps,
-        )
-        if self._frame_params != frame_params:
-            ret = self.on_frame_params_change(frame_params)
-            if ret != Gst.FlowReturn.OK:
-                return ret
-        buffer: Gst.Buffer = Gst.Buffer.new_wrapped(frame.payload_as_bytes())
-        tb_num, tb_denum = frame.time_base
-        buffer.pts = pts * tb_num * Gst.SECOND // tb_denum
-        buffer.dts = dts * tb_num * Gst.SECOND // tb_denum
-        if not frame.key_frame:
-            buffer.set_flags(Gst.BufferFlags.DELTA_UNIT)
+            if self._frame_params != frame_params:
+                ret = self.on_frame_params_change(frame_params)
+                if ret != Gst.FlowReturn.OK:
+                    return ret
+            buffer: Gst.Buffer = Gst.Buffer.new_wrapped(frame.payload_as_bytes())
+            tb_num, tb_denum = frame.time_base
+            buffer.pts = pts * tb_num * Gst.SECOND // tb_denum
+            buffer.dts = dts * tb_num * Gst.SECOND // tb_denum
+            if not frame.key_frame:
+                buffer.set_flags(Gst.BufferFlags.DELTA_UNIT)
 
-        self.logger.debug(
-            'Pushing buffer of size %s with PTS=%s, DTS=%s and duration=%s to src pad.',
-            buffer.get_size(),
-            pts,
-            dts,
-            buffer.duration,
-        )
+            self.logger.debug(
+                'Pushing buffer of size %s with PTS=%s, DTS=%s and duration=%s to src pad.',
+                buffer.get_size(),
+                pts,
+                dts,
+                buffer.duration,
+            )
 
-        return Gst.FlowReturn.OK, buffer
+            return Gst.FlowReturn.OK, buffer
 
     def on_frame_params_change(self, frame_params: FrameParams):
         """Change caps when video parameter changed."""

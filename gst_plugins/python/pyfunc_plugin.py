@@ -9,11 +9,7 @@ from typing import Any, Optional
 
 from savant_rs.pipeline2 import VideoPipeline
 
-from gst_plugins.python.pyfunc_common import (
-    handle_fatal_error,
-    handle_non_fatal_error,
-    init_pyfunc,
-)
+from gst_plugins.python.pyfunc_common import handle_fatal_error, init_pyfunc
 from savant.base.pyfunc import BasePyFuncPlugin, PyFunc
 from savant.gstreamer import GLib, GObject, Gst, GstBase  # noqa: F401
 from savant.utils.log import LoggerMixin
@@ -164,7 +160,7 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
         else:
             raise AttributeError(f'Unknown property {prop.name}.')
 
-    def do_start(self):
+    def do_start(self) -> bool:
         """Do on plugin start."""
 
         if not self.module or not self.class_name:
@@ -199,7 +195,7 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
                 False,
             )
 
-    def do_stop(self):
+    def do_stop(self) -> bool:
         """Do on plugin stop."""
         # pylint: disable=broad-exception-caught
         try:
@@ -221,13 +217,17 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
         try:
             self.pyfunc.instance.on_event(event)
         except Exception as exc:
-            handle_non_fatal_error(
+            res = handle_fatal_error(
                 self,
                 self.logger,
                 exc,
                 f'Error in do_sink_event() call for {self.pyfunc}.',
                 self.dev_mode,
+                True,
+                False,
             )
+            if not res:
+                return False
         return self.srcpad.push_event(event)
 
     def do_transform_ip(self, buffer: Gst.Buffer):
@@ -242,8 +242,8 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
                 exc,
                 f'Error in process_buffer() call for {self.pyfunc}.',
                 self.dev_mode,
-                True,
-                False,
+                Gst.FlowReturn.OK,
+                Gst.FlowReturn.ERROR,
             )
 
         return Gst.FlowReturn.OK
