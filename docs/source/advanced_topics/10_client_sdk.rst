@@ -88,6 +88,10 @@ Sources ingest frames and their metadata to a running module.
         ),
     )
     telemetry.init(telemetry_config)
+    # or 
+    # use x509 provider config file (take a look at samples/telemetry/otlp/x509_provider_config.json)
+    # telemetry.init_from_file('/path/to/x509_provider_config.json')
+
 
     # Build the source
     source = (

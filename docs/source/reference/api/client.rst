@@ -42,6 +42,10 @@ Source usage example:
         ),
     )
     telemetry.init(telemetry_config)
+    # or 
+    # use x509 provider config file (take a look at samples/telemetry/otlp/x509_provider_config.json)
+    # telemetry.init_from_file('/path/to/x509_provider_config.json')
+
 
     # Build the source
     source = (
@@ -148,6 +152,9 @@ Async example (both source and sink):
             ),
         )
         telemetry.init(telemetry_config)
+        # or 
+        # use x509 provider config file (take a look at samples/telemetry/otlp/x509_provider_config.json)
+        # telemetry.init_from_file('/path/to/x509_provider_config.json')
 
         await asyncio.gather(run_sink(), run_source())
 
