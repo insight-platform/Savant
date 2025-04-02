@@ -38,7 +38,7 @@ Trace Propagation
 Trace propagation is a mechanism of passing traces between distributed, decoupled systems. Savant supports trace propagation.
 
 OpenTelemetry Configuration (module)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Use ``params.telemetry.tracing`` to configure OpenTelemetry for the module.
 
