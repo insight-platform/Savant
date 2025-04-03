@@ -143,7 +143,7 @@ class AuxiliaryStreamInternal:
     def eos(self) -> bool:
         """Send EOS (Gst) to the auxiliary stream.
         Results in outputting EOS event from the auxiliary stream,
-        deactivates and then destroys the auxiliary stream.
+        deactivates and then destroys the auxiliary stream pipeline.
         """
         if not self._is_opened:
             self._logger.warning('Auxiliary stream is not opened')
