@@ -836,7 +836,13 @@ class NvDsPipeline(GstPipeline):
             source_id = parse_savant_eos_event(event)
             if source_id is None:
                 return Gst.PadProbeReturn.PASS
-            assert source_id == source_info.source_id
+            if source_id != source_info.source_id:
+                self._logger.error(
+                    'Source ID mismatch: expected %s, got %s',
+                    source_info.source_id,
+                    source_id,
+                )
+                return Gst.PadProbeReturn.PASS
             savant_eos = True
         self._logger.debug(
             'Got %sEOS on pad %s.%s',
