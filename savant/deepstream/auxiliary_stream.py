@@ -141,6 +141,10 @@ class AuxiliaryStreamInternal:
         return frame, buffer
 
     def eos(self) -> bool:
+        """Send EOS (Gst) to the auxiliary stream.
+        Results in outputting EOS event from the auxiliary stream,
+        deactivates and then destroys the auxiliary stream.
+        """
         if not self._is_opened:
             self._logger.warning('Auxiliary stream is not opened')
             return False
@@ -153,7 +157,11 @@ class AuxiliaryStreamInternal:
         self._pad.push_event(Gst.Event.new_flush_stop(True))
         return self._pad.push_event(Gst.Event.new_eos())
 
-    def savant_eos(self, savant_eos: bool = True) -> bool:
+    def savant_eos(self) -> bool:
+        """Send EOS (Savant) to the auxiliary stream.
+        Results in outputting EOS event from the auxiliary stream,
+        does not deactivate the auxiliary stream pipeline.
+        """
         if not self._is_opened:
             self._logger.warning('Auxiliary stream is not opened')
             return False
