@@ -1,6 +1,6 @@
 {
     "tracer": {
-        "service_name": "savant-core",
+        "service_name": "${TRACING_SERVICE_NAME:-telemetry-otlp}",
         "protocol": "grpc",
         "endpoint": "https://jaeger:4317",
         "timeout": {
