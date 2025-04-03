@@ -140,25 +140,27 @@ class AuxiliaryStreamInternal:
 
         return frame, buffer
 
-    def eos(self, savant_eos: bool = True) -> bool:
+    def eos(self) -> bool:
         if not self._is_opened:
             self._logger.warning('Auxiliary stream is not opened')
             return False
         if self._pending_buffers:
             self.flush()
-        self._logger.info(
-            'Sending %sEOS to auxiliary stream',
-            'Savant ' if savant_eos else '',
-        )
-        if savant_eos:
-            return self._pad.push_event(build_savant_eos_event(self._source_id))
-
+        self._logger.info('Sending EOS to auxiliary stream')
         # may result in loss of buffers
         # TODO: Provide a method to check for buffers in the auxiliary stream pipeline
         self._pad.push_event(Gst.Event.new_flush_start())
         self._pad.push_event(Gst.Event.new_flush_stop(True))
-
         return self._pad.push_event(Gst.Event.new_eos())
+
+    def savant_eos(self, savant_eos: bool = True) -> bool:
+        if not self._is_opened:
+            self._logger.warning('Auxiliary stream is not opened')
+            return False
+        if self._pending_buffers:
+            self.flush()
+        self._logger.info('Sending Savant EOS to auxiliary stream')
+        return self._pad.push_event(build_savant_eos_event(self._source_id))
 
     def flush(self) -> Gst.FlowReturn:
         self._logger.debug('Flushing %s buffers', len(self._pending_buffers))
@@ -286,12 +288,12 @@ class AuxiliaryStream:
     def eos(self) -> bool:
         """Send EOS to the auxiliary stream."""
 
-        return self._internal.eos()
+        return self._internal.savant_eos()
 
     def __del__(self):
         """Remove the auxiliary stream."""
 
         self._internal.flush()
-        self._internal.eos(savant_eos=False)
+        self._internal.eos()
         self._internal.close()
         self._registry.remove_stream(self._internal._source_id)
