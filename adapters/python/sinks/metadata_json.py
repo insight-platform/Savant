@@ -51,11 +51,11 @@ class MetadataJsonWriter(ChunkWriter):
         self,
         pattern: str,
         chunk_size: int,
-        format: MetadataJsonFormat = MetadataJsonFormat.LEGACY,
+        metadata_format: MetadataJsonFormat = MetadataJsonFormat.LEGACY,
     ):
         super().__init__(chunk_size, logger_prefix=LOGGER_NAME)
         self.pattern = pattern
-        self.format = format
+        self.metadata_format = metadata_format
         self.logger.info('File name pattern is %s', self.pattern)
 
     def _write_video_frame(
@@ -64,7 +64,7 @@ class MetadataJsonWriter(ChunkWriter):
         content: Optional[bytes],
         frame_num: int,
     ) -> bool:
-        if self.format == MetadataJsonFormat.NATIVE:
+        if self.metadata_format == MetadataJsonFormat.NATIVE:
             metadata_str = frame.json
         else:
             metadata = parse_video_frame(frame)
