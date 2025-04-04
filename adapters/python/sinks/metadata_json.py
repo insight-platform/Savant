@@ -35,6 +35,12 @@ class Patterns:
 
 # enum for metadata JSON formats (native and legacy)
 class MetadataJsonFormat(Enum):
+    """Enum defining the available formats for metadata JSON output.
+    
+    Values:
+        NATIVE: Uses the raw JSON representation directly from the VideoFrame.
+        LEGACY: Parses the VideoFrame into a dictionary and adds schema information.
+    """
     NATIVE = 'native'
     LEGACY = 'legacy'
 
