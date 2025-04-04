@@ -37,10 +37,14 @@ Trace Propagation
 
 Trace propagation is a mechanism of passing traces between distributed, decoupled systems. Savant supports trace propagation.
 
-OpenTelemetry Configuration (module)
+OpenTelemetry Configuration (Module)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Use ``params.telemetry.tracing`` to configure OpenTelemetry for the module.
+
+.. warning::
+
+    We recommend using the OpenTelemetry configuration file (JSON file path set with the ``provider_params_config`` parameter) to configure OpenTelemetry for the module. In the future versions of Savant, the module configuration can be deprecated. The motivation for this change is to simplify reuse of the OpenTelemetry configuration in different modules and adapters.
 
 .. code-block:: yaml
 
@@ -77,13 +81,17 @@ Use ``params.telemetry.tracing`` to configure OpenTelemetry for the module.
 OpenTelemetry Configuration (JSON file)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+.. note::
+
+    JSON configuration files can contain environment variables. For example, ``${TRACING_SERVICE_NAME:-default-name}`` will be replaced with the value of the ``TRACING_SERVICE_NAME`` environment variable or ``default-name`` if the variable is not set.
+
 Full example of the OpenTelemetry configuration file with TLS configuration:
 
 .. code-block:: json
 
     {
       "tracer": {
-          "service_name": "savant-core",
+          "service_name": "${TRACING_SERVICE_NAME:-default-name}",
           "protocol": "grpc",
           "endpoint": "https://jaeger:4317",
           "timeout": {
@@ -108,7 +116,7 @@ An example of the OpenTelemetry configuration file without TLS configuration:
 
     {
       "tracer": {
-          "service_name": "savant-core",
+          "service_name": "${TRACING_SERVICE_NAME:-default-name}",
           "protocol": "grpc",
           "endpoint": "http://jaeger:4317",
           "timeout": {
