@@ -160,6 +160,7 @@ class TracingParameters:
     provider: Optional[str] = None
     """Tracing provider name."""
 
+    # TODO: remove provider_params in Savant 0.6
     provider_params: Optional[Dict[str, Any]] = None
     """Parameters for tracing provider."""
 

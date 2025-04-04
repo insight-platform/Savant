@@ -26,6 +26,7 @@ def init_tracing(module_name: str, tracing: TracingParameters):
     """Initialize tracing provider."""
     if tracing.provider == 'jaeger' or tracing.provider == 'opentelemetry':
         if tracing.provider == 'jaeger':
+            # TODO: remove jaeger keyword support in Savant 0.6
             logger.warning(
                 'Jaeger provider is deprecated. Use "opentelemetry" instead.'
             )
