@@ -12,7 +12,7 @@ parameters:
     tracing:
       sampling_period: 100
       root_span_name: pipeline
-      provider: opentelemetry```
+      provider: opentelemetry
       provider_params:
         service_name: demo-pipeline
         protocol: grpc
