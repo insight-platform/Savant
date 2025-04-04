@@ -44,6 +44,7 @@ services:
       - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output.ipc
       - CHUNK_SIZE=1000
       - DIR_LOCATION=/results
+      - METADATA_JSON_FORMAT=native
     entrypoint: /opt/savant/adapters/python/sinks/image_files.py
 
 volumes:

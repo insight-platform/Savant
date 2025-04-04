@@ -4,6 +4,7 @@ import json
 import os
 import signal
 import traceback
+from enum import Enum
 from typing import Dict, Optional
 
 from savant_rs.match_query import MatchQuery
@@ -32,10 +33,29 @@ class Patterns:
     CHUNK_IDX = '%chunk_idx'
 
 
+# enum for metadata JSON formats (native and legacy)
+class MetadataJsonFormat(Enum):
+    """Enum defining the available formats for metadata JSON output.
+
+    Values:
+        NATIVE: Uses the raw JSON representation directly from the VideoFrame.
+        LEGACY: Parses the VideoFrame into a dictionary and adds schema information.
+    """
+
+    NATIVE = 'native'
+    LEGACY = 'legacy'
+
+
 class MetadataJsonWriter(ChunkWriter):
-    def __init__(self, pattern: str, chunk_size: int):
+    def __init__(
+        self,
+        pattern: str,
+        chunk_size: int,
+        metadata_format: MetadataJsonFormat = MetadataJsonFormat.LEGACY,
+    ):
         super().__init__(chunk_size, logger_prefix=LOGGER_NAME)
         self.pattern = pattern
+        self.metadata_format = metadata_format
         self.logger.info('File name pattern is %s', self.pattern)
 
     def _write_video_frame(
@@ -44,24 +64,29 @@ class MetadataJsonWriter(ChunkWriter):
         content: Optional[bytes],
         frame_num: int,
     ) -> bool:
-        metadata = parse_video_frame(frame)
-        metadata['schema'] = 'VideoFrame'
-        return self._write_meta_to_file(metadata, frame_num)
+        if self.metadata_format == MetadataJsonFormat.NATIVE:
+            metadata_str = frame.json
+        else:
+            metadata = parse_video_frame(frame)
+            metadata['schema'] = 'VideoFrame'
+            if frame_num is not None:
+                metadata['frame_num'] = frame_num
+            metadata_str = json.dumps(metadata)
+        return self._write_meta_to_file(metadata_str, frame_num)
 
     def _write_eos(self, eos: EndOfStream) -> bool:
         metadata = {'source_id': eos.source_id, 'schema': 'EndOfStream'}
-        return self._write_meta_to_file(metadata, None)
+        metadata_str = json.dumps(metadata)
+        return self._write_meta_to_file(metadata_str, None)
 
     def _write_meta_to_file(
         self,
-        metadata: Dict,
+        metadata_str: str,
         frame_num: Optional[int],
     ) -> bool:
         self.logger.debug('Writing meta to file %s', self.location)
-        if frame_num is not None:
-            metadata['frame_num'] = frame_num
         try:
-            json.dump(metadata, self.file)
+            self.file.write(metadata_str)
             self.file.write('\n')
         except Exception:
             traceback.print_exc()
@@ -95,10 +120,12 @@ class MetadataJsonSink:
         location: str,
         skip_frames_without_objects: bool = True,
         chunk_size: int = 0,
+        metadata_format: MetadataJsonFormat = MetadataJsonFormat.LEGACY,
     ):
         self.logger = get_logger(f'{LOGGER_NAME}.{self.__class__.__name__}')
         self.skip_frames_without_objects = skip_frames_without_objects
         self.chunk_size = chunk_size
+        self.metadata_format = metadata_format
         self.writers: Dict[str, MetadataJsonWriter] = {}
         self.last_writer_per_source: Dict[str, (str, MetadataJsonWriter)] = {}
 
@@ -138,7 +165,7 @@ class MetadataJsonSink:
         ) or (None, None)
 
         if writer is None:
-            writer = MetadataJsonWriter(location, self.chunk_size)
+            writer = MetadataJsonWriter(location, self.chunk_size, self.metadata_format)
             self.writers[location] = writer
         if writer is not last_source_writer:
             if last_source_writer is not None:
@@ -201,6 +228,29 @@ def get_tag_location(frame: VideoFrame):
     return value.as_string()
 
 
+def opt_config_metadata_format(
+    env_var_name: str = 'METADATA_JSON_FORMAT',
+) -> MetadataJsonFormat:
+    """Parse the metadata format from an environment variable.
+
+    :param env_var_name: Name of the environment variable to get the format from.
+    :return: The parsed MetadataJsonFormat enum value, defaults to LEGACY if invalid.
+    """
+    format_str = opt_config(env_var_name, MetadataJsonFormat.LEGACY.value)
+
+    try:
+        return MetadataJsonFormat(format_str)
+    except ValueError:
+        logger = get_logger(LOGGER_NAME)
+        logger.warning(
+            'Invalid %s value %s, using %s instead',
+            env_var_name,
+            format_str,
+            MetadataJsonFormat.LEGACY.value,
+        )
+        return MetadataJsonFormat.LEGACY
+
+
 def main():
     init_logging()
     # To gracefully shut down the adapter on SIGTERM (raise KeyboardInterrupt)
@@ -218,6 +268,8 @@ def main():
     source_id = opt_config('SOURCE_ID')
     source_id_prefix = opt_config('SOURCE_ID_PREFIX')
 
+    format_enum = opt_config_metadata_format('METADATA_JSON_FORMAT')
+
     # possible exceptions will cause app to crash and log error by default
     # no need to handle exceptions here
     source = ZeroMQSource(
@@ -226,8 +278,13 @@ def main():
         source_id_prefix=source_id_prefix,
     )
 
-    sink = MetadataJsonSink(location, skip_frames_without_objects, chunk_size)
-    logger.info('Metadata JSON sink started')
+    sink = MetadataJsonSink(
+        location,
+        skip_frames_without_objects,
+        chunk_size,
+        metadata_format=format_enum,
+    )
+    logger.info('Metadata JSON sink started with format %s', format_enum.value)
 
     try:
         source.start()

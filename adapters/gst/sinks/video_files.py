@@ -10,10 +10,12 @@ from savant_rs.primitives import EndOfStream, VideoFrame
 
 from adapters.python.sinks.chunk_writer import ChunkWriter, CompositeChunkWriter
 from adapters.python.sinks.metadata_json import (
+    MetadataJsonFormat,
     MetadataJsonWriter,
     Patterns,
     get_location,
     get_tag_location,
+    opt_config_metadata_format,
 )
 from gst_plugins.python.savant_rs_video_demux_common import FrameParams, build_caps
 from savant.api.parser import convert_ts
@@ -330,12 +332,14 @@ class VideoFilesSink:
         self,
         location: str,
         chunk_size: int,
+        metadata_format: MetadataJsonFormat,
     ):
         self.logger = get_logger(f'{LOGGER_NAME}.{self.__class__.__name__}')
         self.location = location
         self.chunk_size = chunk_size
         self.writers: Dict[str, ChunkWriter] = {}
         self.last_writer_per_source: Dict[str, (str, ChunkWriter)] = {}
+        self.metadata_format = metadata_format
 
     def write(self, zmq_message: ZeroMQMessage):
         message = zmq_message.message
@@ -393,6 +397,7 @@ class VideoFilesSink:
                     MetadataJsonWriter(
                         os.path.join(location, 'metadata.json'),
                         self.chunk_size,
+                        self.metadata_format,
                     ),
                 ],
                 self.chunk_size,
@@ -450,6 +455,7 @@ def main():
     chunk_size = opt_config('CHUNK_SIZE', DEFAULT_CHUNK_SIZE, int)
     source_id = opt_config('SOURCE_ID')
     source_id_prefix = opt_config('SOURCE_ID_PREFIX')
+    metadata_format = opt_config_metadata_format('METADATA_JSON_FORMAT')
 
     # possible exceptions will cause app to crash and log error by default
     # no need to handle exceptions here
@@ -459,7 +465,7 @@ def main():
         source_id_prefix=source_id_prefix,
     )
 
-    video_sink = VideoFilesSink(dir_location, chunk_size)
+    video_sink = VideoFilesSink(dir_location, chunk_size, metadata_format)
     Gst.init(None)
     logger.info('Video files sink started')
 

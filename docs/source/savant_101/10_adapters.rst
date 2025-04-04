@@ -935,6 +935,7 @@ The JSON Metadata Sink Adapter writes received messages as newline-delimited JSO
 - ``SKIP_FRAMES_WITHOUT_OBJECTS``: a flag indicating whether frames without detected objects are ignored in output; the default value is ``False``;
 - ``SOURCE_ID``: an optional filter to filter out frames with a specific ``source_id`` only;
 - ``SOURCE_ID_PREFIX`` an optional filter to filter out frames with a matching ``source_id`` prefix only.
+- ``METADATA_JSON_FORMAT``: format of the metadata JSON, either ``legacy`` (default) or ``native``; the ``legacy`` format is compatible with older versions of Savant, while the ``native`` format provides the raw JSON representation of the VideoFrame structure.
 
 If the ``FILENAME_PATTERN`` contains an extension (e.g., ``.json-stream``) it is extracted and used in the final file name. if the extension is missing, the system will add ``.json``.
 
@@ -1008,6 +1009,7 @@ The image file sink adapter extends the JSON metadata adapter by writing image f
 - ``SKIP_FRAMES_WITHOUT_OBJECTS``: a flag indicating whether frames without objects are ignored in output; the default value is ``False``;
 - ``SOURCE_ID``: an optional filter to filter out frames with a specific ``source_id`` only;
 - ``SOURCE_ID_PREFIX`` an optional filter to filter out frames with a matching ``source_id`` prefix only.
+- ``METADATA_JSON_FORMAT``: format of the metadata JSON, either ``legacy`` (default) or ``native``; the ``legacy`` format is compatible with older versions of Savant, while the ``native`` format provides the raw JSON representation of the VideoFrame structure.
 
 
 If ``DIR_LOCATION`` does not contain ``%chunk_idx`` it is created as a subdirectory containing: ``metadata.json`` file and ``images`` directory with images. Otherwise, extra directory is not created.
@@ -1044,6 +1046,7 @@ The video file sink adapter extends the JSON metadata adapter by writing video f
 - ``CHUNK_SIZE``: a chunk size in a number of frames; the stream is split into chunks and is written to separate folders with consecutive numbering; default is ``10000``; A value of ``0`` disables limit for number of frames in a chunk: the stream will be split into chunks only by EOS messages;
 - ``SOURCE_ID``: an optional filter to filter out frames with a specific ``source_id`` only;
 - ``SOURCE_ID_PREFIX`` an optional filter to filter out frames with a matching ``source_id`` prefix only.
+- ``METADATA_JSON_FORMAT``: format of the metadata JSON, either ``legacy`` (default) or ``native``; the ``legacy`` format is compatible with older versions of Savant, while the ``native`` format provides the raw JSON representation of the VideoFrame structure.
 
 
 If ``DIR_LOCATION`` does not contain ``%chunk_idx`` it is created as a subdirectory containing: ``metadata.json`` and ``video.{mov, webm}`` files. Otherwise, extra directory is not created.

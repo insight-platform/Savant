@@ -48,6 +48,7 @@ from savant.config.schema import (
 )
 from savant.gstreamer import GLib, Gst  # noqa:F401
 from savant.gstreamer.buffer_processor import GstBufferProcessor
+from savant.gstreamer.event import parse_savant_eos_event
 from savant.gstreamer.pipeline import GstPipeline
 from savant.gstreamer.utils import (
     add_buffer_probe,
@@ -339,7 +340,7 @@ class NvDsPipeline(GstPipeline):
         with self._source_adding_lock:
             self._logger.info('Shutting down the pipeline.')
             # We need to add a fakesink element to the pipeline and receive EOS
-            # with it to shut down the pipeine.
+            # with it to shut down the pipeline.
             self._logger.debug('Adding fakesink to the pipeline')
             fakesink = self.add_element(
                 PipelineElement(
@@ -727,7 +728,6 @@ class NvDsPipeline(GstPipeline):
         fakesink = super()._add_sink(
             PipelineElement(
                 element='fakesink',
-                name=f'sink_{source_info.source_id}',
                 properties={
                     'sync': 0,
                     'qos': 0,
@@ -745,7 +745,10 @@ class NvDsPipeline(GstPipeline):
         fakesink_pad.add_probe(
             Gst.PadProbeType.EVENT_DOWNSTREAM,
             on_pad_event,
-            {Gst.EventType.EOS: self.on_last_pad_eos},
+            {
+                Gst.EventType.EOS: self.on_last_pad_eos,
+                Gst.EventType.CUSTOM_DOWNSTREAM: self.on_last_pad_eos,
+            },
             source_info,
         )
 
@@ -828,19 +831,37 @@ class NvDsPipeline(GstPipeline):
 
     def on_last_pad_eos(self, pad: Gst.Pad, event: Gst.Event, source_info: SourceInfo):
         """Process EOS on last pad."""
+        savant_eos = False
+        if event.type == Gst.EventType.CUSTOM_DOWNSTREAM:
+            source_id = parse_savant_eos_event(event)
+            if source_id is None:
+                return Gst.PadProbeReturn.PASS
+            if source_id != source_info.source_id:
+                self._logger.error(
+                    'Source ID mismatch: expected %s, got %s',
+                    source_info.source_id,
+                    source_id,
+                )
+                return Gst.PadProbeReturn.PASS
+            savant_eos = True
         self._logger.debug(
-            'Got EOS on pad %s.%s', pad.get_parent().get_name(), pad.get_name()
+            'Got %sEOS on pad %s.%s',
+            'Savant ' if savant_eos else '',
+            pad.get_parent().get_name(),
+            pad.get_name(),
         )
+
         self._buffer_processor.on_eos(source_info)
 
-        try:
-            self._check_pipeline_is_running()
-            GLib.idle_add(self._remove_output_elements, source_info)
-        except PipelineIsNotRunningError:
-            self._logger.info(
-                'Pipeline is not running. Do not remove output elements for source %s.',
-                source_info.source_id,
-            )
+        if not savant_eos:
+            try:
+                self._check_pipeline_is_running()
+                GLib.idle_add(self._remove_output_elements, source_info)
+            except PipelineIsNotRunningError:
+                self._logger.info(
+                    'Pipeline is not running. Do not remove output elements for source %s.',
+                    source_info.source_id,
+                )
 
         self._queue.put(SinkEndOfStream(EndOfStream(source_info.source_id)))
 
