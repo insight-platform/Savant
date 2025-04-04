@@ -8,11 +8,13 @@ from savant_rs.primitives import EndOfStream, VideoFrame
 
 from adapters.python.sinks.chunk_writer import ChunkWriter, CompositeChunkWriter
 from adapters.python.sinks.metadata_json import (
+    MetadataJsonFormat,
     MetadataJsonWriter,
     Patterns,
     frame_has_objects,
     get_location,
     get_tag_location,
+    opt_config_metadata_format,
 )
 from savant.api.enums import ExternalFrameType
 from savant.utils.config import opt_config, req_config, strtobool
@@ -82,6 +84,7 @@ class ImageFilesSink:
         location: str,
         chunk_size: int,
         skip_frames_without_objects: bool = False,
+        metadata_format: MetadataJsonFormat = MetadataJsonFormat.LEGACY,
     ):
         self.logger = get_logger(f'{LOGGER_NAME}.{self.__class__.__name__}')
         self.location = location
@@ -89,6 +92,7 @@ class ImageFilesSink:
         self.skip_frames_without_objects = skip_frames_without_objects
         self.writers: Dict[str, ChunkWriter] = {}
         self.last_writer_per_source: Dict[str, (str, ChunkWriter)] = {}
+        self.metadata_format = metadata_format
 
     def write(self, zmq_message: ZeroMQMessage):
         message = zmq_message.message
@@ -126,6 +130,7 @@ class ImageFilesSink:
                     MetadataJsonWriter(
                         os.path.join(location, 'metadata.json'),
                         self.chunk_size,
+                        self.metadata_format,
                     ),
                 ],
                 self.chunk_size,
@@ -186,6 +191,7 @@ def main():
     chunk_size = opt_config('CHUNK_SIZE', DEFAULT_CHUNK_SIZE, int)
     source_id = opt_config('SOURCE_ID')
     source_id_prefix = opt_config('SOURCE_ID_PREFIX')
+    metadata_format = opt_config_metadata_format('METADATA_JSON_FORMAT')
 
     # possible exceptions will cause app to crash and log error by default
     # no need to handle exceptions here
@@ -195,7 +201,9 @@ def main():
         source_id_prefix=source_id_prefix,
     )
 
-    image_sink = ImageFilesSink(dir_location, chunk_size, skip_frames_without_objects)
+    image_sink = ImageFilesSink(
+        dir_location, chunk_size, skip_frames_without_objects, metadata_format
+    )
     logger.info('Image files sink started')
 
     try:
