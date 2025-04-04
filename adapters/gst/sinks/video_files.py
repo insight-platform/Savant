@@ -14,8 +14,8 @@ from adapters.python.sinks.metadata_json import (
     MetadataJsonWriter,
     Patterns,
     get_location,
-    opt_config_metadata_format,
     get_tag_location,
+    opt_config_metadata_format,
 )
 from gst_plugins.python.savant_rs_video_demux_common import FrameParams, build_caps
 from savant.api.parser import convert_ts
@@ -456,7 +456,7 @@ def main():
     source_id = opt_config('SOURCE_ID')
     source_id_prefix = opt_config('SOURCE_ID_PREFIX')
     metadata_format = opt_config_metadata_format('METADATA_JSON_FORMAT')
-    
+
     # possible exceptions will cause app to crash and log error by default
     # no need to handle exceptions here
     source = ZeroMQSource(

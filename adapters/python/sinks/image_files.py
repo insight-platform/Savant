@@ -13,8 +13,8 @@ from adapters.python.sinks.metadata_json import (
     Patterns,
     frame_has_objects,
     get_location,
-    opt_config_metadata_format,
     get_tag_location,
+    opt_config_metadata_format,
 )
 from savant.api.enums import ExternalFrameType
 from savant.utils.config import opt_config, req_config, strtobool

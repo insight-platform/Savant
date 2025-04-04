@@ -221,12 +221,14 @@ def get_tag_location(frame: VideoFrame):
     return value.as_string()
 
 
-def opt_config_metadata_format(env_var_name: str = 'METADATA_JSON_FORMAT') -> MetadataJsonFormat:
+def opt_config_metadata_format(
+    env_var_name: str = 'METADATA_JSON_FORMAT',
+) -> MetadataJsonFormat:
     """Parse the metadata format from an environment variable.
-    
+
     Args:
         env_var_name: Name of the environment variable to get the format from.
-        
+
     Returns:
         The parsed MetadataJsonFormat enum value, defaults to LEGACY if invalid.
     """
@@ -261,7 +263,7 @@ def main():
     chunk_size = opt_config('CHUNK_SIZE', 0, int)
     source_id = opt_config('SOURCE_ID')
     source_id_prefix = opt_config('SOURCE_ID_PREFIX')
-    
+
     format_enum = opt_config_metadata_format('METADATA_JSON_FORMAT')
 
     # possible exceptions will cause app to crash and log error by default
