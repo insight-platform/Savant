@@ -233,11 +233,8 @@ def opt_config_metadata_format(
 ) -> MetadataJsonFormat:
     """Parse the metadata format from an environment variable.
 
-    Args:
-        env_var_name: Name of the environment variable to get the format from.
-
-    Returns:
-        The parsed MetadataJsonFormat enum value, defaults to LEGACY if invalid.
+    :param env_var_name: Name of the environment variable to get the format from.
+    :return: The parsed MetadataJsonFormat enum value, defaults to LEGACY if invalid.
     """
     format_str = opt_config(env_var_name, MetadataJsonFormat.LEGACY.value)
 
