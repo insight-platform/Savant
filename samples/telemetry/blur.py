@@ -14,7 +14,6 @@ class Blur(NvDsPyFuncPlugin):
         self._gaussian_filter = cv2.cuda.createGaussianFilter(
             cv2.CV_8UC4, cv2.CV_8UC4, (31, 31), 0
         )
-        self.counter = 0
 
     def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
         # the call of this method is wrapped with `process-frame` span
@@ -44,8 +43,7 @@ class Blur(NvDsPyFuncPlugin):
             with frame_meta.telemetry_span.nested_span('error-code') as span:
                 span.set_string_attribute('section', 'try division by zero')
                 # raise Exception('Some exception.')
-                self.counter += 1
-                if self.counter % 100 == 0:
+                if frame_meta.frame_num % 100 == 0:
                     _ = 2 / 0
 
         except:
