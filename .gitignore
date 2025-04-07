@@ -69,3 +69,12 @@ logs
 certs
 
 local_wheels/savant_rs/*.whl
+
+**/*.crt
+**/*.key
+**/*.pem
+**/*.csr
+**/*.csr.pem
+**/*.csr.key
+**/*.csr.crt
+**/*.csr.pem

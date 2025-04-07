@@ -12,17 +12,11 @@ parameters:
     tracing:
       sampling_period: 100
       root_span_name: pipeline
-      provider: jaeger
+      provider: opentelemetry
       provider_params:
         service_name: demo-pipeline
         protocol: grpc
         endpoint: "http://jaeger:4317"
-        # timeout: 5000 # milliseconds
-        # tls:
-        #   certificate: /path/to/ca.crt
-        #   identity:
-        #       certificate: /path/to/client.crt
-        #       key: /path/to/client.key
 
   # pipeline processing frame parameters
   frame:

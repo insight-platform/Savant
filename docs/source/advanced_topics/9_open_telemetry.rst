@@ -20,8 +20,7 @@ Developers can attach auxiliary information to a span: attributes, events, span 
 
 Savant automatically creates spans for every pipeline stage and gives developer API to create nested spans in their Python code.
 
-OpenTelemetry send tracing information to a trace collector. Currently, Savant integrates with `Jaeger <https://www.jaegertracing.io/>`_: a widely-used open-source tracing solution. Jaeger not only gathers traces but has RESTful API and WebUI to access and analyze tracing information.
-
+OpenTelemetry send tracing information to a trace collector. Currently, Savant integrates with any OpenTelemetry-compatible trace collector.
 .. image:: ../../../samples/telemetry/assets/01-trace.png
 
 OpenTelemetry Sampling
@@ -38,10 +37,14 @@ Trace Propagation
 
 Trace propagation is a mechanism of passing traces between distributed, decoupled systems. Savant supports trace propagation.
 
-OpenTelemetry Configuration
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OpenTelemetry Configuration (Module)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Use ``params.telemetry.tracing`` to configure OpenTelemetry for the module.
+
+.. warning::
+
+    We recommend using the OpenTelemetry configuration file (JSON file path set with the ``provider_params_config`` parameter) to configure OpenTelemetry for the module. In the future versions of Savant, the module configuration can be deprecated. The motivation for this change is to simplify reuse of the OpenTelemetry configuration in different modules and adapters.
 
 .. code-block:: yaml
 
@@ -55,7 +58,12 @@ Use ``params.telemetry.tracing`` to configure OpenTelemetry for the module.
         tracing:
           sampling_period: 100
           root_span_name: pipeline
-          provider: jaeger
+          provider: opentelemetry
+          # or (mutually exclusive with provider_params, high priority)
+          # use provider config file (take a look at samples/telemetry/otlp/x509_provider_config.json)
+          provider_params_config: /path/to/x509_provider_config.json
+          # or (mutually exclusive with provider_params_config, low priority)
+          # use provider config attributes
           provider_params:
             service_name: demo-pipeline
             # Available protocols: grpc, http_binary, http_json.
@@ -65,26 +73,59 @@ Use ``params.telemetry.tracing`` to configure OpenTelemetry for the module.
             endpoint: "http://jaeger:4317"
             timeout: 5000 # milliseconds
             tls:
-              certificate: /path/to/ca.crt
+              ca: /path/to/ca.crt
               identity:
                   certificate: /path/to/client.crt
                   key: /path/to/client.key
 
+OpenTelemetry Configuration (JSON file)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. note::
 
-    The module `template <https://github.com/insight-platform/Savant/tree/develop/samples/template>`_ already has valid configuration, considering that the Jaeger is launched in the all-in-one mode recommended on the Jaeger `website <https://www.jaegertracing.io/docs/1.62/getting-started/>`_:
+    JSON configuration files can contain environment variables. For example, ``${TRACING_SERVICE_NAME:-default-name}`` will be replaced with the value of the ``TRACING_SERVICE_NAME`` environment variable or ``default-name`` if the variable is not set.
 
-    .. code-block:: bash
+Full example of the OpenTelemetry configuration file with TLS configuration:
 
-        docker run -d --name jaeger \
-          -e COLLECTOR_ZIPKIN_HOST_PORT=:9411 \
-          -p 16686:16686 \
-          -p 4317:4317 \
-          -p 4318:4318 \
-          -p 14250:14250 \
-          -p 14268:14268 \
-          -p 14269:14269 \
-          -p 9411:9411 \
-          jaegertracing/all-in-one:1.62.0
+.. code-block:: json
+
+    {
+      "tracer": {
+          "service_name": "${TRACING_SERVICE_NAME:-default-name}",
+          "protocol": "grpc",
+          "endpoint": "https://jaeger:4317",
+          "timeout": {
+              "secs": 10,
+              "nanos": 0
+          },
+          "tls": {
+              "ca": "/opt/savant/samples/telemetry/certs/ca.crt",
+              "identity": {
+                  "key": "/opt/savant/samples/telemetry/certs/client.key",
+                  "certificate": "/opt/savant/samples/telemetry/certs/client.crt"
+              }
+          }
+      },
+      "context_propagation_format": "w3c"
+    }
+
+
+An example of the OpenTelemetry configuration file without TLS configuration:
+
+.. code-block:: json
+
+    {
+      "tracer": {
+          "service_name": "${TRACING_SERVICE_NAME:-default-name}",
+          "protocol": "grpc",
+          "endpoint": "http://jaeger:4317",
+          "timeout": {
+              "secs": 10,
+              "nanos": 0
+          }
+      },
+      "context_propagation_format": "w3c"
+    }
+
 
 .. youtube:: DkNifuKg-kY

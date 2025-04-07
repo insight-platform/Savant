@@ -25,12 +25,9 @@ services:
       - ..:/opt/savant/samples
     command: samples/telemetry/module.yml
     environment:
-      - TRACING_PROVIDER=jaeger
-      - TRACING_PROVIDER_ENDPOINT=https://jaeger:4317
-      - TRACING_PROVIDER_PROTOCOL=grpc
-      - TRACING_PROVIDER_TLS={"certificate":"/opt/savant/samples/telemetry/certs/ca.crt","identity":{"certificate":"/opt/savant/samples/telemetry/certs/client.crt","key":"/opt/savant/samples/telemetry/certs/client.key"}}
-      # Remove "identity" key to disable client authentication
-      # - TRACING_PROVIDER_TLS={"certificate":"/opt/savant/samples/telemetry/certs/ca.crt"}
+      - TRACING_PROVIDER=opentelemetry
+      - TRACING_SERVICE_NAME=savant-core
+      - TRACING_PROVIDER_PARAMS_CONFIG=/opt/savant/samples/telemetry/otlp/x509_provider_config.json
       - TRACING_SAMPLING_PERIOD=100
       - TRACING_APPEND_FRAME_META_TO_SPAN=True
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
@@ -48,10 +45,10 @@ services:
     image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
     restart: unless-stopped
     ports:
-      - "554:554"    # RTSP
-      - "1935:1935"  # RTMP
-      - "888:888"    # HLS
-      - "8889:8889"  # WebRTC
+      - "554:554" # RTSP
+      - "1935:1935" # RTMP
+      - "888:888" # HLS
+      - "8889:8889" # WebRTC
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../assets/stub_imgs:/stub_imgs
@@ -76,9 +73,9 @@ services:
     image: jaegertracing/all-in-one:1.62.0
     restart: unless-stopped
     ports:
-      - "16686:16686"    # query
-      - "4317:4317"      # OTLP gRPC
-      - "4318:4318"      # OTLP HTTP
+      - "16686:16686" # query
+      - "4317:4317" # OTLP gRPC
+      - "4318:4318" # OTLP HTTP
       - "14250:14250"
       - "14268:14268"
       - "14269:14269"

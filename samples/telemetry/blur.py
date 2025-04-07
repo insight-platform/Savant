@@ -43,7 +43,8 @@ class Blur(NvDsPyFuncPlugin):
             with frame_meta.telemetry_span.nested_span('error-code') as span:
                 span.set_string_attribute('section', 'try division by zero')
                 # raise Exception('Some exception.')
-                _ = 2 / 0
+                if frame_meta.frame_num % 100 == 0:
+                    _ = 2 / 0
 
         except:
             pass

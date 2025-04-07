@@ -141,14 +141,17 @@ parameters:
   #     sampling_period: 100
   #     append_frame_meta_to_span: False
   #     root_span_name: demo-pipeline-root
-  #     provider: jaeger
+  #     provider: opentelemetry
+  #     # or (mutually exclusive with provider_params, high priority)
+  #     provider_params_config: /path/to/provider_config.json
+  #     # or (mutually exclusive with provider_params_config, low priority)
   #     provider_params:
   #       service_name: demo-pipeline
   #       protocol: grpc
   #       endpoint: "http://jaeger:4317"
   #       timeout: 5000 # milliseconds
   #       tls:
-  #         certificate: /path/to/ca.crt
+  #         ca: /path/to/ca.crt
   #         identity:
   #             certificate: /path/to/client.crt
   #             key: /path/to/client.key
@@ -171,6 +174,7 @@ parameters:
       # Tracing provider name
       provider: ${oc.decode:${oc.env:TRACING_PROVIDER, null}}
       # Parameters for tracing provider
+      provider_params_config: ${oc.decode:${oc.env:TRACING_PROVIDER_PARAMS_CONFIG, null}}
       provider_params: ${json:${oc.env:TRACING_PROVIDER_PARAMS, null}}
     # Configure metrics
     metrics:

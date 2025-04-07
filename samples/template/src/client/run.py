@@ -19,13 +19,13 @@ print('Starting Savant client...')
 # Initialize Jaeger tracer to send metrics and logs to Jaeger.
 # Note: the Jaeger tracer also should be configured in the module.
 telemetry_config = TelemetryConfiguration(
-    context_propagation_format=ContextPropagationFormat.Jaeger,
+    context_propagation_format=ContextPropagationFormat.W3C,
     tracer=TracerConfiguration(
         service_name='savant-client',
         protocol=Protocol.Grpc,
         endpoint='http://jaeger:4317',
         # tls=ClientTlsConfig(
-        #     certificate='/path/to/ca.crt',
+        #     ca='/path/to/ca.crt',
         #     identity=Identity(
         #         certificate='/path/to/client.crt',
         #         key='/path/to/client.key',
@@ -35,6 +35,9 @@ telemetry_config = TelemetryConfiguration(
     ),
 )
 telemetry.init(telemetry_config)
+# or
+# use x509 provider config file (take a look at samples/telemetry/otlp/x509_provider_config.json)
+# telemetry.init_from_file('/path/to/x509_provider_config.json')
 
 module_hostname = os.environ.get('MODULE_HOSTNAME', 'localhost')
 jaeger_endpoint = 'http://jaeger:16686'
