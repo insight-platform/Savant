@@ -78,7 +78,7 @@ class BgRemover(NvDsPyFuncPlugin):
         if source_id is self.back_subtractors:
             self.back_subtractors.pop(source_id)
         if source_id in self.result_aux_streams:
-            self.result_aux_streams.get(source_id).eos()
+            del self.result_aux_streams[source_id]
 
     def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
         """Process frame metadata.
