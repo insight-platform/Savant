@@ -8,6 +8,7 @@ from omegaconf import DictConfig, OmegaConf
 from savant.utils.log import get_logger
 
 from .base import RemoteFileError, RemoteFileManagerType
+from .gcs import GCSFileHandler
 from .http import HTTPFileHandler
 from .s3 import S3FileHandler
 from .gcs import GCSFileHandler

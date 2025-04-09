@@ -1,0 +1,19 @@
+{
+    "tracer": {
+        "service_name": "${TRACING_SERVICE_NAME:-telemetry-otlp}",
+        "protocol": "grpc",
+        "endpoint": "https://jaeger:4317",
+        "timeout": {
+            "secs": 10,
+            "nanos": 0
+        },
+        "tls": {
+            "ca": "/opt/savant/samples/telemetry/certs/ca.crt",
+            "identity": {
+                "key": "/opt/savant/samples/telemetry/certs/client.key",
+                "certificate": "/opt/savant/samples/telemetry/certs/client.crt"
+            }
+        }
+    },
+    "context_propagation_format": "w3c"
+}

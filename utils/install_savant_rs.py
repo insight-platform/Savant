@@ -103,9 +103,13 @@ def main():
     release_tag = sys.argv[1]
     download_path = sys.argv[2]
 
-    assets = get_release_assets(release_tag, gh_repo, gh_token)
-    if not assets:
-        sys.exit(f'No assets found for tag {release_tag} in repository {gh_repo}.')
+    try:
+        assets = get_release_assets(release_tag, gh_repo, gh_token)
+    except Exception:
+        print(
+            f'Error getting release assets for tag {release_tag} in repository {gh_repo}, skipping installation.'
+        )
+        assets = []
 
     asset_path = None
     for asset in assets:

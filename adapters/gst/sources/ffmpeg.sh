@@ -11,8 +11,6 @@ required_env SOURCE_ID
 required_env URI
 required_env ZMQ_ENDPOINT
 
-ZMQ_SOCKET_TYPE="${ZMQ_TYPE:="DEALER"}"
-ZMQ_SOCKET_BIND="${ZMQ_BIND:="false"}"
 SYNC_OUTPUT="${SYNC_OUTPUT:="false"}"
 if [[ -n "${SYNC_DELAY}" ]]; then
     # Seconds to nanoseconds
@@ -34,8 +32,6 @@ USE_ABSOLUTE_TIMESTAMPS="${USE_ABSOLUTE_TIMESTAMPS:="false"}"
 SINK_PROPERTIES=(
     source-id="${SOURCE_ID}"
     socket="${ZMQ_ENDPOINT}"
-    socket-type="${ZMQ_SOCKET_TYPE}"
-    bind="${ZMQ_SOCKET_BIND}"
     sync="${SYNC_OUTPUT}"
     ts-offset="${SYNC_DELAY}"
 )

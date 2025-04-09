@@ -14,8 +14,6 @@ required_env LOCATION
 required_env ZMQ_ENDPOINT
 required_env FILE_TYPE
 
-ZMQ_SOCKET_TYPE="${ZMQ_TYPE:="DEALER"}"
-ZMQ_SOCKET_BIND="${ZMQ_BIND:="false"}"
 SYNC_OUTPUT="${SYNC_OUTPUT:="false"}"
 FRAMERATE="${FRAMERATE:="30/1"}"
 FPS_OUTPUT="${FPS_OUTPUT:="stdout"}"
@@ -44,8 +42,6 @@ SINK_PROPERTIES=(
     eos-on-file-end="${EOS_ON_FILE_END}"
     eos-on-frame-params-change="${EOS_ON_FRAME_PARAMS_CHANGE}"
     socket="${ZMQ_ENDPOINT}"
-    socket-type="${ZMQ_SOCKET_TYPE}"
-    bind="${ZMQ_SOCKET_BIND}"
     sync="${SYNC_OUTPUT}"
 )
 if [[ -n "${RECEIVE_TIMEOUT_MSECS}" ]]; then

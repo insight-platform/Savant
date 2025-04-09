@@ -18,7 +18,7 @@ def init_pyfunc(
     class_name: str,
     kwargs: Optional[str],
     dev_mode: bool = False,
-) -> PyFunc:
+) -> Optional[PyFunc]:
     # pylint: disable=broad-exception-caught
     if kwargs:
         try:
@@ -30,8 +30,8 @@ def init_pyfunc(
                 exc,
                 f'Failed to parse kwargs for "{module}.{class_name}" pyfunc.',
                 dev_mode,
-                True,
-                False,
+                return_ok=None,
+                return_err=None,
             )
     else:
         kwargs = None
@@ -50,8 +50,8 @@ def init_pyfunc(
             exc,
             f'Failed to initialize "{module}.{class_name}" pyfunc.',
             dev_mode,
-            True,
-            False,
+            return_ok=None,
+            return_err=None,
         )
 
     try:
@@ -63,8 +63,8 @@ def init_pyfunc(
             exc,
             f'Failed to load user code for {pyfunc}.',
             dev_mode,
-            True,
-            False,
+            return_ok=None,
+            return_err=None,
         )
 
     return pyfunc
@@ -76,8 +76,8 @@ def handle_fatal_error(
     exc: BaseException,
     msg: str,
     dev_mode: bool,
-    return_ok: Any = Gst.FlowReturn.OK,
-    return_err: Any = Gst.FlowReturn.ERROR,
+    return_ok: Any,
+    return_err: Any,
 ) -> Any:
     if dev_mode:
         if not isinstance(exc, PyFuncNoopCallException):

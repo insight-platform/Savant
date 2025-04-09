@@ -54,7 +54,7 @@ The following parameters are defined for a Savant module by default:
 
 .. literalinclude:: ../../../savant/config/default.yml
   :language: YAML
-  :lines: 1-195
+  :lines: 1-198
 
 .. note::
 
@@ -196,7 +196,7 @@ If the ``output_frame`` section is set, Savant adds encoded video streams to sin
 OpenTelemetry Configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The ``telemetry.tracing`` section defines the telemetry configuration. The ``endpoint`` in ``telemetry.tracing.provider_params`` is required when ``telemetry.tracing.provider`` is set to ``'jaeger'``.
+The ``telemetry.tracing`` section defines the telemetry configuration. The ``endpoint`` in (``telemetry.tracing.provider_params`` or ``telemetry.tracing.provider_params_config``) is required when ``telemetry.tracing.provider`` is set to ``'opentelemetry'``.
 
 Example:
 
@@ -207,14 +207,19 @@ Example:
         sampling_period: 100
         append_frame_meta_to_span: false
         root_span_name: demo-pipeline-root
-        provider: jaeger
+        provider: opentelemetry
+        # or (mutually exclusive with provider_params, high priority)
+        # use provider config file (take a look at samples/telemetry/otlp/x509_provider_config.json)
+        provider_params_config: /path/to/x509_provider_config.json
+        # or (mutually exclusive with provider_params_config, low priority)
+        # use provider config attributes
         provider_params:
           service_name: demo-pipeline
           protocol: grpc
           endpoint: "http://jaeger:4317"
           timeout: 5000 # milliseconds
           tls:
-            certificate: /path/to/ca.crt
+            ca: /path/to/ca.crt
             identity:
                 certificate: /path/to/client.crt
                 key: /path/to/client.key

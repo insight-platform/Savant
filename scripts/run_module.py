@@ -24,38 +24,14 @@ from common import (
 )
 @click.option(
     '--in-endpoint',
-    default='ipc:///tmp/zmq-sockets/input-video.ipc',
+    default='router+bind:ipc:///tmp/zmq-sockets/input-video.ipc',
     help='Input ZeroMQ socket endpoint',
     show_default=True,
 )
 @click.option(
-    '--in-type',
-    default='ROUTER',
-    help='Input ZeroMQ socket type',
-    show_default=True,
-)
-@click.option(
-    '--in-bind',
-    default=True,
-    help='Input ZeroMQ socket bind/connect mode (bind if True)',
-    show_default=True,
-)
-@click.option(
     '--out-endpoint',
-    default='ipc:///tmp/zmq-sockets/output-video.ipc',
+    default='dealer+bind:ipc:///tmp/zmq-sockets/output-video.ipc',
     help='Output ZeroMQ socket endpoint',
-    show_default=True,
-)
-@click.option(
-    '--out-type',
-    default='PUB',
-    help='Output ZeroMQ socket type',
-    show_default=True,
-)
-@click.option(
-    '--out-bind',
-    default=True,
-    help='Output ZeroMQ socket bind/connect mode (bind if True)',
     show_default=True,
 )
 @docker_image_option('savant-deepstream')
@@ -65,11 +41,7 @@ def run_module(
     module_config: str,
     build_engines: bool,
     in_endpoint: str,
-    in_type: str,
-    in_bind: bool,
     out_endpoint: str,
-    out_type: str,
-    out_bind: bool,
     docker_image: Optional[str],
     gpus: Optional[str],
     detach: bool,
@@ -103,11 +75,7 @@ def run_module(
         '-e', 'METRICS_FRAME_PERIOD',
         '-e', 'GST_DEBUG_COLOR_MODE=off',
         '-e', f'ZMQ_SRC_ENDPOINT={in_endpoint}',
-        '-e', f'ZMQ_SRC_TYPE={in_type}',
-        '-e', f'ZMQ_SRC_BIND={in_bind}',
         '-e', f'ZMQ_SINK_ENDPOINT={out_endpoint}',
-        '-e', f'ZMQ_SINK_TYPE={out_type}',
-        '-e', f'ZMQ_SINK_BIND={out_bind}',
     ]
     # fmt: on
 

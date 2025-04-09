@@ -42,23 +42,8 @@ def output_endpoint_options(func):
     """Click options for output endpoint."""
     func = click.option(
         '--out-endpoint',
-        default='ipc:///tmp/zmq-sockets/input-video.ipc',
+        default='dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc',
         help='Adapter output (module input) ZeroMQ socket endpoint.',
-        show_default=True,
-    )(func)
-    func = click.option(
-        '--out-type',
-        default='DEALER',
-        help='Adapter output (module input) ZeroMQ socket type.',
-        show_default=True,
-    )(func)
-    func = click.option(
-        '--out-bind',
-        default=False,
-        help=(
-            'Adapter output (module input) ZeroMQ socket bind/connect mode '
-            '(bind if True).'
-        ),
         show_default=True,
     )(func)
     return func
@@ -75,8 +60,6 @@ def common_options(func):
 def files_source(
     source_id: Optional[str],
     out_endpoint: str,
-    out_type: str,
-    out_bind: bool,
     sync: bool,
     use_absolute_timestamps: Optional[bool],
     docker_image: str,
@@ -113,8 +96,6 @@ def files_source(
             fps_period_seconds=fps_period_seconds,
             fps_output=fps_output,
             zmq_endpoint=out_endpoint,
-            zmq_type=out_type,
-            zmq_bind=out_bind,
             use_absolute_timestamps=use_absolute_timestamps,
         )
         + [f'LOCATION={location}', f'FILE_TYPE={file_type}']
@@ -167,8 +148,6 @@ def files_source(
 def videos_source(
     source_id: str,
     out_endpoint: str,
-    out_type: str,
-    out_bind: bool,
     sync: bool,
     use_absolute_timestamps: Optional[bool],
     docker_image: str,
@@ -187,8 +166,6 @@ def videos_source(
     files_source(
         source_id=source_id,
         out_endpoint=out_endpoint,
-        out_type=out_type,
-        out_bind=out_bind,
         sync=sync,
         docker_image=docker_image,
         fps_period_frames=fps_period_frames,
@@ -251,8 +228,6 @@ def videos_source(
 def video_loop_source(
     source_id: str,
     out_endpoint: str,
-    out_type: str,
-    out_bind: bool,
     sync: bool,
     use_absolute_timestamps: Optional[bool],
     docker_image: str,
@@ -289,8 +264,6 @@ def video_loop_source(
     files_source(
         source_id=source_id,
         out_endpoint=out_endpoint,
-        out_type=out_type,
-        out_bind=out_bind,
         sync=sync,
         docker_image=docker_image,
         fps_period_frames=fps_period_frames,
@@ -353,8 +326,6 @@ def video_loop_source(
 @click.argument('location', required=True)
 def multi_stream_source(
     out_endpoint: str,
-    out_type: str,
-    out_bind: bool,
     sync: bool,
     use_absolute_timestamps: Optional[bool],
     docker_image: str,
@@ -396,8 +367,6 @@ def multi_stream_source(
     files_source(
         source_id=None,
         out_endpoint=out_endpoint,
-        out_type=out_type,
-        out_bind=out_bind,
         sync=sync,
         docker_image=docker_image,
         detach=detach,
@@ -453,8 +422,6 @@ def multi_stream_source(
 def images_source(
     source_id: str,
     out_endpoint: str,
-    out_type: str,
-    out_bind: bool,
     sync: bool,
     use_absolute_timestamps: Optional[bool],
     docker_image: str,
@@ -475,8 +442,6 @@ def images_source(
     files_source(
         source_id=source_id,
         out_endpoint=out_endpoint,
-        out_type=out_type,
-        out_bind=out_bind,
         sync=sync,
         docker_image=docker_image,
         fps_period_frames=fps_period_frames,
@@ -536,8 +501,6 @@ def images_source(
 def rtsp_source(
     source_id: str,
     out_endpoint: str,
-    out_type: str,
-    out_bind: bool,
     sync: bool,
     sync_delay: Optional[int],
     buffer_len: int,
@@ -559,8 +522,6 @@ def rtsp_source(
         fps_period_seconds=fps_period_seconds,
         fps_output=fps_output,
         zmq_endpoint=out_endpoint,
-        zmq_type=out_type,
-        zmq_bind=out_bind,
         use_absolute_timestamps=use_absolute_timestamps,
     ) + [
         f'RTSP_URI={rtsp_uri}',
@@ -648,8 +609,6 @@ def rtsp_source(
 def gige_cam_source(
     source_id: str,
     out_endpoint: str,
-    out_type: str,
-    out_bind: bool,
     use_absolute_timestamps: Optional[bool],
     docker_image: str,
     fps_period_frames: Optional[int],
@@ -697,8 +656,6 @@ def gige_cam_source(
         fps_period_seconds=fps_period_seconds,
         fps_output=fps_output,
         zmq_endpoint=out_endpoint,
-        zmq_type=out_type,
-        zmq_bind=out_bind,
         use_absolute_timestamps=use_absolute_timestamps,
     )
 
@@ -784,8 +741,6 @@ def gige_cam_source(
 def ffmpeg_source(
     source_id: str,
     out_endpoint: str,
-    out_type: str,
-    out_bind: bool,
     sync: bool,
     sync_delay: Optional[int],
     ffmpeg_params: Optional[str],
@@ -808,8 +763,6 @@ def ffmpeg_source(
         fps_period_seconds=fps_period_seconds,
         fps_output=fps_output,
         zmq_endpoint=out_endpoint,
-        zmq_type=out_type,
-        zmq_bind=out_bind,
         use_absolute_timestamps=use_absolute_timestamps,
     ) + [
         f'URI={uri}',
@@ -959,8 +912,6 @@ def kafka_redis_source(
         fps_period_seconds=fps_period_seconds,
         fps_output=fps_output,
         zmq_endpoint=out_endpoint,
-        zmq_type=None,
-        zmq_bind=None,
     ) + [
         f'KAFKA_BROKERS={brokers}',
         f'KAFKA_TOPIC={topic}',
@@ -1022,8 +973,6 @@ def message_dump_player_source(
         fps_period_seconds=None,
         fps_output=None,
         zmq_endpoint=out_endpoint,
-        zmq_type=None,
-        zmq_bind=None,
     ) + [
         f'PLAYLIST_PATH={playlist}',
         f'SYNC_OUTPUT={sync}',
@@ -1140,8 +1089,6 @@ def kvs_source(
     envs = build_common_envs(
         source_id=source_id,
         zmq_endpoint=out_endpoint,
-        zmq_type=None,
-        zmq_bind=None,
         fps_period_frames=fps_period_frames,
         fps_period_seconds=fps_period_seconds,
         fps_output=fps_output,

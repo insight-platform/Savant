@@ -1,0 +1,12 @@
+{
+    "tracer": {
+        "service_name": "${TRACING_SERVICE_NAME:-telemetry-otlp}",
+        "protocol": "grpc",
+        "endpoint": "http://jaeger:4317",
+        "timeout": {
+            "secs": 10,
+            "nanos": 0
+        }
+    },
+    "context_propagation_format": "w3c"
+}

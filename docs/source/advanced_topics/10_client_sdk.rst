@@ -7,7 +7,7 @@ Client SDK together with :doc:`DevServer </advanced_topics/9_dev_server>` and :d
 
 - Client SDK allows sending a single frame from Python and retrieving the corresponding result. Because it is a Python code developers can use OpenCV to display the resulting frame, dumping meta to JSON, etc.
 - The Client SDK source sends every frame with OpenTelemetry propagated through the pipeline to the Client SDK sink, so developers can trace the code end-to-end and match frames sent with frames retrieved by Trace ID.
-- Client SDK can retrieve and display logs from Jaeger by a trace ID.
+- Client SDK can retrieve and display logs from Jaeger by a trace ID (it uses Jaeger REST API, not OpenTelemetry).
 - You can run the code directly from your IDE.
 - You can analyze code instrumenting in Jaeger Web GUI for every single query, which is beneficial for code optimization and debugging.
 
@@ -31,8 +31,6 @@ When the frame is sent, the :py:class:`savant.client.runner.source.SourceResult`
     The `trace_id` can also be used to observe the trace in the Opentelemetry management system like Jaeger.
 
 When the frame processing result is retrieved from the module, the developer can request the frame, metadata and logs collected by OpenTelemetry.
-
-Currently we support only Jaeger OpenTelemetry collector. Logs are fetched from Jaeger REST API.
 
 Remote Development
 ^^^^^^^^^^^^^^^^^^
@@ -74,13 +72,13 @@ Sources ingest frames and their metadata to a running module.
     # Initialize Jaeger tracer to send metrics and logs to Jaeger.
     # Note: the Jaeger tracer also should be configured in the module.
     telemetry_config = TelemetryConfiguration(
-        context_propagation_format=ContextPropagationFormat.Jaeger,
+        context_propagation_format=ContextPropagationFormat.W3C,
         tracer=TracerConfiguration(
             service_name='savant-client',
             protocol=Protocol.Grpc,
             endpoint='http://jaeger:4317',
             # tls=ClientTlsConfig(
-            #     certificate='/path/to/ca.crt',
+            #     ca='/path/to/ca.crt',
             #     identity=Identity(
             #         certificate='/path/to/client.crt',
             #         key='/path/to/client.key',
@@ -90,6 +88,10 @@ Sources ingest frames and their metadata to a running module.
         ),
     )
     telemetry.init(telemetry_config)
+    # or 
+    # use x509 provider config file (take a look at samples/telemetry/otlp/x509_provider_config.json)
+    # telemetry.init_from_file('/path/to/x509_provider_config.json')
+
 
     # Build the source
     source = (

@@ -18,7 +18,7 @@ from savant_rs.utils import PropagatedContext
 from savant_rs.webserver import is_shutdown_set as is_ws_shutdown_set
 
 from gst_plugins.python.pyfunc_common import handle_non_fatal_error, init_pyfunc
-from gst_plugins.python.zeromq_properties import ZEROMQ_PROPERTIES, socket_type_property
+from gst_plugins.python.zeromq_properties import ZEROMQ_PROPERTIES
 from savant.api.enums import ExternalFrameType
 from savant.api.parser import convert_ts
 from savant.base.frame_filter import DefaultIngressFilter
@@ -42,7 +42,6 @@ HandlerResult = Optional[Tuple[Gst.FlowReturn, Optional[Gst.Buffer]]]
 
 ZEROMQ_SRC_PROPERTIES = {
     **ZEROMQ_PROPERTIES,
-    'socket-type': socket_type_property(ReceiverSocketTypes),
     'receive-hwm': (
         int,
         'High watermark for inbound messages',
@@ -197,8 +196,6 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
 
         # properties
         self.socket: str = None
-        self.socket_type: str = ReceiverSocketTypes.ROUTER.name
-        self.bind: bool = True
         self.receive_timeout: int = Defaults.RECEIVE_TIMEOUT
         self.receive_hwm: int = Defaults.RECEIVE_HWM
         self.source_id: Optional[str] = None
@@ -230,10 +227,6 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
 
         if prop.name == 'socket':
             return self.socket
-        if prop.name == 'socket-type':
-            return self.socket_type
-        if prop.name == 'bind':
-            return self.bind
         if prop.name == 'receive-hwm':
             return self.receive_hwm
         if prop.name == 'source-id':
@@ -285,10 +278,6 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
         self.logger.debug('Setting property "%s" to "%s".', prop.name, value)
         if prop.name == 'socket':
             self.socket = value
-        elif prop.name == 'socket-type':
-            self.socket_type = value
-        elif prop.name == 'bind':
-            self.bind = value
         elif prop.name == 'receive-hwm':
             self.receive_hwm = value
         elif prop.name == 'source-id':
@@ -352,8 +341,6 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
 
             self.source = ZeroMQSource(
                 socket=self.socket,
-                socket_type=self.socket_type,
-                bind=self.bind,
                 receive_timeout=self.receive_timeout,
                 receive_hwm=self.receive_hwm,
                 source_id=self.source_id,

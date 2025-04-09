@@ -12,6 +12,7 @@ from savant.api.constants import DEFAULT_TIME_BASE
 from savant.config.schema import PipelineElement
 from savant.gstreamer import Gst
 from savant.gstreamer.codecs import AUXILIARY_STREAM_CODECS, CODEC_BY_NAME
+from savant.gstreamer.event import build_savant_eos_event
 from savant.utils.log import get_logger
 from savant.utils.source_info import SourceInfoRegistry, SourceShape
 
@@ -140,13 +141,34 @@ class AuxiliaryStreamInternal:
         return frame, buffer
 
     def eos(self) -> bool:
+        """Send EOS (Gst) to the auxiliary stream.
+        Results in outputting EOS event from the auxiliary stream,
+        deactivates and then destroys the auxiliary stream pipeline.
+        """
         if not self._is_opened:
             self._logger.warning('Auxiliary stream is not opened')
             return False
         if self._pending_buffers:
             self.flush()
         self._logger.info('Sending EOS to auxiliary stream')
+        # may result in loss of buffers
+        # TODO: Provide a method to check for buffers in the auxiliary stream pipeline
+        self._pad.push_event(Gst.Event.new_flush_start())
+        self._pad.push_event(Gst.Event.new_flush_stop(True))
         return self._pad.push_event(Gst.Event.new_eos())
+
+    def savant_eos(self) -> bool:
+        """Send EOS (Savant) to the auxiliary stream.
+        Results in outputting EOS event from the auxiliary stream,
+        does not deactivate the auxiliary stream pipeline.
+        """
+        if not self._is_opened:
+            self._logger.warning('Auxiliary stream is not opened')
+            return False
+        if self._pending_buffers:
+            self.flush()
+        self._logger.info('Sending Savant EOS to auxiliary stream')
+        return self._pad.push_event(build_savant_eos_event(self._source_id))
 
     def flush(self) -> Gst.FlowReturn:
         self._logger.debug('Flushing %s buffers', len(self._pending_buffers))
@@ -274,7 +296,7 @@ class AuxiliaryStream:
     def eos(self) -> bool:
         """Send EOS to the auxiliary stream."""
 
-        return self._internal.eos()
+        return self._internal.savant_eos()
 
     def __del__(self):
         """Remove the auxiliary stream."""

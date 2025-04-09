@@ -122,7 +122,8 @@ openssl x509 -req -days 365 \
     -CA samples/telemetry/certs/ca.crt \
     -CAkey samples/telemetry/certs/ca.key \
     -CAcreateserial \
-    -out samples/telemetry/certs/client.crt
+    -out samples/telemetry/certs/client.crt \
+    -extfile <(echo "subjectAltName=DNS:module")
 ```
 
 ### Run Demo with TLS
