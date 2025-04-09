@@ -1,21 +1,59 @@
 services:
 
-  video-loop-source:
+  # video-loop-source:
+  #   image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+  #   restart: unless-stopped
+  #   volumes:
+  #     - zmq_sockets:/tmp/zmq-sockets
+  #     - /tmp/video-loop-source-downloads:/tmp/video-loop-source-downloads
+  #   environment:
+  #     - LOCATION=https://eu-central-1.linodeobjects.com/savant-data/demo/Free_City_Street_Footage.mp4
+  #     - DOWNLOAD_PATH=/tmp/video-loop-source-downloads
+  #     - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
+  #     - SOURCE_ID=city-traffic
+  #     - SYNC_OUTPUT=True
+  #   entrypoint: /opt/savant/adapters/gst/sources/video_loop.sh
+  #   depends_on:
+  #     module:
+  #       condition: service_healthy
+
+  video-source:
     image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
-    restart: unless-stopped
+    restart: "no"
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - /tmp/video-loop-source-downloads:/tmp/video-loop-source-downloads
+      - ./assets/avg.mp4:/tmp/video-loop-source-downloads/avg.mp4
     environment:
-      - LOCATION=https://eu-central-1.linodeobjects.com/savant-data/demo/Free_City_Street_Footage.mp4
+      - LOCATION=/tmp/video-loop-source-downloads/avg.mp4
       - DOWNLOAD_PATH=/tmp/video-loop-source-downloads
+      - FILE_TYPE=video
+      - SOURCE_ID_BASE=city-traffic
       - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
-      - SOURCE_ID=city-traffic
       - SYNC_OUTPUT=True
-    entrypoint: /opt/savant/adapters/gst/sources/video_loop.sh
+    entrypoint: >
+      sh -c '
+        echo "--- Starting video source loop (20 iterations) ---"
+        BASE_SOURCE_ID="${SOURCE_ID_BASE:-city-traffic}"
+        export FILE_TYPE="${FILE_TYPE:-video}"
+
+        for i in $$(seq 1 20); do
+          export SOURCE_ID="$${BASE_SOURCE_ID}-$${i}"
+          echo "--- Running source adapter: iteration $${i}, SOURCE_ID=$${SOURCE_ID} ---"
+          /opt/savant/adapters/gst/sources/media_files.sh
+          EXIT_CODE=$$?
+          if [ $$EXIT_CODE -ne 0 ]; then
+            echo "--- Script failed with exit code $$EXIT_CODE on iteration $${i}. Stopping loop. ---"
+            exit $$EXIT_CODE
+          fi
+          echo "--- Finished iteration $${i} ---"
+        done
+        echo "--- Video source loop finished (20 iterations) ---"
+      '
     depends_on:
       module:
         condition: service_healthy
+
 
   module:
     image: ghcr.io/insight-platform/savant-deepstream:latest

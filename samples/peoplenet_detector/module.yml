@@ -23,53 +23,7 @@ parameters:
     # this is to circumvent 3 hardware decoding processes limit on NVIDIA consumer hardware
     codec: ${oc.env:CODEC, 'raw-rgba'}
   # PyFunc for drawing on frames
-  draw_func:
-    # specify the drawfunc's python module
-    module: samples.peoplenet_detector.overlay
-    # specify the drawfunc's python class from the module
-    class_name: Overlay
-    # drawfunc's class init keyword arguments
-    # will be available as drawfunc object's attributes
-    kwargs:
-      # height of overlay dashboard in pixels
-      overlay_height: 180
-      # height of logo image in pixels
-      logo_height: 120
-      # the height of animation's sprites in pixels
-      sprite_height: 120
-      # height of counter's numbers in pixels
-      counters_height: 85
-      # thickness of counter's font
-      counters_font_thickness: 5
-    rendered_objects:
-      # Detector's element name from pipeline definition below
-      peoplenet:
-        # Detector's output object's label from pipeline definition
-        # Note that in this sample the analytics pyfunc assigns draw labels to objects
-        # If assigned, draw labels are used in place of the original object labels
-        # in the default draw func implementation
-        person_face:
-          bbox:
-            # RGBA color value for bboxes of persons with face associated
-            border_color: '00ff00ff'
-            # width of person's bboxes border in pixels
-            thickness: 3
-          label:
-            # RGBA color values for person label's font and background
-            font_color: '000000ff'
-            background_color: 'd8e6ffd9'
-        person_noface:
-          bbox:
-            # RGBA color value for bboxes of persons with no face associated
-            border_color: '0000ffff'
-            # width of person's bboxes border in pixels
-            thickness: 3
-          label:
-            # RGBA color values for person label's font and background
-            font_color: '000000ff'
-            background_color: 'd8e6ffd9'
-        face:
-          blur: true
+  draw_func: {}
 
   batch_size: 1
 
@@ -141,20 +95,19 @@ pipeline:
       properties:
         ll-lib-file: /opt/nvidia/deepstream/deepstream/lib/libnvds_nvmultiobjecttracker.so
         # specify tracking config file
-        ll-config-file: ${oc.env:PROJECT_PATH}/samples/assets/tracker/config_tracker_NvSORT.yml
-        tracker-width: 640
-        tracker-height: 384
+        ll-config-file: ${oc.env:PROJECT_PATH}/samples/assets/tracker/config_tracker_NvDCF_perf.yml
+        tracker-width: 960
+        tracker-height: 544  # 384
         display-tracking-id: 0
 
     # analytics element realized in custom pyfunc
     - element: pyfunc
       # specify the pyfunc's python module
-      module: samples.peoplenet_detector.analytics
+      module: samples.peoplenet_detector.dummy
       # specify the pyfunc's python class from the module
-      class_name: Analytics
+      class_name: Dummy
       # pyfunc's class init keyword arguments
       # will be available as pyfunc object's attributes
-      kwargs:
-        counters_smoothing_period: 0.25
+
 
   # sink definition is skipped, zeromq sink is used by default to connect with sink adapters
