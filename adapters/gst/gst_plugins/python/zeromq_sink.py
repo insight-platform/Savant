@@ -4,6 +4,7 @@ import inspect
 import json
 from fractions import Fraction
 from pathlib import Path
+import time
 from typing import Any, Dict, List, NamedTuple, Optional
 
 from savant_rs.primitives import (
@@ -128,6 +129,13 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
             DEFAULT_FRAMERATE,
             GObject.ParamFlags.READWRITE,
         ),
+        'eos-on-start': (
+            bool,
+            'Send EOS on start',
+            'Send EOS on start',
+            False,
+            GObject.ParamFlags.READWRITE,
+        ),
         'eos-on-file-end': (
             bool,
             'Send EOS at the end of each file',
@@ -204,6 +212,7 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
         # properties
         self.socket: str = None
         self.source_id: Optional[str] = None
+        self.eos_on_start: bool = False
         self.eos_on_file_end: bool = True
         self.eos_on_loop_end: bool = False
         self.eos_on_frame_params_change: bool = True
@@ -255,6 +264,8 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
             return self.location
         if prop.name == 'framerate':
             return self.default_framerate
+        if prop.name == 'eos-on-start':
+            return self.eos_on_start
         if prop.name == 'eos-on-file-end':
             return self.eos_on_file_end
         if prop.name == 'eos-on-loop-end':
@@ -302,6 +313,8 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
             except (ZeroDivisionError, ValueError) as e:
                 raise AttributeError(f'Invalid property {prop.name}: {e}.') from e
             self.default_framerate = value
+        elif prop.name == 'eos-on-start':
+            self.eos_on_start = value
         elif prop.name == 'eos-on-file-end':
             self.eos_on_file_end = value
         elif prop.name == 'eos-on-loop-end':
@@ -365,6 +378,9 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
             config_builder.with_send_retries(self.receive_retries)
             self.writer = BlockingWriter(config_builder.build())
             self.writer.start()
+            if self.eos_on_start:
+                self.logger.info('Sending EOS to %s on start to reset decoder state', self.source_id)
+                self.writer.send_eos(self.source_id)
 
         except Exception as exc:
             error = f'Failed to start ZeroMQ sink with socket {self.socket}: {exc}.'

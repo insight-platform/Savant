@@ -34,6 +34,7 @@ SINK_PROPERTIES=(
     socket="${ZMQ_ENDPOINT}"
     sync="${SYNC_OUTPUT}"
     ts-offset="${SYNC_DELAY}"
+    eos-on-start="${EOS_ON_START}"
 )
 
 FFMPEG_SRC=(ffmpeg_src uri="${URI}" queue-len="${BUFFER_LEN}" loglevel="${FFMPEG_LOGLEVEL}")
