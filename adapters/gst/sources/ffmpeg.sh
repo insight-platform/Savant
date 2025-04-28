@@ -29,11 +29,13 @@ fi
 BUFFER_LEN="${BUFFER_LEN:="50"}"
 FFMPEG_LOGLEVEL="${FFMPEG_LOGLEVEL:="info"}"
 USE_ABSOLUTE_TIMESTAMPS="${USE_ABSOLUTE_TIMESTAMPS:="false"}"
+EOS_ON_START="${EOS_ON_START:="true"}"
 SINK_PROPERTIES=(
     source-id="${SOURCE_ID}"
     socket="${ZMQ_ENDPOINT}"
     sync="${SYNC_OUTPUT}"
     ts-offset="${SYNC_DELAY}"
+    eos-on-start="${EOS_ON_START}"
 )
 
 FFMPEG_SRC=(ffmpeg_src uri="${URI}" queue-len="${BUFFER_LEN}" loglevel="${FFMPEG_LOGLEVEL}")
