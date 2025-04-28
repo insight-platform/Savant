@@ -4,7 +4,6 @@ import inspect
 import json
 from fractions import Fraction
 from pathlib import Path
-import time
 from typing import Any, Dict, List, NamedTuple, Optional
 
 from savant_rs.primitives import (
@@ -379,7 +378,9 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
             self.writer = BlockingWriter(config_builder.build())
             self.writer.start()
             if self.eos_on_start:
-                self.logger.info('Sending EOS to %s on start to reset decoder state', self.source_id)
+                self.logger.info(
+                    'Sending EOS to %s on start to reset decoder state', self.source_id
+                )
                 self.writer.send_eos(self.source_id)
 
         except Exception as exc:
