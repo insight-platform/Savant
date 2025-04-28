@@ -391,15 +391,53 @@ FFmpeg Source Adapter
 
 The adapter delivers video stream using FFmpeg library. It can be used to read video files, RTSP streams, and other sources supported by FFmpeg.
 
-**Parameters**:
+.. list-table:: Parameters
+    :header-rows: 1
 
-* ``URI`` (**required**): an URI of the stream;
-* ``FFMPEG_PARAMS``: a comma separated string ``key=value`` with parameters for FFmpeg (e.g. ``rtsp_transport=tcp``, ``input_format=mjpeg,video_size=1280x720``);
-* ``FFMPEG_LOGLEVEL``: a log level for FFmpeg; default is ``info``;
-* ``BUFFER_LEN``: a maximum amount of frames in FFmpeg buffer; default is ``50``;
-* ``SYNC_OUTPUT``: a flag indicating the need to send frames from source synchronously (i.e. at the source file rate); default is ``False``;
-* ``SYNC_DELAY``: a delay in seconds before sending frames; default is ``0``;
-* ``FFMPEG_TIMEOUT_MS``: a timeout in milliseconds for FFmpeg to wait for a frame; default is ``10000``.
+    * - Parameter
+      - Description
+      - Default
+      - Example
+
+    * - ``URI``
+      - URI of the stream (**required**)
+      - 
+      - ``rtsp://192.168.1.1:554/stream/path``
+    
+    * - ``FFMPEG_PARAMS``
+      - A comma separated string ``key=value`` with parameters for FFmpeg (e.g. ``rtsp_transport=tcp``, ``input_format=mjpeg,video_size=1280x720``)
+      - 
+      - ``rtsp_transport=tcp,input_format=mjpeg,video_size=1280x720``
+
+    * - ``FFMPEG_LOGLEVEL``
+      - Log level for FFmpeg; default is ``info``;
+      - ``info``
+      - ``debug``
+
+    * - ``BUFFER_LEN``
+      - Maximum amount of frames in FFmpeg buffer; default is ``50``;
+      - ``50``
+      - ``100``
+
+    * - ``SYNC_OUTPUT``
+      - Flag indicating the need to send frames from source synchronously (i.e. at the source file rate); default is ``False``;
+      - ``False``
+      - ``True``
+
+    * - ``SYNC_DELAY``
+      - Delay in seconds before sending frames; default is ``0``;
+      - ``0``
+      - ``1``
+
+    * - ``FFMPEG_TIMEOUT_MS``
+      - Timeout in milliseconds for FFmpeg to wait for a frame; default is ``10000``.
+      - ``10000``
+      - ``20000``
+
+    * - ``EOS_ON_START``
+      - Flag indicating the need to send ``EOS`` message on start; default is ``True``.
+      - ``True``
+      - ``False``
 
 Running the adapter with Docker:
 
@@ -425,14 +463,48 @@ RTSP Source Adapter
 
 The RTSP Source Adapter delivers RTSP stream to a module.
 
-**Parameters**:
+.. list-table:: Parameters
+    :header-rows: 1
 
-- ``RTSP_URI`` (**required**): an RTSP URI of the stream;
-- ``SYNC_OUTPUT``: a flag indicating the need to send frames from source synchronously (i.e. at the source file rate); default is ``False``;
-- ``SYNC_DELAY``: a delay in seconds before sending frames; when the source has ``B``-frames the flag allows avoiding sending frames in batches; default is ``0``;
-- ``RTSP_TRANSPORT``: a transport protocol to use; default is ``tcp``;
-- ``BUFFER_LEN``: a maximum amount of frames in the buffer; default is ``50``;
-- ``FFMPEG_TIMEOUT_MS``: a timeout in milliseconds for FFmpeg to wait for a frame; default is ``10000``.
+    * - Parameter
+      - Description
+      - Default
+      - Example
+
+    * - ``RTSP_URI``
+      - RTSP URI of the stream (**required**)
+      - 
+      - ``rtsp://192.168.1.1:554/stream/path``
+
+    * - ``RTSP_TRANSPORT``
+      - Transport protocol to use; default is ``tcp``;
+      - ``tcp``
+      - ``udp``
+
+    * - ``SYNC_OUTPUT``
+      - Flag indicating the need to send frames from source synchronously (i.e. at the source file rate); default is ``False``;
+      - ``False``
+      - ``True``
+
+    * - ``SYNC_DELAY``
+      - Buffering delay in seconds before sending frames; default is ``0``;
+      - ``0``
+      - ``1``
+
+    * - ``BUFFER_LEN``
+      - Maximum amount of frames in the buffer; default is ``50``;
+      - ``50``
+      - ``100``
+
+    * - ``EOS_ON_START``
+      - Flag indicating the need to send ``EOS`` message on start; default is ``True``.
+      - ``True``
+      - ``False``
+
+    * - ``FFMPEG_TIMEOUT_MS``
+      - Timeout in milliseconds for FFmpeg to wait for a frame; default is ``10000``.
+      - ``10000``
+      - ``20000``
 
 Running the adapter with Docker:
 
