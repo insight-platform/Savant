@@ -275,7 +275,7 @@ jobs:
           docker pull ${{ env.REGISTRY }}/insight-platform/${{ matrix.image }}:${{ needs.init.outputs.savant-rs-version }}-rolling
           
           # Set tag based on the reference
-          TAG_NAME=$(if [[ "${{ github.ref }}" == "develop" ]]; then 
+          TAG_NAME=$(if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then 
             echo "savant-latest"; 
           else 
             echo "v${{ needs.init.outputs.savant-version }}"; 
