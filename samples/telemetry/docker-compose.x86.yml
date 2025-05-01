@@ -41,46 +41,31 @@ services:
               count: 1
               capabilities: [ gpu ]
 
-  # docker run -it --rm   --network host   -v $(pwd)/replay_config.json:/opt/etc/config.json   -v $(pwd)/data:/opt/rocksdb   savant-replay-x86:latest
-  replay:
-    image: savant-replay-x86:latest
+  always-on-sink:
+    image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
     restart: unless-stopped
-    environment:
-      - TRACING_SERVICE_NAME=savant-replay
+    ports:
+      - "554:554" # RTSP
+      - "1935:1935" # RTMP
+      - "888:888" # HLS
+      - "8889:8889" # WebRTC
     volumes:
-      - data:/opt/rocksdb
       - zmq_sockets:/tmp/zmq-sockets
-      - ..:/opt/savant/samples
-      - ./replay_config.json:/opt/etc/config.json
-    depends_on:
-      module:
-        condition: service_healthy
-
-  # always-on-sink:
-  #   image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
-  #   restart: unless-stopped
-  #   ports:
-  #     - "554:554" # RTSP
-  #     - "1935:1935" # RTMP
-  #     - "888:888" # HLS
-  #     - "8889:8889" # WebRTC
-  #   volumes:
-  #     - zmq_sockets:/tmp/zmq-sockets
-  #     - ../assets/stub_imgs:/stub_imgs
-  #   environment:
-  #     - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
-  #     - SOURCE_ID=0
-  #     - FRAMERATE=25/1
-  #     - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x720.jpeg
-  #     - DEV_MODE=True
-  #   command: python -m adapters.ds.sinks.always_on_rtsp
-  #   deploy:
-  #     resources:
-  #       reservations:
-  #         devices:
-  #           - driver: nvidia
-  #             count: 1
-  #             capabilities: [ gpu ]
+      - ../assets/stub_imgs:/stub_imgs
+    environment:
+      - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
+      - SOURCE_ID=0
+      - FRAMERATE=25/1
+      - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x720.jpeg
+      - DEV_MODE=True
+    command: python -m adapters.ds.sinks.always_on_rtsp
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
 
   # All-in-One Jaeger
   # https://www.jaegertracing.io/docs/1.62/getting-started/#all-in-one
@@ -100,4 +85,3 @@ services:
 
 volumes:
   zmq_sockets:
-  data:
