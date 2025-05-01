@@ -23,7 +23,7 @@ class Blur(NvDsPyFuncPlugin):
         frame_meta.telemetry_span.set_int_attribute('frame_num', frame_meta.frame_num)
 
         # logger messages will be added to span automatically
-        self.logger.info('Try to blur frame #%d.', frame_meta.frame_num)
+        self.logger.debug('Try to blur frame #%d.', frame_meta.frame_num)
 
         stream = self.get_cuda_stream(frame_meta)
         with nvds_to_gpu_mat(buffer, frame_meta.frame_meta) as frame_mat:
@@ -43,7 +43,7 @@ class Blur(NvDsPyFuncPlugin):
             with frame_meta.telemetry_span.nested_span('error-code') as span:
                 span.set_string_attribute('section', 'try division by zero')
                 # raise Exception('Some exception.')
-                if frame_meta.frame_num % 100 == 0:
+                if frame_meta.frame_num % 10000 == 0:
                     _ = 2 / 0
 
         except:
