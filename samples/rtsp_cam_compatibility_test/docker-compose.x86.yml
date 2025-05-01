@@ -2,29 +2,33 @@ services:
 
   receiver:
     image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    network_mode: host
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
     environment:
-      - ZMQ_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
+      - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
       - FFMPEG_LOGLEVEL=debug
       - FFMPEG_PARAMS=rtsp_transport=tcp
+      - SYNC_OUTPUT=True
       - URI
       - SOURCE_ID=test
+      - EOS_ON_START=True
     entrypoint: /opt/savant/adapters/gst/sources/ffmpeg.sh
 
   broadcaster:
     image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
     restart: unless-stopped
     ports:
-      - "888:888"    # HLS
+      - "6666:6666"
+      - "888:888" # HLS
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../assets/stub_imgs:/stub_imgs
     environment:
-      - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
+      - ZMQ_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
       - SOURCE_ID=test
-      - STUB_FILE_LOCATION=/stub_imgs/smpte100_640x360.jpeg
+      - STUB_FILE_LOCATION=/stub_imgs/smpte100_1920x1080.jpeg
       - DEV_MODE=True
     command: python -m adapters.ds.sinks.always_on_rtsp
     deploy:
@@ -37,4 +41,5 @@ services:
 
 volumes:
   zmq_sockets:
+
 
