@@ -26,7 +26,7 @@ services:
     command: samples/telemetry/module.yml
     environment:
       - TRACING_PROVIDER=opentelemetry
-      - TRACING_SERVICE_NAME=savant-core
+      - TRACING_SERVICE_NAME=savant-module
       - TRACING_PROVIDER_PARAMS_CONFIG=/opt/savant/samples/telemetry/otlp/provider_config.json
       - TRACING_SAMPLING_PERIOD=100
       - TRACING_APPEND_FRAME_META_TO_SPAN=True
