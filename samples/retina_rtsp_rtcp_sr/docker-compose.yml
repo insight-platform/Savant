@@ -68,6 +68,7 @@ services:
     image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
     restart: unless-stopped
     ports:
+      - "554:554" # RTSP
       - "888:888" # HLS
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
