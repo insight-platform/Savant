@@ -126,6 +126,18 @@ Such cases may require detecting the objects with minimal overlap. To achieve th
 
 Savant supports processing parallelization; it helps to utilize the available resources to the maximum. The parallelization is achieved by running the pipeline stages in separate threads. Despite flow control-related Python code is not parallel; the developer can utilize GIL-releasing mechanisms to achieve the desired parallelization with NumPy, Numba, or custom native code in C++ or Rust.
 
+
+🕛 RTCP Sender Report-based RTSP Synchronization
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Savant provides means to synchronize RTSP streams by RTCP Sender Reports (SR) out of the box with the Retina RTSP `adapter <https://insight-platform.github.io/savant-rs/services/retina_rtsp/index.html>`__.
+
+📹 Non-linear Video Analyitics And Smart Archive
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Savant provides a special tool to record, replay and restream video with the REST-controlled Replay `service <https://insight-platform.github.io/savant-rs/services/replay/index.html>`__.
+
+
 .. toctree::
    :maxdepth: 1
    :hidden:

@@ -101,6 +101,7 @@ The sample shows how to synchronize multiple RTSP streams by RTCP SR NTP data wi
 
 Sample location: [retina_rtsp_rtcp_sr](./retina_rtsp_rtcp_sr)
 
+![](retina_rtsp_rtcp_sr/assets/cloud-sync-400.webp)
 
 ### OpenCV CUDA MOG2 Background Segmentation Demo
 
