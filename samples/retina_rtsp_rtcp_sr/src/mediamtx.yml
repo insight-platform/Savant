@@ -1,0 +1,30 @@
+logLevel: info
+logDestinations: [ stdout ]
+
+writeQueueSize: 8192
+
+api: no
+
+rtsp: yes
+protocols: [ tcp, udp ]
+rtspAddress: :554
+
+rtmp: no
+
+hls: no
+
+webrtc: no
+
+srt: no
+
+
+paths:
+
+  source:
+    source: publisher
+    rtspTransport: automatic
+    record: no
+    playback: no
+    publishIPs: [ "127.0.0.1", "::1" ]
+    runOnInit: ffmpeg -nostdin -re -stream_loop -1 -i /data/clouds.mp4 -c copy -bsf:v h264_mp4toannexb -f rtsp -rtsp_transport tcp rtsp://localhost:554/source
+

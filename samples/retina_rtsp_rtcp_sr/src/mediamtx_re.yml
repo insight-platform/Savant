@@ -1,0 +1,31 @@
+logLevel: info
+logDestinations: [ stdout ]
+
+writeQueueSize: 8192
+
+api: no
+
+rtsp: yes
+protocols: [ tcp ]
+rtspAddress: :554
+
+rtmp: no
+
+hls: no
+
+webrtc: no
+
+srt: no
+
+
+paths:
+
+  main:
+    source: rtsp://mediamtx-src:554/source
+    useAbsoluteTimestamp: yes
+    rtspTransport: tcp
+
+  overlay:
+    source: rtsp://mediamtx-src:554/source
+    useAbsoluteTimestamp: yes
+    rtspTransport: tcp

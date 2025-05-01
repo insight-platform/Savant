@@ -1,0 +1,32 @@
+name: stitching
+
+parameters:
+  auxiliary_encoders:
+    - ${pipeline.elements[0].kwargs.codec_params}
+
+  batch_size: 1
+
+pipeline:
+  elements:
+    - element: pyfunc
+      module: stitching.stitching
+      class_name: CombineFrames
+      kwargs:
+        source:
+          sources:
+            - id: main
+            - id: overlay
+        output:
+          source_id: composition
+          framerate: '25/1'
+          width: ${oc.decode:${oc.env:WIDTH}}
+          height: ${oc.decode:${oc.env:HEIGHT}}
+        queue_size: ${oc.decode:${oc.env:COMBINE_FRAMES_QUEUE_SIZE, 20}}
+        report_interval: ${oc.decode:${oc.env:REPORT_INTERVAL, 60}}
+        codec_params:
+          codec: hevc
+          encoder_params:
+            bitrate: ${oc.decode:${oc.env:BITRATE}}
+            maxbitrate: ${oc.decode:${oc.env:MAXBITRATE}}
+            control-rate: variable_bitrate
+            tuning-info-id: UltraLowLatencyPreset

@@ -1,0 +1,16 @@
+FROM ubuntu:22.04
+
+RUN apt-get update \
+    && apt-get install -y \
+    ffmpeg \
+    tar \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /opt
+ARG MEDIAMTX_VERSION="v1.12.0"
+RUN mkdir mediamtx \
+    && wget -qO- "https://github.com/bluenviron/mediamtx/releases/download/${MEDIAMTX_VERSION}/mediamtx_${MEDIAMTX_VERSION}_linux_amd64.tar.gz" | tar xz -C mediamtx
+
+WORKDIR /opt/mediamtx
+ENTRYPOINT ["/opt/mediamtx/mediamtx"]
