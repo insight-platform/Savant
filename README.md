@@ -284,7 +284,7 @@ parallelization is achieved by running the pipeline stages in separate threads. 
 is not parallel; the developer can utilize GIL-releasing mechanisms to achieve the desired parallelization with NumPy,
 Numba, or custom native code in C++ or Rust.
 
-### Advanced RTSP Synchronization
+### RTCP Sender Report-based RTSP Synchronization
 
 Savant provides means to synchronize RTSP streams by RTCP Sender Reports (SR) out of the box with the Retina RTSP [adapter](https://insight-platform.github.io/savant-rs/services/retina_rtsp/index.html).
 
