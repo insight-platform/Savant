@@ -242,7 +242,6 @@ jobs:
   # retag replay containers
   retag-savant-rs-containers:
     needs: init
-    # if: startsWith(github.ref, 'refs/tags/v')  # Only run for version tags like v0.5.4
 
     permissions:
       packages: write
