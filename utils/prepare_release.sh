@@ -10,9 +10,11 @@ git checkout -b releases/$SAVANT_VER
 DEFAULT_TAG=latest
 PATTERN_DS="savant-(adapters-)?deepstream(-l4t)?"
 PATTERN_NO_DS="savant-(adapters-)?(gstreamer|py)(-l4t)?"
+PATTERN_SAVANT_RS="savant-latest"
 SED_DS="s/($PATTERN_DS):$DEFAULT_TAG/\1:$SAVANT_VER-$DS_VER/g"
 SED_NO_DS="s/($PATTERN_NO_DS):$DEFAULT_TAG/\1:$SAVANT_VER/g"
-SED_CMD="$SED_DS;$SED_NO_DS"
+SED_SAVANT_RS="s/:($PATTERN_SAVANT_RS)/:v$SAVANT_VER/g"
+SED_CMD="$SED_DS;$SED_NO_DS;$SED_SAVANT_RS"
 
 # find files with the name pattern "[Dd]ocker*" in the samples directory
 # and save the list of files to a variable
