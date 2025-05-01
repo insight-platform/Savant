@@ -223,7 +223,8 @@ Currently, the following source adapters are available:
 - Local directory of image files;
 - Image URL;
 - Video URL;
-- RTSP stream;
+- RTSP stream (FFmpeg-based);
+- Multi-stream RTSP with RTCP SR synchronization;
 - USB/CSI camera;
 - GigE (Genicam) industrial cam;
 - FFmpeg;
@@ -458,10 +459,10 @@ Running with the helper script:
 
     ./scripts/run_source.py ffmpeg --source-id=test --ffmpeg-params=input_format=mjpeg,video_size=1280x720 --device=/dev/video0 /dev/video0
 
-RTSP Source Adapter
+FFmpeg RTSP Source Adapter
 ^^^^^^^^^^^^^^^^^^^
 
-The RTSP Source Adapter delivers RTSP stream to a module.
+The RTSP Source Adapter delivers RTSP stream to a module. This adapter is based on FFmpeg and supports wide variety of cameras.
 
 .. list-table:: Parameters
     :header-rows: 1
@@ -523,6 +524,13 @@ Running with the helper script:
 .. code-block:: bash
 
     ./scripts/run_source.py rtsp --source-id=test rtsp://192.168.1.1
+
+Retina RTSP Source Adapter
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The Retina RTSP Source Adapter delivers multiple RTSP streams to a module. It supports RTCP SR synchronization of multiple streams.
+
+The adapter documentation is available `here <https://insight-platform.github.io/savant-rs/services/retina_rtsp/index.html>`__.
 
 USB Cam Source Adapter
 ^^^^^^^^^^^^^^^^^^^^^^

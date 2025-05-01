@@ -69,6 +69,7 @@ services:
     restart: unless-stopped
     ports:
       - "888:888" # HLS
+      - "554:554" # RTSP
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../assets/stub_imgs:/stub_imgs

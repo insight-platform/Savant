@@ -94,6 +94,14 @@ Sample location: [panoptic_driving_perception](./panoptic_driving_perception)
 
 ## Utility And Coding Examples
 
+
+### Retina RTSP and RTCP SR Sample
+
+The sample shows how to synchronize multiple RTSP streams by RTCP SR NTP data with the Savant Retina RTSP adapter.
+
+Sample location: [retina_rtsp_rtcp_sr](./retina_rtsp_rtcp_sr)
+
+
 ### OpenCV CUDA MOG2 Background Segmentation Demo
 
 Sample location: [opencv_cuda_bg_remover_mog2](./opencv_cuda_bg_remover_mog2)
