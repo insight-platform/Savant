@@ -214,7 +214,8 @@ The following source adapters are available:
 - [Local image file](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#image-file-source-adapter);
 - [Local directory of image files](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#image-file-source-adapter);
 - [Image URL](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#image-file-source-adapter);
-- [RTSP stream](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#rtsp-source-adapter);
+- [RTSP stream (FFmpeg)](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#ffmpeg-rtsp-source-adapter);
+- [Multi-stream RTSP (Retina)](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#retina-rtsp-source-adapter);
 - [USB/CSI camera](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#usb-cam-source-adapter);
 - [GigE (Genicam) industrial cam](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#gige-vision-source-adapter);
 - [Kafka-Redis](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#kafka-redis-source-adapter);
@@ -282,6 +283,15 @@ Savant supports processing parallelization; it helps to utilize the available re
 parallelization is achieved by running the pipeline stages in separate threads. Despite flow control-related Python code
 is not parallel; the developer can utilize GIL-releasing mechanisms to achieve the desired parallelization with NumPy,
 Numba, or custom native code in C++ or Rust.
+
+### Advanced RTSP Synchronization
+
+Savant provides means to synchronize RTSP streams by RTCP Sender Reports (SR) out of the box with the Retina RTSP [adapter](https://insight-platform.github.io/savant-rs/services/retina_rtsp/index.html).
+
+### Non-linear Video Analyitics And Smart Archive
+
+Savant provides a special tool to record, replay and restream video with the REST-controlled Replay [service](https://insight-platform.github.io/savant-rs/services/replay/index.html).
+
 
 ## What's Next
 

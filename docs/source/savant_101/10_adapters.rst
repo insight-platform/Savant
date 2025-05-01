@@ -460,7 +460,7 @@ Running with the helper script:
     ./scripts/run_source.py ffmpeg --source-id=test --ffmpeg-params=input_format=mjpeg,video_size=1280x720 --device=/dev/video0 /dev/video0
 
 FFmpeg RTSP Source Adapter
-^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The RTSP Source Adapter delivers RTSP stream to a module. This adapter is based on FFmpeg and supports wide variety of cameras.
 
