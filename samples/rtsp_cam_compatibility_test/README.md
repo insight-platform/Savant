@@ -37,7 +37,7 @@ RETINA_RTSP_CREDENTIALS={"username": "admin", "password": "password"}
 ## FFmpeg adapter
 
 ```bash
-docker compose -f samples/rtsp_cam_compatibility_test/docker-compose-retina.yml up
+docker compose -f samples/rtsp_cam_compatibility_test/docker-compose-ffmpeg.yml up
 ```
 
 See if it works: http://127.0.0.1:888/stream/test
