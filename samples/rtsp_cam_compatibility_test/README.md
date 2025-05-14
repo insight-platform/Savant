@@ -50,5 +50,5 @@ docker compose -f samples/rtsp_cam_compatibility_test/docker-compose-retina.yml 
 
 See if it works:
 
-- Stream without RTCP SR from camera: http://127.0.0.1:888/stream/no-rtcp-sr/ (it will work if camera is supported, otherwise stub)
-- Stream with RTCP SR from camera: http://127.0.0.1:888/stream/rtcp-sr/ (it will work if camera is supported and sends RTCP SR, otherwise stub)
+- Stream without RTCP SR from camera: http://127.0.0.1:888/stream/no-rtcp-sr/ (it will work if camera is supported, otherwise you see a stub);
+- Stream with RTCP SR from camera: http://127.0.0.1:888/stream/rtcp-sr/ (it will work if camera is supported and sends RTCP SR, otherwise you see a stub).
