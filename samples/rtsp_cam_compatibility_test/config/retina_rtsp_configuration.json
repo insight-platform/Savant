@@ -1,0 +1,56 @@
+{
+    "sink": {
+        "url": "${ZMQ_ENDPOINT}",
+        "options": {
+            "send_timeout": {
+                "secs": 1,
+                "nanos": 0
+            },
+            "send_retries": 3,
+            "receive_timeout": {
+                "secs": 1,
+                "nanos": 0
+            },
+            "receive_retries": 3,
+            "send_hwm": 1000,
+            "receive_hwm": 1000,
+            "inflight_ops": 100
+        }
+    },
+    "rtsp_sources": {
+        "rtcp_sr": {
+            "sources": [
+                {
+                    "source_id": "rtcp-sr",
+                    "url": "${URI}",
+                    "options": ${RETINA_RTSP_CREDENTIALS:-null}
+                }
+            ],
+            "rtcp_sr_sync": {
+                "group_window_duration": {
+                    "secs": 0,
+                    "nanos": 3000000
+                },
+                "batch_duration": {
+                    "secs": 0,
+                    "nanos": 100000
+                }
+            }
+        },
+        "no_rtcp_sr": {
+            "sources": [
+                {
+                    "source_id": "no-rtcp-sr",
+                    "url": "${URI}",
+                    "options": ${RETINA_RTSP_CREDENTIALS:-null}
+                }
+            ]
+        }
+
+    },
+    "reconnect_interval": {
+        "secs": 5,
+        "nanos": 0
+    },
+    "eos_on_restart": true
+}

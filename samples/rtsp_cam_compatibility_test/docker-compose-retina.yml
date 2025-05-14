@@ -1,0 +1,46 @@
+services:
+
+  sync-rtsp-adapter:
+    image: ghcr.io/insight-platform/savant-retina-rtsp-x86:savant-latest
+    restart: unless-stopped
+    environment:
+      - RUST_LOG=info
+      - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
+      - URI
+      - RETINA_RTSP_CREDENTIALS
+    volumes:
+      - ./config/retina_rtsp_configuration.json:/opt/etc/configuration.json
+      - zmq_sockets:/tmp/zmq-sockets
+    depends_on:
+      broadcaster:
+        condition: service_started
+
+  broadcaster:
+    image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
+    restart: unless-stopped
+    ports:
+      - "6666:6666"
+      - "888:888" # HLS
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ../assets/stub_imgs:/stub_imgs
+    environment:
+      - ZMQ_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
+      - SOURCE_IDS=rtcp-sr,no-rtcp-sr
+      - STUB_FILE_LOCATION=/stub_imgs/smpte100_1920x1080.jpeg
+      - DEV_MODE=True
+      # - METADATA_OUTPUT=logger # Uncomment to check Retina NTP metadata in the logs. 
+      # For the details look here https://insight-platform.github.io/savant-rs/services/retina_rtsp/3_configuration.html#rtcp-sr-sync-configurations
+    command: python -m adapters.ds.sinks.always_on_rtsp
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+
+volumes:
+  zmq_sockets:
+
+

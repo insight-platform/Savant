@@ -4,25 +4,51 @@ This pipeline is a simple pipeline that can be used to test the compatibility of
 
 It uses NVDEC and NVENC internally and Savant protocol. Thus, if the pipeline works, it means that Savant highly likely will work with the camera.
 
-The resulting video is broadcast in 640x360 resolution. You can access it at `http://<ip>:888/stream/test`.
+The resulting video is broadcast in 640x360 resolution. See the following sections to find out how to use the sample and access the stream.
 
-Tested on platforms:
+## RTSP Adapter Variants
 
-- Nvidia Turing
-- Nvidia Jetson Orin family
+The sample allows testing RTSP streams with:
+
+- FFmpeg-based RTSP adapter (does not support RTCP Sender Reports, but potentially more cameras are supported);
+- Retina-based RTSP adapter (supports RTCP Sender Reports and cross-stream synchronizations, but potentially fewer cameras are supported).
+
 
 ## Specifying the RTSP URL
 
 Edit `.env` file and set the `URI` variable to the RTSP URL of the camera.
 
-## X86
+Example: 
 
-```bash
-docker-compose -f docker-compose.x86.yml up
+```
+URI=rtsp://hello.savant.video:8554/stream/town-centre
 ```
 
-# L4T (Jetson)
+### RTSP Credentials
+
+For FFmpeg encode login and password in the URI. For Retina RTSP use the `RETINA_RTSP_CREDENTIALS` variable in the `.env` file.
+
+Example:
+
+```
+RETINA_RTSP_CREDENTIALS={"username": "admin", "password": "password"}
+```
+
+## FFmpeg adapter
 
 ```bash
-docker-compose -f docker-compose.l4t.yml up
+docker compose -f samples/rtsp_cam_compatibility_test/docker-compose-ffmpeg.yml up
 ```
+
+See if it works: http://127.0.0.1:888/stream/test
+
+# Retina adapter
+
+```bash
+docker compose -f samples/rtsp_cam_compatibility_test/docker-compose-retina.yml up
+```
+
+See if it works:
+
+- Stream without RTCP SR from camera: http://127.0.0.1:888/stream/no-rtcp-sr/ (it will work if camera is supported, otherwise you see a stub);
+- Stream with RTCP SR from camera: http://127.0.0.1:888/stream/rtcp-sr/ (it will work if camera is supported and sends RTCP SR, otherwise you see a stub).
