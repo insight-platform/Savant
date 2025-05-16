@@ -215,7 +215,7 @@ def get_location(
 
 
 def frame_has_objects(frame: VideoFrame):
-    return bool(frame.access_objects(MatchQuery.idle()))
+    return frame.has_objects()
 
 
 def get_tag_location(frame: VideoFrame):
