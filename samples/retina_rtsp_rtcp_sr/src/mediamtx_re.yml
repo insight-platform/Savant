@@ -29,3 +29,16 @@ paths:
     source: rtsp://mediamtx-src:554/source
     useAbsoluteTimestamp: yes
     rtspTransport: tcp
+
+
+authInternalUsers:
+- user: player
+  pass: player
+  ips: []
+  permissions:
+  - action: publish
+    path:
+  - action: read
+    path:
+  - action: playback
+    path:

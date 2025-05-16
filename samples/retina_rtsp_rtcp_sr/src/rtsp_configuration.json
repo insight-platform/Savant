@@ -22,11 +22,19 @@
             "sources": [
                 {
                     "source_id": "main",
-                    "url": "${RTSP_MAIN_URI}"
+                    "url": "${RTSP_MAIN_URI}",
+                    "options": {
+                        "username": "player",
+                        "password": "player"
+                    }
                 },
                 {
                     "source_id": "overlay",
-                    "url": "${RTSP_OVERLAY_URI}"
+                    "url": "${RTSP_OVERLAY_URI}",
+                    "options": {
+                        "username": "player",
+                        "password": "player"
+                    }
                 }
             ],
             "rtcp_sr_sync": {

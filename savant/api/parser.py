@@ -82,7 +82,7 @@ def parse_tags(frame: VideoFrame):
 def parse_video_objects(frame: VideoFrame):
     parents = {}
     objects = {}
-    for obj in frame.access_objects(MatchQuery.idle()):
+    for obj in frame.get_all_objects():
         for child in frame.get_children(obj.id):
             parents[child.id] = obj
         objects[obj.id] = parse_video_object(obj)

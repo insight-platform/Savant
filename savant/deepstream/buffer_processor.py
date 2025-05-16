@@ -170,7 +170,7 @@ class NvDsBufferProcessor(GstBufferProcessor):
 
         all_nvds_obj_metas = {}
         # add external objects to nvds meta
-        for obj_meta in video_frame.access_objects(MatchQuery.idle()):
+        for obj_meta in video_frame.get_all_objects():
             obj_key = build_model_object_key(obj_meta.namespace, obj_meta.label)
 
             bbox = obj_meta.detection_box
@@ -238,7 +238,7 @@ class NvDsBufferProcessor(GstBufferProcessor):
 
         # finish configuring obj metas by assigning the parents
         # TODO: fix query to iterate only objects with children
-        for parent in video_frame.access_objects(MatchQuery.idle()):
+        for parent in video_frame.get_all_objects():
             for child in video_frame.get_children(parent.id):
                 all_nvds_obj_metas[child.id].parent = all_nvds_obj_metas[parent.id]
 
