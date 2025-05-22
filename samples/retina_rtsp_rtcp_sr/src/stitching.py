@@ -1,15 +1,15 @@
-from dataclasses import dataclass
 from collections import deque
+from dataclasses import dataclass
 from typing import Deque, Dict, List, NamedTuple, Optional
 
 import cv2
+
 from savant.deepstream.auxiliary_stream import AuxiliaryStream
 from savant.deepstream.meta.frame import NvDsFrameMeta
-from savant.deepstream.opencv_utils import nvds_to_gpu_mat
+from savant.deepstream.opencv_utils import draw_rect, nvds_to_gpu_mat
 from savant.deepstream.pyfunc import NvDsPyFuncPlugin
 from savant.gstreamer import Gst
 from savant.utils import log as logging
-from savant.deepstream.opencv_utils import draw_rect
 
 
 class Frame(NamedTuple):
@@ -28,7 +28,7 @@ class Source:
 def prepare_sources(sources_cfg: List[Dict]) -> List[Source]:
     return [
         Source(
-            id=source_cfg["id"],
+            id=source_cfg['id'],
         )
         for source_cfg in sources_cfg
     ]
@@ -62,21 +62,21 @@ class CombineFrames(NvDsPyFuncPlugin):
         **kwargs,
     ):
         self.batches: Dict[int, Batch] = {}
-        self.logger = logging.get_logger(f"{__name__}.{self.__class__.__name__}")
-        self.output_width, self.output_height = output["width"], output["height"]
+        self.logger = logging.get_logger(f'{__name__}.{self.__class__.__name__}')
+        self.output_width, self.output_height = output['width'], output['height']
         self.logger.info(
-            f"Output frame dimensions: {self.output_width}x{self.output_height}"
+            f'Output frame dimensions: {self.output_width}x{self.output_height}'
         )
 
-        self.sources: List[Source] = prepare_sources(source["sources"])
+        self.sources: List[Source] = prepare_sources(source['sources'])
         self.source_by_id: Dict[str, Source] = {
             source.id: source for source in self.sources
         }
         for source in self.sources:
-            self.logger.info(f"Source {source.id}")
+            self.logger.info(f'Source {source.id}')
 
-        self.output_source_id = output["source_id"]
-        self.output_framerate = output["framerate"]
+        self.output_source_id = output['source_id']
+        self.output_framerate = output['framerate']
         self.codec_params = codec_params
 
         self.queue_size = queue_size
@@ -85,18 +85,18 @@ class CombineFrames(NvDsPyFuncPlugin):
         self.last_batch_id: Optional[int] = None
         self.last_pts: Optional[int] = None
 
-        self.logger.info(f"Initializing CombineFrames plugin")
+        self.logger.info(f'Initializing CombineFrames plugin')
         super().__init__(**kwargs)
 
     def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
         batch_attr = (
-            frame_meta.video_frame.get_attribute("retina-rtsp", "batch-id")
+            frame_meta.video_frame.get_attribute('retina-rtsp', 'batch-id')
             .values[0]
             .as_string()
         )
         batch_id = int(batch_attr)
         sources = (
-            frame_meta.video_frame.get_attribute("retina-rtsp", "batch-sources")
+            frame_meta.video_frame.get_attribute('retina-rtsp', 'batch-sources')
             .values[0]
             .as_strings()
         )
@@ -106,20 +106,20 @@ class CombineFrames(NvDsPyFuncPlugin):
             full_batch = False
 
         self.logger.debug(
-            f"Batch ID: {batch_id}, Sources: {sources}, Full batch: {full_batch}"
+            f'Batch ID: {batch_id}, Sources: {sources}, Full batch: {full_batch}'
         )
 
         self.logger.debug(
-            "Processing frame %s from source %s and batch %s. Batch %s full.",
+            'Processing frame %s from source %s and batch %s. Batch %s full.',
             frame_meta.pts,
             frame_meta.source_id,
             batch_id,
-            "is" if full_batch else "is not",
+            'is' if full_batch else 'is not',
         )
 
         if not full_batch:
             self.logger.warning(
-                "Batch %s %s, Frame %s/%s is not part of a full batch. Skipping.",
+                'Batch %s %s, Frame %s/%s is not part of a full batch. Skipping.',
                 batch_id,
                 sources,
                 frame_meta.source_id,
@@ -149,20 +149,20 @@ class CombineFrames(NvDsPyFuncPlugin):
                 del self.batches[current_batch.batch_id]
 
                 self.logger.debug(
-                    f"Current batch: {current_batch.batch_id}, is complete: {current_batch.is_complete()}"
+                    f'Current batch: {current_batch.batch_id}, is complete: {current_batch.is_complete()}'
                 )
 
                 if not current_batch.is_complete():
                     self.logger.warning(
-                        f"Batch {current_batch.batch_id} is not complete. Skipping."
+                        f'Batch {current_batch.batch_id} is not complete. Skipping.'
                     )
                     return
 
-                self.logger.debug(f"Batch {min_batch_id} is complete. Processing.")
+                self.logger.debug(f'Batch {min_batch_id} is complete. Processing.')
                 if self.last_batch_id:
                     if min_batch_id <= self.last_batch_id:
                         self.logger.warning(
-                            f"Batch {min_batch_id} is not greater than last batch {self.last_batch_id}. Skipping."
+                            f'Batch {min_batch_id} is not greater than last batch {self.last_batch_id}. Skipping.'
                         )
                         return
 
@@ -188,13 +188,13 @@ class CombineFrames(NvDsPyFuncPlugin):
         )
         if self.last_pts and pts <= self.last_pts:
             self.logger.warning(
-                f"Batch {batch_id} has PTS {pts} which is not greater than last PTS {self.last_pts}. Skipping."
+                f'Batch {batch_id} has PTS {pts} which is not greater than last PTS {self.last_pts}. Skipping.'
             )
             return None
         self.last_pts = pts
 
         self.logger.debug(
-            "Dewarping and combining %s frames from batch %s. PTS: %s.",
+            'Dewarping and combining %s frames from batch %s. PTS: %s.',
             len(frames_to_combine),
             batch_id,
             pts,
@@ -211,20 +211,20 @@ class CombineFrames(NvDsPyFuncPlugin):
     ):
 
         batch_id = next(iter(frames_to_combine.values())).batch_id
-        self.logger.debug("[Batch %s] Combining frames.", batch_id)
+        self.logger.debug('[Batch %s] Combining frames.', batch_id)
 
         for i, source in enumerate(self.sources):
-            self.logger.debug("[Batch %s] Processing source %s.", batch_id, source.id)
+            self.logger.debug('[Batch %s] Processing source %s.', batch_id, source.id)
             frame = frames_to_combine.get(source.id)
             if frame is None:
                 self.logger.warning(
-                    "[Batch %s] Missing frame for source %s.", batch_id, source.id
+                    '[Batch %s] Missing frame for source %s.', batch_id, source.id
                 )
                 return
 
         stitched_width, stitched_height = output_mat.size()
-        main_w, main_h = frames_to_combine["main"].content.size()
-        overlay_w, overlay_h = frames_to_combine["overlay"].content.size()
+        main_w, main_h = frames_to_combine['main'].content.size()
+        overlay_w, overlay_h = frames_to_combine['overlay'].content.size()
 
         assert main_w == overlay_w
         assert main_h == overlay_h
@@ -232,11 +232,11 @@ class CombineFrames(NvDsPyFuncPlugin):
         assert main_h == stitched_height
         assert main_w == self.output_width
 
-        main_cam = self.source_by_id["main"]
+        main_cam = self.source_by_id['main']
         main_frame: Frame = frames_to_combine.get(main_cam.id)
         main_frame_content: cv2.cuda.GpuMat = main_frame.content
 
-        overlay_cam = self.source_by_id["overlay"]
+        overlay_cam = self.source_by_id['overlay']
         overlay_frame: Frame = frames_to_combine.get(overlay_cam.id)
         overlay_frame_content: cv2.cuda.GpuMat = overlay_frame.content
 
@@ -258,12 +258,17 @@ class CombineFrames(NvDsPyFuncPlugin):
         overlay_crop.copyTo(dst=overlay_crop_dest, stream=stream)
 
         stream.waitForCompletion()
-        draw_rect(output_mat, (self.output_width // 2, 0, self.output_width, self.output_height // 2), (255, 255, 255, 255), 2)
+        draw_rect(
+            output_mat,
+            (self.output_width // 2, 0, self.output_width, self.output_height // 2),
+            (255, 255, 255, 255),
+            2,
+        )
 
-        self.logger.debug("[Batch %s] Frames combined.", batch_id)
+        self.logger.debug('[Batch %s] Frames combined.', batch_id)
 
     def on_start(self) -> bool:
-        self.logger.info("Starting CombineFrames plugin")
+        self.logger.info('Starting CombineFrames plugin')
         if not super().on_start():
             return False
 
@@ -276,13 +281,13 @@ class CombineFrames(NvDsPyFuncPlugin):
                 framerate=self.output_framerate,
             )
         except Exception as e:
-            self.logger.error("Failed to create output stream: %s", e, exc_info=True)
+            self.logger.error('Failed to create output stream: %s', e, exc_info=True)
             return False
 
         return True
 
     def on_source_eos(self, source_id: str):
-        self.logger.info("Got EOS from source %s.", source_id)
+        self.logger.info('Got EOS from source %s.', source_id)
         for source in self.sources:
             source.pending_frames = deque()
 

@@ -1,6 +1,5 @@
 from typing import Tuple, Union
 
-from savant_rs.match_query import MatchQuery
 from savant_rs.primitives import (
     Attribute,
     AttributeValue,
