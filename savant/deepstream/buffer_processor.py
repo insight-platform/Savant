@@ -10,7 +10,6 @@ from pygstsavantframemeta import (
     gst_buffer_get_savant_frame_meta,
     nvds_frame_meta_get_nvds_savant_frame_meta,
 )
-from savant_rs.match_query import MatchQuery
 from savant_rs.pipeline2 import VideoPipeline
 from savant_rs.primitives import (
     VideoFrame,
