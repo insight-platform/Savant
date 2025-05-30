@@ -258,6 +258,10 @@ jobs:
             runner: X64
           - image: savant-retina-rtsp-arm64
             runner: ARM64
+          - image: savant-router-x86
+            runner: X64
+          - image: savant-router-arm64
+            runner: ARM64
     runs-on:
       - self-hosted
       - ${{ matrix.runner }}
