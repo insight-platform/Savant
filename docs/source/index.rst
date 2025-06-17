@@ -128,12 +128,12 @@ Savant supports processing parallelization; it helps to utilize the available re
 
 
 🕛 RTCP Sender Report-based RTSP Synchronization
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Savant provides means to synchronize RTSP streams by RTCP Sender Reports (SR) out of the box with the Retina RTSP `adapter <https://insight-platform.github.io/savant-rs/services/retina_rtsp/index.html>`__.
 
 📹 Non-linear Video Analyitics And Smart Archive
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Savant provides a special tool to record, replay and restream video with the REST-controlled Replay `service <https://insight-platform.github.io/savant-rs/services/replay/index.html>`__.
 
@@ -176,7 +176,7 @@ Savant provides a special tool to record, replay and restream video with the RES
    savant_101/40_cm
    savant_101/43_am
    savant_101/53_complexm
-   savant_101/55_preprocessing.rst
+   savant_101/55_preprocessing
    savant_101/60_nv_trackers
    savant_101/70_python
    savant_101/75_working_with_metadata
@@ -209,20 +209,22 @@ Savant provides a special tool to record, replay and restream video with the RES
    advanced_topics/9_prometheus_metrics
    advanced_topics/9_input_json_metadata
    advanced_topics/10_client_sdk
-   advanced_topics/11_memory_representation_function.rst
-   advanced_topics/12_torch_hub.rst
-   advanced_topics/13_auxiliary_video_streams.rst
-   advanced_topics/14_jetson_dla.rst
-   advanced_topics/15_managed_pipeline_shutdown.rst
-   advanced_topics/15_embedded_kvs.rst
-   advanced_topics/16_pipeline_watchdog.rst
+   advanced_topics/11_memory_representation_function
+   advanced_topics/12_torch_hub
+   advanced_topics/13_auxiliary_video_streams
+   advanced_topics/14_jetson_dla
+   advanced_topics/15_managed_pipeline_shutdown
+   advanced_topics/15_embedded_kvs
+   advanced_topics/16_pipeline_watchdog
+   advanced_topics/17_restreaming
+   advanced_topics/18_stream_routing
 
 .. toctree::
    :maxdepth: 0
    :hidden:
    :caption: Cookbook
 
-   recipes/index.rst
+   recipes/index
 
 .. toctree::
    :maxdepth: 1

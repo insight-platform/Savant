@@ -186,3 +186,9 @@ Sample location: [auxiliary_streams](./auxiliary_streams)
 A pipeline demonstrates processing of streams at the original resolution, i.e. without scaling to a single resolution.
 
 Sample location: [original_resolution_processing](original_resolution_processing)
+
+### Router demonstration
+
+A pipeline demonstrates the router service distributing video streams between screenshot maker and video archiving sink.
+
+Sample location: [router](router)

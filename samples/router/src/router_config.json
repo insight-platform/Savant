@@ -1,0 +1,48 @@
+{
+    "ingres": [
+        {
+            "name": "ingress",
+            "socket": {
+                "url": "sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc"
+            },
+            "handler": "ingress_handler"
+        }
+    ],
+    "egress": [
+        {
+            "name": "screenshots",
+            "socket": {
+                "url": "dealer+bind:ipc:///tmp/zmq-sockets/screenshots.ipc"
+            },
+            "matcher": "[screenshots]"
+        },
+        {
+            "name": "archive",
+            "socket": {
+                "url": "dealer+bind:ipc:///tmp/zmq-sockets/archive.ipc"
+            }
+        }
+    ],
+    "common": {
+        "init": {
+            "python_root": "${PYTHON_MODULE_ROOT}",
+            "module_name": "router",
+            "function_name": "init",
+            "args": {
+                "screenshot_period": ${SCREENSHOT_PERIOD:-10}
+            }
+        },
+        "source_affinity_cache_size": 1000,
+        "name_cache": {
+            "ttl": {
+                "secs": 10,
+                "nanos": 0
+            },
+            "size": 1000
+        },
+        "idle_sleep": {
+            "secs": 0,
+            "nanos": 1000
+        }
+    }
+}
