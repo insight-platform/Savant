@@ -1,0 +1,12 @@
+name: screenshot-maker
+
+parameters:
+  batch_size: 1
+  output_frame:
+    codec: jpeg
+  draw_func:
+    module: samples.router.src.screenshot_maker
+    class_name: Overlay
+
+pipeline:
+  elements: []
