@@ -240,32 +240,13 @@ jobs:
           push: true
 
   # retag replay containers
-  retag-savant-rs-containers:
+  retag-savant-rs-platform-containers:
     needs: init
+    runs-on: ubuntu-latest
 
     permissions:
       packages: write
 
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - image: savant-replay-x86
-            runner: X64
-          - image: savant-replay-arm64
-            runner: ARM64
-          - image: savant-retina-rtsp-x86
-            runner: X64
-          - image: savant-retina-rtsp-arm64
-            runner: ARM64
-          - image: savant-router-x86
-            runner: X64
-          - image: savant-router-arm64
-            runner: ARM64
-    runs-on:
-      - self-hosted
-      - ${{ matrix.runner }}
-        
     steps:
       - name: Log in to the container registry
         uses: docker/login-action@v3
@@ -273,11 +254,12 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ github.token }}
+
+      - name: Set up docker buildx
+        uses: docker/setup-buildx-action@v3
           
-      - name: Pull and retag container
+      - name: Retag savant-rs platform containers
         run: |
-          docker pull ${{ env.REGISTRY }}/insight-platform/${{ matrix.image }}:${{ needs.init.outputs.savant-rs-version }}-rolling
-          
           # Set tag based on the reference
           TAG_NAME=$(if [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then 
             echo "savant-latest"; 
@@ -285,8 +267,24 @@ jobs:
             echo "v${{ needs.init.outputs.savant-version }}"; 
           fi)
           
-          docker tag ${{ env.REGISTRY }}/insight-platform/${{ matrix.image }}:${{ needs.init.outputs.savant-rs-version }}-rolling ${{ env.REGISTRY }}/insight-platform/${{ matrix.image }}:$TAG_NAME
-          docker push ${{ env.REGISTRY }}/insight-platform/${{ matrix.image }}:$TAG_NAME
+          # List of images to retag
+          IMAGES=(
+            "savant-replay-x86"
+            "savant-replay-arm64"
+            "savant-retina-rtsp-x86"
+            "savant-retina-rtsp-arm64"
+            "savant-router-x86"
+            "savant-router-arm64"
+            "savant-rs-py313"
+          )
+          
+          # Retag each image using docker buildx imagetools
+          for image in "${IMAGES[@]}"; do
+            echo "Retagging $image..."
+            docker buildx imagetools create \
+              --tag ${{ env.REGISTRY }}/insight-platform/$image:$TAG_NAME \
+              ${{ env.REGISTRY }}/insight-platform/$image:${{ needs.init.outputs.savant-rs-version }}-rolling
+          done
 
   # build documentation
   build-docs:
