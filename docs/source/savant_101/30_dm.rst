@@ -1,7 +1,7 @@
 Detection Unit
 ==============
 
-To create a detector unit the developer have to write the ``nvinfer@detector`` declaration like it's shown in the following listing:
+To create a detector unit the developer has to write the ``nvinfer@detector`` declaration as shown in the following listing:
 
 .. code-block:: yaml
 

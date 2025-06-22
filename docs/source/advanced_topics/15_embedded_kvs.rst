@@ -86,7 +86,7 @@ Getting Keys Names by Glob
 
     **Response**
 
-    .. sourcecode:: http
+    .. code-block:: http
 
         HTTP/1.1 200 OK
         Content-Type: application/json
@@ -108,7 +108,7 @@ Getting Attributes by Glob
 
     **Response**
 
-    .. sourcecode:: http
+    .. code-block:: http
 
         HTTP/1.1 200 OK
 
@@ -125,7 +125,7 @@ Getting Attributes by Exact Match
 
     **Response**
 
-    .. sourcecode:: http
+    .. code-block:: http
 
         HTTP/1.1 200 OK
 
@@ -181,7 +181,7 @@ Returns messages in pairs (JSON - for metadata, serialized AttributeSet - for at
         "ttl":null
     }]
 
-.. code-block::
+.. code-block:: text
 
     <protobuf-serialized AttributeSet>
     ...

@@ -8,7 +8,7 @@ The limitations are connected with the infamous GIL: a global mutex required to 
 So, by enabling multithreaded execution in Savant, you may benefit from frameworks releasing GIL. However, you need to remember that when you release GIL, you must wait for it back after the release ends. Specifically, short-running operations suffer from excessive GIL releases.
 Regular GIL-keeping Python operations looks like as follows:
 
-.. code-block::
+.. code-block:: python
 
     op:
       Acquire_GIL  # takes time to wait when GIL is unlocked
@@ -17,7 +17,7 @@ Regular GIL-keeping Python operations looks like as follows:
 
 The operation releasing GIL looks like as follows:
 
-.. code-block::
+.. code-block:: python
 
     op:
       Acquire_GIL # takes time to wait when GIL is unlocked
@@ -76,3 +76,19 @@ Python multithreading can be enabled by placing GStreamer ``queue`` elements bef
 By activating ``buffer_queues`` you unlock the threading and deploy the GStreamer queue before every ``pyfunc``, but you also must ensure that the pipeline has enough frames prepared for processing. Without that, queues do not unlock their potential because DeepStream does not ingest enough frames into the pipeline.
 
 There are two configuration variables allowing configuring the number of frames prepared by DeepStream for processing and they limit the maximum number of elements enqueued in the queues. They are ``muxer_buffer_pool_size`` and ``stream_buffer_pool_size`` and discussed in the :any:`Nvidia Stream Muxer and Converter Configuration <deepstream_buffering_configuration>`.
+
+.. code-block:: python
+
+    from savant.base.frame_filter import BaseFrameFilter
+    from savant.base.pyfunc import BasePyFuncPlugin
+    from savant.config.schema import BufferQueuesConfig
+    from savant.utils.logging import get_logger
+
+    logger = get_logger(__name__)
+
+.. code-block:: python
+
+    class MyFrameFilter(BaseFrameFilter):
+        def should_process_frame(self, frame_meta):
+            # Your filtering logic here
+            return True
