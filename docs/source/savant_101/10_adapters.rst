@@ -96,6 +96,7 @@ Or:
 Not all socket pairs form "sane" communication patterns, so, you must use combinations colored green:
 
 .. image:: ../_static/img/10_adapters_normal_pairs.png
+   :alt: Diagram showing normal ZeroMQ socket pairs for communication
 
 The Rules Of Thumb
 ------------------
@@ -241,6 +242,8 @@ Most source adapters accept the following common parameters:
 - ``FPS_OUTPUT``; a path to the file for FPS reports; default is ``stdout``;
 - ``USE_ABSOLUTE_TIMESTAMPS``; when ``True`` the adapter puts absolute timestamps into the frames, i.e. the timestamps of the frames start from the time of adapter launch; default is ``False``.
 
+.. _image_file_source_adapter:
+
 Image File Source Adapter
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -297,6 +300,8 @@ Running with the helper script:
 
     ./scripts/run_source.py images --source-id=test /path/to/images
 
+.. _video_file_source_adapter:
+
 Video File Source Adapter
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -343,6 +348,8 @@ Running with the helper script:
 
     The resulting video stream framerate is set to the framerate of the first video file; subsequent files are delivered with the same FPS. Consider having the same framerate for all video files or serving each file separately. The adapter is lightweight, and the cost of launching is negligible.
 
+.. _video_loop_source_adapter:
+
 Video Loop Source Adapter
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -386,6 +393,8 @@ Running with the helper script:
 .. code-block:: bash
 
     ./scripts/run_source.py video-loop --source-id=test /path/to/data/test.mp4
+
+.. _ffmpeg_source_adapter:
 
 FFmpeg Source Adapter
 ^^^^^^^^^^^^^^^^^^^^^
@@ -458,6 +467,8 @@ Running with the helper script:
 .. code-block:: bash
 
     ./scripts/run_source.py ffmpeg --source-id=test --ffmpeg-params=input_format=mjpeg,video_size=1280x720 --device=/dev/video0 /dev/video0
+
+.. _ffmpeg_rtsp_source_adapter:
 
 FFmpeg RTSP Source Adapter
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -532,6 +543,8 @@ The Retina RTSP Source Adapter delivers multiple RTSP streams to a module. It su
 
 The adapter documentation is available `here <https://insight-platform.github.io/savant-rs/services/retina_rtsp/index.html>`__.
 
+.. _usb_cam_source_adapter:
+
 USB Cam Source Adapter
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -585,6 +598,8 @@ Related articles in the Savant blog:
 
 - `How To Work With MJPEG USB Camera in Savant <https://b.savant-ai.io/2024/03/14/how-to-work-with-mjpeg-usb-camera-in-savant/>`_;
 - `Emulating USB Camera In Linux With FFmpeg and V4L2 Loopback <https://b.savant-ai.io/2024/02/23/emulating-usb-camera-in-linux/>`_.
+
+.. _gige_vision_source_adapter:
 
 GigE Vision Source Adapter
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -689,6 +704,8 @@ Running with the helper script:
 
     ./scripts/run_source.py multi-stream --source-id-pattern='camera-%d' --number-of-sources=4 --shutdown-auth=shutdown-key /path/to/data/test.mp4
 
+.. _kafka_redis_source_adapter:
+
 Kafka-Redis Source Adapter
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -739,6 +756,8 @@ Running with the helper script:
 .. code-block:: bash
 
     ./scripts/run_source.py kafka-redis --brokers=kafka:9092 --topic=kafka-redis-adapter-demo --group-id=kafka-redis-adapter-demo
+
+.. _kinesis_video_stream_source_adapter:
 
 Kinesis Video Stream Source Adapter
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -952,7 +971,7 @@ Message Dump Player Source Adapter
 
 The Message Dump Player Adapter plays video dumps sequentially from a playlist file and sends them to a module.
 Playlist file contains a list of message dump files, one per line.
-It's one shot adapter, i.e. it stops after playing all files from the playlist.
+It's a one-shot adapter, i.e. it stops after playing all files from the playlist.
 
 **Parameters**:
 
@@ -997,6 +1016,8 @@ All sync adapters accept the following parameters:
 
 - ``ZMQ_ENDPOINT``: a ZeroMQ socket for data input matching the one specified in module's output;  the endpoint coding scheme is ``[<socket_type>+(bind|connect):]<endpoint>``;
 
+.. _json_metadata_sink_adapter:
+
 JSON Metadata Sink Adapter
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -1021,7 +1042,7 @@ If the ``FILENAME_PATTERN`` contains an extension (e.g., ``.json-stream``) it is
 
 When the ``FILENAME_PATTERN`` contains ``%chunk_idx`` the pattern will be used as is, for example:
 
-.. code-block::
+.. code-block:: text
 
     /out/%source_id/%chunk_idx/metadata.json
 
@@ -1029,14 +1050,14 @@ When the ``FILENAME_PATTERN`` contains ``%chunk_idx`` the pattern will be used a
 or
 
 
-.. code-block::
+.. code-block:: text
 
     /out/%source_id/%chunk_idx/metadata # .json will be added
 
 
 If the ``FILENAME_PATTERN`` does not contain ``%chunk_idx`` and the ``CHUNK_SIZE`` is set to a value greater than ``0``, the filename is constructed as:
 
-.. code-block::
+.. code-block:: text
 
     {FILENAME_PATTERN}_{CHUNK_IDX}.{EXTENSION}
 
@@ -1047,7 +1068,7 @@ If the ``FILENAME_PATTERN`` does not contain ``%chunk_idx`` and the ``CHUNK_SIZE
 
 When the ``CHUNK_SIZE`` is set to ``0``, the name is built as:
 
-.. code-block::
+.. code-block:: text
 
     {FILENAME_PATTERN}.json
 
@@ -1076,6 +1097,8 @@ Running with the helper script:
 
     ./scripts/run_sink.py meta-json /path/to/output/%source_id-%src_filename
 
+
+.. _image_file_sink_adapter:
 
 Image File Sink Adapter
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -1115,6 +1138,8 @@ Running with the helper script:
 
     ./scripts/run_sink.py image-files /path/to/output/%source_id-%src_filename
 
+.. _video_file_sink_adapter:
+
 Video File Sink Adapter
 ^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -1151,6 +1176,8 @@ Running with the helper script:
 .. code-block:: bash
 
     ./scripts/run_sink.py video-files /path/to/output/%source_id-%src_filename
+
+.. _display_sink_adapter:
 
 Display Sink Adapter
 ^^^^^^^^^^^^^^^^^^^^
@@ -1194,6 +1221,8 @@ Running with the helper script:
 .. code-block:: bash
 
     ./scripts/run_sink.py display
+
+.. _always_on_rtsp_sink_adapter:
 
 Always-On RTSP Sink Adapter
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1297,15 +1326,15 @@ The simplified design of the adapter is depicted in the following diagram:
       - ``True``
       - ``False``
     * - ``REALTIME``
-      - A flag indicating whether to synchronise frames at realtime (i.e. using absolute timestamps); ignored when ``SYNC_INPUT=False``.
+      - A flag indicating whether to synchronize frames at real-time (i.e. using absolute timestamps); ignored when ``SYNC_INPUT=False``.
       - ``False``
       - ``True``
     * - ``SYNC_OFFSET_MS``
-      - An offset in milliseconds to adjust the synchronisation. Tune this parameter to play video more smoothly. When ``REALTIME=False``, the offset is applied to the timestamp of the first frame; when ``REALTIME=True``, the offset is applied to the current time. Ignored when ``SYNC_INPUT=False``.
+      - An offset in milliseconds to adjust the synchronization. Tune this parameter to play video more smoothly. When ``REALTIME=False``, the offset is applied to the timestamp of the first frame; when ``REALTIME=True``, the offset is applied to the current time. Ignored when ``SYNC_INPUT=False``.
       - ``1000``
       - ``5000``
     * - ``SYNC_QUEUE_SIZE``
-      - A size of queue for frames to be synchronised; ignored when ``SYNC_INPUT=False``. Tune this parameter according to the stream framerate and ``SYNC_OFFSET_MS``.
+      - A size of queue for frames to be synchronized; ignored when ``SYNC_INPUT=False``. Tune this parameter according to the stream framerate and ``SYNC_OFFSET_MS``.
       - ``500``
       - ``1000``
     * - ``SOURCE_ID``
@@ -1578,6 +1607,8 @@ Response:
 
     "ok"
 
+.. _kafka_redis_sink_adapter:
+
 Kafka-Redis Sink Adapter
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -1626,6 +1657,8 @@ Running the adapter with the helper script:
 .. code-block:: bash
 
     ./scripts/run_sink.py kafka-redis --brokers=kafka:9092 --topic=kafka-redis-adapter-demo --redis-host=redis
+
+.. _multistream_kinesis_video_stream_sink_adapter:
 
 Multistream Kinesis Video Stream Sink Adapter
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1735,6 +1768,8 @@ Bridge adapters accept the following common parameters:
 
 - ``ZMQ_SINK_ENDPOINT``: a ZeroMQ socket for data input matching the one specified in module's output;  the endpoint coding scheme is ``<socket_type>+(bind|connect):<endpoint>``;
 - ``ZMQ_SRC_ENDPOINT``: adapter's socket where it sends media stream; it must form a valid ZeroMQ pair with module's input socket; the endpoint coding scheme is ``<socket_type>+(bind|connect):<endpoint>``;
+
+.. _buffer_bridge_adapter:
 
 Buffer Bridge Adapter
 ^^^^^^^^^^^^^^^^^^^^^

@@ -6,6 +6,7 @@ A module is an executable unit that is deployed and executed on Nvidia edge devi
 The module is responsible for managing every activity displayed in the following picture:
 
 .. image:: ../_static/img/1_pipeline_diagram.jpg
+   :alt: Savant pipeline diagram showing the flow of data through the module
 
 Module Runtime
 --------------
@@ -136,7 +137,7 @@ You specify the number in batches.
 
 In short, the following constraint must be satisfied:
 
-.. code-block::
+.. code-block:: text
 
     Number_Of_Streams x Converter_Allocated_Buffers >= Batch_size x Muxer_Allocated_Buffers
 

@@ -50,7 +50,7 @@ How The Pipeline Looks Like
 
 In computer vision field the `pipeline` is a name commonly used to describe a set of steps computing various algorithms on images resulting in transformed images and their metadata. Such algorithms may include traditional computer vision algorithms like background subtraction and modern approaches based on DNN.
 
-Savant is a framework to build pipelines. A pipeline implemented in Savant is called the `module`. We usually tell a `module` meaning `a running computer vision pipeline implemented in Savant`. Please remenber the term `module` as we use it in the text very often.
+Savant is a framework to build pipelines. A pipeline implemented in Savant is called the `module`. We usually tell a `module` meaning `a running computer vision pipeline implemented in Savant`. Please remember the term `module` as we use it in the text very often.
 
 Every Savant module consists of two parts: YAML configuration and Python code. YAML is used to define module `units` (pipeline steps), and the code is used to implement custom metadata processing. Remember the term `unit` as we use it a lot in the text.
 

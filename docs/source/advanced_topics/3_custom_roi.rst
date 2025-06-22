@@ -46,14 +46,20 @@ The custom ROI is created for the left half of the frame.
 
 The configuration file (module.yml) from Car Detection and Classification `demo <https://github.com/insight-platform/Savant/tree/develop/samples/nvidia_car_classification>`__ is taken as base for example. The pyfunc element is added before the detection model in the configuration file to create the custom ROI with the element name ``custom_roi`` and the label ``left_half`` on each frame. Then the custom ROI is set as an input object for detection model element using element_name and label.
 
-.. code-block:: YAML
+.. code-block:: yaml
 
-    ...
     pipeline:
       elements:
         - element: pyfunc
-          module: samples.nvidia_car_classification.custom_roi
-          class_name: CreateCustomROI
+          name: custom_roi
+          module: module.custom_roi
+          class_name: CustomROI
+          kwargs:
+            roi_config:
+              - name: "zone1"
+                points: [[100, 100], [300, 100], [300, 300], [100, 300]]
+              - name: "zone2"
+                points: [[400, 200], [600, 200], [600, 400], [400, 400]]
 
         # detector
         - element: nvinfer@detector
@@ -117,13 +123,13 @@ A new default ROI is created for the left half of the frame.
 
 The configuration file (module.yml) from Car Detection and Classification `demo <https://github.com/insight-platform/Savant/tree/develop/samples/nvidia_car_classification>`__ is taken as base for example. In the configuration file, a pyfunc element is added before the detection model to change the default ROI
 
-.. code-block:: YAML
+.. code-block:: yaml
 
-    ...
     pipeline:
       elements:
         - element: pyfunc
-          module: samples.nvidia_car_classification.custom_roi
+          name: custom_roi
+          module: module.custom_roi
           class_name: ChangeROI
 
         # detector
@@ -162,6 +168,6 @@ Delete Default ROI
 An example of how to delete the default ROI object from a frame is demonstrated in the Traffic Meter `demo <https://github.com/insight-platform/Savant/tree/develop/samples/traffic_meter>`__. In the demo, when the lines are not configured for a source, the default ROI is removed from a frame.
 
 .. literalinclude:: ../../../samples/traffic_meter/line_crossing.py
-  :language: YAML
+  :language: yaml
   :lines: 12-35
 

@@ -34,7 +34,7 @@ Use the ``ffplay`` command to test video visually:
 
 If you experience **periodic** packet losses like:
 
-.. code-block::
+.. code-block:: text
 
     [rtsp @ 0x7f7ba8000cc0] max delay reached. need to consume packet
     [rtsp @ 0x7f7ba8000cc0] RTP: missed 5 packets
@@ -45,7 +45,7 @@ If you experience **periodic** packet losses like:
 
 or
 
-.. code-block::
+.. code-block:: text
 
     [h264 @ 0x7f7ba8c315c0] concealing 11875 DC, 11875 AC, 11875 MV errors in I frame
 

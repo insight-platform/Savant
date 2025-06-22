@@ -105,19 +105,19 @@ Savant supports custom OpenCV CUDA bindings enabling operations on DeepStream's 
 🔦 PyTorch Support
 ^^^^^^^^^^^^^^^^^^
 
-Savant supports PyTorch, one of the most popular ML frameworks. It enables the developer to use ready-to-use PyTorch models from PyTorchHub, a large number of code samples, and reliable extensions. The integration is highly efficient: it allows running inference on GPU-allocated images and processing the results in GPU RAM, avoiding data transfers between CPU and GPU RAM.
+Savant supports PyTorch, one of the most popular ML frameworks. It enables the developer to use ready-to-use PyTorch models from PyTorch Hub, a large number of code samples, and reliable extensions. The integration is highly efficient: it allows running inference on GPU-allocated images and processing the results in GPU RAM, avoiding data transfers between CPU and GPU RAM.
 
 🔢 CuPy Support For Post-Processing
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Savant supports CuPy: a NumPy-like library for GPU-accelerated computing. It enables the developer to implement custom post-processing functions in Python, executed in GPU RAM, avoiding data transfers between CPU and GPU RAM. The feature allows for accessing model output tensors directly from GPU RAM, which helps implement heavy-weight custom post-processing functions.
+Savant supports CuPy: a NumPy-like library for GPU-accelerated computing. It enables the developer to implement custom post-processing functions in Python, executed in GPU RAM, avoiding data transfers between CPU and GPU RAM. The feature allows for accessing model output tensors directly from GPU RAM, which helps implement heavyweight custom post-processing functions.
 
 The integration also provides a conversion for in-GPU data between CuPy, OpenCV, and PyTorch in-GPU formats.
 
 ↻ Rotated Detection Models Support
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-We frequently deal with the models resulting in bounding boxes rotated relative to a video frame (oriented bounding boxes). For example, it is often the case with bird-eye cameras observing the underlying area from a high point.
+We frequently deal with the models resulting in bounding boxes rotated relative to a video frame (oriented bounding boxes). For example, it is often the case with bird's-eye cameras observing the underlying area from a high point.
 
 Such cases may require detecting the objects with minimal overlap. To achieve that, special models are used which generate bounding boxes that are not orthogonal to the frame axis. Take a look at `RAPiD <https://vip.bu.edu/projects/vsns/cossy/fisheye/rapid/>`_ to find more.
 
@@ -132,7 +132,7 @@ Savant supports processing parallelization; it helps to utilize the available re
 
 Savant provides means to synchronize RTSP streams by RTCP Sender Reports (SR) out of the box with the Retina RTSP `adapter <https://insight-platform.github.io/savant-rs/services/retina_rtsp/index.html>`__.
 
-📹 Non-linear Video Analyitics And Smart Archive
+📹 Non-linear Video Analytics And Smart Archive
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Savant provides a special tool to record, replay and restream video with the REST-controlled Replay `service <https://insight-platform.github.io/savant-rs/services/replay/index.html>`__.
@@ -156,6 +156,7 @@ Savant provides a special tool to record, replay and restream video with the RES
    getting_started/0_configure_prod_env
    getting_started/1_configure_dev_env
    getting_started/2_module_devguide
+   getting_started/3_samples
 
 
 .. toctree::

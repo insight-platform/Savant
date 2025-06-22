@@ -33,7 +33,7 @@ To measure the performance, use the ``uridecodebin`` Gstreamer source:
 
 .. _isolated_uridecodebin_benchmark:
 
-.. code-block::
+.. code-block:: bash
 
     pipeline:
       # local video file source, not using source adapter
@@ -73,7 +73,7 @@ End-To-End or Isolated Benchmarking
 
 In the above-mentioned :ref:`listing <isolated_uridecodebin_benchmark>` you may see that the sink for the pipeline is set to:
 
-.. code-block::
+.. code-block:: bash
 
     pipeline:
       # noop pipeline sink, not using sink adapter
@@ -158,3 +158,13 @@ This is normally a good situation. What approaches may improve the performance:
 - network quantization;
 - try pipeline :doc:`chaining <6_chaining>` and multiple GPUs;
 - choosing a more capable GPU model.
+
+.. code-block:: bash
+
+    # Run the benchmark
+    ./run_benchmarks.sh
+
+.. code-block:: bash
+
+    # Analyze the results
+    python analyze_benchmark_results.py

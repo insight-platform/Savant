@@ -6,8 +6,8 @@ Communication With External Systems
 
 We consider three kinds of pipeline circuits:
 
-- end-to-end capacity (non-realtime) circuit;
-- end-to-end realtime circuit;
+- end-to-end capacity (non-real-time) circuit;
+- end-to-end real-time circuit;
 - mixed circuit;
 
 Different circuits require different approaches when implementing the pipelines. We will share with you the best practices for implementing such kinds of circuits.
@@ -29,7 +29,7 @@ Our recommendations when building such sort of circuits:
 Pure Real-Time Circuits
 -----------------------
 
-As it comes from its name, a real-time circuit works in a real-time with no delays expected. Such circuits may tolerate short-term traffic bursts with internal buffers, but suffer when a part of the circuit gets stuck.
+As it comes from its name, a real-time circuit works in real-time with no delays expected. Such circuits may tolerate short-term traffic bursts with internal buffers, but suffer when a part of the circuit gets stuck.
 
 An example of such a circuit: RTSP -> Module -> RTSP
 

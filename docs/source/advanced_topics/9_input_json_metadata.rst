@@ -19,14 +19,14 @@ JSON metadata must follow the following requirements:
 
 Example:
 
-.. code-block::
+.. code-block:: text
 
     ./input_data/0000000000000785.json
     ./input_data/0000000000000785.jpg
 
 Or
 
-.. code-block::
+.. code-block:: text
 
     ./input_data/street_people.json
     ./input_data/street_people.mp4
