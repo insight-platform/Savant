@@ -290,7 +290,11 @@ Savant provides means to synchronize RTSP streams by RTCP Sender Reports (SR) ou
 
 ### Non-linear Video Analyitics And Smart Archive
 
-Savant provides a special tool to record, replay and restream video with the REST-controlled Replay [service](https://insight-platform.github.io/savant-rs/services/replay/index.html).
+Savant provides a special service to record, replay and restream video with the REST-controlled Replay [service](https://insight-platform.github.io/savant-rs/services/replay/index.html).
+
+### Stream Routing and Augmentation
+
+Savant provides the Router [service](https://insight-platform.github.io/savant-rs/services/router/index.html) used to route, filter, distribute, dupllicate, modify and augment streams.
 
 
 ## What's Next
