@@ -38,9 +38,8 @@ services:
     environment:
       - LOGLEVEL=savant_rs::message::validate_seq_iq=error,info
       - ZMQ_SRC_ENDPOINT=router+connect:ipc:///tmp/zmq-sockets/screenshots.ipc
-      - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/null.ipc
+      - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/analytics.ipc
       - SOURCE_EVICTION_INTERVAL=300
-
     deploy:
       resources:
         reservations:
@@ -48,6 +47,20 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [ gpu ]
+
+  savant-analytics:
+    image: ghcr.io/insight-platform/savant-rs-py313:savant-latest
+    restart: unless-stopped
+    environment:
+      - LOGLEVEL=info
+      - ZMQ_SRC_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/analytics.ipc
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ./src/analytics.py:/opt/python/analytics.py:ro
+    command: python3 /opt/python/analytics.py
+    depends_on:
+      screenshot-maker:
+        condition: service_healthy
 
   video-sink:
     container_name: video-sink
