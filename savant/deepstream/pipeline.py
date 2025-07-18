@@ -1027,6 +1027,17 @@ class NvDsPipeline(GstPipeline):
                     (parent.id, parent.namespace, parent.label, parent.track_id),
                     e,
                 )
+            except KeyError as e:
+                # TODO: fix it GitHub issue #1000
+                # this is a workaround to fix the issue (we just prevent circular references)
+                obj = video_frame.get_object(obj_id)
+                parent = video_frame.get_object(nvds_object_id_map[parent_id])
+                self._logger.warning(
+                    'Failed to set parent for object %s: %s, exception: %s',
+                    (obj.id, obj.namespace, obj.label, obj.track_id),
+                    (parent.id, parent.namespace, parent.label, parent.track_id),
+                    e,
+                )
 
     # Muxer
     def _create_muxer(self) -> Gst.Element:
