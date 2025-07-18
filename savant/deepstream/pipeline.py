@@ -1031,11 +1031,10 @@ class NvDsPipeline(GstPipeline):
                 # TODO: fix it GitHub issue #1000
                 # this is a workaround to fix the issue (we just prevent circular references)
                 obj = video_frame.get_object(obj_id)
-                parent = video_frame.get_object(nvds_object_id_map[parent_id])
                 self._logger.warning(
-                    'Failed to set parent for object %s: %s, exception: %s',
+                    'Failed to set parent %s for object %s: exception: %s',
+                    parent_id,
                     (obj.id, obj.namespace, obj.label, obj.track_id),
-                    (parent.id, parent.namespace, parent.label, parent.track_id),
                     e,
                 )
 

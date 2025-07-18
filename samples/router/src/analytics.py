@@ -1,14 +1,14 @@
 import asyncio
-import time
 import os
+import time
 
 from savant_rs.logging import LogLevel, log
 from savant_rs.match_query import MatchQuery as Q
 from savant_rs.primitives import BorrowedVideoObject, VideoFrame
 from savant_rs.zmq import NonBlockingReader, ReaderConfigBuilder, ReaderResultMessage
 
+socket_url = os.getenv('ZMQ_SRC_ENDPOINT')
 
-socket_url = os.getenv("ZMQ_SRC_ENDPOINT")
 
 async def reader():
     reader_config = ReaderConfigBuilder(socket_url).build()
@@ -35,10 +35,10 @@ async def reader():
                     processed_at = time.time() * 1000
                     log(
                         LogLevel.Info,
-                        "analytics::time_delta",
-                        f"{frame.source_id} {frame.pts} {int(processed_at - created_at)} {object_info}",
+                        'analytics::time_delta',
+                        f'{frame.source_id} {frame.pts} {int(processed_at - created_at)} {object_info}',
                     )
-                    log(LogLevel.Info, "analytics::frame::json", f"{frame.json}")
+                    log(LogLevel.Info, 'analytics::frame::json', f'{frame.json}')
 
 
 loop = asyncio.new_event_loop()
