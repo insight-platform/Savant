@@ -1,4 +1,4 @@
-# Faces detection, tracking and age-gender recognition (YoloV5face, Nvidia Tracker, Age-Gender model)
+# Faces detection, tracking and age-gender recognition (YoloV8face, Nvidia Tracker, Age-Gender model)
 
 **NB**: The demo uses **YOLOV8-Face** model which takes up to **30-40 minutes** to compile to TensorRT engine. The first launch takes an enormous time.
 
