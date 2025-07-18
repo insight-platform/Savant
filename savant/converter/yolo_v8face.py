@@ -39,7 +39,7 @@ class YoloV8faceConverter(BaseComplexModelOutputConverter):
         :param output_layers: Output layer tensor
         :param model: Model definition, required parameters: input tensor shape,
             maintain_aspect_ratio
-        :param roi: [top, left, width, height] of the rectangle
+        :param roi: [left, top, width, height] of the rectangle
             on which the model infers
         :return: a combination of :py:class:`.BaseObjectModelOutputConverter` and
             :py:class:`.BaseAttributeModelOutputConverter` outputs:
@@ -51,7 +51,7 @@ class YoloV8faceConverter(BaseComplexModelOutputConverter):
         """
         attr_name = model.output.attributes[0].name
 
-        roi_top, roi_left, roi_width, roi_height = roi
+        roi_left, roi_top, roi_width, roi_height = roi
         ratio_width = roi_width / model.input.shape[2]
         ratio_height = roi_height / model.input.shape[1]
 
@@ -80,8 +80,8 @@ class YoloV8faceConverter(BaseComplexModelOutputConverter):
 
         # Scale and shift bbox coordinates
         xywh *= np.tile(np.float32([ratio_width, ratio_height]), 2)
-        xywh[:, 0] += roi_top  # x center
-        xywh[:, 1] += roi_left  # y center
+        xywh[:, 0] += roi_left  # x center
+        xywh[:, 1] += roi_top  # y center
 
         bbox_output = np.concatenate((class_num, conf, xywh), axis=1)
 
@@ -90,8 +90,8 @@ class YoloV8faceConverter(BaseComplexModelOutputConverter):
             selected_nms_predictions[:, 5:20]
             * np.tile(np.float32([ratio_width, ratio_height, 1.0]), 5)
         ).reshape(-1, 5, 3)
-        landmarks[:, :, 0] += roi_top  # x
-        landmarks[:, :, 1] += roi_left  # y
+        landmarks[:, :, 0] += roi_left  # x
+        landmarks[:, :, 1] += roi_top  # y
 
         landmarks_output = [
             [(attr_name, lms, conf)]
