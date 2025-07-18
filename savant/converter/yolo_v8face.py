@@ -51,8 +51,9 @@ class YoloV8faceConverter(BaseComplexModelOutputConverter):
         """
         attr_name = model.output.attributes[0].name
 
-        ration_width = roi[2] / model.input.shape[2]
-        ratio_height = roi[3] / model.input.shape[1]
+        roi_top, roi_left, roi_width, roi_height = roi
+        ratio_width = roi_width / model.input.shape[2]
+        ratio_height = roi_height / model.input.shape[1]
 
         raw_predictions = np.transpose(output_layers[0])
 
@@ -76,13 +77,22 @@ class YoloV8faceConverter(BaseComplexModelOutputConverter):
         xywh = selected_nms_predictions[:, :4]
         conf = selected_nms_predictions[:, 4:5]
         class_num = np.zeros_like(conf)
-        xywh *= np.tile(np.float32([ration_width, ratio_height]), 2)
+
+        # Scale and shift bbox coordinates
+        xywh *= np.tile(np.float32([ratio_width, ratio_height]), 2)
+        xywh[:, 0] += roi_top  # x center
+        xywh[:, 1] += roi_left  # y center
+
         bbox_output = np.concatenate((class_num, conf, xywh), axis=1)
 
+        # Process landmarks (5 points, each with x, y, conf)
         landmarks = (
             selected_nms_predictions[:, 5:20]
-            * np.tile(np.float32([ration_width, ratio_height, 1.0]), 5)
+            * np.tile(np.float32([ratio_width, ratio_height, 1.0]), 5)
         ).reshape(-1, 5, 3)
+        landmarks[:, :, 0] += roi_top  # x
+        landmarks[:, :, 1] += roi_left  # y
+
         landmarks_output = [
             [(attr_name, lms, conf)]
             for lms, conf in zip(

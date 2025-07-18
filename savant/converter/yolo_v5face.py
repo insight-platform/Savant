@@ -50,9 +50,13 @@ class YoloV5faceConverter(BaseComplexModelOutputConverter):
               ``(attr_name, value, confidence)``
         """
         atr_name = model.output.attributes[0].name
-        ration_width = roi[2] / model.input.shape[2]
-        ratio_height = roi[3] / model.input.shape[1]
+
+        roi_top, roi_left, roi_width, roi_height = roi
+        ratio_width = roi_width / model.input.shape[2]
+        ratio_height = roi_height / model.input.shape[1]
+
         raw_predictions = np.float32(output_layers[0])
+
         if raw_predictions.size:
             raw_predictions[:, 4:5] *= raw_predictions[:, 15:16]
             selected_preds = raw_predictions[
@@ -65,13 +69,21 @@ class YoloV5faceConverter(BaseComplexModelOutputConverter):
                 selected_preds.shape[0],
             )
             selected_nms_prediction = selected_preds[keep]
+
             xywh = selected_nms_prediction[:, :4]
             conf = selected_nms_prediction[:, 4:5]
             class_num = np.zeros_like(conf, dtype=np.float32)
-            xywh *= np.tile(np.float32([ration_width, ratio_height]), 2)
+
+            xywh *= np.tile(np.float32([ratio_width, ratio_height]), 2)
+            xywh[:, 0] += roi_top
+            xywh[:, 1] += roi_left
+
             landmarks = selected_nms_prediction[:, 5:15] * np.tile(
-                np.float32([ration_width, ratio_height]), 5
+                np.float32([ratio_width, ratio_height]), 5
             )
+            landmarks[:, :, 0] += roi_top
+            landmarks[:, :, 1] += roi_left
+
             bbox = np.concatenate((class_num, conf, xywh), axis=1)
             landmarks_output = list(
                 map(lambda x: [(atr_name, x, 1.0)], landmarks.tolist())
