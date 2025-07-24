@@ -33,8 +33,8 @@ class YoloV8faceConverter(BaseComplexModelOutputConverter):
         model: ComplexModel,
         roi: Tuple[float, float, float, float],
     ) -> Optional[Tuple[np.ndarray, List[List[Tuple[str, Any, float]]]]]:
-        """Converts detector output layer tensor to bbox tensor and addition
-        attribute(landmark).
+        """Converts detector output layer tensor to bbox tensor and additional
+        attributes (landmarks).
 
         :param output_layers: Output layer tensor
         :param model: Model definition, required parameters: input tensor shape,
@@ -78,8 +78,29 @@ class YoloV8faceConverter(BaseComplexModelOutputConverter):
         conf = selected_nms_predictions[:, 4:5]
         class_num = np.zeros_like(conf)
 
-        # Scale and shift bbox coordinates
-        xywh *= np.tile(np.float32([ratio_width, ratio_height]), 2)
+        # Scale and shift bounding box coordinates
+        if model.input.maintain_aspect_ratio:
+            scale = min(
+                model.input.width / roi_width,
+                model.input.height / roi_height,
+            )
+            xywh /= scale
+        
+            if model.input.symmetric_padding:
+                new_width = roi_width * scale
+                new_height = roi_height * scale
+        
+                # Convert to ROI coordinates
+                pad_x = (model.input.width - new_width) / (2 * scale)
+                pad_y = (model.input.height - new_height) / (2 * scale)
+        
+                xywh[:, 0] -= pad_x  # xc
+                xywh[:, 1] -= pad_y  # yc
+        else:
+            # Without aspect ratio preservation, use direct scaling
+            xywh *= np.tile(np.float32([ratio_width, ratio_height]), 2)
+
+        # Offset bounding box centers to full-frame coordinates
         xywh[:, 0] += roi_left  # x center
         xywh[:, 1] += roi_top  # y center
 

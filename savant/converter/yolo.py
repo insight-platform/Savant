@@ -125,10 +125,22 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
 
         # scale
         if model.input.maintain_aspect_ratio:
-            bboxes /= min(
+            scale = min(
                 model.input.width / roi_width,
                 model.input.height / roi_height,
             )
+            bboxes /= scale
+
+            if model.input.symmetric_padding:
+                new_width = roi_width * scale
+                new_height = roi_height * scale
+            
+                # Convert to ROI coordinates
+                pad_x = (model.input.width - new_width) / (2 * scale)
+                pad_y = (model.input.height - new_height) / (2 * scale)
+            
+                bboxes[:, 0] -= pad_x  # xc
+                bboxes[:, 1] -= pad_y  # yc
         else:
             bboxes[:, [0, 2]] /= model.input.width / roi_width
             bboxes[:, [1, 3]] /= model.input.height / roi_height
