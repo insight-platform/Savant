@@ -38,6 +38,7 @@ services:
         condition: service_healthy
 
   stitching:
+    privileged: true
     image: ghcr.io/insight-platform/savant-deepstream:latest
     restart: unless-stopped
     volumes:
@@ -65,6 +66,7 @@ services:
               capabilities: [ gpu ]
 
   always-on-sink:
+    privileged: true
     image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
     restart: unless-stopped
     ports:

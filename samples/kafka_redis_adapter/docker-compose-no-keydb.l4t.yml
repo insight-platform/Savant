@@ -81,6 +81,7 @@ services:
         condition: service_healthy
 
   module:
+    privileged: true
     image: ghcr.io/insight-platform/savant-deepstream-l4t:latest
     restart: unless-stopped
     volumes:

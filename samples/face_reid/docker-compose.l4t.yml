@@ -21,6 +21,7 @@ services:
         condition: service_healthy
 
   index-builder-pipeline:
+    privileged: true
     image: ghcr.io/insight-platform/savant-deepstream-l4t:latest
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -56,6 +57,7 @@ services:
         condition: service_healthy
 
   module:
+    privileged: true
     build:
       context: .
       dockerfile: docker/Dockerfile.l4t

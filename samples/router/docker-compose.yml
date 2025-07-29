@@ -28,6 +28,7 @@ services:
       - zmq_sockets:/tmp/zmq-sockets
 
   screenshot-maker:
+    privileged: true
     restart: unless-stopped
     image: ghcr.io/insight-platform/savant-deepstream:latest
     volumes:

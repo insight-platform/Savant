@@ -18,6 +18,7 @@ services:
         condition: service_healthy
 
   first:
+    privileged: true
     image: ghcr.io/insight-platform/savant-deepstream:latest
     restart: unless-stopped
     ports:
@@ -45,6 +46,7 @@ services:
 
 
   second:
+    privileged: true
     image: ghcr.io/insight-platform/savant-deepstream:latest
     restart: unless-stopped
     volumes:

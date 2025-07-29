@@ -22,6 +22,7 @@ services:
         condition: service_healthy
 
   module-detector:
+    privileged: true
     image: ghcr.io/insight-platform/savant-deepstream:latest
     restart: unless-stopped
     volumes:
@@ -48,6 +49,7 @@ services:
               capabilities: [ gpu ]
 
   module-tracker:
+    privileged: true
     image: ghcr.io/insight-platform/savant-deepstream:latest
     restart: unless-stopped
     volumes:
@@ -74,6 +76,7 @@ services:
               capabilities: [ gpu ]
 
   module-draw-func:
+    privileged: true
     image: ghcr.io/insight-platform/savant-deepstream:latest
     restart: unless-stopped
     volumes:
@@ -103,6 +106,7 @@ services:
               capabilities: [ gpu ]
 
   always-on-sink:
+    privileged: true
     image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
     restart: unless-stopped
     ports:

@@ -19,6 +19,7 @@ services:
         condition: service_healthy
 
   module:
+    privileged: true
     build:
       context: .
       dockerfile: docker/Dockerfile.l4t
@@ -39,6 +40,7 @@ services:
       - CODEC=copy
     depends_on:
       mongo:
+        privileged: true
         condition: service_healthy
     runtime: nvidia
 
@@ -79,6 +81,7 @@ services:
         condition: service_healthy
 
   draw-func:
+    privileged: true
     build:
       context: .
       dockerfile: docker/Dockerfile.l4t
@@ -97,6 +100,7 @@ services:
       - CODEC=jpeg
     depends_on:
       mongo:
+        privileged: true
         condition: service_healthy
     runtime: nvidia
 

@@ -18,6 +18,7 @@ services:
         condition: service_healthy
 
   module:
+    privileged: true
     image: ghcr.io/insight-platform/savant-deepstream:latest
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -40,6 +41,7 @@ services:
               capabilities: [ gpu ]
 
   always-on-sink:
+    privileged: true
     image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
     restart: unless-stopped
     ports:

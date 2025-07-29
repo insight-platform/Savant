@@ -19,6 +19,7 @@ services:
         condition: service_healthy
 
   module:
+    privileged: true
     build:
       context: .
       dockerfile: docker/Dockerfile.x86
@@ -84,6 +85,7 @@ services:
         condition: service_healthy
 
   draw-func:
+    privileged: true
     build:
       context: .
       dockerfile: docker/Dockerfile.x86
@@ -111,6 +113,7 @@ services:
               capabilities: [ gpu ]
 
   always-on-sink:
+    privileged: true
     image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
     restart: unless-stopped
     ports:

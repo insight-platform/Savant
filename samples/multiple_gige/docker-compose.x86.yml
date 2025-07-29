@@ -39,6 +39,7 @@ services:
     entrypoint: /opt/savant/adapters/gst/sources/gige_cam.sh
 
   always-on-sink:
+    privileged: true
     image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
     restart: unless-stopped
     ports:
