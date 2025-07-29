@@ -79,8 +79,6 @@ The sample includes an option to choose the model used for object detection. Cho
 - `DETECTOR=yolov8s` for yolov8s
 - `DETECTOR=yolov4` for yolov4
 
-This demo uses [DeepStream-Yolo](https://github.com/marcoslucianops/DeepStream-Yolo/) to process YOLO models and allows you to use any YOLO model that DeepStream-Yolo supports. The demo contains 4 prepared models: `peoplenet`, `yolov8m`, `yolov8s`, `yolov4`.
-
 ## Performance Measurement
 
 Download the video file to the data folder. For example:
