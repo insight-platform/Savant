@@ -100,4 +100,4 @@ Now you are ready to run the performance benchmark with the following command:
 
 **Note**: Change the value of the `DATA_LOCATION` variable in the `run_perf.sh` script if you changed the video.
 
-**Note**: `yolov8m` detector is set by default.
+**Note**: `yolov8s` detector is set by default.
