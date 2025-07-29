@@ -74,12 +74,12 @@ To create a custom Grafana dashboard, sign in with `admin\admin` credentials.
 
 The sample includes an option to choose the model used for object detection. Choose between NVIDIA [peoplenet](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/peoplenet) and YOLOv8 by changing the env variable in `.env` file:
 
-- `DETECTOR=peoplenet` for peoplnet
+- `DETECTOR=peoplenet` for peoplenet
 - `DETECTOR=yolov8m` for yolov8m
 - `DETECTOR=yolov8s` for yolov8s
 - `DETECTOR=yolov4` for yolov4
 
-This demo uses [DeepStream-Yolo](https://github.com/marcoslucianops/DeepStream-Yolo/) to process YOLO models and allows you to use any YOLO model that DeepStream-Yolo supports. The demo contains 3 prepared models - `yolov8m` / `yolov8s` / `yolov4`. If you are going to use any other model (e.g. custom yolov8m), follow the DeepStream-Yolo export instructions. For example, YOLOv8 instructions are [here](https://github.com/marcoslucianops/DeepStream-Yolo/blob/master/docs/YOLOv8.md).
+This demo uses [DeepStream-Yolo](https://github.com/marcoslucianops/DeepStream-Yolo/) to process YOLO models and allows you to use any YOLO model that DeepStream-Yolo supports. The demo contains 4 prepared models: `peoplenet`, `yolov8m`, `yolov8s`, `yolov4`.
 
 ## Performance Measurement
 
