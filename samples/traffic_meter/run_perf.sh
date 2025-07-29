@@ -18,6 +18,6 @@ fi
 source samples/assets/run_perf_helper.sh
 set_source $DATA_LOCATION
 PERF_CONFIG="${MODULE_CONFIG%.*}_perf.yml"
-YQ_ARGS+=('.parameters.detector="yolov8m"' '.parameters.send_stats=False')
+YQ_ARGS+=('.parameters.detector="yolov8s"' '.parameters.send_stats=False')
 config_perf $MODULE_CONFIG $PERF_CONFIG "${YQ_ARGS[@]}"
 ./scripts/run_module.py -i traffic_meter-module $PERF_CONFIG
