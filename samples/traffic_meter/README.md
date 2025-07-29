@@ -72,7 +72,7 @@ To create a custom Grafana dashboard, sign in with `admin\admin` credentials.
 
 ## Switch Detector Model
 
-The sample includes an option to choose the model used for object detection. Choose between NVIDIA [peoplenet](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/peoplenet) and YOLOv8 by changing the env variable in `.env` file:
+The sample includes an option to choose the model used for object detection. Choose between NVIDIA [peoplenet](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/peoplenet), YOLOv8, YOLOv11 and YOLOv4 by changing the env variable in `.env` file:
 
 - `DETECTOR=peoplenet` for peoplenet
 - `DETECTOR=yolov8m` for yolov8m
