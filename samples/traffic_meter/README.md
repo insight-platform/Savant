@@ -1,6 +1,6 @@
 # Traffic meter demo
 
-**NB**: The demo optionally uses **YOLOV8** model which takes up to **10-15 minutes** to compile to TensorRT engine. The first launch may take a decent time.
+**NB**: The demo optionally uses **YOLOV8** or **YOLOv11** models which take up to **10-15 minutes** to compile to TensorRT engine. The first launch may take a decent time.
 
 The pipeline detects when people cross a user-configured line and the direction of the crossing. The crossing events are attached to individual tracks, counted for each source separately and the counters are displayed on the frame. The crossing events are also stored with Graphite and displayed on a Grafana dashboard.
 
@@ -78,6 +78,7 @@ The sample includes an option to choose the model used for object detection. Cho
 - `DETECTOR=yolov8m` for yolov8m
 - `DETECTOR=yolov8s` for yolov8s
 - `DETECTOR=yolov4` for yolov4
+- `DETECTOR=yolov11s` for yolov11s
 
 ## Performance Measurement
 
