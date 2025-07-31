@@ -31,12 +31,7 @@ from savant.gstreamer.utils import (
     required_property,
 )
 from savant.utils.log import LoggerMixin
-from savant.utils.zeromq import (
-    Defaults,
-    ReceiverSocketTypes,
-    ZeroMQMessage,
-    ZeroMQSource,
-)
+from savant.utils.zeromq import Defaults, ZeroMQMessage, ZeroMQSource
 
 HandlerResult = Optional[Tuple[Gst.FlowReturn, Optional[Gst.Buffer]]]
 
