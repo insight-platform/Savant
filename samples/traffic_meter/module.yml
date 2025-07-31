@@ -203,6 +203,48 @@ pipeline:
                         confidence_threshold: 0.25
                         nms_iou_threshold: 0.45
 
+    # variant group: yolov11s detector
+    - group:
+        # enabled if env var DETECTOR==yolov11s
+        init_condition:
+          expr: ${parameters.detector}
+          value: yolov11s
+        elements:
+          - element: nvinfer@detector
+            name: yolov11s
+            model:
+              remote:
+                url: s3://savant-data/models/yolov11s/yolov11s_abc.zip
+                checksum_url: s3://savant-data/models/yolov11s/yolov11s_abc.md5
+                parameters:
+                  endpoint: https://eu-central-1.linodeobjects.com
+              format: onnx
+              model_file: yolov11s.onnx
+              batch_size: ${parameters.batch_size}
+              workspace_size: 6144
+              input:
+                shape: [3, 640, 640]
+                scale_factor: 0.0039215697906911373
+                maintain_aspect_ratio: true
+                symmetric_padding: true
+              output:
+                layer_names: [output0]
+                converter:
+                  module: savant.converter.yolo
+                  class_name: TensorToBBoxConverter
+                  kwargs:
+                    confidence_threshold: 0.25
+                    nms_iou_threshold: 0.45
+                    top_k: 300
+                objects:
+                  - class_id: ${parameters.detected_object.id}
+                    label: ${parameters.detected_object.label}
+                    selector:
+                      module: savant.selector.detector
+                      kwargs:
+                        confidence_threshold: 0.25
+                        nms_iou_threshold: 0.45
+
     # regular nvtracker definition
     - element: nvtracker
       properties:
