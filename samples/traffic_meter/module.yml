@@ -214,8 +214,8 @@ pipeline:
             name: yolov11s
             model:
               remote:
-                url: s3://savant-data/models/yolov11s/yolov11s_abc.zip
-                checksum_url: s3://savant-data/models/yolov11s/yolov11s_abc.md5
+                url: s3://savant-data/models/yolov11s/yolov11s.zip
+                checksum_url: s3://savant-data/models/yolov11s/yolov11s.md5
                 parameters:
                   endpoint: https://eu-central-1.linodeobjects.com
               format: onnx
