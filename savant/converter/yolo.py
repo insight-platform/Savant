@@ -90,12 +90,12 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
         roi: Tuple[float, float, float, float],
     ) -> Optional[np.ndarray]:
         """Converts detector output layer tensor to bbox tensor.
-    
+
         This converter handles common YOLO heads (incl. YOLOv11 single-head `output0`)
         in either `[N, 4+…] / [N, 5+…]` or transposed `[(4+…), N] / [(5+…), N]` forms,
         and correctly maps boxes back from model input space to the ROI (reverse-letterbox
         if `maintain_aspect_ratio` with `symmetric_padding` is enabled).
-    
+
         :param output_layers: Output layer tensor
         :param model: Model definition, required parameters: input tensor shape,
             maintain_aspect_ratio
@@ -108,8 +108,10 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
 
         if len(output_layers) == 1:
             output = output_layers[0]
-            num_classes = getattr(model.output, "num_detected_classes", None)
-            bboxes, confidences, class_ids = self._decode_single_head(output, num_classes)
+            num_classes = getattr(model.output, 'num_detected_classes', None)
+            bboxes, confidences, class_ids = self._decode_single_head(
+                output, num_classes
+            )
 
         elif len(output_layers) == 3:
             # Already NMS'ed: (bboxes_xywh, scores_per_class, class_ids)
@@ -135,20 +137,36 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
         # --- class filter
         if self.class_ids:
             mask = np.isin(class_ids, self.class_ids)
-            bboxes, confidences, class_ids = bboxes[mask], confidences[mask], class_ids[mask]
+            bboxes, confidences, class_ids = (
+                bboxes[mask],
+                confidences[mask],
+                class_ids[mask],
+            )
 
         # --- confidence filter
         if self.confidence_threshold > 0:
             mask = confidences > self.confidence_threshold
-            bboxes, confidences, class_ids = bboxes[mask], confidences[mask], class_ids[mask]
+            bboxes, confidences, class_ids = (
+                bboxes[mask],
+                confidences[mask],
+                class_ids[mask],
+            )
 
         # --- NMS (class-agnostic)
         if self.nms_iou_threshold > 0 and bboxes.shape[0] > 1:
             keep = nms_cpu(bboxes, confidences, self.nms_iou_threshold, self.top_k)
-            bboxes, confidences, class_ids = bboxes[keep], confidences[keep], class_ids[keep]
+            bboxes, confidences, class_ids = (
+                bboxes[keep],
+                confidences[keep],
+                class_ids[keep],
+            )
         elif bboxes.shape[0] > self.top_k:
             idx = np.argpartition(confidences, -self.top_k)[-self.top_k :]
-            bboxes, confidences, class_ids = bboxes[idx], confidences[idx], class_ids[idx]
+            bboxes, confidences, class_ids = (
+                bboxes[idx],
+                confidences[idx],
+                class_ids[idx],
+            )
 
         # --- map from model input space -> ROI space
         roi_left, roi_top, roi_w, roi_h = roi
@@ -161,7 +179,7 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
             # de-scale w,h,xc,yc
             bboxes /= scale
 
-            if getattr(model.input, "symmetric_padding", False):
+            if getattr(model.input, 'symmetric_padding', False):
                 new_w = roi_w * scale
                 new_h = roi_h * scale
                 pad_x = (model.input.width - new_w) / 2.0
@@ -173,8 +191,8 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
                 bboxes[:, 1] -= pad_y  # yc
         else:
             # simple affine scaling
-            bboxes[:, [0, 2]] /= (model.input.width / roi_w)
-            bboxes[:, [1, 3]] /= (model.input.height / roi_h)
+            bboxes[:, [0, 2]] /= model.input.width / roi_w
+            bboxes[:, [1, 3]] /= model.input.height / roi_h
 
         # offset by ROI top-left
         bboxes[:, 0] += roi_left
