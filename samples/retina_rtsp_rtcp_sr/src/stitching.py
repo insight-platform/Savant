@@ -1,6 +1,6 @@
 from collections import deque
 from dataclasses import dataclass
-from typing import Deque, Dict, List, NamedTuple, Optional
+from typing import Dict, List, NamedTuple, Optional
 
 import cv2
 

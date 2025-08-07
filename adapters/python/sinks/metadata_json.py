@@ -7,7 +7,6 @@ import traceback
 from enum import Enum
 from typing import Dict, Optional
 
-from savant_rs.match_query import MatchQuery
 from savant_rs.primitives import (
     Attribute,
     AttributeValue,
