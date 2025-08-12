@@ -2,37 +2,18 @@ services:
 
   video-loop-source:
     image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
-    restart: unless-stopped
-    volumes:
-      - zmq_sockets:/tmp/zmq-sockets
-      - /tmp/video-loop-source-downloads:/tmp/video-loop-source-downloads
-    environment:
-      - LOCATION=https://eu-central-1.linodeobjects.com/savant-data/demo/shuffle_dance.mp4
-      - DOWNLOAD_PATH=/tmp/video-loop-source-downloads
-      - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
-      - SOURCE_ID=0
-      - SYNC_OUTPUT=True
-    entrypoint: /opt/savant/adapters/gst/sources/video_loop.sh
-    depends_on:
-      module:
-        condition: service_healthy
+    extends:
+      file: docker-compose.l4t.yml
+      service: video-loop-source
 
   module:
     image: ghcr.io/insight-platform/savant-deepstream:latest
-    restart: unless-stopped
-    volumes:
-      - zmq_sockets:/tmp/zmq-sockets
-      - ..:/opt/savant/samples
-    command: samples/telemetry/module.yml
+    extends:
+      file: docker-compose.l4t.yml
+      service: module
+    runtime: runc
     environment:
-      - TRACING_PROVIDER=opentelemetry
-      - TRACING_SERVICE_NAME=savant-module
-      - TRACING_PROVIDER_PARAMS_CONFIG=/opt/savant/samples/telemetry/otlp/provider_config.json
-      - TRACING_SAMPLING_PERIOD=100
-      - TRACING_APPEND_FRAME_META_TO_SPAN=True
-      - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
-      - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
-      - METRICS_FRAME_PERIOD=1000
+      - CODEC=h264
     deploy:
       resources:
         reservations:
@@ -43,22 +24,9 @@ services:
 
   always-on-sink:
     image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
-    restart: unless-stopped
-    ports:
-      - "554:554" # RTSP
-      - "1935:1935" # RTMP
-      - "888:888" # HLS
-      - "8889:8889" # WebRTC
-    volumes:
-      - zmq_sockets:/tmp/zmq-sockets
-      - ../assets/stub_imgs:/stub_imgs
-    environment:
-      - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
-      - SOURCE_ID=0
-      - FRAMERATE=25/1
-      - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x720.jpeg
-      - DEV_MODE=True
-    command: python -m adapters.ds.sinks.always_on_rtsp
+    extends:
+      file: docker-compose.l4t.yml
+      service: always-on-sink
     deploy:
       resources:
         reservations:
@@ -67,21 +35,10 @@ services:
               count: 1
               capabilities: [ gpu ]
 
-  # All-in-One Jaeger
-  # https://www.jaegertracing.io/docs/1.62/getting-started/#all-in-one
   jaeger:
-    image: jaegertracing/all-in-one:1.62.0
-    restart: unless-stopped
-    ports:
-      - "16686:16686" # query
-      - "4317:4317" # OTLP gRPC
-      - "4318:4318" # OTLP HTTP
-      - "14250:14250"
-      - "14268:14268"
-      - "14269:14269"
-      - "9411:9411"
-    environment:
-      - COLLECTOR_ZIPKIN_HOST_PORT=:9411
+    extends:
+      file: docker-compose.l4t.yml
+      service: jaeger
 
 volumes:
   zmq_sockets:

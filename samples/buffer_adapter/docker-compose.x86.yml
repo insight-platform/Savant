@@ -2,59 +2,24 @@ services:
 
   video-loop-source:
     image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
-    restart: unless-stopped
-    volumes:
-      - zmq_sockets:/tmp/zmq-sockets
-      - /tmp/video-loop-source-downloads:/tmp/video-loop-source-downloads
-    environment:
-      - LOCATION=https://eu-central-1.linodeobjects.com/savant-data/demo/Free_City_Street_Footage.mp4
-      - DOWNLOAD_PATH=/tmp/video-loop-source-downloads
-      - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/buffer.ipc
-      - SOURCE_ID=city-traffic
-      - SYNC_OUTPUT=True
-    entrypoint: /opt/savant/adapters/gst/sources/video_loop.sh
-    depends_on:
-      module:
-        condition: service_healthy
-      buffer:
-        condition: service_started
+    extends:
+      file: docker-compose.l4t.yml
+      service: video-loop-source
 
   buffer:
     image: ghcr.io/insight-platform/savant-adapters-py:latest
-    #restart: unless-stopped
-    ports:
-      - "8080:8080"
-    volumes:
-      - zmq_sockets:/tmp/zmq-sockets
-      - buffer:/tmp/savant-adapter/buffer
-      - message_dump:/tmp/message-dump
-    environment:
-      - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/buffer.ipc
-      - ZMQ_SINK_ENDPOINT=dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc
-      - BUFFER_PATH=/tmp/savant-adapter/buffer
-      - BUFFER_LEN=1000
-      - INTERVAL=0.1
-      - METRICS_FRAME_PERIOD=1000
-      - METRICS_TIME_PERIOD=10
-      - STATS_LOG_INTERVAL=10
-      - METRICS_EXTRA_LABELS={"adapter":"buffer"}
-      - MESSAGE_DUMP_ENABLED=False # Set to True to enable message dumping for later analysis
-      - MESSAGE_DUMP_SEGMENT_DURATION=30
-      - MESSAGE_DUMP_PATH=/tmp/message-dump
-    command: python -m adapters.python.bridge.buffer
+    extends:
+      file: docker-compose.l4t.yml
+      service: buffer
 
   module:
     image: ghcr.io/insight-platform/savant-deepstream:latest
-    restart: unless-stopped
-    volumes:
-      - zmq_sockets:/tmp/zmq-sockets
-      - ..:/opt/savant/samples
-    command: samples/buffer_adapter/demo.yml
+    extends:
+      file: docker-compose.l4t.yml
+      service: module
+    runtime: runc
     environment:
-      - ZMQ_SRC_ENDPOINT=router+bind:ipc:///tmp/zmq-sockets/input-video.ipc
-      - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
-      - METRICS_FRAME_PERIOD=1000
-      - METRICS_TIME_PERIOD=10
+      - CODEC=h264
     deploy:
       resources:
         reservations:
@@ -65,22 +30,9 @@ services:
 
   always-on-sink:
     image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
-    restart: unless-stopped
-    ports:
-      - "554:554"    # RTSP
-      - "1935:1935"  # RTMP
-      - "888:888"    # HLS
-      - "8889:8889"  # WebRTC
-    volumes:
-      - zmq_sockets:/tmp/zmq-sockets
-      - ../assets/stub_imgs:/stub_imgs
-    environment:
-      - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
-      - SOURCE_ID=city-traffic
-      - FRAMERATE=25/1
-      - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x720.jpeg
-      - DEV_MODE=True
-    command: python -m adapters.ds.sinks.always_on_rtsp
+    extends:
+      file: docker-compose.l4t.yml
+      service: always-on-sink
     deploy:
       resources:
         reservations:
@@ -90,26 +42,14 @@ services:
               capabilities: [ gpu ]
 
   prometheus:
-    image: prom/prometheus:v2.48.0
-    restart: unless-stopped
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    extends:
+      file: docker-compose.l4t.yml
+      service: prometheus
 
   grafana:
-    image: grafana/grafana-oss
-    restart: unless-stopped
-    volumes:
-      - ./grafana_datasources:/etc/grafana/provisioning/datasources/
-      - ./grafana_dashboards:/etc/grafana/provisioning/dashboards/
-    ports:
-      - "3000:3000"
-    environment:
-      - GF_AUTH_ANONYMOUS_ENABLED=true
-      - GF_AUTH_ANONYMOUS_ORG_NAME=Main Org.
-      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
-
+    extends:
+      file: docker-compose.l4t.yml
+      service: grafana
 
 volumes:
   buffer:
