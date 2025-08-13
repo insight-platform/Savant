@@ -25,6 +25,7 @@ services:
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../cache:/cache
+      - ../assets/tracker:/opt/savant/samples/assets/tracker
       - ./src:/opt/savant/samples/face_reid
     command: samples/face_reid/index_builder.yml
     environment:
@@ -63,6 +64,7 @@ services:
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../cache:/cache
+      - ../assets/tracker:/opt/savant/samples/assets/tracker
       - ./src:/opt/savant/samples/face_reid/
       - ./index_files:/index
     command: samples/face_reid/module.yml

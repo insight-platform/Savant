@@ -1,5 +1,4 @@
 import functools
-import os
 from enum import Enum
 from pathlib import Path
 from typing import Optional
@@ -14,7 +13,6 @@ from savant_rs.pipeline2 import (
 from adapters.ds.sinks.always_on_rtsp.utils import nvidia_runtime_is_available
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
 from savant.utils.config import opt_config, req_config, strtobool
-from savant.utils.zeromq import ReceiverSocketTypes
 
 ENCODER_DEFAULT_PROFILES = {
     Codec.H264: 'High',
