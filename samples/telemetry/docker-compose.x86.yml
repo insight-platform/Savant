@@ -1,13 +1,13 @@
 services:
 
   video-loop-source:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:0.5.10
     extends:
       file: docker-compose.l4t.yml
       service: video-loop-source
 
   module:
-    image: ghcr.io/insight-platform/savant-deepstream:latest
+    image: ghcr.io/insight-platform/savant-deepstream:0.5.10-7.0
     extends:
       file: docker-compose.l4t.yml
       service: module
@@ -23,7 +23,7 @@ services:
               capabilities: [ gpu ]
 
   always-on-sink:
-    image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
+    image: ghcr.io/insight-platform/savant-adapters-deepstream:0.5.10-7.0
     extends:
       file: docker-compose.l4t.yml
       service: always-on-sink

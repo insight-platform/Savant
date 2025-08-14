@@ -1,13 +1,13 @@
 services:
 
   client:
-    image: ghcr.io/insight-platform/savant-deepstream:latest
+    image: ghcr.io/insight-platform/savant-deepstream:0.5.10-7.0
     extends:
       file: docker-compose.l4t.yml
       service: client
 
   uri-input:
-    image: ghcr.io/insight-platform/savant-deepstream:latest
+    image: ghcr.io/insight-platform/savant-deepstream:0.5.10-7.0
     extends:
       file: docker-compose.l4t.yml
       service: uri-input
@@ -44,7 +44,7 @@ services:
       service: jaeger
 
   always-on-sink:
-    image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
+    image: ghcr.io/insight-platform/savant-adapters-deepstream:0.5.10-7.0
     extends:
       file: docker-compose.l4t.yml
       service: always-on-sink
