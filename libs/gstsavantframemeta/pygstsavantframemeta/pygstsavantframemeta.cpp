@@ -149,14 +149,18 @@ PYBIND11_MODULE(pygstsavantframemeta, m) {
             (GDestroyNotify)release_savant_rs_pad_probe_data);
     });
 
-    m.def("add_pad_probe_to_remove_tracker_objs", [](size_t gst_pad) {
+    m.def("add_tracker_postproc_pad_probe", [](size_t gst_pad, bool disable_obj_init) {
         auto *pad = reinterpret_cast<GstPad *>(gst_pad);
+        auto *disable_obj_init_ptr = new bool(disable_obj_init);
         gst_pad_add_probe(
             pad,
             GST_PAD_PROBE_TYPE_BUFFER,
-            remove_tracker_objs_pad_probe,
-            NULL,
-            NULL);
+            tracker_postproc_pad_probe,
+            disable_obj_init_ptr,  // pass to user data
+            [](gpointer data) {
+                delete reinterpret_cast<bool *>(data);  // clean up
+            }
+        );
     });
 #endif // SAVANT_NVDS_ENABLED
 }

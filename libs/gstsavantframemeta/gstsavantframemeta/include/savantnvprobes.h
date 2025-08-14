@@ -11,7 +11,7 @@
  * @param info Pad probe info.
  * @param user_data Pointer to user data.
  */
-GstPadProbeReturn remove_tracker_objs_pad_probe(GstPad *pad,
+GstPadProbeReturn tracker_postproc_pad_probe(GstPad *pad,
                                                 GstPadProbeInfo *info,
                                                 gpointer user_data);
 

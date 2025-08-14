@@ -3,7 +3,7 @@
 from dataclasses import replace
 
 import pyds
-from pygstsavantframemeta import add_pad_probe_to_remove_tracker_objs
+from pygstsavantframemeta import add_tracker_postproc_pad_probe
 
 from savant.config.schema import PipelineElement
 from savant.gstreamer import Gst  # noqa: F401
@@ -67,11 +67,9 @@ class NvDsElementFactory(GstElementFactory):
 
         tracker = GstElementFactory.create_element(element)
 
-        if isinstance(disable_obj_init, bool) and disable_obj_init:
-            logger.debug(
-                'Nvtracker factory: adding a probe '
-                'that removes objects created by the tracker.'
-            )
-            add_pad_probe_to_remove_tracker_objs(tracker.get_static_pad('src'))
+        add_tracker_postproc_pad_probe(
+            tracker.get_static_pad('src'),
+            disable_obj_init=isinstance(disable_obj_init, bool) and disable_obj_init,
+        )
 
         return tracker
