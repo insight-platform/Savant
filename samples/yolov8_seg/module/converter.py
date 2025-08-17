@@ -59,7 +59,6 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
             return
 
         roi_left, roi_top, roi_width, roi_height = roi
-        # self.logger.info(f"ROI: {roi}")
 
         if model.input.maintain_aspect_ratio:
             ratio_x = ratio_y = max(
