@@ -145,8 +145,7 @@ class NvDsFrameMeta(AbstractContextManager, LoggerMixin):
 
     @property
     def time_base(self) -> Tuple[int, int]:
-        """Get the time base of the current frame.
-        """
+        """Get the time base of the current frame."""
         return self._video_frame.time_base
 
     @property

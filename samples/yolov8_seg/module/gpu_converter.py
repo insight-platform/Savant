@@ -105,11 +105,17 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
                     (
                         model.output.attributes[0].name,
                         mask[
-                            max(0, int(tensors[i, 3] - tensors[i, 5] / 2)) : min(
-                                mask_height, int(tensors[i, 3] + tensors[i, 5] / 2)
+                            max(
+                                0, int(tensors[i, 3] - roi_top - tensors[i, 5] / 2)
+                            ) : min(
+                                mask_height,
+                                int(tensors[i, 3] - roi_top + tensors[i, 5] / 2),
                             ),
-                            max(0, int(tensors[i, 2] - tensors[i, 4] / 2)) : min(
-                                mask_width, int(tensors[i, 2] + tensors[i, 4] / 2)
+                            max(
+                                0, int(tensors[i, 2] - roi_left - tensors[i, 4] / 2)
+                            ) : min(
+                                mask_width,
+                                int(tensors[i, 2] - roi_left + tensors[i, 4] / 2),
                             ),
                         ].get(),
                         1.0,

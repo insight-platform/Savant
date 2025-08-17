@@ -1,5 +1,6 @@
 """Custom DrawFunc implementation."""
 
+import cv2
 import numpy as np
 
 from savant.deepstream.drawfunc import NvDsDrawFunc
@@ -14,6 +15,7 @@ class Overlay(NvDsDrawFunc):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.bbox_color = (0, 255, 0, 255)
+        self.roi_color = (0, 0, 255, 255)
         self.mask_color = np.array([0, 255, 0, 64], dtype=np.uint8)
         self.bg_color = np.array([0, 0, 0, 0], dtype=np.uint8)
 
@@ -24,6 +26,15 @@ class Overlay(NvDsDrawFunc):
                 if obj_meta.is_primary:
                     continue
 
+                if obj_meta.label == 'roi':
+                    draw_rect(
+                        frame_mat,
+                        rect=obj_meta.bbox.as_ltrb_int(),
+                        color=self.roi_color,
+                        thickness=2,
+                        stream=stream,
+                    )
+
                 mask_attr = obj_meta.get_attr_meta('yolov8_seg', 'mask')
                 if not mask_attr:
                     continue
@@ -33,6 +44,10 @@ class Overlay(NvDsDrawFunc):
                 mask_overlay = np.where(
                     mask_attr.value[..., None], self.mask_color, self.bg_color
                 )[0 : bbox[3] - bbox[1], 0 : bbox[2] - bbox[0]]
+
+                # if any shape dimension is 0, skip
+                if any(dim == 0 for dim in mask_overlay.shape):
+                    continue
 
                 alpha_comp(
                     frame_mat,
