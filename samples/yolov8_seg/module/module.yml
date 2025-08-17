@@ -5,10 +5,18 @@ parameters:
     width: 1280
     height: 720
   output_frame:
-    codec: ${oc.env:CODEC, 'hevc'}
+    codec: h264
+    encoder_params:
+      bitrate: 4000000
+      iframeinterval: 10
+      profile: High
+    condition:
+      tag: visualize
   draw_func:
     module: samples.yolov8_seg.module.overlay
     class_name: Overlay
+    condition:
+      tag: visualize
   buffer_queues:
     length: 10
   batch_size: 1
@@ -16,6 +24,11 @@ parameters:
 
 pipeline:
   elements:
+    - element: pyfunc
+      module: samples.yolov8_seg.module.sampler
+      class_name: PyFunc
+      condition:
+        tag: visualize
     - element: nvinfer@instance_segmentation
       name: yolov8_seg
       model:
