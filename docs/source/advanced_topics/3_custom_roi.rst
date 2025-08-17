@@ -169,5 +169,5 @@ An example of how to delete the default ROI object from a frame is demonstrated 
 
 .. literalinclude:: ../../../samples/traffic_meter/line_crossing.py
   :language: yaml
-  :lines: 12-35
+  :lines: 12-37
 
