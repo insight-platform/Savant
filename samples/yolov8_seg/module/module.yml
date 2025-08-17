@@ -11,11 +11,7 @@ parameters:
     width: 1280
     height: 720
   output_frame:
-    codec: h264
-    encoder_params:
-      bitrate: 4000000
-      iframeinterval: 10
-      profile: High
+    codec: ${oc.env:CODEC, 'hevc'}
     condition:
       tag: visualize
   draw_func:

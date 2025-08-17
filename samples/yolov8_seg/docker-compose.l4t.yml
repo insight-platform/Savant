@@ -33,9 +33,9 @@ services:
       - METRICS_FRAME_PERIOD=1000
       - CODEC=jpeg
       - ROI_LEFT=200
-      - ROI_TOP=100
+      - ROI_TOP=150
       - ROI_WIDTH=880
-      - ROI_HEIGHT=520
+      - ROI_HEIGHT=420
       - MODEL_OUTPUT_CONVERTER=gpu_converter
       - SAMPLING_FPS=10
     runtime: nvidia
