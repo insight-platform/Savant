@@ -107,6 +107,7 @@ pipeline:
                   - class_id: ${parameters.detected_object.id}
                     label: ${parameters.detected_object.label}
                     selector:
+                      module: savant.selector.detector
                       kwargs:
                         confidence_threshold: 0.5
                         nms_iou_threshold: 0.5
@@ -154,6 +155,7 @@ pipeline:
                   - class_id: ${parameters.detected_object.id}
                     label: ${parameters.detected_object.label}
                     selector:
+                      module: savant.selector.detector
                       kwargs:
                         confidence_threshold: 0.25
                         nms_iou_threshold: 0.45
@@ -199,6 +201,7 @@ pipeline:
                   - class_id: ${parameters.detected_object.id}
                     label: ${parameters.detected_object.label}
                     selector:
+                      module: savant.selector.detector
                       kwargs:
                         confidence_threshold: 0.25
                         nms_iou_threshold: 0.45
