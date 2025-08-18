@@ -10,6 +10,10 @@ parameters:
     module: samples.age_gender_recognition.overlay
     # specify the drawfunc's python class from the module
     class_name: Overlay
+    kwargs:
+      draw_landmarks: true        # Toggle landmark rendering
+      landmarks_radius: 3         # Circle radius for points
+      landmarks_color: 'FF0000FF' # RGBA (green, fully opaque)
     rendered_objects:
       yolov8nface:
         face:
