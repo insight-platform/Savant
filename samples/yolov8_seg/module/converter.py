@@ -34,7 +34,6 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
         *output_layers: np.ndarray,
         model: NvInferInstanceSegmentation,
         roi: Tuple[float, float, float, float],
-        stream: cv2.cuda.Stream = cv2.cuda.Stream.Null(),
     ) -> Optional[Tuple[np.ndarray, List[List[Tuple[str, Any, float]]]]]:
         """Converts model output layer tensors to bbox/seg tensors.
 
@@ -43,7 +42,6 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
             maintain_aspect_ratio
         :param roi: [top, left, width, height] of the rectangle
             on which the model infers
-        :param stream: CUDA stream to use for processing
         :return: a combination of :py:class:`.BaseObjectModelOutputConverter` and
             corresponding segmentation masks
         """
