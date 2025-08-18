@@ -18,12 +18,8 @@ services:
         condition: service_healthy
 
   module:
-    # 
-    # to improve numpy efficient for mask processing 
-    # we pin the service to specific cpu cores to manually decrease parallelism for 
-    # small tensor output and improve cache efficiency
-    # the limited cores can utilize Turbo Boost to improve performance.
-    # 
+    # To improve numpy efficiency for mask processing we pin the service to specific CPU cores to manually decrease the parallelism.
+    # It improves cache efficiency and utilizes CPU frequency scaling (if possible).
     cpuset: "0,1"
     image: ghcr.io/insight-platform/savant-deepstream-l4t:latest
     restart: unless-stopped
@@ -44,7 +40,7 @@ services:
       - ROI_WIDTH=880
       - ROI_HEIGHT=420
       - MODEL_OUTPUT_CONVERTER=converter # 'gpu_converter' is an alternative post-processing implementation working solely on GPU (CuPy)
-      - SAMPLING_FPS=30
+      - SAMPLING_FPS=10
     runtime: nvidia
 
   always-on-sink:

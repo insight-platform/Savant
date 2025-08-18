@@ -33,14 +33,13 @@ class Downsampler(NvDsPyFuncPlugin):
     def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
         source_id = frame_meta.source_id
         time_base = frame_meta.time_base
-        current_pts = frame_meta.pts
-        current_ts = current_pts
+        current_ts = frame_meta.pts
         last_ts = self.last_pts[source_id]
-        sampling_period_ts = time_base[1] / self.sampling_fps
+        sampling_period = time_base[1] / time_base[0] / self.sampling_fps
 
         # when the condition is true, we need to add our custom ROI to the frame
         # to process only the marked frames (downsampled frames)
-        time_condition = current_ts - last_ts > sampling_period_ts
+        time_condition = current_ts - last_ts > sampling_period
 
         # remove default ROI because we add our custom ROI to the frame
         # removal is not required but may help in case of tracker to reduce amount of tracked objects
@@ -50,7 +49,7 @@ class Downsampler(NvDsPyFuncPlugin):
                 break
 
         if time_condition:
-            self.last_pts[source_id] = current_pts
+            self.last_pts[source_id] = current_ts
             custom_roi = BBox(
                 self.roi_left + self.roi_width / 2,
                 self.roi_top + self.roi_height / 2,

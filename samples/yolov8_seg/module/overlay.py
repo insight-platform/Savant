@@ -1,6 +1,5 @@
 """Custom DrawFunc implementation."""
 
-import cv2
 import numpy as np
 
 from savant.deepstream.drawfunc import NvDsDrawFunc
