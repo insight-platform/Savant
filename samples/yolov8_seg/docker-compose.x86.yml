@@ -14,7 +14,6 @@ services:
     runtime: runc
     environment:
       - CODEC=h264
-#      - MODEL_OUTPUT_CONVERTER=gpu_converter
     deploy:
       resources:
         reservations:
