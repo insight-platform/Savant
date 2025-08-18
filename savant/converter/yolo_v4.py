@@ -36,8 +36,6 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
 
         # [num, 1, 4] -> [num, 4]
         bboxes = np.squeeze(boxes)
-        if bboxes.ndim == 1:
-            bboxes = np.expand_dims(bboxes, axis=0)
 
         # YOLOv4 returns [left, top, right, bottom] in normalized coordinates
         bboxes[:, 2] -= bboxes[:, 0]  # width = right - left
