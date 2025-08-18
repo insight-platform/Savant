@@ -233,7 +233,7 @@ pipeline:
               output:
                 layer_names: [output0]
                 converter:
-                  module: savant.converter.yolo
+                  module: savant.converter.yolo_v11
                   class_name: TensorToBBoxConverter
                   kwargs:
                     confidence_threshold: 0.25

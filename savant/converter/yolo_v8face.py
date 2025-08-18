@@ -78,41 +78,45 @@ class YoloV8faceConverter(BaseComplexModelOutputConverter):
         conf = selected_nms_predictions[:, 4:5]
         class_num = np.zeros_like(conf)
 
-        # Scale and shift bounding box coordinates
+        # Process landmarks (5 points, each with x, y, conf)
+        landmarks = selected_nms_predictions[:, 5:20].reshape(-1, 5, 3)
+
+        # Scale and shift bounding box coordinates (multiplicative form)
         if model.input.maintain_aspect_ratio:
             scale = min(
                 model.input.width / roi_width,
                 model.input.height / roi_height,
             )
-            xywh /= scale
+            inv_scale = 1.0 / scale
+            xywh *= inv_scale
+            landmarks[:, :, 0] *= inv_scale
+            landmarks[:, :, 1] *= inv_scale
 
             if model.input.symmetric_padding:
-                new_width = roi_width * scale
-                new_height = roi_height * scale
+                new_w = roi_width * scale
+                new_h = roi_height * scale
 
                 # Convert to ROI coordinates
-                pad_x = (model.input.width - new_width) / (2 * scale)
-                pad_y = (model.input.height - new_height) / (2 * scale)
+                pad_x = (model.input.width  - new_w) * 0.5 * inv_scale
+                pad_y = (model.input.height - new_h) * 0.5 * inv_scale
 
                 xywh[:, 0] -= pad_x  # xc
                 xywh[:, 1] -= pad_y  # yc
+                landmarks[:, :, 0] -= pad_x
+                landmarks[:, :, 1] -= pad_y
         else:
             # Without aspect ratio preservation, use direct scaling
             xywh *= np.tile(np.float32([ratio_width, ratio_height]), 2)
+            landmarks[:, :, 0] *= ratio_width
+            landmarks[:, :, 1] *= ratio_height
 
         # Offset bounding box centers to full-frame coordinates
         xywh[:, 0] += roi_left  # x center
         xywh[:, 1] += roi_top  # y center
-
         bbox_output = np.concatenate((class_num, conf, xywh), axis=1)
 
-        # Process landmarks (5 points, each with x, y, conf)
-        landmarks = (
-            selected_nms_predictions[:, 5:20]
-            * np.tile(np.float32([ratio_width, ratio_height, 1.0]), 5)
-        ).reshape(-1, 5, 3)
-        landmarks[:, :, 0] += roi_left  # x
-        landmarks[:, :, 1] += roi_top  # y
+        landmarks[:, :, 0] += roi_left
+        landmarks[:, :, 1] += roi_top
 
         landmarks_output = [
             [(attr_name, lms, conf)]
