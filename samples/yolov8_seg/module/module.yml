@@ -1,12 +1,12 @@
 name: yolov8_seg
 
 parameters:
-  sampling_fps: ${oc.decode:${oc.env:SAMPLING_FPS, '10'}}
+  sampling_fps: ${oc.decode:${oc.env:SAMPLING_FPS, 10}}
   roi:
-    left: ${oc.decode:${oc.env:ROI_LEFT, '100'}}
-    top: ${oc.decode:${oc.env:ROI_TOP, '100'}}
-    width: ${oc.decode:${oc.env:ROI_WIDTH, '1080'}}
-    height: ${oc.decode:${oc.env:ROI_HEIGHT, '520'}}
+    left: ${oc.decode:${oc.env:ROI_LEFT, 100}}
+    top: ${oc.decode:${oc.env:ROI_TOP, 100}}
+    width: ${oc.decode:${oc.env:ROI_WIDTH, 1080}}
+    height: ${oc.decode:${oc.env:ROI_HEIGHT, 520}}
   frame:
     width: 1280
     height: 720

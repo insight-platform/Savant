@@ -7,27 +7,27 @@ from savant.meta.object import ObjectMeta
 
 
 class Downsampler(NvDsPyFuncPlugin):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        sampling_fps: int,
+        roi_left: int,
+        roi_top: int,
+        roi_width: int,
+        roi_height: int,
+        **kwargs,
+    ):
+        self.sampling_fps = sampling_fps
+        self.roi_left = roi_left
+        self.roi_top = roi_top
+        self.roi_width = roi_width
+        self.roi_height = roi_height
         self.last_pts: dict[str, int] = {}
-        if not hasattr(self, 'sampling_fps'):
-            raise ValueError('sampling_fps is required')
-        if not hasattr(self, 'roi_left'):
-            raise ValueError('roi_left is required')
-        if not hasattr(self, 'roi_top'):
-            raise ValueError('roi_top is required')
-        if not hasattr(self, 'roi_width'):
-            raise ValueError('roi_width is required')
-        if not hasattr(self, 'roi_height'):
-            raise ValueError('roi_height is required')
+        super().__init__(**kwargs)
 
     def on_source_add(self, source_id: str):
         self.last_pts[source_id] = 0
 
     def on_source_eos(self, source_id: str):
-        self.logger.info(
-            f'Removing cache for source {source_id} EOS, cache size: {len(self.last_track_actions[source_id])}'
-        )
         del self.last_pts[source_id]
 
     def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
