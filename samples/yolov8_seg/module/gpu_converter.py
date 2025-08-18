@@ -79,8 +79,6 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
         # scale & shift bboxes
         tensors[:, [2, 4]] *= ratio_x
         tensors[:, [3, 5]] *= ratio_y
-        tensors[:, 2] += roi_left
-        tensors[:, 3] += roi_top
 
         # scale masks & prepare mask list
         mask_width = int(ratio_x * model.input.width)
@@ -106,16 +104,21 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
                         model.output.attributes[0].name,
                         mask[
                             max(0, int(tensors[i, 3] - tensors[i, 5] / 2)) : min(
-                                mask_height, int(tensors[i, 3] + tensors[i, 5] / 2)
+                                mask_height,
+                                int(tensors[i, 3] + tensors[i, 5] / 2),
                             ),
                             max(0, int(tensors[i, 2] - tensors[i, 4] / 2)) : min(
-                                mask_width, int(tensors[i, 2] + tensors[i, 4] / 2)
+                                mask_width,
+                                int(tensors[i, 2] + tensors[i, 4] / 2),
                             ),
                         ].get(),
                         1.0,
                     )
                 ]
             )
+
+        tensors[:, 2] += roi_left
+        tensors[:, 3] += roi_top
 
         return tensors.get(), mask_list
 

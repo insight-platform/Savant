@@ -1,7 +1,7 @@
 """Wrapper of deepstream frame meta information."""
 
 from contextlib import AbstractContextManager
-from typing import Dict, Iterator, Optional, Union
+from typing import Dict, Iterator, Optional, Tuple, Union
 
 import pyds
 from savant_rs.primitives import VideoFrame
@@ -142,6 +142,11 @@ class NvDsFrameMeta(AbstractContextManager, LoggerMixin):
             name=name,
             values=[build_attribute_value(value)],
         )
+
+    @property
+    def time_base(self) -> Tuple[int, int]:
+        """Get the time base of the current frame."""
+        return self._video_frame.time_base
 
     @property
     def pts(self) -> int:
