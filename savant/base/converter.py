@@ -5,6 +5,7 @@ from enum import Enum
 from typing import Any, List, Optional, Tuple, Union
 
 import cupy as cp
+import cv2
 import numpy as np
 
 from .model import AttributeModel, ComplexModel, ObjectModel
@@ -36,6 +37,7 @@ class BaseOutputConverter(BasePyFuncCallableImpl):
         *output_layers: Union[np.ndarray, cp.ndarray],
         model: ObjectModel,
         roi: Tuple[float, float, float, float],
+        stream: cv2.cuda.Stream = cv2.cuda.Stream.Null(),
     ) -> Any:
         """Converts raw model output tensors to a model specific representation."""
 
@@ -49,6 +51,7 @@ class BaseObjectModelOutputConverter(BaseOutputConverter):
         *output_layers: Union[np.ndarray, cp.ndarray],
         model: ObjectModel,
         roi: Tuple[float, float, float, float],
+        stream: cv2.cuda.Stream = cv2.cuda.Stream.Null(),
     ) -> Optional[np.ndarray]:
         """Converts raw model output tensors to a numpy array that represents a
         list of detected bboxes in the format ``(class_id, confidence, xc, yc,
@@ -60,6 +63,7 @@ class BaseObjectModelOutputConverter(BaseOutputConverter):
             maintain_aspect_ratio flag
         :param roi: ``[top, left, width, height]`` of the rectangle
             on which the model infers
+        :param stream: CUDA stream to use for GPU operations
         :return: BBox tensor ``(class_id, confidence, xc, yc, width, height, [angle])``
             offset by roi upper left and scaled by roi width and height
         """
@@ -74,6 +78,7 @@ class BaseAttributeModelOutputConverter(BaseOutputConverter):
         *output_layers: Union[np.ndarray, cp.ndarray],
         model: AttributeModel,
         roi: Tuple[float, float, float, float],
+        stream: cv2.cuda.Stream = cv2.cuda.Stream.Null(),
     ) -> Optional[List[Tuple[str, Any, float]]]:
         """Converts raw model output tensors to a list of values in several
         formats:
@@ -90,6 +95,7 @@ class BaseAttributeModelOutputConverter(BaseOutputConverter):
         :param model: Attribute model
         :param roi: ``[top, left, width, height]`` of the rectangle
             on which the model infers
+        :param stream: CUDA stream to use for GPU operations
         :return: list of attributes values with confidences
             ``(attr_name, value, confidence)``
         """
@@ -104,6 +110,7 @@ class BaseComplexModelOutputConverter(BaseOutputConverter):
         *output_layers: Union[np.ndarray, cp.ndarray],
         model: ComplexModel,
         roi: Tuple[float, float, float, float],
+        stream: cv2.cuda.Stream = cv2.cuda.Stream.Null(),
     ) -> Optional[Tuple[np.ndarray, List[List[Tuple[str, Any, float]]]]]:
         """Converts raw model output tensors to Savant format.
 
@@ -112,6 +119,7 @@ class BaseComplexModelOutputConverter(BaseOutputConverter):
             maintain_aspect_ratio flag
         :param roi: ``[top, left, width, height]`` of the rectangle
             on which the model infers
+        :param stream: CUDA stream to use for GPU operations
         :return: a combination of :py:class:`.BaseObjectModelOutputConverter` and
             :py:class:`.BaseAttributeModelOutputConverter` outputs:
 

@@ -1,6 +1,7 @@
 import logging
 from typing import Callable, List, Optional, Tuple, Union
 
+import cv2
 import numpy as np
 import pyds
 from pygstsavantframemeta import (
@@ -20,6 +21,7 @@ from savant.base.converter import TensorFormat
 from savant.base.input_preproc import ObjectsPreprocessing
 from savant.base.pyfunc import PyFuncNoopCallException
 from savant.config.schema import FramePadding, ModelElement
+from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
 from savant.deepstream.utils.attribute import (
     nvds_add_attr_meta_to_obj,
@@ -133,6 +135,16 @@ class NvInferProcessor:
 
         elif self._is_attribute_model:
             self.postproc = self._process_regular_classifier_output
+
+        self._stream_pool = {}
+
+    def get_cuda_stream(self, frame_meta: NvDsFrameMeta):
+        """Get a CUDA stream that can be used to asynchronously process
+        a frame in a batch.
+        """
+        if frame_meta.batch_id not in self._stream_pool:
+            self._stream_pool[frame_meta.batch_id] = cv2.cuda.Stream()
+        return self._stream_pool[frame_meta.batch_id]
 
     def _preprocess_object_meta(self, buffer: Gst.Buffer):
         """Preprocesses input object metadata."""
@@ -283,6 +295,7 @@ class NvInferProcessor:
         self._model: Union[NvInferAttributeModel, NvInferComplexModel]
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
+            cuda_stream = self.get_cuda_stream(nvds_frame_meta)
             source_id, frame_idx = self._get_frame_source_id_and_idx(
                 buffer,
                 nvds_frame_meta,
@@ -320,6 +333,7 @@ class NvInferProcessor:
                                 parent_nvds_obj_meta.rect_params.width,
                                 parent_nvds_obj_meta.rect_params.height,
                             ),
+                            stream=cuda_stream,
                         )
                     except Exception as exc:  # pylint: disable=broad-except
                         if self._model.output.converter.dev_mode:

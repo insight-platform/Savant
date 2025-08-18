@@ -59,7 +59,11 @@ def nms_cpu(
 
 
 def nms_gpu(
-    bboxes: cp.ndarray, confidences: cp.ndarray, threshold: float, top_k: int = 300
+    bboxes: cp.ndarray,
+    confidences: cp.ndarray,
+    threshold: float,
+    top_k: int = 300,
+    stream: cp.cuda.Stream = cp.cuda.Stream.null,
 ) -> cp.ndarray:
     """Performs non-maximum suppression (NMS) on the boxes according
     to their intersection-over-union (IoU). CuPy (GPU) version.
@@ -72,18 +76,20 @@ def nms_gpu(
     :param threshold: IoU threshold.
         Discards all overlapping boxes with IoU > threshold.
     :param top_k: Returns only K with max confidence/score.
+    :param stream: CuPy stream to run the kernel on.
     :return: Indices of the boxes that have been kept by NMS,
         sorted in decreasing order of scores.
     """
-    _bboxes = cp.zeros_like(bboxes)
-    _bboxes[:, 0] += bboxes[:, 0]
-    _bboxes[:, 1] += bboxes[:, 1]
-    _bboxes[:, 2] = bboxes[:, 0] + bboxes[:, 2]
-    _bboxes[:, 3] = bboxes[:, 1] + bboxes[:, 3]
-    order = confidences.argsort()[::-1].astype(np.uint32)
-    sorted_bboxes = _bboxes[order, :]
-    mask = _call_nms_kernel(sorted_bboxes, threshold)
-    mask = order[mask]
+    with stream:
+        _bboxes = cp.zeros_like(bboxes)
+        _bboxes[:, 0] += bboxes[:, 0]
+        _bboxes[:, 1] += bboxes[:, 1]
+        _bboxes[:, 2] = bboxes[:, 0] + bboxes[:, 2]
+        _bboxes[:, 3] = bboxes[:, 1] + bboxes[:, 3]
+        order = confidences.argsort()[::-1].astype(cp.uint32)
+        sorted_bboxes = _bboxes[order, :]
+        mask = _call_nms_kernel(sorted_bboxes, threshold)
+        mask = order[mask]
     return mask[:top_k]
 
 
@@ -174,7 +180,6 @@ def _call_nms_kernel(bboxes: cp.ndarray, threshold: float) -> cp.ndarray:
     return _nms_gpu_post(mask.get(), n_bbox, threads_per_block, col_blocks)
 
 
-# @nb.njit('u4[:](u8[:], u2, u2, u2)', nogil=True, cache=True)
 def _nms_gpu_post(
     mask: np.ndarray, n_bbox: int, threads_per_block: int, col_blocks: int
 ) -> np.ndarray:

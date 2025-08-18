@@ -32,6 +32,7 @@ services:
       - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
       - METRICS_FRAME_PERIOD=1000
       - CODEC=jpeg
+      - MODEL_OUTPUT_CONVERTER=gpu_converter
     runtime: nvidia
 
   always-on-sink:
