@@ -2,62 +2,34 @@ services:
 
   gige-camera-raw:
     image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
-    restart: unless-stopped
-    entrypoint: arv-fake-gv-camera-0.8
-    command: [ "-i", "eth0", "-s", "Camera-Raw" ]
+    extends:
+      file: docker-compose.l4t.yml
+      service: gige-camera-raw
 
   gige-camera-encoded:
     image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
-    restart: unless-stopped
-    entrypoint: arv-fake-gv-camera-0.8
-    command: [ "-i", "eth0", "-s", "Camera-Encoded" ]
+    extends:
+      file: docker-compose.l4t.yml
+      service: gige-camera-encoded
 
   gige-source-raw:
     image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
-    restart: unless-stopped
-    volumes:
-      - zmq_sockets:/tmp/zmq-sockets
-    environment:
-      - CAMERA_NAME=Aravis-Fake-Camera-Raw
-      - FRAMERATE=20/1
-      - ENCODE=False
-      - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/video.ipc
-      - SOURCE_ID=gige-raw
-    entrypoint: /opt/savant/adapters/gst/sources/gige_cam.sh
+    extends:
+      file: docker-compose.l4t.yml
+      service: gige-source-raw
 
   gige-source-encoded:
     image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
-    restart: unless-stopped
-    volumes:
-      - zmq_sockets:/tmp/zmq-sockets
-    environment:
-      - CAMERA_NAME=Aravis-Fake-Camera-Encoded
-      - FRAMERATE=20/1
-      - ENCODE=True
-      - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/video.ipc
-      - SOURCE_ID=gige-encoded
-    entrypoint: /opt/savant/adapters/gst/sources/gige_cam.sh
+    extends:
+      file: docker-compose.l4t.yml
+      service: gige-source-encoded
 
   always-on-sink:
     privileged: true
     image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
-    restart: unless-stopped
-    ports:
-      - "554:554"    # RTSP
-      - "1935:1935"  # RTMP
-      - "888:888"    # HLS
-      - "8889:8889"  # WebRTC
-      - "13000:13000"  # Stream control API
-    volumes:
-      - zmq_sockets:/tmp/zmq-sockets
-      - ../assets/stub_imgs:/stub_imgs
-    environment:
-      - ZMQ_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/video.ipc
-      - SOURCE_IDS=gige-raw,gige-encoded
-      - FRAMERATE=20/1
-      - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x720.jpeg
-      - DEV_MODE=True
-    command: python -m adapters.ds.sinks.always_on_rtsp
+    extends:
+      file: docker-compose.l4t.yml
+      service: always-on-sink
     deploy:
       resources:
         reservations:

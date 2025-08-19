@@ -1,14 +1,29 @@
 name: yolov8_seg
 
 parameters:
+  sampling_fps: ${oc.decode:${oc.env:SAMPLING_FPS, 10}}
+  roi:
+    left: ${oc.decode:${oc.env:ROI_LEFT, 100}}
+    top: ${oc.decode:${oc.env:ROI_TOP, 100}}
+    width: ${oc.decode:${oc.env:ROI_WIDTH, 1080}}
+    height: ${oc.decode:${oc.env:ROI_HEIGHT, 520}}
   frame:
     width: 1280
     height: 720
   output_frame:
     codec: ${oc.env:CODEC, 'hevc'}
+    condition:
+      tag: visualize
   draw_func:
     module: samples.yolov8_seg.module.overlay
     class_name: Overlay
+    condition:
+      tag: visualize
+    kwargs:
+      roi_left: ${parameters.roi.left}
+      roi_top: ${parameters.roi.top}
+      roi_width: ${parameters.roi.width}
+      roi_height: ${parameters.roi.height}
   buffer_queues:
     length: 10
   batch_size: 1
@@ -16,6 +31,15 @@ parameters:
 
 pipeline:
   elements:
+    - element: pyfunc
+      module: samples.yolov8_seg.module.sampler
+      class_name: Downsampler
+      kwargs:
+        sampling_fps: ${parameters.sampling_fps}
+        roi_left: ${parameters.roi.left}
+        roi_top: ${parameters.roi.top}
+        roi_width: ${parameters.roi.width}
+        roi_height: ${parameters.roi.height}
     - element: nvinfer@instance_segmentation
       name: yolov8_seg
       model:
@@ -28,6 +52,7 @@ pipeline:
         model_file: yolov8m-seg.onnx
         batch_size: ${parameters.batch_size}
         input:
+          object: rate_limiter.roi
           shape: [3, 640, 640]
           maintain_aspect_ratio: true
           scale_factor: 0.0039215697906911373

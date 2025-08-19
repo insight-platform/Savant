@@ -7,7 +7,7 @@ parameters:
   frame:
     width: 1280
     height: 720
-  batch_size: 1
+  batch_size: ${oc.decode:${oc.env:BATCH_SIZE, 1}}
   # to check auxiliary streams' encoder
   auxiliary_encoders:
     - ${pipeline.elements[0].kwargs.codec_params}

@@ -56,7 +56,7 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
         )
 
         if tensors.shape[0] == 0:
-            return
+            return None
 
         roi_left, roi_top, roi_width, roi_height = roi
 
@@ -72,8 +72,6 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
         # scale & shift bboxes
         tensors[:, [2, 4]] *= ratio_x
         tensors[:, [3, 5]] *= ratio_y
-        tensors[:, 2] += roi_left
-        tensors[:, 3] += roi_top
 
         # scale masks (transpose to use cv2.resize)
         masks = masks.transpose((1, 2, 0))
@@ -93,10 +91,12 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
                     masks[
                         i,
                         max(0, int(tensors[i, 3] - tensors[i, 5] / 2)) : min(
-                            mask_height, int(tensors[i, 3] + tensors[i, 5] / 2)
+                            mask_height,
+                            int(tensors[i, 3] + tensors[i, 5] / 2),
                         ),
                         max(0, int(tensors[i, 2] - tensors[i, 4] / 2)) : min(
-                            mask_width, int(tensors[i, 2] + tensors[i, 4] / 2)
+                            mask_width,
+                            int(tensors[i, 2] + tensors[i, 4] / 2),
                         ),
                     ],
                     1.0,
@@ -104,6 +104,9 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
             ]
             for i in range(len(masks))
         ]
+
+        tensors[:, 2] += roi_left
+        tensors[:, 3] += roi_top
 
         return tensors, mask_list
 

@@ -1,7 +1,7 @@
 """Wrapper of deepstream frame meta information."""
 
 from contextlib import AbstractContextManager
-from typing import Dict, Iterator, Optional, Union
+from typing import Dict, Iterator, Optional, Tuple, Union
 
 import pyds
 from savant_rs.primitives import VideoFrame
@@ -144,6 +144,11 @@ class NvDsFrameMeta(AbstractContextManager, LoggerMixin):
         )
 
     @property
+    def time_base(self) -> Tuple[int, int]:
+        """Get the time base of the current frame."""
+        return self._video_frame.time_base
+
+    @property
     def pts(self) -> int:
         """Get the presentation time stamp (PTS) of the current frame.
 
@@ -180,6 +185,17 @@ class NvDsFrameMeta(AbstractContextManager, LoggerMixin):
 
             if object_meta.uid is not None and object_meta.uid in self._objects:
                 return
+
+            if not object_meta.bbox.inside_viewport(
+                self.video_frame.width, self.video_frame.height
+            ):
+                raise MetaValueError(
+                    f'Object {object_meta.element_name}/{object_meta.label} '
+                    f'with ID={object_meta.uid} is out of viewport: '
+                    f'LeftTopRightBottom=[{object_meta.bbox.as_ltrb_int()}] '
+                    f'does not fit in frame {self.video_frame.width}x{self.video_frame.height}. '
+                    'Trim the object bounding box to fit in the frame.'
+                )
 
             ds_object_meta = _NvDsObjectMetaImpl(
                 frame_meta=self,

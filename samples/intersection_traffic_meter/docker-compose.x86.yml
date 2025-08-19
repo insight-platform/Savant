@@ -2,37 +2,21 @@ services:
 
   video-loop-source:
     image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
-    restart: unless-stopped
-    volumes:
-      - zmq_sockets:/tmp/zmq-sockets
-      - /tmp/video-loop-source-downloads:/tmp/video-loop-source-downloads
-    environment:
-      - LOCATION=https://eu-central-1.linodeobjects.com/savant-data/demo/leeds_1080p.mp4
-      - DOWNLOAD_PATH=/tmp/video-loop-source-downloads
-      - ZMQ_ENDPOINT=dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc
-      - SOURCE_ID=leeds
-      - SYNC_OUTPUT=True
-    entrypoint: /opt/savant/adapters/gst/sources/video_loop.sh
-    depends_on:
-      module:
-        condition: service_healthy
+    extends:
+      file: docker-compose.l4t.yml
+      service: video-loop-source
 
   module:
     privileged: true
     build:
       context: .
       dockerfile: docker/Dockerfile.x86
-    volumes:
-      - zmq_sockets:/tmp/zmq-sockets
-      - ../../cache:/cache
-      - ..:/opt/savant/samples
-    command: samples/intersection_traffic_meter/module.yml
+    extends:
+      file: docker-compose.l4t.yml
+      service: module
+    runtime: runc
     environment:
-      - MODEL_PATH=/cache/models/intersection_traffic_meter
-      - DOWNLOAD_PATH=/cache/downloads/intersection_traffic_meter
-      - ZMQ_SRC_ENDPOINT=router+bind:ipc:///tmp/zmq-sockets/input-video.ipc
-      - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
-      - METRICS_FRAME_PERIOD=1000
+      - CODEC=h264
     deploy:
       resources:
         reservations:
@@ -44,21 +28,9 @@ services:
   always-on-sink:
     privileged: true
     image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
-    restart: unless-stopped
-    ports:
-      - "554:554"    # RTSP
-      - "1935:1935"  # RTMP
-      - "888:888"    # HLS
-      - "8889:8889"  # WebRTC
-    volumes:
-      - zmq_sockets:/tmp/zmq-sockets
-      - ../assets/stub_imgs:/stub_imgs
-    environment:
-      - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
-      - SOURCE_ID=leeds
-      - STUB_FILE_LOCATION=/stub_imgs/smpte100_1920x1080.jpeg
-      - DEV_MODE=True
-    command: python -m adapters.ds.sinks.always_on_rtsp
+    extends:
+      file: docker-compose.l4t.yml
+      service: always-on-sink
     deploy:
       resources:
         reservations:
@@ -68,19 +40,14 @@ services:
               capabilities: [ gpu ]
 
   graphite:
-    image: graphiteapp/graphite-statsd
+    extends:
+      file: docker-compose.l4t.yml
+      service: graphite
 
   grafana:
-    image: grafana/grafana-oss
-    volumes:
-      - ./grafana_datasources:/etc/grafana/provisioning/datasources/
-      - ./grafana_dashboards:/etc/grafana/provisioning/dashboards/
-    ports:
-      - "3000:3000"
-    environment:
-      - GF_AUTH_ANONYMOUS_ENABLED=true
-      - GF_AUTH_ANONYMOUS_ORG_NAME=Main Org.
-      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+    extends:
+      file: docker-compose.l4t.yml
+      service: grafana
 
 volumes:
   zmq_sockets:

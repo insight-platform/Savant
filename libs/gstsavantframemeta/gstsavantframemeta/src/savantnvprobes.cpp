@@ -1,11 +1,14 @@
 #include "savantnvprobes.h"
 #include <vector>
 #include "gstnvdsmeta.h"
+#include <glib.h> // for GHashTable
 
 
-GstPadProbeReturn remove_tracker_objs_pad_probe(GstPad *pad,
+GstPadProbeReturn tracker_postproc_pad_probe(GstPad *pad,
                                                 GstPadProbeInfo *info,
                                                 gpointer user_data) {
+    bool disable_obj_init = *(static_cast<bool*>(user_data));
+
     GstBuffer *buffer = GST_PAD_PROBE_INFO_BUFFER(info);
     if (!buffer) {
         GST_INFO_OBJECT(pad, "Skipping NULL buffer.");
@@ -26,23 +29,37 @@ GstPadProbeReturn remove_tracker_objs_pad_probe(GstPad *pad,
         NvDsFrameMeta *frame_meta = (NvDsFrameMeta *) (l_frame->data);
         std::vector<NvDsObjectMeta*> removal_list;
         NvDsObjectMetaList *l_obj = NULL;
+
+        // build a set of valid object pointers in this frame
+        GHashTable *valid_objs = g_hash_table_new(g_direct_hash, g_direct_equal);
         for (l_obj = frame_meta->obj_meta_list; l_obj != NULL; l_obj = l_obj->next) {
             NvDsObjectMeta *obj_meta = (NvDsObjectMeta *) (l_obj->data);
 
-            if (obj_is_tracker_created(obj_meta)) {
+            if (disable_obj_init && obj_is_tracker_created(obj_meta)) {
                 GST_INFO_OBJECT(pad, "Found obj created by the tracker, marking for removal.");
                 removal_list.push_back(obj_meta);
+            } else {
+                g_hash_table_insert(valid_objs, obj_meta, GINT_TO_POINTER(1));
             }
         }
 
         for (auto obj : removal_list) {
             nvds_remove_obj_meta_from_frame(frame_meta, obj);
         }
+
+        // check parents
+        for (l_obj = frame_meta->obj_meta_list; l_obj != NULL; l_obj = l_obj->next) {
+            NvDsObjectMeta *obj_meta = (NvDsObjectMeta *) (l_obj->data);
+            if (obj_meta->parent && !g_hash_table_contains(valid_objs, obj_meta->parent)) {
+                obj_meta->parent = NULL;
+            }
+        }
+
+        g_hash_table_destroy(valid_objs);
     }
 
     return GST_PAD_PROBE_OK;
 }
-
 
 bool obj_is_tracker_created(NvDsObjectMeta *obj_meta) {
     float left = obj_meta->detector_bbox_info.org_bbox_coords.left;

@@ -21,7 +21,7 @@ from gst_plugins.python.savant_rs_video_demux_common import FrameParams, build_c
 from savant.api.parser import convert_ts
 from savant.gstreamer import GLib, Gst, GstApp
 from savant.gstreamer.codecs import Codec
-from savant.utils.config import opt_config, req_config, strtobool
+from savant.utils.config import opt_config, req_config
 from savant.utils.log import get_logger, init_logging
 from savant.utils.welcome import get_starting_message
 from savant.utils.zeromq import ZeroMQMessage, ZeroMQSource

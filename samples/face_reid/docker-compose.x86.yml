@@ -4,35 +4,17 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile.x86
-    volumes:
-      - zmq_sockets:/tmp/zmq-sockets
-      - ./assets/gallery:/gallery
-      - ./src:/opt/savant/samples/face_reid
-      - ./index_files:/index
-    environment:
-      - ZMQ_SRC_ENDPOINT=req+connect:ipc:///tmp/zmq-sockets/input-video.ipc
-      - ZMQ_SINK_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
-    entrypoint: python
-    command: samples/face_reid/index_builder_client.py
-    profiles:
-      - index
-    depends_on:
-      index-builder-pipeline:
-        condition: service_healthy
+    extends:
+      file: docker-compose.l4t.yml
+      service: index-builder-client
 
   index-builder-pipeline:
     privileged: true
     image: ghcr.io/insight-platform/savant-deepstream:latest
-    volumes:
-      - zmq_sockets:/tmp/zmq-sockets
-      - ../../cache:/cache
-      - ./src:/opt/savant/samples/face_reid
-    command: samples/face_reid/index_builder.yml
-    environment:
-      - MODEL_PATH=/cache/models/face_reid
-      - DOWNLOAD_PATH=/cache/downloads/face_reid
-      - ZMQ_SRC_ENDPOINT=rep+bind:ipc:///tmp/zmq-sockets/input-video.ipc
-      - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
+    extends:
+      file: docker-compose.l4t.yml
+      service: index-builder-pipeline
+    runtime: runc
     deploy:
       resources:
         reservations:
@@ -40,46 +22,24 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [ gpu ]
-    profiles:
-      - index
 
   video-loop-source:
     image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
-    restart: unless-stopped
-    volumes:
-      - zmq_sockets:/tmp/zmq-sockets
-      - /tmp/video-loop-source-downloads:/tmp/video-loop-source-downloads
-    environment:
-      - LOCATION=https://eu-central-1.linodeobjects.com/savant-data/demo/jumanji_cast.mp4
-      - DOWNLOAD_PATH=/tmp/video-loop-source-downloads
-      - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
-      - SOURCE_ID=video
-      - SYNC_OUTPUT=True
-    entrypoint: /opt/savant/adapters/gst/sources/video_loop.sh
-    profiles:
-      - demo
-    depends_on:
-      module:
-        condition: service_healthy
+    extends:
+      file: docker-compose.l4t.yml
+      service: video-loop-source
 
   module:
     privileged: true
     build:
       context: .
       dockerfile: docker/Dockerfile.x86
-    restart: unless-stopped
-    volumes:
-      - zmq_sockets:/tmp/zmq-sockets
-      - ../../cache:/cache
-      - ./src:/opt/savant/samples/face_reid/
-      - ./index_files:/index
-    command: samples/face_reid/module.yml
+    extends:
+      file: docker-compose.l4t.yml
+      service: module
+    runtime: runc
     environment:
-      - MODEL_PATH=/cache/models/face_reid
-      - DOWNLOAD_PATH=/cache/downloads/face_reid
-      - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
-      - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
-      - METRICS_FRAME_PERIOD=1000
+      - CODEC=h264
     deploy:
       resources:
         reservations:
@@ -87,28 +47,13 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [ gpu ]
-    profiles:
-      - demo
 
   always-on-sink:
     privileged: true
     image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
-    restart: unless-stopped
-    ports:
-      - "554:554"    # RTSP
-      - "1935:1935"  # RTMP
-      - "888:888"    # HLS
-      - "8889:8889"  # WebRTC
-    volumes:
-      - zmq_sockets:/tmp/zmq-sockets
-      - ../assets/stub_imgs:/stub_imgs
-    environment:
-      - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
-      - SOURCE_ID=video
-      - FRAMERATE=25/1
-      - STUB_FILE_LOCATION=/stub_imgs/smpte100_1576x720.jpeg
-      - DEV_MODE=True
-    command: python -m adapters.ds.sinks.always_on_rtsp
+    extends:
+      file: docker-compose.l4t.yml
+      service: always-on-sink
     deploy:
       resources:
         reservations:
@@ -116,8 +61,6 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [ gpu ]
-    profiles:
-      - demo
 
 volumes:
   zmq_sockets:

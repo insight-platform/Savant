@@ -35,6 +35,7 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
         self.nms_iou_threshold = nms_iou_threshold
         self.top_k = top_k
         super().__init__()
+        self.logger.info('Using GPU converter.')
 
     def __call__(
         self,
@@ -63,7 +64,7 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
         )
 
         if tensors.shape[0] == 0:
-            return
+            return None
 
         roi_left, roi_top, roi_width, roi_height = roi
 
@@ -79,8 +80,6 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
         # scale & shift bboxes
         tensors[:, [2, 4]] *= ratio_x
         tensors[:, [3, 5]] *= ratio_y
-        tensors[:, 2] += roi_left
-        tensors[:, 3] += roi_top
 
         # scale masks & prepare mask list
         mask_width = int(ratio_x * model.input.width)
@@ -93,7 +92,7 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
                 src=gpu_mat,
                 dsize=(mask_width, mask_height),
                 interpolation=cv2.INTER_LINEAR,
-                # TODO: it should work, but it doesn't, investigate
+                # TODO: Use cuda stream
                 # stream=cp.cuda.Stream(),
             )
             mask = opencv_gpu_mat_as_cupy_array(resized_gpu_mat)
@@ -106,16 +105,21 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
                         model.output.attributes[0].name,
                         mask[
                             max(0, int(tensors[i, 3] - tensors[i, 5] / 2)) : min(
-                                mask_height, int(tensors[i, 3] + tensors[i, 5] / 2)
+                                mask_height,
+                                int(tensors[i, 3] + tensors[i, 5] / 2),
                             ),
                             max(0, int(tensors[i, 2] - tensors[i, 4] / 2)) : min(
-                                mask_width, int(tensors[i, 2] + tensors[i, 4] / 2)
+                                mask_width,
+                                int(tensors[i, 2] + tensors[i, 4] / 2),
                             ),
                         ].get(),
                         1.0,
                     )
                 ]
             )
+
+        tensors[:, 2] += roi_left
+        tensors[:, 3] += roi_top
 
         return tensors.get(), mask_list
 

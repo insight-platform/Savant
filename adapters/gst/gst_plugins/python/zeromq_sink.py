@@ -36,7 +36,7 @@ from savant.gstreamer.utils import (
     required_property,
 )
 from savant.utils.log import LoggerMixin
-from savant.utils.zeromq import Defaults, SenderSocketTypes, get_zmq_socket_uri_options
+from savant.utils.zeromq import Defaults
 
 EMBEDDED_FRAME_TYPE = 'embedded'
 DEFAULT_SOURCE_ID_PATTERN = 'source-%d'

@@ -20,7 +20,7 @@ from savant.config.schema import SinkElement
 from savant.utils.log import get_logger
 
 from .registry import Registry
-from .zeromq import Defaults, SenderSocketTypes, get_zmq_socket_uri_options
+from .zeromq import Defaults
 
 logger = get_logger(__name__)
 

@@ -174,9 +174,9 @@ def add_pad_probe_to_unpack_and_move_batch(
     )
 
 
-def add_pad_probe_to_remove_tracker_objs(pad: Gst.Pad):
-    """Add a src pad probe to a nvtracker element that removes tracker-created objects.
+def add_tracker_postproc_pad_probe(pad: Gst.Pad, disable_obj_init: bool):
+    """Add a src pad probe to a nvtracker element that do some postprocessing.
 
     :param pad: nvtracker src pad.
     """
-    pygstsavantframemeta.add_pad_probe_to_remove_tracker_objs(hash(pad))
+    pygstsavantframemeta.add_tracker_postproc_pad_probe(hash(pad), disable_obj_init)
