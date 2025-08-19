@@ -29,6 +29,21 @@ parameters:
   detector: ${oc.env:DETECTOR, 'yolov8m'}
   send_stats: True
 
+  default_yolo_converter:
+    module: savant.converter.yolo
+    class_name: TensorToBBoxConverter
+    kwargs:
+      confidence_threshold: 0.25
+      nms_iou_threshold: 0.45
+      top_k: 300
+
+  default_yolo_selector:
+    module: savant.selector.detector
+    class_name: MinMaxSizeBBoxSelector
+    kwargs:
+      min_width: 30
+      min_height: 30
+
 pipeline:
 
   elements:
@@ -97,22 +112,11 @@ pipeline:
                 scale_factor: 0.0039215697906911373
               output:
                 layer_names: [boxes, confs]
-                converter:
-                  module: savant.converter.yolo_v4
-                  class_name: TensorToBBoxConverter
-                  kwargs:
-                    confidence_threshold: 0.5
-                    top_k: 300
+                converter: ${parameters.default_yolo_converter}
                 objects:
                   - class_id: ${parameters.detected_object.id}
                     label: ${parameters.detected_object.label}
-                    selector:
-                      module: savant.selector.detector
-                      kwargs:
-                        confidence_threshold: 0.5
-                        nms_iou_threshold: 0.5
-                        min_width: 30
-                        min_height: 40
+                    selector: ${parameters.default_yolo_selector}
 
     # variant group: yolov8m detector
     # groups are included in the pipeline.elements alongside regular units or other groups
@@ -144,21 +148,11 @@ pipeline:
                 symmetric_padding: true
               output:
                 layer_names: [boxes, scores, classes]
-                converter:
-                  module: savant.converter.yolo
-                  class_name: TensorToBBoxConverter
-                  kwargs:
-                    confidence_threshold: 0.25
-                    nms_iou_threshold: 0.45
-                    top_k: 300
+                converter: ${parameters.default_yolo_converter}
                 objects:
                   - class_id: ${parameters.detected_object.id}
                     label: ${parameters.detected_object.label}
-                    selector:
-                      module: savant.selector.detector
-                      kwargs:
-                        confidence_threshold: 0.25
-                        nms_iou_threshold: 0.45
+                    selector: ${parameters.default_yolo_selector}
 
     # variant group: yolov8s detector
     # groups are included in the pipeline.elements alongside regular units or other groups
@@ -190,21 +184,11 @@ pipeline:
                 symmetric_padding: true
               output:
                 layer_names: [boxes, scores, classes]
-                converter:
-                  module: savant.converter.yolo
-                  class_name: TensorToBBoxConverter
-                  kwargs:
-                    confidence_threshold: 0.25
-                    nms_iou_threshold: 0.45
-                    top_k: 300
+                converter: ${parameters.default_yolo_converter}
                 objects:
                   - class_id: ${parameters.detected_object.id}
                     label: ${parameters.detected_object.label}
-                    selector:
-                      module: savant.selector.detector
-                      kwargs:
-                        confidence_threshold: 0.25
-                        nms_iou_threshold: 0.45
+                    selector: ${parameters.default_yolo_selector}
 
     # variant group: yolov11s detector
     - group:
@@ -232,21 +216,12 @@ pipeline:
                 symmetric_padding: true
               output:
                 layer_names: [output0]
-                converter:
-                  module: savant.converter.yolo_v11
-                  class_name: TensorToBBoxConverter
-                  kwargs:
-                    confidence_threshold: 0.25
-                    nms_iou_threshold: 0.45
-                    top_k: 300
+                num_detected_classes: 80  # required for YOLOv11
+                converter: ${parameters.default_yolo_converter}
                 objects:
                   - class_id: ${parameters.detected_object.id}
                     label: ${parameters.detected_object.label}
-                    selector:
-                      module: savant.selector.detector
-                      kwargs:
-                        confidence_threshold: 0.25
-                        nms_iou_threshold: 0.45
+                    selector: ${parameters.default_yolo_selector}
 
     # regular nvtracker definition
     - element: nvtracker

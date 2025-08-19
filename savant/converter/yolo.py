@@ -1,6 +1,6 @@
-"""YOLO base detector postprocessing (converter).
-"""
+"""YOLO base detector postprocessing (converter)."""
 
+from functools import lru_cache
 from typing import Optional, Tuple
 
 import numpy as np
@@ -41,22 +41,22 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
     ) -> Optional[np.ndarray]:
         """Converts detector output layer tensor to bbox tensor.
 
-        Converter is suitable for PyTorch YOLOv5/v6/v7/v8 models.
+        Converter is suitable for PyTorch YOLOv4/v5/v6/v7/v8/v11 models.
         `output_layers` is assumed to consist of
-        either one Nx(num_detected_classes+5) shape tensor,
-        or one tensor of shape (num_detected_classes+4)xN,
-        or 4 tensors (after NMS) of shapes: 1, Nx4, N, N.
+        1) 1 tensor of shape (num_detected_classes+4)xN, or
+        2) 1 tensor of shape Nx(num_detected_classes+4+1), or
+        3) 2 tensors of shapes Nx1x4 and Nx(num_detected_classes), or
+        4) 3 tensors of shapes Nx4, Nx(num_detected_classes), and Nx1, or
+        5) 4 tensors (after NMS) of shapes: 1, Nx4, N, N.
 
         :param output_layers: Output layer tensor
         :param model: Model definition, required parameters: input tensor shape,
             maintain_aspect_ratio
-        :param roi: [top, left, width, height] of the rectangle
+        :param roi: [left, top, width, height] of the rectangle
             on which the model infers
         :return: BBox tensor (class_id, confidence, xc, yc, width, height, [angle])
             offset by roi upper left and scaled by roi width and height
         """
-
-        assert len(output_layers) in (1, 3, 4)
 
         if len(output_layers) == 1:
             output = output_layers[0]
@@ -70,11 +70,26 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
             class_ids = np.argmax(scores, axis=-1)
             confidences = np.max(scores, axis=-1)
 
+        # YOLOv4
+        elif len(output_layers) == 2:
+            boxes, scores = output_layers
+            # [num, 1, 4] -> [num, 4]
+            bboxes = np.squeeze(boxes)
+            # YOLOv4 returns [left, top, right, bottom] in normalized coordinates
+            bboxes[:, 2] -= bboxes[:, 0]  # width = right - left
+            bboxes[:, 3] -= bboxes[:, 1]  # height = bottom - top
+            bboxes[:, 0] += bboxes[:, 2] / 2  # convert to xc
+            bboxes[:, 1] += bboxes[:, 3] / 2  # convert to yc
+            bboxes[:, [0, 2]] *= model.input.width
+            bboxes[:, [1, 3]] *= model.input.height
+            class_ids = np.argmax(scores, axis=-1)
+            confidences = np.max(scores, axis=-1)
+
         elif len(output_layers) == 3:
             bboxes, scores, class_ids = output_layers
             confidences = np.max(scores, axis=-1)
 
-        else:
+        elif len(output_layers) == 4:
             num_dets, det_boxes, det_scores, det_classes = output_layers
             num = int(num_dets[0])
             bboxes = det_boxes[:num]
@@ -91,6 +106,11 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
             bboxes[:, 0] += bboxes[:, 2] / 2
             bboxes[:, 1] += bboxes[:, 3] / 2
 
+        else:
+            raise ValueError(
+                f'Unsupported number of output layers: {len(output_layers)}'
+            )
+
         # filter by class
         if self.class_ids:
             class_mask = np.isin(class_ids, self.class_ids)
@@ -105,7 +125,6 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
             class_ids = class_ids[conf_mask]
             confidences = confidences[conf_mask]
 
-        # TODO: ability to filter by size (width, height) and aspect ratio
         # apply class agnostic NMS (all classes are treated as one)
         if self.nms_iou_threshold > 0 and len(confidences) > 1:
             nms_mask = nms_cpu(bboxes, confidences, self.nms_iou_threshold, self.top_k)
@@ -120,32 +139,16 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
             class_ids = class_ids[top_k_mask]
             confidences = confidences[top_k_mask]
 
-        roi_left, roi_top, roi_width, roi_height = roi
-
-        # scale
-        if model.input.maintain_aspect_ratio:
-            scale = min(model.input.width / roi_width,
-                        model.input.height / roi_height)
-            inv_scale = 1.0 / scale
-            bboxes *= inv_scale
-        
-            if model.input.symmetric_padding:
-                new_w = roi_width * scale
-                new_h = roi_height * scale
-        
-                # Convert to ROI coordinates
-                pad_x = (model.input.width - new_w) * 0.5 * inv_scale
-                pad_y = (model.input.height - new_h) * 0.5 * inv_scale
-        
-                bboxes[:, 0] -= pad_x
-                bboxes[:, 1] -= pad_y
-        else:
-            bboxes[:, [0, 2]] *= roi_width / model.input.width
-            bboxes[:, [1, 3]] *= roi_height / model.input.height
-
-        # correct xc, yc
-        bboxes[:, 0] += roi_left
-        bboxes[:, 1] += roi_top
+        # transform output coordinates to ROI coordinates
+        (scale_x, scale_y), (pad_x, pad_y) = compute_scale_and_pad(
+            roi,
+            model.input.width,
+            model.input.height,
+            model.input.maintain_aspect_ratio,
+            model.input.symmetric_padding,
+        )
+        bboxes[:, [0, 2]] *= scale_x + pad_x
+        bboxes[:, [1, 3]] *= scale_y + pad_y
 
         return np.concatenate(
             (
@@ -155,3 +158,40 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
             ),
             axis=1,
         )
+
+
+@lru_cache()
+def compute_scale_and_pad(
+    roi: Tuple[float, float, float, float],
+    model_input_width: int,
+    model_input_height: int,
+    maintain_aspect_ratio: bool,
+    symmetric_padding: bool,
+) -> Tuple[Tuple[float, float], Tuple[float, float]]:
+    """Get scale parameters for output coordinates.
+
+    :param roi: [left, top, width, height] of the rectangle
+        on which the model infers.
+    :param model_input_width: Model input width.
+    :param model_input_height: Model input height.
+    :param maintain_aspect_ratio: If True, scale is computed to maintain aspect ratio.
+    :param symmetric_padding: If True, padding is applied symmetrically.
+    :return: Scale parameters ((scale_x, scale_y), (pad_x, pad_y)).
+    """
+    roi_left, roi_top, roi_width, roi_height = roi
+
+    pad_x, pad_y = roi_left, roi_top
+
+    if maintain_aspect_ratio:
+        scale_x = scale_y = max(
+            roi_width / model_input_width,
+            roi_height / model_input_height,
+        )
+        if symmetric_padding:
+            pad_x += ((model_input_width - roi_width / scale_x) / 2) * scale_x
+            pad_y += ((model_input_height - roi_height / scale_y) / 2) * scale_y
+    else:
+        scale_x = roi_width / model_input_width
+        scale_y = roi_height / model_input_height
+
+    return (scale_x, scale_y), (pad_x, pad_y)

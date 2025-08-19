@@ -1,8 +1,8 @@
 """Overlay with age/gender labels and optional YOLOv8face landmarks rendering."""
 
-from typing import List, Tuple, Sequence, Union
-import cv2
+from typing import List, Sequence, Tuple, Union
 
+import cv2
 from savant_rs.draw_spec import LabelDraw, ObjectDraw
 
 from savant.deepstream.drawfunc import NvDsDrawFunc
@@ -33,9 +33,11 @@ def _extract_landmarks(obj: ObjectMeta) -> List[Tuple[float, float]]:
     Tries common namespaces where 'landmarks' may be stored.
     """
     lm_attr = (
-        obj.get_attr_meta(MODEL_NAME, 'landmarks')           # detector namespace (typical)
-        or obj.get_attr_meta('value', 'landmarks')           # generic namespace (fallback)
-        or obj.get_attr_meta('smoothed_value', 'landmarks')  # if someone smooths landmarks later
+        obj.get_attr_meta(MODEL_NAME, 'landmarks')  # detector namespace (typical)
+        or obj.get_attr_meta('value', 'landmarks')  # generic namespace (fallback)
+        or obj.get_attr_meta(
+            'smoothed_value', 'landmarks'
+        )  # if someone smooths landmarks later
     )
     if lm_attr is None:
         return []
@@ -127,7 +129,7 @@ class Overlay(NvDsDrawFunc):
             if not pts:
                 continue
 
-            for (x, y) in pts:
+            for x, y in pts:
                 artist.add_circle(
                     (int(round(x)), int(round(y))),
                     self.landmarks_radius,
