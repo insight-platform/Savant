@@ -16,6 +16,7 @@ services:
         condition: service_started
 
   broadcaster:
+    privileged: true
     image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
     restart: unless-stopped
     ports:

@@ -29,6 +29,21 @@ parameters:
   detector: ${oc.env:DETECTOR, 'yolov8m'}
   send_stats: True
 
+  default_yolo_converter:
+    module: savant.converter.yolo
+    class_name: TensorToBBoxConverter
+    kwargs:
+      confidence_threshold: 0.25
+      nms_iou_threshold: 0.45
+      top_k: 300
+
+  default_yolo_selector:
+    module: savant.selector.detector
+    class_name: MinMaxSizeBBoxSelector
+    kwargs:
+      min_width: 30
+      min_height: 30
+
 pipeline:
 
   elements:
@@ -70,6 +85,39 @@ pipeline:
                   - class_id: ${parameters.detected_object.id}
                     label: ${parameters.detected_object.label}
 
+    # variant group: yolov4 detector
+    # groups are included in the pipeline.elements alongside regular units or other groups
+    - group:
+        # enabled if env var DETECTOR==yolov4
+        init_condition:
+          expr: ${parameters.detector}
+          value: yolov4
+        elements:
+          # below follows detector unit definition as usual
+          - element: nvinfer@detector
+            name: yolov4
+            model:
+              format: onnx
+              remote:
+                url: s3://savant-data/models/yolov4/yolov4.zip
+                checksum_url: s3://savant-data/models/yolov4/yolov4.md5
+                parameters:
+                  endpoint: https://eu-central-1.linodeobjects.com
+              model_file: yolov4.onnx
+              batch_size: ${parameters.batch_size}
+              input:
+                shape: [3, 608, 608]
+                maintain_aspect_ratio: true
+                symmetric_padding: true
+                scale_factor: 0.0039215697906911373
+              output:
+                layer_names: [boxes, confs]
+                converter: ${parameters.default_yolo_converter}
+                objects:
+                  - class_id: ${parameters.detected_object.id}
+                    label: ${parameters.detected_object.label}
+                    selector: ${parameters.default_yolo_selector}
+
     # variant group: yolov8m detector
     # groups are included in the pipeline.elements alongside regular units or other groups
     - group:
@@ -89,15 +137,22 @@ pipeline:
                   endpoint: https://eu-central-1.linodeobjects.com
               format: onnx
               model_file: yolov8m.onnx
-              config_file: config_infer_primary_yoloV8.txt
               batch_size: ${parameters.batch_size}
               # max GPU RAM used to build the engine, 6GB by default
               # set lower than total GPU RAM available on your hardware
               workspace_size: 6144
+              input:
+                shape: [3, 640, 640]
+                scale_factor: 0.0039215697906911373
+                maintain_aspect_ratio: true
+                symmetric_padding: true
               output:
+                layer_names: [boxes, scores, classes]
+                converter: ${parameters.default_yolo_converter}
                 objects:
                   - class_id: ${parameters.detected_object.id}
                     label: ${parameters.detected_object.label}
+                    selector: ${parameters.default_yolo_selector}
 
     # variant group: yolov8s detector
     # groups are included in the pipeline.elements alongside regular units or other groups
@@ -118,15 +173,55 @@ pipeline:
                   endpoint: https://eu-central-1.linodeobjects.com
               format: onnx
               model_file: yolov8s.onnx
-              config_file: config_infer_primary_yoloV8.txt
               batch_size: ${parameters.batch_size}
               # max GPU RAM used to build the engine, 6GB by default
               # set lower than total GPU RAM available on your hardware
               workspace_size: 6144
+              input:
+                shape: [3, 640, 640]
+                scale_factor: 0.0039215697906911373
+                maintain_aspect_ratio: true
+                symmetric_padding: true
               output:
+                layer_names: [boxes, scores, classes]
+                converter: ${parameters.default_yolo_converter}
                 objects:
                   - class_id: ${parameters.detected_object.id}
                     label: ${parameters.detected_object.label}
+                    selector: ${parameters.default_yolo_selector}
+
+    # variant group: yolov11s detector
+    - group:
+        # enabled if env var DETECTOR==yolov11s
+        init_condition:
+          expr: ${parameters.detector}
+          value: yolov11s
+        elements:
+          - element: nvinfer@detector
+            name: yolov11s
+            model:
+              remote:
+                url: s3://savant-data/models/yolov11s/yolov11s.zip
+                checksum_url: s3://savant-data/models/yolov11s/yolov11s.md5
+                parameters:
+                  endpoint: https://eu-central-1.linodeobjects.com
+              format: onnx
+              model_file: yolov11s.onnx
+              batch_size: ${parameters.batch_size}
+              workspace_size: 6144
+              input:
+                shape: [3, 640, 640]
+                scale_factor: 0.0039215697906911373
+                maintain_aspect_ratio: true
+                symmetric_padding: true
+              output:
+                layer_names: [output0]
+                num_detected_classes: 80  # required for YOLOv11
+                converter: ${parameters.default_yolo_converter}
+                objects:
+                  - class_id: ${parameters.detected_object.id}
+                    label: ${parameters.detected_object.label}
+                    selector: ${parameters.default_yolo_selector}
 
     # regular nvtracker definition
     - element: nvtracker

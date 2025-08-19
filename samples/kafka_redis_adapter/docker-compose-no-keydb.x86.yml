@@ -23,6 +23,7 @@ services:
       service: kafka-source
 
   module:
+    privileged: true
     image: ghcr.io/insight-platform/savant-deepstream:latest
     extends:
       file: docker-compose-no-keydb.l4t.yml
@@ -39,6 +40,7 @@ services:
               capabilities: [ gpu ]
 
   always-on-sink:
+    privileged: true
     image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
     extends:
       file: docker-compose-no-keydb.l4t.yml

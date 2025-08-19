@@ -17,6 +17,7 @@ services:
     entrypoint: /opt/savant/adapters/gst/sources/ffmpeg.sh
 
   broadcaster:
+    privileged: true
     image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
     restart: unless-stopped
     ports:

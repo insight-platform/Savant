@@ -7,6 +7,7 @@ services:
       service: video-loop-source
 
   module:
+    privileged: true
     image: ghcr.io/insight-platform/savant-deepstream-extra:latest
     extends:
       file: docker-compose.l4t.yml
@@ -23,6 +24,7 @@ services:
               capabilities: [ gpu ]
 
   always-on-sink:
+    privileged: true
     image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
     extends:
       file: docker-compose.l4t.yml

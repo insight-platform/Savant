@@ -7,6 +7,7 @@ services:
       service: image-json-source
 
   module:
+    privileged: true
     build:
       context: .
       dockerfile: docker/Dockerfile.x86

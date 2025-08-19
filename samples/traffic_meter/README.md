@@ -1,6 +1,6 @@
 # Traffic meter demo
 
-**NB**: The demo optionally uses **YOLOV8** model which takes up to **10-15 minutes** to compile to TensorRT engine. The first launch may take a decent time.
+**NB**: The demo optionally uses **YOLO** models which take up to **10-15 minutes** to compile to TensorRT engine. The first launch may take a decent time.
 
 The pipeline detects when people cross a user-configured line and the direction of the crossing. The crossing events are attached to individual tracks, counted for each source separately and the counters are displayed on the frame. The crossing events are also stored with Graphite and displayed on a Grafana dashboard.
 
@@ -72,13 +72,13 @@ To create a custom Grafana dashboard, sign in with `admin\admin` credentials.
 
 ## Switch Detector Model
 
-The sample includes an option to choose the model used for object detection. Choose between NVIDIA [peoplenet](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/peoplenet) and YOLOv8 by changing the env variable in `.env` file:
+The sample includes an option to choose the model used for object detection. Choose between NVIDIA [peoplenet](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/peoplenet), YOLOv8, YOLOv11 and YOLOv4 by changing the env variable in `.env` file:
 
-- `DETECTOR=peoplenet` for peoplnet
+- `DETECTOR=peoplenet` for peoplenet
 - `DETECTOR=yolov8m` for yolov8m
 - `DETECTOR=yolov8s` for yolov8s
-
-This demo uses [DeepStream-Yolo](https://github.com/marcoslucianops/DeepStream-Yolo/) to process YOLO models and allows you to use any YOLO model that DeepStream-Yolo supports. The demo contains 2 already prepared models - `yolov8m` / `yolov8s`. If you are going to use any other model (e.g. custom yolov8m), follow the DeepStream-Yolo export instructions. For example, YOLOv8 instructions are [here](https://github.com/marcoslucianops/DeepStream-Yolo/blob/master/docs/YOLOv8.md).
+- `DETECTOR=yolov4` for yolov4
+- `DETECTOR=yolov11s` for yolov11s
 
 ## Performance Measurement
 
@@ -99,4 +99,4 @@ Now you are ready to run the performance benchmark with the following command:
 
 **Note**: Change the value of the `DATA_LOCATION` variable in the `run_perf.sh` script if you changed the video.
 
-**Note**: `yolov8m` detector is set by default.
+**Note**: `yolov8s` detector is set by default.

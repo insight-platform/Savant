@@ -22,6 +22,7 @@ services:
         condition: service_healthy
 
   module-detector:
+    privileged: true
     image: ghcr.io/insight-platform/savant-deepstream-l4t:latest
     restart: unless-stopped
     volumes:
@@ -42,6 +43,7 @@ services:
     runtime: nvidia
 
   module-tracker:
+    privileged: true
     image: ghcr.io/insight-platform/savant-deepstream-l4t:latest
     restart: unless-stopped
     volumes:
@@ -62,6 +64,7 @@ services:
     runtime: nvidia
 
   module-draw-func:
+    privileged: true
     image: ghcr.io/insight-platform/savant-deepstream-l4t:latest
     restart: unless-stopped
     volumes:

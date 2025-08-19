@@ -11,6 +11,8 @@ from savant.base.converter import BaseComplexModelOutputConverter
 from savant.base.model import ComplexModel
 from savant.utils.nms import nms_cpu
 
+from .yolo import compute_scale_and_pad
+
 
 class YoloV8faceConverter(BaseComplexModelOutputConverter):
     """`YOLOv8face <https://github.com/derronqi/yolov8-face>`_ output to bbox
@@ -33,8 +35,8 @@ class YoloV8faceConverter(BaseComplexModelOutputConverter):
         model: ComplexModel,
         roi: Tuple[float, float, float, float],
     ) -> Optional[Tuple[np.ndarray, List[List[Tuple[str, Any, float]]]]]:
-        """Converts detector output layer tensor to bbox tensor and addition
-        attribute(landmark).
+        """Converts detector output layer tensor to bbox tensor and additional
+        attributes (landmarks).
 
         :param output_layers: Output layer tensor
         :param model: Model definition, required parameters: input tensor shape,
@@ -43,25 +45,18 @@ class YoloV8faceConverter(BaseComplexModelOutputConverter):
             on which the model infers
         :return: a combination of :py:class:`.BaseObjectModelOutputConverter` and
             :py:class:`.BaseAttributeModelOutputConverter` outputs:
-
             * BBox tensor ``(class_id, confidence, xc, yc, width, height, [angle])``
               offset by roi upper left and scaled by roi width and height,
             * list of attributes values with confidences
               ``(attr_name, value, confidence)``
         """
-        attr_name = model.output.attributes[0].name
-
-        roi_left, roi_top, roi_width, roi_height = roi
-        ratio_width = roi_width / model.input.shape[2]
-        ratio_height = roi_height / model.input.shape[1]
-
         raw_predictions = np.transpose(output_layers[0])
 
         selected_predictions = raw_predictions[
             raw_predictions[:, 4] > self.confidence_threshold
         ]
         if selected_predictions.shape[0] == 0:
-            return
+            return None
 
         keep = nms_cpu(
             selected_predictions[:, :4],
@@ -69,30 +64,33 @@ class YoloV8faceConverter(BaseComplexModelOutputConverter):
             self.nms_iou_threshold,
             selected_predictions.shape[0],
         )
-
         selected_nms_predictions = selected_predictions[keep]
         if selected_nms_predictions.shape[0] == 0:
-            return
+            return None
 
-        xywh = selected_nms_predictions[:, :4]
-        conf = selected_nms_predictions[:, 4:5]
-        class_num = np.zeros_like(conf)
+        bboxes = selected_nms_predictions[:, :4]
+        confidences = selected_nms_predictions[:, 4:5]
+        class_ids = np.zeros_like(confidences)
 
-        # Scale and shift bbox coordinates
-        xywh *= np.tile(np.float32([ratio_width, ratio_height]), 2)
-        xywh[:, 0] += roi_left  # x center
-        xywh[:, 1] += roi_top  # y center
+        # process landmarks (5 points, each with x, y, conf)
+        landmarks = selected_nms_predictions[:, 5:20].reshape(-1, 5, 3)
 
-        bbox_output = np.concatenate((class_num, conf, xywh), axis=1)
+        # transform output coordinates to ROI coordinates
+        (scale_x, scale_y), (pad_x, pad_y) = compute_scale_and_pad(
+            roi,
+            model.input.width,
+            model.input.height,
+            model.input.maintain_aspect_ratio,
+            model.input.symmetric_padding,
+        )
+        bboxes[:, [0, 2]] *= scale_x + pad_x
+        bboxes[:, [1, 3]] *= scale_y + pad_y
+        landmarks[:, :, 0] *= scale_x + pad_x
+        landmarks[:, :, 1] *= scale_y + pad_y
 
-        # Process landmarks (5 points, each with x, y, conf)
-        landmarks = (
-            selected_nms_predictions[:, 5:20]
-            * np.tile(np.float32([ratio_width, ratio_height, 1.0]), 5)
-        ).reshape(-1, 5, 3)
-        landmarks[:, :, 0] += roi_left  # x
-        landmarks[:, :, 1] += roi_top  # y
+        bbox_output = np.concatenate((class_ids, confidences, bboxes), axis=1)
 
+        attr_name = model.output.attributes[0].name
         landmarks_output = [
             [(attr_name, lms, conf)]
             for lms, conf in zip(
