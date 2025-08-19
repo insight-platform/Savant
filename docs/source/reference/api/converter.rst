@@ -45,7 +45,7 @@ Attribute model converters
 Object model converters
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-.. inheritance-diagram:: savant.converter.yolo.TensorToBBoxConverter savant.converter.yolo_v4.TensorToBBoxConverter savant.converter.yolo_x.TensorToBBoxConverter savant.converter.rapid.TensorToBBoxConverter
+.. inheritance-diagram:: savant.converter.yolo.TensorToBBoxConverter savant.converter.yolo_x.TensorToBBoxConverter savant.converter.rapid.TensorToBBoxConverter savant.converter.yolo_v8face.YoloV8faceConverter
     :parts: 2
     :caption: Object converters hierarchy
     :top-classes: savant.base.converter.BaseObjectModelOutputConverter
@@ -56,6 +56,6 @@ Object model converters
     :template: autosummary/module_class.rst
 
     yolo.TensorToBBoxConverter
-    yolo_v4.TensorToBBoxConverter
     yolo_x.TensorToBBoxConverter
     rapid.TensorToBBoxConverter
+    yolo_v8face.YoloV8faceConverter

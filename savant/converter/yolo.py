@@ -11,7 +11,7 @@ from savant.utils.nms import nms_cpu
 
 
 class TensorToBBoxConverter(BaseObjectModelOutputConverter):
-    """YOLO detector output to bbox converter."""
+    """YOLOv4/v5/v6/v7/v8/v11 detector output to bbox converter."""
 
     def __init__(
         self,
@@ -147,8 +147,10 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
             model.input.maintain_aspect_ratio,
             model.input.symmetric_padding,
         )
-        bboxes[:, [0, 2]] *= scale_x + pad_x
-        bboxes[:, [1, 3]] *= scale_y + pad_y
+        bboxes[:, [0, 2]] *= scale_x
+        bboxes[:, [1, 3]] *= scale_y
+        bboxes[:, 0] += pad_x
+        bboxes[:, 1] += pad_y
 
         return np.concatenate(
             (

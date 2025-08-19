@@ -45,6 +45,7 @@ class YoloV8faceConverter(BaseComplexModelOutputConverter):
             on which the model infers
         :return: a combination of :py:class:`.BaseObjectModelOutputConverter` and
             :py:class:`.BaseAttributeModelOutputConverter` outputs:
+
             * BBox tensor ``(class_id, confidence, xc, yc, width, height, [angle])``
               offset by roi upper left and scaled by roi width and height,
             * list of attributes values with confidences
@@ -83,10 +84,14 @@ class YoloV8faceConverter(BaseComplexModelOutputConverter):
             model.input.maintain_aspect_ratio,
             model.input.symmetric_padding,
         )
-        bboxes[:, [0, 2]] *= scale_x + pad_x
-        bboxes[:, [1, 3]] *= scale_y + pad_y
-        landmarks[:, :, 0] *= scale_x + pad_x
-        landmarks[:, :, 1] *= scale_y + pad_y
+        bboxes[:, [0, 2]] *= scale_x
+        bboxes[:, [1, 3]] *= scale_y
+        bboxes[:, 0] += pad_x
+        bboxes[:, 1] += pad_y
+        landmarks[:, :, 0] *= scale_x
+        landmarks[:, :, 0] += pad_x
+        landmarks[:, :, 1] *= scale_y
+        landmarks[:, :, 1] += pad_y
 
         bbox_output = np.concatenate((class_ids, confidences, bboxes), axis=1)
 
