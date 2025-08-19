@@ -56,7 +56,7 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
         )
 
         if tensors.shape[0] == 0:
-            return
+            return None
 
         roi_left, roi_top, roi_width, roi_height = roi
 

@@ -179,6 +179,9 @@ RUN --mount=from=nv-buf-surface-generator-builder,source=/libs/nvbufsurfacegener
 RUN --mount=from=savant-package-builder,source=/tmp/build/dist,target=/tmp/dist \
     python -m pip install --no-cache-dir /tmp/dist/*.whl
 
+# copy headers for cupy NVRTC
+COPY --from=builder /usr/local/cuda/include /usr/local/cuda/include
+
 # TODO: install yq?
 #ARG YQ_VERSION=4.35.2
 #ARG YQ_BINARY=yq_linux_${TARGETARCH}

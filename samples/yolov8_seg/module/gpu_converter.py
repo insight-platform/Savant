@@ -35,6 +35,7 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
         self.nms_iou_threshold = nms_iou_threshold
         self.top_k = top_k
         super().__init__()
+        self.logger.info('Using GPU converter.')
 
     def __call__(
         self,
@@ -63,7 +64,7 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
         )
 
         if tensors.shape[0] == 0:
-            return
+            return None
 
         roi_left, roi_top, roi_width, roi_height = roi
 
@@ -91,7 +92,7 @@ class TensorToBBoxSegConverter(BaseComplexModelOutputConverter):
                 src=gpu_mat,
                 dsize=(mask_width, mask_height),
                 interpolation=cv2.INTER_LINEAR,
-                # TODO: it should work, but it doesn't, investigate
+                # TODO: Use cuda stream
                 # stream=cp.cuda.Stream(),
             )
             mask = opencv_gpu_mat_as_cupy_array(resized_gpu_mat)
