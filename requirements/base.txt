@@ -34,5 +34,5 @@ ffmpeg-input @ https://github.com/insight-platform/FFmpeg-Input/releases/downloa
 
 splitstream==1.2.6
 
-nvidia-nvimgcodec-cu12[nvjpeg,nvjpeg2k] ; platform_machine=='x86_64'
-nvidia-nvimgcodec-tegra-cu12[nvjpeg,nvjpeg2k] ; platform_machine=='aarch64'
+nvidia-nvimgcodec-cu12[nvjpeg,nvjpeg2k]~=0.6 ; platform_machine=='x86_64'
+nvidia-nvimgcodec-tegra-cu12[nvjpeg,nvjpeg2k]~=0.6 ; platform_machine=='aarch64'
