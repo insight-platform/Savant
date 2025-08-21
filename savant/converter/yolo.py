@@ -190,8 +190,8 @@ def compute_scale_and_pad(
             roi_height / model_input_height,
         )
         if symmetric_padding:
-            pad_x += ((model_input_width - roi_width / scale_x) / 2) * scale_x
-            pad_y += ((model_input_height - roi_height / scale_y) / 2) * scale_y
+            pad_x += (roi_width - model_input_width * scale_x) / 2
+            pad_y += (roi_height - model_input_height * scale_y) / 2
     else:
         scale_x = roi_width / model_input_width
         scale_y = roi_height / model_input_height
