@@ -4,10 +4,8 @@ from savant.utils.platform import is_aarch64
 
 
 def converter_selector() -> str:
-    if is_aarch64():
-        return 'converter'
-    else:
-        return 'gpu_converter'
+    converter = 'converter' if is_aarch64() else 'gpu_converter'
+    return converter
 
 
 def output_frame_selector() -> Dict[str, Any]:
