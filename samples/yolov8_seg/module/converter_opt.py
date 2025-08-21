@@ -12,7 +12,5 @@ def converter_selector() -> str:
 
 def output_frame_selector() -> Dict[str, Any]:
     visualize_tag = {'tag': 'visualize'}
-    if is_aarch64():
-        return {'codec': 'jpeg', 'condition': visualize_tag}
-    else:
-        return {'codec': 'hevc', 'condition': visualize_tag}
+    codec = 'jpeg' if is_aarch64() else 'hevc'
+    return {'codec': codec, 'condition': visualize_tag}
