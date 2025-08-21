@@ -108,7 +108,6 @@ class ObjectMeta:
         bbox: Union[BBox, RBBox],
         confidence: Optional[float] = DEFAULT_CONFIDENCE,
         track_id: int = UNTRACKED_OBJECT_ID,
-        parent: Optional['ObjectMeta'] = None,
         attributes: Optional[Iterable[AttributeMeta]] = None,
         draw_label: Optional[str] = None,
     ):
@@ -117,7 +116,7 @@ class ObjectMeta:
         self._draw_label = draw_label
         self._confidence = confidence
         self._track_id = track_id
-        self._parent = parent
+        self._parent = None
         self._bbox = bbox
         self._uid = None
         self.object_meta_impl: Optional[BaseObjectMetaImpl] = None
