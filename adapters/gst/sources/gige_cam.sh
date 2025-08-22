@@ -80,7 +80,7 @@ if [[ "${ENCODE,,}" == "true" ]]; then
     )
 fi
 if [[ "${USE_ABSOLUTE_TIMESTAMPS,,}" == "true" ]]; then
-    TS_OFFSET="$(date +%s%N)"
+    TS_OFFSET="${ABSOLUTE_TIMESTAMPS_OFFSET:-$(date +%s%N)}"
     if [[ "${ENCODE,,}" == "true" ]]; then
         # x265enc adds offset to timestamps to avoid negative timestamps
         TS_OFFSET="$((TS_OFFSET - 3600000000000000))"
