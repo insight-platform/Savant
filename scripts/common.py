@@ -156,6 +156,7 @@ def build_common_envs(
     fps_output: Optional[str],
     zmq_endpoint: str,
     use_absolute_timestamps: Optional[bool] = None,
+    absolute_timestamps_offset: Optional[int] = None,
 ):
     """Generate env var run options."""
     envs = build_zmq_endpoint_envs(
@@ -165,6 +166,8 @@ def build_common_envs(
         envs.append(f'SOURCE_ID={source_id}')
     if use_absolute_timestamps is not None:
         envs.append(f'USE_ABSOLUTE_TIMESTAMPS={use_absolute_timestamps}')
+    if absolute_timestamps_offset is not None:
+        envs.append(f'ABSOLUTE_TIMESTAMPS_OFFSET={absolute_timestamps_offset}')
     envs += build_fps_meter_envs(
         fps_period_frames=fps_period_frames,
         fps_period_seconds=fps_period_seconds,

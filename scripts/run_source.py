@@ -72,6 +72,7 @@ def files_source(
     entrypoint: str = '/opt/savant/adapters/gst/sources/media_files.sh',
     extra_volumes: List[str] = None,
     detach: bool = False,
+    absolute_timestamps_offset: Optional[int] = None,
 ):
     """Read image or video files from LOCATION.
     LOCATION can be single file, directory or HTTP URL.
@@ -97,6 +98,7 @@ def files_source(
             fps_output=fps_output,
             zmq_endpoint=out_endpoint,
             use_absolute_timestamps=use_absolute_timestamps,
+            absolute_timestamps_offset=absolute_timestamps_offset,
         )
         + [f'LOCATION={location}', f'FILE_TYPE={file_type}']
         + envs
@@ -159,6 +161,7 @@ def videos_source(
     read_metadata: bool,
     eos_on_file_end: bool,
     eos_on_frame_params_change: bool,
+    absolute_timestamps_offset: Optional[int] = None,
 ):
     """Read video files from LOCATION.
     LOCATION can be single file, directory or HTTP URL.
@@ -180,6 +183,7 @@ def videos_source(
             f'EOS_ON_FRAME_PARAMS_CHANGE={eos_on_frame_params_change}',
         ],
         use_absolute_timestamps=use_absolute_timestamps,
+        absolute_timestamps_offset=absolute_timestamps_offset,
     )
 
 
@@ -241,6 +245,7 @@ def video_loop_source(
     loss_rate: float,
     location: str,
     read_metadata: bool,
+    absolute_timestamps_offset: Optional[int] = None,
 ):
     """Read a video file from LOCATION and loop it.
     LOCATION can be single file, directory or HTTP URL.
@@ -275,6 +280,7 @@ def video_loop_source(
         entrypoint='/opt/savant/adapters/gst/sources/video_loop.sh',
         extra_volumes=volumes,
         use_absolute_timestamps=use_absolute_timestamps,
+        absolute_timestamps_offset=absolute_timestamps_offset,
     )
 
 
@@ -341,6 +347,7 @@ def multi_stream_source(
     shutdown_auth: Optional[str],
     location: str,
     read_metadata: bool,
+    absolute_timestamps_offset: Optional[int] = None,
 ):
     """Read a video file from LOCATION and sends it to with multiple source IDs.
     LOCATION can be single file or HTTP URL.
@@ -379,6 +386,7 @@ def multi_stream_source(
         entrypoint='/opt/savant/adapters/gst/sources/multi_stream.sh',
         extra_volumes=volumes,
         use_absolute_timestamps=use_absolute_timestamps,
+        absolute_timestamps_offset=absolute_timestamps_offset,
     )
 
 
@@ -434,6 +442,7 @@ def images_source(
     read_metadata: bool,
     eos_on_file_end: bool,
     eos_on_frame_params_change: bool,
+    absolute_timestamps_offset: Optional[int] = None,
 ):
     """Read image files from LOCATION.
     LOCATION can be single file, directory or HTTP URL.
@@ -457,6 +466,7 @@ def images_source(
             f'EOS_ON_FRAME_PARAMS_CHANGE={eos_on_frame_params_change}',
         ],
         use_absolute_timestamps=use_absolute_timestamps,
+        absolute_timestamps_offset=absolute_timestamps_offset,
     )
 
 
@@ -513,6 +523,7 @@ def rtsp_source(
     fps_period_seconds: Optional[float],
     fps_output: str,
     rtsp_uri: str,
+    absolute_timestamps_offset: Optional[int] = None,
 ):
     """Read video stream from RTSP_URI."""
 
@@ -523,6 +534,7 @@ def rtsp_source(
         fps_output=fps_output,
         zmq_endpoint=out_endpoint,
         use_absolute_timestamps=use_absolute_timestamps,
+        absolute_timestamps_offset=absolute_timestamps_offset,
     ) + [
         f'RTSP_URI={rtsp_uri}',
         f'RTSP_TRANSPORT={rtsp_transport}',
@@ -632,6 +644,7 @@ def gige_cam_source(
     encode_speed_preset: str,
     encode_tune: str,
     camera_name: Optional[str],
+    absolute_timestamps_offset: Optional[int] = None,
 ):
     """Read video stream from GigE camera CAMERA_NAME.
 
@@ -657,6 +670,7 @@ def gige_cam_source(
         fps_output=fps_output,
         zmq_endpoint=out_endpoint,
         use_absolute_timestamps=use_absolute_timestamps,
+        absolute_timestamps_offset=absolute_timestamps_offset,
     )
 
     envs_dict = {
@@ -754,6 +768,7 @@ def ffmpeg_source(
     fps_period_seconds: Optional[float],
     fps_output: str,
     uri: str,
+    absolute_timestamps_offset: Optional[int] = None,
 ):
     """Read video stream from URI using FFmpeg library."""
 
@@ -764,6 +779,7 @@ def ffmpeg_source(
         fps_output=fps_output,
         zmq_endpoint=out_endpoint,
         use_absolute_timestamps=use_absolute_timestamps,
+        absolute_timestamps_offset=absolute_timestamps_offset,
     ) + [
         f'URI={uri}',
         f'BUFFER_LEN={buffer_len}',

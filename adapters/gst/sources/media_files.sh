@@ -61,7 +61,7 @@ PIPELINE=(
     adjust_timestamps !
 )
 if [[ "${USE_ABSOLUTE_TIMESTAMPS,,}" == "true" ]]; then
-    TS_OFFSET="$(date +%s%N)"
+    TS_OFFSET="${ABSOLUTE_TIMESTAMPS_OFFSET:-$(date +%s%N)}"
     PIPELINE+=(
         shift_timestamps offset="${TS_OFFSET}" !
     )
