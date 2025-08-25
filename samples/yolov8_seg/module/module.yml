@@ -10,10 +10,7 @@ parameters:
   frame:
     width: 1280
     height: 720
-  output_frame:
-    codec: ${oc.env:CODEC, 'hevc'}
-    condition:
-      tag: visualize
+  output_frame: ${py:samples.yolov8_seg.module.converter_opt, output_frame_selector}
   draw_func:
     module: samples.yolov8_seg.module.overlay
     class_name: Overlay
@@ -27,7 +24,7 @@ parameters:
   buffer_queues:
     length: 10
   batch_size: 1
-  model_output_converter: ${oc.env:MODEL_OUTPUT_CONVERTER, converter}
+  model_output_converter: ${py:samples.yolov8_seg.module.converter_opt, converter_selector}
 
 pipeline:
   elements:

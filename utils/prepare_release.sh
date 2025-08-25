@@ -18,7 +18,7 @@ SED_CMD="$SED_DS;$SED_NO_DS;$SED_SAVANT_RS"
 
 # find files with the name pattern "[Dd]ocker*" in the samples directory
 # and save the list of files to a variable
-readarray -d '' array < <(find samples -type f -name "[Dd]ocker*" -print0)
+readarray -d '' array < <(git ls-files -z -- "samples/**/[Dd]ocker*")
 
 # iterate over the list of files in array
 for file in "${array[@]}"; do

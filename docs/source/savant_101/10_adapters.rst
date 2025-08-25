@@ -237,10 +237,11 @@ Most source adapters accept the following common parameters:
 
 - ``SOURCE_ID``: a string identifier for a stream processed; this option is **required**; every stream must have a unique identifier, if identifiers collide, processing may cause unpredictable results; the identifier may encode user-defined semantics in a prefix, like ``rtsp.stream.1``; many sink adapters can filter out streams by prefix or full ``SOURCE_ID``;
 - ``ZMQ_ENDPOINT``: adapter's socket where it sends media stream; it must form a valid ZeroMQ pair with module's input socket; the endpoint coding scheme is ``[<socket_type>+(bind|connect):]<endpoint>``;
-- ``FPS_PERIOD_FRAMES``; a number of frames between FPS reports; FPS reporting helps to estimate the performance of the pipeline components deployed; default is ``1000``;
-- ``FPS_PERIOD_SECONDS``; a number of seconds between FPS reports; default is ``None`` which means that FPS reporting uses ``FPS_PERIOD_FRAMES``;
-- ``FPS_OUTPUT``; a path to the file for FPS reports; default is ``stdout``;
-- ``USE_ABSOLUTE_TIMESTAMPS``; when ``True`` the adapter puts absolute timestamps into the frames, i.e. the timestamps of the frames start from the time of adapter launch; default is ``False``.
+- ``FPS_PERIOD_FRAMES``: a number of frames between FPS reports; FPS reporting helps to estimate the performance of the pipeline components deployed; default is ``1000``;
+- ``FPS_PERIOD_SECONDS``: a number of seconds between FPS reports; default is ``None`` which means that FPS reporting uses ``FPS_PERIOD_FRAMES``;
+- ``FPS_OUTPUT``: a path to the file for FPS reports; default is ``stdout``;
+- ``USE_ABSOLUTE_TIMESTAMPS``: when ``True`` the adapter puts absolute timestamps into the frames, i.e. the timestamps of the frames start from the time of adapter launch; default is ``False``;
+- ``ABSOLUTE_TIMESTAMPS_OFFSET``: defines the timestamp offset when ``USE_ABSOLUTE_TIMESTAMPS`` is active; default is the time of adapter launch.
 
 .. _image_file_source_adapter:
 

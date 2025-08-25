@@ -106,3 +106,24 @@ The resulting configuration is presented in the following snippet:
         encoder_params:
           bitrate: 4000000
 
+Python Resolver
+---------------
+
+The Python resolver allows using Python functions to calculate the value of a configuration parameter. 
+For example, the configuration that sets the output frame codec based on the platform looks like this:
+
+.. code-block:: yaml
+
+    parameters:
+      output_frame: ${py:samples.yolov8_seg.module.converter_opt, output_frame_selector}
+
+
+The resolver can return a dictionary, list, tuple, or any other type that can be converted to a OmegaConf object.
+
+Example of usage:
+
+.. literalinclude:: ../../../samples/yolov8_seg/module/converter_opt.py
+  :language: python
+
+
+
