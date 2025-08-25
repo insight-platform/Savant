@@ -22,7 +22,7 @@ services:
 
   index-builder-pipeline:
     privileged: true
-    image: ghcr.io/insight-platform/savant-deepstream-l4t:latest
+    image: ghcr.io/insight-platform/savant-deepstream-l4t:0.5.12-7.0
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../cache:/cache
@@ -39,7 +39,7 @@ services:
       - index
 
   video-loop-source:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:latest
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:0.5.12
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -82,7 +82,7 @@ services:
       - demo
 
   always-on-sink:
-    image: ghcr.io/insight-platform/savant-adapters-deepstream-l4t:latest
+    image: ghcr.io/insight-platform/savant-adapters-deepstream-l4t:0.5.12-7.0
     restart: unless-stopped
     ports:
       - "554:554"    # RTSP

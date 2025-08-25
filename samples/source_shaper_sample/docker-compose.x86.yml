@@ -1,20 +1,20 @@
 services:
 
   video-loop-city-traffic:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:0.5.12
     extends:
       file: docker-compose.l4t.yml
       service: video-loop-city-traffic
 
   video-loop-town-centre:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:0.5.12
     extends:
       file: docker-compose.l4t.yml
       service: video-loop-town-centre
 
   module:
     privileged: true
-    image: ghcr.io/insight-platform/savant-deepstream:latest
+    image: ghcr.io/insight-platform/savant-deepstream:0.5.12-7.0
     extends:
       file: docker-compose.l4t.yml
       service: module
@@ -31,7 +31,7 @@ services:
 
   always-on-sink:
     privileged: true
-    image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
+    image: ghcr.io/insight-platform/savant-adapters-deepstream:0.5.12-7.0
     extends:
       file: docker-compose.l4t.yml
       service: always-on-sink
