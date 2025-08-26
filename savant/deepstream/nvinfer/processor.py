@@ -184,36 +184,20 @@ class NvInferProcessor:
                         ),
                     )
 
-                else:
-                    source_id, frame_idx = self._get_frame_source_id_and_idx(
-                        buffer,
-                        nvds_frame_meta,
-                    )
-                    self._logger.warning(
-                        'The object (%s.%s, bbox %s) of a frame %s/%s with IDX %s '
-                        'is an orphan (no parent object is assigned). '
-                        'It is a non-typical case: the object should either '
-                        'have the frame or an ROI object as a parent.',
-                        object_meta.element_name,
-                        object_meta.label,
-                        object_meta.bbox.as_ltrb_int(),
-                        source_id,
-                        nvds_frame_meta.buf_pts,
-                        frame_idx,
-                    )
-
                 user_object_meta = ObjectMeta(
                     object_meta.element_name,
                     object_meta.label,
                     object_meta.bbox.copy(),
                     object_meta.confidence,
                     object_meta.track_id,
-                    user_parent_object_meta,
                     attributes=nvds_attr_meta_iterator(
                         frame_meta=nvds_frame_meta,
                         obj_meta=object_meta.ds_object_meta,
                     ),
                 )
+
+                if user_parent_object_meta:
+                    user_object_meta.parent = user_parent_object_meta
 
                 try:
                     res_bbox = self._model.input.preprocess_object_meta(
@@ -223,7 +207,8 @@ class NvInferProcessor:
                     if self._model.input.preprocess_object_meta.dev_mode:
                         if not isinstance(exc, PyFuncNoopCallException):
                             self._logger.exception(
-                                'Error calling preprocess input object meta.'
+                                'Error calling preprocess input object meta. Exception: %s',
+                                exc,
                             )
                         res_bbox = user_object_meta.bbox
                     else:
