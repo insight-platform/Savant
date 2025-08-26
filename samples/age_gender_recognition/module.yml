@@ -12,8 +12,8 @@ parameters:
     class_name: Overlay
     kwargs:
       draw_landmarks: true        # Toggle landmark rendering
-      landmarks_radius: 3         # Circle radius for points
-      landmarks_color: 'FF0000FF' # RGBA (green, fully opaque)
+      landmarks_radius: 1         # Circle radius for points
+      landmarks_color: '00FF00FF' # RGBA (green, fully opaque)
     rendered_objects:
       yolov8nface:
         face:
