@@ -1,7 +1,7 @@
 services:
 
   video-loop-source:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:0.5.13
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -19,7 +19,7 @@ services:
 
   first:
     privileged: true
-    image: ghcr.io/insight-platform/savant-deepstream:latest
+    image: ghcr.io/insight-platform/savant-deepstream:0.5.13-7.0
     restart: unless-stopped
     ports:
       - "8080:8080"
@@ -47,7 +47,7 @@ services:
 
   second:
     privileged: true
-    image: ghcr.io/insight-platform/savant-deepstream:latest
+    image: ghcr.io/insight-platform/savant-deepstream:0.5.13-7.0
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets

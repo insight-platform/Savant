@@ -1,7 +1,7 @@
 services:
 
   source:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:0.5.13
     entrypoint: /opt/savant/adapters/gst/sources/multi_stream.sh
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -19,7 +19,7 @@ services:
 
   module:
     privileged: true
-    image: ghcr.io/insight-platform/savant-deepstream:latest
+    image: ghcr.io/insight-platform/savant-deepstream:0.5.13-7.0
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../cache:/cache
@@ -40,7 +40,7 @@ services:
               capabilities: [ gpu ]
 
   video-sink:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:0.5.13
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../data/results:/data

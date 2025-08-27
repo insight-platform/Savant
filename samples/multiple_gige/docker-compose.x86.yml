@@ -1,32 +1,32 @@
 services:
 
   gige-camera-raw:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:0.5.13
     extends:
       file: docker-compose.l4t.yml
       service: gige-camera-raw
 
   gige-camera-encoded:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:0.5.13
     extends:
       file: docker-compose.l4t.yml
       service: gige-camera-encoded
 
   gige-source-raw:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:0.5.13
     extends:
       file: docker-compose.l4t.yml
       service: gige-source-raw
 
   gige-source-encoded:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:0.5.13
     extends:
       file: docker-compose.l4t.yml
       service: gige-source-encoded
 
   always-on-sink:
     privileged: true
-    image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
+    image: ghcr.io/insight-platform/savant-adapters-deepstream:0.5.13-7.0
     extends:
       file: docker-compose.l4t.yml
       service: always-on-sink

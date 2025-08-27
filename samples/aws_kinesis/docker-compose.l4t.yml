@@ -1,7 +1,7 @@
 services:
 
   video-loop-source:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:latest
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:0.5.13
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -45,7 +45,7 @@ services:
     runtime: nvidia
 
   kvs-sink:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:latest
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:0.5.13
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -59,7 +59,7 @@ services:
     entrypoint: /opt/savant/adapters/gst/sinks/multistream_kvs.py
 
   kvs-source:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:latest
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:0.5.13
     restart: unless-stopped
     ports:
       - "18367:18367" # API
@@ -105,7 +105,7 @@ services:
     runtime: nvidia
 
   always-on-sink:
-    image: ghcr.io/insight-platform/savant-adapters-deepstream-l4t:latest
+    image: ghcr.io/insight-platform/savant-adapters-deepstream-l4t:0.5.13-7.0
     restart: unless-stopped
     ports:
       - "554:554"    # RTSP
