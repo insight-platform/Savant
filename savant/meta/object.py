@@ -1,9 +1,13 @@
 """Object meta."""
 
 from abc import ABC, abstractmethod
+from random import randrange
 from typing import Any, Iterable, List, Optional, Union
 
 from savant_rs.primitives.geometry import BBox, RBBox
+from savant_rs.utils import AtomicCounter
+
+OBJECT_ID_GENERATOR = AtomicCounter(randrange(0, 1_000_000_000))
 
 from .attribute import AttributeMeta
 from .constants import (
@@ -118,7 +122,7 @@ class ObjectMeta:
         self._track_id = track_id
         self._parent = None
         self._bbox = bbox
-        self._uid = None
+        self._uid = OBJECT_ID_GENERATOR.next
         self.object_meta_impl: Optional[BaseObjectMetaImpl] = None
         self._attributes = {}
         if attributes:
@@ -277,7 +281,11 @@ class ObjectMeta:
         :param value: Parent object.
         """
         if value.uid == self.uid:
-            raise MetaValueError('An object cannot have itself as a parent.')
+            raise MetaValueError(
+                f'An object [{self.element_name}.{self.label}] cannot have '
+                f'a parent [{value.element_name}.{value.label}] with the same uid: '
+                f'{self.uid} == {value.uid}'
+            )
         if self.object_meta_impl:
             self.object_meta_impl.parent = value
         self._parent = value
