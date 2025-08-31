@@ -40,7 +40,6 @@ services:
       - CODEC=copy
     depends_on:
       mongo:
-        privileged: true
         condition: service_healthy
     runtime: nvidia
 
@@ -100,7 +99,6 @@ services:
       - CODEC=jpeg
     depends_on:
       mongo:
-        privileged: true
         condition: service_healthy
     runtime: nvidia
 
