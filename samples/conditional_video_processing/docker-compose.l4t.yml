@@ -35,7 +35,6 @@ services:
       - CODEC=jpeg
     depends_on:
       etcd:
-        privileged: true
         condition: service_healthy
     runtime: nvidia
 
