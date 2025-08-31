@@ -167,11 +167,6 @@ class NvInferProcessor:
                             'represented by regular (axis-aligned) boxes.'
                         )
 
-                    if parent_object_meta.parent:
-                        self._logger.warning(
-                            'Preprocessing only supports 1 level of hierarchy.'
-                        )
-
                     user_parent_object_meta = ObjectMeta(
                         parent_object_meta.element_name,
                         parent_object_meta.label,
