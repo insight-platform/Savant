@@ -400,7 +400,7 @@ class Model:
        {model_name}_b{batch_size}_gpu{gpu_id}_{precision}.engine
     """
 
-    input: ModelInput = ModelInput()
+    input: ModelInput = field(default_factory=ModelInput)
     """Optional configuration of input data and custom preprocessing methods
     for a model. If not set, then input will default to entire frame.
     """
@@ -414,7 +414,7 @@ class ObjectModel(Model):
     Use to configure a detector.
     """
 
-    output: ObjectModelOutput = ObjectModelOutput()
+    output: ObjectModelOutput = field(default_factory=ObjectModelOutput)
     """Configuration for post-processing of an object model's results."""
 
 
@@ -426,7 +426,7 @@ class AttributeModel(Model):
     Use to configure a classifier or ReID model.
     """
 
-    output: AttributeModelOutput = AttributeModelOutput()
+    output: AttributeModelOutput = field(default_factory=AttributeModelOutput)
     """Configuration for post-processing of an attribute model's results."""
 
 
@@ -439,5 +439,5 @@ class ComplexModel(Model):
     detector that produces bounding boxes and landmarks.
     """
 
-    output: ComplexModelOutput = ComplexModelOutput()
+    output: ComplexModelOutput = field(default_factory=ComplexModelOutput)
     """Configuration for post-processing of a complex model's results."""
