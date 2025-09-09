@@ -141,7 +141,7 @@ class NvInferModelInput(ModelInput):
 class NvInferModel(Model):
     """Base configuration template for a `nvinfer` model."""
 
-    input: NvInferModelInput = NvInferModelInput()
+    input: NvInferModelInput = field(default_factory=NvInferModelInput)
     """Optional configuration of input data and custom preprocessing methods
     for a model. If not set, then input will default to entire frame.
     """
@@ -239,6 +239,7 @@ class NvInferModel(Model):
     """
 
 
+# TODO: Refactor to avoid converter duplication.
 NVINFER_DEFAULT_OBJECT_SELECTOR = PyFunc(
     module='savant.selector.detector',
     class_name='BBoxSelector',
@@ -315,7 +316,7 @@ class NvInferDetector(NvInferModel, ObjectModel):
     If not specified, Gst-nvinfer uses the internal function
     for the resnet model provided by the SDK."""
 
-    output: NvInferObjectModelOutput = NvInferObjectModelOutput()
+    output: NvInferObjectModelOutput = field(default_factory=NvInferObjectModelOutput)
     """Results post-processing configuration."""
 
 
@@ -393,7 +394,7 @@ class NvInferComplexModel(NvInferModel, ComplexModel):
                 - name: landmarks
     """
 
-    output: NvInferComplexModelOutput = NvInferComplexModelOutput()
+    output: NvInferComplexModelOutput = field(default_factory=NvInferComplexModelOutput)
     """Configuration for post-processing of a complex model's results."""
 
 
