@@ -577,7 +577,9 @@ def main():
     signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
     config = Config()
     if config.buffer_reset_on_restart and os.path.exists(config.buffer.path):
-        logger.info('Resetting the buffer contents. Removing %s contents.', config.buffer.path)
+        logger.info(
+            'Resetting the buffer contents. Removing %s contents.', config.buffer.path
+        )
         # iterate over the directory and remove all files
         for file in os.listdir(config.buffer.path):
             # if a regular file, remove it

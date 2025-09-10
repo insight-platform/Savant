@@ -15,7 +15,7 @@ services:
     entrypoint: /opt/savant/adapters/gst/sources/video_loop.sh
     depends_on:
       module:
-       condition: service_healthy
+        condition: service_healthy
       buffer:
         condition: service_started
 
