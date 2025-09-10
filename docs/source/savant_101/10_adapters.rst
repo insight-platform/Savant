@@ -1797,6 +1797,10 @@ The Buffer Bridge Adapter buffers messages from a source and sends them to a mod
 - ``MESSAGE_DUMP_PATH``: a directory to dump message segment files; default is ``/tmp/buffer-adapter-dump``;
 - ``MESSAGE_DUMP_SEGMENT_DURATION``: a duration of a message segment in seconds; default is ``60``.
 - ``MESSAGE_DUMP_SEGMENT_TEMPLATE``: a template for message segment file names; default is ``dump-%Y-%m-%d-%H-%M-%S.msgpack``.
+- ``BUFFER_RESET_ON_RESTART``: a flag indicating whether to reset the buffer contents on restart; default is ``False``.
+
+.. note::
+    When the buffer is reset on restart, the adapter will remove the buffer directory and create a new one.
 
 Running the adapter with Docker:
 
