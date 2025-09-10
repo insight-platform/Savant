@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import signal
 import time
 from typing import Dict, Optional, Tuple, Union
@@ -97,6 +98,9 @@ class Config:
         self.message_dump = MessageDumpConfig()
         self.idle_polling_period = opt_config('IDLE_POLLING_PERIOD', 0.005, float)
         self.stats_log_interval = opt_config('STATS_LOG_INTERVAL', 60, int)
+        self.buffer_reset_on_restart = opt_config(
+            'BUFFER_RESET_ON_RESTART', False, strtobool
+        )
         self.metrics = MetricsConfig()
 
 
@@ -572,6 +576,16 @@ def main():
     # To gracefully shut down the adapter on SIGTERM (raise KeyboardInterrupt)
     signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
     config = Config()
+    if config.buffer_reset_on_restart and os.path.exists(config.buffer.path):
+        logger.info('Resetting the buffer contents. Removing %s contents.', config.buffer.path)
+        # iterate over the directory and remove all files
+        for file in os.listdir(config.buffer.path):
+            # if a regular file, remove it
+            if os.path.isfile(os.path.join(config.buffer.path, file)):
+                os.remove(os.path.join(config.buffer.path, file))
+            # if a directory, remove it
+            elif os.path.isdir(os.path.join(config.buffer.path, file)):
+                shutil.rmtree(os.path.join(config.buffer.path, file))
     queue = PersistentQueueWithCapacity(
         config.buffer.path,
         config.buffer.len + config.buffer.service_messages,

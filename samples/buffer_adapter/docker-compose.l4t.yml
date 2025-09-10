@@ -15,7 +15,7 @@ services:
     entrypoint: /opt/savant/adapters/gst/sources/video_loop.sh
     depends_on:
       module:
-        condition: service_healthy
+       condition: service_healthy
       buffer:
         condition: service_started
 
@@ -41,6 +41,7 @@ services:
       - MESSAGE_DUMP_ENABLED=False # Set to True to enable message dumping for later analysis
       - MESSAGE_DUMP_SEGMENT_DURATION=30
       - MESSAGE_DUMP_PATH=/tmp/message-dump
+      - BUFFER_RESET_ON_RESTART=True
     command: python -m adapters.python.bridge.buffer
 
   module:

@@ -47,6 +47,12 @@ def build_common_bridge_envs(
     show_default=True,
 )
 @click.option(
+    '--buffer-reset-on-restart',
+    default=False,
+    is_flag=True,
+    help='Reset the buffer contents on restart.',
+)
+@click.option(
     '--mount-buffer-path',
     default=False,
     is_flag=True,
@@ -126,6 +132,7 @@ def buffer_bridge(
     metrics_extra_labels: str,
     docker_image: str,
     buffer_path: str,
+    buffer_reset_on_restart: bool,
 ):
     """Buffers messages from a source to BUFFER_PATH and sends them to a module.
 
@@ -152,6 +159,7 @@ def buffer_bridge(
         f'METRICS_FRAME_PERIOD={metrics_frame_period}',
         f'METRICS_HISTORY={metrics_history}',
         f'METRICS_EXTRA_LABELS={metrics_extra_labels}',
+        f'BUFFER_RESET_ON_RESTART={buffer_reset_on_restart}',
     ]
     if metrics_time_period:
         envs.append(f'METRICS_TIME_PERIOD={metrics_time_period}')
