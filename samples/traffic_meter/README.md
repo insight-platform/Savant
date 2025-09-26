@@ -68,7 +68,7 @@ docker compose -f samples/traffic_meter/docker-compose.l4t.yml up
 # Ctrl+C to stop running the compose bundle
 ```
 
-To create a custom Grafana dashboard, sign in with `admin\admin` credentials.
+To create a custom Grafana dashboard, sign in with `admin/admin` credentials.
 
 ## Switch Detector Model
 
@@ -79,6 +79,7 @@ The sample includes an option to choose the model used for object detection. Cho
 - `DETECTOR=yolov8s` for yolov8s
 - `DETECTOR=yolov4` for yolov4
 - `DETECTOR=yolov11s` for yolov11s
+- `DETECTOR=yolov11n` for yolov11n
 
 ## Performance Measurement
 

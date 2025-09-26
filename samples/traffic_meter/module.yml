@@ -195,6 +195,39 @@ pipeline:
         # enabled if env var DETECTOR==yolov11s
         init_condition:
           expr: ${parameters.detector}
+          value: yolov11n
+        elements:
+          - element: nvinfer@detector
+            name: yolov11n
+            model:
+              remote:
+                url: s3://savant-data/models/yolo11n/yolo11n.zip
+                checksum_url: s3://savant-data/models/yolo11n/yolo11n.md5
+                parameters:
+                  endpoint: https://eu-central-1.linodeobjects.com              
+              format: onnx
+              model_file: yolo11n.onnx
+              batch_size: ${parameters.batch_size}
+              workspace_size: 6144
+              input:
+                shape: [3, 640, 640]
+                scale_factor: 0.0039215697906911373
+                maintain_aspect_ratio: true
+                symmetric_padding: true
+              output:
+                layer_names: [output0]
+                num_detected_classes: 80  # required for YOLOv11
+                converter: ${parameters.default_yolo_converter}
+                objects:
+                  - class_id: ${parameters.detected_object.id}
+                    label: ${parameters.detected_object.label}
+                    selector: ${parameters.default_yolo_selector}
+
+    # variant group: yolov11s detector
+    - group:
+        # enabled if env var DETECTOR==yolov11s
+        init_condition:
+          expr: ${parameters.detector}
           value: yolov11s
         elements:
           - element: nvinfer@detector
