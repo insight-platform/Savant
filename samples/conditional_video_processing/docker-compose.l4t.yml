@@ -59,7 +59,7 @@ services:
 
   etcd:
     container_name: etcd
-    image: docker.io/bitnami/etcd:3.5
+    image: bitnamilegacy/etcd:3.6.4-debian-12-r4
     restart: unless-stopped
     environment:
       - ALLOW_NONE_AUTHENTICATION=yes
