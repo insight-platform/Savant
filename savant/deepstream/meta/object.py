@@ -209,6 +209,27 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
             replace=replace,
         )
 
+    def _set_obj_label(self, element_name: str, label: str):
+        obj_key = build_model_object_key(element_name, label)
+        if len(obj_key) > MAX_LABEL_SIZE:
+            self.logger.warning(
+                'The length of label "%s" '
+                'and element_name "%s" is greater '
+                'than %d characters, '
+                'so it will be reduced '
+                'to %d characters',
+                label,
+                element_name,
+                MAX_LABEL_SIZE,
+                MAX_LABEL_SIZE,
+            )
+            obj_key = obj_key[:MAX_LABEL_SIZE]
+        # workaround for pyds string handling
+        self.ds_object_meta.obj_label = obj_key + '\0'
+        self.ds_object_meta.unique_component_id, self.ds_object_meta.class_id = (
+            get_object_id(element_name, label)
+        )
+
     @property
     def label(self) -> str:
         """Returns the object label.
@@ -224,30 +245,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
 
         :param value: Object label.
         """
-        if isinstance(value, str):
-            obj_key = build_model_object_key(self.element_name, value)
-            if len(obj_key) > MAX_LABEL_SIZE:
-                self.logger.warning(
-                    'The length of label "%s" '
-                    'and element_name "%s" is greater '
-                    'than %d characters, '
-                    'so it will be reduced '
-                    'to %d characters',
-                    value,
-                    self.element_name,
-                    MAX_LABEL_SIZE,
-                    MAX_LABEL_SIZE,
-                )
-
-                self.ds_object_meta.obj_label = obj_key[:MAX_LABEL_SIZE]
-            else:
-                self.ds_object_meta.obj_label = obj_key
-            self.ds_object_meta.class_id = get_object_id(self.element_name, value)[1]
-        else:
-            raise MetaValueError(
-                'The label property can only be a string, '
-                f'the value is `{type(value)}`'
-            )
+        self._set_obj_label(element_name=self.element_name, label=value)
 
     @property
     def draw_label(self) -> str:
@@ -334,7 +332,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
     @element_name.setter
     def element_name(self, value: str):
         """Changes the identifier of the element that created this object."""
-        self.ds_object_meta.unique_component_id = get_object_id(value, self.label)[0]
+        self._set_obj_label(element_name=value, label=self.label)
 
     @classmethod
     def from_nv_ds_object_meta(
