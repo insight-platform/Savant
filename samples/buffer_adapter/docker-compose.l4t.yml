@@ -20,29 +20,21 @@ services:
         condition: service_started
 
   buffer:
-    image: ghcr.io/insight-platform/savant-adapters-py-l4t:latest
+    image: ghcr.io/insight-platform/savant-buffer-ng-arm64:savant-latest
     #restart: unless-stopped
     ports:
       - "8080:8080"
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - buffer:/tmp/savant-adapter/buffer
-      - message_dump:/tmp/message-dump
     environment:
       - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/buffer.ipc
       - ZMQ_SINK_ENDPOINT=dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc
       - BUFFER_PATH=/tmp/savant-adapter/buffer
       - BUFFER_LEN=1000
-      - INTERVAL=0.1
-      - METRICS_FRAME_PERIOD=1000
-      - METRICS_TIME_PERIOD=10
       - STATS_LOG_INTERVAL=10
       - METRICS_EXTRA_LABELS={"adapter":"buffer"}
-      - MESSAGE_DUMP_ENABLED=False # Set to True to enable message dumping for later analysis
-      - MESSAGE_DUMP_SEGMENT_DURATION=30
-      - MESSAGE_DUMP_PATH=/tmp/message-dump
-      - BUFFER_RESET_ON_RESTART=True
-    command: python -m adapters.python.bridge.buffer
+      - BUFFER_RESET_ON_RESTART=true
 
   module:
     privileged: true
