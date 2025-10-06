@@ -7,7 +7,7 @@ services:
       service: video-loop-source
 
   buffer:
-    image: ghcr.io/insight-platform/savant-adapters-py:latest
+    image: ghcr.io/insight-platform/savant-buffer-ng-x86:savant-latest
     extends:
       file: docker-compose.l4t.yml
       service: buffer

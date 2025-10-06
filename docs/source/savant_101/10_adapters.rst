@@ -1764,6 +1764,9 @@ Bridge adapters deliver data from other elements of the pipeline (e.g. a source 
 Currently, the following bridge adapters are available:
 
 - Buffer adapter.
+- Buffer NG adapter.
+- Router adapter.
+- Replay adapter.
 
 Bridge adapters accept the following common parameters:
 
@@ -1879,3 +1882,29 @@ The adapter exports its internal state to Prometheus:
     * - ``last_sent_message``
       - A timestamp of the last sent message.
       - Gauge
+
+
+Buffer NG Bridge Adapter
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Buffer NG is a new generation of the buffer adapter. It is a more efficient and scalable buffer adapter. Built in Rust and can be extended with custom logic in Python.
+
+Read the adapter documentation `here <https://insight-platform.github.io/savant-rs/services/buffer_ng/index.html>`__.
+
+
+Router Bridge Adapter
+^^^^^^^^^^^^^^^^^^^^^
+
+Router is a service that routes messages coming from multiple sources to multiple destinations. It is used to route messages to different destinations based on the assigned labels.
+
+It is built in Rust and can be extended with custom logic in Python.
+
+Read the adapter documentation `here <https://insight-platform.github.io/savant-rs/services/router/index.html>`__.
+
+
+Replay Bridge Adapter
+^^^^^^^^^^^^^^^^^^^^^
+
+Replay is a service that records, replays and restreams video streams. It is used to record, replay and restream video streams.
+
+Read the adapter documentation `here <https://insight-platform.github.io/savant-rs/services/replay/index.html>`__.
