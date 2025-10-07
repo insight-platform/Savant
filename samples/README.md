@@ -94,7 +94,6 @@ Sample location: [panoptic_driving_perception](./panoptic_driving_perception)
 
 ## Utility And Coding Examples
 
-
 ### Retina RTSP and RTCP SR Sample
 
 The sample shows how to synchronize multiple RTSP streams by RTCP SR NTP data with the Savant Retina RTSP adapter.
@@ -192,3 +191,9 @@ Sample location: [original_resolution_processing](original_resolution_processing
 A pipeline demonstrates the router service distributing video streams between screenshot maker and video archiving sink.
 
 Sample location: [router](router)
+
+### Uridecodebin input
+
+The sample shows how to use the module with uridecodebin input to feed downstream elements with videostreams.
+
+Sample location: [uridecodebin](./uridecodebin)
