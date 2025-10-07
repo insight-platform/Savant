@@ -1,0 +1,27 @@
+# module name, required
+name: uridecodebin
+# base module parameters
+parameters:
+  max_fps_control: true
+  max_fps: 30/1
+  batch_size: 1
+  output_frame: 
+    codec: hevc
+    encoder_params:
+      profile: Main
+      bitrate: 8000000
+  draw_func: null
+pipeline:
+  source:
+    element: uridecodebin
+    properties:
+      uri: ${oc.env:URI}
+  sink:
+    - element: zeromq_sink
+      properties:
+        socket: ${oc.env:ZMQ_SINK_ENDPOINT}
+      egress_frame_filter:
+        module: samples.uridecodebin.src.egress_frame_filter
+        class_name: EgressFilter
+        kwargs:
+          source_id: ${oc.env:SOURCE_ID}
