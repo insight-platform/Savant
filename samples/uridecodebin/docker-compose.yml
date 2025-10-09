@@ -1,7 +1,7 @@
 services:
 
   module:
-    image: ghcr.io/insight-platform/savant-deepstream:latest
+    image: ghcr.io/insight-platform/savant-deepstream:0.5.15-7.0
     restart: unless-stopped
     privileged: true
     volumes:
@@ -23,7 +23,7 @@ services:
               capabilities: [ gpu ]
 
   always-on-sink:
-    image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
+    image: ghcr.io/insight-platform/savant-adapters-deepstream:0.5.15-7.0
     restart: unless-stopped
     ports:
       - "554:554"    # RTSP

@@ -1,7 +1,7 @@
 services:
 
   video-loop-source:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:0.5.15
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -18,7 +18,7 @@ services:
         condition: service_started
 
   router:
-    image: ghcr.io/insight-platform/savant-router-x86:savant-latest
+    image: ghcr.io/insight-platform/savant-router-x86:v0.5.15
     restart: unless-stopped
     environment:
       - SCREENSHOT_PERIOD=10
@@ -30,7 +30,7 @@ services:
   screenshot-maker:
     privileged: true
     restart: unless-stopped
-    image: ghcr.io/insight-platform/savant-deepstream:latest
+    image: ghcr.io/insight-platform/savant-deepstream:0.5.15-7.0
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ..:/opt/savant/samples
@@ -50,7 +50,7 @@ services:
               capabilities: [ gpu ]
 
   savant-analytics:
-    image: ghcr.io/insight-platform/savant-rs-py313:savant-latest
+    image: ghcr.io/insight-platform/savant-rs-py313:v0.5.15
     restart: unless-stopped
     environment:
       - LOGLEVEL=info
@@ -65,7 +65,7 @@ services:
 
   video-sink:
     container_name: video-sink
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:0.5.15
     restart: unless-stopped
     entrypoint: /opt/savant/adapters/gst/sinks/video_files.py
     environment:

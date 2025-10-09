@@ -1,7 +1,7 @@
 services:
 
   sync-rtsp-adapter:
-    image: ghcr.io/insight-platform/savant-retina-rtsp-x86:savant-latest
+    image: ghcr.io/insight-platform/savant-retina-rtsp-x86:v0.5.15
     restart: unless-stopped
     environment:
       - RUST_LOG=info
@@ -17,7 +17,7 @@ services:
 
   broadcaster:
     privileged: true
-    image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
+    image: ghcr.io/insight-platform/savant-adapters-deepstream:0.5.15-7.0
     restart: unless-stopped
     ports:
       - "6666:6666"
