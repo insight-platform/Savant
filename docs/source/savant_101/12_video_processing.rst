@@ -255,7 +255,7 @@ You can choose hardware or software encoder by setting ``encoder`` parameter to 
 
 When ``encoder`` parameter is specified and the framework doesn't find a suitable encoder, it will end with an error. When ``encoder`` parameter is omitted, the framework will try to use hardware encoder. When it fails, it will fall back to software encoder.
 
-Every codec has its own configuration parameters related to a corresponding GStreamer plugin. Those parameters are defined in ``output_frame.encoder_params``:
+Every codec has its own configuration parameters related to a corresponding GStreamer plugin. Those parameters are defined in ``output_frame.encoder_params`` or ``output_frame.{codec_name}_encoder_params`` if the pipeline can be launched with various codecs:
 
 .. code-block:: yaml
 
@@ -267,9 +267,31 @@ Every codec has its own configuration parameters related to a corresponding GStr
           iframeinterval: 10
           profile: High
 
+or
+
+.. code-block:: yaml
+
+    parameters:
+      output_frame:
+        codec: ${oc.env:CODEC, 'h264'}
+        h264_encoder_params:
+          profile: Baseline
+          bitrate: 8000000
+        hevc_encoder_params:
+          profile: Main
+          bitrate: 8000000
+        jpeg_encoder_params:
+          quality: 99
+
+
+.. tip::
+
+    The pipeline first tries to apply ``output_frame.{codec_name}_encoder_params`` and later ``output_frame.encoder_params`` if the specific configuration is absent.
+
 
 .. tip::
     Find out more on the `software H264 encoder <https://blog.savant-ai.io/savant-explained-software-video-encoder-543ed147f9f?source=friends_link&sk=155e038056bbbca6d43793297e4afdda>`_ on Medium.
+
 
 Encoder Properties
 ------------------
