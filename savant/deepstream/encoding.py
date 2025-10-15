@@ -52,6 +52,13 @@ def check_encoder_is_available(
         parser_props = {'config-interval': -1}
     else:
         parser_props = {}
+
+    # check if {codec}_encoder_params are available
+    encoder_params_key_name = f'{codec.value.name.lower()}_encoder_params'
+    encoder_params = codec_params.get(encoder_params_key_name, {})
+    if not encoder_params:
+        encoder_params = codec_params.get('encoder_params', {})
+
     elements = [
         PipelineElement(
             'videotestsrc',
@@ -64,7 +71,7 @@ def check_encoder_is_available(
         PipelineElement('nvvideoconvert'),
         PipelineElement(
             encoder,
-            properties=codec_params.get('encoder_params', {}),
+            properties=encoder_params,
         ),
         PipelineElement(
             codec.value.parser,

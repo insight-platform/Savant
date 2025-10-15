@@ -3,8 +3,14 @@ name: license_plate_recognition
 parameters:
   output_frame:
     codec: ${oc.env:CODEC, 'h264'}
-    encoder_params:
+    h264_encoder_params:
+      profile: Baseline
       bitrate: 8000000
+    hevc_encoder_params:
+      profile: Main
+      bitrate: 8000000
+    jpeg_encoder_params:
+      quality: 99
   frame:
     width: ${oc.decode:${oc.env:FRAME_WIDTH, 1920}}
     height: ${oc.decode:${oc.env:FRAME_HEIGHT, 1080}}

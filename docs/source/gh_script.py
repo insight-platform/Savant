@@ -2,15 +2,15 @@
 """Downloads and unpacks documentation for all published releases.
 Usage: gh_script.py GH_OWNER/GH_REPO GH_TOKEN DST_PATH
 """
-import sys
-from urllib.error import HTTPError
-from urllib.request import Request, urlopen
-from pathlib import Path
 import json
 import shutil
+import sys
 import tarfile
-import jinja2
+from pathlib import Path
+from urllib.error import HTTPError
+from urllib.request import Request, urlopen
 
+import jinja2
 
 ASSET_NAME = 'docs.tar'
 
