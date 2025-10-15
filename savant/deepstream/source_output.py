@@ -428,7 +428,7 @@ class SourceOutputEncoded(SourceOutputWithFrame):
         if not encoder_params:
             encoder_params = output_frame.get('encoder_params', {})
 
-        self._params = encoder_params or {}
+        self._params = encoder_params
 
     @property
     def encoder(self) -> str:
