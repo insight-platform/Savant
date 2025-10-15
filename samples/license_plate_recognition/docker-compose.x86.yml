@@ -14,7 +14,7 @@ services:
       service: module
     runtime: runc
     environment:
-      - CODEC=h264
+      - CODEC=jpeg
     deploy:
       resources:
         reservations:
