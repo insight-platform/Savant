@@ -423,7 +423,7 @@ class SourceOutputEncoded(SourceOutputWithFrame):
         self._encoder = self._codec.encoder(output_frame.get('encoder'))
 
         # check if {codec}_encoder_params are available
-        encoder_params_key_name = f'{self._codec.name}_encoder_params'.lower()
+        encoder_params_key_name = f'{self._codec.name.lower()}_encoder_params'
         encoder_params = output_frame.get(encoder_params_key_name, {})
         if not encoder_params:
             encoder_params = output_frame.get('encoder_params', {})
