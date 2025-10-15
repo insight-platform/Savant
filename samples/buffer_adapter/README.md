@@ -1,8 +1,10 @@
 # Buffer Adapter Demo
 
-A pipeline demonstrates how Buffer Adapter works in Savant. In the demo video from Video Loop Source adapter passed to Buffer Adapter. Buffer Adapter stores frames in buffer and passes it to the module. Then the module passes the processed frames to Always-On-RTSP Sink adapter. The module simulates a periodic load spike by adding a lag for 0.06 - 0.1 seconds to 500 frames after every 500 frames without a lag. When there is a load spike, the buffer adapter stores frames in the buffer and passes them to the module when the load is reduced. When the buffer is full, the buffer adapter drops incoming frames.
+A pipeline demonstrates how the Buffer NG adapter works in Savant. In the demo video from Video Loop Source adapter passed to the Buffer NG adapter. The Buffer NG adapter stores frames in buffer and passes it to the module. Then the module passes the processed frames to Always-On-RTSP Sink adapter. 
 
-The buffer adapter metrics are stored in Prometheus and displayed on a Grafana dashboard.
+The module simulates a periodic load spike by adding a lag for 0.06 - 0.1 seconds to 500 frames after every 500 frames without a lag. When there is a load spike, the buffer adapter stores frames in the buffer and passes them to the module when the load is reduced. When the buffer is full, the buffer adapter drops incoming frames.
+
+The adapter metrics are stored in Prometheus and displayed on a Grafana dashboard.
 
 Tested on platforms:
 
