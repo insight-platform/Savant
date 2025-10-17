@@ -178,25 +178,8 @@ run-dev:
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} \+
 
-check-black:
-	black --check .
+check:
+	ruff check .
 
-check-unify:
-	unify --check-only --recursive savant | grep -- '--- before' | sed 's#--- before/##'
-	unify --check-only --recursive savant > /dev/null
-
-check-isort:
-	isort savant adapters gst_plugins samples scripts tests utils -c
-
-check: check-black check-unify check-isort
-
-run-unify:
-	unify --in-place --recursive savant adapters gst_plugins samples scripts tests utils services
-
-run-black:
-	black .
-
-run-isort:
-	isort savant adapters gst_plugins samples scripts tests utils services
-
-reformat: run-unify run-black run-isort
+reformat:
+	ruff format .
