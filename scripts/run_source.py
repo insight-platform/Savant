@@ -128,8 +128,9 @@ def files_source(
     '--read-metadata',
     default=False,
     is_flag=True,
-    help='Attempt to read the metadata of objects from the JSON file that has the identical name '
-    'as the source file with `json` extension, and then send it to the module.',
+    help='Attempt to read the metadata of objects from the JSON file that has '
+    'the identical name as the source file with `json` extension, '
+    'and then send it to the module.',
 )
 @click.option(
     '--eos-on-file-end',
@@ -193,8 +194,9 @@ def videos_source(
     '--read-metadata',
     default=False,
     is_flag=True,
-    help='Attempt to read the metadata of objects from the JSON file that has the identical name '
-    'as the source file with `json` extension, and then send it to the module.',
+    help='Attempt to read the metadata of objects from the JSON file that has '
+    'the identical name as the source file with `json` extension, '
+    'and then send it to the module.',
 )
 @click.option(
     '--eos-on-loop-end',
@@ -206,7 +208,8 @@ def videos_source(
     '--measure-fps-per-loop',
     default=False,
     is_flag=True,
-    help='Measure FPS per loop. FPS meter will dump statistics at the end of each loop.',
+    help='Measure FPS per loop. '
+    'FPS meter will dump statistics at the end of each loop.',
 )
 @click.option(
     '--download-path',
@@ -290,8 +293,9 @@ def video_loop_source(
     '--read-metadata',
     default=False,
     is_flag=True,
-    help='Attempt to read the metadata of objects from the JSON file that has the identical name '
-    'as the source file with `json` extension, and then send it to the module.',
+    help='Attempt to read the metadata of objects from the JSON file that has '
+    'the identical name as the source file with `json` extension, '
+    'and then send it to the module.',
 )
 @click.option(
     '--download-path',
@@ -408,8 +412,9 @@ def multi_stream_source(
     '--read-metadata',
     default=False,
     is_flag=True,
-    help='Attempt to read the metadata of objects from the JSON file that has the identical name '
-    'as the source file with `json` extension, and then send it to the module.',
+    help='Attempt to read the metadata of objects from the JSON file that has '
+    'the identical name as the source file with `json` extension, '
+    'and then send it to the module.',
 )
 @click.option(
     '--eos-on-file-end',
@@ -580,7 +585,8 @@ def rtsp_source(
 @click.option('--gain-auto', help='Auto Gain Mode, one of "off", "once", "on"')
 @click.option(
     '--features',
-    help='Additional configuration parameters as a space separated list of feature assignations',
+    help='Additional configuration parameters as a space separated list '
+    'of feature assignations',
 )
 @click.option(
     '--host-network', default=False, is_flag=True, help='Use the host network.'
@@ -606,13 +612,16 @@ def rtsp_source(
 @click.option(
     '--encode-speed-preset',
     default='medium',
-    help='Speed preset of the encoder, one of "ultrafast", "superfast", "veryfast", "faster", "fast", "medium", "slow", "slower", "veryslow", "placebo"',
+    help='Speed preset of the encoder, one of '
+    '"ultrafast", "superfast", "veryfast", "faster", "fast", '
+    '"medium", "slow", "slower", "veryslow", "placebo"',
     show_default=True,
 )
 @click.option(
     '--encode-tune',
     default='zerolatency',
-    help='Tune of the encoder, one of "psnr", "ssim", "grain", "zerolatency", "psnr", "fastdecode", "animation"',
+    help='Tune of the encoder, one of "psnr", "ssim", "grain", "zerolatency", '
+    '"psnr", "fastdecode", "animation"',
     show_default=True,
 )
 @common_options
@@ -839,13 +848,15 @@ def ffmpeg_source(
     '--auto-commit-interval-ms',
     type=click.INT,
     default=1000,
-    help='Frequency in milliseconds that the consumer offsets are auto-committed to Kafka.',
+    help='Frequency in milliseconds that the consumer offsets are auto-committed '
+    'to Kafka.',
     show_default=True,
 )
 @click.option(
     '--auto-offset-reset',
     default='latest',
-    help='Position to start reading messages from Kafka topic when the group is created.',
+    help='Position to start reading messages from Kafka topic when the group '
+    'is created.',
     show_default=True,
 )
 @click.option(
@@ -920,7 +931,8 @@ def kafka_redis_source(
 ):
     """Takes video stream metadata from Kafka and fetches frame content from Redis.
 
-    Frame content location is encoded as <redis-host>:<redis-port>:<redis-db>/<redis-key>.
+    Frame content location is encoded as
+    <redis-host>:<redis-port>:<redis-db>/<redis-key>.
     """
 
     envs = build_common_envs(
@@ -982,7 +994,9 @@ def kafka_redis_source(
 def message_dump_player_source(
     out_endpoint: str, docker_image: str, playlist: str, dump_files_dir: str, sync: bool
 ):
-    """Plays video dumps sequentially from a playlist file and sends them to a module."""
+    """Plays video dumps sequentially from a playlist file and
+    sends them to a module.
+    """
 
     envs = build_common_envs(
         source_id=None,

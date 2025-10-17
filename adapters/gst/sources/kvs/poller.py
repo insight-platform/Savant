@@ -177,7 +177,9 @@ class FragmentsPoller(BaseThreadWorker):
         self.event.set()
 
     def on_stream_read_exception(self, stream_name: str, error: Union[str, Exception]):
-        """Callback for stream read exception. Sets error and event to stop the consumer."""
+        """Callback for stream read exception.
+        Sets error and event to stop the consumer.
+        """
 
         self.set_error(f'Error reading stream {stream_name}: {error}')
         self.event.set()

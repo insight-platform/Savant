@@ -501,7 +501,8 @@ def nvinfer_element_configurator(
             except ValueError:
                 model_uid, obj_id = get_object_id(element_config.name, obj.label)
                 logger.debug(
-                    'Object label "%s" already registered for id %s. Merging id %s into id %s.',
+                    'Object label "%s" already registered for id %s. '
+                    'Merging id %s into id %s.',
                     obj.label,
                     obj_id,
                     obj.class_id,
@@ -588,15 +589,15 @@ def nvtracker_element_configurator(
     ll_config_file = element_config.properties.get('ll-config-file')
     if ll_config_file is not None and not os.path.exists(ll_config_file):
         raise NvTrackerConfigException(
-            f'File not found when loading low-level library config for nvtracker: {ll_config_file}.'
-            ' Please check the path to the file.'
+            f'File not found when loading low-level library config for nvtracker: '
+            f'{ll_config_file}. Please check the path to the file.'
         )
 
     ll_lib_file = element_config.properties.get('ll-lib-file')
     if ll_lib_file is not None and not os.path.exists(ll_lib_file):
         raise NvTrackerConfigException(
-            f'File not found when loading low-level library for nvtracker: {ll_lib_file}.'
-            ' Please check the path to the file.'
+            f'File not found when loading low-level library for nvtracker: '
+            f'{ll_lib_file}. Please check the path to the file.'
         )
 
     return element_config

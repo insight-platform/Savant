@@ -108,7 +108,8 @@ class GstPipelineRunner:
         end_time = time()
         exec_seconds = end_time - start_time
         logger.info(
-            'The pipeline is initialized and ready to process data. Initialization took %s.',
+            'The pipeline is initialized and ready to process data. '
+            'Initialization took %s.',
             timedelta(seconds=exec_seconds),
         )
 

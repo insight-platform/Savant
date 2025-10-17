@@ -17,9 +17,9 @@ from savant.deepstream.pyfunc import NvDsPyFuncPlugin
 from savant.gstreamer import Gst
 from savant.parameter_storage import param_storage
 
-OBJ_LABEL = param_storage()['detected_object_label']
+from .utils import TwoLinesCrossingTracker
 
-from .utils import Point, TwoLinesCrossingTracker
+OBJ_LABEL = param_storage()['detected_object_label']
 
 
 class ConditionalDetectorSkip(NvDsPyFuncPlugin):
@@ -62,10 +62,12 @@ class LineCrossing(NvDsPyFuncPlugin):
             config_order = next(points_permutations)
             polygon = PolygonalArea(config_order, poly_cfg['edges'])
             if polygon.is_self_intersecting():
-                # try to find a permutation of points that does not produce a self-intersecting polygon
+                # try to find a permutation of points
+                # that does not produce a self-intersecting polygon
                 self.logger.warn(
-                    'Polygon config for the "%s" source id produced a self-intersecting polygon.'
-                    ' Trying to find a valid permutation...',
+                    'Polygon config for the "%s" source id '
+                    'produced a self-intersecting polygon. '
+                    'Trying to find a valid permutation...',
                     source_id,
                 )
                 while True:
@@ -74,15 +76,18 @@ class LineCrossing(NvDsPyFuncPlugin):
                         polygon = PolygonalArea(points_perm, poly_cfg['edges'])
                         if not polygon.is_self_intersecting():
                             self.logger.info(
-                                'Found a valid points permutation "%s" for the "%s" source id.',
+                                'Found a valid points permutation "%s" '
+                                'for the "%s" source id.',
                                 points_perm,
                                 source_id,
                             )
                             break
                     except StopIteration:
                         self.logger.error(
-                            'Polygon config for the "%s" source id produced a self-intersecting polygon.'
-                            ' Please correct coordinates "%s" in the config file and restart the pipeline.',
+                            'Polygon config for the "%s" source id '
+                            'produced a self-intersecting polygon. '
+                            'Please correct coordinates "%s" in the config file and '
+                            'restart the pipeline.',
                             source_id,
                             poly_cfg,
                         )
@@ -100,7 +105,8 @@ class LineCrossing(NvDsPyFuncPlugin):
         if self.send_stats:
             if StatsClient is None:
                 self.logger.error(
-                    'Stats client is not installed. Please install statsd to enable sending stats.'
+                    'Stats client is not installed. '
+                    'Please install statsd to enable sending stats.'
                 )
                 self.send_stats = False
             else:

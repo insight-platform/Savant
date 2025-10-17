@@ -85,12 +85,14 @@ def main():
             continue
         if arch not in name:
             print(
-                f'Skipping {name} because it does not relate to the target architecture {arch}.'
+                f'Skipping {name} because it does not relate '
+                f'to the target architecture {arch}.'
             )
             continue
         if python_short_version not in name:
             print(
-                f'Skipping {name} because it does not match Python version {python_short_version}.'
+                f'Skipping {name} because it does not match '
+                f'Python version {python_short_version}.'
             )
             continue
         print(f'Installing {name}')
@@ -107,7 +109,8 @@ def main():
         assets = get_release_assets(release_tag, gh_repo, gh_token)
     except Exception:
         print(
-            f'Error getting release assets for tag {release_tag} in repository {gh_repo}, skipping installation.'
+            f'Error getting release assets for tag {release_tag} '
+            f'in repository {gh_repo}, skipping installation.'
         )
         assets = []
 

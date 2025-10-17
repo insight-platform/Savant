@@ -20,7 +20,8 @@ from .savant_rs_handler import LOG_LEVEL_PY_TO_RS
 def init_logging(log_spec_str: Optional[str] = None):
     """Initialize logging with specified log level or set default.
 
-    :param log_spec_str: A comma-separated list of logging directives of the form target=level.
+    :param log_spec_str: A comma-separated list of logging directives of
+        the form target=level.
     """
     if init_logging.done:
         return
@@ -64,7 +65,8 @@ def get_logger(name: str) -> logging.Logger:
 def update_logging(log_spec_str: str):
     """Update logging with specified log spec.
 
-    :param log_spec_str: A comma-separated list of logging directives of the form target=level.
+    :param log_spec_str: A comma-separated list of logging directives of
+        the form target=level.
     """
     log_spec_dict = parse_log_spec(log_spec_str)
     apply_log_spec(log_spec_dict)

@@ -41,7 +41,9 @@ def add_queues_to_element_group(
     next_should_be_queue: bool,
     first_element: bool,
 ):
-    """Add queues to the pipeline or an element group before and after pyfunc elements."""
+    """Add queues to the pipeline or
+    an element group before and after pyfunc elements.
+    """
 
     elements = []
     for i, element in enumerate(element_group.elements):

@@ -42,7 +42,8 @@ class Downsampler(NvDsPyFuncPlugin):
         time_condition = current_ts - last_ts > sampling_period
 
         # remove default ROI because we add our custom ROI to the frame
-        # removal is not required but may help in case of tracker to reduce amount of tracked objects
+        # removal is not required but may help in case of tracker
+        # to reduce amount of tracked objects
         for obj_meta in frame_meta.objects:
             if obj_meta.is_primary:
                 frame_meta.remove_obj_meta(obj_meta)

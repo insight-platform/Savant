@@ -100,9 +100,10 @@ def main(module_config: Union[str, Path, IO[Any]]):
                 logger.info('Shutting down module "%s".', config.name)
             except Exception as exc:  # pylint: disable=broad-except
                 logger.error(exc, exc_info=True)
-                # TODO: Sometimes pipeline hangs when exit(1) or not exit at all is called.
-                #       E.g. when the module has "req+connect" socket at the sink and
-                #       sink adapter is not available.
+                # TODO: Sometimes pipeline hangs when exit(1)
+                #  or not exit at all is called.
+                #  E.g. when the module has "req+connect" socket at the sink and
+                #  sink adapter is not available.
                 os._exit(1)  # pylint: disable=protected-access
     except Exception as exc:  # pylint: disable=broad-except
         logger.error('Module "%s" error %s', config.name, exc, exc_info=True)

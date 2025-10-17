@@ -16,7 +16,8 @@ from savant.utils.artist import Artist
 class BgRemover(NvDsPyFuncPlugin):
     """Background remover pyfunc.
 
-    The class is designed to process video frame metadata and remove the background from the frame.
+    The class is designed to process video frame metadata and
+    remove the background from the frame.
     MOG2 method from openCV is used to remove background.
     """
 

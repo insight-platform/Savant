@@ -45,7 +45,10 @@ class First(NvDsPyFuncPlugin):
                     elapsed_time = float(int((time.time() - now) * 100_000) / 100)
                     for a in second_attributes:
                         self.logger.info(
-                            f'Downstream attribute value (second): {a.values[0].as_integer()}, Elapsed time: {elapsed_time} ms'
+                            'Downstream attribute value (second): %d, '
+                            'Elapsed time: %f ms',
+                            a.values[0].as_integer(),
+                            elapsed_time,
                         )
 
 

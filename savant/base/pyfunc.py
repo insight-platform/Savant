@@ -163,7 +163,8 @@ class PyFunc:
     A pyfunc can be configured to be run in dev mode. Pyfuncs in dev mode are
     reloaded at runtime before each call (each frame) if the source file has
     changed since the last one. Additionally, pyfuncs in dev mode gracefully
-    recover from error in code, allowing the pipeline to stay up and continue processing.
+    recover from error in code, allowing the pipeline
+    to stay up and continue processing.
 
     .. note::
 
@@ -319,7 +320,8 @@ class PyFunc:
                 )
         else:
             logger.trace(
-                'Dev mode is enabled and no changes in "%s.%s" are detected; continuing.',
+                'Dev mode is enabled and no changes in "%s.%s" are detected; '
+                'continuing.',
                 self.module,
                 self.class_name,
             )
@@ -342,7 +344,8 @@ def pyfunc_module_spec_factory(pyfunc: PyFunc) -> ModuleSpec:
     if not spec.has_location:
         # can be a built-in or a namespace packge, for example
         logger.warning(
-            'Attempting to load a PyFunc with undetermined location. Is it really a user module? %r',
+            'Attempting to load a PyFunc with undetermined location. '
+            'Is it really a user module? %r',
             pyfunc,
         )
     return spec

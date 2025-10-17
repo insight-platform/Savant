@@ -1,7 +1,8 @@
 """GStreamer module."""
 
+# ruff: skip-file
 # to avoid `gi.require_version` warning
-import gi
+import gi  # noqa: F401
 
 gi.require_version('GLib', '2.0')
 gi.require_version('GObject', '2.0')
@@ -11,4 +12,4 @@ gi.require_version('GstApp', '1.0')
 gi.require_version('GstVideo', '1.0')
 
 # pylint:disable=wrong-import-position
-from gi.repository import GLib, GObject, Gst, GstApp, GstBase
+from gi.repository import GLib, GObject, Gst, GstApp, GstBase  # noqa: F401, E402

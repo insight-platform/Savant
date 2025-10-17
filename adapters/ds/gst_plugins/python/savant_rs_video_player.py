@@ -187,7 +187,8 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
     def do_get_property(self, prop):
         """Gst plugin get property function.
 
-        :param prop: structure that encapsulates the metadata required to specify parameters
+        :param prop: structure that encapsulates the metadata
+            required to specify parameters
         """
         if prop.name == 'sync':
             return self._sync
@@ -210,7 +211,8 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
     def do_set_property(self, prop, value):
         """Gst plugin set property function.
 
-        :param prop: structure that encapsulates the metadata required to specify parameters
+        :param prop: structure that encapsulates the metadata
+            required to specify parameters
         :param value: new value for param, type dependents on param
         """
         if prop.name == 'sync':

@@ -66,7 +66,9 @@ def run_module(
     # fmt: off
     command = [
         'docker', 'run',
-        '--privileged', # privileged is required on particular hosts to overcome the security restrictions with pthreads_setspecific
+        # privileged is required on particular hosts to overcome
+        # the security restrictions with pthreads_set specific
+        '--privileged',
         '--rm',
         '-e', f'DOWNLOAD_PATH=/cache/downloads/{module_name}',
         '-e', f'MODEL_PATH=/cache/models/{module_name}',

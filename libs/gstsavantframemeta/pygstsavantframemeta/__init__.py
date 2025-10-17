@@ -6,7 +6,7 @@ from savant_rs.pipeline2 import VideoPipeline
 from . import pygstsavantframemeta
 
 gi.require_version('Gst', '1.0')
-from gi.repository import Gst
+from gi.repository import Gst  # noqa: E402
 
 
 def gst_buffer_add_savant_batch_meta(
@@ -82,7 +82,7 @@ def gst_buffer_get_savant_frame_meta(
 
 
 def nvds_frame_meta_get_nvds_savant_frame_meta(
-    frame_meta: 'pyds.NvDsFrameMeta',
+    frame_meta: 'pyds.NvDsFrameMeta',  # noqa: F821
 ) -> Optional[pygstsavantframemeta.GstSavantFrameMeta]:
     """Get savant frame metadata from NvDs frame metadata.
 
@@ -125,7 +125,8 @@ def add_pad_probe_to_pack_and_move_frames(
     video_pipeline: VideoPipeline,
     stage: str,
 ):
-    """Add pad probe to pack frames to batch and move it to the next stage of VideoPipeline.
+    """Add pad probe to pack frames to batch and
+    move it to the next stage of VideoPipeline.
 
     :param pad: GStreamer pad.
     :param video_pipeline: VideoPipeline object.
@@ -161,7 +162,8 @@ def add_pad_probe_to_unpack_and_move_batch(
     video_pipeline: VideoPipeline,
     stage: str,
 ):
-    """Add pad probe to unpack batch to frames and move them to the next stage of VideoPipeline.
+    """Add pad probe to unpack batch to frames and
+    move them to the next stage of VideoPipeline.
 
     :param pad: GStreamer pad.
     :param video_pipeline: VideoPipeline object.
@@ -178,5 +180,6 @@ def add_tracker_postproc_pad_probe(pad: Gst.Pad, disable_obj_init: bool):
     """Add a src pad probe to a nvtracker element that do some postprocessing.
 
     :param pad: nvtracker src pad.
+    :param disable_obj_init: Whether to disable object initialization.
     """
     pygstsavantframemeta.add_tracker_postproc_pad_probe(hash(pad), disable_obj_init)

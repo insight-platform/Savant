@@ -7,8 +7,6 @@ from typing import Any, Iterable, List, Optional, Union
 from savant_rs.primitives.geometry import BBox, RBBox
 from savant_rs.utils import AtomicCounter
 
-OBJECT_ID_GENERATOR = AtomicCounter(randrange(0, 1_000_000_000))
-
 from .attribute import AttributeMeta
 from .constants import (
     DEFAULT_CONFIDENCE,
@@ -17,6 +15,8 @@ from .constants import (
     UNTRACKED_OBJECT_ID,
 )
 from .errors import MetaValueError
+
+OBJECT_ID_GENERATOR = AtomicCounter(randrange(0, 1_000_000_000))
 
 
 class BaseObjectMetaImpl(ABC):

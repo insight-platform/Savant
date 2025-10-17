@@ -26,8 +26,8 @@ import cv2
 import gi
 
 gi.require_version('Gst', '1.0')
-import pyds
-from gi.repository import GLib, Gst
+import pyds  # noqa: E402
+from gi.repository import GLib, Gst  # noqa: E402
 
 scale = 10**6  # milliseconds
 RECT_COLOR = (127, 127, 127, 255)  # gray
@@ -434,7 +434,7 @@ def main(args):
     pipeline.set_state(Gst.State.PLAYING)
     try:
         loop.run()
-    except:
+    except Exception:
         pass
     print('Exiting app\n')
     pipeline.set_state(Gst.State.NULL)

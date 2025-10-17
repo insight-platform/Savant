@@ -94,7 +94,8 @@ class SROverlay(NvDsPyFuncPlugin):
                     duration=frame_meta.duration,
                 )
                 with nvds_to_gpu_mat(aux_buffer, batch_id=0) as aux_mat:
-                    # Scale the image to display it alongside the super resolution result.
+                    # Scale the image to display it alongside
+                    # the super resolution result.
                     scaled_image = cv2.cuda.resize(
                         src=frame_mat,
                         dsize=SUPER_RESOLUTION,

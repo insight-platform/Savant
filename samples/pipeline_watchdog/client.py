@@ -22,7 +22,8 @@ def main():
 
     if not zmq_sink_endpoint:
         sys.exit(
-            'ZMQ_SINK_ENDPOINT is not set. Please provide the ZMQ_SINK_ENDPOINT in the environment variable.'
+            'ZMQ_SINK_ENDPOINT is not set. '
+            'Please provide the ZMQ_SINK_ENDPOINT in the environment variable.'
         )
 
     # Build the sink
