@@ -19,6 +19,6 @@ def test_validate_empty_watch(config_with_invalid_watch_config):
     with pytest.raises(
         ValueError,
         match='Watch config must include at least one of the following: '
-              'queue, ingress, or egress.'
+        'queue, ingress, or egress.',
     ):
         validate(config_with_invalid_watch_config)

@@ -95,7 +95,8 @@ class GstPipelineRunner:
         end_time = time()
         exec_seconds = end_time - start_time
         self._logger.info(
-            'The pipeline is initialized and ready to process data. Initialization took %s.',
+            'The pipeline is initialized and ready to process data. '
+            'Initialization took %s.',
             timedelta(seconds=exec_seconds),
         )
 
@@ -417,7 +418,8 @@ class VideoFilesSink:
                     )
                     del self.writers[last_source_location]
                 self.logger.info(
-                    'New writer for source=%s, location=%s is initialized, amount of resident writers is %d',
+                    'New writer for source=%s, location=%s is initialized, '
+                    'amount of resident writers is %d',
                     video_frame.source_id,
                     location,
                     len(self.writers),

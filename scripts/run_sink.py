@@ -130,13 +130,13 @@ def chunk_size_option(default=10000):
     '--egress-queue-length',
     type=click.INT,
     help='Length of the egress queue (after decoder) '
-         'in frames (0 - no limit, default 5).',
+    'in frames (0 - no limit, default 5).',
 )
 @click.option(
     '--egress-queue-byte-size',
     type=click.INT,
     help='Size of the egress queue (after decoder) '
-         'in bytes (0 - no limit, default 10485760).',
+    'in bytes (0 - no limit, default 10485760).',
 )
 @common_options
 @source_id_option(required=False)
@@ -824,7 +824,7 @@ def kafka_redis_sink(
     '--stream-name-prefix',
     default='',
     help='Prefix for the stream name. '
-         'The stream name is generated as <stream-name-prefix><source-id>.',
+    'The stream name is generated as <stream-name-prefix><source-id>.',
     show_default=True,
 )
 @click.option(

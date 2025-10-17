@@ -54,7 +54,7 @@ class H264EncoderBuilder(BaseEncoderBuilder):
             PipelineElement(
                 'capsfilter',
                 properties={
-                    'caps': f'video/x-h264,profile={self.config.encoder_profile.lower()}'
+                    'caps': f'video/x-h264,profile={self.config.encoder_profile.lower()}'  # noqa:E501
                 },
             ),
         ]

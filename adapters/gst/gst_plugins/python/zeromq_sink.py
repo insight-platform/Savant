@@ -159,8 +159,9 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
         'read-metadata': (
             bool,
             'Read metadata',
-            'Attempt to read the metadata of objects from the JSON file that has the identical name '
-            'as the source file with `json` extension, and then send it to the module.',
+            'Attempt to read the metadata of objects from the JSON file '
+            'that has the identical name as the source file with `json` extension, '
+            'and then send it to the module.',
             False,
             GObject.ParamFlags.READWRITE,
         ),
@@ -168,7 +169,7 @@ class ZeroMQSink(LoggerMixin, GstBase.BaseSink):
             str,
             'Frame type.',
             'Frame type (allowed: '
-            f'{", ".join([EMBEDDED_FRAME_TYPE] + [enum_member.value for enum_member in ExternalFrameType])})',
+            f'{", ".join([EMBEDDED_FRAME_TYPE] + [enum_member.value for enum_member in ExternalFrameType])})',  # noqa: E501
             None,
             GObject.ParamFlags.READWRITE,
         ),

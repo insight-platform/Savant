@@ -173,7 +173,8 @@ class BaseKafkaRedisAdapter(ABC):
             raise False
 
         self._logger.info(
-            'Creating kafka topic %s with %s partitions, %s replication factor and config %s',
+            'Creating kafka topic %s with %s partitions, '
+            '%s replication factor and config %s',
             self._config.kafka.topic,
             self._config.kafka.create_topic_num_partitions,
             self._config.kafka.create_topic_replication_factor,
@@ -200,7 +201,9 @@ class BaseKafkaRedisAdapter(ABC):
         return False
 
     def clear_queue(self, queue: Queue):
-        """Clear the queue. Needed to prevent the adapter from hanging in the case of failure."""
+        """Clear the queue.
+        Needed to prevent the adapter from hanging in the case of failure.
+        """
 
         while not queue.empty():
             queue.get_nowait()

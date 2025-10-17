@@ -167,8 +167,10 @@ class AlwaysOnRtspFrameSink(LoggerMixin, GstBase.BaseSink):
     def _process_frame(self, frame: Frame):
         self.logger.debug('Input frame resolution is %sx%s', self._width, self._height)
         if isinstance(frame, cv2.cuda.GpuMat):
-            # Clone image for thread safety. The original CUDA memory will be released in this thread.
-            # TODO: don't allocate CUDA memory if frame size wasn't changed (threadsafe?)
+            # Clone image for thread safety.
+            # The original CUDA memory will be released in this thread.
+            # TODO: don't allocate CUDA memory if frame size wasn't changed
+            #  (threadsafe?)
             content = frame.clone()
         else:
             content = frame

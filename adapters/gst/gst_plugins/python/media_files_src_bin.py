@@ -186,7 +186,8 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
         if not self.loop_file:
             return
         assert self.file_type == FileType.VIDEO, (
-            f'Only "file-type={FileType.VIDEO.value}" is allowed when "loop-file" is enabled'
+            f'Only "file-type={FileType.VIDEO.value}" is allowed '
+            f'when "loop-file" is enabled'
         )
         if not isinstance(self.location, Path):
             return
@@ -211,7 +212,8 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
         assert self.location.exists(), f'No such file or directory "{self.location}"'
         if self.location.is_dir():
             assert not self.loop_file, (
-                'Specifying directory as location is not allowed when "loop-file" is enabled'
+                'Specifying directory as location is not allowed '
+                'when "loop-file" is enabled'
             )
             all_files = sorted(
                 (f for f in self.location.iterdir() if f.is_file()),
@@ -270,7 +272,8 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
             demuxer_factory = self.find_demuxer_factory(caps)
             if demuxer_factory is None:
                 self.logger.error(
-                    'Cannot find a demuxer for caps %r. Currently we support only %s containers.',
+                    'Cannot find a demuxer for caps %r. '
+                    'Currently we support only %s containers.',
                     caps.to_string(),
                     ', '.join(repr(x[1]) for x in self.supported_demuxers),
                 )
@@ -334,7 +337,8 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
             parser: Gst.Element = Gst.ElementFactory.make(codec.value.parser)
             if codec.value.parser in ['h264parse', 'h265parse']:
                 # Send VPS, SPS and PPS with every IDR frame
-                # h26xparse cannot start stream without VPS, SPS or PPS in the first frame
+                # h26xparse cannot start stream without VPS, SPS or PPS
+                # in the first frame
                 self.logger.debug(
                     'Set config-interval of %s to %s', parser.get_name(), -1
                 )
@@ -377,7 +381,8 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
     def do_get_property(self, prop):
         """Gst plugin get property function.
 
-        :param prop: structure that encapsulates the metadata required to specify parameters
+        :param prop: structure that encapsulates the metadata
+            required to specify parameters
         """
         if prop.name == 'location':
             return str(self.location)
@@ -396,7 +401,8 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
     def do_set_property(self, prop, value):
         """Gst plugin set property function.
 
-        :param prop: structure that encapsulates the metadata required to specify parameters
+        :param prop: structure that encapsulates the metadata
+            required to specify parameters
         :param value: new value for param, type dependents on param
         """
         if prop.name == 'location':

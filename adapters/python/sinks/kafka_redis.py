@@ -74,7 +74,8 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
         self._producer = self.build_producer()
         if config.redis is not None:
             self._logger.info(
-                'Redis is configured at %s:%s/%s. Frame content will be stored to Redis.',
+                'Redis is configured at %s:%s/%s. '
+                'Frame content will be stored to Redis.',
                 config.redis.host,
                 config.redis.port,
                 config.redis.db,
@@ -145,7 +146,8 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
     async def messages_processor(self):
         """Process messages from the poller queue and put them to the sender queue.
 
-        Frame content is saved to Redis and frame metadata is updated with the content location.
+        Frame content is saved to Redis and frame metadata is updated
+        with the content location.
         """
 
         self._logger.info('Starting serializer')
@@ -199,7 +201,8 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
     async def process_message(self, result: SinkResult):
         """Process one message from the poller queue.
 
-        Frame content is saved to Redis and frame metadata is updated with the content location.
+        Frame content is saved to Redis and frame metadata is updated
+        with the content location.
         """
 
         if result.frame_meta is not None:
@@ -247,11 +250,15 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
             return VideoFrameContent.internal(content)
 
         content_key = f'{self._config.redis.key_prefix}:{frame.uuid}'
-        location = f'{self._config.redis.host}:{self._config.redis.port}:{self._config.redis.db}/{content_key}'
+        location = (
+            f'{self._config.redis.host}:{self._config.redis.port}:'
+            f'{self._config.redis.db}/{content_key}'
+        )
 
         if await self.need_to_store_content_to_redis(frame, content_key, location):
             self._logger.debug(
-                'Storing content of the frame %s from source %s to Redis location %r (%s bytes)',
+                'Storing content of the frame %s from source %s to Redis '
+                'location %r (%s bytes)',
                 frame.pts,
                 frame.source_id,
                 location,
@@ -273,7 +280,8 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
     ):
         """Check if the frame content needs to be stored to Redis.
 
-        The frame content doesn't need to be stored in Redis when the following conditions are met:
+        The frame content doesn't need to be stored in Redis
+        when the following conditions are met:
         - the deduplication is enabled;
         - the module before the adapter works in pass-through mode;
         - Redis already contains the frame content at the location.
@@ -298,7 +306,8 @@ class KafkaRedisSink(BaseKafkaRedisAdapter):
             self._config.redis.ttl_seconds,
         ):
             self._logger.debug(
-                'Content of the frame %s from source %s is already in Redis at %r. TTL was updated.',
+                'Content of the frame %s from source %s is already in Redis at %r. '
+                'TTL was updated.',
                 frame.pts,
                 frame.source_id,
                 location,
