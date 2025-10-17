@@ -61,9 +61,9 @@ class BufferConfig:
     def __init__(self):
         self.low_threshold = opt_config('BUFFER_LOW_THRESHOLD', 30, int)
         self.high_threshold = opt_config('BUFFER_HIGH_THRESHOLD', 40, int)
-        assert (
-            self.low_threshold < self.high_threshold
-        ), 'BUFFER_LOW_THRESHOLD must be less than BUFFER_HIGH_THRESHOLD'
+        assert self.low_threshold < self.high_threshold, (
+            'BUFFER_LOW_THRESHOLD must be less than BUFFER_HIGH_THRESHOLD'
+        )
 
 
 class FpsMeterConfig:

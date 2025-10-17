@@ -27,7 +27,6 @@ class Overlay(NvDsDrawFunc):
                     self.lines[source_id][edge_tag] = line
 
     def draw_on_frame(self, frame_meta: NvDsFrameMeta, artist: Artist):
-
         crossing_counts = defaultdict(int)
         for obj_meta in frame_meta.objects:
             if obj_meta.is_primary:

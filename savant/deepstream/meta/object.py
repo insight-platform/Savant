@@ -266,8 +266,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
                 )
         else:
             raise MetaValueError(
-                'The label property can only be a string, '
-                f'the value is `{type(value)}`'
+                f'The label property can only be a string, the value is `{type(value)}`'
             )
 
     @property

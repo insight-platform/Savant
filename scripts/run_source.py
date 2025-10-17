@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Run source adapter."""
+
 import os
 import uuid
 from typing import List, Optional
@@ -1037,7 +1038,7 @@ def message_dump_player_source(
     required=False,
     help=(
         'Either timestamp in format "%Y-%m-%dT%H:%M:%S" or delay from current '
-        'time in "-<delay>(s\|m)". E.g. "2024-03-12T06:57:00", "-30s", "-1m".'
+        r'time in "-<delay>(s\|m)". E.g. "2024-03-12T06:57:00", "-30s", "-1m".'
     ),
 )
 @click.option(
@@ -1120,9 +1121,9 @@ def kvs_source(
         f'STATE_PATH={state_path}',
     ]
     if save_state and mount_state_path:
-        assert os.path.isabs(
-            state_path
-        ), 'State path must be absolute when mounting state path.'
+        assert os.path.isabs(state_path), (
+            'State path must be absolute when mounting state path.'
+        )
         state_dir = os.path.dirname(state_path)
         assert state_dir != '/', 'State directory must not be root.'
         volumes = [f'{os.path.abspath(mount_state_path)}:{state_dir}']

@@ -41,7 +41,6 @@ def load_mask_decoder_engine(path: str) -> TRTModule:
 
 
 class Predictor(NvDsPyFuncPlugin):
-
     def __init__(
         self,
         mask_decoder_engine_path: str,

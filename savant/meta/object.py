@@ -215,7 +215,7 @@ class ObjectMeta:
                 replace=replace,
             )
         else:
-            if not (element_name, name) in self._attributes:
+            if (element_name, name) not in self._attributes:
                 self._attributes[(element_name, name)] = []
             self._attributes[(element_name, name)].append(
                 AttributeMeta(

@@ -100,7 +100,7 @@ autodoc_mock_imports = [
 # a list of builtin themes.
 #
 # html_theme = 'alabaster'
-html_theme = "sphinx_rtd_theme"
+html_theme = 'sphinx_rtd_theme'
 html_theme_options = {}
 
 # Add any paths that contain custom static files (such as style sheets) here,

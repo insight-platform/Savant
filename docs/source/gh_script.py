@@ -2,6 +2,7 @@
 """Downloads and unpacks documentation for all published releases.
 Usage: gh_script.py GH_OWNER/GH_REPO GH_TOKEN DST_PATH
 """
+
 import json
 import shutil
 import sys

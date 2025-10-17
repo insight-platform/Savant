@@ -85,7 +85,7 @@ class CombineFrames(NvDsPyFuncPlugin):
         self.last_batch_id: Optional[int] = None
         self.last_pts: Optional[int] = None
 
-        self.logger.info(f'Initializing CombineFrames plugin')
+        self.logger.info('Initializing CombineFrames plugin')
         super().__init__(**kwargs)
 
     def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
@@ -209,7 +209,6 @@ class CombineFrames(NvDsPyFuncPlugin):
         output_mat: cv2.cuda.GpuMat,
         stream: Optional[cv2.cuda.Stream],
     ):
-
         batch_id = next(iter(frames_to_combine.values())).batch_id
         self.logger.debug('[Batch %s] Combining frames.', batch_id)
 

@@ -71,7 +71,6 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
         :param artist: Artist to draw on the frame.
         """
         for obj_meta in frame_meta.objects:
-
             if obj_meta.is_primary:
                 continue
 

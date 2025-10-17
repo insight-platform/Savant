@@ -107,8 +107,7 @@ def process_remote(
         # to prevent loading when the remote config schema changes
         if remote != saved_remote_config:
             logger.info(
-                'Remote file configuration was changed, '
-                'remote file will be downloaded.'
+                'Remote file configuration was changed, remote file will be downloaded.'
             )
             return update()
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Run sink adapter."""
+
 import os
 import uuid
 from typing import Optional
@@ -568,13 +569,13 @@ def always_on_rtsp_sink(
     See http://<container-host>:<api-port>/docs for API documentation.
     """
 
-    assert (
-        source_id is None or source_ids is None
-    ), '"--source-id" and "--source-ids" arguments are mutually exclusive.'
+    assert source_id is None or source_ids is None, (
+        '"--source-id" and "--source-ids" arguments are mutually exclusive.'
+    )
     assert os.path.exists(stub_file_location)
-    assert dev_mode == (
-        rtsp_uri is None
-    ), 'Must be specified one of "--dev-mode" flag or "RTSP_URI" argument.'
+    assert dev_mode == (rtsp_uri is None), (
+        'Must be specified one of "--dev-mode" flag or "RTSP_URI" argument.'
+    )
     stub_file_location = os.path.abspath(stub_file_location)
 
     envs = build_common_envs(

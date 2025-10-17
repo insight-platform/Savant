@@ -150,13 +150,13 @@ class CPUImage:
         """
         if self._np_image.dtype != image.np_array.dtype:
             raise ValueError(
-                f'Images have different types {self._np_image.dtype } != '
+                f'Images have different types {self._np_image.dtype} != '
                 f'{image.np_array.dtype}'
             )
         if axis == 0:
             if self.width != image.width:
                 raise ValueError(
-                    f'Images have different ' f'height {self.width} != {image.height}'
+                    f'Images have different height {self.width} != {image.height}'
                 )
 
             return CPUImage(
@@ -165,7 +165,7 @@ class CPUImage:
         elif axis == 1:
             if self.height != image.height:
                 raise ValueError(
-                    f'Images have different ' f'width {self.height} != {image.height}'
+                    f'Images have different width {self.height} != {image.height}'
                 )
             return CPUImage(
                 image=np.concatenate([self._np_image, image.np_array], axis=1)
@@ -381,7 +381,7 @@ class GPUImage:
         if axis == 0:
             if self.width != image.width:
                 raise ValueError(
-                    f'Images have different ' f'height {self.width} != {image.height}'
+                    f'Images have different height {self.width} != {image.height}'
                 )
 
             res_rows = self.height + image.height
@@ -398,7 +398,7 @@ class GPUImage:
         elif axis == 1:
             if self.height != image.height:
                 raise ValueError(
-                    f'Images have different ' f'width {self.height} != {image.height}'
+                    f'Images have different width {self.height} != {image.height}'
                 )
             res_cols = self.width + image.width
             res_image = cv2.cuda.GpuMat(

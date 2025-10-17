@@ -72,7 +72,7 @@ class AlwaysOnRtspFrameProcessor(LoggerMixin, GstBase.BaseTransform):
         'mode': (
             str,
             'Transfer mode.',
-            'Transfer mode (allowed: ' f'{", ".join([mode.value for mode in Mode])}).',
+            f'Transfer mode (allowed: {", ".join([mode.value for mode in Mode])}).',
             DEFAULT_MODE.value,
             GObject.ParamFlags.READWRITE,
         ),

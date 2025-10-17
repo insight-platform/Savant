@@ -181,8 +181,8 @@ class SavantRsVideoPlayer(LoggerMixin, Gst.Bin):
         self.add(self._decoder)
         self._decoder.connect('pad-added', self.on_pad_added)
 
-        assert self._source.link(self._queue), f'Failed to link source to queue'
-        assert self._queue.link(self._decoder), f'Failed to link queue to decoder'
+        assert self._source.link(self._queue), 'Failed to link source to queue'
+        assert self._queue.link(self._decoder), 'Failed to link queue to decoder'
 
     def do_get_property(self, prop):
         """Gst plugin get property function.

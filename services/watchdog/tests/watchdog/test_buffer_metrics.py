@@ -51,14 +51,14 @@ async def test_get_metrics_response_exception(session_mock):
     'content, expected',
     [
         (
-            '''
+            """
             # HELP received_messages_total Number of messages received by the adapter
             # TYPE received_messages_total counter
             received_messages_total{adapter="buffer"} 120.0
             # HELP pushed_messages_total Number of messages pushed to the buffer
             # TYPE pushed_messages_total counter
             pushed_messages_total{adapter="buffer"} 34.0 1720441634544
-            ''',
+            """,
             {'received_messages_total': 120.0, 'pushed_messages_total': 34.0},
         ),
     ],

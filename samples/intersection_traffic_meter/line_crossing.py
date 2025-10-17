@@ -153,7 +153,6 @@ class LineCrossing(NvDsPyFuncPlugin):
                 obj_events = self.cross_events[frame_meta.source_id][obj_meta.track_id]
 
                 if cross_result is not None:
-
                     if '->' in cross_result:
                         # full crossing and not just entry
                         if self.send_stats:

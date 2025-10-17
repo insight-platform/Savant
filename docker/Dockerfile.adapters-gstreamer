@@ -132,6 +132,7 @@ RUN git clone \
         /opt/amazon-kinesis-video-streams-consumer-library-for-python && \
     cd /opt/amazon-kinesis-video-streams-consumer-library-for-python && \
     git checkout c97c13029163fe83b6904b5a594d6d7f697bdcb8 && \
+    sed -i 's/^av.*/av>=10.0.0,<13.0.0/' requirements.txt && \
     rm -rf .git
 
 

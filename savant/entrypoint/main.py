@@ -1,14 +1,12 @@
-"""Module entrypoints.
-isort:skip_file
-"""
+"""Module entrypoints."""
 
 import importlib
 import os
 import signal
 from pathlib import Path
-from typing import IO, Any, Union, Type
+from typing import IO, Any, Type, Union
 
-from savant.gstreamer import Gst  # should be first
+from savant.gstreamer import Gst  # ruff: isort: skip
 from savant.config import ModuleConfig
 from savant.config.schema import ElementGroup, ModelElement, Module
 from savant.deepstream.encoding import check_encoder_is_available
@@ -17,7 +15,7 @@ from savant.deepstream.nvinfer.model import NvInferModel
 from savant.deepstream.pipeline import NvDsPipeline
 from savant.deepstream.runner import NvDsPipelineRunner
 from savant.gstreamer.codecs import AUXILIARY_STREAM_CODECS
-from savant.healthcheck.status import set_module_status, ModuleStatus
+from savant.healthcheck.status import ModuleStatus, set_module_status
 from savant.utils.check_display import check_display_env
 from savant.utils.log import get_logger, init_logging, update_logging
 from savant.utils.sink_factories import sink_factory

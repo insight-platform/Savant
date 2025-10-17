@@ -309,7 +309,7 @@ class PyFunc:
                     # only savant_plugins have on_start, callables don't
                     try:
                         self._instance.on_start()
-                    except Exception as exc:
+                    except Exception:
                         logger.exception('Error calling on_start()')
             else:
                 logger.info(

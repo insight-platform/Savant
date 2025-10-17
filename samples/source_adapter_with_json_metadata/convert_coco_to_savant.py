@@ -21,7 +21,7 @@ def main(annotation_folder, output_folder: str):
     files_list = list(annotation_folder.glob('*.txt'))
     files_list = sorted(files_list, key=lambda file_path: file_path.name)
 
-    coco = COCO(annotation_folder / 'annotations' / f'instances_val2017.json')
+    coco = COCO(annotation_folder / 'annotations' / 'instances_val2017.json')
     cat_ids = coco.getCatIds()
     for file in files_list:
         img_info = coco.loadImgs(int(file.stem))[0]

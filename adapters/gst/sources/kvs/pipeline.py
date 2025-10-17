@@ -66,7 +66,7 @@ class Pipeline(BaseThreadWorker):
             try:
                 self.process_fragment()
             except Exception as e:
-                self.logger.error(f'Error processing fragment: %s', e, exc_info=True)
+                self.logger.error('Error processing fragment: %s', e, exc_info=True)
                 break
 
         self.is_running = False
@@ -142,7 +142,7 @@ class Pipeline(BaseThreadWorker):
     def add_sink(self, pad: Gst.Pad, caps: Gst.Caps):
         """Add sink elements to the pipeline."""
 
-        self.logger.debug(f'Try to find codec for %r', caps[0].get_name())
+        self.logger.debug('Try to find codec for %r', caps[0].get_name())
         try:
             codec = caps_to_codec(caps)
         except ValueError:
@@ -212,9 +212,9 @@ class Pipeline(BaseThreadWorker):
                     last_element.get_name(),
                     element.get_name(),
                 )
-                assert last_element.link(
-                    element
-                ), f'Failed to link {last_element.get_name()} to {element.get_name()}'
+                assert last_element.link(element), (
+                    f'Failed to link {last_element.get_name()} to {element.get_name()}'
+                )
             last_element = element
 
         parser_pad: Gst.Pad = parser.get_static_pad('sink')
@@ -225,9 +225,9 @@ class Pipeline(BaseThreadWorker):
             element.sync_state_with_parent()
 
         parser_pad.send_event(self.build_stream_name_event())
-        assert (
-            pad.link(parser_pad) == Gst.PadLinkReturn.OK
-        ), f'Failed to link {pad.get_name()} to {parser_pad.get_name()}'
+        assert pad.link(parser_pad) == Gst.PadLinkReturn.OK, (
+            f'Failed to link {pad.get_name()} to {parser_pad.get_name()}'
+        )
 
     def build_stream_name_event(self) -> Gst.Event:
         tag_list: Gst.TagList = Gst.TagList.new_empty()
