@@ -86,7 +86,8 @@ class Pipeline(BaseThreadWorker):
             return
 
         self.logger.debug(
-            'Processing fragment %r with %d bytes. Timestamp: %s. First frame UUID: %s. Last frame UUID: %s.',
+            'Processing fragment %r with %d bytes. '
+            'Timestamp: %s. First frame UUID: %s. Last frame UUID: %s.',
             fragment.fragment_number,
             len(fragment.content),
             fragment.timestamp,

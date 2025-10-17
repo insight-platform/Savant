@@ -182,7 +182,8 @@ class MetadataJsonSink:
                 del self.writers[last_source_location]
 
             self.logger.info(
-                'New writer for source=%s, location=%s is initialized, amount of resident writers is %d',
+                'New writer for source=%s, location=%s is initialized, '
+                'amount of resident writers is %d',
                 video_frame.source_id,
                 location,
                 len(self.writers),

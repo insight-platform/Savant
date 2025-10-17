@@ -277,7 +277,7 @@ class KafkaRedisSource(BaseKafkaRedisAdapter):
                 'auto.commit.interval.ms': self._config.kafka.auto_commit_interval_ms,
                 'enable.auto.commit': True,
                 'enable.auto.offset.store': False,
-                'partition.assignment.strategy': self._config.kafka.partition_assignment_strategy,
+                'partition.assignment.strategy': self._config.kafka.partition_assignment_strategy,  # noqa: E501
                 'max.poll.interval.ms': self._config.kafka.max_poll_interval_ms,
                 'error_cb': self.on_consumer_error,
             }

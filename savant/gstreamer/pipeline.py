@@ -199,7 +199,10 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
             else:
                 cmp_symbol = '!='
                 action = 'skipping'
-            debug_str = f'expr "{group.init_condition.expr}" {cmp_symbol} value "{group.init_condition.value}", {action}'
+            debug_str = (
+                f'expr "{group.init_condition.expr}" {cmp_symbol} '
+                f'value "{group.init_condition.value}", {action}'
+            )
             self._logger.debug(
                 'Group %s (name %s): %s %s elements.',
                 group_idx,

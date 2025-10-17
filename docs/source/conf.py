@@ -23,7 +23,7 @@ copyright = '2020-2023 BWSoft Management, LLC'
 html_favicon = 'https://avatars.githubusercontent.com/u/102944477?s=48&v=4'
 
 # The full version, including alpha/beta/rc tags
-from savant import __version__
+from savant import __version__  # noqa: E402
 
 release = __version__
 version = __version__ + (' (develop)' if os.getenv('MODE') == 'develop' else '')
@@ -63,14 +63,17 @@ autodoc_typehints_description_target = 'documented'
 # This value controls the format of typehints
 autodoc_typehints_format = 'short'
 
-# This value selects if automatically documented members are sorted alphabetical (value 'alphabetical'),
-# by member type (value 'groupwise') or by source order (value 'bysource'). The default is alphabetical.
+# This value selects if automatically documented members are
+# sorted alphabetical (value 'alphabetical'),
+# by member type (value 'groupwise') or by source order (value 'bysource').
+# The default is alphabetical.
 autodoc_member_order = 'bysource'
 
 # build the templated autosummary files
 autosummary_generate = True
 
-# If this is True, todo and todolist produce output, else they produce nothing. The default is False.
+# If this is True, todo and todolist produce output, else they produce nothing.
+# The default is False.
 todo_include_todos = False
 
 autosectionlabel_prefix_document = True

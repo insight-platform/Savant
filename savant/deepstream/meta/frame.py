@@ -193,7 +193,8 @@ class NvDsFrameMeta(AbstractContextManager, LoggerMixin):
                     f'Object {object_meta.element_name}/{object_meta.label} '
                     f'with ID={object_meta.uid} is out of viewport: '
                     f'LeftTopRightBottom=[{object_meta.bbox.as_ltrb_int()}] '
-                    f'does not fit in frame {self.video_frame.width}x{self.video_frame.height}. '
+                    f'does not fit in frame {self.video_frame.width}'
+                    f'x{self.video_frame.height}. '
                     'Trim the object bounding box to fit in the frame.'
                 )
 

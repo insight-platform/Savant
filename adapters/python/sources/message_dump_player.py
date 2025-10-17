@@ -115,7 +115,8 @@ class Player:
         config_builder = WriterConfigBuilder(config.zmq_endpoint)
         self._writer = BlockingWriter(config_builder.build())
         self._sync_output = config.sync_output
-        # Last sending time in seconds and last frame timestamp in nanoseconds for synchronization
+        # Last sending time in seconds and last frame timestamp in nanoseconds
+        # for synchronization
         self._last_send_time = None
         self._last_ts = None
 
@@ -134,7 +135,9 @@ class Player:
         self._writer.shutdown()
 
     def _send_message(self, ts: int, topic: str, meta: Message, content: bytes):
-        """Send a message to the sink ZeroMQ socket. Synchronize the sending if needed."""
+        """Send a message to the sink ZeroMQ socket.
+        Synchronize the sending if needed.
+        """
 
         self._logger.debug('Sending message to the sink ZeroMQ socket')
 

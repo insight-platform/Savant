@@ -109,7 +109,7 @@ class GstPluginPyFunc(LoggerMixin, GstBase.BaseTransform):
         self.class_name: Optional[str] = None
         self.kwargs: Optional[str] = None
         self.video_pipeline: Optional[VideoPipeline] = None
-        self.gst_pipeline: Optional['GstPipeline'] = None
+        self.gst_pipeline: Optional['GstPipeline'] = None  # noqa: F821
         self.dev_mode: bool = False
         self.max_stream_pool_size: int = 1
         # pyfunc object

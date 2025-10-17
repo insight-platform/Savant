@@ -271,7 +271,10 @@ class ConsoleSinkFactory(SinkFactory):
             if isinstance(msg, SinkVideoFrame):
                 frame_pts = convert_ts(msg.video_frame.pts, msg.video_frame.time_base)
                 if self.video_frame_filter(msg.video_frame, frame_pts):
-                    message = f'Frame shape(WxH): {msg.video_frame.width}x{msg.video_frame.height}'
+                    message = (
+                        f'Frame shape(WxH): {msg.video_frame.width}x'
+                        f'{msg.video_frame.height}'
+                    )
                     if msg.video_frame.codec is not None:
                         message += f', codec: {msg.video_frame.codec}'
                     if msg.frame is not None:

@@ -202,7 +202,8 @@ class NvInferProcessor:
                     if self._model.input.preprocess_object_meta.dev_mode:
                         if not isinstance(exc, PyFuncNoopCallException):
                             self._logger.exception(
-                                'Error calling preprocess input object meta. Exception: %s',
+                                'Error calling preprocess input object meta. '
+                                'Exception: %s',
                                 exc,
                             )
                         res_bbox = user_object_meta.bbox

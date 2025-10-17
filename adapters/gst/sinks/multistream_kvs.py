@@ -237,14 +237,15 @@ class KvsWriter(ChunkWriter):
     def _open(self):
         while self.pipeline is not None:
             self.logger.debug(
-                'Waiting for the previous pipeline to be closed for chunk %s of source %s',
+                'Waiting for the previous pipeline to be closed for '
+                'chunk %s of source %s',
                 self.chunk_idx,
                 self.source_id,
             )
             time.sleep(0.1)
 
         elements = [
-            'appsrc name=appsrc emit-signals=false format=time max-buffers=1 block=true',
+            'appsrc name=appsrc emit-signals=false format=time max-buffers=1 block=true',  # noqa: E501
             f'{self.frame_params.codec.value.parser} config-interval=-1',
             CODEC_TO_CAPS[self.frame_params.codec],
             'appsink name=appsink emit-signals=true sync=false max-buffers=1',

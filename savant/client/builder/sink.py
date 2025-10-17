@@ -112,7 +112,8 @@ class SinkBuilder:
 
         Sink will filter messages by source id prefix.
 
-        Note: source_id and source_id_prefix are mutually exclusive. If both are set, source_id will be used.
+        Note: source_id and source_id_prefix are mutually exclusive.
+        If both are set, source_id will be used.
         """
         return self._with_field('source_id_prefix', source_id_prefix)
 

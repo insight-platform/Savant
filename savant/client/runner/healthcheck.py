@@ -42,7 +42,8 @@ class HealthCheck:
 
         if response.status_code != HTTPStatus.OK:
             logger.warning(
-                'Health check failed (Expected HTTP 200 OK): unexpected HTTP status code: %s.',
+                'Health check failed (Expected HTTP 200 OK): '
+                'unexpected HTTP status code: %s.',
                 response.status_code,
             )
             return None

@@ -24,7 +24,8 @@ def parse_savant_eos_event(event: Gst.Event) -> Optional[str]:
     """Parse a savant-eos event.
 
     :param event: The event to parse.
-    :returns: Source ID of the stream if the event is a savant-eos event, otherwise None.
+    :returns: Source ID of the stream if the event is a savant-eos event,
+        otherwise None.
     """
 
     if event.type != Gst.EventType.CUSTOM_DOWNSTREAM:

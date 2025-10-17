@@ -31,12 +31,15 @@ class PyFuncMetricsExample(NvDsPyFuncPlugin):
 
         # HELP frames_per_source_total Number of processed frames per source
         # TYPE frames_per_source_total counter
-        frames_per_source_total{module_stage="tracker",source_id="city-traffic"} 748.0 1700803467794
+        frames_per_source_total{module_stage="tracker",source_id="city-traffic"}
+         748.0 1700803467794
         # HELP total_queue_length The total queue length for the pipeline
         # TYPE total_queue_length gauge
-        total_queue_length{module_stage="tracker",source_id="city-traffic"} 36.0 1700803467794
+        total_queue_length{module_stage="tracker",source_id="city-traffic"}
+         36.0 1700803467794
 
-    Note: the "module_stage" label is configured in docker-compose file and added to all metrics.
+    Note: the "module_stage" label is configured in docker-compose file and
+    added to all metrics.
     """
 
     def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
