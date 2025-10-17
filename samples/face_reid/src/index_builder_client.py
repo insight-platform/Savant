@@ -103,7 +103,6 @@ def main(args):
     person_names = []
     results_count = 0
     for result in sink:
-
         if result.eos:
             continue
 

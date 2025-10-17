@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Run module."""
+
 import pathlib
 from typing import Optional
 
@@ -20,7 +21,7 @@ from common import (
     '--build-engines',
     is_flag=True,
     default=False,
-    help='Build module model\'s engines and exit.',
+    help='Build module models engines and exit.',
 )
 @click.option(
     '--in-endpoint',

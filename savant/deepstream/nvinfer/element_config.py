@@ -527,9 +527,9 @@ def nvinfer_element_configurator(
 
         # classifier
         if issubclass(model_type, AttributeModel):
-            nvinfer_config['property'][
-                'network-type'
-            ] = NvInferModelType.CLASSIFIER.value
+            nvinfer_config['property']['network-type'] = (
+                NvInferModelType.CLASSIFIER.value
+            )
             # nvinfer doesn't support per attribute threshold
             # workaround: set the overall classifier threshold for regular classifier
             # using the threshold of the first attribute
@@ -540,9 +540,9 @@ def nvinfer_element_configurator(
 
         # instance segmentation
         elif model_type == NvInferInstanceSegmentation:
-            nvinfer_config['property'][
-                'network-type'
-            ] = NvInferModelType.INSTANCE_SEGMENTATION.value
+            nvinfer_config['property']['network-type'] = (
+                NvInferModelType.INSTANCE_SEGMENTATION.value
+            )
             # clustering is done by the model itself
             nvinfer_config['property']['cluster-mode'] = 4
 

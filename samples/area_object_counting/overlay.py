@@ -60,7 +60,6 @@ class Overlay(NvDsDrawFunc):
 
         area_lines = self.areas[frame_meta.source_id]
         for area_name, (points, color) in area_lines.items():
-
             artist.add_polygon(points, line_color=color, line_width=2)
 
             for obj in obj_metas:

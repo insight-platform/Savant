@@ -81,9 +81,9 @@ class BufferConfig:
         self.service_messages = service_messages_items * QUEUE_ITEM_SIZE
 
         threshold_percentage = opt_config('BUFFER_THRESHOLD_PERCENTAGE', 80, int)
-        assert (
-            0 <= threshold_percentage <= 100
-        ), 'BUFFER_THRESHOLD_PERCENTAGE must be in [0, 100] range'
+        assert 0 <= threshold_percentage <= 100, (
+            'BUFFER_THRESHOLD_PERCENTAGE must be in [0, 100] range'
+        )
         self.threshold = int(len_items * threshold_percentage / 100) * QUEUE_ITEM_SIZE
 
 
@@ -307,9 +307,9 @@ class Egress(BaseThreadWorker):
 
         config_builder = WriterConfigBuilder(config.zmq_sink_endpoint)
         config = config_builder.build()
-        assert (
-            config.socket_type == WriterSocketType.Dealer
-        ), 'Only DEALER socket type is supported for Egress'
+        assert config.socket_type == WriterSocketType.Dealer, (
+            'Only DEALER socket type is supported for Egress'
+        )
         self._write_timeout_send_retries = config.send_retries + 1
 
         self._writer = BlockingWriter(config)

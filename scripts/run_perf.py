@@ -16,6 +16,7 @@ docker run --rm \
  --endpoint-url=https://eu-central-1.linodeobjects.com \
  s3 sync s3://savant-data/demo /data
 """
+
 import argparse
 import itertools
 import json

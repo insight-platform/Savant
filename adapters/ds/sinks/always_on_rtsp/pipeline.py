@@ -23,9 +23,9 @@ def add_elements(
         assert gst_element is not None, f'Failed to create {element}'
         pipeline.add(gst_element)
         if gst_elements:
-            assert gst_elements[-1].link(
-                gst_element
-            ), f'Failed to link {gst_elements[-1].name} to {gst_element.name}'
+            assert gst_elements[-1].link(gst_element), (
+                f'Failed to link {gst_elements[-1].name} to {gst_element.name}'
+            )
         gst_elements.append(gst_element)
     return gst_elements
 

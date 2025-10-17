@@ -53,9 +53,9 @@ def main():
             ]
         )
         logger.info('Started MediaMTX, PID: %s', mediamtx_process.pid)
-        assert (
-            mediamtx_process.returncode is None
-        ), f'Failed to start MediaMTX. Exit code: {mediamtx_process.returncode}.'
+        assert mediamtx_process.returncode is None, (
+            f'Failed to start MediaMTX. Exit code: {mediamtx_process.returncode}.'
+        )
     else:
         mediamtx_process = None
 

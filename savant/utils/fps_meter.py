@@ -21,9 +21,9 @@ class FPSMeter:
         self._period_seconds = None
 
         if period_frames is not None:
-            assert (
-                period_seconds is None
-            ), 'Only one of "period_frames" or "period_seconds" should be set'
+            assert period_seconds is None, (
+                'Only one of "period_frames" or "period_seconds" should be set'
+            )
             self.period_frames = period_frames
         elif period_seconds is not None:
             self.period_seconds = period_seconds

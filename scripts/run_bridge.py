@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Run bridge adapter."""
+
 import uuid
 from typing import Optional
 

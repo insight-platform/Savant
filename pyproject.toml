@@ -41,7 +41,6 @@ line-length = 88
 [tool.ruff.format]
 quote-style = "single"
 indent-style = "space"
-skip-string-normalization = true
 skip-magic-trailing-comma = false
 
 [tool.ruff.lint]

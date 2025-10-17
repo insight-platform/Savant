@@ -384,7 +384,6 @@ class VideoFilesSink:
         ) or (None, None)
 
         if writer is None:
-
             video_writer = VideoFilesWriter(
                 location,
                 video_frame.source_id,

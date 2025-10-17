@@ -240,27 +240,27 @@ def is_aarch64():
 def bus_call(bus, message, loop):
     t = message.type
     if t == Gst.MessageType.EOS:
-        sys.stdout.write("End-of-stream\n")
+        sys.stdout.write('End-of-stream\n')
         loop.quit()
     elif t == Gst.MessageType.WARNING:
         err, debug = message.parse_warning()
-        sys.stderr.write("Warning: %s: %s\n" % (err, debug))
+        sys.stderr.write('Warning: %s: %s\n' % (err, debug))
     elif t == Gst.MessageType.ERROR:
         err, debug = message.parse_error()
-        sys.stderr.write("Error: %s: %s\n" % (err, debug))
+        sys.stderr.write('Error: %s: %s\n' % (err, debug))
         loop.quit()
     return True
 
 
 def main(args):
-    assert (
-        len(args) > 2
-    ), 'Usage: ./benchmark.py <benchmark-name> <cpu|gpu> [n-frames] [output-filename]'
+    assert len(args) > 2, (
+        'Usage: ./benchmark.py <benchmark-name> <cpu|gpu> [n-frames] [output-filename]'
+    )
     benchmark_name = args[1]
     is_gpu = args[2] == 'gpu'
-    assert (
-        benchmark_name in BENCHMARK_FUNCS
-    ), f'Available benchmark names: {", ".join(BENCHMARK_FUNCS.keys())}'
+    assert benchmark_name in BENCHMARK_FUNCS, (
+        f'Available benchmark names: {", ".join(BENCHMARK_FUNCS.keys())}'
+    )
     benchmark_func = BENCHMARK_FUNCS[benchmark_name][int(is_gpu)]
     assert benchmark_func is not None, 'Benchmark not implemented'
 
@@ -274,61 +274,61 @@ def main(args):
 
     Gst.init(None)
 
-    print("Creating Pipeline")
+    print('Creating Pipeline')
     pipeline = Gst.Pipeline()
     is_live = False
 
-    print("Creating streammux")
-    streammux = Gst.ElementFactory.make("nvstreammux", "streammux")
+    print('Creating streammux')
+    streammux = Gst.ElementFactory.make('nvstreammux', 'streammux')
     pipeline.add(streammux)
 
-    print("Creating source")
-    source = Gst.ElementFactory.make("videotestsrc", "source")
+    print('Creating source')
+    source = Gst.ElementFactory.make('videotestsrc', 'source')
     pipeline.add(source)
 
-    print("Creating source converter")
-    source_converter = Gst.ElementFactory.make("nvvideoconvert", "source-converter")
+    print('Creating source converter')
+    source_converter = Gst.ElementFactory.make('nvvideoconvert', 'source-converter')
     pipeline.add(source_converter)
 
-    print("Creating source capsfilter")
-    source_capsfilter = Gst.ElementFactory.make("capsfilter", "source-capsfilter")
+    print('Creating source capsfilter')
+    source_capsfilter = Gst.ElementFactory.make('capsfilter', 'source-capsfilter')
     pipeline.add(source_capsfilter)
 
-    print("Creating workload")
-    workload = Gst.ElementFactory.make("identity", "workload")
+    print('Creating workload')
+    workload = Gst.ElementFactory.make('identity', 'workload')
     pipeline.add(workload)
 
-    print("Creating streamdemux")
-    streamdemux = Gst.ElementFactory.make("nvstreamdemux", "streamdemux")
+    print('Creating streamdemux')
+    streamdemux = Gst.ElementFactory.make('nvstreamdemux', 'streamdemux')
     pipeline.add(streamdemux)
 
-    print("Creating queue")
-    queue = Gst.ElementFactory.make("queue", "queue")
+    print('Creating queue')
+    queue = Gst.ElementFactory.make('queue', 'queue')
     pipeline.add(queue)
 
     if output_filename:
-        print("Creating converter")
-        converter = Gst.ElementFactory.make("nvvideoconvert", "converter")
+        print('Creating converter')
+        converter = Gst.ElementFactory.make('nvvideoconvert', 'converter')
         pipeline.add(converter)
 
-        print("Creating sink_capsfilter")
-        sink_capsfilter = Gst.ElementFactory.make("capsfilter", "sink_capsfilter")
+        print('Creating sink_capsfilter')
+        sink_capsfilter = Gst.ElementFactory.make('capsfilter', 'sink_capsfilter')
         pipeline.add(sink_capsfilter)
 
-        print("Creating encoder")
-        encoder = Gst.ElementFactory.make("nvv4l2h264enc", "encoder")
+        print('Creating encoder')
+        encoder = Gst.ElementFactory.make('nvv4l2h264enc', 'encoder')
         pipeline.add(encoder)
 
-        print("Creating parser")
-        parser = Gst.ElementFactory.make("h264parse", "parser")
+        print('Creating parser')
+        parser = Gst.ElementFactory.make('h264parse', 'parser')
         pipeline.add(parser)
 
-        print("Creating sink")
-        sink = Gst.ElementFactory.make("filesink", "sink")
+        print('Creating sink')
+        sink = Gst.ElementFactory.make('filesink', 'sink')
         pipeline.add(sink)
     else:
-        print("Creating sink")
-        sink = Gst.ElementFactory.make("fakesink", "sink")
+        print('Creating sink')
+        sink = Gst.ElementFactory.make('fakesink', 'sink')
         pipeline.add(sink)
 
     source.set_property('num-buffers', n_frames)
@@ -340,18 +340,18 @@ def main(args):
     streammux.set_property('batch-size', 1)
     streammux.set_property('batched-push-timeout', 4000000)
 
-    sink.set_property("sync", 0)
-    sink.set_property("qos", 0)
-    sink.set_property("enable-last-sample", 0)
+    sink.set_property('sync', 0)
+    sink.set_property('qos', 0)
+    sink.set_property('enable-last-sample', 0)
     if output_filename:
-        sink.set_property("location", output_filename)
+        sink.set_property('location', output_filename)
 
     if not is_aarch64():
         nv_buf_memory_type = int(pyds.NVBUF_MEM_CUDA_UNIFIED)
-        source_converter.set_property("nvbuf-memory-type", nv_buf_memory_type)
-        streammux.set_property("nvbuf-memory-type", nv_buf_memory_type)
+        source_converter.set_property('nvbuf-memory-type', nv_buf_memory_type)
+        streammux.set_property('nvbuf-memory-type', nv_buf_memory_type)
         if output_filename:
-            converter.set_property("nvbuf-memory-type", nv_buf_memory_type)
+            converter.set_property('nvbuf-memory-type', nv_buf_memory_type)
 
     source_capsfilter.set_property(
         'caps',
@@ -367,7 +367,7 @@ def main(args):
             ),
         )
 
-    print("Linking elements in the Pipeline")
+    print('Linking elements in the Pipeline')
 
     assert source.link(source_converter)
     assert source_converter.link(source_capsfilter)
@@ -401,12 +401,12 @@ def main(args):
     loop = GLib.MainLoop()
     bus = pipeline.get_bus()
     bus.add_signal_watch()
-    bus.connect("message", bus_call, loop)
+    bus.connect('message', bus_call, loop)
 
-    sink_pad = workload.get_static_pad("sink")
+    sink_pad = workload.get_static_pad('sink')
     measurements = []
     if not sink_pad:
-        sys.stderr.write("Unable to get sink pad")
+        sys.stderr.write('Unable to get sink pad')
     else:
         overlay = cv2.imread('logo.png', cv2.IMREAD_UNCHANGED)
         benchmark_data = BenchmarkData(
@@ -429,18 +429,18 @@ def main(args):
             measurements,
         )
 
-    print("Starting pipeline")
+    print('Starting pipeline')
     ts1 = time.time()
     pipeline.set_state(Gst.State.PLAYING)
     try:
         loop.run()
     except:
         pass
-    print("Exiting app\n")
+    print('Exiting app\n')
     pipeline.set_state(Gst.State.NULL)
     ts2 = time.time()
     elapsed = ts2 - ts1
-    print(f"Elapsed: {elapsed:.2f}, framerate: {n_frames / elapsed:.2f}")
+    print(f'Elapsed: {elapsed:.2f}, framerate: {n_frames / elapsed:.2f}')
     metrics = [
         ('min', min(measurements)),
         ('max', max(measurements)),
@@ -454,7 +454,7 @@ def main(args):
     ]
     for name, val in metrics:
         print(f'{name}: {val:.3f}')
-    device_name = "gpu" if is_gpu else "cpu"
+    device_name = 'gpu' if is_gpu else 'cpu'
     with open('metrics.csv', 'a') as f:
         f.write(
             ','.join(

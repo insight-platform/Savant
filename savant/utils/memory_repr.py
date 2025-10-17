@@ -49,9 +49,9 @@ def cuda_array_as_opencv_gpu_mat(arr) -> cv2.cuda.GpuMat:
 
     dtype = arr.__cuda_array_interface__['typestr']
     depth = NUMPY_TO_OPENCV_TYPE_MAP.get(dtype)
-    assert (
-        depth is not None
-    ), f'Array must be of one of the following types {list(NUMPY_TO_OPENCV_TYPE_MAP)}.'
+    assert depth is not None, (
+        f'Array must be of one of the following types {list(NUMPY_TO_OPENCV_TYPE_MAP)}.'
+    )
 
     strides = arr.__cuda_array_interface__['strides']
     assert strides is None, 'Array must be in C-contiguous layout.'

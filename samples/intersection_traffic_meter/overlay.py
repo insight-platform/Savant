@@ -29,7 +29,6 @@ class Overlay(NvDsDrawFunc):
 
         self.directions = {}
         for source_id, src_lines in self.lines.items():
-
             src_edge_tags = list(src_lines.keys())
 
             src_directions = []
@@ -45,7 +44,6 @@ class Overlay(NvDsDrawFunc):
             self.directions[source_id] = src_directions
 
     def draw_on_frame(self, frame_meta: NvDsFrameMeta, artist: Artist):
-
         crossing_counts = defaultdict(int)
         for obj_meta in frame_meta.objects:
             if obj_meta.is_primary:

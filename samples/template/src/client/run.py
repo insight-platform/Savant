@@ -104,9 +104,9 @@ for result in sink:
     # for simplicity, we only check the IOU coefs of bounding boxes
     for obj in result.frame_meta.get_all_objects():
         if obj.label == 'person':
-            assert (
-                obj.detection_box.iou(person_bbox) > 0.9
-            ), 'Person bbox is not correct'
+            assert obj.detection_box.iou(person_bbox) > 0.9, (
+                'Person bbox is not correct'
+            )
         elif obj.label == 'face':
             assert obj.detection_box.iou(face_bbox) > 0.9, 'Face bbox is not correct'
     print('Result is correct.')

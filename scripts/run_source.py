@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Run source adapter."""
+
 import os
 import uuid
 from typing import List, Optional
@@ -1120,9 +1121,9 @@ def kvs_source(
         f'STATE_PATH={state_path}',
     ]
     if save_state and mount_state_path:
-        assert os.path.isabs(
-            state_path
-        ), 'State path must be absolute when mounting state path.'
+        assert os.path.isabs(state_path), (
+            'State path must be absolute when mounting state path.'
+        )
         state_dir = os.path.dirname(state_path)
         assert state_dir != '/', 'State directory must not be root.'
         volumes = [f'{os.path.abspath(mount_state_path)}:{state_dir}']

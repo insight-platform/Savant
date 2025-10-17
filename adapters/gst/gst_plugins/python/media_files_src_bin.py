@@ -185,14 +185,14 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
         assert self.file_type is not None, '"file-type" property is required'
         if not self.loop_file:
             return
-        assert (
-            self.file_type == FileType.VIDEO
-        ), f'Only "file-type={FileType.VIDEO.value}" is allowed when "loop-file" is enabled'
+        assert self.file_type == FileType.VIDEO, (
+            f'Only "file-type={FileType.VIDEO.value}" is allowed when "loop-file" is enabled'
+        )
         if not isinstance(self.location, Path):
             return
-        assert (
-            self.download_path is not None
-        ), '"download-path" property is required when "loop-file" is enabled'
+        assert self.download_path is not None, (
+            '"download-path" property is required when "loop-file" is enabled'
+        )
         if self.download_path.exists():
             assert self.download_path.is_dir(), '"download-path" must be a directory'
 
@@ -210,9 +210,9 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
     def list_files(self):
         assert self.location.exists(), f'No such file or directory "{self.location}"'
         if self.location.is_dir():
-            assert (
-                not self.loop_file
-            ), f'Specifying directory as location is not allowed when "loop-file" is enabled'
+            assert not self.loop_file, (
+                f'Specifying directory as location is not allowed when "loop-file" is enabled'
+            )
             all_files = sorted(
                 (f for f in self.location.iterdir() if f.is_file()),
                 key=(

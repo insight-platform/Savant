@@ -24,7 +24,7 @@ if __name__ == '__main__':
         '-e',
         '--build-engines',
         action='store_true',
-        help='builds module model\'s engines and exit',
+        help='builds module model engines and exit',
     )
     parser.add_argument(
         'config',

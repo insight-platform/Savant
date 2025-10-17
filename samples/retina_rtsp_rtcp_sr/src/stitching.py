@@ -209,7 +209,6 @@ class CombineFrames(NvDsPyFuncPlugin):
         output_mat: cv2.cuda.GpuMat,
         stream: Optional[cv2.cuda.Stream],
     ):
-
         batch_id = next(iter(frames_to_combine.values())).batch_id
         self.logger.debug('[Batch %s] Combining frames.', batch_id)
 
