@@ -182,4 +182,5 @@ check:
 	ruff check .
 
 reformat:
+	ruff check . --fix
 	ruff format .

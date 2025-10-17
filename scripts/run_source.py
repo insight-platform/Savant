@@ -1038,7 +1038,7 @@ def message_dump_player_source(
     required=False,
     help=(
         'Either timestamp in format "%Y-%m-%dT%H:%M:%S" or delay from current '
-        'time in "-<delay>(s\|m)". E.g. "2024-03-12T06:57:00", "-30s", "-1m".'
+        r'time in "-<delay>(s\|m)". E.g. "2024-03-12T06:57:00", "-30s", "-1m".'
     ),
 )
 @click.option(

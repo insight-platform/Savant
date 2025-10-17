@@ -70,7 +70,7 @@ class Second(NvDsPyFuncPlugin):
             )
             binary_attributes = kvs.serialize_attributes([attr])
             response = requests.post(
-                f'http://first:8080/kvs/set', data=binary_attributes
+                'http://first:8080/kvs/set', data=binary_attributes
             )
             assert response.status_code == 200
             elapsed = float(int((time.time() - now) * 100_000) / 100)

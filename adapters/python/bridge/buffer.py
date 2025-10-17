@@ -20,9 +20,8 @@ from savant_rs.utils.serialization import (
     load_message_from_bytes,
     save_message_to_bytes,
 )
-from savant_rs.webserver import init_webserver
+from savant_rs.webserver import init_webserver, stop_webserver
 from savant_rs.webserver import set_status_running as set_ws_pipeline_status_running
-from savant_rs.webserver import stop_webserver
 from savant_rs.zmq import (
     BlockingWriter,
     WriterConfigBuilder,

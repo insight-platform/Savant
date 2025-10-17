@@ -66,7 +66,7 @@ class Pipeline(BaseThreadWorker):
             try:
                 self.process_fragment()
             except Exception as e:
-                self.logger.error(f'Error processing fragment: %s', e, exc_info=True)
+                self.logger.error('Error processing fragment: %s', e, exc_info=True)
                 break
 
         self.is_running = False
@@ -142,7 +142,7 @@ class Pipeline(BaseThreadWorker):
     def add_sink(self, pad: Gst.Pad, caps: Gst.Caps):
         """Add sink elements to the pipeline."""
 
-        self.logger.debug(f'Try to find codec for %r', caps[0].get_name())
+        self.logger.debug('Try to find codec for %r', caps[0].get_name())
         try:
             codec = caps_to_codec(caps)
         except ValueError:

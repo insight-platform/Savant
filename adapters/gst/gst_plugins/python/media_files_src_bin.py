@@ -211,7 +211,7 @@ class MediaFilesSrcBin(LoggerMixin, Gst.Bin):
         assert self.location.exists(), f'No such file or directory "{self.location}"'
         if self.location.is_dir():
             assert not self.loop_file, (
-                f'Specifying directory as location is not allowed when "loop-file" is enabled'
+                'Specifying directory as location is not allowed when "loop-file" is enabled'
             )
             all_files = sorted(
                 (f for f in self.location.iterdir() if f.is_file()),

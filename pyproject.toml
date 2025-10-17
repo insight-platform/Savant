@@ -44,4 +44,4 @@ indent-style = "space"
 skip-magic-trailing-comma = false
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I"]  # базовые ошибки + импорт
+select = ["E", "F", "W", "I"]

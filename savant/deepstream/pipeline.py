@@ -25,11 +25,10 @@ from savant_rs.metrics import set_extra_labels
 from savant_rs.pipeline2 import VideoPipeline, VideoPipelineConfiguration
 from savant_rs.primitives import EndOfStream, VideoFrame
 from savant_rs.primitives.geometry import RBBox
-from savant_rs.webserver import init_webserver
+from savant_rs.webserver import init_webserver, stop_webserver
 from savant_rs.webserver import (
     set_shutdown_token as set_ws_pipeline_shutdown_auth_token,
 )
-from savant_rs.webserver import stop_webserver
 
 from savant.base.input_preproc import ObjectsPreprocessing
 from savant.base.model import AttributeModel, ComplexModel
