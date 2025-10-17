@@ -140,8 +140,8 @@ def main(args):
             feature_attr = obj.get_attribute(args.feature_namespace, args.feature_name)
             feature = feature_attr.values[0].as_floats()
             # index stores single int label for each feature
-            # we assume that the gallery holds no more than 2^32 people or images per person
-            # and pack both person_id and img_n into single int64
+            # we assume that the gallery holds no more than 2^32 people or
+            # images per person and pack both person_id and img_n into single int64
             feature_id = pack_person_id_img_n(person_id, img_n)
             index.add_items(feature, feature_id)
 

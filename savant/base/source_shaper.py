@@ -11,7 +11,8 @@ from savant.utils.source_info import SourceShape
 class BaseSourceShaper(ABC):
     """Base class to define a source shape.
 
-    :param geometry_base: Base value for frame parameters. All frame parameters must be divisible by this value.
+    :param geometry_base: Base value for frame parameters.
+        All frame parameters must be divisible by this value.
     :param kwargs: Custom keyword arguments.
         They will be available inside the class instance,
         as fields with the argument name.
@@ -37,7 +38,8 @@ class BaseSourceShaper(ABC):
         :param width: Source width
         :param height: Source height
         :param frame_meta: Metadata of the first frame in the source.
-        :return: Shape of the source or None. When None is returned, the source shape will not be modified.
+        :return: Shape of the source or None.
+            When None is returned, the source shape will not be modified.
 
         .. note:: The source shape should be divisible by the geometry base.
         """

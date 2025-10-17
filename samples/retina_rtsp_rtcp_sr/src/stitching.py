@@ -106,7 +106,10 @@ class CombineFrames(NvDsPyFuncPlugin):
             full_batch = False
 
         self.logger.debug(
-            f'Batch ID: {batch_id}, Sources: {sources}, Full batch: {full_batch}'
+            'Batch ID: %s, Sources: %s, Full batch: %s',
+            batch_id,
+            sources,
+            full_batch,
         )
 
         self.logger.debug(
@@ -149,20 +152,26 @@ class CombineFrames(NvDsPyFuncPlugin):
                 del self.batches[current_batch.batch_id]
 
                 self.logger.debug(
-                    f'Current batch: {current_batch.batch_id}, is complete: {current_batch.is_complete()}'
+                    'Current batch: %s, is complete: %s',
+                    current_batch.batch_id,
+                    current_batch.is_complete(),
                 )
 
                 if not current_batch.is_complete():
                     self.logger.warning(
-                        f'Batch {current_batch.batch_id} is not complete. Skipping.'
+                        'Batch %s is not complete. Skipping.',
+                        min_batch_id,
                     )
                     return
 
-                self.logger.debug(f'Batch {min_batch_id} is complete. Processing.')
+                self.logger.debug('Batch %s is complete. Processing.', min_batch_id)
                 if self.last_batch_id:
                     if min_batch_id <= self.last_batch_id:
                         self.logger.warning(
-                            f'Batch {min_batch_id} is not greater than last batch {self.last_batch_id}. Skipping.'
+                            'Batch %s is not greater than the last processed batch %s. '
+                            'Skipping.',
+                            min_batch_id,
+                            self.last_batch_id,
                         )
                         return
 
@@ -188,7 +197,10 @@ class CombineFrames(NvDsPyFuncPlugin):
         )
         if self.last_pts and pts <= self.last_pts:
             self.logger.warning(
-                f'Batch {batch_id} has PTS {pts} which is not greater than last PTS {self.last_pts}. Skipping.'
+                'Batch %s has PTS %s which is not greater than last PTS %s. Skipping.',
+                batch_id,
+                pts,
+                self.last_pts,
             )
             return None
         self.last_pts = pts

@@ -42,7 +42,8 @@ def init_tracing(module_name: str, tracing: TracingParameters):
             )
             if provider_params:
                 logger.warning(
-                    'Provider params from config attributes will be ignored because JSON file is specified.'
+                    'Provider params from config attributes will be ignored '
+                    'because JSON file is specified.'
                 )
             init_from_file(str(provider_params_config))
         else:
@@ -53,7 +54,8 @@ def init_tracing(module_name: str, tracing: TracingParameters):
             endpoint = provider_params.get('endpoint')
             if not endpoint:
                 raise ValueError(
-                    'OpenTelemetry endpoint is not specified. Please specify it in the config file.'
+                    'OpenTelemetry endpoint is not specified. Please specify it '
+                    'in the config file.'
                 )
 
             protocol_name = provider_params.get('protocol') or 'grpc'
@@ -81,7 +83,8 @@ def init_tracing(module_name: str, tracing: TracingParameters):
                     # TODO: remove in Savant 0.6
                     if ca:
                         logger.warning(
-                            'The "tls.certificate" key is deprecated. Use "tls.ca" instead.'
+                            'The "tls.certificate" key is deprecated. '
+                            'Use "tls.ca" instead.'
                         )
 
                 tls_config = ClientTlsConfig(
@@ -96,7 +99,8 @@ def init_tracing(module_name: str, tracing: TracingParameters):
                 timeout = int(timeout)
 
             logger.info(
-                'Initializing OpenTelemetry tracer with service name %r and endpoint %r. Protocol: %s.',
+                'Initializing OpenTelemetry tracer with service name %r '
+                'and endpoint %r. Protocol: %s.',
                 service_name,
                 endpoint,
                 protocol,

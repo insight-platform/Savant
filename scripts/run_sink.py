@@ -129,12 +129,14 @@ def chunk_size_option(default=10000):
 @click.option(
     '--egress-queue-length',
     type=click.INT,
-    help='Length of the egress queue (after decoder) in frames (0 - no limit, default 5).',
+    help='Length of the egress queue (after decoder) '
+         'in frames (0 - no limit, default 5).',
 )
 @click.option(
     '--egress-queue-byte-size',
     type=click.INT,
-    help='Size of the egress queue (after decoder) in bytes (0 - no limit, default 10485760).',
+    help='Size of the egress queue (after decoder) '
+         'in bytes (0 - no limit, default 10485760).',
 )
 @common_options
 @source_id_option(required=False)
@@ -551,7 +553,8 @@ def always_on_rtsp_sink(
 ):
     """Send video stream from specific source to RTSP server.
 
-    RTSP_URI - URI of the RTSP server. The sink sends video stream to RTSP_URI/{source-id}.
+    RTSP_URI - URI of the RTSP server.
+    The sink sends video stream to RTSP_URI/{source-id}.
     Exactly one of --dev-mode flag and RTSP_URI argument must be used.
 
     When --dev-mode flag is used the stream is available at:
@@ -758,7 +761,8 @@ def kafka_redis_sink(
 ):
     """Sends video stream metadata to Kafka and frame content to Redis.
 
-    Frame content location is encoded as <redis-host>:<redis-port>:<redis-db>/<redis-key>.
+    Frame content location is encoded as
+    <redis-host>:<redis-port>:<redis-db>/<redis-key>.
     """
 
     envs = build_common_envs(
@@ -819,7 +823,8 @@ def kafka_redis_sink(
 @click.option(
     '--stream-name-prefix',
     default='',
-    help='Prefix for the stream name. The stream name is generated as <stream-name-prefix><source-id>.',
+    help='Prefix for the stream name. '
+         'The stream name is generated as <stream-name-prefix><source-id>.',
     show_default=True,
 )
 @click.option(

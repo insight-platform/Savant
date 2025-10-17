@@ -95,7 +95,8 @@ class Overlay(NvDsDrawFunc):
                     # get a face image from the gallery
                     track_id = obj_meta.track_id
                     if track_id != UNTRACKED_OBJECT_ID:
-                        # do not use the same image for less than `match_linger_frames` frames
+                        # do not use the same image for less than `match_linger_frames`
+                        # frames
                         if track_id not in self.prev_used_gallery:
                             # no previous image used for this track
                             self.prev_used_gallery[track_id] = (person_id, image_n)
@@ -112,8 +113,8 @@ class Overlay(NvDsDrawFunc):
                                 or prev_used_count > self.match_linger_frames
                             ):
                                 # if the track switched to a different person
-                                # or the previous image was used for more than `match_linger_frames` frames
-                                # use the new image
+                                # or the previous image was used for more
+                                # than `match_linger_frames` frames use the new image
                                 self.prev_used_gallery[track_id] = (person_id, image_n)
                                 self.prev_used_counter[track_id] = 1
                             else:

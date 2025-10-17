@@ -36,7 +36,8 @@ async def reader():
                     log(
                         LogLevel.Info,
                         'analytics::time_delta',
-                        f'{frame.source_id} {frame.pts} {int(processed_at - created_at)} {object_info}',
+                        f'{frame.source_id} {frame.pts} '
+                        f'{int(processed_at - created_at)} {object_info}',
                     )
                     log(LogLevel.Info, 'analytics::frame::json', f'{frame.json}')
 

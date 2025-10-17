@@ -23,7 +23,7 @@ class RemoteFile:
 
     always_check: bool = False
     """If True: always download and and check the remote file (or checksum).
-    If False: download the remote file only if the content of the cached config 
+    If False: download the remote file only if the content of the cached config
     does not match the current config.
     """
 

@@ -89,7 +89,7 @@ class FrameParameters:
     """Add paddings to the frame before processing"""
 
     geometry_base: int = 8
-    """Base value for frame parameters. 
+    """Base value for frame parameters.
     All frame parameters must be divisible by this value.
     """
 
@@ -601,8 +601,8 @@ class Pipeline:
     """Sink elements of a pipeline."""
 
     pipeline_class: Optional[str] = None
-    """Pipeline class name with full module path, 
-    e.g. ``savant.deepstream.pipeline.NvDsPipeline``. 
+    """Pipeline class name with full module path,
+    e.g. ``savant.deepstream.pipeline.NvDsPipeline``.
     If not set, the default pipeline class specified in the entrypoint will be used.
     """
 

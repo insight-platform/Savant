@@ -268,7 +268,8 @@ class AuxiliaryStreamRegistry:
 class AuxiliaryStream:
     """Auxiliary stream for sending frames directly to sink with a different source ID.
 
-    Do not create instances of this class directly. Use `NvDsPyFuncPlugin.auxiliary_stream` instead.
+    Do not create instances of this class directly.
+    Use `NvDsPyFuncPlugin.auxiliary_stream` instead.
     """
 
     def __init__(

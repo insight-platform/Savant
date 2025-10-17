@@ -19,9 +19,9 @@ def test_extra():
 
     print('TensorRT', tensorrt.__version__)
 
-    from torch2trt.torch2trt import *
+    from torch2trt import torch2trt
 
-    print('Torch2TRT OK')
+    print('Torch2TRT OK', torch2trt)
 
     import onnx
 

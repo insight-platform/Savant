@@ -187,7 +187,8 @@ def main():
     config_file_path = os.environ.get('CONFIG_FILE_PATH')
     if not config_file_path:
         logger.error(
-            'Configuration file path is not provided. Provide the CONFIG_FILE_PATH environment variable'
+            'Configuration file path is not provided. '
+            'Provide the CONFIG_FILE_PATH environment variable'
         )
         exit(1)
 

@@ -40,7 +40,8 @@ class CustomSourceShaper(BaseSourceShaper):
         )
 
         self.logger.info(
-            'Source %s with original resolution %sx%s shaped to %s. Original codec: %s, transformations: %s.',
+            'Source %s with original resolution %sx%s shaped to %s. '
+            'Original codec: %s, transformations: %s.',
             source_id,
             width,
             height,

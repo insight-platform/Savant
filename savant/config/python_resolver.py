@@ -29,7 +29,8 @@ def python_resolver(  # pylint:disable=unused-argument
             module_name,
         )
         raise ValueError(
-            f'Python configuration resolver function "{function_name}" not found in module "{module_name}"'
+            f'Python configuration resolver function "{function_name}" not found '
+            f'in module "{module_name}"'
         )
     try:
         res = function(*args)
@@ -44,11 +45,13 @@ def python_resolver(  # pylint:disable=unused-argument
         return res
     except Exception as e:
         logger.error(
-            'Python configuration resolver function "%s" in module "%s" raised an error: %s',
+            'Python configuration resolver function "%s" in module "%s" '
+            'raised an error: %s',
             function_name,
             module_name,
             e,
         )
         raise ValueError(
-            f'Python configuration resolver function "{function_name}" in module "{module_name}" raised an error: {e}'
+            f'Python configuration resolver function "{function_name}" '
+            f'in module "{module_name}" raised an error: {e}'
         )

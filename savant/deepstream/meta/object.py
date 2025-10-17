@@ -57,7 +57,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
 
     def __init__(
         self,
-        frame_meta: 'NvDsFrameMeta',
+        frame_meta: 'NvDsFrameMeta',  # noqa: F821
         element_name: str,
         label: str,
         bbox: Union[BBox, RBBox],

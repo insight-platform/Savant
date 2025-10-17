@@ -25,8 +25,8 @@ class BaseOutputConverter(BasePyFuncCallableImpl):
     """Base model output converter."""
 
     tensor_format: TensorFormat = TensorFormat.NumPy
-    """Set to ``CuPy`` to get the ``output_layers`` tensors in the converter call 
-    on the GPU as a ``cupy.ndarray``. Or set to ``NumPy`` to get tensors on the host 
+    """Set to ``CuPy`` to get the ``output_layers`` tensors in the converter call
+    on the GPU as a ``cupy.ndarray``. Or set to ``NumPy`` to get tensors on the host
     as a ``numpy.ndarray``.
     """
 

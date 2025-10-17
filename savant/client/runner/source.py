@@ -109,7 +109,9 @@ class SourceRunner:
         self._writer.shutdown()
 
     def __call__(self, source: Source, send_eos: bool = True) -> SourceResult:
-        """Handle the callable interface for this object. For more information, see the send method."""
+        """Handle the callable interface for this object.
+        For more information, see the send method.
+        """
 
         return self.send(source, send_eos)
 
@@ -117,7 +119,8 @@ class SourceRunner:
         """Send source data to ZeroMQ socket.
 
         :param source: Source of the frame to send. Can be an instance
-            of FrameSource or a tuple of VideoFrame and content, or a batch of frames with topic name.
+            of FrameSource or a tuple of VideoFrame and content,
+            or a batch of frames with topic name.
             NB: If the source is used to send a stream of batches,
             the topic name must remain the same for all batches to maintain their order.
         :param send_eos: Whether to send EOS after sending the source.

@@ -150,7 +150,8 @@ class AlwaysOnRtspFrameProcessor(LoggerMixin, GstBase.BaseTransform):
 
             if last_frame is None or delay > self._max_delay:
                 self.logger.debug(
-                    'No new data received from the input. Sending stub image with the timestamp.'
+                    'No new data received from the input. '
+                    'Sending stub image with the timestamp.'
                 )
                 return self._overlay_timestamp(buffer, now)
 

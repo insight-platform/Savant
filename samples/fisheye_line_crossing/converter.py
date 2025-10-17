@@ -38,7 +38,8 @@ class TensorToBBoxConverter(BaseObjectModelOutputConverter):
         """Converts detector output layer tensor to bbox tensor.
 
         Converter is suitable for PyTorch YOLOv8 models.
-        Assumed one output layer with shape (batch, 25200, 185) or (25200, 185) for batch=1,
+        Assumed one output layer with shape (batch, 25200, 185)
+        or (25200, 185) for batch=1,
         185 -> (xc,yc,w,h,conf,180*angle categories).
         Outputs best class only for each detection.
 

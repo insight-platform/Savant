@@ -46,5 +46,5 @@ class Blur(NvDsPyFuncPlugin):
                 if frame_meta.frame_num % 10000 == 0:
                     _ = 2 / 0
 
-        except:
+        except Exception:
             pass
