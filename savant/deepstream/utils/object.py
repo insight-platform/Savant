@@ -70,7 +70,8 @@ def nvds_add_obj_meta_to_frame(  # pylint: disable=too-many-arguments,too-many-l
             pass
         elif isinstance(bbox, BBox):
             raise IncorrectBBoxType(
-                f"Selection type '{selection_type}' does not match bbox type '{type(bbox)}'"
+                f"Selection type '{selection_type}' "
+                f"does not match bbox type '{type(bbox)}'"
             )
         else:
             bbox = RBBox(*bbox)
@@ -79,7 +80,8 @@ def nvds_add_obj_meta_to_frame(  # pylint: disable=too-many-arguments,too-many-l
             pass
         elif isinstance(bbox, RBBox):
             raise IncorrectBBoxType(
-                f"Selection type '{selection_type}' does not match bbox type '{type(bbox)}'"
+                f"Selection type '{selection_type}' "
+                f"does not match bbox type '{type(bbox)}'"
             )
         else:
             bbox = BBox(*bbox[:-1])

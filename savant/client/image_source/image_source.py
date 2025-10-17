@@ -26,7 +26,8 @@ class ImageSource(FrameSource):
     """Frame source for image files.
 
     :param source_id: Source ID.
-    :param file: Path to an image file or a file handle to an image file opened as binary.
+    :param file: Path to an image file or a file handle
+        to an image file opened as binary.
     :param pts: Frame presentation timestamp.
     :param framerate: Framerate (numerator, denominator).
     :param updates: List of frame updates.

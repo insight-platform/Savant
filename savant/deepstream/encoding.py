@@ -87,7 +87,8 @@ def check_encoder_is_available(
     last_gst_element = None
     for element in elements:
         if element.element == 'capsfilter':
-            # Cannot use NvDsElementFactory().create() since it creates videotestsrc as a bin.
+            # cannot use NvDsElementFactory().create()
+            # since it creates videotestsrc as a bin
             gst_element = GstElementFactory.create_caps_filter(element)
         elif element.element == 'nvvideoconvert':
             gst_element = NvDsElementFactory.create_nvvideoconvert(element)

@@ -6,7 +6,7 @@ import yaml
 from savant_rs.primitives.geometry import Point, PolygonalArea
 from statsd import StatsClient
 
-from samples.intersection_traffic_meter.utils import Point, TwoLinesCrossingTracker
+from samples.intersection_traffic_meter.utils import TwoLinesCrossingTracker
 from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.deepstream.pyfunc import NvDsPyFuncPlugin
 from savant.gstreamer import Gst
@@ -52,10 +52,11 @@ class LineCrossing(NvDsPyFuncPlugin):
             config_order = next(points_permutations)
             polygon = PolygonalArea(config_order, poly_cfg['edges'])
             if polygon.is_self_intersecting():
-                # try to find a permutation of points that does not produce a self-intersecting polygon
+                # try to find a permutation of points
+                # that does not produce a self-intersecting polygon
                 self.logger.warn(
-                    'Polygon config for the "%s" source id produced a self-intersecting polygon.'
-                    ' Trying to find a valid permutation...',
+                    'Polygon config for the "%s" source id produced a self-intersecting'
+                    ' polygon. Trying to find a valid permutation...',
                     source_id,
                 )
                 while True:
@@ -64,15 +65,18 @@ class LineCrossing(NvDsPyFuncPlugin):
                         polygon = PolygonalArea(points_perm, poly_cfg['edges'])
                         if not polygon.is_self_intersecting():
                             self.logger.info(
-                                'Found a valid points permutation "%s" for the "%s" source id.',
+                                'Found a valid points permutation "%s" '
+                                'for the "%s" source id.',
                                 points_perm,
                                 source_id,
                             )
                             break
                     except StopIteration:
                         self.logger.error(
-                            'Polygon config for the "%s" source id produced a self-intersecting polygon.'
-                            ' Please correct coordinates "%s" in the config file and restart the pipeline.',
+                            'Polygon config for the "%s" source id '
+                            'produced a self-intersecting polygon. '
+                            'Please correct coordinates "%s" in the config file and '
+                            'restart the pipeline.',
                             source_id,
                             poly_cfg,
                         )
@@ -86,7 +90,7 @@ class LineCrossing(NvDsPyFuncPlugin):
         self.cross_events = defaultdict(lambda: defaultdict(list))
 
         # metrics namescheme
-        # savant.module.intersection_traffic_meter.source_id.obj_class_label.crossing_label
+        # savant.module.intersection_traffic_meter.source_id.obj_class_lbl.crossing_lbl
         if self.send_stats:
             self.stats_client = StatsClient(
                 'graphite', 8125, prefix='savant.module.intersection_traffic_meter'

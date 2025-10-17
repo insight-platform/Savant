@@ -162,7 +162,8 @@ class SourceOutputWithFrame(SourceOutput):
         )
 
         self._logger.debug(
-            'Added pad probe to convert savant frame meta from NvDsMeta to GstMeta (source_id=%s)',
+            'Added pad probe to convert savant frame meta from NvDsMeta '
+            'to GstMeta (source_id=%s)',
             source_info.source_id,
         )
         output_converter_props = {}
@@ -514,12 +515,14 @@ class SourceOutputH26X(SourceOutputEncoded):
         if not self._is_jetson_nvenc:
             return super()._create_encoder(pipeline)
 
+        # noqa: E501
         # Workaround for a bug in h264x encoders on Jetson devices.
         # https://forums.developer.nvidia.com/t/nvv4l2h264enc-returns-frames-in-wrong-order-when-pts-doesnt-align-with-framerate/257363
         #
         # Encoder "nvv4l2h26xenc" on Jetson devices produces frames with correct
         # DTS but with PTS and metadata from different frames.
-        # We don't send more than one frame to the encoder at a time to avoid this issue.
+        # We don't send more than one frame to the encoder at a time
+        # to avoid this issue.
         encoder = pipeline._element_factory.create(
             PipelineElement(self._encoder, properties=self._params)
         )
@@ -551,7 +554,7 @@ class SourceOutputH26X(SourceOutputEncoded):
         return Gst.Caps.from_string(', '.join(caps_params))
 
 
-class SourceOutputNvJpeg(SourceOutputEncoded):
+class SourceOutputNvJpeg(SourceOutputEncoded):  # noqa: E501
     """Adds an output elements to a DeepStream pipeline.
     Output contains frames encoded with jpeg codec along with metadata.
 
@@ -614,8 +617,9 @@ class SourceOutputNvJpeg(SourceOutputEncoded):
                     self._logger.debug('Encoder pool size: %s', len(self._encoder_pool))
                     continue
                 else:
-                    self._logger.warning(
-                        'Removing nvjpegenc do not release GPU memory. This leads to memory leak. See '
+                    self._logger.warning(  # noqa: E501
+                        'Removing nvjpegenc do not release GPU memory. '
+                        'This leads to memory leak. See '
                         'https://forums.developer.nvidia.com/t/nvjpegenc-dont-release-gpu-memory-when-gst-element-removed-from-pipeline'
                         ' for details.'
                     )

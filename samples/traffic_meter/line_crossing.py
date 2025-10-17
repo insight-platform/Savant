@@ -5,7 +5,7 @@ import yaml
 from savant_rs.primitives.geometry import Point, PolygonalArea
 from statsd import StatsClient
 
-from samples.traffic_meter.utils import Direction, Point, TwoLinesCrossingTracker
+from samples.traffic_meter.utils import Direction, TwoLinesCrossingTracker
 from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.deepstream.pyfunc import NvDsPyFuncPlugin
 from savant.gstreamer import Gst
@@ -60,8 +60,9 @@ class LineCrossing(NvDsPyFuncPlugin):
                 )
                 if area.is_self_intersecting():
                     self.logger.error(
-                        'Lines config for the "%s" source id produced a self-intersecting polygon.'
-                        ' Please correct coordinates "%s" in the config file and restart the pipeline.',
+                        'Lines config for the "%s" source id produced a '
+                        'self-intersecting polygon. Please correct coordinates "%s" '
+                        'in the config file and restart the pipeline.',
                         source_id,
                         line_cfg,
                     )

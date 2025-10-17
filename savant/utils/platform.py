@@ -75,7 +75,7 @@ def get_platform_info() -> dict:
                 tensorrt=jetson.board['libraries']['TensorRT'],
             )
             jetson.close()
-        except:
+        except ImportError:
             platform_info['jetson'] = dict(l4t='.'.join(get_l4t_version()))
 
     else:

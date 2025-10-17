@@ -228,7 +228,8 @@ class FFmpegSrc(LoggerMixin, GstBase.BaseSrc):
 
             if frame.corrupted:
                 self.logger.warning(
-                    'Corrupted frame received. Skipping. PTS: %s, DTS: %s, codec: %s, width: %s, height: %s, fps: %s',
+                    'Corrupted frame received. Skipping. PTS: %s, DTS: %s, codec: %s, '
+                    'width: %s, height: %s, fps: %s',
                     frame.pts,
                     frame.dts,
                     frame.codec,
@@ -270,7 +271,8 @@ class FFmpegSrc(LoggerMixin, GstBase.BaseSrc):
                 buffer.set_flags(Gst.BufferFlags.DELTA_UNIT)
 
             self.logger.debug(
-                'Pushing buffer of size %s with PTS=%s, DTS=%s and duration=%s to src pad.',
+                'Pushing buffer of size %s '
+                'with PTS=%s, DTS=%s and duration=%s to src pad.',
                 buffer.get_size(),
                 pts,
                 dts,

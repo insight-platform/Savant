@@ -3,7 +3,7 @@ import gi
 from . import pynvbufsurfacegenerator
 
 gi.require_version('Gst', '1.0')
-from gi.repository import Gst
+from gi.repository import Gst  # noqa: E402
 
 
 class NvBufSurfaceGenerator:

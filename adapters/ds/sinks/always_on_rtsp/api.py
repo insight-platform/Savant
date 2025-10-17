@@ -72,7 +72,8 @@ class StreamModel(BaseModel):
 
     stub_file: Optional[Path] = Field(
         None,
-        description='Location of the stub image file. Image file must be in JPEG format.',
+        description='Location of the stub image file. '
+        'Image file must be in JPEG format.',
         examples=['/stub_imgs/smpte100_1280x720.jpeg'],
     )
     framerate: Optional[str] = Field(
@@ -122,7 +123,8 @@ class StreamModel(BaseModel):
     )
     rtsp_keep_alive: Optional[bool] = Field(
         None,
-        description='Send RTSP keep alive packets, disable for old incompatible server.',
+        description='Send RTSP keep alive packets, '
+        'disable for old incompatible server.',
     )
     metadata_output: Optional[MetadataOutput] = Field(
         None,
@@ -356,5 +358,6 @@ class Api:
             if stream.profile not in ENCODER_PROFILES[codec]:
                 raise HTTPException(
                     status_code=HTTPStatus.BAD_REQUEST,
-                    detail=f'Invalid profile {stream.profile} for codec {codec.value.name}.',
+                    detail=f'Invalid profile {stream.profile} '
+                    f'for codec {codec.value.name}.',
                 )

@@ -29,7 +29,7 @@ def build_output_pipeline(
             PipelineElement(
                 'capsfilter',
                 properties={
-                    'caps': f'{config.video_raw_caps}, format=RGBA, framerate={config.framerate}'
+                    'caps': f'{config.video_raw_caps}, format=RGBA, framerate={config.framerate}'  # noqa:E501
                 },
             ),
             PipelineElement(

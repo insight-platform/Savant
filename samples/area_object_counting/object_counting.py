@@ -54,11 +54,12 @@ class ObjectCounting(NvDsPyFuncPlugin):
 
                 polygon = PolygonalArea(config_order)
                 if polygon.is_self_intersecting():
-                    # try to find a permutation of points that does not produce a self-intersecting polygon
+                    # try to find a permutation of points
+                    # that does not produce a self-intersecting polygon
                     self.logger.warning(
-                        'Polygon config for the "%s" source id produced a self-intersecting polygon '
-                        'for the "%s" area.'
-                        ' Trying to find a valid permutation...',
+                        'Polygon config for the "%s" source id '
+                        'produced a self-intersecting polygon for the "%s" area. '
+                        'Trying to find a valid permutation...',
                         source_id,
                         area_name,
                     )
@@ -68,7 +69,8 @@ class ObjectCounting(NvDsPyFuncPlugin):
                             polygon = PolygonalArea(points_perm)
                             if not polygon.is_self_intersecting():
                                 self.logger.info(
-                                    'Found a valid points permutation "%s" for the "%s" source id "%s" area.',
+                                    'Found a valid points permutation "%s" '
+                                    'for the "%s" source id "%s" area.',
                                     points_perm,
                                     source_id,
                                     area_name,
@@ -76,8 +78,10 @@ class ObjectCounting(NvDsPyFuncPlugin):
                                 break
                         except StopIteration:
                             self.logger.error(
-                                'Polygon config for the "%s" source id produced a self-intersecting polygon.'
-                                ' Please correct coordinates of "%s" area in the config file and restart the pipeline.',
+                                'Polygon config for the "%s" source id '
+                                'produced a self-intersecting polygon. '
+                                'Please correct coordinates of "%s" area in '
+                                'the config file and restart the pipeline.',
                                 source_id,
                                 area_name,
                             )

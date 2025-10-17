@@ -56,7 +56,8 @@ def pad_to_source_id(pad: Gst.Pad) -> str:
 def parse_pad_name(pad: Gst.Pad) -> Tuple[str, int]:
     """Extract source ID and first frame ID from the pad name.
 
-    Pad should be named with pattern "src_<source_id>_<first_frame_id>" (eg "src_cam-1_362").
+    Pad should be named with pattern "src_<source_id>_<first_frame_id>"
+    (eg "src_cam-1_362").
     """
     source_id, first_frame_id = pad.get_name()[4:].rsplit('_', 1)
     return source_id, int(first_frame_id)
@@ -228,13 +229,14 @@ def gst_post_message(
 ):
     """Post an error, warning or info message on the bus from inside an element.
 
-    :param msg_type: Must be one of Gst.MessageType.ERROR, Gst.MessageType.WARNING, Gst.MessageType.INFO.
+    :param msg_type: Must be one of Gst.MessageType.ERROR, Gst.MessageType.WARNING,
+        Gst.MessageType.INFO.
     :param gst_element: Gst Element that posts the message.
     :param frame: Frame object from inspect.currentframe().
     :param file_path: Path to the file that posts the message.
     :param domain: The GStreamer error domain this error belongs to.
     :param code: The error code belonging to the domain, check here
-        https://gstreamer.freedesktop.org/documentation/gstreamer/gsterror.html?gi-language=python
+        https://gstreamer.freedesktop.org/documentation/gstreamer/gsterror.html
     :param text: Error text.
     :param debug: Debug info.
     """
@@ -280,8 +282,8 @@ def link_pads(src_pad: Gst.Pad, sink_pad: Gst.Pad):
     """Link pads and raise exception if linking failed."""
 
     assert src_pad.link(sink_pad) == Gst.PadLinkReturn.OK, (
-        f'Unable to link {src_pad.get_parent_element().get_name()}.{src_pad.get_name()} '
-        f'to {sink_pad.get_parent_element().get_name()}.{sink_pad.get_name()}'
+        f'Unable to link {src_pad.get_parent_element().get_name()}.{src_pad.get_name()}'
+        f' to {sink_pad.get_parent_element().get_name()}.{sink_pad.get_name()}'
     )
 
 

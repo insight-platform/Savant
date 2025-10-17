@@ -53,7 +53,8 @@ class BaseNvDsDrawFunc(NvDsPyFuncPlugin):
             return True
 
         self.logger.debug(
-            'Frame from source %s with PTS %s does not have tag %s. Skip drawing on it.',
+            'Frame from source %s with PTS %s does not have tag %s. '
+            'Skip drawing on it.',
             frame_meta.source_id,
             frame_meta.pts,
             self.condition.tag,

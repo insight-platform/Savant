@@ -121,7 +121,8 @@ class ModelInput:
     """
 
     symmetric_padding: bool = False
-    """Indicates whether the input preprocessing should symmetrically pad the image when it's scaled. 
+    """Indicates whether the input preprocessing should symmetrically pad
+    the image when it's scaled.
     By default the images are padded asymmetrically.
     """
 

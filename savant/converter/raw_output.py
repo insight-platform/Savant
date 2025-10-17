@@ -1,4 +1,5 @@
-"""Model raw output converters. They provide different options for processing output tensors: on the GPU or the host.
+"""Model raw output converters.
+They provide different options for processing output tensors: on the GPU or the host.
 See `savant.base.converter.TensorFormat`"""
 
 from typing import Any, List, Optional, Tuple

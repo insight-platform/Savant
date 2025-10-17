@@ -80,7 +80,8 @@ class ConfigParser:
 
             if not watch:
                 raise ValueError(
-                    'No watch configs found in the config file. Please specify at least one.'
+                    'No watch configs found in the config file. '
+                    'Please specify at least one.'
                 )
 
             try:

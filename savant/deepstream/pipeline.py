@@ -160,7 +160,8 @@ class NvDsPipeline(GstPipeline):
             shutdown_auth = kwargs.get('shutdown_auth')
             if shutdown_auth is not None:
                 pipeline_cfg.source.properties['shutdown-auth'] = shutdown_auth
-                # setting a token, allowing to shut the pipeline down with a webserver feature
+                # setting a token, allowing to shut the pipeline down
+                # with a webserver feature
                 # /shutdown/{token}/signal
                 # /shutdown/{token}/graceful
                 set_ws_pipeline_shutdown_auth_token(shutdown_auth)
@@ -191,9 +192,10 @@ class NvDsPipeline(GstPipeline):
             queue_properties=self._egress_queue_properties,
         )
 
+        # noqa: E501
         # nvjpegdec decoder is selected in decodebin according to the rank, but
         # the plugin doesn't support some jpg
-        #  https://forums.developer.nvidia.com/t/nvvideoconvert-memory-compatibility-error/226138;
+        # https://forums.developer.nvidia.com/t/nvvideoconvert-memory-compatibility-error/226138;
         # Set the rank to NONE for the plugin to not use it.
         # Decodebin will use nvv4l2decoder instead.
         if is_aarch64():
@@ -428,11 +430,14 @@ class NvDsPipeline(GstPipeline):
             return
 
         if add_frames_to_pipeline:
-            # new_pad.name example `src_camera1` => source_id == `camera1` (real source_id)
+            # new_pad.name example
+            # `src_camera1` => source_id == `camera1` (real source_id)
             source_id = pad_to_source_id(new_pad)
             first_frame_id = None
         else:
-            # new_pad.name example `src_camera1_362` => source_id == `camera1` (real source_id), first_frame_id == 362
+            # new_pad.name example
+            # `src_camera1_362` => source_id == `camera1` (real source_id),
+            # first_frame_id == 362
             source_id, first_frame_id = parse_pad_name(new_pad)
         self._logger.debug(
             'Adding source %s. First frame ID: %s. Pad name: %s.',
@@ -527,8 +532,9 @@ class NvDsPipeline(GstPipeline):
                     with self._source_adding_lock:
                         source_info.pad_idx = self._free_pad_indices.pop(0)
                 except IndexError:
-                    # savant_rs_video_decode_bin already sent EOS for some stream and adding a
-                    # new one, but the former stream did not complete in this pipeline yet.
+                    # savant_rs_video_decode_bin already sent EOS for some stream and
+                    # adding a new one, but the former stream did not complete
+                    # in this pipeline yet.
                     self._logger.warning(
                         'Reached maximum number of streams: %s. '
                         'Waiting resources for source %s.',
@@ -587,8 +593,8 @@ class NvDsPipeline(GstPipeline):
     ) -> Gst.Pad:
         self._check_pipeline_is_running()
         if add_frames_to_pipeline:
-            # Add savant frames to VideoPipeline when source element is not zeromq_source_bin
-            # (e.g. uridecodebin).
+            # Add savant frames to VideoPipeline
+            # when source element is not zeromq_source_bin (e.g. uridecodebin).
             # Cannot add frames with a probe since Gst.Buffer is not writable,
             # and it's impossible to make it writable in a probe.
             savant_rs_add_frames = self._element_factory.create(
@@ -616,8 +622,9 @@ class NvDsPipeline(GstPipeline):
         if self._stream_buffer_pool_size is not None:
             nv_video_converter_props['output-buffers'] = self._stream_buffer_pool_size
         if is_aarch64() and new_pad_caps.get_structure(0).get_value('format') == 'RGB':
-            #   https://forums.developer.nvidia.com/t/buffer-transform-failed-for-nvvideoconvert-for-num-input-channels-num-output-channels-on-jetson/237578
-            #   https://forums.developer.nvidia.com/t/nvvideoconvert-buffer-transform-failed-on-jetson/261370
+            # noqa: E501
+            # https://forums.developer.nvidia.com/t/buffer-transform-failed-for-nvvideoconvert-for-num-input-channels-num-output-channels-on-jetson/237578
+            # https://forums.developer.nvidia.com/t/nvvideoconvert-buffer-transform-failed-on-jetson/261370
             self._logger.info(
                 'Input stream is RGB, using compute-hw=1 as recommended by Nvidia'
             )
@@ -705,7 +712,8 @@ class NvDsPipeline(GstPipeline):
 
         except PipelineIsNotRunningError:
             self._logger.info(
-                'Pipeline is not running. Cancel removing input elements for source %s.',
+                'Pipeline is not running. '
+                'Cancel removing input elements for source %s.',
                 source_info.source_id,
             )
             return False
@@ -813,7 +821,8 @@ class NvDsPipeline(GstPipeline):
 
         except PipelineIsNotRunningError:
             self._logger.info(
-                'Pipeline is not running. Cancel removing output elements for source %s.',
+                'Pipeline is not running. '
+                'Cancel removing output elements for source %s.',
                 source_info.source_id,
             )
             return False
@@ -858,7 +867,8 @@ class NvDsPipeline(GstPipeline):
                 GLib.idle_add(self._remove_output_elements, source_info)
             except PipelineIsNotRunningError:
                 self._logger.info(
-                    'Pipeline is not running. Do not remove output elements for source %s.',
+                    'Pipeline is not running. '
+                    'Do not remove output elements for source %s.',
                     source_info.source_id,
                 )
 
@@ -1016,8 +1026,6 @@ class NvDsPipeline(GstPipeline):
             try:
                 video_frame.set_parent_by_id(obj_id, nvds_object_id_map[parent_id])
             except ValueError as e:
-                # TODO: fix it GitHub issue #1000
-                # this is a workaround to fix the issue (we just prevent circular references)
                 obj = video_frame.get_object(obj_id)
                 parent = video_frame.get_object(nvds_object_id_map[parent_id])
                 self._logger.warning(
@@ -1027,8 +1035,6 @@ class NvDsPipeline(GstPipeline):
                     e,
                 )
             except KeyError as e:
-                # TODO: fix it GitHub issue #1000
-                # this is a workaround to fix the issue (we just prevent circular references)
                 obj = video_frame.get_object(obj_id)
                 self._logger.warning(
                     'Failed to set parent %s for object %s: exception: %s',

@@ -511,7 +511,8 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
         frame_idx = self.add_frame_to_pipeline(video_frame, span_context)
         if self.pass_through_mode and not video_frame.content.is_internal():
             self.logger.debug(
-                'Storing content of frame with IDX %s as an internal VideoFrameContent (%s) bytes.',
+                'Storing content of frame with IDX %s as '
+                'an internal VideoFrameContent (%s) bytes.',
                 frame_idx,
                 len(external_content),
             )

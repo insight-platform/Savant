@@ -72,14 +72,16 @@ class FPSMeterPlugin(LoggerMixin, GstBase.BaseTransform):
         'measure-per-file': (
             bool,
             'Measure FPS per file',
-            'Measure FPS per file. FPS meter will dump statistics at the end of each file.',
+            'Measure FPS per file. '
+            'FPS meter will dump statistics at the end of each file.',
             True,
             GObject.ParamFlags.READWRITE,
         ),
         'measure-per-loop': (
             bool,
             'Measure FPS per loop',
-            'Measure FPS per loop. FPS meter will dump statistics at the end of each loop.',
+            'Measure FPS per loop. '
+            'FPS meter will dump statistics at the end of each loop.',
             False,
             GObject.ParamFlags.READWRITE,
         ),

@@ -56,6 +56,9 @@ coverage.xml
 docs/build/
 generated
 
+# ruff cache
+.ruff_cache/
+
 # cached models, downloads, etc.
 cache
 

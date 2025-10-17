@@ -55,8 +55,8 @@ def _iou(boxes_a: np.ndarray, boxes_b: np.ndarray) -> np.ndarray:
 def match_person_faces(person_boxes: np.ndarray, face_boxes: np.ndarray) -> List[int]:
     """Matches persons and faces based on their bounding boxes' IOU coefficients.
 
-    :param person_boxes: Bbox array shape (n,4), coordinates [x_min, y_min, x_max, y_max]
-    :param face_boxes: Bbox array shape (n,4), coordinates [x_min, y_min, x_max, y_max]
+    :param person_boxes: Bbox array shape (n, 4), [x_min, y_min, x_max, y_max]
+    :param face_boxes: Bbox array shape (n, 4), [x_min, y_min, x_max, y_max]
     :return: indexes of persons that were successfully matched with a face.
     """
     iou_matrix = _iou(person_boxes, face_boxes)

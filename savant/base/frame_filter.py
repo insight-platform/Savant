@@ -26,7 +26,8 @@ class DefaultEgressFilter(BaseFrameFilter):
         """Filters output frames.
 
         :param video_frame: Video frame.
-        :return: Whether to put the frame into the output queue (True) or skip it (False).
+        :return: Whether to put the frame into the output queue (True)
+            or skip it (False).
         """
 
         return True
@@ -39,7 +40,8 @@ class DefaultIngressFilter(BaseFrameFilter):
         """Filters input frames.
 
         :param video_frame: Video frame.
-        :return: Whether to accept the frame into the pipeline (True) or skip it (False).
+        :return: Whether to accept the frame into the pipeline (True)
+            or skip it (False).
         """
 
         return not video_frame.content.is_none()

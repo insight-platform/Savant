@@ -332,11 +332,13 @@ class Egress(BaseThreadWorker):
                             is_sent = True
                         elif isinstance(send_message_result, WriterResultSendTimeout):
                             self.logger.warning(
-                                'Failed to send message to the sink ZeroMQ socket due to timeout. Retrying'
+                                'Failed to send message to the sink '
+                                'ZeroMQ socket due to timeout. Retrying'
                             )
                         else:
                             self.logger.warning(
-                                'Error sending a message to the sink ZeroMQ socket: %s. Ignoring',
+                                'Error sending a message to the sink '
+                                'ZeroMQ socket: %s. Ignoring',
                                 send_message_result,
                             )
                             is_sent = True
@@ -458,7 +460,9 @@ class StatsLogger(BaseThreadWorker):
 
         stats = self._stats_aggregator.get_stats()
         self.logger.info(
-            'Received %s, pushed %s, dropped %s, sent %s, buffer size %s, payload size %s, last message received %s, last message pushed %s, last message dropped %s, last message sent %s',
+            'Received %s, pushed %s, dropped %s, sent %s, buffer size %s, '
+            'payload size %s, last message received %s, last message pushed %s, '
+            'last message dropped %s, last message sent %s',
             stats['received_messages'],
             stats['pushed_messages'],
             stats['dropped_messages'],

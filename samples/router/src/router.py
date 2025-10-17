@@ -34,7 +34,8 @@ class IngressHandler:
         log(
             LogLevel.Debug,
             'ingress_handler',
-            f'Sending message from {ingress_name} for topic {topic} with labels {message.labels}',
+            f'Sending message from {ingress_name} '
+            f'for topic {topic} with labels {message.labels}',
         )
 
         if message.is_video_frame():
@@ -89,8 +90,8 @@ class IngressHandler:
 
 
 def init(params: Any):
-    """
-    This function is called once when the service starts. It is specified in the configuration.json file.
+    """This function is called once when the service starts.
+    It is specified in the configuration.json file.
     """
     log(
         LogLevel.Info,
