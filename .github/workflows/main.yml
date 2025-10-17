@@ -276,6 +276,7 @@ jobs:
             "savant-router-x86"
             "savant-router-arm64"
             "savant-rs-py313"
+            "savant-rs-py314"
             "savant-buffer-ng-x86"
             "savant-buffer-ng-arm64"
           )
