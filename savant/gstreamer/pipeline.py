@@ -99,9 +99,9 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
 
     def link_element(self, gst_element: Gst.Element):
         """Links last element with the given one."""
-        assert self._last_element.link(
-            gst_element
-        ), f'Unable to link {gst_element.get_name()} to {self._last_element.name}'
+        assert self._last_element.link(gst_element), (
+            f'Unable to link {gst_element.get_name()} to {self._last_element.name}'
+        )
         self._last_element = gst_element
 
     def _add_source(self, source: PipelineElement) -> Gst.Element:

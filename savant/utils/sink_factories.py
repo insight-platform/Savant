@@ -268,7 +268,6 @@ class ConsoleSinkFactory(SinkFactory):
             msg: SinkMessage,
             **kwargs,
         ):
-
             if isinstance(msg, SinkVideoFrame):
                 frame_pts = convert_ts(msg.video_frame.pts, msg.video_frame.time_base)
                 if self.video_frame_filter(msg.video_frame, frame_pts):

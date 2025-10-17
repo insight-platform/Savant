@@ -138,7 +138,6 @@ def clip_coords(boxes, img_shape):
 
 
 def scale_coords(img1_shape, coords, img0_shape):
-
     coords[:, :4] /= torch.tensor(
         [
             img1_shape[1] / img0_shape[1],

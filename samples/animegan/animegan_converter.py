@@ -14,7 +14,6 @@ class AnimeganConverter(BaseAttributeModelOutputConverter):
         model: AttributeModel,
         roi: Tuple[float, float, float, float],
     ) -> Optional[List[Tuple[str, Any, float]]]:
-
         img = output_layers[0]
         # from [-1, 1] to [0, 255]
         img = (img + 1) * 127.5

@@ -36,7 +36,6 @@ logger = logging.getLogger('PipelineWatchdog')
 
 
 class DockerClient:
-
     def __init__(self):
         self._client = aiodocker.Docker()
 

@@ -14,7 +14,6 @@ def convert_to_seconds(s: str):
 
 
 class ConfigParser:
-
     def __init__(self, config_path: str):
         self._config_path = config_path
 

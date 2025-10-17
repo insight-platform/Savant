@@ -19,7 +19,7 @@ def test_extra():
 
     print('TensorRT', tensorrt.__version__)
 
-    import torch2trt
+    from torch2trt.torch2trt import *
 
     print('Torch2TRT OK')
 

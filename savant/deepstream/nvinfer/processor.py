@@ -322,9 +322,9 @@ class NvInferProcessor:
                     if self._is_complex_model:
                         # output converter returns tensor and attribute values
                         bbox_tensor, values = outputs
-                        assert bbox_tensor.shape[0] == len(
-                            values
-                        ), 'Number of detected boxes and attributes do not match.'
+                        assert bbox_tensor.shape[0] == len(values), (
+                            'Number of detected boxes and attributes do not match.'
+                        )
 
                     # object model
                     elif self._is_object_model:

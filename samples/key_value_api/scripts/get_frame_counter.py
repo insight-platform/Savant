@@ -3,7 +3,7 @@
 import requests
 import savant_rs.webserver.kvs as kvs
 
-response = requests.get(f'http://localhost:8080/kvs/get/counter/frame_counter')
+response = requests.get('http://localhost:8080/kvs/get/counter/frame_counter')
 assert response.status_code == 200
 attributes = kvs.deserialize_attributes(response.content)
 if len(attributes) == 1:

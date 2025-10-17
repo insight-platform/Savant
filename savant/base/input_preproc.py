@@ -154,11 +154,11 @@ class ObjectsPreprocessing:
                         row_height = 0
                     if top >= frame_image.height:
                         raise ValueError(
-                            'There is no place on frame ' 'to put object image.'
+                            'There is no place on frame to put object image.'
                         )
                     if top + preprocess_image.height > frame_image.height:
                         raise ValueError(
-                            'There is no place on frame ' 'to put object image.'
+                            'There is no place on frame to put object image.'
                         )
                     if preprocess_image.height > row_height:
                         row_height = preprocess_image.height

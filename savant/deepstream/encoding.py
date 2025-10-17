@@ -110,7 +110,7 @@ def check_encoder_is_available(
         if runner.error is not None:
             logger.error(
                 'You have configured NVENC-accelerated encoding, '
-                'but your device doesn\'t support NVENC for codec %r.',
+                'but your device does not support NVENC for codec %r.',
                 codec_name,
             )
             return False

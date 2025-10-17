@@ -31,7 +31,6 @@ def parse_log_spec(log_spec_str: str) -> dict:
         # consecutive commas will result in empty strings
         # skip them
         if log_directive:
-
             eq_num = log_directive.count('=')
 
             if eq_num == 1:

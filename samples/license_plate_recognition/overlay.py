@@ -14,7 +14,6 @@ class Overlay(NvDsDrawFunc):
         Add classifier attributes labels to the object visualisation.
         """
         if object_meta.label == 'lpd':
-
             # drawing a licence plate instead of the label or empty label
             attr_meta = object_meta.get_attr_meta('LPRNet', 'lpr')
             if attr_meta is not None:

@@ -129,8 +129,7 @@ class NvDsPyFuncPlugin(BasePyFuncPlugin):
         savant_batch_meta = gst_buffer_get_savant_batch_meta(buffer)
         if savant_batch_meta is None:
             self.logger.warning(
-                'Failed to process batch at buffer %s. '
-                'Batch has no Savant Frame Meta.',
+                'Failed to process batch at buffer %s. Batch has no Savant Frame Meta.',
                 buffer.pts,
             )
             return

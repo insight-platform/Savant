@@ -65,7 +65,6 @@ class TensorToBBoxConverter(YoloTensorToBBoxConverter):
 
 @lru_cache()
 def _get_grids_strides(input_height: int, input_width: int, yolo_p6: bool = False):
-
     grids = []
     expanded_strides = []
 

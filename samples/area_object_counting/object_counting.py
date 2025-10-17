@@ -45,7 +45,6 @@ class ObjectCounting(NvDsPyFuncPlugin):
         for source_id, areas in self.area_config.items():
             self.areas[source_id] = {}
             for area_name, area_dict in areas.items():
-
                 coords_list = area_dict['points']
 
                 points = [Point(*pt_coords) for pt_coords in coords_list]

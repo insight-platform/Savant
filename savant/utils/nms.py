@@ -87,7 +87,7 @@ def nms_gpu(
     return mask[:top_k]
 
 
-_nms_gpu_code = '''
+_nms_gpu_code = """
 #define DIVUP(m,n) ((m) / (n) + ((m) % (n) > 0))
 int const threadsPerBlock = sizeof(unsigned long long) * 8;
 
@@ -149,7 +149,7 @@ void nms_kernel(const int n_bbox, const float thresh,
     dev_mask[cur_box_idx * col_blocks + col_start] = t;
   }
 }
-'''
+"""
 
 
 def _call_nms_kernel(bboxes: cp.ndarray, threshold: float) -> cp.ndarray:
