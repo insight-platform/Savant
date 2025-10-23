@@ -1,6 +1,5 @@
 """Logging utils package."""
 
-from .log_setup import get_logger, init_logging, update_logging
-from .logger_mixin import LoggerMixin
+from savant_rs.py.log import LoggerMixin, get_logger, init_logging, update_logging
 
 __all__ = ['get_logger', 'init_logging', 'update_logging', 'LoggerMixin']
