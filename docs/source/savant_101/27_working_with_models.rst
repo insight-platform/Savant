@@ -52,10 +52,19 @@ The ``input`` section describes the model input: names of input layers, dimensio
 
 The ``output`` section describes the model output: names of output layers, converters, selectors, etc. The mandatory or optional nature of the parameters in this section depends on the model format, as well as on the type of model. This section will be covered in more detail later, when describing model formats.
 
-To accelerate inference in the framework, NVIDIA TensorRT is used. To use a model in a pipeline, it must be presented in one of the formats supported by TensorRT:
+Supported Model Formats
+-----------------------
+
+To accelerate inference in the framework, NVIDIA TensorRT is used. 
+To use a model in a pipeline, it must be presented in one of the formats supported by TensorRT:
+
+.. note::
+  The model format is specified in the ``format`` parameter of the model configuration. 
+  Practically, the format you should use is ONNX, unless you have a specific reason to use another format.
+
 
 ONNX
-----
+~~~~
 
 ONNX is an open format built to represent machine learning models. ONNX defines a common set of operators - the building blocks of machine learning and deep learning models - and a common file format to enable AI developers to use models with a variety of frameworks, tools, runtimes, and compilers. This format is recommended as the to-go format for models.
 
@@ -88,7 +97,7 @@ If the model has non-standard outputs (outputs that cannot be automatically conv
         layer_names: [output]
 
 UFF
----
+~~~
 
 UFF is an intermediate format for representing a model between TensorFlow and TensorRT. Users who use the TensorFlow framework can convert their models to the UFF format using the UFF converter. If you are using a model in the UFF format, you must specify the name of the input layer (``layer_name``) and the input dimensionality of the model (``shape``) in the ``input`` section, as well as the name(s) of the resulting layer(s) (``layer_names``) in the ``output`` section.
 
@@ -105,10 +114,13 @@ UFF is an intermediate format for representing a model between TensorFlow and Te
       output:
         layer_names: [output_cov/Sigmoid, output_bbox/BiasAdd]
 
-This format will no longer be supported by future releases of TensorRT (`Tensor RT release notes <https://docs.nvidia.com/deeplearning/tensorrt/release-notes/index.html#tensorrt-9>`_).
+
+.. warning::
+  This format will no longer be supported by future releases of TensorRT (`Tensor RT release notes <https://docs.nvidia.com/deeplearning/tensorrt/release-notes/index.html#tensorrt-9>`_).
+
 
 Caffe
------
+~~~~~
 
 If you have a model trained using the Caffe framework, then you can save your model in the ``caffemodel`` format.
 
@@ -123,11 +135,12 @@ If you have a model trained using the Caffe framework, then you can save your mo
       output:
         layer_names: [output_cov/Sigmoid, output_bbox/BiasAdd]
 
+.. warning::
+  This format will no longer be supported by future releases of TensorRT (`Tensor RT release notes <https://docs.nvidia.com/deeplearning/tensorrt/release-notes/index.html#tensorrt-9>`_).
 
-This format will no longer be supported by future releases of TensorRT (`Tensor RT release notes <https://docs.nvidia.com/deeplearning/tensorrt/release-notes/index.html#tensorrt-9>`_).
 
 NVIDIA TAO Toolkit
-------------------
+~~~~~~~~~~~~~~~~~~
 
 The NVIDIA TAO Toolkit is a set of training tools that requires minimal effort to create computer vision neural models based on user's own data. Using the TAO toolkit, users can perform transfer learning from pre-trained NVIDIA models to create their own model.
 
@@ -147,7 +160,7 @@ After training the model, you can download it in the ``etlt`` format and use thi
         layer_names: [output_cov/Sigmoid, output_bbox/BiasAdd]
 
 Custom CUDA Engine
-------------------
+~~~~~~~~~~~~~~~~~~
 
 For all the above-mentioned variants of specifying the model, during the first launch, an engine file will be generated using TensorRT with automatic parsing of the model. When the model is very complex or requires some custom plugins or layers, you can generate the engine file yourself using the TensorRT API and specifying the library and the name of the function that generates the engine (`Using custom model with DeepStream <https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_using_custom_model.html>`_).
 
@@ -161,8 +174,8 @@ For all the above-mentioned variants of specifying the model, during the first l
       custom_lib_path: libnvdsinfer_custom_impl_Yolo.so
       engine_create_func_name: NvDsInferYoloCudaEngineGet
 
-Build Model Engine
-------------------
+Building Model Engines Prior to Pipeline Launch (Optional)
+-----------------------------------------------------------
 
 Savant uses the DeepStream element ``nvinfer`` to perform model inferencing. Under the hood, nvinfer uses TensorRT to facilitate high-performance machine learning inference. Any of the supported model types (ONNX, UFF, TAO) must be converted to the TensorRT engine for use in the pipeline.
 
