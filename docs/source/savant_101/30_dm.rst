@@ -115,18 +115,18 @@ The converter implementation can be found in the class :py:class:`~savant.conver
 
 .. note::
 
-     The converter can access data with CPU-based tools (NumPy) or in GPU with CuPy. Typically, NumPy-based processing is a default choice; however, if you have a lot of data to process, you may consider using CuPy to speed up the processing. To use CuPy, you need to set the ``tensor_format`` parameter to ``CuPy`` in the converter class.
+    The converter can access data with CPU-based tools (NumPy) or in GPU with CuPy. Typically, NumPy-based processing is a default choice; however, if you have a lot of data to process, you may consider using CuPy to speed up the processing. To use CuPy, you need to set the ``tensor_format`` parameter to ``CuPy`` in the converter class.
 
-     For example:
+    For example:
 
-     .. code-block:: python
+    .. code-block:: python
 
-         class TensorToBBoxConverter(BaseObjectModelOutputConverter):
-             tensor_format: TensorFormat = TensorFormat.CuPy
+      class TensorToBBoxConverter(BaseObjectModelOutputConverter):
+        tensor_format: TensorFormat = TensorFormat.CuPy
 
-     This will allow the converter to use CuPy to process the data. For an example of the CuPy converter take a look at the sample at the link on GitHub: https://github.com/insight-platform/Savant/tree/develop/samples/yolov8_seg
+    This will allow the converter to use CuPy to process the data. For an example of the CuPy converter take a look at the sample at the link on GitHub: https://github.com/insight-platform/Savant/tree/develop/samples/yolov8_seg
 
-     Normally, if the tensor output is small, it is better to use NumPy. If the tensor output is large (frequently met in tasks like segmentation, instance segmentation, etc.), it is beneficial to consider using CuPy to speed up the processing.
+    Normally, if the tensor output is small, it is better to use NumPy. If the tensor output is large (frequently met in tasks like segmentation, instance segmentation, etc.), it is beneficial to consider using CuPy to speed up the processing.
 
 
 An example of the converter for YOLOv4 listed below. The YOLOv4 model has two output layers: the first represents box definition (incl. ``class_id``), the last is for confidence. 
