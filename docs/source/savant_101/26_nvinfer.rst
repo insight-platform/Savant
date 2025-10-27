@@ -1,8 +1,7 @@
 NvInfer Unit Overview and Common Configuration
 ==============================================
 
-In Savant, DeepStream NvInfer is used to run inference on models prepared for Nvidia DeepStream. 
-The framework supports four types of inference units:
+In Savant, DeepStream NvInfer is used to run inference on models prepared for Nvidia DeepStream. The framework supports four types of inference units:
 
 - :doc:`30_dm` - detector unit (typically used for models producing bounding boxes, classes and confidence scores);
 - :doc:`40_cm` - classifier unit (typically used for models producing classes and confidence scores);
