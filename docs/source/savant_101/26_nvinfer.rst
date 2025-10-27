@@ -14,19 +14,16 @@ Each of these units is configured a bit differently. In this section, we describ
 About DeepStream NvInfer
 ------------------------
 
-Nvinfer is a GStreamer plugin for running inference on models prepared for Nvidia DeepStream. In DeepStream it is configured with
-a configuration file. In Savant, we provide two ways for configuring the NvInfer unit:
+Nvinfer is a GStreamer plugin for running inference on models prepared for Nvidia DeepStream. In DeepStream it is configured with a configuration file. In Savant, we provide two ways for configuring the NvInfer unit:
 
 - YAML-based configuration;
 - a configuration file (you should not use it if we provide the required configuration parameter in YAML).
 
 In the end, both of them lead to the same result: a generated configuration file in the model cache directory.
 
-All of the NvInfer variants require the model to be specified. Savant supports local model files and remote model files. 
-The first are convenient if/when they are burnt into the docker image. The second are convenient if/when they are downloaded from a remote location.
+All of the NvInfer variants require the model to be specified. Savant supports local model files and remote model files. The first are convenient if/when they are burnt into the docker image. The second are convenient if/when they are downloaded from a remote location.
 
-Regardless of the model source, NvInfer generates a TensorRT engine file for the model for the current hardware. 
-If the engine file already exists, it will be used instead of generating a new one if it is compatible with the current configuration (hardware,batch size, precision, etc.).
+Regardless of the model source, NvInfer generates a TensorRT engine file for the model for the current hardware. If the engine file already exists, it will be used instead of generating a new one if it is compatible with the current configuration (hardware,batch size, precision, etc.).
 
 Read more about working with models in :doc:`27_working_with_models`.
 
