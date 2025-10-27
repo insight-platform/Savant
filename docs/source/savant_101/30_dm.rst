@@ -243,15 +243,21 @@ The selector is used to select the objects that are of interest. Their functiona
 It mostly depends on the purpose, but as a rule of thumb, you should use the converter if you need to convert the model output to a format that can be used by the selector.
 You should use the selector if you need to filter out the objects that are of interest.
 
+.. note::
+
+    Despite their different roles, a custom implementation of the converter can contain features normally implemented in the selector. 
+    It depends on the developer's preferences and the performance considerations.
+
+
 Performance Considerations
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The goal of the converter is to transform the model output to a format that can be used by the selector and exclude what is not required by running NMS 
 and exclude classes. This is important to avoid creating unnecessary metadata. However, when every class requires additional filtering, these operations 
 can be carried out by selectors individually for each class. Every class can have its own selector with its own parameters.
 
 Default Selector
-~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^
 
 The default selector implementation is :py:class:`~savant.selector.detector.BBoxSelector`. It is a simple implementation of the selector that runs 
 NMS and excludes objects based on their confidence and size. When the ``module`` and ``class_name`` parameters are not specified in the ``objects.<class_id>.selector`` block, the default selector 
