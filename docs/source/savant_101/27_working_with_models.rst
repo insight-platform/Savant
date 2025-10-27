@@ -55,8 +55,7 @@ The ``output`` section describes the model output: names of output layers, conve
 Supported Model Formats
 -----------------------
 
-To accelerate inference in the framework, NVIDIA TensorRT is used. 
-To use a model in a pipeline, it must be presented in one of the formats supported by TensorRT:
+To accelerate inference in the framework, NVIDIA TensorRT is used. To use a model in a pipeline, it must be presented in one of the formats supported by TensorRT:
 
 .. note::
   The model format is specified in the ``format`` parameter of the model configuration. 
