@@ -35,7 +35,7 @@ class NvInferModelFormat(Enum):
     ETLT = 3
     """Nvidia TAO model."""
 
-    CUSTOM = 4  # YOLO?
+    CUSTOM = 4
     """Other format."""
 
 
