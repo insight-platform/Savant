@@ -175,8 +175,8 @@ Savant provides a special tool to record, replay and restream video with the RES
    savant_101/26_nvinfer
    savant_101/27_working_with_models
    savant_101/30_dm
-   savant_101/40_cm
    savant_101/43_am
+   savant_101/40_cm
    savant_101/53_complexm
    savant_101/54_additional_nvinfer_parameters
    savant_101/55_preprocessing
