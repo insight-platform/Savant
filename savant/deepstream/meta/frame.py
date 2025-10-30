@@ -189,13 +189,13 @@ class NvDsFrameMeta(AbstractContextManager, LoggerMixin):
             if not object_meta.bbox.inside_viewport(
                 self.video_frame.width, self.video_frame.height
             ):
+                frame_box = BBox.ltrb(0, 0, self.video_frame.width, self.video_frame.height)
                 raise MetaValueError(
                     f'Object {object_meta.element_name}/{object_meta.label} '
                     f'with ID={object_meta.uid} is out of viewport: '
-                    f'LeftTopRightBottom=[{object_meta.bbox.as_ltrb_int()}] '
-                    f'does not fit in frame {self.video_frame.width}'
-                    f'x{self.video_frame.height}. '
-                    'Trim the object bounding box to fit in the frame.'
+                    f'object LeftTopRightBottom=[{object_meta.bbox.as_ltrb()}] '
+                    f'does not fit in frame LeftTopRightBottom=[{frame_box.as_ltrb()}].'
+                    ' Trim the object bounding box to fit in the frame.'
                 )
 
             ds_object_meta = _NvDsObjectMetaImpl(
