@@ -1,7 +1,7 @@
 services:
 
   receiver:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:0.5.16
     network_mode: host
     restart: unless-stopped
     volumes:
@@ -18,7 +18,7 @@ services:
 
   broadcaster:
     privileged: true
-    image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
+    image: ghcr.io/insight-platform/savant-adapters-deepstream:0.5.16-7.0
     restart: unless-stopped
     ports:
       - "6666:6666"
