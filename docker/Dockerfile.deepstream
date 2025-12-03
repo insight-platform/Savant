@@ -1,17 +1,25 @@
-ARG DEEPSTREAM_VERSION=7.0
-ARG DEEPSTREAM_DEVEL_IMAGE=$DEEPSTREAM_VERSION-triton-multiarch
-ARG DEEPSTREAM_BASE_IMAGE=$DEEPSTREAM_VERSION-samples-multiarch
-FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_DEVEL_IMAGE AS builder
+ARG DEEPSTREAM_VERSION=7.1
+ARG DEEPSTREAM_DEVEL_IMAGE=nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-triton-multiarch
+ARG DEEPSTREAM_BASE_IMAGE=nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-samples-multiarch
+#ARG DEEPSTREAM_DEVEL_IMAGE=deepstream:7.1.0-devel
+#ARG DEEPSTREAM_BASE_IMAGE=deepstream:7.1.0-samples
+FROM $DEEPSTREAM_DEVEL_IMAGE AS builder
 ARG TARGETARCH
 
-# install/upgrade pip and builders
+# prepare python build environment
+RUN apt-get update && \
+    apt-get install --no-install-recommends -y \
+    python3-dev \
+    python3-venv
+
+RUN python3 -m venv /opt/venv --system-site-packages
+ENV PATH="/opt/venv/bin:$PATH" \
+    LD_LIBRARY_PATH=/opt/venv/lib:/opt/nvidia/deepstream/deepstream/lib:$LD_LIBRARY_PATH
+
 RUN python3 -m pip install --no-cache-dir --upgrade \
     build \
     ninja \
-    pip \
-    scikit-build \
-    setuptools \
-    wheel
+    scikit-build
 
 # install cmake
 ARG CMAKE_VER=3.27.7
@@ -38,14 +46,12 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then \
 
 # extra packages builders
 FROM builder AS extra-builder
+# TODO: Move to r36.3+
 FROM dustynv/l4t-pytorch:r36.2.0 AS extra-l4t-builder
 
 
 # Savant python package builder
 FROM builder AS savant-package-builder
-
-RUN apt-get update && \
-    apt-get install --no-install-recommends -y python3-venv
 
 WORKDIR /tmp/build
 COPY pyproject.toml README.md LICENSE ./
@@ -100,7 +106,7 @@ RUN python3 -m build --wheel --no-isolation && rm -rf _skbuild
 
 
 # Savant base container
-FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_BASE_IMAGE AS base
+FROM $DEEPSTREAM_BASE_IMAGE AS base
 ARG TARGETARCH
 ARG TARGETPLATFORM
 ARG DEEPSTREAM_VERSION
@@ -116,6 +122,7 @@ RUN apt-get update && \
         libmagic1 \
         libcairo2-dev \
         python3-pip \
+        python3-venv \
         python3-dev \
         python-gi-dev \
         python3-gst-1.0 \
@@ -139,16 +146,22 @@ ENV PYTHONUNBUFFERED=1 \
     CUPY_CACHE_DIR=/cache/cupy
 WORKDIR $PROJECT_PATH
 
-# add deepstream libs to path
-ENV LD_LIBRARY_PATH=/opt/nvidia/deepstream/deepstream/lib:$LD_LIBRARY_PATH
-
 # python to python3 by default
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 10
 
-# install requirements
-RUN python -m pip install --no-cache-dir --upgrade pip
+# set up python venv and install requirements
+RUN python3 -m venv /opt/venv --system-site-packages
+# TODO: Do we need to extend LD_LIBRARY_PATH? Savant libs can be in package.
+ENV PATH="/opt/venv/bin:$PATH" \
+    LD_LIBRARY_PATH=/opt/venv/lib:/opt/nvidia/deepstream/deepstream/lib:$LD_LIBRARY_PATH
 
-ARG OPENCV_VERSION=4.8.0
+ARG OPENCV_VERSION=4.12.0
+# local install
+#RUN --mount=type=bind,source=packages/linux/amd64/ds${DEEPSTREAM_VERSION}/opencv-${OPENCV_VERSION}-${TARGETARCH}-ds${DEEPSTREAM_VERSION}.tar.gz,target=/tmp/opencv.tar.gz \
+#    mkdir -p /tmp/dist && \
+#    tar -xf /tmp/opencv.tar.gz -C /tmp/dist && \
+#    dpkg -i /tmp/dist/OpenCV* && \
+#    rm -rf /tmp/dist
 RUN wget -qO- \
     ${PACKAGES_URL}/opencv-${OPENCV_VERSION}-${TARGETARCH}-ds${DEEPSTREAM_VERSION}.tar.gz \
     | tar xz && \
@@ -314,7 +327,7 @@ RUN wget -nv -O ${PYCUDA_WHL} ${PACKAGES_URL}/${PYCUDA_WHL} && \
     python -m pip install --no-cache-dir ${PYCUDA_WHL} && \
     rm ${PYCUDA_WHL}
 
-# onnx, onnxruntime (use extra-index to get the version with CUDA 12.2 support)
+# onnx, onnxruntime (use extra-index to get the version with CUDA 12 support)
 ARG ORT_VERSION=1.17.1
 RUN python -m pip install --no-cache-dir onnx onnxruntime-gpu --extra-index-url https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/onnxruntime-cuda-12/pypi/simple/
 
