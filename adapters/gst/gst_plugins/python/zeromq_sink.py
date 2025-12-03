@@ -25,8 +25,8 @@ from splitstream import splitfile
 
 from gst_plugins.python.zeromq_properties import ZEROMQ_PROPERTIES
 from savant.api.builder import add_objects_to_video_frame
-from savant.api.constants import DEFAULT_FRAMERATE, DEFAULT_NAMESPACE, DEFAULT_TIME_BASE
-from savant.api.enums import ExternalFrameType
+from savant_rs.py.api.constants import DEFAULT_FRAMERATE, DEFAULT_NAMESPACE, DEFAULT_TIME_BASE
+from savant_rs.py.api.enums import ExternalFrameType
 from savant.gstreamer import GObject, Gst, GstBase
 from savant.gstreamer.codecs import Codec, caps_to_codec
 from savant.gstreamer.event import parse_savant_frame_tags_event
@@ -36,7 +36,7 @@ from savant.gstreamer.utils import (
     required_property,
 )
 from savant.utils.log import LoggerMixin
-from savant.utils.zeromq import Defaults
+from savant_rs.py.utils.zeromq import Defaults
 
 EMBEDDED_FRAME_TYPE = 'embedded'
 DEFAULT_SOURCE_ID_PATTERN = 'source-%d'

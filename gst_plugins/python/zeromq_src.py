@@ -19,7 +19,7 @@ from savant_rs.webserver import is_shutdown_set as is_ws_shutdown_set
 
 from gst_plugins.python.pyfunc_common import handle_non_fatal_error, init_pyfunc
 from gst_plugins.python.zeromq_properties import ZEROMQ_PROPERTIES
-from savant.api.enums import ExternalFrameType
+from savant_rs.py.api.enums import ExternalFrameType
 from savant.api.parser import convert_ts
 from savant.base.frame_filter import DefaultIngressFilter
 from savant.base.pyfunc import PyFunc
@@ -31,7 +31,7 @@ from savant.gstreamer.utils import (
     required_property,
 )
 from savant.utils.log import LoggerMixin
-from savant.utils.zeromq import Defaults, ZeroMQMessage, ZeroMQSource
+from savant_rs.py.utils.zeromq import Defaults, ZeroMQMessage, ZeroMQSource
 
 HandlerResult = Optional[Tuple[Gst.FlowReturn, Optional[Gst.Buffer]]]
 

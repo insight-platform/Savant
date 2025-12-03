@@ -10,7 +10,7 @@ from pygstsavantframemeta import (
 )
 from savant_rs.pipeline2 import VideoPipeline
 
-from savant.api.constants import DEFAULT_FRAMERATE
+from savant_rs.py.api.constants import DEFAULT_FRAMERATE
 from savant.base.pyfunc import BasePyFuncPlugin
 from savant.gstreamer import Gst  # noqa: F401
 from savant.utils.source_info import SourceInfoRegistry
