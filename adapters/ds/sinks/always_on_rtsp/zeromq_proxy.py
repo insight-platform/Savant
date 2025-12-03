@@ -2,7 +2,7 @@ from typing import Optional
 
 from savant_rs.zmq import BlockingWriter, WriterConfigBuilder
 
-from savant.utils.zeromq import ZeroMQSource
+from savant_rs.py.utils.zeromq import ZeroMQSource
 
 
 class ZeroMqProxy:

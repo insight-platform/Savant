@@ -48,6 +48,17 @@ This release is based on DeepStream 7.0.
 | X86 Driver 525(Datacenter), 530+ Quadro/GeForce | Stable | 7.0        |
 | Jetson Orin JetPack 6.0                         | Stable | 7.0        |
 
+### 0.6.x Current Development
+
+This release is NOT recommended for production use. 
+The release **ADDS** support for **Blackwell** GPUs and **DROPS** support for **Pascal** GPUs. It supports Jetson Orin (Nano/NX/AGX) hardware.
+
+This release is based on a customized DeepStream 7.1 with TensorRT 10.9.
+
+| Requirements                                    | Status | DeepStream |
+|-------------------------------------------------|--------|------------|
+| X86 Driver 525(Datacenter), 530+ Quadro/GeForce | Stable | 7.1        |
+| Jetson Orin JetPack 6.2                         | Stable | 7.1        |
 
 ## Chat With Us
 
