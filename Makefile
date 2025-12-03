@@ -19,8 +19,8 @@ endif
 
 PROJECT_PATH := /opt/savant
 
-#BUILD_PROGRESS := plain
-BUILD_PROGRESS := auto
+BUILD_PROGRESS := plain
+#BUILD_PROGRESS := auto
 
 publish-local: build build-adapters-all build-watchdog
 	docker tag savant-deepstream$(PLATFORM_SUFFIX) ghcr.io/insight-platform/savant-deepstream$(PLATFORM_SUFFIX)
@@ -73,7 +73,7 @@ build-watchdog:
 		-t savant-watchdog$(PLATFORM_SUFFIX) .
 
 build-extra-packages:
-	docker buildx build --load \
+	docker buildx build --progress=$(BUILD_PROGRESS) --load \
 		--platform $(PLATFORM) \
 		--target extra$(PLATFORM_SUFFIX)-builder \
 		--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
@@ -95,29 +95,16 @@ build-extra:
 		-f docker/$(DOCKER_FILE) \
 		-t savant-deepstream$(PLATFORM_SUFFIX)-extra .
 
-build-opencv: build-opencv-amd64 build-opencv-arm64
-
-build-opencv-amd64:
-	docker buildx build --load \
-		--platform linux/amd64 \
+build-opencv-%:
+	docker buildx build --progress=$(BUILD_PROGRESS) --load \
+		--platform linux/$* \
 		--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
 		-f docker/Dockerfile.deepstream-opencv \
 		-t savant-opencv-builder .
 	docker run --rm \
-		--platform linux/amd64 \
-		-v `pwd`/packages/linux/amd64/ds$(DEEPSTREAM_VERSION):/out \
+		--platform linux/$* \
+		-v `pwd`/packages/linux/$*/ds$(DEEPSTREAM_VERSION):/out \
 		savant-opencv-builder
-
-build-opencv-arm64:
-	docker buildx build --load \
-		--platform linux/arm64 \
-		--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
-		-f docker/Dockerfile.deepstream-opencv \
-		-t savant-l4t-opencv-builder .
-	docker run --rm \
-		--platform linux/arm64 \
-		-v `pwd`/packages/linux/arm64/ds$(DEEPSTREAM_VERSION):/out \
-		savant-l4t-opencv-builder
 
 build-docs:
 	rm -rf docs/source/reference/api/generated
@@ -182,5 +169,5 @@ check:
 	ruff check .
 
 reformat:
-	ruff check . --fix
 	ruff format .
+	ruff check . --fix

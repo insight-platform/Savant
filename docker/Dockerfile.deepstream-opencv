@@ -2,8 +2,7 @@ ARG DEEPSTREAM_VERSION
 FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-triton-multiarch
 ARG TARGETARCH
 ARG DEEPSTREAM_VERSION
-ARG OPENCV_VERSION=4.8.0
-ARG PYTHON_VERSION=3.10
+ARG OPENCV_VERSION=4.12.0
 
 # install cmake
 ARG CMAKE_VER=3.27.7
@@ -15,7 +14,6 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
       wget -nv -O /tmp/cmake.sh https://github.com/Kitware/CMake/releases/download/v$CMAKE_VER/cmake-$CMAKE_VER-linux-aarch64.sh; \
       sh /tmp/cmake.sh --skip-license --prefix=/usr/local; \
       rm -f /tmp/cmake.sh; \
-      apt-get install -y file; \
     fi
 
 WORKDIR /opencv
@@ -27,14 +25,17 @@ RUN python3 -m pip install --no-cache-dir 'numpy>=1.22.4,<2.0'
 
 # add ffmpeg/gstreamer libs
 RUN /opt/nvidia/deepstream/deepstream/user_additional_install.sh
-RUN apt-get install -y \
-      libavcodec-dev \
-      libavformat-dev \
-      libavutil-dev \
-      libswscale-dev
+RUN apt-get update && apt-get install -y \
+    file \
+    libavcodec-dev \
+    libavformat-dev \
+    libavutil-dev \
+    libswscale-dev
 
 COPY libs/opencv/savant /opencv/opencv_contrib/modules/savant
 RUN --mount=type=cache,target=/tmp/opencv-cache \
+    PYTHON_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')") && \
+    echo "Detected Python version: $PYTHON_VERSION" && \
     cmake \
         -D CMAKE_BUILD_TYPE=RELEASE \
         -D OPENCV_EXTRA_MODULES_PATH=/opencv/opencv_contrib/modules  \
