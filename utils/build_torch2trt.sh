@@ -7,7 +7,9 @@
 : "${TMP_DIR:=/tmp}"
 
 cd $TMP_DIR || exit 1
-git clone --branch=${TORCH2TRT_VERSION} --depth=1 https://github.com/NVIDIA-AI-IOT/torch2trt
+#git clone --branch=${TORCH2TRT_VERSION} --depth=1 https://github.com/NVIDIA-AI-IOT/torch2trt
+# use master branch to get latest fixes
+git clone https://github.com/NVIDIA-AI-IOT/torch2trt
 cd torch2trt || exit 1
 
 # patch for python >= 3.10
@@ -15,7 +17,7 @@ sed 's|collections.Sequence|collections.abc.Sequence|g' -i torch2trt/converters/
 #cat torch2trt/converters/interpolate.py | grep Sequence
 
 # install requirements
-python3 -m pip install tensorrt~=8.6 torch packaging
+python3 -m pip install tensorrt torch packaging
 
 python3 setup.py bdist_wheel
 cp dist/torch2trt*.whl "$OUTPUT_DIR"

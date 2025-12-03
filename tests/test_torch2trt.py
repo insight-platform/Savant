@@ -8,9 +8,9 @@ from torchvision.models import ResNet18_Weights, resnet
 
 def test_torch2trt():
     """Test torch2trt."""
-    model = resnet.resnet18(weights=ResNet18_Weights.DEFAULT).eval().cuda()
+    model = resnet.resnet18().eval().cuda()
 
-    dummy_input = torch.randn(1, 3, 224, 224).cuda()
+    dummy_input = torch.full((1, 3, 224, 224), 0.5, dtype=torch.float32).cuda()
 
     model_trt = torch2trt(model, [dummy_input])
 

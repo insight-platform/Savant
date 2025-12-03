@@ -1,8 +1,8 @@
 ARG DEEPSTREAM_VERSION=7.1
-ARG DEEPSTREAM_DEVEL_IMAGE=nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-triton-multiarch
-ARG DEEPSTREAM_BASE_IMAGE=nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-samples-multiarch
-#ARG DEEPSTREAM_DEVEL_IMAGE=deepstream:7.1.0-devel
-#ARG DEEPSTREAM_BASE_IMAGE=deepstream:7.1.0-samples
+#ARG DEEPSTREAM_DEVEL_IMAGE=nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-triton-multiarch
+#ARG DEEPSTREAM_BASE_IMAGE=nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-samples-multiarch
+ARG DEEPSTREAM_DEVEL_IMAGE=deepstream:7.1.0-devel
+ARG DEEPSTREAM_BASE_IMAGE=deepstream:7.1.0-samples
 FROM $DEEPSTREAM_DEVEL_IMAGE AS builder
 ARG TARGETARCH
 
@@ -285,11 +285,15 @@ ARG USERNAME=container_user
 ARG USER_UID=1001
 ARG USER_GID=$USER_UID
 # Create the user
-RUN groupadd --gid $USER_GID $USERNAME && \
-	useradd --uid $USER_UID --gid $USER_GID -m $USERNAME
+RUN if ! getent group "${USER_GID}" >/dev/null; then \
+        groupadd -g "${USER_GID}" "${USERNAME}"; \
+    fi
+RUN if ! getent passwd "${USER_UID}" >/dev/null; then \
+        useradd -m -u "${USER_UID}" -g "${USER_GID}" "${USERNAME}"; \
+    fi
 
 RUN chown -R $USER_UID:$USER_GID $PROJECT_PATH
-USER $USERNAME
+USER ${USER_UID}:${USER_GID}
 
 WORKDIR $PROJECT_PATH/docs
 
@@ -305,7 +309,7 @@ ARG DEEPSTREAM_VERSION
 ARG PACKAGES_URL=https://eu-central-1.linodeobjects.com/savant-data/packages/${TARGETPLATFORM}/ds${DEEPSTREAM_VERSION}
 
 # torch, torchvision, torchaudio
-RUN python -m pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+RUN python -m pip install --no-cache-dir torch torchvision torchaudio
 
 ENV TORCH_HOME=/cache/models/torch_hub
 
@@ -315,21 +319,20 @@ ARG TORCH2TRT_WHL="torch2trt-${TORCH2TRT_VERSION}-py3-none-any.whl"
 RUN wget -nv -P /usr/local/lib/ ${PACKAGES_URL}/libtorch2trt_plugins.so && \
     ldconfig && \
     wget -nv -O ${TORCH2TRT_WHL} ${PACKAGES_URL}/${TORCH2TRT_WHL} && \
-    python -m pip install --no-cache-dir tensorrt~=8.6 && \
+    python -m pip install --no-cache-dir tensorrt~=10.9 && \
     python -m pip install --no-cache-dir ${TORCH2TRT_WHL} && \
     python -m pip install --no-cache-dir onnx-graphsurgeon && \
     rm ${TORCH2TRT_WHL}
 
 # pycuda
 ARG PYCUDA_VERSION=2024.1
-ARG PYCUDA_WHL="pycuda-${PYCUDA_VERSION}-cp310-cp310-linux_x86_64.whl"
+ARG PYCUDA_WHL="pycuda-${PYCUDA_VERSION}-cp312-cp312-linux_x86_64.whl"
 RUN wget -nv -O ${PYCUDA_WHL} ${PACKAGES_URL}/${PYCUDA_WHL} && \
     python -m pip install --no-cache-dir ${PYCUDA_WHL} && \
     rm ${PYCUDA_WHL}
 
 # onnx, onnxruntime (use extra-index to get the version with CUDA 12 support)
-ARG ORT_VERSION=1.17.1
-RUN python -m pip install --no-cache-dir onnx onnxruntime-gpu --extra-index-url https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/onnxruntime-cuda-12/pypi/simple/
+RUN python -m pip install --no-cache-dir onnx onnxruntime-gpu onnxscript --extra-index-url https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/onnxruntime-cuda-12/pypi/simple/
 
 # cython, polars, scikit-learn, jupyter, etc.
 RUN --mount=type=bind,source=requirements/extra.txt,target=/tmp/requirements.txt \
@@ -338,6 +341,7 @@ RUN --mount=type=bind,source=requirements/extra.txt,target=/tmp/requirements.txt
 
 # Extra l4t container
 # based on https://github.com/dusty-nv/jetson-containers
+# TODO: Refactor
 FROM base AS deepstream-l4t-extra
 
 RUN apt-get update && \
