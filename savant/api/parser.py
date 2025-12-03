@@ -12,7 +12,7 @@ from savant_rs.primitives.geometry import BBox, RBBox
 
 from savant.meta.constants import UNTRACKED_OBJECT_ID
 
-from .constants import DEFAULT_TIME_BASE
+from savant_rs.py.api.constants import DEFAULT_TIME_BASE
 
 _attribute_value_to_python = {
     AttributeValueType.BBox: lambda x: x.as_bbox(),

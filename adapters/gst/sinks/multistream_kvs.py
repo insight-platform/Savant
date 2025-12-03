@@ -21,12 +21,12 @@ from savant_rs.primitives import EndOfStream, VideoFrame
 
 from adapters.python.sinks.chunk_writer import ChunkWriter
 from gst_plugins.python.savant_rs_video_demux_common import FrameParams, build_caps
-from savant.api.enums import ExternalFrameType
+from savant_rs.py.api.enums import ExternalFrameType
 from savant.gstreamer import Gst, GstApp
 from savant.gstreamer.codecs import Codec
 from savant.utils.config import opt_config, req_config, strtobool
 from savant.utils.log import get_logger, init_logging
-from savant.utils.zeromq import ZeroMQMessage, ZeroMQSource
+from savant_rs.py.utils.zeromq import ZeroMQMessage, ZeroMQSource
 
 LOGGER_PREFIX = 'adapters.multistream_kvs_sink'
 

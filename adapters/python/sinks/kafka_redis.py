@@ -19,7 +19,7 @@ from adapters.python.shared.kafka_redis import (
     BaseKafkaRedisAdapter,
     run_kafka_redis_adapter,
 )
-from savant.api.enums import ExternalFrameType
+from savant_rs.py.api.enums import ExternalFrameType
 from savant.client import SinkBuilder
 from savant.client.runner.sink import SinkResult
 from savant.utils.config import opt_config, req_config, strtobool
