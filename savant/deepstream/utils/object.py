@@ -264,7 +264,7 @@ def nvds_init_obj_draw_label(
         data = pyds.alloc_custom_struct(user_meta)
         data.message = draw_label
         user_meta.user_meta_data = data
-        user_meta.base_meta.meta_type = OBJ_DRAW_LABEL_META_TYPE
+        user_meta.base_meta.meta_type = pyds.NvDsMetaType(OBJ_DRAW_LABEL_META_TYPE)
         pyds.nvds_add_user_meta_to_obj(obj_meta, user_meta)
     else:
         raise MetaPoolError('Error in acquiring user meta from pool.')
