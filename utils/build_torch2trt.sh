@@ -7,9 +7,7 @@
 : "${TMP_DIR:=/tmp}"
 
 cd $TMP_DIR || exit 1
-#git clone --branch=${TORCH2TRT_VERSION} --depth=1 https://github.com/NVIDIA-AI-IOT/torch2trt
-# use master branch to get latest fixes
-git clone https://github.com/NVIDIA-AI-IOT/torch2trt
+git clone --branch=${TORCH2TRT_VERSION} --depth=1 https://github.com/NVIDIA-AI-IOT/torch2trt
 cd torch2trt || exit 1
 
 # patch for python >= 3.10
