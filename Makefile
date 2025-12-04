@@ -6,15 +6,24 @@ SAVANT_VERSION := $(shell cat savant/VERSION | awk -F= '$$1=="SAVANT"{print $$2}
 SAVANT_RS_VERSION := $(shell cat savant/VERSION | awk -F= '$$1=="SAVANT_RS"{print $$2}' | sed 's/"//g')
 DEEPSTREAM_VERSION := $(shell cat savant/VERSION | awk -F= '$$1=="DEEPSTREAM"{print $$2}' | sed 's/"//g')
 DOCKER_FILE := Dockerfile.deepstream
-PLATFORM := linux/amd64
-ifeq ("$(shell uname -m)", "aarch64")
+DEEPSTREAM_BASE_IMAGE := nvcr.io/nvidia/deepstream:$(DEEPSTREAM_VERSION)-samples-multiarch
+DEEPSTREAM_DEVEL_IMAGE := nvcr.io/nvidia/deepstream:$(DEEPSTREAM_VERSION)-triton-multiarch
+
+ARCH := $(shell uname -m)
+ifeq ($(ARCH), x86_64)
+	PLATFORM := linux/amd64
+	PLATFORM_SUFFIX :=
+	RUNTIME := --gpus=all
+    ifeq ($(DEEPSTREAM_VERSION), 7.1)
+    	DEEPSTREAM_BASE_IMAGE := ghcr.io/insight-platform/deepstream:7.1.0-samples
+    	DEEPSTREAM_DEVEL_IMAGE := ghcr.io/insight-platform/deepstream:7.1.0-devel
+  	endif
+else ifeq ($(ARCH), aarch64)
 	PLATFORM := linux/arm64
-endif
-PLATFORM_SUFFIX :=
-RUNTIME := --gpus=all
-ifeq ("$(PLATFORM)", "linux/arm64")
-    PLATFORM_SUFFIX := -l4t
-    RUNTIME := --runtime=nvidia
+	PLATFORM_SUFFIX := -l4t
+	RUNTIME := --runtime=nvidia
+else
+    $(error Unsupported architecture: $(ARCH))
 endif
 
 PROJECT_PATH := /opt/savant
@@ -42,6 +51,8 @@ build:
 		--target base \
 		--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
 		--build-arg SAVANT_RS_VERSION=$(SAVANT_RS_VERSION) \
+		--build-arg DEEPSTREAM_BASE_IMAGE=$(DEEPSTREAM_BASE_IMAGE) \
+		--build-arg DEEPSTREAM_DEVEL_IMAGE=$(DEEPSTREAM_DEVEL_IMAGE) \
 		-f docker/$(DOCKER_FILE) \
 		-t savant-deepstream$(PLATFORM_SUFFIX) .
 
@@ -50,6 +61,8 @@ build-adapters-deepstream:
 		--target adapters \
 		--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
 		--build-arg SAVANT_RS_VERSION=$(SAVANT_RS_VERSION) \
+		--build-arg DEEPSTREAM_BASE_IMAGE=$(DEEPSTREAM_BASE_IMAGE) \
+		--build-arg DEEPSTREAM_DEVEL_IMAGE=$(DEEPSTREAM_DEVEL_IMAGE) \
 		-f docker/$(DOCKER_FILE) \
 		-t savant-adapters-deepstream$(PLATFORM_SUFFIX) .
 
@@ -77,6 +90,8 @@ build-extra-packages:
 		--platform $(PLATFORM) \
 		--target extra$(PLATFORM_SUFFIX)-builder \
 		--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
+		--build-arg DEEPSTREAM_BASE_IMAGE=$(DEEPSTREAM_BASE_IMAGE) \
+		--build-arg DEEPSTREAM_DEVEL_IMAGE=$(DEEPSTREAM_DEVEL_IMAGE) \
 		-f docker/$(DOCKER_FILE) \
 		-t savant-extra$(PLATFORM_SUFFIX)-builder .
 	docker run --rm $(RUNTIME) \
@@ -92,6 +107,8 @@ build-extra:
 		--target deepstream$(PLATFORM_SUFFIX)-extra \
 		--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
 		--build-arg SAVANT_RS_VERSION=$(SAVANT_RS_VERSION) \
+		--build-arg DEEPSTREAM_BASE_IMAGE=$(DEEPSTREAM_BASE_IMAGE) \
+		--build-arg DEEPSTREAM_DEVEL_IMAGE=$(DEEPSTREAM_DEVEL_IMAGE) \
 		-f docker/$(DOCKER_FILE) \
 		-t savant-deepstream$(PLATFORM_SUFFIX)-extra .
 
@@ -99,6 +116,7 @@ build-opencv-%:
 	docker buildx build --progress=$(BUILD_PROGRESS) --load \
 		--platform linux/$* \
 		--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
+		--build-arg DEEPSTREAM_DEVEL_IMAGE=$(DEEPSTREAM_DEVEL_IMAGE) \
 		-f docker/Dockerfile.deepstream-opencv \
 		-t savant-opencv-builder .
 	docker run --rm \

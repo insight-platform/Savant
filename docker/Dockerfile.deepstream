@@ -1,8 +1,6 @@
 ARG DEEPSTREAM_VERSION=7.1
-#ARG DEEPSTREAM_DEVEL_IMAGE=nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-triton-multiarch
-#ARG DEEPSTREAM_BASE_IMAGE=nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-samples-multiarch
-ARG DEEPSTREAM_DEVEL_IMAGE=deepstream:7.1.0-devel
-ARG DEEPSTREAM_BASE_IMAGE=deepstream:7.1.0-samples
+ARG DEEPSTREAM_DEVEL_IMAGE=nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-triton-multiarch
+ARG DEEPSTREAM_BASE_IMAGE=nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-samples-multiarch
 FROM $DEEPSTREAM_DEVEL_IMAGE AS builder
 ARG TARGETARCH
 
