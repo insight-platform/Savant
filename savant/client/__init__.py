@@ -1,11 +1,11 @@
 """Source/Sink framework for development and QA purposes."""
 
-from .builder.sink import SinkBuilder
-from .builder.source import SourceBuilder
-from .frame_source import FrameSource
-from .image_source import JpegSource, PngSource
-from .log_provider import LogProvider
-from .log_provider.jaeger import JaegerLogProvider
+from savant_rs.py.client.builder.sink import SinkBuilder
+from savant_rs.py.client.builder.source import SourceBuilder
+from savant_rs.py.client.frame_source import FrameSource
+from savant_rs.py.client.image_source import JpegSource, PngSource
+from savant_rs.py.client.log_provider import LogProvider
+from savant_rs.py.client.log_provider.jaeger import JaegerLogProvider
 
 __all__ = [
     'SinkBuilder',

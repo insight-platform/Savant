@@ -24,7 +24,7 @@ from savant.gstreamer.codecs import Codec
 from savant.utils.config import opt_config, req_config
 from savant.utils.log import get_logger, init_logging
 from savant.utils.welcome import get_starting_message
-from savant.utils.zeromq import ZeroMQMessage, ZeroMQSource
+from savant_rs.py.utils.zeromq import ZeroMQMessage, ZeroMQSource
 
 LOGGER_NAME = 'adapters.video_files_sink'
 DEFAULT_CHUNK_SIZE = 10000

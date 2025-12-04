@@ -9,7 +9,7 @@ from savant_rs.primitives.geometry import BBox
 from savant_rs.utils import TelemetrySpan
 
 from savant.api.builder import build_attribute_value
-from savant.api.constants import DEFAULT_NAMESPACE
+from savant_rs.py.api.constants import DEFAULT_NAMESPACE
 from savant.api.parser import parse_attribute_value
 from savant.deepstream.utils.attribute import nvds_remove_obj_attrs
 from savant.meta.errors import MetaValueError

@@ -14,7 +14,7 @@ from samples.face_reid.utils import pack_person_id_img_n
 from savant_rs.primitives import Attribute, AttributeValue, VideoFrameUpdate
 
 from savant.client import JpegSource, SinkBuilder, SourceBuilder
-from savant.client.utils import resize_preserving_aspect
+from savant_rs.py.client.utils import resize_preserving_aspect
 from savant.utils.log import get_logger, init_logging
 
 

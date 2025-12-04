@@ -12,7 +12,7 @@ import click
 
 sys.path.append(str(Path(__file__).parent.parent))
 from savant.utils.platform import is_aarch64
-from savant.utils.re_patterns import socket_uri_pattern
+from savant_rs.py.utils.re_patterns import socket_uri_pattern
 from savant.utils.version import version
 
 # use version.SAVANT or 'latest'
