@@ -102,6 +102,20 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ github.token }}
 
+      - name: Determine base image
+        run: |
+          DEEPSTREAM_VERSION=${{ needs.init.outputs.deepstream-version }}
+          DEEPSTREAM_BASE_IMAGE=nvcr.io/nvidia/deepstream:${DEEPSTREAM_VERSION}-samples-multiarch
+          DEEPSTREAM_DEVEL_IMAGE=nvcr.io/nvidia/deepstream:${DEEPSTREAM_VERSION}-devel-multiarch          
+          if [ "${{ matrix.runner }}" = "X86" ]; then
+            if [ "${DEEPSTREAM_VERSION}" = "7.1" ]; then
+              DEEPSTREAM_BASE_IMAGE=ghcr.io/insight-platform/deepstream:7.1.0-samples
+              DEEPSTREAM_DEVEL_IMAGE=ghcr.io/insight-platform/deepstream:7.1.0-devel
+            fi
+          fi
+          echo "DEEPSTREAM_BASE_IMAGE=${DEEPSTREAM_BASE_IMAGE}" >> $GITHUB_ENV
+          echo "DEEPSTREAM_DEVEL_IMAGE=${DEEPSTREAM_DEVEL_IMAGE}" >> $GITHUB_ENV
+
       # base image
       - name: Build and push savant-deepstream docker image
         uses: docker/build-push-action@v6
@@ -113,6 +127,8 @@ jobs:
             SAVANT_VERSION=${{ needs.init.outputs.savant-version }}
             SAVANT_RS_VERSION=${{ needs.init.outputs.savant-rs-version }}
             DEEPSTREAM_VERSION=${{ needs.init.outputs.deepstream-version }}
+            DEEPSTREAM_BASE_IMAGE=${{ env.DEEPSTREAM_BASE_IMAGE }}
+            DEEPSTREAM_DEVEL_IMAGE=${{ env.DEEPSTREAM_DEVEL_IMAGE }}
           target: base
           push: true
 
@@ -127,6 +143,8 @@ jobs:
             SAVANT_VERSION=${{ needs.init.outputs.savant-version }}
             SAVANT_RS_VERSION=${{ needs.init.outputs.savant-rs-version }}
             DEEPSTREAM_VERSION=${{ needs.init.outputs.deepstream-version }}
+            DEEPSTREAM_BASE_IMAGE=${{ env.DEEPSTREAM_BASE_IMAGE }}
+            DEEPSTREAM_DEVEL_IMAGE=${{ env.DEEPSTREAM_DEVEL_IMAGE }}
           target: adapters
           push: true
 
@@ -141,6 +159,8 @@ jobs:
             SAVANT_VERSION=${{ needs.init.outputs.savant-version }}
             SAVANT_RS_VERSION=${{ needs.init.outputs.savant-rs-version }}
             DEEPSTREAM_VERSION=${{ needs.init.outputs.deepstream-version }}
+            DEEPSTREAM_BASE_IMAGE=${{ env.DEEPSTREAM_BASE_IMAGE }}
+            DEEPSTREAM_DEVEL_IMAGE=${{ env.DEEPSTREAM_DEVEL_IMAGE }}
           target: ${{ matrix.docker_image_suffix }}-extra
           push: true
 
