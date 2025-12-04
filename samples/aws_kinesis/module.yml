@@ -20,19 +20,18 @@ pipeline:
     - element: nvinfer@detector
       name: peoplenet
       model:
-        format: etlt
         remote:
-          url: s3://savant-data/models/peoplenet/peoplenet_pruned_v2.0.zip
-          checksum_url: s3://savant-data/models/peoplenet/peoplenet_pruned_v2.0.md5
+          url: s3://savant-data/models/peoplenet/peoplenet_deployable_quantized_onnx_v2.6.3.zip
+          checksum_url: s3://savant-data/models/peoplenet/peoplenet_deployable_quantized_onnx_v2.6.3.md5
           parameters:
             endpoint: https://eu-central-1.linodeobjects.com
-        model_file: resnet34_peoplenet_pruned.etlt
+        model_file: resnet34_peoplenet.onnx
         input:
-          layer_name: input_1
+          layer_name: input_1:0
           shape: [ 3, 544, 960 ]
           scale_factor: 0.0039215697906911373
         output:
-          layer_names: [ output_bbox/BiasAdd, output_cov/Sigmoid ]
+          layer_names: [ output_bbox/BiasAdd:0, output_cov/Sigmoid:0 ]
           num_detected_classes: 3
           objects:
             - class_id: 0

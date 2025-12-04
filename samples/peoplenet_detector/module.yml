@@ -86,24 +86,18 @@ pipeline:
       name: peoplenet
       # model definition
       model:
-        # format of the provided model file
-        format: etlt
-        # remote storage where the model files can be found
-        # skip if providing model files locally
         remote:
-          url: s3://savant-data/models/peoplenet/peoplenet_pruned_v2.0.zip
-          checksum_url: s3://savant-data/models/peoplenet/peoplenet_pruned_v2.0.md5
+          url: s3://savant-data/models/peoplenet/peoplenet_deployable_quantized_onnx_v2.6.3.zip
+          checksum_url: s3://savant-data/models/peoplenet/peoplenet_deployable_quantized_onnx_v2.6.3.md5
           parameters:
             endpoint: https://eu-central-1.linodeobjects.com
-
-        # model file name, without location
-        model_file: resnet34_peoplenet_pruned.etlt  # v2.0 Accuracy: 84.3 Size 20.9 MB
+        model_file: resnet34_peoplenet.onnx
         batch_size: ${parameters.batch_size}
 
         # configuration of input data and custom preprocessing methods
         input:
           # model input layer name
-          layer_name: input_1
+          layer_name: input_1:0
           # model input layer shape
           shape: [3, 544, 960]
           # pixel scaling/normalization factor
@@ -112,7 +106,7 @@ pipeline:
         # configuration of model output
         output:
           # model output layer names
-          layer_names: [output_bbox/BiasAdd, output_cov/Sigmoid]
+          layer_names: [output_bbox/BiasAdd:0, output_cov/Sigmoid:0]
           # number of detected classes for detector model
           num_detected_classes: 3
           # specify which detected objects are included in output
