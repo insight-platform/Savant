@@ -164,7 +164,7 @@ Async example (both source and sink):
 
     asyncio.run(main())
 
-.. currentmodule:: savant.client
+.. currentmodule:: savant_rs.py.client
 
 Builders
 --------
@@ -174,8 +174,8 @@ Builders
     :nosignatures:
     :template: autosummary/class.rst
 
-    SourceBuilder
-    SinkBuilder
+    savant_rs.py.client.SourceBuilder
+    savant_rs.py.client.SinkBuilder
 
 Frame sources
 -------------
@@ -185,9 +185,9 @@ Frame sources
     :nosignatures:
     :template: autosummary/class.rst
 
-    FrameSource
-    JpegSource
-    PngSource
+    savant_rs.py.client.FrameSource
+    savant_rs.py.client.JpegSource
+    savant_rs.py.client.PngSource
 
 Log providers
 -------------
@@ -197,8 +197,8 @@ Log providers
     :nosignatures:
     :template: autosummary/class.rst
 
-    LogProvider
-    JaegerLogProvider
+    savant_rs.py.client.LogProvider
+    savant_rs.py.client.JaegerLogProvider
 
 Results
 -------
@@ -208,8 +208,8 @@ Results
     :nosignatures:
     :template: autosummary/class.rst
 
-    runner.source.SourceResult
-    runner.sink.SinkResult
+    savant_rs.py.client.runner.source.SourceResult
+    savant_rs.py.client.runner.sink.SinkResult
 
 Runners
 -------
@@ -219,7 +219,7 @@ Runners
     :nosignatures:
     :template: autosummary/class.rst
 
-    runner.source.SourceRunner
-    runner.source.AsyncSourceRunner
-    runner.sink.SinkRunner
-    runner.sink.AsyncSinkRunner
+    savant_rs.py.client.runner.source.SourceRunner
+    savant_rs.py.client.runner.source.AsyncSourceRunner
+    savant_rs.py.client.runner.sink.SinkRunner
+    savant_rs.py.client.runner.sink.AsyncSinkRunner
