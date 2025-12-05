@@ -6,4 +6,3 @@ ENV TORCH_HOME=/cache/models/torch_hub
 RUN export PYTHONPATH=/cache/models/torch_hub:$PYTHONPATH
 
 RUN pip3 install prefetch_generator matplotlib yacs
-

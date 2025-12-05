@@ -51,9 +51,7 @@ class PyTorchInfer(NvDsPyFuncPlugin):
         with nvds_to_gpu_mat(buffer, frame_meta.frame_meta) as frame_mat:
             with torch.inference_mode():
                 w, h = frame_mat.size()
-                input_image = cv2.cuda.GpuMat()
                 input_image = cv2.cuda.resize(frame_mat, (640, 480), stream=stream)
-
                 input_tensor = opencv_gpu_mat_as_pytorch_tensor(input_image).permute(
                     2, 0, 1
                 )
@@ -97,31 +95,28 @@ class PyTorchInfer(NvDsPyFuncPlugin):
         inf_out = det_out[0].squeeze(0)
         x = inf_out[inf_out[:, 4] > self.conf_threshold, :]
         x[:, 5:] *= x[:, 4:5]  # conf = obj_conf * cls_conf
-        box = xywh2xyxy(x[:, :4])
-        i = torchvision.ops.nms(box, x[:, 4], self.iou_threshold)
+        i = torchvision.ops.nms(xywh2xyxy(x[:, :4]), x[:, 4], self.iou_threshold)
         output = x[i]
-        output[:, :4] = scale_coords(
-            input_tensor.shape[2:], output[:, :4], (h, w)
-        ).round()
-        for obj_meta_tensor in output:
-            bbox = BBox(
-                float(obj_meta_tensor[0]),
-                float(obj_meta_tensor[1]),
-                float(obj_meta_tensor[2]),
-                float(obj_meta_tensor[3]),
-            )
+        output[:, :4] = scale_coords(input_tensor.shape[2:], output[:, :4], (h, w))
+        # (xc, yc, w, h) -> (left, top, right, bottom), clip to image size
+        output[:, 0] = (output[:, 0] - output[:, 2] / 2).clamp(0, w)  # left
+        output[:, 1] = (output[:, 1] - output[:, 3] / 2).clamp(0, h)  # top
+        output[:, 2] = (output[:, 0] + output[:, 2]).clamp(0, w)  # right
+        output[:, 3] = (output[:, 1] + output[:, 3]).clamp(0, h)  # bottom
+        for det in output:
             obj_meta = ObjectMeta(
                 element_name='yolop',
                 label='car',
-                bbox=bbox,
-                confidence=float(obj_meta_tensor[4]),
+                bbox=BBox.ltrb(
+                    det[0].item(), det[1].item(), det[2].item(), det[3].item()
+                ),
+                confidence=float(det[4]),
             )
             frame_meta.add_obj_meta(obj_meta)
 
 
 def xywh2xyxy(x):
-    # Convert nx4 boxes from [x_center, y_center, w, h] to [x1, y1, x2, y2]
-    # where xy1=top-left, xy2=bottom-right
+    """Convert nx4 boxes from (xc, yc, w, h) to (left, top, right, bottom) format."""
     y = torch.zeros_like(x)
     y[:, 0] = x[:, 0] - x[:, 2] / 2  # top left x
     y[:, 1] = x[:, 1] - x[:, 3] / 2  # top left y
@@ -130,15 +125,8 @@ def xywh2xyxy(x):
     return y
 
 
-def clip_coords(boxes, img_shape):
-    # Clip bounding xyxy bounding boxes to image shape (height, width)
-    boxes[:, 0].clamp_(0, img_shape[1])  # x1
-    boxes[:, 1].clamp_(0, img_shape[0])  # y1
-    boxes[:, 2].clamp_(0, img_shape[1])  # x2
-    boxes[:, 3].clamp_(0, img_shape[0])  # y2
-
-
 def scale_coords(img1_shape, coords, img0_shape):
+    """Rescale coords (xc, yc, w, h) from img1_shape to img0_shape."""
     coords[:, :4] /= torch.tensor(
         [
             img1_shape[1] / img0_shape[1],
@@ -149,5 +137,4 @@ def scale_coords(img1_shape, coords, img0_shape):
         device='cuda',
     )
 
-    clip_coords(coords, img0_shape)
     return coords
