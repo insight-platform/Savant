@@ -7,8 +7,8 @@ from pygstsavantframemeta import gst_buffer_add_savant_frame_meta
 from pynvbufsurfacegenerator import NvBufSurfaceGenerator
 from savant_rs.pipeline2 import VideoPipeline
 from savant_rs.primitives import VideoFrame, VideoFrameContent
-
 from savant_rs.py.api.constants import DEFAULT_TIME_BASE
+
 from savant.config.schema import PipelineElement
 from savant.gstreamer import Gst
 from savant.gstreamer.codecs import AUXILIARY_STREAM_CODECS, CODEC_BY_NAME

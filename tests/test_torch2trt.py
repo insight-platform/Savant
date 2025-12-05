@@ -3,7 +3,7 @@
 import numpy as np
 import torch
 from torch2trt import torch2trt
-from torchvision.models import ResNet18_Weights, resnet
+from torchvision.models import resnet
 
 
 def test_torch2trt():

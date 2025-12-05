@@ -3,7 +3,7 @@
 import numpy as np
 import onnxruntime as ort
 import torch
-from torchvision.models import ResNet18_Weights, resnet
+from torchvision.models import resnet
 
 
 def test_onnxruntime():

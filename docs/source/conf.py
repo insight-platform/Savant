@@ -12,7 +12,6 @@
 #
 import os
 import sys
-import savant_rs
 
 sys.path.append(os.path.abspath('./_ext'))
 

@@ -5,6 +5,8 @@ from dataclasses import dataclass, replace
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from savant_rs.primitives import EndOfStream, VideoFrame, VideoFrameContent
+from savant_rs.py.api.enums import ExternalFrameType
+from savant_rs.py.utils.zeromq import Defaults
 from savant_rs.utils import PropagatedContext
 from savant_rs.zmq import (
     BlockingWriter,
@@ -13,14 +15,12 @@ from savant_rs.zmq import (
     WriterResultSuccess,
 )
 
-from savant_rs.py.api.enums import ExternalFrameType
 from savant.api.parser import convert_ts
 from savant.base.pyfunc import PyFunc
 from savant.config.schema import SinkElement
 from savant.utils.log import get_logger
 
 from .registry import Registry
-from savant_rs.py.utils.zeromq import Defaults
 
 logger = get_logger(__name__)
 

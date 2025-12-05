@@ -6,8 +6,8 @@ from typing import Any, NamedTuple, Optional
 from pygstsavantframemeta import gst_buffer_add_savant_frame_meta
 from savant_rs.pipeline2 import VideoPipeline
 from savant_rs.primitives import VideoFrame, VideoFrameContent, VideoFrameTransformation
-
 from savant_rs.py.api.constants import DEFAULT_FRAMERATE, DEFAULT_TIME_BASE
+
 from savant.gstreamer import GObject, Gst, GstBase  # noqa: F401
 from savant.gstreamer.utils import (
     RequiredPropertyError,
