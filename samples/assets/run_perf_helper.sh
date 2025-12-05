@@ -91,5 +91,5 @@ function run_perf {
 
   config_perf "$module_config" "$perf_config" "${YQ_ARGS[@]}"
 
-  ./scripts/run_module.py "$perf_config"
+  LOGLEVEL=info ./scripts/run_module.py "$perf_config"
 }
