@@ -410,8 +410,10 @@ class SourceElement(PipelineElement):
 class SinkElement(PipelineElement):
     """A pipeline element that produces pipeline output."""
 
-    egress_frame_filter: PyFunc = PyFunc(
-        module='savant.base.frame_filter', class_name='DefaultEgressFilter'
+    egress_frame_filter: PyFunc = field(
+        default_factory=lambda: PyFunc(
+            module='savant.base.frame_filter', class_name='DefaultEgressFilter'
+        )
     )
     """Frame filter for egress frames."""
 

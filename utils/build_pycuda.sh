@@ -5,6 +5,8 @@
 : "${OUTPUT_DIR:=/opt}"
 : "${TMP_DIR:=/tmp}"
 
+python3 -m pip install numpy>=1.22.4,<2.0
+
 cd $TMP_DIR || exit 1
 git clone --branch=${PYCUDA_VERSION} --depth=1 --recursive https://github.com/inducer/pycuda
 cd pycuda || exit 1

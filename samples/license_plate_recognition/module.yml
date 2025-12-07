@@ -71,24 +71,23 @@ pipeline:
                 kwargs:
                   confidence_threshold: 0.6
                   nms_iou_threshold: 0.5
-                  min_width: 30
-                  min_height: 40
+                  min_width: 60
+                  min_height: 60
 
     # LPD https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/lpdnet
     - element: nvinfer@detector
       name: LPDNet
       model:
         remote:
-          url: s3://savant-data/models/lpdnet/lpdnet_v2.2.zip
-          checksum_url: s3://savant-data/models/lpdnet/lpdnet_v2.2.md5
+          url: s3://savant-data/models/lpdnet/lpdnet_pruned_v2.3.1.zip
+          checksum_url: s3://savant-data/models/lpdnet/lpdnet_pruned_v2.3.1.md5
           parameters:
             endpoint: https://eu-central-1.linodeobjects.com
-        format: onnx
         model_file: LPDNet_usa_pruned_tao5.onnx
         batch_size: 16
         input:
           object: yolov8n.Car
-          layer_name: input_1
+          layer_name: input_1:0
           shape: [3, 480, 640]
           scale_factor: 0.0039215697906911373
         output:
@@ -101,8 +100,8 @@ pipeline:
                 kwargs:
                   confidence_threshold: 0.1
                   nms_iou_threshold: 0.5
-                  min_width: 25
-                  min_height: 18
+                  min_width: 24
+                  min_height: 16
 
     # tracker
     - element: nvtracker
@@ -118,18 +117,15 @@ pipeline:
       name: LPRNet
       model:
         remote:
-          url: s3://savant-data/models/nvidia_license_plate_recognition/lpr_usa.zip
-          checksum_url: s3://savant-data/models/nvidia_license_plate_recognition/lpr_usa.md5
+          url: s3://savant-data/models/lprnet/lprnet_deployable_onnx_v1.1.zip
+          checksum_url: s3://savant-data/models/lprnet/lprnet_deployable_onnx_v1.1.md5
           parameters:
             endpoint: https://eu-central-1.linodeobjects.com
-        format: etlt
-        model_file: us_lprnet_baseline18_deployable.etlt
-        tlt_model_key: nvidia_tlt
-        precision: fp16
+        model_file: us_lprnet_baseline18_deployable.onnx
         batch_size: 16
         input:
           object: LPDNet.lpd
-          layer_name: input_1
+          layer_name: image_input
           shape: [3, 48, 96]
           scale_factor: 0.00392156862745098
         output:

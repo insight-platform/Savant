@@ -5,11 +5,13 @@ from typing import Tuple
 
 from confluent_kafka import KafkaError, Producer
 from redis.asyncio import Redis
+from savant.client.runner.sink import SinkResult
 from savant_rs.primitives import (
     VideoFrame,
     VideoFrameContent,
     VideoFrameTranscodingMethod,
 )
+from savant_rs.py.api.enums import ExternalFrameType
 from savant_rs.utils.serialization import save_message_to_bytes
 
 from adapters.python.shared.kafka_redis import (
@@ -19,9 +21,7 @@ from adapters.python.shared.kafka_redis import (
     BaseKafkaRedisAdapter,
     run_kafka_redis_adapter,
 )
-from savant_rs.py.api.enums import ExternalFrameType
 from savant.client import SinkBuilder
-from savant.client.runner.sink import SinkResult
 from savant.utils.config import opt_config, req_config, strtobool
 
 

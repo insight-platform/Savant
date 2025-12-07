@@ -2,6 +2,7 @@
 
 import os
 import pathlib
+import re
 import string
 import subprocess
 import sys
@@ -12,7 +13,6 @@ import click
 
 sys.path.append(str(Path(__file__).parent.parent))
 from savant.utils.platform import is_aarch64
-from savant_rs.py.utils.re_patterns import socket_uri_pattern
 from savant.utils.version import version
 
 # use version.SAVANT or 'latest'
@@ -22,6 +22,8 @@ DEEPSTREAM_VERSION = version.DEEPSTREAM
 # docker registry to use with scripts, set to "None" to use local images
 DOCKER_REGISTRY = 'ghcr.io/insight-platform'
 # DOCKER_REGISTRY = None
+
+socket_uri_pattern = re.compile('([a-z]+\\+[a-z]+:)?([a-z]+://.*)')
 
 
 def docker_image_option(default_docker_image_name: str, tag: Optional[str] = None):

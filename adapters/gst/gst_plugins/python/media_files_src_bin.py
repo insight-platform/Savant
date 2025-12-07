@@ -7,6 +7,7 @@ from urllib.parse import urlparse
 from urllib.request import urlretrieve
 
 from savant_rs.py.api.constants import DEFAULT_FRAMERATE
+
 from savant.gstreamer import GLib, GObject, Gst
 from savant.gstreamer.codecs import Codec, caps_to_codec
 from savant.gstreamer.utils import on_pad_event

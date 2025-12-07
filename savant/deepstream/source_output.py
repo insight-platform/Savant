@@ -11,8 +11,8 @@ from pygstsavantframemeta import (
 )
 from savant_rs.pipeline2 import VideoPipeline
 from savant_rs.primitives import VideoFrameContent
-
 from savant_rs.py.api.constants import DEFAULT_NAMESPACE
+
 from savant.config.schema import FrameProcessingCondition, PipelineElement
 from savant.gstreamer import Gst  # noqa:F401
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec, CodecInfo
