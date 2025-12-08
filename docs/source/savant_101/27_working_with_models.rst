@@ -36,7 +36,7 @@ The ``model_file`` parameter defines the name of the file with the model. The na
 
 The ``engine_file`` parameter defines the name for the TensorRT-generated engine file. If this parameter is set, then when the pipeline is launched, the presence of this file is checked first, and if it is present, the model will be loaded from it.
 
-If the prepared model engine file does not exist, then the pipeline will generate the engine for the model. If you are not using a specially generated, pre-created TensorRT engine file, it is recommended not to set this field: the name will be generated automatically. Engiine files are stored in the model cache directory under the name of the unit.
+If the prepared model engine file does not exist, then the pipeline will generate the engine for the model. If you are not using a specially generated, pre-created TensorRT engine file, it is recommended not to set this field: the name will be generated automatically. Engine files are stored in the model cache directory under the name of the unit.
 
 The ``remote`` section specifies a URL and credentials for accessing a remote model storage. Full description below. Savant supports downloading the models from remote locations so you can easily update them without rebuilding docker images.
 
