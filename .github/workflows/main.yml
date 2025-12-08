@@ -312,7 +312,7 @@ jobs:
   # build documentation
   build-docs:
     needs: [init, build-savant-deepstream]
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, X64]
     container:
       image: ${{ needs.init.outputs.docs-docker-image }}
     permissions:
