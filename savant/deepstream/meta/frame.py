@@ -6,10 +6,10 @@ from typing import Dict, Iterator, Optional, Tuple, Union
 import pyds
 from savant_rs.primitives import VideoFrame
 from savant_rs.primitives.geometry import BBox
+from savant_rs.py.api.constants import DEFAULT_NAMESPACE
 from savant_rs.utils import TelemetrySpan
 
 from savant.api.builder import build_attribute_value
-from savant_rs.py.api.constants import DEFAULT_NAMESPACE
 from savant.api.parser import parse_attribute_value
 from savant.deepstream.utils.attribute import nvds_remove_obj_attrs
 from savant.meta.errors import MetaValueError
@@ -189,7 +189,9 @@ class NvDsFrameMeta(AbstractContextManager, LoggerMixin):
             if not object_meta.bbox.inside_viewport(
                 self.video_frame.width, self.video_frame.height
             ):
-                frame_box = BBox.ltrb(0, 0, self.video_frame.width, self.video_frame.height)
+                frame_box = BBox.ltrb(
+                    0, 0, self.video_frame.width, self.video_frame.height
+                )
                 raise MetaValueError(
                     f'Object {object_meta.element_name}/{object_meta.label} '
                     f'with ID={object_meta.uid} is out of viewport: '

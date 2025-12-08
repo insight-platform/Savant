@@ -7,6 +7,7 @@ from time import time
 from typing import Dict, Optional
 
 from savant_rs.primitives import EndOfStream, VideoFrame
+from savant_rs.py.utils.zeromq import ZeroMQMessage, ZeroMQSource
 
 from adapters.python.sinks.chunk_writer import ChunkWriter, CompositeChunkWriter
 from adapters.python.sinks.metadata_json import (
@@ -24,7 +25,6 @@ from savant.gstreamer.codecs import Codec
 from savant.utils.config import opt_config, req_config
 from savant.utils.log import get_logger, init_logging
 from savant.utils.welcome import get_starting_message
-from savant_rs.py.utils.zeromq import ZeroMQMessage, ZeroMQSource
 
 LOGGER_NAME = 'adapters.video_files_sink'
 DEFAULT_CHUNK_SIZE = 10000

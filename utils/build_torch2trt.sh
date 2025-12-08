@@ -15,7 +15,7 @@ sed 's|collections.Sequence|collections.abc.Sequence|g' -i torch2trt/converters/
 #cat torch2trt/converters/interpolate.py | grep Sequence
 
 # install requirements
-python3 -m pip install tensorrt~=8.6 torch packaging
+python3 -m pip install tensorrt torch packaging
 
 python3 setup.py bdist_wheel
 cp dist/torch2trt*.whl "$OUTPUT_DIR"

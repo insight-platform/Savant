@@ -252,7 +252,7 @@ NVINFER_DEFAULT_OBJECT_SELECTOR = PyFunc(
 class NvInferObjectModelOutputObject(ObjectModelOutputObject):
     """NvInferObjectModel output objects configuration template."""
 
-    selector: PyFunc = NVINFER_DEFAULT_OBJECT_SELECTOR
+    selector: PyFunc = field(default_factory=lambda: NVINFER_DEFAULT_OBJECT_SELECTOR)
     """Model output selector."""
 
 

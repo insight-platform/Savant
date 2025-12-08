@@ -1,33 +1,39 @@
-ARG DEEPSTREAM_VERSION=7.0
-ARG DEEPSTREAM_DEVEL_IMAGE=$DEEPSTREAM_VERSION-triton-multiarch
-ARG DEEPSTREAM_BASE_IMAGE=$DEEPSTREAM_VERSION-samples-multiarch
-FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_DEVEL_IMAGE AS builder
+ARG DEEPSTREAM_VERSION=7.1
+ARG DEEPSTREAM_DEVEL_IMAGE=nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-triton-multiarch
+ARG DEEPSTREAM_BASE_IMAGE=nvcr.io/nvidia/deepstream:$DEEPSTREAM_VERSION-samples-multiarch
+FROM $DEEPSTREAM_DEVEL_IMAGE AS builder
 ARG TARGETARCH
 
-# install/upgrade pip and builders
+# prepare python build environment
+RUN apt-get update && \
+    apt-get install --no-install-recommends -y \
+    python3-dev \
+    python3-venv
+
+RUN python3 -m venv /opt/venv --system-site-packages
+ENV PATH="/opt/venv/bin:$PATH" \
+    LD_LIBRARY_PATH=/opt/venv/lib:/opt/nvidia/deepstream/deepstream/lib:$LD_LIBRARY_PATH
+
 RUN python3 -m pip install --no-cache-dir --upgrade \
     build \
     ninja \
-    pip \
-    scikit-build \
-    setuptools \
-    wheel
+    scikit-build
 
 # install cmake
-ARG CMAKE_VER=3.27.7
+ARG CMAKE_VERSION=3.27.7
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
-      wget -nv -O /tmp/cmake.sh https://github.com/Kitware/CMake/releases/download/v$CMAKE_VER/cmake-$CMAKE_VER-linux-x86_64.sh; \
+      wget -nv -O /tmp/cmake.sh https://github.com/Kitware/CMake/releases/download/v$CMAKE_VERSION/cmake-$CMAKE_VERSION-linux-x86_64.sh; \
       sh /tmp/cmake.sh --skip-license --prefix=/usr/local; \
       rm -f /tmp/cmake.sh; \
     elif [ "$TARGETARCH" = "arm64" ]; then \
-      wget -nv -O /tmp/cmake.sh https://github.com/Kitware/CMake/releases/download/v$CMAKE_VER/cmake-$CMAKE_VER-linux-aarch64.sh; \
+      wget -nv -O /tmp/cmake.sh https://github.com/Kitware/CMake/releases/download/v$CMAKE_VERSION/cmake-$CMAKE_VERSION-linux-aarch64.sh; \
       sh /tmp/cmake.sh --skip-license --prefix=/usr/local; \
       rm -f /tmp/cmake.sh; \
     fi
 
-# TODO: Determine JetPack release (replace `r36.2`)
+ARG L4T_VERSION=36.4
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
-      echo "deb [trusted=yes] https://repo.download.nvidia.com/jetson/t234 r36.2 main" \
+      echo "deb [trusted=yes] https://repo.download.nvidia.com/jetson/t234 r${L4T_VERSION} main" \
         > /etc/apt/sources.list.d/nvidia-l4t-apt-source.list \
       && rm /etc/ld.so.conf.d/nvidia-tegra.conf \
       && mkdir -p /opt/nvidia/l4t-packages/ \
@@ -38,14 +44,12 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then \
 
 # extra packages builders
 FROM builder AS extra-builder
+# TODO: Move to r36.3+
 FROM dustynv/l4t-pytorch:r36.2.0 AS extra-l4t-builder
 
 
 # Savant python package builder
 FROM builder AS savant-package-builder
-
-RUN apt-get update && \
-    apt-get install --no-install-recommends -y python3-venv
 
 WORKDIR /tmp/build
 COPY pyproject.toml README.md LICENSE ./
@@ -100,7 +104,7 @@ RUN python3 -m build --wheel --no-isolation && rm -rf _skbuild
 
 
 # Savant base container
-FROM nvcr.io/nvidia/deepstream:$DEEPSTREAM_BASE_IMAGE AS base
+FROM $DEEPSTREAM_BASE_IMAGE AS base
 ARG TARGETARCH
 ARG TARGETPLATFORM
 ARG DEEPSTREAM_VERSION
@@ -116,6 +120,7 @@ RUN apt-get update && \
         libmagic1 \
         libcairo2-dev \
         python3-pip \
+        python3-venv \
         python3-dev \
         python-gi-dev \
         python3-gst-1.0 \
@@ -139,16 +144,22 @@ ENV PYTHONUNBUFFERED=1 \
     CUPY_CACHE_DIR=/cache/cupy
 WORKDIR $PROJECT_PATH
 
-# add deepstream libs to path
-ENV LD_LIBRARY_PATH=/opt/nvidia/deepstream/deepstream/lib:$LD_LIBRARY_PATH
-
 # python to python3 by default
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 10
 
-# install requirements
-RUN python -m pip install --no-cache-dir --upgrade pip
+# set up python venv and install requirements
+RUN python3 -m venv /opt/venv --system-site-packages
+# TODO: Do we need to extend LD_LIBRARY_PATH? Savant libs can be in package.
+ENV PATH="/opt/venv/bin:$PATH" \
+    LD_LIBRARY_PATH=/opt/venv/lib:/opt/nvidia/deepstream/deepstream/lib:$LD_LIBRARY_PATH
 
-ARG OPENCV_VERSION=4.8.0
+ARG OPENCV_VERSION=4.12.0
+# local install
+#RUN --mount=type=bind,source=packages/linux/amd64/ds${DEEPSTREAM_VERSION}/opencv-${OPENCV_VERSION}-${TARGETARCH}-ds${DEEPSTREAM_VERSION}.tar.gz,target=/tmp/opencv.tar.gz \
+#    mkdir -p /tmp/dist && \
+#    tar -xf /tmp/opencv.tar.gz -C /tmp/dist && \
+#    dpkg -i /tmp/dist/OpenCV* && \
+#    rm -rf /tmp/dist
 RUN wget -qO- \
     ${PACKAGES_URL}/opencv-${OPENCV_VERSION}-${TARGETARCH}-ds${DEEPSTREAM_VERSION}.tar.gz \
     | tar xz && \
@@ -272,11 +283,15 @@ ARG USERNAME=container_user
 ARG USER_UID=1001
 ARG USER_GID=$USER_UID
 # Create the user
-RUN groupadd --gid $USER_GID $USERNAME && \
-	useradd --uid $USER_UID --gid $USER_GID -m $USERNAME
+RUN if ! getent group "${USER_GID}" >/dev/null; then \
+        groupadd -g "${USER_GID}" "${USERNAME}"; \
+    fi
+RUN if ! getent passwd "${USER_UID}" >/dev/null; then \
+        useradd -m -u "${USER_UID}" -g "${USER_GID}" "${USERNAME}"; \
+    fi
 
 RUN chown -R $USER_UID:$USER_GID $PROJECT_PATH
-USER $USERNAME
+USER ${USER_UID}:${USER_GID}
 
 WORKDIR $PROJECT_PATH/docs
 
@@ -292,7 +307,7 @@ ARG DEEPSTREAM_VERSION
 ARG PACKAGES_URL=https://eu-central-1.linodeobjects.com/savant-data/packages/${TARGETPLATFORM}/ds${DEEPSTREAM_VERSION}
 
 # torch, torchvision, torchaudio
-RUN python -m pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+RUN python -m pip install --no-cache-dir torch torchvision torchaudio
 
 ENV TORCH_HOME=/cache/models/torch_hub
 
@@ -302,21 +317,20 @@ ARG TORCH2TRT_WHL="torch2trt-${TORCH2TRT_VERSION}-py3-none-any.whl"
 RUN wget -nv -P /usr/local/lib/ ${PACKAGES_URL}/libtorch2trt_plugins.so && \
     ldconfig && \
     wget -nv -O ${TORCH2TRT_WHL} ${PACKAGES_URL}/${TORCH2TRT_WHL} && \
-    python -m pip install --no-cache-dir tensorrt~=8.6 && \
+    python -m pip install --no-cache-dir tensorrt~=10.9 && \
     python -m pip install --no-cache-dir ${TORCH2TRT_WHL} && \
     python -m pip install --no-cache-dir onnx-graphsurgeon && \
     rm ${TORCH2TRT_WHL}
 
 # pycuda
 ARG PYCUDA_VERSION=2024.1
-ARG PYCUDA_WHL="pycuda-${PYCUDA_VERSION}-cp310-cp310-linux_x86_64.whl"
+ARG PYCUDA_WHL="pycuda-${PYCUDA_VERSION}-cp312-cp312-linux_x86_64.whl"
 RUN wget -nv -O ${PYCUDA_WHL} ${PACKAGES_URL}/${PYCUDA_WHL} && \
     python -m pip install --no-cache-dir ${PYCUDA_WHL} && \
     rm ${PYCUDA_WHL}
 
-# onnx, onnxruntime (use extra-index to get the version with CUDA 12.2 support)
-ARG ORT_VERSION=1.17.1
-RUN python -m pip install --no-cache-dir onnx onnxruntime-gpu --extra-index-url https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/onnxruntime-cuda-12/pypi/simple/
+# onnx, onnxruntime (use extra-index to get the version with CUDA 12 support)
+RUN python -m pip install --no-cache-dir onnx onnxruntime-gpu onnxscript --extra-index-url https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/onnxruntime-cuda-12/pypi/simple/
 
 # cython, polars, scikit-learn, jupyter, etc.
 RUN --mount=type=bind,source=requirements/extra.txt,target=/tmp/requirements.txt \
@@ -343,23 +357,8 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # torch, torchvision, torchaudio
-COPY --from=builder /usr/local/cuda-12.2/targets/aarch64-linux/lib/libcupti.* /usr/local/cuda-12.2/targets/aarch64-linux/lib/
-# https://forums.developer.nvidia.com/t/pytorch-for-jetson/72048
-ARG PYTORCH_URL=https://nvidia.box.com/shared/static/mp164asf3sceb570wvjsrezk1p4ftj8t.whl
-ARG PYTORCH_WHL=torch-2.3.0-cp310-cp310-linux_aarch64.whl
-RUN wget -nv -O ${PYTORCH_WHL} ${PYTORCH_URL} && \
-    python -m pip install --no-cache-dir ${PYTORCH_WHL} && \
-    rm ${PYTORCH_WHL}
-ARG TORCHAUDIO_URL=https://nvidia.box.com/shared/static/9agsjfee0my4sxckdpuk9x9gt8agvjje.whl
-ARG TORCHAUDIO_WHL=torchaudio-2.3.0+952ea74-cp310-cp310-linux_aarch64.whl
-RUN wget -nv -O ${TORCHAUDIO_WHL} ${TORCHAUDIO_URL} && \
-    python -m pip install --no-cache-dir ${TORCHAUDIO_WHL} && \
-    rm ${TORCHAUDIO_WHL}
-ARG TORCHVISION_URL=https://nvidia.box.com/shared/static/xpr06qe6ql3l6rj22cu3c45tz1wzi36p.whl
-ARG TORCHVISION_WHL=torchvision-0.18.0a0+6043bc2-cp310-cp310-linux_aarch64.whl
-RUN wget -nv -O ${TORCHVISION_WHL} ${TORCHVISION_URL} && \
-    python -m pip install --no-cache-dir ${TORCHVISION_WHL} && \
-    rm ${TORCHVISION_WHL}
+COPY --from=builder /usr/local/cuda-12.6/targets/aarch64-linux/lib/libcupti.* /usr/local/cuda-12.6/targets/aarch64-linux/lib/
+RUN python -m pip install torch==2.8.0 torchaudio==2.8.0 torchvision==0.23.0 --index-url=https://pypi.jetson-ai-lab.io/jp6/cu126
 
 # set the CUDA architectures that torch extensions get built for
 # Nano/TX1 = 5.3, TX2 = 6.2, Xavier = 7.2, Orin = 8.7
@@ -368,12 +367,12 @@ ENV TORCH_CUDA_ARCH_LIST=${TORCH_CUDA_ARCH_ARGS} \
     TORCH_HOME=/cache/models/torch_hub
 
 # torch2trt
-ARG TORCH2TRT_VERSION=0.4.0
+ARG TORCH2TRT_VERSION=0.5.0
 ARG TORCH2TRT_WHL="torch2trt-${TORCH2TRT_VERSION}-py3-none-any.whl"
 RUN wget -nv -P /usr/local/lib/ ${PACKAGES_URL}/libtorch2trt_plugins.so && \
     ldconfig && \
     wget -nv -O ${TORCH2TRT_WHL} ${PACKAGES_URL}/${TORCH2TRT_WHL} && \
-    python -m pip install --no-cache-dir tensorrt~=8.6 && \
+    python -m pip install --no-cache-dir tensorrt && \
     python -m pip install --no-cache-dir ${TORCH2TRT_WHL} && \
     python -m pip install --no-cache-dir nvidia-pyindex && \
     python -m pip install --no-cache-dir onnx-graphsurgeon && \

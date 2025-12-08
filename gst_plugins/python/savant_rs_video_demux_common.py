@@ -2,8 +2,8 @@ from fractions import Fraction
 from typing import NamedTuple
 
 from savant_rs.primitives import VideoFrame
-
 from savant_rs.py.api.constants import DEFAULT_FRAMERATE
+
 from savant.gstreamer import Gst
 from savant.gstreamer.codecs import CODEC_BY_NAME, Codec
 

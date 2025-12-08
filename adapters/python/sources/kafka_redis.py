@@ -5,6 +5,7 @@ from typing import AsyncIterator, Dict, Optional, Tuple, Union
 from confluent_kafka import Consumer, KafkaError, TopicPartition
 from redis.asyncio import Redis
 from savant_rs.primitives import EndOfStream, VideoFrame, VideoFrameContent
+from savant_rs.py.api.enums import ExternalFrameType
 from savant_rs.utils.serialization import Message, load_message_from_bytes
 
 from adapters.python.shared.kafka_redis import (
@@ -14,7 +15,6 @@ from adapters.python.shared.kafka_redis import (
     BaseKafkaRedisAdapter,
     run_kafka_redis_adapter,
 )
-from savant_rs.py.api.enums import ExternalFrameType
 from savant.client import SourceBuilder
 from savant.utils.config import opt_config, req_config
 
