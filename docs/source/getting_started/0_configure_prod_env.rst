@@ -11,31 +11,12 @@ General Requirements
 Data Center, Professional And Desktop Hardware
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Docker with Compose, Nvidia GPU drivers R525 (data center hardware), 530+ professional and desktop hardware;
+Docker with Compose, Nvidia GPU drivers 570.133.20+;
 
 Edge Hardware
 ^^^^^^^^^^^^^
 
-Docker with Compose, Jetpack 6.0 DP on Jetson AGX Orin, Orin NX, Orin Nano.
-
-Previous Savant Versions
-^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. list-table::
-    :header-rows: 1
-
-    * - Device
-      - Support Notes
-      - JetPack Requirements
-    * - Jetson Nano 1st gen, TX1, TX2
-      - Not supported
-      - Not supported
-    * - Jetson Xavier Family
-      - Savant 0.2.x
-      - Jetpack 5.1.2, 5.1.3
-    * - Jetson Orin Family
-      - Savant 0.2.x
-      - Jetpack 5.1.2, 5.1.3
+Docker with Compose, Jetpack 6.2 DP on Jetson AGX Orin, Orin NX, Orin Nano.
 
 Nvidia Jetson Setup
 -------------------
@@ -93,7 +74,7 @@ Install Nvidia Drivers
 
 .. code-block:: bash
 
-   sudo apt install --no-install-recommends nvidia-driver-535
+   sudo apt install --no-install-recommends nvidia-driver-570 # or a newer version
    sudo reboot
 
 Install Nvidia Container Toolkit
