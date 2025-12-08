@@ -16,7 +16,7 @@ Docker with Compose, Nvidia GPU drivers 570.133.20+;
 Edge Hardware
 ^^^^^^^^^^^^^
 
-Docker with Compose, Jetpack 6.2 DP on Jetson AGX Orin, Orin NX, Orin Nano.
+Docker with Compose, Jetpack 6.2 GA on Jetson AGX Orin, Orin NX, Orin Nano.
 
 Nvidia Jetson Setup
 -------------------
