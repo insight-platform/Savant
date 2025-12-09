@@ -21,7 +21,9 @@ services:
     privileged: true
     build:
       context: .
-      dockerfile: docker/Dockerfile.l4t
+      dockerfile: docker/Dockerfile
+      args:
+        IMAGE: ghcr.io/insight-platform/savant-deepstream-l4t:latest
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../cache:/cache
@@ -52,6 +54,7 @@ services:
       - SOURCE_ID=leeds
       - STUB_FILE_LOCATION=/stub_imgs/smpte100_1920x1080.jpeg
       - DEV_MODE=True
+      - ENCODER_BITRATE=8000000
     command: python -m adapters.ds.sinks.always_on_rtsp
 
   graphite:
