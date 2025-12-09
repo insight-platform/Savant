@@ -1,11 +1,11 @@
 name: intersection_traffic_meter
 
 parameters:
-  frame:
-    width: 1920
-    height: 1080
   output_frame:
     codec: ${oc.env:CODEC, 'h264'}
+    h264_encoder_params:
+      bitrate: 8000000
+      profile: Baseline
   draw_func:
     module: samples.intersection_traffic_meter.overlay
     class_name: Overlay
@@ -14,6 +14,22 @@ parameters:
   detected_object_label: transport
   send_stats: True
   batch_size: 1
+
+  default_yolo_converter:
+    module: savant.converter.yolo
+    class_name: TensorToBBoxConverter
+    kwargs:
+      confidence_threshold: 0.25
+      nms_iou_threshold: 0.45
+      top_k: 300
+
+  default_yolo_selector:
+    module: savant.selector.detector
+    class_name: MinMaxSizeBBoxSelector
+    kwargs:
+      min_width: 30
+      min_height: 30
+
 
 pipeline:
 
@@ -26,61 +42,47 @@ pipeline:
         config_path: ${oc.env:PROJECT_PATH}/samples/intersection_traffic_meter/polygon_config.yml
 
     - element: nvinfer@detector
-      name: yolov8m
+      name: yolov11n
       model:
         remote:
-          url: s3://savant-data/models/yolov8m_f630b10/yolov8m_f630b10.zip
-          checksum_url: s3://savant-data/models/yolov8m_f630b10/yolov8m_f630b10.md5
+          url: s3://savant-data/models/yolo11n/yolo11n.zip
+          checksum_url: s3://savant-data/models/yolo11n/yolo11n.md5
           parameters:
-            endpoint: https://eu-central-1.linodeobjects.com
+            endpoint: https://eu-central-1.linodeobjects.com              
         format: onnx
-        model_file: yolov8m.onnx
-        config_file: config_infer_primary_yoloV8.txt
-        # max GPU RAM used to build the engine, 6GB by default
-        # set lower than total GPU RAM available on your hardware
+        model_file: yolo11n.onnx
+        batch_size: ${parameters.batch_size}
         workspace_size: 6144
+        input:
+          shape: [3, 640, 640]
+          scale_factor: 0.0039215697906911373
+          maintain_aspect_ratio: true
+          symmetric_padding: true
         output:
+          layer_names: [output0]
+          num_detected_classes: 80  # required for YOLOv11
+          converter: ${parameters.default_yolo_converter}
           objects:
             # COCO bicycle
             - class_id: 1
               label: ${parameters.detected_object_label}
-              selector:
-                module: savant.selector.detector
-                class_name: BBoxSelector
-                kwargs:
-                  confidence_threshold: 0.2
+              selector: ${parameters.default_yolo_selector}
             # COCO car
             - class_id: 2
               label: ${parameters.detected_object_label}
-              selector:
-                module: savant.selector.detector
-                class_name: BBoxSelector
-                kwargs:
-                  confidence_threshold: 0.2
+              selector: ${parameters.default_yolo_selector}
             # COCO motorcycle
             - class_id: 3
               label: ${parameters.detected_object_label}
-              selector:
-                module: savant.selector.detector
-                class_name: BBoxSelector
-                kwargs:
-                  confidence_threshold: 0.2
+              selector: ${parameters.default_yolo_selector}
             # COCO bus
             - class_id: 5
               label: ${parameters.detected_object_label}
-              selector:
-                module: savant.selector.detector
-                class_name: BBoxSelector
-                kwargs:
-                  confidence_threshold: 0.2
+              selector: ${parameters.default_yolo_selector}
             # COCO truck
             - class_id: 7
               label: ${parameters.detected_object_label}
-              selector:
-                module: savant.selector.detector
-                class_name: BBoxSelector
-                kwargs:
-                  confidence_threshold: 0.2
+              selector: ${parameters.default_yolo_selector}
 
     - element: nvtracker
       properties:
