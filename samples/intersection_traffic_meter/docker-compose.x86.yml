@@ -9,8 +9,8 @@ services:
   module:
     privileged: true
     build:
-      context: .
-      dockerfile: docker/Dockerfile.x86
+      args:
+        IMAGE: ghcr.io/insight-platform/savant-deepstream:latest
     extends:
       file: docker-compose.l4t.yml
       service: module

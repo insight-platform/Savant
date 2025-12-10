@@ -55,10 +55,10 @@ The release **ADDS** support for **Blackwell** GPUs and **DROPS** support for **
 
 This release is based on a customized DeepStream 7.1 with TensorRT 10.9.
 
-| Requirements                                    | Status | DeepStream |
-|-------------------------------------------------|--------|------------|
-| X86 Driver 525(Datacenter), 530+ Quadro/GeForce | Stable | 7.1        |
-| Jetson Orin JetPack 6.2                         | Stable | 7.1        |
+| Requirements                                    | Status | DeepStream | TensorRT |
+|-------------------------------------------------|--------|------------|----------|
+| X86 Driver 570.133.20+                          | Stable | 7.1        | 10.9     |
+| Jetson Orin JetPack 6.2                         | Stable | 7.1        | 10.9     |
 
 ## Chat With Us
 

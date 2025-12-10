@@ -1,6 +1,6 @@
 # Intersection traffic meter demo
 
-**NB**: The demo uses **YOLOV8** model which takes up to **10-15 minutes** to compile to TensorRT engine. The first launch may take a decent time.
+**NB**: The demo uses **YOLOV11** model which takes up to **10-15 minutes** to compile to TensorRT engine. The first launch may take a decent time.
 
 The pipeline detects when cars, trucks or buses cross a city intersection delimited by user-configured polygon and the direction of the crossing. The crossing events are attached to individual tracks and are counted for each video source and polygon edge separately; the counters are displayed on the frame. The crossing events are also stored with Graphite and displayed on a Grafana dashboard.
 
@@ -10,12 +10,8 @@ Preview:
 
 Tested on platforms:
 
-- Nvidia Turing
+- Nvidia Turing, Ampere
 - Nvidia Jetson Orin family
-
-Demonstrated operational modes:
-
-- real-time processing: RTSP streams (multiple sources at once);
 
 Demonstrated adapters:
 - Video loop adapter;
