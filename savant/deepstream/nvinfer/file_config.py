@@ -292,14 +292,21 @@ class NvInferConfig:
         config['class-attrs-all'] = {'pre-cluster-threshold': 1e10}
         # replace class-attrs parameters with selector kwargs
         for obj in model_config.output.objects:
+            key = f'class-attrs-{obj.class_id}'
             class_attrs = {}
             if not obj.selector or 'kwargs' not in obj.selector:
                 obj.selector = NVINFER_DEFAULT_OBJECT_SELECTOR
             for field in NvInferConfig._CLASS_ATTR_MAP:
+                if key in config:
+                    # use existing config value as default
+                    value = config[key].get(field.property_name)
+                    if value is not None:
+                        class_attrs[field.property_name] = value
+                        continue
                 value = obj.selector.kwargs.get(field.name)
                 if value is not None:
                     class_attrs[field.property_name] = value
             if class_attrs:
-                config[f'class-attrs-{obj.class_id}'] = class_attrs
+                config[key] = class_attrs
 
         return config
