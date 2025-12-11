@@ -28,7 +28,7 @@ To fine-tune the tracker, you can pass a tracking configuration file to the libr
         ll-lib-file: /opt/nvidia/deepstream/deepstream/lib/libnvds_nvmultiobjecttracker.so
         ll-config-file: ${oc.env:APP_PATH}/samples/line_crossing/config_tracker_NvDCF_perf.yml
 
-In the example above, ``config_tracker_NvDCF_perf.yml`` specifies a configuration file for one of the tracking presets provided by Nvidia. This and other configuration files can be found in the DeepStream development image at ``/opt/nvidia/deepstream/deepstream-6.2/samples/configs/deepstream-app``. Nvidia provides four different approaches to tracking, which are described in detail in the Gst-nvtracker Tracker library `documentation <https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_plugin_gst-nvtracker.html#id9>`__.
+In the example above, ``config_tracker_NvDCF_perf.yml`` specifies a configuration file for one of the tracking presets provided by Nvidia. This and other configuration files can be found in the DeepStream development image at ``/opt/nvidia/deepstream/deepstream/samples/configs/deepstream-app``. Nvidia provides four different approaches to tracking, which are described in detail in the Gst-nvtracker Tracker library `documentation <https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_plugin_gst-nvtracker.html#id9>`__.
 
 The **IOU** tracker is the most lightweight, but suitable only for the simplest scenes. The configuration file is ``config_tracker_IOU.yml``.
 
