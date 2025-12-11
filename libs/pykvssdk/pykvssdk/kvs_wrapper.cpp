@@ -21,7 +21,8 @@ KvsWrapper::KvsWrapper(
     bool allow_stream_creation,
     uint32_t framerate,
     uint32_t low_threshold,
-    uint32_t high_threshold
+    uint32_t high_threshold,
+    uint32_t retention_period_hours
 ) {
     std::string content_type, codec_id;
     if (codec == "h264") {
@@ -69,7 +70,7 @@ KvsWrapper::KvsWrapper(
     std::unique_ptr<video::StreamDefinition> stream_definition(
         new video::StreamDefinition(
             stream_name,
-            DEFAULT_RETENTION_PERIOD,
+            std::chrono::hours(retention_period_hours),
             nullptr, // tags
             "", // kms_key_id
             STREAMING_TYPE_OFFLINE,

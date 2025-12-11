@@ -21,7 +21,8 @@ public:
         bool allow_stream_creation,
         uint32_t framerate,
         uint32_t low_threshold,
-        uint32_t high_threshold
+        uint32_t high_threshold,
+        uint32_t retention_period_hours = 24
     );
 
     bool start(const char *codec_private_data, size_t codec_private_data_size);

@@ -75,6 +75,7 @@ class FpsMeterConfig:
 class Config:
     def __init__(self):
         self.allow_create_stream = opt_config('ALLOW_CREATE_STREAM', False, strtobool)
+        self.retention_period_hours = opt_config('RETENTION_PERIOD_HOURS', 24, int)
         self.stream_name_prefix = opt_config('STREAM_NAME_PREFIX', '')
         self.kvssdk_loglevel = os.environ.get('KVSSDK_LOGLEVEL', 'INFO')
         self.zmq: ZmqConfig = ZmqConfig()
@@ -108,6 +109,7 @@ class KvsWriter(ChunkWriter):
             round(Fraction(frame_params.framerate)),
             config.buffer.low_threshold,
             config.buffer.high_threshold,
+            config.retention_period_hours,
         )
         self.stream_started = False
 

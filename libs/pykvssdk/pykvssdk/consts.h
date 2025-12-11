@@ -8,7 +8,6 @@
 #define TIME_100NS_TO_1S (TIME_100NS_TO_1MS * 1000)
 
 // Defaults
-#define DEFAULT_RETENTION_PERIOD std::chrono::hours(24)
 #define DEFAULT_MAX_LATENCY std::chrono::seconds(10)
 #define DEFAULT_FRAGMENT_DURATION std::chrono::seconds(20)
 #define DEFAULT_TIMECODE_SCALE std::chrono::milliseconds(1)
