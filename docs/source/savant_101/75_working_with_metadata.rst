@@ -3,68 +3,68 @@ Working With Metadata
 
 Units handle two types of data when the pipeline is running: images and their corresponding metadata. Some of the metadata is read-only, some is modifiable, and some metadata can be deleted or added.
 
-Depending on the unit type, metadata interaction occurs in different ways. For example, in model inference items in the ``input`` section, which is responsible for model input data, it is specified which objects will be processed by filtering on the metadata fields ``element_name`` and ``label``:
+Metadata interaction varies by unit type. In the ``input`` section of a model inference unit — where the model's input data is defined — you specify which objects to process by filtering on the ``element_name`` and ``label`` metadata fields:
 
 .. code-block:: yaml
 
     input:
       object: person_detector.person
 
-In this example, we indicated to the unit that of all the objects that exist on the frame, we want to select those objects that have ``element_name==person_detector`` and ``label==person`` in their metadata.
+In this example, we indicated that between all the objects that exist on the frame, we want to select those objects that have ``element_name==person_detector`` and ``label==person`` in their metadata.
 
-Similarly, the ``output`` section specifies how the metadata will be written to the model results, such as attribute names, and can filter based on these values to exclude some of the metadata from the results.
+Similarly, the ``output`` section defines how metadata is written to the model results, including attribute names. It can also apply filters to exclude specific metadata values from the output.
 
-You can obtain full access to all metadata in the Python Function unit. In this element, by implementing the processing you need, you can read the metadata for the frame, and object metadata, change metadata if it is writable, and delete or add new metadata.
+The Python Function unit provides full access to all metadata. Within this unit, you can implement custom processing to read frame and object metadata, modify writable metadata, and delete or add metadata as needed.
 
 For example, you may want to remove all objects that belong to red-colored cars without an identified car plate or make the areas with license plates blurred.
 
-Let's first understand what metadata categories exist and then describe the API for interacting with them. Different metadata have different access restrictions: some metadata can only be read, others can be further modified by writing new values, and some can only be extended, i.e. you cannot delete or change values, but you can extend, and there are also metadata that you can delete.
+Before examining the API, it is useful to understand the available metadata types. Each type has its own access rules: some metadata are read-only, some allow writing new values, some can only be extended without modification or deletion, and others permit deletion.
 
 There are three types of metadata:
 
-* metadata for the entire frame;
-* metadata for objects on the frame;
-* metadata for object attributes.
+* metadata for the entire frame
+* metadata for objects on the frame
+* metadata for object attributes
 
 Entire Frame Metadata
 ---------------------
 
-Let us first look at what metadata is defined for the frame.  The access restrictions for metadata are shown in parentheses:
+Let us first look at the frame metadata. Note than the access restrictions for metadata are shown in square brackets:
 
-* The ``source_id [read]`` attribute is a unique identifier of the video stream source. With this identifier, you can understand which source frame the metadata you receive belongs to. Most often, this identifier is used to be able to store some state, which must be unique for each video stream. In the TrafficMeter example, this property was used to separate the counting of people for different video streams (`link <https://github.com/insight-platform/Savant/blob/documentation-initial-update/samples/traffic_meter/line_crossing.py>`__).
+* The ``source_id [read]`` attribute is a unique identifier of the video stream source. With this identifier, you can understand which source, the frame metadata you received belongs to. Most often, this identifier is used to be able to store some state, which must be unique for each video stream. In the TrafficMeter example, this property is used to count people in different video streams (`link <https://github.com/insight-platform/Savant/blob/documentation-initial-update/samples/traffic_meter/line_crossing.py>`__).
 
-* The ``frame_num [read]`` attribute is a frame number for a particular source.
+* The ``frame_num [read]`` attribute is the frame number of a particular source.
 
 * The ``roi [read, write]`` attribute stores meta-information about the region of the image that serves as the default input area for the detection units, if no object is specified for the area where detection will be done.
 
 * The ``objects_number [read]`` represents the total number of objects on the frame.
 
-* The ``tags [read, extend]`` attribute represents additional tags with information about the frame. The information is represented as an extensible dictionary. These tags can store a variety of information. For example, if you use standard video file-sending adapters, then the relative path of the video file will be available in tags by the key 'location'. Or if you write a method defining lightness level on the frame, you can, for example, enter three gradations: ``light``, ``regular``, and ``dark``, and add this information as tags with the key ``illumination``. Then use this information somehow in the pipeline.
+* The ``tags [read, extend]`` attribute stores auxiliary information about the frame as an extensible dictionary. These tags can hold various details; for example, standard video file adapters expose the video's relative path under the ``location`` key. If you implement a method that determines frame brightness, you might classify it as ``light``, ``regular``, or ``dark`` and record this under the ``illumination`` key for later use in the pipeline.
 
 * The ``pts [read]`` attribute stores the presentation timestamp. This is the information from the source video stream timestamp.
 
-* The ``duration [read]`` represents the duration of the frame. It may not be present, then returns ``None``.
+* The ``duration [read]`` attribute provides the frame duration. If unavailable, it returns ``None``.
 
-* The ``framerate [read]`` attribute stores number of frames per second in the source video stream. This meta-information is represented as strings. For example: ``20/1``.
+* The ``framerate [read]`` attribute records the source stream's FPS value as a string, for example ``20/1``.
 
 The second type of metadata is object data. All metadata of this type is a single list that you can iterate over.
 
 Per-Object Metadata
 -------------------
 
-* The ``label [read, write]`` attribute stores an object's class. Describes what kind of object it is. For example, a car, a person, a flower, etc.
+* The ``label [read, write]`` attribute stores the object's class (e.g., car, person, flower).
 
 * The ``track_id [read, write]`` attribute is a unique object identifier used to track objects. If ``track_id`` is equal to the max ``uint64`` value, it means the object is not tracked. This corresponds to the DeepStream's `constant <https://docs.nvidia.com/metropolis/deepstream/dev-guide/sdk-api/group__metadata__structures.html#ga23a0088be46b70720415bc25e8c85c7f>`__.
 
 * The ``element_name [read]`` attribute is the name of the unit that added this object. If the object is a result of the detection model, ``element_name`` is the name of the unit (the name field of the unit defined in the configuration file). For user-created objects, ``element_name`` is a mandatory constructor argument.
 
-* The ``confidence [read]`` attribute is the numeric value denoting the probability that the object of the class is specified in the label field. Typically set by a detector, in cases described in `NvDsObjectMeta <https://docs.nvidia.com/metropolis/deepstream/python-api/PYTHON_API/NvDsMeta/NvDsObjectMeta.html#pyds.NvDsObjectMeta>`__ a special value ``-0.1`` is possible.
+* The ``confidence [read]`` attribute is the numeric value denoting the probability that the object of the class is specified in the label field. Typically set by a detector, in cases described in `NvDsObjectMeta <https://docs.nvidia.com/metropolis/deepstream/dev-guide/python-api/PYTHON_API/NvDsMeta/NvDsObjectMeta.html>`__ a special value ``-0.1`` is possible.
 
-* The ``bbox [read, write]`` attribute is meta-information about the object's position on the frame. Object position can be set by two types of boxes: an aligned bounding box (sides of the box are parallel to the coordinate axes) and an oriented bounding box (the box can have an angle).  The position is set by the coordinates of the center of the box, the width and height of the box, and the rotation angle if it is an oriented bounding box.
+* The ``bbox [read, write]`` attribute is meta-information about the object's position on the frame. This attribute can have two types: an aligned bounding box (sides of the box are parallel to the coordinate axes) and an oriented bounding box (the box can have an angle).  The position is set by the coordinates of the center of the box, the width and height of the box, and the rotation angle if it is an oriented bounding box.
 
 * The ``uid [read]`` attribute is a unique identifier of the box. This identifier is assigned when adding an object to the list of frame objects and does not change throughout the existence of meta-information about the object, in contrast to the ``track_id`` which can change for the object.
 
-* The ``parent [read, write]`` attribute stores a reference to the parent object. This value can be ``None``, if there is no parent object. The parent reference can be used to associate objects with each other. For example, the model can detect a face only within the area related to the human body, which forms the relationship between the "human" and "face" objects. If the model produces both detections for faces and detections for people at the same time, these objects are on the same hierarchy level and a manual association is required.
+* The ``parent [read, write]`` attribute stores a reference to the parent object. This value can be ``None``, if there is no parent object. The parent reference can be used to associate objects with each other. For example, the model can detect a face only within the area related to the human body, which forms the relationship between the "human" and "face" objects. If a model produces both face and person detections simultaneously, these objects exist at the same hierarchy level and require manual association.
 
 * The ``is_primary [read]`` attribute shows whether this metadata structure describes the main frame object. You can read more about the main frame object later, in the context of associating metadata to each other.
 
