@@ -22,8 +22,19 @@ PYBIND11_MODULE(pykvssdk, m) {
                 bool,
                 uint32_t,
                 uint32_t,
+                uint32_t,
                 uint32_t
-            >()
+            >(),
+            py::arg("region"),
+            py::arg("access_key"),
+            py::arg("secret_key"),
+            py::arg("stream_name"),
+            py::arg("codec"),
+            py::arg("allow_stream_creation"),
+            py::arg("framerate"),
+            py::arg("low_threshold"),
+            py::arg("high_threshold"),
+            py::arg("retention_period_hours") = 24
         )
         .def("start", &KvsWrapper::start)
         .def("stop_sync", &KvsWrapper::stop_sync)
