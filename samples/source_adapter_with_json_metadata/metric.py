@@ -22,9 +22,12 @@ class IOU(NvDsPyFuncPlugin):
             elif obj.element_name == self.ground_truth:
                 ground_truth_objects.append(obj)
         if len(ground_truth_objects) == 1 and len(detected_objects) == 1:
+            metric = ground_truth_objects[0].bbox.iou(detected_objects[0].bbox)
             frame_meta.set_tag(
                 'iou_metric',
-                ground_truth_objects[0].bbox.iou(detected_objects[0].bbox),
+                metric,
             )
+            self.logger.info(f'IOU metric: {metric}')
         else:
             frame_meta.set_tag('iou_metric', 0)
+            self.logger.info('GT count: %d, detected count: %d, IOU metric: 0', len(ground_truth_objects), len(detected_objects))

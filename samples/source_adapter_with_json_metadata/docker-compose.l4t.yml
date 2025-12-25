@@ -18,15 +18,13 @@ services:
 
   module:
     privileged: true
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.l4t
+    image: ghcr.io/insight-platform/savant-deepstream-l4t:latest
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../cache:/cache
       - ..:/opt/savant/samples
-    command: samples/source_adapter_with_json_metadata/demo.yml
+    command: samples/source_adapter_with_json_metadata/module.yml
     environment:
       - MODEL_PATH=/cache/models/traffic_meter
       - DOWNLOAD_PATH=/cache/downloads/traffic_meter
