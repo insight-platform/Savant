@@ -49,11 +49,11 @@ Sample location: [age gender recognition](./age_gender_recognition)
 
 ![](age_gender_recognition/assets/age-gender-recognition-loop-400.webp)
 
-### YOLOv8 Instance Segmentation
+### YOLOv11 Instance Segmentation
 
-Sample location: [yolov8_seg](./yolov8_seg)
+Sample location: [yolov11_seg](./yolov11_seg)
 
-![](yolov8_seg/assets/shuffle_dance-400.webp)
+![](yolov11_seg/assets/shuffle_dance-400.webp)
 
 ### Facial ReID
 
