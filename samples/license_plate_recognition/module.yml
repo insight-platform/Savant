@@ -18,13 +18,13 @@ parameters:
     module: samples.license_plate_recognition.overlay
     class_name: Overlay
     rendered_objects:
-      yolov8n:
-        Car:
+      detector:
+        car:
           bbox:
             border_color: '00FF00FF'  # Green
             background_color: '00000000'  # transparent
             thickness: 4
-      LPDNet:
+      lpd:
         lpd:
           bbox:
             border_color: '0000FFFF'  # Blue
@@ -35,48 +35,55 @@ parameters:
             thickness: 2
   detected_object:
     id: 2
-    label: Car
+    label: car
+  
+  default_yolo_converter:
+    module: savant.converter.yolo
+    class_name: TensorToBBoxConverter
+    kwargs:
+      confidence_threshold: 0.25
+      nms_iou_threshold: 0.45
+      top_k: 300
+
+  default_yolo_selector:
+    module: savant.selector.detector
+    class_name: MinMaxSizeBBoxSelector
+    kwargs:
+      min_width: 30
+      min_height: 30
 
   batch_size: 1
 
 pipeline:
   elements:
     - element: nvinfer@detector
-      name: yolov8n
+      name: detector
       model:
         remote:
-          url: s3://savant-data/models/yolov8n/yolov8n_000bcd6.zip
-          checksum_url: s3://savant-data/models/yolov8n/yolov8n_000bcd6.md5
+          url: s3://savant-data/models/yolov11s/yolov11s.zip
+          checksum_url: s3://savant-data/models/yolov11s/yolov11s.md5
           parameters:
-            endpoint: https://eu-central-1.linodeobjects.com
+            endpoint: https://eu-central-1.linodeobjects.com              
         format: onnx
-        model_file: yolov8n.onnx
+        model_file: yolov11s.onnx
         batch_size: ${parameters.batch_size}
         input:
-          shape: [3, 640, 640]  # TODO: use [3, 384, 640]
-          maintain_aspect_ratio: true
+          shape: [3, 640, 640]
           scale_factor: 0.0039215697906911373
+          maintain_aspect_ratio: true
+          symmetric_padding: true
         output:
-          layer_names: [boxes, scores, classes]
-          converter:
-            module: savant.converter.yolo
-            class_name: TensorToBBoxConverter
-            kwargs:
-              confidence_threshold: 0.6
-              top_k: 100
+          layer_names: [output0]
+          num_detected_classes: 80  # required for YOLOv11
+          converter: ${parameters.default_yolo_converter}
           objects:
             - class_id: ${parameters.detected_object.id}
               label: ${parameters.detected_object.label}
-              selector:
-                kwargs:
-                  confidence_threshold: 0.6
-                  nms_iou_threshold: 0.5
-                  min_width: 60
-                  min_height: 60
+              selector: ${parameters.default_yolo_selector}
 
     # LPD https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/lpdnet
     - element: nvinfer@detector
-      name: LPDNet
+      name: lpd
       model:
         remote:
           url: s3://savant-data/models/lpdnet/lpdnet_pruned_v2.3.1.zip
@@ -86,7 +93,7 @@ pipeline:
         model_file: LPDNet_usa_pruned_tao5.onnx
         batch_size: 16
         input:
-          object: yolov8n.Car
+          object: detector.car
           layer_name: input_1:0
           shape: [3, 480, 640]
           scale_factor: 0.0039215697906911373
@@ -114,7 +121,7 @@ pipeline:
 
     # LPR https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/lprnet
     - element: nvinfer@classifier
-      name: LPRNet
+      name: lpr
       model:
         remote:
           url: s3://savant-data/models/lprnet/lprnet_deployable_onnx_v1.1.zip
@@ -124,7 +131,7 @@ pipeline:
         model_file: us_lprnet_baseline18_deployable.onnx
         batch_size: 16
         input:
-          object: LPDNet.lpd
+          object: lpd.lpd
           layer_name: image_input
           shape: [3, 48, 96]
           scale_factor: 0.00392156862745098
