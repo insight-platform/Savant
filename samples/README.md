@@ -19,12 +19,6 @@ Sample location: [peoplenet_detector](./peoplenet_detector)
 
 ![](peoplenet_detector/assets/peoplenet-blur-demo-loop-400.webp)
 
-### Car Detection and Classification (Nvidia detectors and classifiers, Nvidia tracker)
-
-Sample location: [nvidia_car_classification](./nvidia_car_classification)
-
-![](nvidia_car_classification/assets/nvidia-car-classification-loop-400.webp)
-
 ### Traffic Meter
 
 Sample location: [traffic_meter](./traffic_meter)
