@@ -38,7 +38,7 @@ pipeline:
         roi_width: ${parameters.roi.width}
         roi_height: ${parameters.roi.height}
     - element: nvinfer@instance_segmentation
-      name: yolov11_seg
+      name: segmenter
       model:
         remote:
           url: s3://savant-data/models/yolov11-seg/yolo11m-seg.zip

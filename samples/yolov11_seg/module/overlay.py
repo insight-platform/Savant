@@ -34,7 +34,7 @@ class Overlay(NvDsDrawFunc):
                         stream=stream,
                     )
 
-                mask_attr = obj_meta.get_attr_meta('yolov8_seg', 'mask')
+                mask_attr = obj_meta.get_attr_meta('segmenter', 'mask')
                 if not mask_attr:
                     continue
 
