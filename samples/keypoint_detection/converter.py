@@ -1,4 +1,4 @@
-"""YOLOv8Pose postprocessing (converter)."""
+"""YOLOv11Pose postprocessing (converter). Also known to work for YOLOv8Pose."""
 
 from typing import Any, List, Optional, Tuple
 
