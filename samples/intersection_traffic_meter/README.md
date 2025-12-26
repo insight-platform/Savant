@@ -62,7 +62,7 @@ To create a custom Grafana dashboard, sign in with `admin\admin` credentials.
 
 ## Detector Model
 
-This demo uses [DeepStream-Yolo](https://github.com/marcoslucianops/DeepStream-Yolo/) to process YOLO models and allows you to use any YOLO model that DeepStream-Yolo supports. The demo uses an already prepared `yolov8m`. If you are going to use any other model (e.g. custom yolov8m), follow the DeepStream-Yolo export instructions. For example, YOLOv8 instructions are [here](https://github.com/marcoslucianops/DeepStream-Yolo/blob/master/docs/YOLOv8.md).
+This demo uses The demo uses `yolov11n`.
 
 ## Performance Measurement
 

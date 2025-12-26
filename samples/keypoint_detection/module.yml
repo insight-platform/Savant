@@ -3,7 +3,7 @@ name: keypoint_detection
 parameters:
   output_frame:
     codec: ${oc.env:CODEC, 'h264'}
-  detector: yolov8n-pose
+  detector: yolo11n-pose
   draw_func:
     module: samples.keypoint_detection.overlay
     class_name: Overlay
@@ -14,12 +14,12 @@ pipeline:
       name: ${parameters.detector}
       model:
         remote:
-          url: s3://savant-data/models/yolov8-pose/${parameters.detector}.zip
-          checksum_url: s3://savant-data/models/yolov8-pose/${parameters.detector}.md5
+          url: s3://savant-data/models/yolo11-pose/${parameters.detector}.zip
+          checksum_url: s3://savant-data/models/yolo11-pose/${parameters.detector}.md5
           parameters:
             endpoint: https://eu-central-1.linodeobjects.com
         format: onnx
-        model_file: ${parameters.detector}-simplify-dynamic.onnx
+        model_file: ${parameters.detector}.onnx
         batch_size: 1
         input:
           shape: [3, 384, 640]
@@ -29,7 +29,7 @@ pipeline:
           layer_names: ['output0']
           converter:
             module: samples.keypoint_detection.converter
-            class_name: YoloV8PoseConverter
+            class_name: Yolo11PoseConverter
             kwargs:
               confidence_threshold: 0.6
               nms_iou_threshold: 0.45

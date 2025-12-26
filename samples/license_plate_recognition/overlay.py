@@ -15,7 +15,7 @@ class Overlay(NvDsDrawFunc):
         """
         if object_meta.label == 'lpd':
             # drawing a licence plate instead of the label or empty label
-            attr_meta = object_meta.get_attr_meta('LPRNet', 'lpr')
+            attr_meta = object_meta.get_attr_meta('lpr', 'lpr')
             if attr_meta is not None:
                 new_label_format = [str(attr_meta.value)]
             else:

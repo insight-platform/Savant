@@ -1,4 +1,4 @@
-name: yolov8_seg
+name: yolov11_seg
 
 parameters:
   sampling_fps: ${oc.decode:${oc.env:SAMPLING_FPS, 10}}
@@ -10,9 +10,9 @@ parameters:
   frame:
     width: 1280
     height: 720
-  output_frame: ${py:samples.yolov8_seg.module.converter_opt, output_frame_selector}
+  output_frame: ${py:samples.yolov11_seg.module.converter_opt, output_frame_selector}
   draw_func:
-    module: samples.yolov8_seg.module.overlay
+    module: samples.yolov11_seg.module.overlay
     class_name: Overlay
     condition:
       tag: visualize
@@ -24,12 +24,12 @@ parameters:
   buffer_queues:
     length: 10
   batch_size: 1
-  model_output_converter: ${py:samples.yolov8_seg.module.converter_opt, converter_selector}
+  model_output_converter: ${py:samples.yolov11_seg.module.converter_opt, converter_selector}
 
 pipeline:
   elements:
     - element: pyfunc
-      module: samples.yolov8_seg.module.sampler
+      module: samples.yolov11_seg.module.sampler
       class_name: Downsampler
       kwargs:
         sampling_fps: ${parameters.sampling_fps}
@@ -38,15 +38,15 @@ pipeline:
         roi_width: ${parameters.roi.width}
         roi_height: ${parameters.roi.height}
     - element: nvinfer@instance_segmentation
-      name: yolov8_seg
+      name: segmenter
       model:
         remote:
-          url: s3://savant-data/models/yolov8m_seg/yolov8m_seg.zip
-          checksum_url: s3://savant-data/models/yolov8m_seg/yolov8m_seg.md5
+          url: s3://savant-data/models/yolov11-seg/yolo11m-seg.zip
+          checksum_url: s3://savant-data/models/yolov11-seg/yolo11m-seg.md5
           parameters:
             endpoint: https://eu-central-1.linodeobjects.com
         format: onnx
-        model_file: yolov8m-seg.onnx
+        model_file: yolo11m-seg.onnx
         batch_size: ${parameters.batch_size}
         input:
           object: rate_limiter.roi
@@ -57,7 +57,7 @@ pipeline:
         output:
           layer_names: [output0, output1]
           converter:
-            module: samples.yolov8_seg.module.${parameters.model_output_converter}
+            module: samples.yolov11_seg.module.${parameters.model_output_converter}
             class_name: TensorToBBoxSegConverter
             kwargs:
               confidence_threshold: 0.7

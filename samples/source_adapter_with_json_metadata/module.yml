@@ -1,0 +1,111 @@
+# module name, required
+name: ${oc.env:MODULE_NAME, 'source-adapter-with-json-metadata'}
+
+# base module parameters
+parameters:
+  # pipeline processing frame parameters
+  frame:
+    width: 1280
+    height: 720
+  output_frame:
+    codec: ${oc.env:CODEC, 'jpeg'}
+
+  detected_object:
+    id: 0
+    label: person
+
+  batch_size: 1
+
+  default_yolo_converter:
+    module: savant.converter.yolo
+    class_name: TensorToBBoxConverter
+    kwargs:
+      confidence_threshold: 0.25
+      nms_iou_threshold: 0.45
+      top_k: 300
+
+  default_yolo_selector:
+    module: savant.selector.detector
+    class_name: MinMaxSizeBBoxSelector
+    kwargs:
+      min_width: 30
+      min_height: 30
+
+  # PyFunc for drawing on frames (default implementation)
+  draw_func:
+    rendered_objects:
+      detector:
+        person:
+          bbox:
+            border_color: 'FF0000FF'  # Red
+            background_color: '00000000'  # transparent
+            thickness: 2
+            padding:
+              top: 10
+              left: 10
+              bottom: 10
+              right: 10
+          label:
+            # RGBA color values for person label's font and background
+            font_color: '000000FF'
+            background_color: 'FF0000FF'
+            position:
+              position: 'TopLeftInside'
+            format: [ 'Detected:','{label}' ]
+      coco:
+        person:
+          bbox:
+            border_color: '00FF00FF'  # Green
+            background_color: '00000000'  # transparent
+            thickness: 2
+            padding:
+              top: 10
+              left: 10
+              bottom: 10
+              right: 10
+
+          label:
+            # RGBA color values for person label's font and background
+            font_color: '000000FF'
+            background_color: '00FF00FF'
+            position:
+              position: 'TopLeftOutside'
+            format: [ 'GT:', '{label}' ]
+# pipeline definition
+pipeline:
+  # source definition is skipped, zeromq source is used by default to connect with source adapters
+
+  # define pipeline's main elements
+  elements:
+    - element: nvinfer@detector
+      name: detector
+      model:
+        remote:
+          url: s3://savant-data/models/yolov11s/yolov11s.zip
+          checksum_url: s3://savant-data/models/yolov11s/yolov11s.md5
+          parameters:
+            endpoint: https://eu-central-1.linodeobjects.com              
+        format: onnx
+        model_file: yolov11s.onnx
+        batch_size: ${parameters.batch_size}
+        workspace_size: 6144
+        input:
+          shape: [3, 640, 640]
+          scale_factor: 0.0039215697906911373
+          maintain_aspect_ratio: true
+          symmetric_padding: true
+        output:
+          layer_names: [output0]
+          num_detected_classes: 80  # required for YOLOv11
+          converter: ${parameters.default_yolo_converter}
+          objects:
+            - class_id: ${parameters.detected_object.id}
+              label: ${parameters.detected_object.label}
+              selector: ${parameters.default_yolo_selector}
+
+    - element: pyfunc
+      module: samples.source_adapter_with_json_metadata.metric
+      class_name: IOU
+      kwargs:
+        ground_truth: coco
+        element_name: detector
