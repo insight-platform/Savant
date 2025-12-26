@@ -106,7 +106,7 @@ jobs:
           DEEPSTREAM_VERSION=${{ needs.init.outputs.deepstream-version }}
           DEEPSTREAM_BASE_IMAGE=nvcr.io/nvidia/deepstream:${DEEPSTREAM_VERSION}-samples-multiarch
           DEEPSTREAM_DEVEL_IMAGE=nvcr.io/nvidia/deepstream:${DEEPSTREAM_VERSION}-triton-multiarch          
-          if [ "${{ matrix.runner }}" = "X64" ]; then
+          if [ "${{ matrix.group }}" = "native-builders-x86" ]; then
             if [ "${DEEPSTREAM_VERSION}" = "7.1" ]; then
               DEEPSTREAM_BASE_IMAGE=ghcr.io/insight-platform/deepstream:7.1.0-samples
               DEEPSTREAM_DEVEL_IMAGE=ghcr.io/insight-platform/deepstream:7.1.0-devel
