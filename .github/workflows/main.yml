@@ -259,7 +259,7 @@ jobs:
 
   # retag replay containers
   retag-savant-rs-platform-containers:
-    needs: init
+    needs: [init, build-savant-deepstream, build-savant-adapters, build-savant-watchdog]
     runs-on: ubuntu-latest
 
     permissions:
