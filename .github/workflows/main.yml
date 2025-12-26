@@ -75,8 +75,7 @@ jobs:
   build-savant-deepstream:
     needs: init
     runs-on:
-      - self-hosted
-      - ${{ matrix.runner }}
+      group: ${{ matrix.group }}
     permissions:
       contents: read
       packages: write
@@ -87,10 +86,10 @@ jobs:
         include:
           - docker_file: docker/Dockerfile.deepstream
             docker_image_suffix: deepstream
-            runner: X64
+            group: native-builders-x86
           - docker_file: docker/Dockerfile.deepstream
             docker_image_suffix: deepstream-l4t
-            runner: ARM64
+            group: native-builders-arm
 
     steps:
       - uses: actions/checkout@v4
@@ -168,8 +167,7 @@ jobs:
   build-savant-adapters:
     needs: init
     runs-on:
-      - self-hosted
-      - ${{ matrix.runner }}
+      group: ${{ matrix.group }}
     permissions:
       contents: read
       packages: write
@@ -180,16 +178,16 @@ jobs:
         include:
           - docker_file: docker/Dockerfile.adapters-gstreamer
             docker_image: savant-adapters-gstreamer
-            runner: X64
+            group: native-builders-x86
           - docker_file: docker/Dockerfile.adapters-gstreamer
             docker_image: savant-adapters-gstreamer-l4t
-            runner: ARM64
+            group: native-builders-arm
           - docker_file: docker/Dockerfile.adapters-py
             docker_image: savant-adapters-py
-            runner: X64
+            group: native-builders-x86
           - docker_file: docker/Dockerfile.adapters-py
             docker_image: savant-adapters-py-l4t
-            runner: ARM64
+            group: native-builders-arm
 
     steps:
       - uses: actions/checkout@v4
@@ -312,7 +310,8 @@ jobs:
   # build documentation
   build-docs:
     needs: [init, build-savant-deepstream]
-    runs-on: [self-hosted, X64]
+    runs-on:
+      group: native-builders-x86
     container:
       image: ${{ needs.init.outputs.docs-docker-image }}
     permissions:
