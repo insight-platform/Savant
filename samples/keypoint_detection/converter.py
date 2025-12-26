@@ -9,8 +9,8 @@ from savant.base.model import ComplexModel
 from savant.utils.nms import nms_cpu
 
 
-class YoloV8PoseConverter(BaseComplexModelOutputConverter):
-    """`YOLOv8Pose converter."""
+class Yolo11PoseConverter(BaseComplexModelOutputConverter):
+    """`YOLOv11Pose converter. Also known to work for YOLOv8Pose."""
 
     def __init__(
         self,
