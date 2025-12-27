@@ -1,6 +1,6 @@
 # License plate recognition 
 
-The app partially reproduces [deepstream_lpr_app](https://github.com/NVIDIA-AI-IOT/deepstream_lpr_app) in the Savant framework. The pipeline detects cars using the YoloV11 model and detects license plates using the NVidia LPD model. Cars and plates track using NVidia traker the license plate is recognized using the NVidia LPR model. The results are displayed on the frames.
+The app partially reproduces [deepstream_lpr_app](https://github.com/NVIDIA-AI-IOT/deepstream_lpr_app) in the Savant framework. The pipeline detects cars using the YoloV11 model and detects license plates using the NVidia LPD model. Cars and plates track using NVidia traker the license plate is recognized using the NVidia OCR model. The results are displayed on the frames.
 
 Preview:
 
