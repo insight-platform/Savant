@@ -79,7 +79,9 @@ def get_obj_draw_spec(config: Optional[dict]) -> ObjectDraw:
         label_format = config['label'].get('format', ['{label}'])
         # padding
         padding = config['label'].get('padding', [0, 0, 0, 0])
-        padding = PaddingDraw(left=padding[0], top=padding[1], right=padding[2], bottom=padding[3])
+        padding = PaddingDraw(
+            left=padding[0], top=padding[1], right=padding[2], bottom=padding[3]
+        )
 
         # rely on rust for defaults for label position
         if 'position' in config['label']:
