@@ -158,9 +158,10 @@ class ArtistGPUMat(AbstractContextManager):
                 raise ValueError('Wrong bbox size.')
 
             if draw_bg:
-                self.frame.colRange(left, right).rowRange(top, bottom).setTo(
-                    bg_color, stream=self.stream
-                )
+                roi = self.frame.rowRange(top, bottom).colRange(left, right)
+                mat = cv2.cuda.GpuMat(roi.size(), roi.type())
+                mat.setTo(bg_color, stream=self.stream)
+                opencv_utils.alpha_comp(roi, mat, (0, 0), stream=self.stream)
 
             if draw_border and (border_color != bg_color or not draw_bg):
                 self.frame.colRange(left, right).rowRange(
