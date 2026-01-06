@@ -41,7 +41,7 @@ services:
       - ROI_WIDTH=880
       - ROI_HEIGHT=420
       - MODEL_OUTPUT_CONVERTER=converter # 'gpu_converter' is an alternative post-processing implementation working solely on GPU (CuPy)
-      - SAMPLING_FPS=10
+      - SAMPLING_FPS=30
     runtime: nvidia
 
   always-on-sink:

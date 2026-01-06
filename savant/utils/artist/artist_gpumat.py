@@ -157,25 +157,24 @@ class ArtistGPUMat(AbstractContextManager):
             if (right - left) < 1 or (bottom - top) < 1:
                 raise ValueError('Wrong bbox size.')
 
-            if draw_bg:
-                roi = self.frame.rowRange(top, bottom).colRange(left, right)
-                mat = cv2.cuda.GpuMat(roi.size(), roi.type())
-                mat.setTo(bg_color, stream=self.stream)
-                opencv_utils.alpha_comp(roi, mat, (0, 0), stream=self.stream)
+            roi = self.frame.rowRange(top, bottom).colRange(left, right)
+            mat = cv2.cuda.GpuMat(roi.size(), roi.type())
 
             if draw_border and (border_color != bg_color or not draw_bg):
-                self.frame.colRange(left, right).rowRange(
-                    top, top + border_width
-                ).setTo(border_color, stream=self.stream)
-                self.frame.colRange(left, right).rowRange(
-                    bottom - border_width, bottom
-                ).setTo(border_color, stream=self.stream)
-                self.frame.colRange(left, left + border_width).rowRange(
-                    top, bottom
-                ).setTo(border_color, stream=self.stream)
-                self.frame.colRange(right - border_width, right).rowRange(
-                    top, bottom
-                ).setTo(border_color, stream=self.stream)
+                mat.setTo(border_color, stream=self.stream)
+
+            begin_col = 0 + border_width
+            end_col = mat.size()[0] - border_width
+            begin_row = 0 + border_width
+            end_row = mat.size()[1] - border_width
+            if end_col - begin_col >= 1 and end_row - begin_row >= 1:
+                bg_area = mat.colRange(begin_col, end_col).rowRange(begin_row, end_row)
+                if draw_bg:
+                    bg_area.setTo(bg_color, stream=self.stream)
+                else:
+                    bg_area.setTo((0, 0, 0, 0), stream=self.stream)
+
+            opencv_utils.alpha_comp(roi, mat, (0, 0), stream=self.stream)
 
         elif isinstance(bbox, RBBox):
             padded = bbox.new_padded(PaddingDraw(*padding))
