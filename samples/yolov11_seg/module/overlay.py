@@ -1,40 +1,27 @@
 """Custom DrawFunc implementation."""
 
+from typing import List
+
 import numpy as np
 
 from savant.deepstream.drawfunc import NvDsDrawFunc
 from savant.deepstream.meta.frame import NvDsFrameMeta
-from savant.deepstream.opencv_utils import alpha_comp, draw_rect, nvds_to_gpu_mat
-from savant.gstreamer import Gst  # noqa: F401
+from savant.utils.artist import Artist
 
 
 class Overlay(NvDsDrawFunc):
     """Custom implementation of PyFunc for drawing on frame."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, mask_color: List[int], bg_color: List[int], **kwargs):
         super().__init__(**kwargs)
-        self.bbox_color = (0, 255, 0, 255)
-        self.roi_color = (0, 0, 255, 255)
-        self.mask_color = np.array([0, 255, 0, 64], dtype=np.uint8)
-        self.bg_color = np.array([0, 0, 0, 0], dtype=np.uint8)
+        self.mask_color = np.array(mask_color, dtype=np.uint8)
+        self.bg_color = np.array(bg_color, dtype=np.uint8)
 
-    def draw(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
-        stream = self.get_cuda_stream(frame_meta)
-        with nvds_to_gpu_mat(buffer, frame_meta.frame_meta) as frame_mat:
-            for obj_meta in frame_meta.objects:
-                if obj_meta.is_primary:
-                    continue
+    def draw_on_frame(self, frame_meta: NvDsFrameMeta, artist: Artist):
+        super().draw_on_frame(frame_meta, artist)
 
-                if obj_meta.label == 'roi':
-                    draw_rect(
-                        frame_mat,
-                        rect=obj_meta.bbox.as_ltrb_int(),
-                        color=self.roi_color,
-                        thickness=2,
-                        stream=stream,
-                    )
-                    continue
-
+        for obj_meta in frame_meta.objects:
+            if obj_meta.label == 'person':
                 mask_attr = obj_meta.get_attr_meta('segmenter', 'mask')
                 if not mask_attr:
                     continue
@@ -49,17 +36,7 @@ class Overlay(NvDsDrawFunc):
                 if any(dim == 0 for dim in mask_overlay.shape):
                     continue
 
-                alpha_comp(
-                    frame_mat,
-                    overlay=mask_overlay,
-                    start=(bbox[0], bbox[1]),
-                    stream=stream,
-                )
-
-                draw_rect(
-                    frame_mat,
-                    rect=bbox,
-                    color=self.bbox_color,
-                    thickness=2,
-                    stream=stream,
+                artist.add_graphic(
+                    img=mask_overlay,
+                    origin=(bbox[0], bbox[1]),
                 )

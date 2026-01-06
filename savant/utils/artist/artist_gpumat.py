@@ -8,6 +8,8 @@ import numpy as np
 from savant_rs.draw_spec import PaddingDraw
 from savant_rs.primitives.geometry import BBox, RBBox
 
+from savant.deepstream import opencv_utils
+
 from .position import Position, get_bottom_left_point
 
 
@@ -410,8 +412,9 @@ class ArtistGPUMat(AbstractContextManager):
             frame_top, frame_bottom
         )
         img_roi = gpu_img.colRange(img_left, img_right).rowRange(img_top, img_bottom)
-
-        img_roi.copyTo(self.stream, frame_roi)
+        opencv_utils.alpha_comp(
+            frame_roi, img_roi, (img_left, img_top), stream=self.stream
+        )
 
     def __init_overlay(self):
         """Init overlay image."""
