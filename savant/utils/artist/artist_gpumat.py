@@ -9,6 +9,7 @@ from savant_rs.draw_spec import PaddingDraw
 from savant_rs.primitives.geometry import BBox, RBBox
 
 from savant.deepstream import opencv_utils
+from savant.utils.log import get_logger
 
 from .position import Position, get_bottom_left_point
 
@@ -29,6 +30,7 @@ class ArtistGPUMat(AbstractContextManager):
         self.overlay = None
         self.font_face = cv2.FONT_HERSHEY_SIMPLEX
         self.gaussian_filter = None
+        self.logger = get_logger(f'{self.__module__}.{self.__class__.__name__}')
 
     def __exit__(self, *exc_details):
         # apply alpha comp if overlay is not null
@@ -155,24 +157,32 @@ class ArtistGPUMat(AbstractContextManager):
             ).as_ltrb_int()
 
             if (right - left) < 1 or (bottom - top) < 1:
-                raise ValueError('Wrong bbox size.')
+                raise ValueError(
+                    f'Wrong bbox size: left={left}, top={top}, right={right}'
+                    f', bottom={bottom}, width={right - left}, height={bottom - top}'
+                )
 
-            roi = self.frame.rowRange(top, bottom).colRange(left, right)
+            roi = self.frame.rowRange(top, bottom + 1).colRange(left, right + 1)
             mat = cv2.cuda.GpuMat(roi.size(), roi.type())
 
             if draw_border and (border_color != bg_color or not draw_bg):
-                mat.setTo(border_color, stream=self.stream)
+                mat.setTo(border_color)
 
-            begin_col = 0 + border_width
+            begin_col = border_width
             end_col = mat.size()[0] - border_width
-            begin_row = 0 + border_width
+            begin_row = border_width
             end_row = mat.size()[1] - border_width
             if end_col - begin_col >= 1 and end_row - begin_row >= 1:
                 bg_area = mat.colRange(begin_col, end_col).rowRange(begin_row, end_row)
                 if draw_bg:
-                    bg_area.setTo(bg_color, stream=self.stream)
+                    bg_area.setTo(bg_color)
                 else:
-                    bg_area.setTo((0, 0, 0, 0), stream=self.stream)
+                    bg_area.setTo((0, 0, 0, 0))
+            else:
+                self.logger.warning(
+                    f'Wrong bg area size: begin_col={begin_col}, end_col={end_col}, '
+                    f'begin_row={begin_row}, end_row={end_row}'
+                )
 
             opencv_utils.alpha_comp(roi, mat, (0, 0), stream=self.stream)
 
@@ -243,6 +253,7 @@ class ArtistGPUMat(AbstractContextManager):
         radius: int,
         color: Tuple[int, int, int, int],
         thickness: int,
+        bg_color: Optional[Tuple[int, int, int, int]] = None,
         line_type: int = cv2.LINE_AA,
     ):
         """Draw circle.
@@ -251,11 +262,23 @@ class ArtistGPUMat(AbstractContextManager):
         :param radius: Circle radius.
         :param color: Circle line color, RGBA, ints in range [0;255].
         :param thickness: Circle line thickness.
+        :param bg_color: Background color, RGBA, ints in range [0;255].
         :param line_type: Circle line type.
         """
         if color[3] <= 0 or (thickness <= 0 and radius <= 0):
             return
         self.__init_overlay()
+        if bg_color is not None and bg_color[3] > 0:
+            inner_radius = radius - thickness
+            if inner_radius > 0:
+                cv2.circle(
+                    self.overlay,
+                    center,
+                    inner_radius,
+                    bg_color,
+                    cv2.FILLED,
+                    line_type,
+                )
         cv2.circle(self.overlay, center, radius, color, thickness, line_type)
 
     def add_line(
@@ -303,7 +326,9 @@ class ArtistGPUMat(AbstractContextManager):
         if draw_fill:
             cv2.drawContours(self.overlay, vertices, 0, bg_color, cv2.FILLED)
         if draw_contour and (not draw_fill or line_color != bg_color):
-            cv2.drawContours(self.overlay, vertices, 0, line_color, line_width)
+            cv2.drawContours(
+                self.overlay, vertices, 0, line_color, line_width, cv2.LINE_AA
+            )
 
     def blur(
         self,
@@ -373,6 +398,7 @@ class ArtistGPUMat(AbstractContextManager):
         if isinstance(img, np.ndarray):
             gpu_img = cv2.cuda.GpuMat(img.shape[0], img.shape[1], cv2.CV_8UC4)
             gpu_img.upload(img, self.stream)
+            self.stream.waitForCompletion()
         else:
             gpu_img = img
 

@@ -1,4 +1,3 @@
-import cv2
 import yaml
 
 from savant.deepstream.drawfunc import NvDsDrawFunc
@@ -57,15 +56,29 @@ class Overlay(NvDsDrawFunc):
         legend_rect_center_x = legend_rect_left + legend_rect_width // 2
         legend_text_x = legend_rect_left + legend_rect_width + 20
         legend_y = 50
+        mark_radius = 6
+        mark_thickness = 2
+        mark_bg_color = (255, 255, 255, 255)
 
         area_lines = self.areas[frame_meta.source_id]
         for area_name, (points, color) in area_lines.items():
-            artist.add_polygon(points, line_color=color, line_width=2)
+            artist.add_polygon(
+                points,
+                line_color=color,
+                bg_color=(color[0], color[1], color[2], 25),
+                line_width=2,
+            )
 
             for obj in obj_metas:
                 if obj.draw_label == area_name:
                     center = round(obj.bbox.xc), round(obj.bbox.yc)
-                    artist.add_circle(center, 3, color, cv2.FILLED)
+                    artist.add_circle(
+                        center,
+                        mark_radius,
+                        mark_bg_color,
+                        mark_thickness,
+                        bg_color=color,
+                    )
 
             n_objs_meta = primary_meta_object.get_attr_meta('analytics', area_name)
             if n_objs_meta:
@@ -88,8 +101,9 @@ class Overlay(NvDsDrawFunc):
                     legend_rect_width,
                     legend_rect_width,
                 ),
-                border_width=0,
-                bg_color=color,
+                border_width=2,
+                border_color=color,
+                bg_color=(color[0], color[1], color[2], color[3] // 2),
             )
 
             legend_y += legend_rect_width + 50
