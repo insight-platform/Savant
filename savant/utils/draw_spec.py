@@ -77,6 +77,11 @@ def get_obj_draw_spec(config: Optional[dict]) -> ObjectDraw:
         thickness = config['label'].get('thickness', 1)
         # default format: {label}
         label_format = config['label'].get('format', ['{label}'])
+        # padding
+        padding = config['label'].get('padding', [0, 0, 0, 0])
+        padding = PaddingDraw(
+            left=padding[0], top=padding[1], right=padding[2], bottom=padding[3]
+        )
 
         # rely on rust for defaults for label position
         if 'position' in config['label']:
@@ -103,6 +108,7 @@ def get_obj_draw_spec(config: Optional[dict]) -> ObjectDraw:
             thickness=thickness,
             format=label_format,
             position=label_position,
+            padding=padding,
         )
 
     blur = config.get('blur', False)

@@ -49,6 +49,7 @@ class NvDsDrawFunc(BaseNvDsDrawFunc):
         with nvds_to_gpu_mat(buffer, frame_meta.frame_meta) as frame_mat:
             with Artist(frame_mat, stream) as artist:
                 self.draw_on_frame(frame_meta, artist)
+        stream.waitForCompletion()
 
     def override_draw_spec(
         self, object_meta: ObjectMeta, draw_spec: ObjectDraw

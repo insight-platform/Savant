@@ -30,4 +30,8 @@ class IOU(NvDsPyFuncPlugin):
             self.logger.info(f'IOU metric: {metric}')
         else:
             frame_meta.set_tag('iou_metric', 0)
-            self.logger.info('GT count: %d, detected count: %d, IOU metric: 0', len(ground_truth_objects), len(detected_objects))
+            self.logger.info(
+                'GT count: %d, detected count: %d, IOU metric: 0',
+                len(ground_truth_objects),
+                len(detected_objects),
+            )

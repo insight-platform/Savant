@@ -21,6 +21,42 @@ parameters:
       roi_top: ${parameters.roi.top}
       roi_width: ${parameters.roi.width}
       roi_height: ${parameters.roi.height}
+      mask_color: [0, 255, 0, 64]
+      bg_color: [0, 0, 0, 0] # transparent
+    rendered_objects:
+      segmenter:
+        person:
+          bbox:
+            border_color: '00FF00FF'  # Green
+            background_color: '000000AA'  # semi-transparent black
+            thickness: 2
+          label:
+            format: [ '{label}' ]
+            font_color: 'FFFFFFFF' # White
+            background_color: '000000AA' # semi-transparent black
+            border_width: 2
+            border_color: 'FFFFFFFF' # white
+            position:
+              position: TopLeftOutside
+              margin_x: 0
+              margin_y: -10
+      rate_limiter:
+        roi:
+          bbox:
+            border_color: 'FF0000FF'  # Red
+            background_color: '00000000' # transparent
+            thickness: 2
+          label:
+            font_color: 'FFFFFFFF' # White
+            background_color: '000000AA' # semi-transparent black
+            format: [ '{label}' ]
+            border_width: 2
+            border_color: 'FFFFFFFF' # white
+            padding: [15, 15, 15, 15]
+            position:
+              position: TopLeftOutside
+              margin_x: -40
+              margin_y: 30
   buffer_queues:
     length: 10
   batch_size: 1

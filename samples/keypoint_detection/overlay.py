@@ -86,9 +86,10 @@ class Overlay(NvDsDrawFunc):
                 if conf > KP_CONFIDENCE_THRESHOLD:
                     artist.add_circle(
                         center=(int(x), int(y)),
-                        radius=2,
-                        color=(255, 0, 0, 255),
+                        radius=8,
+                        color=(255, 255, 255, 255),
                         thickness=2,
+                        bg_color=(255, 0, 0, 128),
                     )
                     # show label
                     # artist.add_text(
