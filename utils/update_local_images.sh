@@ -6,7 +6,7 @@ if [ -z "$VERSION" ]; then
     # No version specified, pull latest and savant-latest tags
     echo "Updating images with 'latest' and 'savant-latest' tags..."
     
-    IMAGES=$(docker images | grep ghcr.io/insight-platform | grep -E "(latest|savant-latest)" | awk '{print $1":"$2}')
+    IMAGES=$(docker images | grep ghcr.io/insight-platform | grep -E "(latest|savant-latest)" | awk '{print $1}')
     
     if [ -z "$IMAGES" ]; then
         echo "No images found with 'latest' or 'savant-latest' tags"
@@ -22,7 +22,7 @@ else
     # Version specified, pull vX.Y.Z tags
     echo "Updating images with version v$VERSION..."
     
-    IMAGES=$(docker images | grep ghcr.io/insight-platform | grep "v$VERSION" | awk '{print $1":"$2}')
+    IMAGES=$(docker images | grep ghcr.io/insight-platform | grep -E ":(v)?$VERSION" | awk '{print $1}')
     
     if [ -z "$IMAGES" ]; then
         echo "No images found with version v$VERSION"
