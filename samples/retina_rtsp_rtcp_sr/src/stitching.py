@@ -251,31 +251,31 @@ class CombineFrames(NvDsPyFuncPlugin):
         overlay_frame: Frame = frames_to_combine.get(overlay_cam.id)
         overlay_frame_content: cv2.cuda.GpuMat = overlay_frame.content
 
-        main_crop_area = (0, 0, self.output_width, self.output_height)
+        main_crop_area = (0, 0, self.output_width // 2, self.output_height)
+
+        # overlay_crop_area = (
+        #     self.output_width // 2,
+        #     0,
+        #     self.output_width // 2,
+        #     self.output_height // 2,
+        # )
 
         overlay_crop_area = (
-            self.output_width // 2,
+            0,
             0,
             self.output_width // 2,
-            self.output_height // 2,
+            self.output_height,
         )
+
 
         main_crop = cv2.cuda.GpuMat(main_frame_content, main_crop_area)
         main_crop_dest = cv2.cuda.GpuMat(output_mat, main_crop_area)
         main_crop.copyTo(dst=main_crop_dest, stream=stream)
 
         overlay_crop = cv2.cuda.GpuMat(overlay_frame_content, overlay_crop_area)
-        overlay_crop_dest = cv2.cuda.GpuMat(output_mat, overlay_crop_area)
+        overlay_crop_dest = cv2.cuda.GpuMat(output_mat, (self.output_width // 2, 0, self.output_width // 2, self.output_height))
         overlay_crop.copyTo(dst=overlay_crop_dest, stream=stream)
-
         stream.waitForCompletion()
-        draw_rect(
-            output_mat,
-            (self.output_width // 2, 0, self.output_width, self.output_height // 2),
-            (255, 255, 255, 255),
-            2,
-        )
-
         self.logger.debug('[Batch %s] Frames combined.', batch_id)
 
     def on_start(self) -> bool:
