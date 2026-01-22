@@ -27,7 +27,7 @@ The demo uses models that are compiled into TensorRT engines the first time the 
 ```bash
 # you are expected to be in Savant/ directory
 
-./scripts/run_module.py --build-engines samples/peoplenet_detector/module.yml
+./scripts/run_module.py --build-engines samples/multiple_rtsp/module.yml
 ```
 
 ## Run Demo

@@ -1,0 +1,33 @@
+services:
+
+  video-file-input:
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    extends:
+      file: docker-compose.l4t.yml
+      service: video-file-input
+
+  module:
+    privileged: true
+    image: ghcr.io/insight-platform/savant-deepstream:latest
+    extends:
+      file: docker-compose.l4t.yml
+      service: module
+    runtime: runc
+    environment:
+      - CODEC=h264
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+
+  video-sink:
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    extends:
+      file: docker-compose.l4t.yml
+      service: video-sink
+
+volumes:
+  zmq_sockets:
