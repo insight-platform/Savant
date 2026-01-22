@@ -27,13 +27,13 @@ The demo uses models that are compiled into TensorRT engines the first time the 
 ./scripts/run_module.py --build-engines samples/file_processing/module.yml
 ```
 
-## Run pipeline and video file Sink
+## Launch the pipeline and video file sink
 
 ```bash
 docker compose -f samples/file_processing/docker-compose.x86.yml up
 ```
 
-## Ingest file
+## Ingest a file
 
 Known issues and how to fix them: https://github.com/insight-platform/Savant/issues/1140
 
