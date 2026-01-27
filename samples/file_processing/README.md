@@ -49,4 +49,4 @@ docker compose \
     video-file-input
 ```
 
-Check results in `data/results/your-source/your-video/video.mov`.
+Check processing results in `data/results/your-source/your-video/video.mov`.
