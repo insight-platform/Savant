@@ -157,7 +157,7 @@ def main(repository: str, token: str, dst_path: str):
     # render html
     render_templates(
         dict(
-            versions=list(versions) + ['develop'],
+            versions=list(versions),
             latest=latest,
             pages_url=pages_url,
         ),

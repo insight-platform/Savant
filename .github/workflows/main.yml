@@ -361,8 +361,8 @@ jobs:
         if: github.ref_name == 'develop'
         run: |
           ./docs/source/gh_script.py ${{ github.repository }} ${{ github.token }} docs/root
-          mv docs/build/html docs/root/develop
-          mv docs/root/versions.js docs/root/develop/_static/js/versions.js
+          mv docs/build/html docs/root/latest
+          mv docs/root/versions.js docs/root/latest/_static/js/versions.js
 
       - name: Upload pages artifact
         if: github.ref_name == 'develop'
