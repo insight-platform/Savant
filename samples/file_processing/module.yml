@@ -1,0 +1,85 @@
+# module name, required
+name: ${oc.env:MODULE_NAME, 'file_processing'}
+
+# base module parameters
+parameters:
+  # pipeline processing frame parameters
+  output_frame:
+    codec: ${oc.env:CODEC, 'raw-rgba'}
+  # PyFunc for drawing on frames (default implementation)
+  draw_func:
+    module: savant.deepstream.drawfunc
+    class_name: NvDsDrawFunc
+    rendered_objects:
+      detector:
+        person:
+          bbox:
+            border_color: 'FFFFFFFF'  # Green
+            background_color: '00000077'  # semi-transparent black
+            thickness: 2
+          label:
+            format: [ '{label}' ]
+            font_color: 'FFFFFFFF' # White
+            background_color: '000000AA' # semi-transparent black
+            border_width: 2
+            border_color: 'FFFFFFFF' # white
+            padding: [10, 0, 10, 0] # left, top, right, bottom
+            position:
+              position: TopLeftOutside
+              margin_x: 0
+              margin_y: -10
+
+  detected_object:
+    id: 0
+    label: person
+
+  default_yolo_converter:
+    module: savant.converter.yolo
+    class_name: TensorToBBoxConverter
+    kwargs:
+      confidence_threshold: 0.25
+      nms_iou_threshold: 0.45
+      top_k: 300
+
+  default_yolo_selector:
+    module: savant.selector.detector
+    class_name: MinMaxSizeBBoxSelector
+    kwargs:
+      min_width: 30
+      min_height: 30
+
+  batch_size: 1
+
+# pipeline definition
+pipeline:
+  # source definition is skipped, zeromq source is used by default to connect with source adapters
+
+  # define pipeline's main elements
+  elements:
+    # primary detector element, inference is provided by the nvinfer Deepstream element
+    # model type is detector (other available types are: classifier, custom)
+    - element: nvinfer@detector
+      name: detector
+      model:
+        remote:
+          url: s3://savant-data/models/yolo11n/yolo11n.zip
+          checksum_url: s3://savant-data/models/yolo11n/yolo11n.md5
+          parameters:
+            endpoint: https://eu-central-1.linodeobjects.com              
+        format: onnx
+        model_file: yolo11n.onnx
+        batch_size: ${parameters.batch_size}
+        workspace_size: 6144
+        input:
+          shape: [3, 640, 640]
+          scale_factor: 0.0039215697906911373
+          maintain_aspect_ratio: true
+          symmetric_padding: true
+        output:
+          layer_names: [output0]
+          num_detected_classes: 80  # required for YOLOv11
+          converter: ${parameters.default_yolo_converter}
+          objects:
+            - class_id: ${parameters.detected_object.id}
+              label: ${parameters.detected_object.label}
+              selector: ${parameters.default_yolo_selector}

@@ -1,0 +1,55 @@
+services:
+
+  video-file-input:
+    profiles: [video-file-input]
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:latest
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ../../data/:/data/
+    environment:
+      - SOURCE_ID
+      - LOCATION
+      - EOS_ON_FRAME_PARAMS_CHANGE=True
+      - ZMQ_ENDPOINT=req+connect:ipc:///tmp/zmq-sockets/input-video.ipc
+      - FILE_TYPE=video
+    entrypoint: /opt/savant/adapters/gst/sources/media_files.sh
+    depends_on:
+      module:
+        condition: service_healthy
+
+  module:
+    privileged: true
+    image: ghcr.io/insight-platform/savant-deepstream-l4t:latest
+    restart: unless-stopped
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ../../cache:/cache
+      - ..:/opt/savant/samples
+    command: samples/file_processing/module.yml
+    environment:
+      - MODEL_PATH=/cache/models/yolo11
+      - DOWNLOAD_PATH=/cache/downloads/yolo11
+      - ZMQ_SRC_ENDPOINT=rep+bind:ipc:///tmp/zmq-sockets/input-video.ipc
+      - ZMQ_SINK_ENDPOINT=dealer+bind:ipc:///tmp/zmq-sockets/output-video.ipc
+      - METRICS_FRAME_PERIOD=1000
+      - CODEC=jpeg
+    runtime: nvidia
+
+  video-sink:
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:latest
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ../../data/results:/data
+    environment:
+      - ZMQ_ENDPOINT=router+connect:ipc:///tmp/zmq-sockets/output-video.ipc
+      - DIR_LOCATION=/data/%source_id/%src_filename
+      - CHUNK_SIZE=0
+      - SKIP_FRAMES_WITHOUT_OBJECTS=False
+      - METADATA_JSON_FORMAT=native
+    entrypoint: /opt/savant/adapters/gst/sinks/video_files.py
+    depends_on:
+      module:
+        condition: service_healthy
+
+volumes:
+  zmq_sockets:

@@ -120,6 +120,12 @@ A simple pipeline demonstrates how multiplexed processing works in Savant. In th
 
 Sample location: [multiple_rtsp](./multiple_rtsp)
 
+### File Processing
+
+A pipeline shows how to send a video file for processing and get resulting video file after processing.
+
+Sample location: [file_processing](./file_processing)
+
 ### Testing RTSP Camera Compatibility
 
 A very primitive source-sink pipeline testing that RTSP cam normally processed by NVDEC and thus, is compatible with Savant.
