@@ -1,4 +1,8 @@
+<<<<<<< HEAD
+# File Processing Demo
+=======
 # File processing demo
+>>>>>>> 94b7faad96316f400112ee3c47929f80f8b86579
 
 A simple pipeline demonstrates how to handle files (input/output). 
 
@@ -17,7 +21,11 @@ git lfs pull
 
 **Note**: Ubuntu 22.04 runtime configuration [guide](https://insight-platform.github.io/Savant/develop/getting_started/0_configure_prod_env.html) helps to configure the runtime to run Savant pipelines.
 
+<<<<<<< HEAD
+## Build Engines
+=======
 ## Build engines
+>>>>>>> 94b7faad96316f400112ee3c47929f80f8b86579
 
 The demo uses models that are compiled into TensorRT engines the first time the demo is run. This takes time. Optionally, you can prepare the engines before running the demo by using the command:
 
