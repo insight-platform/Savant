@@ -405,7 +405,6 @@ class ZeromqSrc(LoggerMixin, GstBase.BaseSrc):
         if is_ws_shutdown_set():
             return self.handle_ws_shutdown()
         message = zmq_message.message
-        message.validate_seq_id()
         if message.is_video_frame():
             return self.handle_video_frame(
                 message.as_video_frame(),

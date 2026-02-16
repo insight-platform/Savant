@@ -301,7 +301,6 @@ class MultiStreamKvsSink:
 
     def write(self, zmq_message: ZeroMQMessage):
         message = zmq_message.message
-        message.validate_seq_id()
         if message.is_video_frame():
             return self._write_video_frame(
                 message.as_video_frame(),
