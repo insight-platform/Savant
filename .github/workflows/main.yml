@@ -297,6 +297,8 @@ jobs:
             "savant-rs-py314"
             "savant-buffer-ng-x86"
             "savant-buffer-ng-arm64"
+            "savant-meta-merge-x86"
+            "savant-meta-merge-arm64"
           )
           
           # Retag each image using docker buildx imagetools
