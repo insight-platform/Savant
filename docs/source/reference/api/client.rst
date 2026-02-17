@@ -174,8 +174,8 @@ Builders
     :nosignatures:
     :template: autosummary/class.rst
 
-    savant_rs.py.client.SourceBuilder
-    savant_rs.py.client.SinkBuilder
+    SourceBuilder
+    SinkBuilder
 
 Frame sources
 -------------
@@ -185,9 +185,9 @@ Frame sources
     :nosignatures:
     :template: autosummary/class.rst
 
-    savant_rs.py.client.FrameSource
-    savant_rs.py.client.JpegSource
-    savant_rs.py.client.PngSource
+    FrameSource
+    JpegSource
+    PngSource
 
 Log providers
 -------------
@@ -197,8 +197,8 @@ Log providers
     :nosignatures:
     :template: autosummary/class.rst
 
-    savant_rs.py.client.LogProvider
-    savant_rs.py.client.JaegerLogProvider
+    LogProvider
+    JaegerLogProvider
 
 Results
 -------
@@ -208,8 +208,8 @@ Results
     :nosignatures:
     :template: autosummary/class.rst
 
-    savant_rs.py.client.runner.source.SourceResult
-    savant_rs.py.client.runner.sink.SinkResult
+    runner.source.SourceResult
+    runner.sink.SinkResult
 
 Runners
 -------
@@ -219,7 +219,7 @@ Runners
     :nosignatures:
     :template: autosummary/class.rst
 
-    savant_rs.py.client.runner.source.SourceRunner
-    savant_rs.py.client.runner.source.AsyncSourceRunner
-    savant_rs.py.client.runner.sink.SinkRunner
-    savant_rs.py.client.runner.sink.AsyncSinkRunner
+    runner.source.SourceRunner
+    runner.source.AsyncSourceRunner
+    runner.sink.SinkRunner
+    runner.sink.AsyncSinkRunner

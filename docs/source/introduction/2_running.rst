@@ -7,7 +7,7 @@ All pieces of Savant framework are normally run in docker containers. We provide
 
 To get an idea how to run a Savant module, let us take a look at the docker compose from one of the Savant examples:
 
-.. literalinclude:: ../../../samples/nvidia_car_classification/docker-compose.x86.yml
+.. literalinclude:: ../../../samples/area_object_counting/docker-compose.x86.yml
   :language: YAML
 
 The file introduces several services:
