@@ -115,14 +115,14 @@ For example, the configuration that sets the output frame codec based on the pla
 .. code-block:: yaml
 
     parameters:
-      output_frame: ${py:samples.yolov8_seg.module.converter_opt, output_frame_selector}
+      output_frame: ${py:samples.yolov11_seg.module.converter_opt, output_frame_selector}
 
 
 The resolver can return a dictionary, list, tuple, or any other type that can be converted to a OmegaConf object.
 
 Example of usage:
 
-.. literalinclude:: ../../../samples/yolov8_seg/module/converter_opt.py
+.. literalinclude:: ../../../samples/yolov11_seg/module/converter_opt.py
   :language: python
 
 

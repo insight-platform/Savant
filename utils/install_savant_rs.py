@@ -96,7 +96,8 @@ def main():
             )
             continue
         print(f'Installing {name}')
-        install(os.path.join('local_wheels/savant_rs', name))
+        whl_path = os.path.join('local_wheels/savant_rs', name)
+        install(f'{whl_path}')
         excludes.append(name)
 
     gh_token = os.environ.get('GITHUB_TOKEN')
@@ -129,7 +130,7 @@ def main():
             continue
         asset_path = download_asset(asset, download_path, gh_repo, gh_token)
         print(f'Downloaded {asset_path}.')
-        install(asset_path)
+        install(f'{asset_path}')
 
     if asset_path is None and len(excludes) == 0:
         sys.exit(
