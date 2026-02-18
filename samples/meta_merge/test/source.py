@@ -84,9 +84,9 @@ def run_yolo_person_detection(
             if cls_id != 0:  # COCO person class
                 continue
             xyxy = box.xyxy[0]
-            l, t, r, b = int(xyxy[0]), int(xyxy[1]), int(xyxy[2]), int(xyxy[3])
+            l, t, right, b = int(xyxy[0]), int(xyxy[1]), int(xyxy[2]), int(xyxy[3])
             conf = float(box.conf[0])
-            persons.append((l, t, r, b, conf))
+            persons.append((l, t, right, b, conf))
     return persons
 
 
