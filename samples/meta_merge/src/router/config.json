@@ -1,0 +1,45 @@
+{
+    "ingress": [
+        {
+            "name": "ingress",
+            "socket": {
+                "url": "sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc"
+            },
+            "handler": "ingress_handler"
+        }
+    ],
+    "egress": [
+        {
+            "name": "left",
+            "socket": {
+                "url": "dealer+bind:ipc:///tmp/zmq-sockets/left.ipc"
+            }
+        },
+        {
+            "name": "right",
+            "socket": {
+                "url": "dealer+bind:ipc:///tmp/zmq-sockets/right.ipc"
+            }
+        }
+    ],
+    "common": {
+        "init": {
+            "python_root": "${PYTHON_MODULE_ROOT}",
+            "module_name": "router",
+            "function_name": "init",
+            "args": null
+        },
+        "source_affinity_cache_size": 1000,
+        "name_cache": {
+            "ttl": {
+                "secs": 10,
+                "nanos": 0
+            },
+            "size": 1000
+        },
+        "idle_sleep": {
+            "secs": 0,
+            "nanos": 1000
+        }
+    }
+}

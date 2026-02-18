@@ -1,0 +1,16 @@
+name: meta_merge_visualization
+
+parameters:
+  frame:
+    width: 1280
+    height: 720
+    geometry_base: 4
+  output_frame:
+    codec: ${oc.env:CODEC, 'jpeg'}
+  draw_func:
+    module: samples.meta_merge.src.visualization.overlay
+    class_name: Overlay
+  batch_size: 1
+
+pipeline:
+  elements: []
