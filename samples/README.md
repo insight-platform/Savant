@@ -192,6 +192,12 @@ A pipeline demonstrates the router service distributing video streams between sc
 
 Sample location: [router](router)
 
+### Meta Merge
+
+A pipeline demonstrating the Meta Merge service for merging metadata from multiple parallel inference pipelines. The sample splits the frame into left and right ROIs, runs YOLO11 on each half in separate module instances, merges objects using `export_complete_object_trees` and `import_object_trees`, and visualizes the combined results.
+
+Sample location: [meta_merge](meta_merge)
+
 ### Uridecodebin input
 
 The sample shows how to use the module with uridecodebin input to feed downstream elements with videostreams.
