@@ -2,4 +2,4 @@
 
 from .handler import init
 
-__all__ = ["init"]
+__all__ = ['init']

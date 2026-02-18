@@ -43,7 +43,9 @@ def merge_jpeg_side_by_side(
         merged.paste(img, (w, 0))
 
         if target_width is not None and target_height is not None:
-            merged = merged.resize((target_width, target_height), Image.Resampling.LANCZOS)
+            merged = merged.resize(
+                (target_width, target_height), Image.Resampling.LANCZOS
+            )
 
         with tempfile.NamedTemporaryFile(suffix='.jpeg', delete=False) as f:
             merged.save(f.name, 'JPEG', quality=85)
@@ -134,7 +136,9 @@ def main() -> int:
                 framerate='30/1',
                 width=width,
                 height=height,
-                content=VideoFrameContent.external(ExternalFrameType.ZEROMQ.value, None),
+                content=VideoFrameContent.external(
+                    ExternalFrameType.ZEROMQ.value, None
+                ),
                 transcoding_method=VideoFrameTranscodingMethod.Copy,
                 codec='jpeg',
                 keyframe=True,

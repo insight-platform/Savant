@@ -128,7 +128,11 @@ def main() -> int:
                             f'No frames received within {max_startup_s}s startup timeout',
                         )
                         return 1
-                elif frames_received > 0 and max_idle_s > 0 and last_frame_time is not None:
+                elif (
+                    frames_received > 0
+                    and max_idle_s > 0
+                    and last_frame_time is not None
+                ):
                     if now - last_frame_time > max_idle_s:
                         log(
                             LogLevel.Info,
@@ -164,9 +168,17 @@ def main() -> int:
         log(LogLevel.Error, 'sink', 'FAILED: No video frames received')
         return 1
     if errors > 0:
-        log(LogLevel.Error, 'sink', f'FAILED: {errors} of {frames_received} frame(s) had detection mismatches')
+        log(
+            LogLevel.Error,
+            'sink',
+            f'FAILED: {errors} of {frames_received} frame(s) had detection mismatches',
+        )
         return 1
-    log(LogLevel.Info, 'sink', f'PASSED: All {frames_received} frame(s) matched expected (source, person) attribute')
+    log(
+        LogLevel.Info,
+        'sink',
+        f'PASSED: All {frames_received} frame(s) matched expected (source, person) attribute',
+    )
     return 0
 
 

@@ -12,7 +12,7 @@ from savant_rs.utils.serialization import Message
 
 from meta_merge.roi_constants import LEFT_ROI_LABEL, RIGHT_ROI_LABEL, ROI_NAMESPACE
 
-MARKER_LABEL = "marker"
+MARKER_LABEL = 'marker'
 MARKER_SIZE = 40
 
 
@@ -77,14 +77,14 @@ class IngressHandler:
 
         log(
             LogLevel.Debug,
-            "router",
-            f"Added ROIs + markers to frame {width}x{height} (idx={self._frame_idx})",
+            'router',
+            f'Added ROIs + markers to frame {width}x{height} (idx={self._frame_idx})',
         )
         return message
 
 
 def init(params: Any) -> bool:
     """Initialize router handlers."""
-    register_handler("ingress_handler", IngressHandler())
-    log(LogLevel.Info, "router", "Router initialized with ROI handler")
+    register_handler('ingress_handler', IngressHandler())
+    log(LogLevel.Info, 'router', 'Router initialized with ROI handler')
     return True

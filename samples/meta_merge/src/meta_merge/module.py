@@ -7,7 +7,12 @@ from savant_rs.logging import LogLevel, log
 from savant_rs.match_query import MatchQuery, StringExpression
 from savant_rs.utils.serialization import Message
 
-from roi_constants import EXPECTED_INGRESS_COUNT, LEFT_ROI_LABEL, RIGHT_ROI_LABEL, ROI_NAMESPACE
+from roi_constants import (
+    EXPECTED_INGRESS_COUNT,
+    LEFT_ROI_LABEL,
+    RIGHT_ROI_LABEL,
+    ROI_NAMESPACE,
+)
 
 
 class MergeHandler:
@@ -46,14 +51,14 @@ class MergeHandler:
                 current_frame.import_object_trees(trees)
                 log(
                     LogLevel.Debug,
-                    "meta_merge",
-                    f"Merged {len(trees)} object tree(s) from {ingress_name}",
+                    'meta_merge',
+                    f'Merged {len(trees)} object tree(s) from {ingress_name}',
                 )
 
         # Track received ingresses
-        received = current_state.state.get("received_ingresses", set())
+        received = current_state.state.get('received_ingresses', set())
         received.add(ingress_name)
-        current_state.state["received_ingresses"] = received
+        current_state.state['received_ingresses'] = received
 
         # Mark ready when we have received from all expected ingresses
         return len(received) >= EXPECTED_INGRESS_COUNT
@@ -80,7 +85,7 @@ class LateArrivalHandler:
 
     def __call__(self, state: Any) -> None:
         """Log late arrival."""
-        log(LogLevel.Warning, "meta_merge", "Late frame arrival ignored")
+        log(LogLevel.Warning, 'meta_merge', 'Late frame arrival ignored')
 
 
 class UnsupportedMessageHandler:
@@ -96,17 +101,17 @@ class UnsupportedMessageHandler:
         """Log unsupported message."""
         log(
             LogLevel.Debug,
-            "meta_merge",
-            f"Unsupported message from {ingress_name}: {type(message)}",
+            'meta_merge',
+            f'Unsupported message from {ingress_name}: {type(message)}',
         )
 
 
 def init(params: Any) -> bool:
     """Register all callback handlers."""
-    register_handler("merge_handler", MergeHandler())
-    register_handler("head_expired_handler", HeadExpiredHandler())
-    register_handler("head_ready_handler", HeadReadyHandler())
-    register_handler("late_arrival_handler", LateArrivalHandler())
-    register_handler("unsupported_message_handler", UnsupportedMessageHandler())
-    log(LogLevel.Info, "meta_merge", "Meta Merge handler initialized")
+    register_handler('merge_handler', MergeHandler())
+    register_handler('head_expired_handler', HeadExpiredHandler())
+    register_handler('head_ready_handler', HeadReadyHandler())
+    register_handler('late_arrival_handler', LateArrivalHandler())
+    register_handler('unsupported_message_handler', UnsupportedMessageHandler())
+    log(LogLevel.Info, 'meta_merge', 'Meta Merge handler initialized')
     return True

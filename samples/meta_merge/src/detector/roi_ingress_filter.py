@@ -24,7 +24,7 @@ class ROIIngressFilter(BaseFrameFilter):
         super().__init__(**kwargs)
         self.roi = roi.lower()
         if self.roi not in VALID_ROIS:
-            raise ValueError(f"roi must be {ROI_LEFT!r} or {ROI_RIGHT!r}, got {roi!r}")
+            raise ValueError(f'roi must be {ROI_LEFT!r} or {ROI_RIGHT!r}, got {roi!r}')
 
     def __call__(self, video_frame) -> bool:
         """Remove the other ROI and its children, then pass the frame."""
