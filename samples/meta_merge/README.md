@@ -37,7 +37,8 @@ meta_merge/
 │   │   └── handler.py              # Creates left/right ROI objects
 │   ├── detector/
 │   │   ├── module.yml              # YOLOv11n detector config
-│   │   └── roi_ingress_filter.py   # Filters frames by MODULE_ROI
+│   │   ├── roi_ingress_filter.py   # Filters frames by MODULE_ROI
+│   │   └── roi_resolver.py         # ${py:} resolver for ROI input object
 │   ├── meta_merge/
 │   │   ├── config.json             # Meta-merge socket config
 │   │   ├── module.py               # Merge/ready/expired/late handlers

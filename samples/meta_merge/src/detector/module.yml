@@ -56,7 +56,7 @@ pipeline:
         batch_size: ${parameters.batch_size}
         workspace_size: 6144
         input:
-          object: router.${oc.env:MODULE_ROI, 'left'}_roi
+          object: ${py:samples.meta_merge.src.detector.roi_resolver, roi_input_object}
           shape: [3, 640, 640]
           scale_factor: 0.0039215697906911373
           maintain_aspect_ratio: true
