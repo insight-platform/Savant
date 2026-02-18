@@ -1,0 +1,68 @@
+{
+    "ingress": [
+        {
+            "name": "left",
+            "socket": {
+                "url": "${ZMQ_INGRESS_LEFT}",
+                "options": {
+                    "receive_timeout": {
+                        "secs": 1,
+                        "nanos": 0
+                    },
+                    "receive_hwm": 1000,
+                    "topic_prefix_spec": "none",
+                    "source_cache_size": 1000,
+                    "inflight_ops": 100
+                }
+            },
+            "eos_policy": "allow"
+        },
+        {
+            "name": "right",
+            "socket": {
+                "url": "${ZMQ_INGRESS_RIGHT}",
+                "options": {
+                    "receive_timeout": {
+                        "secs": 1,
+                        "nanos": 0
+                    },
+                    "receive_hwm": 1000,
+                    "topic_prefix_spec": "none",
+                    "source_cache_size": 1000,
+                    "inflight_ops": 100
+                }
+            },
+            "eos_policy": "deny"
+        }
+    ],
+    "egress": {
+        "socket": {
+            "url": "${ZMQ_EGRESS}"
+        }
+    },
+    "common": {
+        "init": {
+            "python_root": "${PYTHON_MODULE_ROOT:-/opt/python}",
+            "module_name": "module",
+            "function_name": "init",
+            "args": null
+        },
+        "callbacks": {
+            "on_merge": "merge_handler",
+            "on_head_expire": "head_expired_handler",
+            "on_head_ready": "head_ready_handler",
+            "on_late_arrival": "late_arrival_handler",
+            "on_unsupported_message": "unsupported_message_handler"
+        },
+        "idle_sleep": {
+            "secs": 0,
+            "nanos": 1000000
+        },
+        "queue": {
+            "max_duration": {
+                "secs": 5,
+                "nanos": 0
+            }
+        }
+    }
+}

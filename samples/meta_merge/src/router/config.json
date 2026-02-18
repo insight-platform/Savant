@@ -1,0 +1,45 @@
+{
+    "ingress": [
+        {
+            "name": "ingress",
+            "socket": {
+                "url": "${ZMQ_INGRESS}"
+            },
+            "handler": "ingress_handler"
+        }
+    ],
+    "egress": [
+        {
+            "name": "left",
+            "socket": {
+                "url": "${ZMQ_EGRESS_LEFT}"
+            }
+        },
+        {
+            "name": "right",
+            "socket": {
+                "url": "${ZMQ_EGRESS_RIGHT}"
+            }
+        }
+    ],
+    "common": {
+        "init": {
+            "python_root": "${PYTHON_MODULE_ROOT}",
+            "module_name": "router",
+            "function_name": "init",
+            "args": null
+        },
+        "source_affinity_cache_size": 1000,
+        "name_cache": {
+            "ttl": {
+                "secs": 10,
+                "nanos": 0
+            },
+            "size": 1000
+        },
+        "idle_sleep": {
+            "secs": 0,
+            "nanos": 1000
+        }
+    }
+}
