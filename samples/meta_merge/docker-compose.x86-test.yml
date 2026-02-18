@@ -37,6 +37,9 @@ services:
       - FRAME_HEIGHT=720
       - IMAGE_PATH=/app/test_image.jpeg
     command: python source.py
+    depends_on:
+      always-on-sink:
+        condition: service_started
 
   router:
     image: ghcr.io/insight-platform/savant-router-x86:savant-latest
@@ -125,6 +128,9 @@ services:
       - MAX_STARTUP_S=600
       - MAX_IDLE_S=60
     command: python sink.py
+    depends_on:
+      visualization:
+        condition: service_healthy
     deploy:
       resources:
         reservations:
