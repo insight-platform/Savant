@@ -194,6 +194,8 @@ Sample location: [router](router)
 
 ### Meta Merge
 
+![](meta_merge/assets/meta-merge-400.webp)
+
 A pipeline demonstrating the Meta Merge service for merging metadata from multiple parallel inference pipelines. The sample splits the frame into left and right ROIs, runs YOLO11 on each half in separate module instances, merges objects using `export_complete_object_trees` and `import_object_trees`, and visualizes the combined results.
 
 Sample location: [meta_merge](meta_merge)

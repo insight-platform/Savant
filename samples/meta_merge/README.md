@@ -1,5 +1,7 @@
 # Meta Merge Sample
 
+![](assets/meta-merge.webp)
+
 Demonstrates the Meta Merge service for merging metadata from multiple parallel
 inference pipelines into a single stream.  A video frame is split into
 left/right ROIs by a router, each half is processed independently by a YOLO

@@ -33,7 +33,7 @@ class IngressHandler:
         width = frame.width
         height = frame.height
 
-        frame.delete_objects(MatchQuery.not_(MatchQuery.parent_defined()))
+        frame.export_complete_object_trees(MatchQuery.idle(), delete_exported=True)
 
         left_bbox = RBBox.ltwh(0, 0, width / 2, height)
         left_roi = frame.create_object(
