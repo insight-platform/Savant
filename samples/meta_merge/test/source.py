@@ -25,10 +25,13 @@ set_log_level(LogLevel.Info)
 
 SOURCE_NAMESPACE = 'source'
 PERSON_ATTR = 'person'
-SOURCE_ID = 'test_source'
 
 
-def merge_jpeg_side_by_side(image_path: str) -> tuple[bytes, int, int]:
+def merge_jpeg_side_by_side(
+    image_path: str,
+    target_width: int | None = None,
+    target_height: int | None = None,
+) -> tuple[bytes, int, int]:
     """Merge JPEG side-by-side (L|R) and return merged bytes, width, height."""
     from PIL import Image
 
@@ -39,13 +42,16 @@ def merge_jpeg_side_by_side(image_path: str) -> tuple[bytes, int, int]:
         merged.paste(img, (0, 0))
         merged.paste(img, (w, 0))
 
+        if target_width is not None and target_height is not None:
+            merged = merged.resize((target_width, target_height), Image.Resampling.LANCZOS)
+
         with tempfile.NamedTemporaryFile(suffix='.jpeg', delete=False) as f:
             merged.save(f.name, 'JPEG', quality=85)
             with open(f.name, 'rb') as rf:
                 data = rf.read()
             os.unlink(f.name)
 
-        return data, w * 2, h
+        return data, merged.width, merged.height
 
 
 YOLO_MODEL = os.environ.get('YOLO_MODEL', '/opt/models/yolo11m.pt')
@@ -60,9 +66,12 @@ def run_yolo_person_detection(
     from PIL import Image
     from ultralytics import YOLO
 
+    import torch
+
     model = YOLO(YOLO_MODEL)
     img = Image.open(io.BytesIO(jpeg_bytes))
-    results = model(img, verbose=False, device=0)
+    device = 0 if torch.cuda.is_available() else 'cpu'
+    results = model(img, verbose=False, device=device)
 
     persons: list[tuple[int, int, int, int, float]] = []
     for r in results:
@@ -83,15 +92,20 @@ def main() -> int:
     socket = os.environ.get(
         'ZMQ_SOCKET', 'dealer+connect:ipc:///tmp/zmq-sockets/infer.ipc'
     )
+    source_id = os.environ.get('SOURCE_ID', 'test_source')
     repetitions = int(os.environ.get('REPETITIONS', '1'))
     image_path = os.environ.get('IMAGE_PATH', '/app/test_image.jpeg')
     frame_interval_ms = int(os.environ.get('FRAME_INTERVAL_MS', '0'))
+    target_w = int(env) if (env := os.environ.get('FRAME_WIDTH')) else None
+    target_h = int(env) if (env := os.environ.get('FRAME_HEIGHT')) else None
 
     if not Path(image_path).exists():
         log(LogLevel.Error, 'source', f'Image not found: {image_path}')
         return 1
 
-    merged_bytes, width, height = merge_jpeg_side_by_side(image_path)
+    merged_bytes, width, height = merge_jpeg_side_by_side(
+        image_path, target_width=target_w, target_height=target_h
+    )
     persons = run_yolo_person_detection(merged_bytes)
 
     values: list[AttributeValue] = []
@@ -116,7 +130,7 @@ def main() -> int:
     try:
         for rep in range(repetitions):
             frame = VideoFrame(
-                source_id=SOURCE_ID,
+                source_id=source_id,
                 framerate='30/1',
                 width=width,
                 height=height,
@@ -133,7 +147,7 @@ def main() -> int:
             )
 
             msg = Message.video_frame(frame)
-            res = writer.send_message(SOURCE_ID, msg, merged_bytes)
+            res = writer.send_message(source_id, msg, merged_bytes)
             if not isinstance(res, WriterResultSuccess):
                 log(LogLevel.Error, 'source', f'Failed to send frame: {res}')
                 return 1
@@ -141,7 +155,17 @@ def main() -> int:
             if frame_interval_ms > 0 and rep < repetitions - 1:
                 time.sleep(frame_interval_ms / 1000.0)
 
-        writer.send_eos(SOURCE_ID)
+        writer.send_eos(source_id)
+        log(LogLevel.Info, 'source', f'Sent {repetitions} frame(s) + EOS')
+
+        post_eos_idle_s = int(os.environ.get('POST_EOS_IDLE_S', '0'))
+        if post_eos_idle_s > 0:
+            log(
+                LogLevel.Info,
+                'source',
+                f'Waiting {post_eos_idle_s}s for pipeline to drain (will be killed by compose)',
+            )
+            time.sleep(post_eos_idle_s)
     finally:
         writer.shutdown()
 

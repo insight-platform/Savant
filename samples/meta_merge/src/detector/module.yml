@@ -1,13 +1,8 @@
 name: meta_merge_detector
 
 parameters:
-  frame:
-    width: 1280
-    height: 720
-    geometry_base: 4
   output_frame:
     codec: ${oc.env:CODEC, 'copy'}
-  draw_func: {}
   batch_size: 1
 
   default_yolo_converter:

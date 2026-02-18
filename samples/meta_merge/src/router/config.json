@@ -3,7 +3,7 @@
         {
             "name": "ingress",
             "socket": {
-                "url": "sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc"
+                "url": "${ZMQ_INGRESS}"
             },
             "handler": "ingress_handler"
         }
@@ -12,13 +12,13 @@
         {
             "name": "left",
             "socket": {
-                "url": "dealer+bind:ipc:///tmp/zmq-sockets/left.ipc"
+                "url": "${ZMQ_EGRESS_LEFT}"
             }
         },
         {
             "name": "right",
             "socket": {
-                "url": "dealer+bind:ipc:///tmp/zmq-sockets/right.ipc"
+                "url": "${ZMQ_EGRESS_RIGHT}"
             }
         }
     ],

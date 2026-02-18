@@ -23,7 +23,7 @@ services:
           devices:
             - driver: nvidia
               count: 1
-              capabilities: [gpu]
+              capabilities: [ gpu ]
 
   module-right:
     image: ghcr.io/insight-platform/savant-deepstream:latest
@@ -37,7 +37,7 @@ services:
           devices:
             - driver: nvidia
               count: 1
-              capabilities: [gpu]
+              capabilities: [ gpu ]
 
   meta-merge:
     image: ghcr.io/insight-platform/savant-meta-merge-x86:savant-latest
@@ -51,26 +51,29 @@ services:
       file: docker-compose.l4t.yml
       service: visualization
     runtime: runc
+    environment:
+      - CODEC=h264
     deploy:
       resources:
         reservations:
           devices:
             - driver: nvidia
               count: 1
-              capabilities: [gpu]
+              capabilities: [ gpu ]
 
   always-on-sink:
     image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
     extends:
       file: docker-compose.l4t.yml
       service: always-on-sink
+    runtime: runc
     deploy:
       resources:
         reservations:
           devices:
             - driver: nvidia
               count: 1
-              capabilities: [gpu]
+              capabilities: [ gpu ]
 
 volumes:
   zmq_sockets:

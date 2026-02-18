@@ -3,9 +3,12 @@
         {
             "name": "left",
             "socket": {
-                "url": "router+bind:ipc:///tmp/zmq-sockets/meta_merge_left.ipc",
+                "url": "${ZMQ_INGRESS_LEFT}",
                 "options": {
-                    "receive_timeout": {"secs": 1, "nanos": 0},
+                    "receive_timeout": {
+                        "secs": 1,
+                        "nanos": 0
+                    },
                     "receive_hwm": 1000,
                     "topic_prefix_spec": "none",
                     "source_cache_size": 1000,
@@ -17,9 +20,12 @@
         {
             "name": "right",
             "socket": {
-                "url": "router+bind:ipc:///tmp/zmq-sockets/meta_merge_right.ipc",
+                "url": "${ZMQ_INGRESS_RIGHT}",
                 "options": {
-                    "receive_timeout": {"secs": 1, "nanos": 0},
+                    "receive_timeout": {
+                        "secs": 1,
+                        "nanos": 0
+                    },
                     "receive_hwm": 1000,
                     "topic_prefix_spec": "none",
                     "source_cache_size": 1000,
@@ -31,7 +37,7 @@
     ],
     "egress": {
         "socket": {
-            "url": "dealer+bind:ipc:///tmp/zmq-sockets/meta_merge_output.ipc"
+            "url": "${ZMQ_EGRESS}"
         }
     },
     "common": {
@@ -48,9 +54,15 @@
             "on_late_arrival": "late_arrival_handler",
             "on_unsupported_message": "unsupported_message_handler"
         },
-        "idle_sleep": {"secs": 0, "nanos": 1000000},
+        "idle_sleep": {
+            "secs": 0,
+            "nanos": 1000000
+        },
         "queue": {
-            "max_duration": {"secs": 5, "nanos": 0}
+            "max_duration": {
+                "secs": 5,
+                "nanos": 0
+            }
         }
     }
 }

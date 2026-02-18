@@ -6,14 +6,14 @@ services:
       - zmq_sockets:/tmp/zmq-sockets
       - /tmp/video-loop-source-downloads:/tmp/video-loop-source-downloads
     environment:
-      - LOCATION=${VIDEO_LOCATION:-https://eu-central-1.linodeobjects.com/savant-data/demo/shuffle_dance.mp4}
+      - LOCATION=${VIDEO_LOCATION:-https://eu-central-1.linodeobjects.com/savant-data/demo/shuffle_dance_dup.mp4}
       - DOWNLOAD_PATH=/tmp/video-loop-source-downloads
-      - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
+      - ZMQ_ENDPOINT=dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc
       - SOURCE_ID=video
       - SYNC_OUTPUT=True
     entrypoint: /opt/savant/adapters/gst/sources/video_loop.sh
     depends_on:
-      router:
+      always-on-sink:
         condition: service_started
 
   router:
@@ -25,14 +25,19 @@ services:
       - zmq_sockets:/tmp/zmq-sockets
     environment:
       - PYTHON_MODULE_ROOT=/opt/python
+      - ZMQ_INGRESS=router+bind:ipc:///tmp/zmq-sockets/input-video.ipc
+      - ZMQ_EGRESS_LEFT=dealer+bind:ipc:///tmp/zmq-sockets/left.ipc
+      - ZMQ_EGRESS_RIGHT=dealer+bind:ipc:///tmp/zmq-sockets/right.ipc
+    depends_on:
+      module-left:
+        condition: service_healthy
+      module-right:
+        condition: service_healthy
 
   module-left:
     privileged: true
     image: ghcr.io/insight-platform/savant-deepstream-l4t:latest
     restart: unless-stopped
-    depends_on:
-      router:
-        condition: service_started
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../cache:/cache
@@ -48,21 +53,11 @@ services:
       - CODEC=copy
       - METRICS_FRAME_PERIOD=1000
     runtime: nvidia
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
 
   module-right:
     privileged: true
     image: ghcr.io/insight-platform/savant-deepstream-l4t:latest
     restart: unless-stopped
-    depends_on:
-      router:
-        condition: service_started
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../cache:/cache
@@ -78,13 +73,9 @@ services:
       - CODEC=copy
       - METRICS_FRAME_PERIOD=1000
     runtime: nvidia
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+    depends_on:
+      module-left:
+        condition: service_healthy
 
   meta-merge:
     image: ghcr.io/insight-platform/savant-meta-merge-arm64:savant-latest
@@ -95,12 +86,18 @@ services:
       - zmq_sockets:/tmp/zmq-sockets
     environment:
       - PYTHON_MODULE_ROOT=/opt/python
+      - ZMQ_INGRESS_LEFT=router+bind:ipc:///tmp/zmq-sockets/meta_merge_left.ipc
+      - ZMQ_INGRESS_RIGHT=router+bind:ipc:///tmp/zmq-sockets/meta_merge_right.ipc
+      - ZMQ_EGRESS=dealer+bind:ipc:///tmp/zmq-sockets/meta_merge_output.ipc
     depends_on:
-      - module-left
-      - module-right
+      module-left:
+        condition: service_healthy
+      module-right:
+        condition: service_healthy
 
   visualization:
     privileged: true
+    runtime: nvidia
     image: ghcr.io/insight-platform/savant-deepstream-l4t:latest
     restart: unless-stopped
     volumes:
@@ -110,19 +107,12 @@ services:
     environment:
       - LOGLEVEL=info
       - ZMQ_SRC_ENDPOINT=router+connect:ipc:///tmp/zmq-sockets/meta_merge_output.ipc
-      - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
+      - ZMQ_SINK_ENDPOINT=dealer+bind:ipc:///tmp/zmq-sockets/output-video.ipc
       - CODEC=jpeg
       - METRICS_FRAME_PERIOD=1000
-    runtime: nvidia
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
     depends_on:
-      - meta-merge
+      meta-merge:
+        condition: service_started
 
   always-on-sink:
     image: ghcr.io/insight-platform/savant-adapters-deepstream-l4t:latest
@@ -136,22 +126,19 @@ services:
       - zmq_sockets:/tmp/zmq-sockets
       - ../assets/stub_imgs:/stub_imgs
     environment:
-      - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
+      - ZMQ_ENDPOINT=router+connect:ipc:///tmp/zmq-sockets/output-video.ipc
       - SOURCE_ID=video
-      - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x720.jpeg
+      - STUB_FILE_LOCATION=/stub_imgs/smpte100_2560x720.jpeg
       - DEV_MODE=True
       - FRAMERATE=30/1
       - ENCODER_BITRATE=8000000
+      - LATENCY_MS=5000
+      - ENCODER_PROFILE=High
     command: python -m adapters.ds.sinks.always_on_rtsp
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+    runtime: nvidia
     depends_on:
-      - visualization
+      visualization:
+        condition: service_healthy
 
 volumes:
   zmq_sockets:

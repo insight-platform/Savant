@@ -1,15 +1,82 @@
 name: meta_merge_visualization
 
 parameters:
-  frame:
-    width: 1280
-    height: 720
-    geometry_base: 4
   output_frame:
     codec: ${oc.env:CODEC, 'jpeg'}
+    h264_encoder_params:
+      profile: Baseline
+      bitrate: 8000000
+    hevc_encoder_params:
+      profile: Main
+      bitrate: 8000000
+    jpeg_encoder_params:
+      quality: 95
   draw_func:
-    module: samples.meta_merge.src.visualization.overlay
-    class_name: Overlay
+    # module: savant.deepstream.drawfunc
+    # class_name: NvDsDrawFunc
+    rendered_objects:
+      router:
+        left_roi:
+          bbox:
+            border_color: 'FF000044'
+            background_color: 'FF000010'
+            thickness: 1
+          label:
+            format: ['{label}']
+            font_color: 'FF0000FF'
+            background_color: '00000088'
+            border_width: 0
+            border_color: '00000000'
+            position:
+              position: TopLeftInside
+              margin_x: 4
+              margin_y: 4
+        right_roi:
+          bbox:
+            border_color: '0000FF44'
+            background_color: '0000FF10'
+            thickness: 1
+          label:
+            format: ['{label}']
+            font_color: '0000FFFF'
+            background_color: '00000088'
+            border_width: 0
+            border_color: '00000000'
+            position:
+              position: TopLeftInside
+              margin_x: 4
+              margin_y: 4
+        marker:
+          bbox:
+            border_color: 'FFD700FF'
+            background_color: 'FFD70033'
+            thickness: 2
+          label:
+            format: ['{label} {confidence:.2f}']
+            font_color: 'FFD700FF'
+            background_color: '00000088'
+            border_width: 0
+            border_color: '00000000'
+            position:
+              position: TopLeftOutside
+              margin_x: 0
+              margin_y: 0
+      yolov11n:
+        person:
+          bbox:
+            border_color: '00FF00FF'
+            background_color: '00000000'
+            thickness: 2
+          label:
+            format: ['{label} {confidence:.2f}']
+            font_color: 'FFFFFFFF'
+            background_color: '00000088'
+            border_width: 0
+            border_color: '00000000'
+            position:
+              position: TopLeftOutside
+              margin_x: 0
+              margin_y: 0
   batch_size: 1
 
 pipeline:

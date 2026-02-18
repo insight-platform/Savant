@@ -80,7 +80,7 @@ class LateArrivalHandler:
 
     def __call__(self, state: Any) -> None:
         """Log late arrival."""
-        log(LogLevel.Warn, "meta_merge", "Late frame arrival ignored")
+        log(LogLevel.Warning, "meta_merge", "Late frame arrival ignored")
 
 
 class UnsupportedMessageHandler:
