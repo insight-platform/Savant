@@ -130,6 +130,8 @@ build-docs:
 		--target docs \
 		--build-arg DEEPSTREAM_VERSION=$(DEEPSTREAM_VERSION) \
 		--build-arg SAVANT_RS_VERSION=$(SAVANT_RS_VERSION) \
+		--build-arg DEEPSTREAM_BASE_IMAGE=$(DEEPSTREAM_BASE_IMAGE) \
+		--build-arg DEEPSTREAM_DEVEL_IMAGE=$(DEEPSTREAM_DEVEL_IMAGE) \
 		--build-arg USER_UID=`id -u` \
 		--build-arg USER_GID=`id -g` \
 		-f docker/$(DOCKER_FILE) \
