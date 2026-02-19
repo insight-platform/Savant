@@ -137,6 +137,15 @@ Savant provides means to synchronize RTSP streams by RTCP Sender Reports (SR) ou
 
 Savant provides a special tool to record, replay and restream video with the REST-controlled Replay `service <https://insight-platform.github.io/savant-rs/services/replay/index.html>`__.
 
+🔀 Stream Routing, Merging, and Buffering
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Savant provides several Rust-based, Python-extendable services for building complex pipeline topologies:
+
+- **Router** — conditionally routes streams to multiple destinations based on labels (`documentation <https://insight-platform.github.io/savant-rs/services/router/index.html>`__);
+- **Meta Merge** — merges metadata from parallel processing pipelines back into a single stream (`documentation <https://insight-platform.github.io/savant-rs/services/meta_merge/index.html>`__);
+- **Buffer NG** — reliably buffers messages on disk to prevent data loss during downstream outages (`documentation <https://insight-platform.github.io/savant-rs/services/buffer_ng/index.html>`__).
+
 
 .. toctree::
    :maxdepth: 1
@@ -221,6 +230,8 @@ Savant provides a special tool to record, replay and restream video with the RES
    advanced_topics/16_pipeline_watchdog
    advanced_topics/17_restreaming
    advanced_topics/18_stream_routing
+   advanced_topics/19_message_buffering
+   advanced_topics/20_metadata_merging
 
 .. toctree::
    :maxdepth: 0
