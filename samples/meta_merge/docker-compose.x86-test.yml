@@ -1,0 +1,137 @@
+# Meta-merge end-to-end test: test source + router/modules/meta_merge/visualization (blackbox) + test sink.
+# Replaces video-loop-source and always-on-sink with test source/sink for IoU validation.
+# Run: docker compose -f docker-compose.x86-test.yml up --abort-on-container-exit
+#
+# Startup chain: router → modules (healthy) → meta-merge → visualization → sink → source
+
+services:
+  video-loop-source:
+    build:
+      context: test
+      dockerfile: Dockerfile
+    runtime: runc
+    restart: "no"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ./test:/app:ro
+    working_dir: /app
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ZMQ_SOCKET=dealer+connect:ipc:///tmp/zmq-sockets/input-video.ipc
+      - SOURCE_ID=video
+      - ZMQ_SEND_TIMEOUT_MS=10000
+      - ZMQ_RECEIVE_TIMEOUT_MS=5000
+      - ZMQ_SEND_RETRIES=10
+      - ZMQ_RECEIVE_RETRIES=10
+      - REPETITIONS=10
+      - FRAME_INTERVAL_MS=10
+      - POST_EOS_IDLE_S=3600
+      - FRAME_WIDTH=1280
+      - FRAME_HEIGHT=720
+      - IMAGE_PATH=/app/test_image.jpeg
+    command: python source.py
+
+  router:
+    image: ghcr.io/insight-platform/savant-router-x86:savant-latest
+    restart: "no"
+    extends:
+      file: docker-compose.l4t.yml
+      service: router
+    environment:
+      - LOGLEVEL=error
+
+  module-left:
+    image: ghcr.io/insight-platform/savant-deepstream:latest
+    restart: "no"
+    extends:
+      file: docker-compose.l4t.yml
+      service: module-left
+    runtime: runc
+    environment:
+      - LOGLEVEL=error
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+
+  module-right:
+    image: ghcr.io/insight-platform/savant-deepstream:latest
+    restart: "no"
+    extends:
+      file: docker-compose.l4t.yml
+      service: module-right
+    runtime: runc
+    environment:
+      - LOGLEVEL=error
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+
+  meta-merge:
+    image: ghcr.io/insight-platform/savant-meta-merge-x86:savant-latest
+    restart: "no"
+    environment:
+      - LOGLEVEL=error
+    extends:
+      file: docker-compose.l4t.yml
+      service: meta-merge
+
+  visualization:
+    image: ghcr.io/insight-platform/savant-deepstream:latest
+    restart: "no"
+    extends:
+      file: docker-compose.l4t.yml
+      service: visualization
+    environment:
+      - CODEC=h264
+      - LOGLEVEL=error
+    runtime: runc
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+
+  always-on-sink:
+    build:
+      context: test
+      dockerfile: Dockerfile
+    runtime: runc
+    restart: "no"
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ./test:/app:ro
+    working_dir: /app
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ZMQ_SOCKET=router+connect:ipc:///tmp/zmq-sockets/output-video.ipc
+      - ZMQ_RECEIVE_TIMEOUT_MS=5000
+      - MAX_STARTUP_S=600
+      - MAX_IDLE_S=60
+    command: python sink.py
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+
+volumes:
+  zmq_sockets:
