@@ -1766,6 +1766,7 @@ Currently, the following bridge adapters are available:
 - Buffer adapter.
 - Buffer NG adapter.
 - Router adapter.
+- Meta Merge adapter.
 - Replay adapter.
 
 Bridge adapters accept the following common parameters:
@@ -1900,6 +1901,16 @@ Router is a service that routes messages coming from multiple sources to multipl
 It is built in Rust and can be extended with custom logic in Python.
 
 Read the adapter documentation `here <https://insight-platform.github.io/savant-rs/services/router/index.html>`__.
+
+
+Meta Merge Bridge Adapter
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Meta Merge is a service that merges metadata from multiple parallel processing pipelines back into a single stream. When the same video frame is processed by several parallel pipelines (e.g. detection, classification, pose estimation), each pipeline attaches its own metadata to the frame. Meta Merge collects these partial results, merges them into a single consolidated frame using developer-defined Python callbacks, and forwards the result downstream in the correct temporal order.
+
+It is built in Rust and can be extended with custom logic in Python.
+
+Read the adapter documentation `here <https://insight-platform.github.io/savant-rs/services/meta_merge/index.html>`__.
 
 
 Replay Bridge Adapter
