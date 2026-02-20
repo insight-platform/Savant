@@ -21,7 +21,7 @@ Object meta preprocessing
 If you don't need to make any changes to the image, or if you are working with
 aligned bounding boxes, then often all you need to do is change or fix the bounding box.
 For example, take its top half or add padding. In this case it is enough to write your
-own class inherited from `BasePreprocessObjectMeta <https://insight-platform.github.io/Savant/reference/api/generated/savant.base.input_preproc.BasePreprocessObjectMeta.html#basepreprocessobjectmeta>`_ class and
+own class inherited from :class:`~savant.base.input_preproc.BasePreprocessObjectMeta` class and
 implement __call__ magic method.
 
 .. code-block:: python
@@ -46,8 +46,7 @@ in preprocessing are not saved and do not affect the meta-information that will 
 model inference. The method is called for each object in the list of objects selected
 for inference, based on the information you specified in the ``object`` of ``input`` section.
 
-You can read about the working with metadata in the `"Working With Metadata"
-<https://insight-platform.github.io/Savant/savant_101/75_working_with_metadata.html>`_ section.
+You can read about the working with metadata in the :doc:`/savant_101/75_working_with_metadata` section.
 The method must return an instance of the class
 `BBox <https://insight-platform.github.io/savant-rs/modules/savant_rs/primitives_geometry.html#savant_rs.primitives.geometry.BBox>`_
 (The class of aligned bounding box).
@@ -74,8 +73,7 @@ Object image preprocessing
 This kind of preprocessing opens up more possibilities, because it allows you to
 interact directly with the image of an object. To implement your own image
 preprocessing you need to create your own class inherited from
-`BasePreprocessObjectImage
-<https://docs.savant-ai.io/reference/api/generated/savant.base.input_preproc.BasePreprocessObjectImage.html#basepreprocessobjectimage>`_
+:class:`~savant.base.input_preproc.BasePreprocessObjectImage`
 and implement the __call__ magic method.
 
 .. code-block:: python
@@ -142,17 +140,17 @@ will be transferred to the inference model.
 
 GPUImage is a special wrapper class which allows you to simplify the work with
 the image on the GPU. A detailed specification of the methods can be found in
-the `documentation <https://docs.savant-ai.io/reference/api/generated/savant.utils.image.GPUImage.html#savant.utils.image.GPUImage>`_.
+the :class:`~savant.utils.image.GPUImage` documentation.
 Let's review the basic methods of this class, which will allow you
 to perform basic operations on the GPU
 
-`GPUImage <https://docs.savant-ai.io/reference/api/generated/savant.utils.image.GPUImage.html#savant.utils.image.GPUImage>`_ class properties:
+:class:`~savant.utils.image.GPUImage` class properties:
 
 * | **gpu_mat** - returns an instance of the `GpuMat <https://docs.opencv.org/4.x/d0/d60/classcv_1_1cuda_1_1GpuMat.html>`_ class from OpenCV.
 * | **width** - image width in pixels.
 * | **height** - image height in pixels.
 
-`GPUImage <https://docs.savant-ai.io/reference/api/generated/savant.utils.image.GPUImage.html#savant.utils.image.GPUImage>`_ class methods:
+:class:`~savant.utils.image.GPUImage` class methods:
 
 * | **to_cpu** - copies image from GPU memory into RAM. The image is returned as instance of CPUImage class.
 
@@ -221,7 +219,7 @@ to perform basic operations on the GPU
         interpolation: int = cv2.INTER_LINEAR,
     ) -> 'GPUImage':
 
-`CPUImage <https://docs.savant-ai.io/reference/api/generated/savant.utils.image.CPUImage.html#savant.utils.image.CPUImage>`_ has the same methods as GPUImage, but they work with images in RAM,
+:class:`~savant.utils.image.CPUImage` has the same methods as GPUImage, but they work with images in RAM,
 instead `gpu_mat` property it has `np_array` property, which returns an instance of the numpy array
 and instead to_cpu method it has to_gpu method, which copies image from RAM into GPU memory.
 

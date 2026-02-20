@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Downloads and unpacks documentation for all published releases.
-Usage: gh_script.py GH_OWNER/GH_REPO GH_TOKEN DST_PATH
+Usage: gh_script.py GH_OWNER/GH_REPO GH_TOKEN DST_PATH DOCS_URL
 """
 
 import json
@@ -106,13 +106,6 @@ def untar(tar_path: Path):
         tar.extractall(tar_path.parent)
 
 
-def get_pages_url(req: GHRequest) -> str:
-    """Gets information about a GitHub Pages site."""
-    res = urlopen(req.request_json(endpoint='pages'))
-    pages_info = json.loads(res.read())
-    return pages_info['html_url']
-
-
 def render_templates(variables: dict, dst: Path, src: Path = None):
     """Renders templates (*.html.tpl, *.js.tpl)."""
     src_path = Path(src) if src else Path(__file__).parent.resolve() / '_templates'
@@ -130,11 +123,12 @@ def render_templates(variables: dict, dst: Path, src: Path = None):
             fp.write(template.render(variables))
 
 
-def main(repository: str, token: str, dst_path: str):
+def main(repository: str, token: str, dst_path: str, docs_url: str):
     """Main.
     :param repository: GitHub repository: GH_OWNER/GH_REPO {{ github.repository }}
     :param token: GitHub API access token {{ github.token }}
     :param dst_path: Docs dir path
+    :param docs_url: Base URL where docs are published (e.g. https://example.com/docs)
     """
 
     # prepare result dir
@@ -151,15 +145,14 @@ def main(repository: str, token: str, dst_path: str):
     # get available versions
     versions = get_versions(request)
 
-    # docs root url
-    pages_url = get_pages_url(request).strip('/')
+    docs_url = docs_url.strip('/')
 
     # render html
     render_templates(
         dict(
             versions=list(versions),
             latest=latest,
-            pages_url=pages_url,
+            pages_url=docs_url,
         ),
         result_path,
     )
@@ -181,7 +174,7 @@ def main(repository: str, token: str, dst_path: str):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) != 4:
-        sys.exit('Usage: gh_script.py GH_OWNER/GH_REPO GH_TOKEN DST_PATH.')
+    if len(sys.argv) != 5:
+        sys.exit('Usage: gh_script.py GH_OWNER/GH_REPO GH_TOKEN DST_PATH DOCS_URL')
 
     main(*sys.argv[1:])
