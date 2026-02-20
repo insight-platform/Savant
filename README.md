@@ -68,15 +68,15 @@ questions you may have.
 ## Quick Links
 
 - [Blog](https://b.savant-ai.io/)
-- [Getting Started Tutorial](https://docs.savant-ai.io/develop/getting_started/2_module_devguide.html)
+- [Getting Started Tutorial](https://savant-ai.io/docs/latest/getting_started/2_module_devguide.html)
 - [Pipeline Samples](https://github.com/insight-platform/Savant/tree/develop/samples)
-- [Documentation](https://docs.savant-ai.io/)
+- [Documentation](https://savant-ai.io/docs/)
 - [Performance Regression Tracking Dashboard](docs/performance.md)
 
 ## Getting Started
 
 First, take a look at the runtime
-configuration [guide](https://docs.savant-ai.io/develop/getting_started/0_configure_prod_env.html) to configure the
+configuration [guide](https://savant-ai.io/docs/latest/getting_started/0_configure_prod_env.html) to configure the
 working environment.
 
 The [demo](https://github.com/insight-platform/Savant/tree/develop/samples/peoplenet_detector) shows a pipeline
@@ -219,31 +219,31 @@ as is" or modify for your needs.
 
 The following source adapters are available:
 
-- [Local video file](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#video-file-source-adapter);
-- [Local directory of video files](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#video-file-source-adapter);
-- [Video URL](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#video-file-source-adapter);
-- [Local image file](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#image-file-source-adapter);
-- [Local directory of image files](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#image-file-source-adapter);
-- [Image URL](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#image-file-source-adapter);
-- [RTSP stream (FFmpeg)](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#ffmpeg-rtsp-source-adapter);
-- [Multi-stream RTSP (Retina)](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#retina-rtsp-source-adapter);
-- [USB/CSI camera](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#usb-cam-source-adapter);
-- [GigE (Genicam) industrial cam](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#gige-vision-source-adapter);
-- [Kafka-Redis](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#kafka-redis-source-adapter);
-- [Video loop URL](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#video-loop-source-adapter);
-- [Multi-stream Source](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#multi-stream-source-adapter);
-- [Amazon Kinesis Video Streams Source](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#kinesis-video-stream-source-adapter);
-- [Message Dump Player](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#message-dump-player-source-adapter).
+- [Local video file](https://savant-ai.io/docs/latest/savant_101/10_adapters.html#video-file-source-adapter);
+- [Local directory of video files](https://savant-ai.io/docs/latest/savant_101/10_adapters.html#video-file-source-adapter);
+- [Video URL](https://savant-ai.io/docs/latest/savant_101/10_adapters.html#video-file-source-adapter);
+- [Local image file](https://savant-ai.io/docs/latest/savant_101/10_adapters.html#image-file-source-adapter);
+- [Local directory of image files](https://savant-ai.io/docs/latest/savant_101/10_adapters.html#image-file-source-adapter);
+- [Image URL](https://savant-ai.io/docs/latest/savant_101/10_adapters.html#image-file-source-adapter);
+- [RTSP stream (FFmpeg)](https://savant-ai.io/docs/latest/savant_101/10_adapters.html#ffmpeg-rtsp-source-adapter);
+- [Multi-stream RTSP (Retina)](https://savant-ai.io/docs/latest/savant_101/10_adapters.html#retina-rtsp-source-adapter);
+- [USB/CSI camera](https://savant-ai.io/docs/latest/savant_101/10_adapters.html#usb-cam-source-adapter);
+- [GigE (Genicam) industrial cam](https://savant-ai.io/docs/latest/savant_101/10_adapters.html#gige-vision-source-adapter);
+- [Kafka-Redis](https://savant-ai.io/docs/latest/savant_101/10_adapters.html#kafka-redis-source-adapter);
+- [Video loop URL](https://savant-ai.io/docs/latest/savant_101/10_adapters.html#video-loop-source-adapter);
+- [Multi-stream Source](https://savant-ai.io/docs/latest/savant_101/10_adapters.html#multi-stream-source-adapter);
+- [Amazon Kinesis Video Streams Source](https://savant-ai.io/docs/latest/savant_101/10_adapters.html#kinesis-video-stream-source-adapter);
+- [Message Dump Player](https://savant-ai.io/docs/latest/savant_101/10_adapters.html#message-dump-player-source-adapter).
 
 Several sink adapters are implemented:
 
-- [Inference results are placed into JSON file stream](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#json-metadata-sink-adapter);
-- [Resulting video overlay displayed on a screen (per source)](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#display-sink-adapter);
-- [MP4 file (per source)](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#video-file-sink-adapter);
-- [Image directory (per source)](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#image-file-sink-adapter);
-- [Always-On RTSP Stream Sink](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#always-on-rtsp-sink-adapter);
-- [Kafka-Redis](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#kafka-redis-sink-adapter);
-- [Amazon Kinesis Video Streams Sink](https://docs.savant-ai.io/develop/savant_101/10_adapters.html#multistream-kinesis-video-stream-sink-adapter).
+- [Inference results are placed into JSON file stream](https://savant-ai.io/docs/latest/savant_101/10_adapters.html#json-metadata-sink-adapter);
+- [Resulting video overlay displayed on a screen (per source)](https://savant-ai.io/docs/latest/savant_101/10_adapters.html#display-sink-adapter);
+- [MP4 file (per source)](https://savant-ai.io/docs/latest/savant_101/10_adapters.html#video-file-sink-adapter);
+- [Image directory (per source)](https://savant-ai.io/docs/latest/savant_101/10_adapters.html#image-file-sink-adapter);
+- [Always-On RTSP Stream Sink](https://savant-ai.io/docs/latest/savant_101/10_adapters.html#always-on-rtsp-sink-adapter);
+- [Kafka-Redis](https://savant-ai.io/docs/latest/savant_101/10_adapters.html#kafka-redis-sink-adapter);
+- [Amazon Kinesis Video Streams Sink](https://savant-ai.io/docs/latest/savant_101/10_adapters.html#multistream-kinesis-video-stream-sink-adapter).
 
 ### 🎯 Dynamic Parameters Ingestion
 
@@ -310,9 +310,9 @@ Savant provides the Router [service](https://insight-platform.github.io/savant-r
 
 ## What's Next
 
-- [Getting Started Tutorial](https://docs.savant-ai.io/develop/getting_started/2_module_devguide.html)
+- [Getting Started Tutorial](https://savant-ai.io/docs/latest/getting_started/2_module_devguide.html)
 - [Publications and Samples](https://github.com/insight-platform/Savant/tree/develop/samples)
-- [Documentation](https://docs.savant-ai.io/)
+- [Documentation](https://savant-ai.io/docs/)
 
 ## Contribution
 
