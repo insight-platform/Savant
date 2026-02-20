@@ -3,5 +3,6 @@ sphinx_rtd_theme~=2.0
 sphinxcontrib-youtube~=1.4
 sphinxcontrib-images~=0.9
 sphinxcontrib-httpdomain~=1.8
+sphinx-sitemap~=2.6
 python-magic~=0.4.27
 requests~=2.32.5
