@@ -45,6 +45,7 @@ extensions = [
     'repo_link',
     'sphinxcontrib.images',
     'sphinxcontrib.httpdomain',
+    'sphinx_sitemap',
 ]
 
 images_config = {
@@ -96,6 +97,16 @@ autodoc_mock_imports = [
     'torch',
     'pynvbufsurfacegenerator',
 ]
+
+# -- Sitemap configuration ---------------------------------------------------
+
+docs_url = os.getenv('DOCS_URL', 'https://savant-ai.io/docs').rstrip('/')
+if os.getenv('MODE') == 'develop':
+    html_baseurl = f'{docs_url}/latest/'
+else:
+    html_baseurl = f'{docs_url}/v{release}/'
+
+sitemap_url_scheme = '{link}'
 
 # -- Options for HTML output -------------------------------------------------
 
