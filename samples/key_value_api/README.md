@@ -25,7 +25,7 @@ The key-value store is accessible via REST API. Use the script to read from the 
 docker compose -f samples/key_value_api/docker-compose.x86.yml exec -it first python /scripts/get_frame_counter.py
 ```
 
-The documentation for the Key-Value API is available at the Savant documentation [website](https://docs.savant-ai.io/develop/advanced_topics/15_embedded_kvs.html).
+The documentation for the Key-Value API is available at the Savant documentation [website](https://insight-platform.github.io/savant-ai.io/docs/latest/advanced_topics/15_embedded_kvs.html).
 
 ## How to Access the Key-Value Subscription With REST API
 
