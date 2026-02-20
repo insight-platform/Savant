@@ -1,3 +1,3 @@
 User-agent: *
-Allow: /latest/
-Disallow: /v
+Allow: /docs/latest/
+Disallow: /docs/v

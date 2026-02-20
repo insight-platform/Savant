@@ -362,42 +362,22 @@ jobs:
       - name: Compose docs
         if: github.ref_name == 'develop'
         run: |
-          ./docs/source/gh_script.py ${{ github.repository }} ${{ github.token }} docs/root
+          ./docs/source/gh_script.py ${{ github.repository }} ${{ github.token }} docs/root ${{ vars.DOCS_URL }}
           mv docs/build/html docs/root/latest
           mv docs/root/versions.js docs/root/latest/_static/js/versions.js
 
-      - name: Upload pages artifact
+      - name: Upload docs artifact
         if: github.ref_name == 'develop'
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
+          name: docs
           path: docs/root
-      # --- develop
-
-  # develop ---
-  deploy-docs:
-    if: github.ref_name == 'develop'
-    runs-on: ubuntu-latest
-    needs: build-docs
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
-    steps:
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
 
       - name: Trigger website rebuild
+        if: github.ref_name == 'develop'
         uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.CROSS_REPO_TOKEN }}
           repository: insight-platform/savant-ai.io
           event-type: savant-docs-updated
-
-  # --- develop
+      # --- develop
