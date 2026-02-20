@@ -10,7 +10,7 @@ This sample is intended to help users to start developing a custom Savant module
 * Supporting Savant services such as Always On Sink adapter and Uri Input script that allow to send a video to the module and receive stream output.
 * All of the above is set up to be ready to run, with no additional configuration needed.
 
-See [documentation](https://insight-platform.github.io/savant-ai.io/docs/latest/) for more information.
+See [documentation](https://insight-platform.github.io/Savant/) for more information.
 
 ## Development Quick Start
 

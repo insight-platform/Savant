@@ -22,7 +22,7 @@ git lfs pull
 ./utils/check-environment-compatible
 ```
 
-**Note**: Ubuntu 22.04 runtime configuration [guide](https://insight-platform.github.io/savant-ai.io/docs/latest/getting_started/0_configure_prod_env.html) helps to configure the runtime to run Savant pipelines.
+**Note**: Ubuntu 22.04 runtime configuration [guide](https://insight-platform.github.io/Savant/develop/getting_started/0_configure_prod_env.html) helps to configure the runtime to run Savant pipelines.
 
 ## Build Engines
 
@@ -71,7 +71,7 @@ You can use the convert_coco_to_savant.py script as a starting point to prepare
 your input metadata. This script reads data from the COCO dataset annotations, 
 selects only objects with "person" label, and converts it into an input data format 
 for the framework. A detailed description of the input JSON file format with metadata 
-for the adapter is described in the documentation ([link](https://insight-platform.github.io/savant-ai.io/docs/latest/advanced_topics/9_input_json_metadata.html)). 
+for the adapter is described in the documentation ([link](https://docs.savant-ai.io/advanced_topics/9_input_json_metadata.html)). 
 Install the pycocotools library before running it.
 
 ```bash

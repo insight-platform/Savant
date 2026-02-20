@@ -23,7 +23,7 @@ dynamic = ['version', 'dependencies']
 [project.urls]
 homepage = 'https://github.com/insight-platform/Savant'
 repository = 'https://github.com/insight-platform/Savant'
-documentation = 'https://insight-platform.github.io/savant-ai.io/docs/latest/'
+documentation = 'https://insight-platform.github.io/Savant/'
 
 [tool.setuptools.packages.find]
 include = ['savant*']

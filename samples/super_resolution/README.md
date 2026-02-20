@@ -22,7 +22,7 @@ git lfs pull
 ./utils/check-environment-compatible
 ```
 
-**Note**: Ubuntu 22.04 runtime configuration [guide](https://insight-platform.github.io/savant-ai.io/docs/latest/getting_started/0_configure_prod_env.html) helps to configure the runtime to run Savant pipelines.
+**Note**: Ubuntu 22.04 runtime configuration [guide](https://insight-platform.github.io/Savant/develop/getting_started/0_configure_prod_env.html) helps to configure the runtime to run Savant pipelines.
 
 ## Build Engines
 
