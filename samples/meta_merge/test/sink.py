@@ -1,4 +1,5 @@
-"""Sink: receives frames, compares detected objects with (source, person) attribute using IoU."""
+"""Sink: receives frames, compares detected objects with (source, person)
+attribute using IoU."""
 
 from __future__ import annotations
 
@@ -24,7 +25,8 @@ IOU_THRESHOLD = 0.5
 
 
 def parse_expected_persons(frame) -> list[tuple[RBBox, float]]:
-    """Extract (source, person) attribute: list of (bbox, conf) from AttributeValue list."""
+    """Extract (source, person) attribute: list of (bbox, conf)
+    from AttributeValue list."""
     attr = frame.get_attribute(SOURCE_NAMESPACE, PERSON_ATTR)
     if attr is None:
         return []
@@ -38,8 +40,7 @@ def parse_expected_persons(frame) -> list[tuple[RBBox, float]]:
         box_ints = av_box.as_integers()
         conf = av_conf.as_float()
         if box_ints is not None and len(box_ints) >= 4 and conf is not None:
-            l, t, r, b = box_ints[0], box_ints[1], box_ints[2], box_ints[3]
-            bbox = RBBox.ltrb(float(l), float(t), float(r), float(b))
+            bbox = RBBox.ltrb(*map(float, box_ints))
             result.append((bbox, conf))
         i += 2
     return result
@@ -74,13 +75,15 @@ def compare_with_iou(
             log(
                 LogLevel.Error,
                 'sink',
-                f'Expected box {exp_bbox} has no matching detection (best IoU={best_iou:.3f})',
+                f'Expected box {exp_bbox} has no matching detection '
+                f'(best IoU={best_iou:.3f})',
             )
             return False
         log(
             LogLevel.Info,
             'sink',
-            f'match: frame_uuid={frame_uuid} attribute_object={exp_bbox} inferred_object={detected[best_idx]} score={best_iou:.4f}',
+            f'match: frame_uuid={frame_uuid} attribute_object={exp_bbox} '
+            f'inferred_object={detected[best_idx]} score={best_iou:.4f}',
         )
         used[best_idx] = True
 
@@ -125,7 +128,8 @@ def main() -> int:
                         log(
                             LogLevel.Error,
                             'sink',
-                            f'No frames received within {max_startup_s}s startup timeout',
+                            f'No frames received within {max_startup_s}s '
+                            f'startup timeout',
                         )
                         return 1
                 elif (
@@ -137,7 +141,8 @@ def main() -> int:
                         log(
                             LogLevel.Info,
                             'sink',
-                            f'No new frames for {max_idle_s}s after {frames_received} frame(s), assuming pipeline done',
+                            f'No new frames for {max_idle_s}s '
+                            f'after {frames_received} frame(s), assuming pipeline done',
                         )
                         break
                 continue
@@ -157,7 +162,8 @@ def main() -> int:
                         log(
                             LogLevel.Info,
                             'sink',
-                            f'Frame #{frames_received}: expected={len(expected)} detected={len(detected)}',
+                            f'Frame #{frames_received}: expected={len(expected)} '
+                            f'detected={len(detected)}',
                         )
                         if not compare_with_iou(frame.uuid, expected, detected):
                             errors += 1
@@ -177,7 +183,8 @@ def main() -> int:
     log(
         LogLevel.Info,
         'sink',
-        f'PASSED: All {frames_received} frame(s) matched expected (source, person) attribute',
+        f'PASSED: All {frames_received} frame(s) matched expected (source, person) '
+        f'attribute',
     )
     return 0
 
