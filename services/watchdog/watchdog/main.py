@@ -4,7 +4,7 @@ import os
 import signal
 import sys
 import time
-from typing import List
+from typing import Callable, Dict, List, Union
 
 import aiodocker
 from aiodocker import DockerError
@@ -90,67 +90,141 @@ async def process_action(
         logger.debug('Restarting containers')
         for container in containers:
             await docker_client.restart_container(container)
-    else:
-        raise RuntimeError(f'Unknown action: {action}')
+
+
+def _queue_evaluate(
+    buffer: str, config: QueueConfig, metrics: Dict[str, float]
+) -> bool:
+    buffer_size = metrics[BUFFER_SIZE_METRIC]
+    if buffer_size > config.length:
+        logger.info(
+            'Queue watch [%s]: %s=%.0f exceeds threshold %s,'
+            ' executing action=%s',
+            buffer,
+            BUFFER_SIZE_METRIC,
+            buffer_size,
+            config.length,
+            config.action.value,
+        )
+        return True
+    logger.info(
+        'Queue watch [%s]: %s=%.0f within threshold %s, no action',
+        buffer,
+        BUFFER_SIZE_METRIC,
+        buffer_size,
+        config.length,
+    )
+    return False
+
+
+def _flow_evaluate(
+    watch_name: str,
+    metric_name: str,
+    buffer: str,
+    config: FlowConfig,
+    metrics: Dict[str, float],
+) -> bool:
+    timestamp = metrics[metric_name]
+    now = time.time()
+    idle_duration = now - timestamp
+    if idle_duration > config.idle:
+        logger.info(
+            '%s watch [%s]: %s=%.3f, idle=%.1fs > threshold=%ss,'
+            ' executing action=%s',
+            watch_name,
+            buffer,
+            metric_name,
+            timestamp,
+            idle_duration,
+            config.idle,
+            config.action.value,
+        )
+        return True
+    logger.info(
+        '%s watch [%s]: %s=%.3f, idle=%.1fs <= threshold=%ss, no action',
+        watch_name,
+        buffer,
+        metric_name,
+        timestamp,
+        idle_duration,
+        config.idle,
+    )
+    return False
+
+
+async def _watch_loop(
+    docker_client: DockerClient,
+    buffer: str,
+    watch_name: str,
+    config: Union[QueueConfig, FlowConfig],
+    evaluate: Callable[[Dict[str, float]], bool],
+):
+    await asyncio.sleep(config.polling_interval)
+
+    while True:
+        try:
+            content = await get_metrics(buffer)
+            metrics = await parse_metrics(content, config.label_filters)
+
+            if evaluate(metrics):
+                await process_action(
+                    docker_client, config.action, config.container_labels
+                )
+                await asyncio.sleep(config.cooldown)
+            else:
+                await asyncio.sleep(config.polling_interval)
+
+        except KeyError as e:
+            logger.warning(
+                '%s watch [%s]: metric %s not found in response, skipping cycle',
+                watch_name,
+                buffer,
+                e,
+            )
+            await asyncio.sleep(config.polling_interval)
+        except Exception as e:
+            logger.warning(
+                '%s watch [%s]: %s: %s, skipping cycle',
+                watch_name,
+                buffer,
+                type(e).__name__,
+                e,
+            )
+            await asyncio.sleep(config.polling_interval)
 
 
 async def watch_queue(docker_client: DockerClient, buffer: str, config: QueueConfig):
-    await asyncio.sleep(config.polling_interval)
-
-    while True:
-        content = await get_metrics(buffer)
-        metrics = await parse_metrics(content)
-
-        buffer_size = metrics[BUFFER_SIZE_METRIC]
-
-        if buffer_size > config.length:
-            logger.debug(
-                'Buffer %s is full, processing action %s', buffer, config.action
-            )
-            await process_action(docker_client, config.action, config.container_labels)
-            await asyncio.sleep(config.cooldown)
-        else:
-            await asyncio.sleep(config.polling_interval)
+    await _watch_loop(
+        docker_client,
+        buffer,
+        'Queue',
+        config,
+        lambda metrics: _queue_evaluate(buffer, config, metrics),
+    )
 
 
 async def watch_egress(docker_client: DockerClient, buffer: str, config: FlowConfig):
-    await asyncio.sleep(config.polling_interval)
-
-    while True:
-        content = await get_metrics(buffer)
-        metrics = await parse_metrics(content)
-
-        last_sent_message = metrics[LAST_SENT_MESSAGE_METRIC]
-        now = time.time()
-
-        if now - last_sent_message > config.idle:
-            logger.debug(
-                'Egress flow %s is idle, processing action %s', buffer, config.action
-            )
-            await process_action(docker_client, config.action, config.container_labels)
-            await asyncio.sleep(config.cooldown)
-        else:
-            await asyncio.sleep(config.polling_interval)
+    await _watch_loop(
+        docker_client,
+        buffer,
+        'Egress',
+        config,
+        lambda metrics: _flow_evaluate(
+            'Egress', LAST_SENT_MESSAGE_METRIC, buffer, config, metrics
+        ),
+    )
 
 
 async def watch_ingress(docker_client: DockerClient, buffer: str, config: FlowConfig):
-    await asyncio.sleep(config.polling_interval)
-
-    while True:
-        content = await get_metrics(buffer)
-        metrics = await parse_metrics(content)
-
-        last_received_message = metrics[LAST_RECEIVED_MESSAGE_METRIC]
-        now = time.time()
-
-        if now - last_received_message > config.idle:
-            logger.debug(
-                'Ingress flow %s is idle, processing action %s', buffer, config.action
-            )
-            await process_action(docker_client, config.action, config.container_labels)
-            await asyncio.sleep(config.cooldown)
-        else:
-            await asyncio.sleep(config.polling_interval)
+    await _watch_loop(
+        docker_client,
+        buffer,
+        'Ingress',
+        config,
+        lambda metrics: _flow_evaluate(
+            'Ingress', LAST_RECEIVED_MESSAGE_METRIC, buffer, config, metrics
+        ),
+    )
 
 
 async def watch_buffer(docker_client: DockerClient, config: WatchConfig):

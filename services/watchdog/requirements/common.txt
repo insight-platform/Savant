@@ -1,4 +1,4 @@
-aiohttp~=3.11
-aiodocker~=0.22.1
+aiohttp~=3.13.3
+aiodocker~=0.26.0
 omegaconf~=2.3.0
-prometheus-client~=0.21.1
+prometheus-client~=0.24.1

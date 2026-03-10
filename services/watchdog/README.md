@@ -1,8 +1,10 @@
 # Watchdog
 
-This service watches the health of pipeline by monitoring one or more buffers in parallel. It will stop or restart designated pipeline services if the buffer queue length exceeds a threshold value or the time since the last output or input message exceeds a specified time. 
+This service watches the health of pipeline by monitoring one or more buffers in parallel. It will stop or restart designated pipeline services if the buffer queue length exceeds a threshold value or the time since the last output or input message exceeds a specified time.
 
 Queue monitoring helps detect the slow processing of messages, and ingress and egress monitoring is helpful in detecting how pipeline services are processing messages. In other words, the service can detect if the pipeline is not processing messages at the expected rate or if the pipeline is not processing messages at all.
+
+The watchdog parses metrics in the [OpenMetrics](https://openmetrics.io/) text format exposed by the buffer service. When a metric has multiple labeled samples (e.g. different `reason` values), the maximum value across all samples is used by default. This can be customized with [label filters](#label-filters). Transient errors such as missing metrics or HTTP failures are logged and the current polling cycle is skipped without crashing.
 
 ## Configuration
 
@@ -24,6 +26,9 @@ watch:
         container:
           - labels: [<str>]
           # other labels
+        label_filters:  # optional
+          <metric_name>:
+            <label_key>: <label_value>
       egress:
         action: <restart|stop>
         idle: <int>
@@ -31,6 +36,9 @@ watch:
         polling_interval: <int>
         container:
           - labels: [<str>]
+        label_filters:  # optional
+          <metric_name>:
+            <label_key>: <label_value>
       ingress:
         action: <restart|stop>
         idle: <int>
@@ -39,6 +47,9 @@ watch:
         container:
           - labels: [<str>]
           # other labels
+        label_filters:  # optional
+          <metric_name>:
+            <label_key>: <label_value>
     # other buffers
 ```
 
@@ -52,6 +63,7 @@ Where:
   * `polling_interval` - interval in seconds to check the queue length.
   * `container` - list of labels to match for the action. Actions are performed on containers that match any of the label sets.
     * `labels` - one or more labels to match on the same container, i.e. the container must have all labels.
+  * `label_filters` - optional mapping of metric name to label key-value pairs used to select specific metric samples. See [Label filters](#label-filters) below.
 * `ingress` or `egress` - configuration for the input or output traffic of the buffer. Optional.
   * `action` - action to take when the time since the last input or output message exceeds the idle threshold. It can be `restart` or `stop`.
   * `idle` - threshold time in seconds since the last input or output message.
@@ -59,8 +71,31 @@ Where:
   * `polling_interval` - interval in seconds between buffer traffic checks. Optional. Default equals to `idle`.
   * `container` - list of labels to match for the action. Actions are performed on containers that match any of the label sets.
     * `labels` - one or more labels to match on the same container, i.e. the container must have all labels.
+  * `label_filters` - optional mapping of metric name to label key-value pairs used to select specific metric samples. See [Label filters](#label-filters) below.
 
 **Note**: For each buffer, at least one of the `queue`, `ingress`, or `egress` sections must be present.
+
+### Label filters
+
+Buffer metrics may expose multiple samples for the same metric name, distinguished by labels (e.g. `last_sent_message{reason="send_success"}` and `last_sent_message{reason="ack_success"}`). By default, the watchdog aggregates all samples for a metric using `max()`. This works well in most cases, but when you need to watch a specific label variant you can use `label_filters`.
+
+`label_filters` is a mapping where each key is a metric name and the value is a dictionary of label key-value pairs. Only samples whose labels match **all** specified pairs are considered. Metrics not mentioned in `label_filters` continue to use `max()` aggregation.
+
+Example:
+
+```yaml
+egress:
+  action: restart
+  cooldown: 60s
+  idle: 100s
+  container:
+    - labels: egress-client-label=egress-client-value
+  label_filters:
+    last_sent_message:
+      reason: send_success
+```
+
+In this example, only the `last_sent_message` sample with `reason="send_success"` is used for the idle check; the `ack_success` sample is ignored.
 
 You can find an example configuration file in the [samples](../../samples/pipeline_watchdog/config.yml) folder.
 
@@ -98,14 +133,14 @@ Configuration of a docker service might be as follows:
 
 ## Sample
 
-The sample demonstrates how to start the watchdog service with an example pipeline to watch the buffer and restart the SDK client based on configuration and buffer state.
+The sample demonstrates how to start the watchdog service with an example pipeline to watch the buffer and restart the SDK client based on configuration and buffer state. The client randomly pauses message processing, triggering the watchdog to restart it when the egress idle threshold is exceeded.
 
 ### Run
 
 This sample is designed to run on x86 architecture only.
 
 ```bash
-docker compose -f samples/pipeline_monitoring/docker-compose.yml up --build -d
+docker compose -f samples/pipeline_watchdog/docker-compose.x86.yml up --build -d
 ```
 
 ### Check
@@ -113,7 +148,7 @@ docker compose -f samples/pipeline_monitoring/docker-compose.yml up --build -d
 After starting the pipeline, you can check the logs of the client container:
 
 ```bash
-docker logs -f pipeline_monitoring-client-1
+docker logs -f pipeline_watchdog-client-1
 ```
 
 When the client stops processing messages for more than `egress.idle` seconds (see [config](../../samples/pipeline_watchdog/config.yml)) you will see the following logs in the client container, and the container itself will be restarted:
@@ -130,5 +165,16 @@ KeyboardInterrupt
 ### Stop
 
 ```bash
-docker compose -f samples/pipeline_monitoring/docker-compose.yml down
+docker compose -f samples/pipeline_watchdog/docker-compose.x86.yml down
 ```
+
+## Tests
+
+Run the tests from the watchdog service directory:
+
+```bash
+cd services/watchdog
+pytest
+```
+
+Dependencies: `pytest`, `pytest-asyncio`, `aiohttp`, `aiodocker`, `prometheus_client`, `omegaconf`.
