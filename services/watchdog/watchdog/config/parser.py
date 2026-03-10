@@ -30,6 +30,13 @@ class ConfigParser:
         return container_labels
 
     @staticmethod
+    def __parse_label_filters(config: DictConfig):
+        label_filters = config.get('label_filters')
+        if label_filters is None:
+            return None
+        return OmegaConf.to_object(label_filters)
+
+    @staticmethod
     def __parse_queue_config(queue_config: DictConfig):
         if queue_config is None:
             return None
@@ -40,6 +47,7 @@ class ConfigParser:
             cooldown=convert_to_seconds(queue_config['cooldown']),
             polling_interval=convert_to_seconds(queue_config['polling_interval']),
             container_labels=ConfigParser.__parse_labels(queue_config['container']),
+            label_filters=ConfigParser.__parse_label_filters(queue_config),
         )
 
     @staticmethod
@@ -58,6 +66,7 @@ class ConfigParser:
                 convert_to_seconds(polling_interval) if polling_interval else idle
             ),
             container_labels=ConfigParser.__parse_labels(flow_config['container']),
+            label_filters=ConfigParser.__parse_label_filters(flow_config),
         )
 
     @staticmethod

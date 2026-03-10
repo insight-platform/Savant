@@ -4,7 +4,7 @@ import pytest
 import pytest_asyncio
 from aiodocker import DockerError
 from aiodocker.containers import DockerContainer, DockerContainers
-from watchdog.run import DockerClient
+from watchdog.main import DockerClient
 
 DOCKER_ERROR = DockerError('status', {'message': 'error'})
 RUNTIME_ERROR = RuntimeError('Test error')

@@ -21,7 +21,7 @@ services:
         condition: service_started
 
   sync-rtsp-adapter:
-    image: ghcr.io/insight-platform/savant-retina-rtsp-x86:v0.5.16
+    image: ghcr.io/insight-platform/savant-retina-rtsp-x86:v0.5.17
     restart: unless-stopped
     environment:
       - RUST_LOG=info
@@ -39,7 +39,7 @@ services:
 
   stitching:
     privileged: true
-    image: ghcr.io/insight-platform/savant-deepstream:0.5.16-7.0
+    image: ghcr.io/insight-platform/savant-deepstream:0.5.17-7.0
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -67,7 +67,7 @@ services:
 
   always-on-sink:
     privileged: true
-    image: ghcr.io/insight-platform/savant-adapters-deepstream:0.5.16-7.0
+    image: ghcr.io/insight-platform/savant-adapters-deepstream:0.5.17-7.0
     restart: unless-stopped
     ports:
       - "888:888" # HLS

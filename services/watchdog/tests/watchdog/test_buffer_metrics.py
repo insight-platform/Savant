@@ -1,3 +1,4 @@
+from textwrap import dedent
 from unittest import mock
 from unittest.mock import AsyncMock, MagicMock, call
 
@@ -47,26 +48,118 @@ async def test_get_metrics_response_exception(session_mock):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize(
-    'content, expected',
-    [
-        (
-            """
-            # HELP received_messages_total Number of messages received by the adapter
-            # TYPE received_messages_total counter
-            received_messages_total{adapter="buffer"} 120.0
-            # HELP pushed_messages_total Number of messages pushed to the buffer
-            # TYPE pushed_messages_total counter
-            pushed_messages_total{adapter="buffer"} 34.0 1720441634544
-            """,
-            {'received_messages_total': 120.0, 'pushed_messages_total': 34.0},
-        ),
-    ],
-)
-async def test_parse_metrics(content, expected):
+async def test_parse_metrics_openmetrics():
+    """Counters use _total suffix; gauges are bare names."""
+    content = dedent("""\
+        # HELP received_messages Number of messages received by the adapter
+        # TYPE received_messages counter
+        received_messages_total{adapter="buffer"} 120.0
+        # HELP pushed_messages Number of messages pushed to the buffer
+        # TYPE pushed_messages counter
+        pushed_messages_total{adapter="buffer"} 34.0
+        # EOF
+    """)
     result = await parse_metrics(content)
+    assert result == {
+        'received_messages_total': 120.0,
+        'pushed_messages_total': 34.0,
+    }
 
-    assert result == expected
+
+@pytest.mark.asyncio
+async def test_parse_metrics_gauge():
+    content = dedent("""\
+        # HELP last_sent_message Timestamp of last sent message
+        # TYPE last_sent_message gauge
+        last_sent_message{reason="send_success"} 1720441634.544
+        # EOF
+    """)
+    result = await parse_metrics(content)
+    assert result == {'last_sent_message': 1720441634.544}
+
+
+@pytest.mark.asyncio
+async def test_parse_metrics_max_aggregation():
+    """Multiple samples for the same metric name are aggregated with max()."""
+    content = dedent("""\
+        # HELP last_sent_message Timestamp of last sent message
+        # TYPE last_sent_message gauge
+        last_sent_message{reason="send_success"} 1720441600.0
+        last_sent_message{reason="ack_success"} 1720441634.544
+        # EOF
+    """)
+    result = await parse_metrics(content)
+    assert result == {'last_sent_message': 1720441634.544}
+
+
+@pytest.mark.asyncio
+async def test_parse_metrics_max_aggregation_stale_label():
+    """Stale label value should not shadow the fresh one."""
+    content = dedent("""\
+        # HELP last_sent_message Timestamp of last sent message
+        # TYPE last_sent_message gauge
+        last_sent_message{reason="ack_success"} 1720441634.544
+        last_sent_message{reason="send_success"} 0.0
+        # EOF
+    """)
+    result = await parse_metrics(content)
+    # max() picks the fresh timestamp, not the stale 0.0
+    assert result == {'last_sent_message': 1720441634.544}
+
+
+@pytest.mark.asyncio
+async def test_parse_metrics_label_filter():
+    """When label_filters is set, only matching samples are considered."""
+    content = dedent("""\
+        # HELP last_sent_message Timestamp of last sent message
+        # TYPE last_sent_message gauge
+        last_sent_message{reason="send_success",adapter="buffer"} 100.0
+        last_sent_message{reason="ack_success",adapter="buffer"} 200.0
+        # EOF
+    """)
+    result = await parse_metrics(
+        content,
+        label_filters={'last_sent_message': {'reason': 'send_success'}},
+    )
+    assert result == {'last_sent_message': 100.0}
+
+
+@pytest.mark.asyncio
+async def test_parse_metrics_label_filter_no_match():
+    """When filter matches nothing, the metric is absent from results."""
+    content = dedent("""\
+        # HELP last_sent_message Timestamp of last sent message
+        # TYPE last_sent_message gauge
+        last_sent_message{reason="send_success"} 100.0
+        # EOF
+    """)
+    result = await parse_metrics(
+        content,
+        label_filters={'last_sent_message': {'reason': 'ack_success'}},
+    )
+    assert 'last_sent_message' not in result
+
+
+@pytest.mark.asyncio
+async def test_parse_metrics_label_filter_unfiltered_metrics_use_max():
+    """Metrics not mentioned in label_filters still use max() aggregation."""
+    content = dedent("""\
+        # HELP buffer_size Number of messages in the buffer
+        # TYPE buffer_size gauge
+        buffer_size{adapter="a"} 10.0
+        buffer_size{adapter="b"} 20.0
+        # HELP last_sent_message Timestamp of last sent message
+        # TYPE last_sent_message gauge
+        last_sent_message{reason="send_success"} 100.0
+        # EOF
+    """)
+    result = await parse_metrics(
+        content,
+        label_filters={'last_sent_message': {'reason': 'send_success'}},
+    )
+    # buffer_size is not in label_filters -> max()
+    assert result['buffer_size'] == 20.0
+    assert result['last_sent_message'] == 100.0
 
 
 @pytest.mark.asyncio

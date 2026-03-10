@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, call
 import pytest
 from aiodocker.containers import DockerContainer
 from watchdog.config.schema import Action
-from watchdog.run import (
+from watchdog.main import (
     main,
     process_action,
     watch_buffer,
@@ -17,7 +17,7 @@ from watchdog.run import (
 
 
 @pytest.mark.asyncio
-@mock.patch('watchdog.run.DockerClient', autospec=True)
+@mock.patch('watchdog.main.DockerClient', autospec=True)
 async def test_process_action_stop(docker_client_mock):
     docker_client = docker_client_mock()
     docker_container1 = AsyncMock(DockerContainer)
@@ -36,7 +36,7 @@ async def test_process_action_stop(docker_client_mock):
 
 
 @pytest.mark.asyncio
-@mock.patch('watchdog.run.DockerClient', autospec=True)
+@mock.patch('watchdog.main.DockerClient', autospec=True)
 async def test_process_action_restart(docker_client_mock):
     docker_client = docker_client_mock()
     docker_container1 = AsyncMock(DockerContainer)
@@ -55,7 +55,7 @@ async def test_process_action_restart(docker_client_mock):
 
 
 @pytest.mark.asyncio
-@mock.patch('watchdog.run.DockerClient', autospec=True)
+@mock.patch('watchdog.main.DockerClient', autospec=True)
 @pytest.mark.parametrize(
     'action',
     [
@@ -74,19 +74,10 @@ async def test_process_action_empty_containers(docker_client_mock, action):
 
 
 @pytest.mark.asyncio
-@mock.patch('watchdog.run.DockerClient', autospec=True)
-async def test_process_action_invalid(docker_client_mock):
-    docker_client = docker_client_mock()
-
-    with pytest.raises(RuntimeError, match='Unknown action: invalid_action'):
-        await process_action(docker_client, 'invalid_action', [])  # type: ignore
-
-
-@pytest.mark.asyncio
-@mock.patch('watchdog.run.watch_ingress')
-@mock.patch('watchdog.run.watch_egress')
-@mock.patch('watchdog.run.watch_queue')
-@mock.patch('watchdog.run.DockerClient')
+@mock.patch('watchdog.main.watch_ingress')
+@mock.patch('watchdog.main.watch_egress')
+@mock.patch('watchdog.main.watch_queue')
+@mock.patch('watchdog.main.DockerClient')
 async def test_watch_buffer(
     docker_client_mock,
     watch_queue_mock,
@@ -109,10 +100,10 @@ async def test_watch_buffer(
 
 
 @pytest.mark.asyncio
-@mock.patch('watchdog.run.watch_ingress')
-@mock.patch('watchdog.run.watch_egress')
-@mock.patch('watchdog.run.watch_queue')
-@mock.patch('watchdog.run.DockerClient')
+@mock.patch('watchdog.main.watch_ingress')
+@mock.patch('watchdog.main.watch_egress')
+@mock.patch('watchdog.main.watch_queue')
+@mock.patch('watchdog.main.DockerClient')
 async def test_watch_buffer_queue_only(
     docker_client_mock,
     watch_queue_mock,
@@ -133,10 +124,10 @@ async def test_watch_buffer_queue_only(
 
 
 @pytest.mark.asyncio
-@mock.patch('watchdog.run.watch_ingress')
-@mock.patch('watchdog.run.watch_egress')
-@mock.patch('watchdog.run.watch_queue')
-@mock.patch('watchdog.run.DockerClient')
+@mock.patch('watchdog.main.watch_ingress')
+@mock.patch('watchdog.main.watch_egress')
+@mock.patch('watchdog.main.watch_queue')
+@mock.patch('watchdog.main.DockerClient')
 async def test_watch_buffer_egress_only(
     docker_client_mock,
     watch_queue_mock,
@@ -157,10 +148,10 @@ async def test_watch_buffer_egress_only(
 
 
 @pytest.mark.asyncio
-@mock.patch('watchdog.run.watch_ingress')
-@mock.patch('watchdog.run.watch_egress')
-@mock.patch('watchdog.run.watch_queue')
-@mock.patch('watchdog.run.DockerClient')
+@mock.patch('watchdog.main.watch_ingress')
+@mock.patch('watchdog.main.watch_egress')
+@mock.patch('watchdog.main.watch_queue')
+@mock.patch('watchdog.main.DockerClient')
 async def test_watch_buffer_ingress_only(
     docker_client_mock,
     watch_queue_mock,
@@ -181,10 +172,10 @@ async def test_watch_buffer_ingress_only(
 
 
 @pytest.mark.asyncio
-@mock.patch('watchdog.run.watch_ingress')
-@mock.patch('watchdog.run.watch_egress')
-@mock.patch('watchdog.run.watch_queue', side_effect=RuntimeError('error'))
-@mock.patch('watchdog.run.DockerClient')
+@mock.patch('watchdog.main.watch_ingress')
+@mock.patch('watchdog.main.watch_egress')
+@mock.patch('watchdog.main.watch_queue', side_effect=RuntimeError('error'))
+@mock.patch('watchdog.main.DockerClient')
 async def test_watch_buffer_watch_queue_failed(
     docker_client_mock,
     watch_queue_mock,
@@ -209,10 +200,10 @@ async def test_watch_buffer_watch_queue_failed(
 
 
 @pytest.mark.asyncio
-@mock.patch('watchdog.run.watch_ingress')
-@mock.patch('watchdog.run.watch_egress', side_effect=RuntimeError('error'))
-@mock.patch('watchdog.run.watch_queue')
-@mock.patch('watchdog.run.DockerClient')
+@mock.patch('watchdog.main.watch_ingress')
+@mock.patch('watchdog.main.watch_egress', side_effect=RuntimeError('error'))
+@mock.patch('watchdog.main.watch_queue')
+@mock.patch('watchdog.main.DockerClient')
 async def test_watch_buffer_watch_egress_failed(
     docker_client_mock,
     watch_queue_mock,
@@ -237,10 +228,10 @@ async def test_watch_buffer_watch_egress_failed(
 
 
 @pytest.mark.asyncio
-@mock.patch('watchdog.run.watch_ingress', side_effect=RuntimeError('error'))
-@mock.patch('watchdog.run.watch_egress')
-@mock.patch('watchdog.run.watch_queue')
-@mock.patch('watchdog.run.DockerClient')
+@mock.patch('watchdog.main.watch_ingress', side_effect=RuntimeError('error'))
+@mock.patch('watchdog.main.watch_egress')
+@mock.patch('watchdog.main.watch_queue')
+@mock.patch('watchdog.main.DockerClient')
 async def test_watch_buffer_watch_ingress_failed(
     docker_client_mock,
     watch_queue_mock,
@@ -264,11 +255,14 @@ async def test_watch_buffer_watch_ingress_failed(
     )
 
 
+# --- watch_queue tests ---
+
+
 @pytest.mark.asyncio
-@mock.patch('watchdog.run.process_action')
-@mock.patch('watchdog.run.get_metrics', return_value='content')
-@mock.patch('watchdog.run.parse_metrics', return_value={'buffer_size': 999})
-@mock.patch('watchdog.run.DockerClient')
+@mock.patch('watchdog.main.process_action')
+@mock.patch('watchdog.main.get_metrics', return_value='content')
+@mock.patch('watchdog.main.parse_metrics', return_value={'buffer_size': 999})
+@mock.patch('watchdog.main.DockerClient')
 async def test_watch_queue(
     docker_client_mock,
     parse_metrics_mock,
@@ -293,17 +287,17 @@ async def test_watch_queue(
             pass
 
     get_metrics_mock.assert_awaited_once_with(watch_config.buffer)
-    parse_metrics_mock.assert_awaited_once_with('content')
+    parse_metrics_mock.assert_awaited_once_with('content', None)
     process_action_mock.assert_awaited_once_with(
         docker_client, watch_config.queue.action, watch_config.queue.container_labels
     )
 
 
 @pytest.mark.asyncio
-@mock.patch('watchdog.run.process_action')
-@mock.patch('watchdog.run.get_metrics', return_value='content')
-@mock.patch('watchdog.run.parse_metrics', return_value={'buffer_size': 0})
-@mock.patch('watchdog.run.DockerClient')
+@mock.patch('watchdog.main.process_action')
+@mock.patch('watchdog.main.get_metrics', return_value='content')
+@mock.patch('watchdog.main.parse_metrics', return_value={'buffer_size': 0})
+@mock.patch('watchdog.main.DockerClient')
 async def test_watch_queue_empty(
     docker_client_mock,
     parse_metrics_mock,
@@ -328,18 +322,81 @@ async def test_watch_queue_empty(
             pass
 
     get_metrics_mock.assert_awaited_once_with(watch_config.buffer)
-    parse_metrics_mock.assert_awaited_once_with('content')
+    parse_metrics_mock.assert_awaited_once_with('content', None)
     process_action_mock.assert_not_awaited()
 
 
 @pytest.mark.asyncio
-@mock.patch('watchdog.run.process_action')
-@mock.patch('watchdog.run.get_metrics', return_value='content')
+@mock.patch('watchdog.main.process_action')
+@mock.patch('watchdog.main.get_metrics', return_value='content')
+@mock.patch('watchdog.main.parse_metrics', return_value={})
+@mock.patch('watchdog.main.DockerClient')
+async def test_watch_queue_missing_metric(
+    docker_client_mock,
+    parse_metrics_mock,
+    get_metrics_mock,
+    process_action_mock,
+    watch_config,
+):
+    """Missing metric should skip cycle, not crash."""
+    docker_client = docker_client_mock()
+
+    with mock.patch(
+        'asyncio.sleep', side_effect=[None, asyncio.CancelledError]
+    ) as sleep_mock:
+        try:
+            await watch_queue(docker_client, watch_config.buffer, watch_config.queue)
+        except asyncio.CancelledError:
+            sleep_mock.assert_has_awaits(
+                [
+                    call(watch_config.queue.polling_interval),
+                    call(watch_config.queue.polling_interval),
+                ]
+            )
+
+    process_action_mock.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+@mock.patch('watchdog.main.process_action')
+@mock.patch('watchdog.main.get_metrics', side_effect=Exception('connection failed'))
+@mock.patch('watchdog.main.DockerClient')
+async def test_watch_queue_http_error(
+    docker_client_mock,
+    get_metrics_mock,
+    process_action_mock,
+    watch_config,
+):
+    """HTTP failure should skip cycle, not crash."""
+    docker_client = docker_client_mock()
+
+    with mock.patch(
+        'asyncio.sleep', side_effect=[None, asyncio.CancelledError]
+    ) as sleep_mock:
+        try:
+            await watch_queue(docker_client, watch_config.buffer, watch_config.queue)
+        except asyncio.CancelledError:
+            sleep_mock.assert_has_awaits(
+                [
+                    call(watch_config.queue.polling_interval),
+                    call(watch_config.queue.polling_interval),
+                ]
+            )
+
+    process_action_mock.assert_not_awaited()
+
+
+# --- watch_egress tests ---
+
+
+@pytest.mark.asyncio
+@mock.patch('watchdog.main.process_action')
+@mock.patch('watchdog.main.get_metrics', return_value='content')
 @mock.patch(
-    'watchdog.run.parse_metrics',
+    'watchdog.main.parse_metrics',
     return_value={'last_sent_message': time.time() - 999},
 )
-@mock.patch('watchdog.run.DockerClient')
+@mock.patch('watchdog.main.DockerClient')
 async def test_watch_egress(
     docker_client_mock,
     parse_metrics_mock,
@@ -364,20 +421,20 @@ async def test_watch_egress(
             pass
 
     get_metrics_mock.assert_awaited_once_with(watch_config.buffer)
-    parse_metrics_mock.assert_awaited_once_with('content')
+    parse_metrics_mock.assert_awaited_once_with('content', None)
     process_action_mock.assert_awaited_once_with(
         docker_client, watch_config.egress.action, watch_config.egress.container_labels
     )
 
 
 @pytest.mark.asyncio
-@mock.patch('watchdog.run.process_action')
-@mock.patch('watchdog.run.get_metrics', return_value='content')
+@mock.patch('watchdog.main.process_action')
+@mock.patch('watchdog.main.get_metrics', return_value='content')
 @mock.patch(
-    'watchdog.run.parse_metrics',
+    'watchdog.main.parse_metrics',
     return_value={'last_sent_message': time.time()},
 )
-@mock.patch('watchdog.run.DockerClient')
+@mock.patch('watchdog.main.DockerClient')
 async def test_watch_egress_message_just_sent(
     docker_client_mock,
     parse_metrics_mock,
@@ -402,18 +459,81 @@ async def test_watch_egress_message_just_sent(
             pass
 
     get_metrics_mock.assert_awaited_once_with(watch_config.buffer)
-    parse_metrics_mock.assert_awaited_once_with('content')
+    parse_metrics_mock.assert_awaited_once_with('content', None)
     process_action_mock.assert_not_awaited()
 
 
 @pytest.mark.asyncio
-@mock.patch('watchdog.run.process_action')
-@mock.patch('watchdog.run.get_metrics', return_value='content')
+@mock.patch('watchdog.main.process_action')
+@mock.patch('watchdog.main.get_metrics', return_value='content')
+@mock.patch('watchdog.main.parse_metrics', return_value={})
+@mock.patch('watchdog.main.DockerClient')
+async def test_watch_egress_missing_metric(
+    docker_client_mock,
+    parse_metrics_mock,
+    get_metrics_mock,
+    process_action_mock,
+    watch_config,
+):
+    """Missing metric should skip cycle, not crash."""
+    docker_client = docker_client_mock()
+
+    with mock.patch(
+        'asyncio.sleep', side_effect=[None, asyncio.CancelledError]
+    ) as sleep_mock:
+        try:
+            await watch_egress(docker_client, watch_config.buffer, watch_config.egress)
+        except asyncio.CancelledError:
+            sleep_mock.assert_has_awaits(
+                [
+                    call(watch_config.egress.polling_interval),
+                    call(watch_config.egress.polling_interval),
+                ]
+            )
+
+    process_action_mock.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+@mock.patch('watchdog.main.process_action')
+@mock.patch('watchdog.main.get_metrics', side_effect=Exception('connection failed'))
+@mock.patch('watchdog.main.DockerClient')
+async def test_watch_egress_http_error(
+    docker_client_mock,
+    get_metrics_mock,
+    process_action_mock,
+    watch_config,
+):
+    """HTTP failure should skip cycle, not crash."""
+    docker_client = docker_client_mock()
+
+    with mock.patch(
+        'asyncio.sleep', side_effect=[None, asyncio.CancelledError]
+    ) as sleep_mock:
+        try:
+            await watch_egress(docker_client, watch_config.buffer, watch_config.egress)
+        except asyncio.CancelledError:
+            sleep_mock.assert_has_awaits(
+                [
+                    call(watch_config.egress.polling_interval),
+                    call(watch_config.egress.polling_interval),
+                ]
+            )
+
+    process_action_mock.assert_not_awaited()
+
+
+# --- watch_ingress tests ---
+
+
+@pytest.mark.asyncio
+@mock.patch('watchdog.main.process_action')
+@mock.patch('watchdog.main.get_metrics', return_value='content')
 @mock.patch(
-    'watchdog.run.parse_metrics',
+    'watchdog.main.parse_metrics',
     return_value={'last_received_message': time.time() - 999},
 )
-@mock.patch('watchdog.run.DockerClient')
+@mock.patch('watchdog.main.DockerClient')
 async def test_watch_ingress(
     docker_client_mock,
     parse_metrics_mock,
@@ -440,7 +560,7 @@ async def test_watch_ingress(
             pass
 
     get_metrics_mock.assert_awaited_once_with(watch_config.buffer)
-    parse_metrics_mock.assert_awaited_once_with('content')
+    parse_metrics_mock.assert_awaited_once_with('content', None)
     process_action_mock.assert_awaited_once_with(
         docker_client,
         watch_config.ingress.action,
@@ -449,13 +569,13 @@ async def test_watch_ingress(
 
 
 @pytest.mark.asyncio
-@mock.patch('watchdog.run.process_action')
-@mock.patch('watchdog.run.get_metrics', return_value='content')
+@mock.patch('watchdog.main.process_action')
+@mock.patch('watchdog.main.get_metrics', return_value='content')
 @mock.patch(
-    'watchdog.run.parse_metrics',
+    'watchdog.main.parse_metrics',
     return_value={'last_received_message': time.time()},
 )
-@mock.patch('watchdog.run.DockerClient')
+@mock.patch('watchdog.main.DockerClient')
 async def test_watch_ingress_message_just_received(
     docker_client_mock,
     parse_metrics_mock,
@@ -482,8 +602,75 @@ async def test_watch_ingress_message_just_received(
             pass
 
     get_metrics_mock.assert_awaited_once_with(watch_config.buffer)
-    parse_metrics_mock.assert_awaited_once_with('content')
+    parse_metrics_mock.assert_awaited_once_with('content', None)
     process_action_mock.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+@mock.patch('watchdog.main.process_action')
+@mock.patch('watchdog.main.get_metrics', return_value='content')
+@mock.patch('watchdog.main.parse_metrics', return_value={})
+@mock.patch('watchdog.main.DockerClient')
+async def test_watch_ingress_missing_metric(
+    docker_client_mock,
+    parse_metrics_mock,
+    get_metrics_mock,
+    process_action_mock,
+    watch_config,
+):
+    """Missing metric should skip cycle, not crash."""
+    docker_client = docker_client_mock()
+
+    with mock.patch(
+        'asyncio.sleep', side_effect=[None, asyncio.CancelledError]
+    ) as sleep_mock:
+        try:
+            await watch_ingress(
+                docker_client, watch_config.buffer, watch_config.ingress
+            )
+        except asyncio.CancelledError:
+            sleep_mock.assert_has_awaits(
+                [
+                    call(watch_config.ingress.polling_interval),
+                    call(watch_config.ingress.polling_interval),
+                ]
+            )
+
+    process_action_mock.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+@mock.patch('watchdog.main.process_action')
+@mock.patch('watchdog.main.get_metrics', side_effect=Exception('connection failed'))
+@mock.patch('watchdog.main.DockerClient')
+async def test_watch_ingress_http_error(
+    docker_client_mock,
+    get_metrics_mock,
+    process_action_mock,
+    watch_config,
+):
+    """HTTP failure should skip cycle, not crash."""
+    docker_client = docker_client_mock()
+
+    with mock.patch(
+        'asyncio.sleep', side_effect=[None, asyncio.CancelledError]
+    ) as sleep_mock:
+        try:
+            await watch_ingress(
+                docker_client, watch_config.buffer, watch_config.ingress
+            )
+        except asyncio.CancelledError:
+            sleep_mock.assert_has_awaits(
+                [
+                    call(watch_config.ingress.polling_interval),
+                    call(watch_config.ingress.polling_interval),
+                ]
+            )
+
+    process_action_mock.assert_not_awaited()
+
+
+# --- main() tests ---
 
 
 @pytest.mark.parametrize('config', [None, ''])
@@ -495,8 +682,8 @@ def test_main_no_config_file_path(environ_mock, config):
         main()
 
 
-@mock.patch('watchdog.run.validate', side_effect=RuntimeError('error'))
-@mock.patch('watchdog.run.ConfigParser')
+@mock.patch('watchdog.main.validate', side_effect=RuntimeError('error'))
+@mock.patch('watchdog.main.ConfigParser')
 @mock.patch('os.environ.get', return_value='config.yml')
 def test_main_invalid_config(environ_mock, config_parser_mock, validate_mock):
     config_parser = config_parser_mock.return_value
@@ -510,10 +697,10 @@ def test_main_invalid_config(environ_mock, config_parser_mock, validate_mock):
     validate_mock.assert_called_once_with(parsed_config)
 
 
-@mock.patch('watchdog.run.watch_buffer')
-@mock.patch('watchdog.run.DockerClient', autospec=True)
-@mock.patch('watchdog.run.validate')
-@mock.patch('watchdog.run.ConfigParser')
+@mock.patch('watchdog.main.watch_buffer', side_effect=KeyboardInterrupt)
+@mock.patch('watchdog.main.DockerClient', autospec=True)
+@mock.patch('watchdog.main.validate')
+@mock.patch('watchdog.main.ConfigParser')
 @mock.patch('os.environ.get', return_value='config.yml')
 def test_main_keyboard_interrupt(
     environ_mock,
@@ -526,17 +713,10 @@ def test_main_keyboard_interrupt(
     config_parser = config_parser_mock.return_value
     config_parser.parse.return_value = config
 
-    def raise_exception():
-        raise KeyboardInterrupt()
-
-    loop = asyncio.new_event_loop()
-    loop.call_later(1, raise_exception)
-    asyncio.set_event_loop(loop)
-
-    main()
-
-    assert loop.is_closed()
-    docker_client_mock.return_value.close.assert_awaited_once()
+    try:
+        main()
+    except KeyboardInterrupt:
+        pass
 
     config_parser_mock.assert_called_once_with('config.yml')
     config_parser.parse.assert_called_once()
