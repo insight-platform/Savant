@@ -73,7 +73,6 @@ async def test_process_action_empty_containers(docker_client_mock, action):
     docker_client.get_containers.assert_awaited_once_with(container_labels)
 
 
-
 @pytest.mark.asyncio
 @mock.patch('watchdog.main.watch_ingress')
 @mock.patch('watchdog.main.watch_egress')
@@ -360,9 +359,7 @@ async def test_watch_queue_missing_metric(
 
 @pytest.mark.asyncio
 @mock.patch('watchdog.main.process_action')
-@mock.patch(
-    'watchdog.main.get_metrics', side_effect=Exception('connection failed')
-)
+@mock.patch('watchdog.main.get_metrics', side_effect=Exception('connection failed'))
 @mock.patch('watchdog.main.DockerClient')
 async def test_watch_queue_http_error(
     docker_client_mock,
@@ -499,9 +496,7 @@ async def test_watch_egress_missing_metric(
 
 @pytest.mark.asyncio
 @mock.patch('watchdog.main.process_action')
-@mock.patch(
-    'watchdog.main.get_metrics', side_effect=Exception('connection failed')
-)
+@mock.patch('watchdog.main.get_metrics', side_effect=Exception('connection failed'))
 @mock.patch('watchdog.main.DockerClient')
 async def test_watch_egress_http_error(
     docker_client_mock,
@@ -646,9 +641,7 @@ async def test_watch_ingress_missing_metric(
 
 @pytest.mark.asyncio
 @mock.patch('watchdog.main.process_action')
-@mock.patch(
-    'watchdog.main.get_metrics', side_effect=Exception('connection failed')
-)
+@mock.patch('watchdog.main.get_metrics', side_effect=Exception('connection failed'))
 @mock.patch('watchdog.main.DockerClient')
 async def test_watch_ingress_http_error(
     docker_client_mock,

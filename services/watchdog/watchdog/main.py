@@ -98,8 +98,7 @@ def _queue_evaluate(
     buffer_size = metrics[BUFFER_SIZE_METRIC]
     if buffer_size > config.length:
         logger.info(
-            'Queue watch [%s]: %s=%.0f exceeds threshold %s,'
-            ' executing action=%s',
+            'Queue watch [%s]: %s=%.0f exceeds threshold %s, executing action=%s',
             buffer,
             BUFFER_SIZE_METRIC,
             buffer_size,
@@ -107,7 +106,7 @@ def _queue_evaluate(
             config.action.value,
         )
         return True
-    logger.info(
+    logger.debug(
         'Queue watch [%s]: %s=%.0f within threshold %s, no action',
         buffer,
         BUFFER_SIZE_METRIC,
@@ -129,8 +128,7 @@ def _flow_evaluate(
     idle_duration = now - timestamp
     if idle_duration > config.idle:
         logger.info(
-            '%s watch [%s]: %s=%.3f, idle=%.1fs > threshold=%ss,'
-            ' executing action=%s',
+            '%s watch [%s]: %s=%.3f, idle=%.1fs > threshold=%ss, executing action=%s',
             watch_name,
             buffer,
             metric_name,
@@ -140,7 +138,7 @@ def _flow_evaluate(
             config.action.value,
         )
         return True
-    logger.info(
+    logger.debug(
         '%s watch [%s]: %s=%.3f, idle=%.1fs <= threshold=%ss, no action',
         watch_name,
         buffer,
