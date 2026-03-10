@@ -1,11 +1,7 @@
-"""Meta Merge Python handler - merges objects from two ROI pipelines using export/import."""
+"""Meta Merge Python handler - merges objects from two ROI pipelines
+using export/import."""
 
 from typing import Any, Optional
-
-from savant_rs import register_handler
-from savant_rs.logging import LogLevel, log
-from savant_rs.match_query import MatchQuery, StringExpression
-from savant_rs.utils.serialization import Message
 
 from roi_constants import (
     EXPECTED_INGRESS_COUNT,
@@ -13,6 +9,10 @@ from roi_constants import (
     RIGHT_ROI_LABEL,
     ROI_NAMESPACE,
 )
+from savant_rs import register_handler
+from savant_rs.logging import LogLevel, log
+from savant_rs.match_query import MatchQuery, StringExpression
+from savant_rs.utils.serialization import Message
 
 
 class MergeHandler:

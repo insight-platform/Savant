@@ -1,4 +1,5 @@
-"""Source service: loads JPEG, runs YOLO, stores person boxes, sends frames via BlockingWriter."""
+"""Source service: loads JPEG, runs YOLO, stores person boxes,
+sends frames via BlockingWriter."""
 
 from __future__ import annotations
 
@@ -9,13 +10,13 @@ import time
 from pathlib import Path
 
 from savant_rs.logging import LogLevel, log, set_log_level
-from savant_rs.py.api.enums import ExternalFrameType
 from savant_rs.primitives import (
     AttributeValue,
     VideoFrame,
     VideoFrameContent,
     VideoFrameTranscodingMethod,
 )
+from savant_rs.py.api.enums import ExternalFrameType
 
 # Image sent as extra argument to send_message, not in frame content
 from savant_rs.utils.serialization import Message
@@ -65,10 +66,9 @@ def run_yolo_person_detection(
     """Run YOLOv11 on JPEG, return list of (l, t, r, b, conf) for person class."""
     import io
 
+    import torch
     from PIL import Image
     from ultralytics import YOLO
-
-    import torch
 
     model = YOLO(YOLO_MODEL)
     img = Image.open(io.BytesIO(jpeg_bytes))
@@ -84,9 +84,14 @@ def run_yolo_person_detection(
             if cls_id != 0:  # COCO person class
                 continue
             xyxy = box.xyxy[0]
-            l, t, r, b = int(xyxy[0]), int(xyxy[1]), int(xyxy[2]), int(xyxy[3])
+            left, top, right, bottom = (
+                int(xyxy[0]),
+                int(xyxy[1]),
+                int(xyxy[2]),
+                int(xyxy[3]),
+            )
             conf = float(box.conf[0])
-            persons.append((l, t, r, b, conf))
+            persons.append((left, top, right, bottom, conf))
     return persons
 
 
@@ -111,8 +116,8 @@ def main() -> int:
     persons = run_yolo_person_detection(merged_bytes)
 
     values: list[AttributeValue] = []
-    for l, t, r, b, conf in persons:
-        values.append(AttributeValue.integers([l, t, r, b]))
+    for left, top, right, bottom, conf in persons:
+        values.append(AttributeValue.integers([left, top, right, bottom]))
         values.append(AttributeValue.float(conf))
 
     send_timeout_ms = int(os.environ.get('ZMQ_SEND_TIMEOUT_MS', '10000'))
@@ -167,7 +172,8 @@ def main() -> int:
             log(
                 LogLevel.Info,
                 'source',
-                f'Waiting {post_eos_idle_s}s for pipeline to drain (will be killed by compose)',
+                f'Waiting {post_eos_idle_s}s for pipeline to drain '
+                f'(will be killed by compose)',
             )
             time.sleep(post_eos_idle_s)
     finally:

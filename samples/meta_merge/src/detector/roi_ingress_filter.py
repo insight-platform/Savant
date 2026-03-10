@@ -1,6 +1,6 @@
-"""Ingress filter that removes the excessive ROI and its children for this module instance."""
+"""Ingress filter that removes the excessive ROI and its children
+for this module instance."""
 
-from savant.base.frame_filter import BaseFrameFilter
 from savant_rs.match_query import MatchQuery, StringExpression
 
 from samples.meta_merge.src.meta_merge.roi_constants import (
@@ -11,10 +11,12 @@ from samples.meta_merge.src.meta_merge.roi_constants import (
     ROI_RIGHT,
     VALID_ROIS,
 )
+from savant.base.frame_filter import BaseFrameFilter
 
 
 class ROIIngressFilter(BaseFrameFilter):
-    """Removes the ROI that this module instance does not process, including its children.
+    """Removes the ROI that this module instance does not process,
+    including its children.
 
     Left module: removes router.right_roi and its children (e.g. marker).
     Right module: removes router.left_roi and its children (e.g. marker).

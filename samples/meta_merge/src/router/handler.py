@@ -1,23 +1,24 @@
-"""Router ingress handler - creates left and right ROI objects on VideoFrame for each egress."""
+"""Router ingress handler - creates left and right ROI objects on VideoFrame
+for each egress."""
 
 import math
 import random
 from typing import Any
 
+from meta_merge.roi_constants import LEFT_ROI_LABEL, RIGHT_ROI_LABEL, ROI_NAMESPACE
 from savant_rs import register_handler
 from savant_rs.logging import LogLevel, log
 from savant_rs.match_query import MatchQuery
 from savant_rs.primitives.geometry import RBBox
 from savant_rs.utils.serialization import Message
 
-from meta_merge.roi_constants import LEFT_ROI_LABEL, RIGHT_ROI_LABEL, ROI_NAMESPACE
-
 MARKER_LABEL = 'marker'
 MARKER_SIZE = 40
 
 
 class IngressHandler:
-    """Creates top-level ROI objects (left half, right half) on VideoFrame for inference modules."""
+    """Creates top-level ROI objects (left half, right half) on VideoFrame
+    for inference modules."""
 
     def __init__(self):
         self._frame_idx = 0
@@ -25,7 +26,8 @@ class IngressHandler:
     def __call__(
         self, message_id: int, ingress_name: str, topic: str, message: Message
     ) -> Message:
-        """Add left and right ROI objects to VideoFrame so each module instance runs inference only on its ROI."""
+        """Add left and right ROI objects to VideoFrame so each module instance
+        runs inference only on its ROI."""
         frame = message.as_video_frame()
         if frame is None:
             return message

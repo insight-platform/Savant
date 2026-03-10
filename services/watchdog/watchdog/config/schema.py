@@ -1,8 +1,8 @@
 """The configuration classes for the pipeline watchdog."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 
 def validate_container_labels(labels: List[List[str]]):
@@ -34,6 +34,14 @@ class QueueConfig:
     container_labels: List[List[str]]
     """List of labels to filter the containers to which the action is applied."""
 
+    label_filters: Optional[Dict[str, Dict[str, str]]] = field(default=None)
+    """Optional mapping of metric name to label key=value pairs.
+
+    When set, only metric samples whose labels match all specified pairs
+    are considered.  When ``None``, ``max()`` across all samples of the
+    same metric name is used.
+    """
+
     def __post_init__(self):
         validate_container_labels(self.container_labels)
 
@@ -56,6 +64,14 @@ class FlowConfig:
 
     container_labels: List[List[str]]
     """List of labels to filter the containers to which the action is applied."""
+
+    label_filters: Optional[Dict[str, Dict[str, str]]] = field(default=None)
+    """Optional mapping of metric name to label key=value pairs.
+
+    When set, only metric samples whose labels match all specified pairs
+    are considered.  When ``None``, ``max()`` across all samples of the
+    same metric name is used.
+    """
 
     def __post_init__(self):
         validate_container_labels(self.container_labels)
