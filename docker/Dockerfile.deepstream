@@ -375,8 +375,7 @@ RUN wget -nv -P /usr/local/lib/ ${PACKAGES_URL}/libtorch2trt_plugins.so && \
     wget -nv -O ${TORCH2TRT_WHL} ${PACKAGES_URL}/${TORCH2TRT_WHL} && \
     python -m pip install --no-cache-dir tensorrt~=8.6 && \
     python -m pip install --no-cache-dir ${TORCH2TRT_WHL} && \
-    python -m pip install --no-cache-dir nvidia-pyindex && \
-    python -m pip install --no-cache-dir onnx-graphsurgeon && \
+    python -m pip install --no-cache-dir --extra-index-url https://pypi.ngc.nvidia.com onnx-graphsurgeon && \
     rm ${TORCH2TRT_WHL}
 
 # pycuda
