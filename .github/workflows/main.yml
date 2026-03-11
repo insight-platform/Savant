@@ -75,8 +75,7 @@ jobs:
   build-savant-deepstream:
     needs: init
     runs-on:
-      - self-hosted
-      - ${{ matrix.runner }}
+      group: ${{ matrix.group }}
     permissions:
       contents: read
       packages: write
@@ -87,10 +86,10 @@ jobs:
         include:
           - docker_file: docker/Dockerfile.deepstream
             docker_image_suffix: deepstream
-            runner: X64
+            group: native-builders-x86
           - docker_file: docker/Dockerfile.deepstream
             docker_image_suffix: deepstream-l4t
-            runner: ARM64
+            group: native-builders-arm
 
     steps:
       - uses: actions/checkout@v4
@@ -101,6 +100,20 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ github.token }}
+
+      - name: Determine base image
+        run: |
+          DEEPSTREAM_VERSION=${{ needs.init.outputs.deepstream-version }}
+          DEEPSTREAM_BASE_IMAGE=nvcr.io/nvidia/deepstream:${DEEPSTREAM_VERSION}-samples-multiarch
+          DEEPSTREAM_DEVEL_IMAGE=nvcr.io/nvidia/deepstream:${DEEPSTREAM_VERSION}-triton-multiarch          
+          if [ "${{ matrix.group }}" = "native-builders-x86" ]; then
+            if [ "${DEEPSTREAM_VERSION}" = "7.1" ]; then
+              DEEPSTREAM_BASE_IMAGE=ghcr.io/insight-platform/deepstream:7.1.0-samples
+              DEEPSTREAM_DEVEL_IMAGE=ghcr.io/insight-platform/deepstream:7.1.0-devel
+            fi
+          fi
+          echo "DEEPSTREAM_BASE_IMAGE=${DEEPSTREAM_BASE_IMAGE}" >> $GITHUB_ENV
+          echo "DEEPSTREAM_DEVEL_IMAGE=${DEEPSTREAM_DEVEL_IMAGE}" >> $GITHUB_ENV
 
       # base image
       - name: Build and push savant-deepstream docker image
@@ -113,6 +126,8 @@ jobs:
             SAVANT_VERSION=${{ needs.init.outputs.savant-version }}
             SAVANT_RS_VERSION=${{ needs.init.outputs.savant-rs-version }}
             DEEPSTREAM_VERSION=${{ needs.init.outputs.deepstream-version }}
+            DEEPSTREAM_BASE_IMAGE=${{ env.DEEPSTREAM_BASE_IMAGE }}
+            DEEPSTREAM_DEVEL_IMAGE=${{ env.DEEPSTREAM_DEVEL_IMAGE }}
           target: base
           push: true
 
@@ -127,6 +142,8 @@ jobs:
             SAVANT_VERSION=${{ needs.init.outputs.savant-version }}
             SAVANT_RS_VERSION=${{ needs.init.outputs.savant-rs-version }}
             DEEPSTREAM_VERSION=${{ needs.init.outputs.deepstream-version }}
+            DEEPSTREAM_BASE_IMAGE=${{ env.DEEPSTREAM_BASE_IMAGE }}
+            DEEPSTREAM_DEVEL_IMAGE=${{ env.DEEPSTREAM_DEVEL_IMAGE }}
           target: adapters
           push: true
 
@@ -141,6 +158,8 @@ jobs:
             SAVANT_VERSION=${{ needs.init.outputs.savant-version }}
             SAVANT_RS_VERSION=${{ needs.init.outputs.savant-rs-version }}
             DEEPSTREAM_VERSION=${{ needs.init.outputs.deepstream-version }}
+            DEEPSTREAM_BASE_IMAGE=${{ env.DEEPSTREAM_BASE_IMAGE }}
+            DEEPSTREAM_DEVEL_IMAGE=${{ env.DEEPSTREAM_DEVEL_IMAGE }}
           target: ${{ matrix.docker_image_suffix }}-extra
           push: true
 
@@ -148,8 +167,7 @@ jobs:
   build-savant-adapters:
     needs: init
     runs-on:
-      - self-hosted
-      - ${{ matrix.runner }}
+      group: ${{ matrix.group }}
     permissions:
       contents: read
       packages: write
@@ -160,16 +178,16 @@ jobs:
         include:
           - docker_file: docker/Dockerfile.adapters-gstreamer
             docker_image: savant-adapters-gstreamer
-            runner: X64
+            group: native-builders-x86
           - docker_file: docker/Dockerfile.adapters-gstreamer
             docker_image: savant-adapters-gstreamer-l4t
-            runner: ARM64
+            group: native-builders-arm
           - docker_file: docker/Dockerfile.adapters-py
             docker_image: savant-adapters-py
-            runner: X64
+            group: native-builders-x86
           - docker_file: docker/Dockerfile.adapters-py
             docker_image: savant-adapters-py-l4t
-            runner: ARM64
+            group: native-builders-arm
 
     steps:
       - uses: actions/checkout@v4
@@ -241,7 +259,7 @@ jobs:
 
   # retag replay containers
   retag-savant-rs-platform-containers:
-    needs: init
+    needs: [init, build-savant-deepstream, build-savant-adapters, build-savant-watchdog]
     runs-on: ubuntu-latest
 
     permissions:
@@ -279,6 +297,8 @@ jobs:
             "savant-rs-py314"
             "savant-buffer-ng-x86"
             "savant-buffer-ng-arm64"
+            "savant-meta-merge-x86"
+            "savant-meta-merge-arm64"
           )
           
           # Retag each image using docker buildx imagetools
@@ -292,7 +312,8 @@ jobs:
   # build documentation
   build-docs:
     needs: [init, build-savant-deepstream]
-    runs-on: ubuntu-latest
+    runs-on:
+      group: native-builders-x86
     container:
       image: ${{ needs.init.outputs.docs-docker-image }}
     permissions:
@@ -341,34 +362,22 @@ jobs:
       - name: Compose docs
         if: github.ref_name == 'develop'
         run: |
-          ./docs/source/gh_script.py ${{ github.repository }} ${{ github.token }} docs/root
-          mv docs/build/html docs/root/develop
-          mv docs/root/versions.js docs/root/develop/_static/js/versions.js
+          ./docs/source/gh_script.py ${{ github.repository }} ${{ github.token }} docs/root ${{ vars.DOCS_URL }}
+          mv docs/build/html docs/root/latest
+          mv docs/root/versions.js docs/root/latest/_static/js/versions.js
 
-      - name: Upload pages artifact
+      - name: Upload docs artifact
         if: github.ref_name == 'develop'
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
+          name: docs
           path: docs/root
+
+      - name: Trigger website rebuild
+        if: github.ref_name == 'develop'
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.CROSS_REPO_TOKEN }}
+          repository: insight-platform/savant-ai.io
+          event-type: savant-docs-updated
       # --- develop
-
-  # develop ---
-  deploy-docs:
-    if: github.ref_name == 'develop'
-    runs-on: ubuntu-latest
-    needs: build-docs
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
-    steps:
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-  # --- develop
