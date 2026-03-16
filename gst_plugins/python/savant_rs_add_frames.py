@@ -3,6 +3,7 @@
 import inspect
 from typing import Any, NamedTuple, Optional
 
+from pyfunc_common import handle_non_fatal_error, init_pyfunc
 from pygstsavantframemeta import gst_buffer_add_savant_frame_meta
 from savant_rs.pipeline2 import VideoPipeline
 from savant_rs.primitives import VideoFrame, VideoFrameContent, VideoFrameTransformation
@@ -73,6 +74,38 @@ class SavantRsAddFrames(LoggerMixin, GstBase.BaseTransform):
             None,
             GObject.ParamFlags.READWRITE,
         ),
+        'ingress-module': (
+            str,
+            'Ingress filter python module.',
+            'Name or path of the python module where '
+            'the ingress filter class code is located.',
+            None,
+            GObject.ParamFlags.READWRITE,
+        ),
+        'ingress-class': (
+            str,
+            'Ingress filter python class name.',
+            'Name of the python class that implements ingress filter.',
+            None,
+            GObject.ParamFlags.READWRITE,
+        ),
+        'ingress-kwargs': (
+            str,
+            'Ingress filter init kwargs.',
+            'Keyword arguments for ingress filter initialization.',
+            None,
+            GObject.ParamFlags.READWRITE,
+        ),
+        'ingress-dev-mode': (
+            bool,
+            'Ingress filter dev mode flag.',
+            (
+                'Whether to monitor the ingress filter source file changes at runtime'
+                ' and reload the pyfunc objects when necessary.'
+            ),
+            False,
+            GObject.ParamFlags.READWRITE,
+        ),
     }
 
     def __init__(self):
@@ -81,6 +114,11 @@ class SavantRsAddFrames(LoggerMixin, GstBase.BaseTransform):
         self._source_id: Optional[str] = None
         self._video_pipeline: Optional[VideoPipeline] = None
         self._pipeline_stage_name: Optional[str] = None
+        self._ingress_module: Optional[str] = None
+        self._ingress_class_name: Optional[str] = None
+        self._ingress_kwargs: Optional[str] = None
+        self._ingress_dev_mode: bool = False
+        self._ingress_pyfunc = None
         # will be set after caps negotiation
         self._frame_params: Optional[FrameParams] = None
         self._initial_size_transformation: Optional[VideoFrameTransformation] = None
@@ -96,6 +134,14 @@ class SavantRsAddFrames(LoggerMixin, GstBase.BaseTransform):
             return self._video_pipeline
         if prop.name == 'pipeline-stage-name':
             return self._pipeline_stage_name
+        if prop.name == 'ingress-module':
+            return self._ingress_module
+        if prop.name == 'ingress-class':
+            return self._ingress_class_name
+        if prop.name == 'ingress-kwargs':
+            return self._ingress_kwargs
+        if prop.name == 'ingress-dev-mode':
+            return self._ingress_dev_mode
         raise AttributeError(f'Unknown property {prop.name}.')
 
     def do_set_property(self, prop: GObject.GParamSpec, value: Any):
@@ -110,6 +156,14 @@ class SavantRsAddFrames(LoggerMixin, GstBase.BaseTransform):
             self._video_pipeline = value
         elif prop.name == 'pipeline-stage-name':
             self._pipeline_stage_name = value
+        elif prop.name == 'ingress-module':
+            self._ingress_module = value
+        elif prop.name == 'ingress-class':
+            self._ingress_class_name = value
+        elif prop.name == 'ingress-kwargs':
+            self._ingress_kwargs = value
+        elif prop.name == 'ingress-dev-mode':
+            self._ingress_dev_mode = value
         else:
             raise AttributeError(f'Unknown property {prop.name}.')
 
@@ -125,6 +179,16 @@ class SavantRsAddFrames(LoggerMixin, GstBase.BaseTransform):
             frame = inspect.currentframe()
             gst_post_library_settings_error(self, frame, __file__, text=exc.args[0])
             return False
+
+        if self._ingress_module and self._ingress_class_name:
+            self._ingress_pyfunc = init_pyfunc(
+                self,
+                self.logger,
+                self._ingress_module,
+                self._ingress_class_name,
+                self._ingress_kwargs,
+                self._ingress_dev_mode,
+            )
 
         return True
 
@@ -178,6 +242,34 @@ class SavantRsAddFrames(LoggerMixin, GstBase.BaseTransform):
             time_base=DEFAULT_TIME_BASE,
         )
         video_frame.add_transformation(self._initial_size_transformation)
+
+        if self._ingress_pyfunc is not None:
+            try:
+                if not self._ingress_pyfunc(video_frame):
+                    self._logger.debug(
+                        'Frame %s from source %s didnt pass ingress filter, '
+                        'skipping it.',
+                        buffer.pts,
+                        video_frame.source_id,
+                    )
+                    # GST_BASE_TRANSFORM_FLOW_DROPPED
+                    return Gst.FlowReturn.CUSTOM_SUCCESS
+
+                self.logger.debug(
+                    'Frame %s from source %s passed ingress filter.',
+                    buffer.pts,
+                    video_frame.source_id,
+                )
+
+            except Exception as exc:
+                handle_non_fatal_error(
+                    self,
+                    self.logger,
+                    exc,
+                    f'Error in ingress filter call {self._ingress_pyfunc}',
+                    self._ingress_dev_mode,
+                )
+
         frame_id = self._video_pipeline.add_frame(
             self._pipeline_stage_name, video_frame
         )

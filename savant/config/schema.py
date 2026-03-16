@@ -370,11 +370,14 @@ class SourceElement(PipelineElement):
     """A pipeline element that produces pipeline input."""
 
     ingress_frame_filter: Optional[PyFunc] = None
-    """Frame filter for ingress frames.
+    """Frame filter for ingress frames."""
+
+    source_id: Optional[str] = None
+    """Source ID to set for the frames.
 
     .. note::
 
-        Ingress filter can only be configured for ``zeromq_source_bin`` source.
+        Ignored for ``zeromq_source_bin`` source.
     """
 
     def __post_init__(self):
@@ -397,12 +400,6 @@ class SourceElement(PipelineElement):
                     'ingress-kwargs': json.dumps(kwargs),
                     'ingress-dev-mode': self.ingress_frame_filter.dev_mode,
                 }
-            )
-        elif self.ingress_frame_filter:
-            logger.warning(
-                'Ingress filter is not supported for "%s", '
-                'no filtering will be performed.',
-                self.element,
             )
 
 

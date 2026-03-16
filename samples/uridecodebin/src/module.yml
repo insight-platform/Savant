@@ -14,14 +14,10 @@ parameters:
 pipeline:
   source:
     element: uridecodebin
+    source_id: ${oc.env:SOURCE_ID}
     properties:
       uri: ${oc.env:URI}
   sink:
     - element: zeromq_sink
       properties:
         socket: ${oc.env:ZMQ_SINK_ENDPOINT}
-      egress_frame_filter:
-        module: samples.uridecodebin.src.egress_frame_filter
-        class_name: EgressFilter
-        kwargs:
-          source_id: ${oc.env:SOURCE_ID}

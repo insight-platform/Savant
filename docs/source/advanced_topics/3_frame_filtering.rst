@@ -22,9 +22,22 @@ To define an ingress filtering function, add an ``ingress_frame_filter`` node to
         module: path.to.module
         class_name: IngressFilter
 
+Ingress filter can also be configured for non-zeromq sources, such as ``uridecodebin``:
+
+.. code-block:: yaml
+
+    source:
+      element: uridecodebin
+      properties:
+        uri: file:///data/file.mp4
+        source_id: my-source
+      ingress_frame_filter:
+        module: path.to.module
+        class_name: IngressFilter
+
 .. note::
 
-    Ingress filter can only be configured for ``zeromq_source_bin`` source.
+    When using a non-zeromq source (e.g. ``uridecodebin``), the ``source_id`` property can be set in ``properties`` to assign a meaningful source identifier. Without it, the source ID defaults to the GStreamer pad index (e.g. ``0``).
 
 Likewise for egress filtering, add an ``egress_frame_filter`` node to the :py:class:`~savant.config.schema.SinkElement` definition.
 

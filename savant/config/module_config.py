@@ -474,6 +474,12 @@ def validate_output_frame_parameters(config: Module):
     if codec != 'copy' and codec not in CODEC_BY_NAME:
         raise ModuleConfigException(f'Unknown codec {codec!r} in output_frame config.')
 
+    if codec == 'copy' and config.pipeline.source.element != 'zeromq_source_bin':
+        raise ModuleConfigException(
+            'Codec "copy" is only supported when pipeline source element '
+            'is "zeromq_source_bin".'
+        )
+
     profile = output_frame.get('profile')
     if profile is not None:
         if codec != Codec.H264.value.name:

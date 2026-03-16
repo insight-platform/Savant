@@ -7,7 +7,7 @@ from typing import Any, Generator, Optional, Tuple, Union
 
 from gi.repository import Gst  # noqa:F401
 
-from savant.config.schema import ElementGroup, Pipeline, PipelineElement
+from savant.config.schema import ElementGroup, Pipeline, PipelineElement, SourceElement
 from savant.utils.log import get_logger
 from savant.utils.sink_factories import SinkMessage
 
@@ -104,7 +104,7 @@ class GstPipeline:  # pylint: disable=too-many-instance-attributes
         )
         self._last_element = gst_element
 
-    def _add_source(self, source: PipelineElement) -> Gst.Element:
+    def _add_source(self, source: SourceElement) -> Gst.Element:
         source.name = 'source'
         _source = self.add_element(source)
         # input processor (post-source)

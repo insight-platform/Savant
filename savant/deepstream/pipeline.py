@@ -2,6 +2,7 @@
 
 import importlib
 import inspect
+import json
 import logging
 import tempfile
 import time
@@ -42,6 +43,7 @@ from savant.config.schema import (
     Pipeline,
     PipelineElement,
     PyFuncElement,
+    SourceElement,
     SourceShaper,
     TelemetryParameters,
 )
@@ -66,6 +68,7 @@ from savant.utils.source_info import (
     SourceShape,
 )
 
+from ..base.pyfunc import PyFunc
 from .buffer_processor import NvDsBufferProcessor, create_buffer_processor
 from .element_factory import NvDsElementFactory
 from .metadata import (
@@ -366,7 +369,7 @@ class NvDsPipeline(GstPipeline):
         self._muxer.set_property('drop-pipeline-eos', False)
 
     # Source
-    def _add_source(self, source: PipelineElement):
+    def _add_source(self, source: SourceElement):
         source.name = 'source'
         _source = self.add_element(source)
         if source.element == 'zeromq_source_bin':
@@ -380,6 +383,8 @@ class NvDsPipeline(GstPipeline):
             'pad-added',
             self.on_source_added,
             add_frames_to_pipeline,
+            source.source_id,
+            source.ingress_frame_filter,
         )
 
         # Need to suppress EOS on nvstreammux sink pad
@@ -407,6 +412,8 @@ class NvDsPipeline(GstPipeline):
         element: Gst.Element,
         new_pad: Gst.Pad,
         add_frames_to_pipeline: bool,
+        configured_source_id: Optional[str],
+        ingress_frame_filter: Optional[PyFunc],
     ):
         """Handle adding new video source.
 
@@ -414,6 +421,8 @@ class NvDsPipeline(GstPipeline):
         :param new_pad: The pad that has been added.
         :param add_frames_to_pipeline: Whether to add frames to pipeline i.e.
             add an element savant_rs_add_frames after the source element.
+        :param configured_source_id: Source ID configured in pipeline config.
+        :param ingress_frame_filter: Ingress frame filter configured in pipeline config.
         """
 
         if not self._is_running:
@@ -430,9 +439,12 @@ class NvDsPipeline(GstPipeline):
             return
 
         if add_frames_to_pipeline:
-            # new_pad.name example
-            # `src_camera1` => source_id == `camera1` (real source_id)
-            source_id = pad_to_source_id(new_pad)
+            if configured_source_id:
+                source_id = configured_source_id
+            else:
+                # new_pad.name example
+                # `src_camera1` => source_id == `camera1` (real source_id)
+                source_id = pad_to_source_id(new_pad)
             first_frame_id = None
         else:
             # new_pad.name example
@@ -474,6 +486,7 @@ class NvDsPipeline(GstPipeline):
             source_info,
             first_frame_id,
             add_frames_to_pipeline,
+            ingress_frame_filter,
         )
 
     def _on_source_caps(
@@ -483,6 +496,7 @@ class NvDsPipeline(GstPipeline):
         source_info: SourceInfo,
         first_frame_id: Optional[int],
         add_frames_to_pipeline: bool,
+        ingress_frame_filter: Optional[PyFunc],
     ):
         """Handle adding caps to video source pad."""
 
@@ -553,6 +567,7 @@ class NvDsPipeline(GstPipeline):
                     new_pad_caps,
                     source_info,
                     add_frames_to_pipeline,
+                    ingress_frame_filter,
                 )
                 self._check_pipeline_is_running()
                 add_pad_probe_to_move_frame(
@@ -590,6 +605,7 @@ class NvDsPipeline(GstPipeline):
         new_pad_caps: Gst.Caps,
         source_info: SourceInfo,
         add_frames_to_pipeline: bool,
+        ingress_frame_filter: Optional[PyFunc],
     ) -> Gst.Pad:
         self._check_pipeline_is_running()
         if add_frames_to_pipeline:
@@ -597,13 +613,26 @@ class NvDsPipeline(GstPipeline):
             # when source element is not zeromq_source_bin (e.g. uridecodebin).
             # Cannot add frames with a probe since Gst.Buffer is not writable,
             # and it's impossible to make it writable in a probe.
+            properties = {
+                'source-id': source_info.source_id,
+                'pipeline-stage-name': 'source',
+            }
+            if ingress_frame_filter is not None:
+                kwargs = {}
+                if ingress_frame_filter.kwargs:
+                    kwargs.update(ingress_frame_filter.kwargs)
+                properties.update(
+                    {
+                        'ingress-module': ingress_frame_filter.module,
+                        'ingress-class': ingress_frame_filter.class_name,
+                        'ingress-kwargs': json.dumps(kwargs),
+                        'ingress-dev-mode': ingress_frame_filter.dev_mode,
+                    }
+                )
             savant_rs_add_frames = self._element_factory.create(
                 PipelineElement(
                     'savant_rs_add_frames',
-                    properties={
-                        'source-id': source_info.source_id,
-                        'pipeline-stage-name': 'source',
-                    },
+                    properties=properties,
                 )
             )
             savant_rs_add_frames.set_property('pipeline', self._video_pipeline)
