@@ -550,4 +550,8 @@ To configure pass-through mode, set ``output_frame.codec`` to ``copy``:
 
 .. note::
 
+    Pass-through mode (``codec: copy``) is only available when the pipeline source is ``zeromq_source_bin``.
+
+.. note::
+
     Drawing on frames is not ignored in pass-through mode but the frame modifications exist only in the pipeline and are not propagated through the sinks.
