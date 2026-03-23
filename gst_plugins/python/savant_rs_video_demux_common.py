@@ -26,16 +26,17 @@ class FrameParams(NamedTuple):
         )
 
 
-def build_caps(params: FrameParams) -> Gst.Caps:
+def build_caps(params: FrameParams, with_framerate: bool = True) -> Gst.Caps:
     """Caps factory."""
-    try:
-        framerate = Fraction(params.framerate)
-    except (ZeroDivisionError, ValueError):
-        framerate = Fraction(DEFAULT_FRAMERATE)
-    framerate = Gst.Fraction(framerate.numerator, framerate.denominator)
     caps = Gst.Caps.from_string(params.codec.value.caps_with_params)
     caps.set_value('width', params.width)
     caps.set_value('height', params.height)
-    caps.set_value('framerate', framerate)
+    if with_framerate:
+        try:
+            framerate = Fraction(params.framerate)
+        except (ZeroDivisionError, ValueError):
+            framerate = Fraction(DEFAULT_FRAMERATE)
+        framerate = Gst.Fraction(framerate.numerator, framerate.denominator)
+        caps.set_value('framerate', framerate)
 
     return caps
