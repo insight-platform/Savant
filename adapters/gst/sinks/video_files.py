@@ -211,7 +211,10 @@ class VideoFilesWriter(ChunkWriter):
         self.pipeline: Optional[Gst.Pipeline] = None
         self.runner: Optional[GstPipelineRunner] = None
         self.frame_params = frame_params
-        self.caps = build_caps(frame_params)
+        self.caps = build_caps(
+            frame_params,
+            with_framerate=frame_params.codec != Codec.JPEG,
+        )
         super().__init__(chunk_size)
 
     def _write_video_frame(
