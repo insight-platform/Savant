@@ -1,7 +1,7 @@
 services:
 
   video-loop-source-720p:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:0.5.17
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:0.5.18
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -18,7 +18,7 @@ services:
         condition: service_healthy
 
   video-loop-source-1080p:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:0.5.17
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:0.5.18
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -36,7 +36,7 @@ services:
 
   module:
     privileged: true
-    image: ghcr.io/insight-platform/savant-deepstream-l4t:0.5.17-7.0
+    image: ghcr.io/insight-platform/savant-deepstream-l4t:0.5.18-7.0
     restart: unless-stopped
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
@@ -52,7 +52,7 @@ services:
     runtime: nvidia
 
   always-on-sink:
-    image: ghcr.io/insight-platform/savant-adapters-deepstream-l4t:0.5.17-7.0
+    image: ghcr.io/insight-platform/savant-adapters-deepstream-l4t:0.5.18-7.0
     restart: unless-stopped
     ports:
       - "554:554"    # RTSP

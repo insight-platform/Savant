@@ -1,7 +1,7 @@
 services:
 
   video-loop-source:
-    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:0.5.17
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:0.5.18
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - /tmp/video-loop-source-downloads:/tmp/video-loop-source-downloads
@@ -18,7 +18,7 @@ services:
 
   module:
     privileged: true
-    image: ghcr.io/insight-platform/savant-deepstream-l4t:0.5.17-7.0
+    image: ghcr.io/insight-platform/savant-deepstream-l4t:0.5.18-7.0
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ..:/opt/savant/samples
@@ -31,7 +31,7 @@ services:
     runtime: nvidia
 
   always-on-sink:
-    image: ghcr.io/insight-platform/savant-adapters-deepstream-l4t:0.5.17-7.0
+    image: ghcr.io/insight-platform/savant-adapters-deepstream-l4t:0.5.18-7.0
     ports:
       - "554:554"    # RTSP
       - "1935:1935"  # RTMP
