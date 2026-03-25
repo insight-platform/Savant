@@ -3,7 +3,7 @@ import os
 import pytest
 import yaml
 from watchdog.config.parser import ConfigParser
-from watchdog.config.schema import Action, PyFuncConfig
+from watchdog.config.schema import Action
 
 
 @pytest.fixture(scope='session')

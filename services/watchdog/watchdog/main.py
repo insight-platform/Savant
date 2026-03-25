@@ -291,7 +291,9 @@ async def watch_buffer(docker_client: DockerClient, config: WatchConfig):
         logger.info('Watching ingress flow: %s', config.ingress)
         watches.append(watch_ingress(docker_client, config.buffer, config.ingress))
     if config.pyfunc:
-        logger.info('Watching pyfunc: %s.%s', config.pyfunc.module, config.pyfunc.class_name)
+        logger.info(
+            'Watching pyfunc: %s.%s', config.pyfunc.module, config.pyfunc.class_name
+        )
         watches.append(watch_pyfunc(docker_client, config.buffer, config.pyfunc))
 
     await asyncio.gather(*watches)

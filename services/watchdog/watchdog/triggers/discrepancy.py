@@ -91,8 +91,7 @@ class DiscrepancyCheck:
             return True
 
         logger.debug(
-            'DiscrepancyCheck [%s]: healthy — '
-            'egress idle %.1fs, ingress idle %.1fs',
+            'DiscrepancyCheck [%s]: healthy — egress idle %.1fs, ingress idle %.1fs',
             self.buffer_url,
             egress_idle_duration,
             ingress_idle_duration,

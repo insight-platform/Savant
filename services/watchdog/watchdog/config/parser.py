@@ -1,7 +1,7 @@
+import importlib
+
 from omegaconf import DictConfig, ListConfig, OmegaConf
 from omegaconf.errors import ConfigKeyError
-
-import importlib
 
 from .schema import Action, Config, FlowConfig, PyFuncConfig, QueueConfig, WatchConfig
 

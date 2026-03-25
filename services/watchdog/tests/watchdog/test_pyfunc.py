@@ -3,9 +3,7 @@ from unittest import mock
 from unittest.mock import AsyncMock, call
 
 import pytest
-from watchdog.config.schema import Action, PyFuncConfig
 from watchdog.main import watch_buffer, watch_pyfunc
-
 
 # --- watch_pyfunc tests ---
 
