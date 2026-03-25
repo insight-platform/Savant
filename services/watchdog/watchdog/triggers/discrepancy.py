@@ -24,8 +24,11 @@ Example configuration:
             ingress_idle: 30
 """
 
+import logging
 import time
 from typing import Dict
+
+logger = logging.getLogger(__name__)
 
 LAST_SENT_MESSAGE_METRIC = 'last_sent_message'
 LAST_RECEIVED_MESSAGE_METRIC = 'last_received_message'
@@ -55,4 +58,23 @@ class DiscrepancyCheck:
         egress_is_idle = egress_idle_duration > self.egress_idle
         ingress_is_active = ingress_idle_duration <= self.ingress_idle
 
-        return egress_is_idle and ingress_is_active
+        if egress_is_idle and ingress_is_active:
+            logger.info(
+                'Discrepancy check: egress idle=%.1fs > threshold=%ss, '
+                'ingress idle=%.1fs <= threshold=%ss, triggering action',
+                egress_idle_duration,
+                self.egress_idle,
+                ingress_idle_duration,
+                self.ingress_idle,
+            )
+            return True
+
+        logger.debug(
+            'Discrepancy check: egress idle=%.1fs (threshold=%ss), '
+            'ingress idle=%.1fs (threshold=%ss), no action',
+            egress_idle_duration,
+            self.egress_idle,
+            ingress_idle_duration,
+            self.ingress_idle,
+        )
+        return False
