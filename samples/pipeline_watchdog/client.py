@@ -6,15 +6,14 @@ import sys
 import time
 
 from savant.client import SinkBuilder
-from savant.utils import logging
+from savant.utils.log import get_logger, init_logging
 
 
 def main():
     # To gracefully shut down the adapter on SIGTERM (raise KeyboardInterrupt)
     signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
 
-    logging.init_logging()
-    logger = logging.get_logger('Client')
+    logger = get_logger('Client')
 
     zmq_sink_endpoint = os.environ.get('ZMQ_SINK_ENDPOINT')
     min_sleep = int(os.environ.get('MIN_SLEEP', 0))
@@ -48,4 +47,5 @@ def main():
 
 
 if __name__ == '__main__':
+    init_logging()
     main()
