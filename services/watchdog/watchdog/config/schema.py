@@ -78,6 +78,43 @@ class FlowConfig:
 
 
 @dataclass
+class PyFuncConfig:
+    """Configuration for a custom pyfunc watch trigger."""
+
+    action: Action
+    """Action to take when the pyfunc returns True."""
+
+    cooldown: int
+    """Interval in seconds to wait after applying the action."""
+
+    polling_interval: int
+    """Interval in seconds between trigger checks."""
+
+    container_labels: List[List[str]]
+    """List of labels to filter the containers to which the action is applied."""
+
+    module: str
+    """Python module path to import (e.g. 'my_checks.discrepancy')."""
+
+    class_name: str
+    """Class name within the module. Must be callable (implement __call__)."""
+
+    kwargs: Optional[Dict] = field(default=None)
+    """Optional keyword arguments passed to the class constructor."""
+
+    label_filters: Optional[Dict[str, Dict[str, str]]] = field(default=None)
+    """Optional mapping of metric name to label key=value pairs.
+
+    When set, only metric samples whose labels match all specified pairs
+    are considered.  When ``None``, ``max()`` across all samples of the
+    same metric name is used.
+    """
+
+    def __post_init__(self):
+        validate_container_labels(self.container_labels)
+
+
+@dataclass
 class WatchConfig:
     """Configuration for a single buffer."""
 
@@ -92,6 +129,9 @@ class WatchConfig:
 
     ingress: Optional[FlowConfig]
     """Ingress traffic watch configuration."""
+
+    pyfunc: Optional[PyFuncConfig] = None
+    """Custom pyfunc watch configuration."""
 
 
 @dataclass

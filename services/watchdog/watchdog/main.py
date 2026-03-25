@@ -1,4 +1,5 @@
 import asyncio
+import importlib
 import logging
 import os
 import signal
@@ -12,7 +13,7 @@ from aiodocker.containers import DockerContainer
 
 from .buffer_metrics import get_metrics, parse_metrics
 from .config.parser import Config, ConfigParser
-from .config.schema import Action, FlowConfig, QueueConfig, WatchConfig
+from .config.schema import Action, FlowConfig, PyFuncConfig, QueueConfig, WatchConfig
 from .config.validator import validate
 
 LOG_LEVEL = os.environ.get('LOGLEVEL', 'INFO')
@@ -154,7 +155,7 @@ async def _watch_loop(
     docker_client: DockerClient,
     buffer: str,
     watch_name: str,
-    config: Union[QueueConfig, FlowConfig],
+    config: Union[QueueConfig, FlowConfig, PyFuncConfig],
     evaluate: Callable[[Dict[str, float]], bool],
 ):
     await asyncio.sleep(config.polling_interval)
@@ -225,6 +226,25 @@ async def watch_ingress(docker_client: DockerClient, buffer: str, config: FlowCo
     )
 
 
+def _load_pyfunc(config: PyFuncConfig):
+    """Import the module and instantiate the trigger class."""
+    mod = importlib.import_module(config.module)
+    cls = getattr(mod, config.class_name)
+    kwargs = config.kwargs or {}
+    return cls(**kwargs)
+
+
+async def watch_pyfunc(docker_client: DockerClient, buffer: str, config: PyFuncConfig):
+    trigger = _load_pyfunc(config)
+    await _watch_loop(
+        docker_client,
+        buffer,
+        f'PyFunc({config.module}.{config.class_name})',
+        config,
+        lambda metrics: trigger(metrics),
+    )
+
+
 async def watch_buffer(docker_client: DockerClient, config: WatchConfig):
     logger.info('Watching buffer [%s] metrics', config.buffer)
     watches = []
@@ -238,6 +258,11 @@ async def watch_buffer(docker_client: DockerClient, config: WatchConfig):
     if config.ingress:
         logger.info('Watching ingress flow: %s', config.ingress)
         watches.append(watch_ingress(docker_client, config.buffer, config.ingress))
+    if config.pyfunc:
+        logger.info(
+            'Watching pyfunc: %s.%s', config.pyfunc.module, config.pyfunc.class_name
+        )
+        watches.append(watch_pyfunc(docker_client, config.buffer, config.pyfunc))
 
     await asyncio.gather(*watches)
 
