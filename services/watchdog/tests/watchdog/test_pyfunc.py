@@ -1,20 +1,29 @@
 import asyncio
+import time
 from unittest import mock
-from unittest.mock import AsyncMock, call
+from unittest.mock import call
 
 import pytest
 from watchdog.main import watch_buffer, watch_pyfunc
+
 
 # --- watch_pyfunc tests ---
 
 
 @pytest.mark.asyncio
 @mock.patch('watchdog.main.process_action')
+@mock.patch('watchdog.main.get_metrics', return_value='content')
+@mock.patch(
+    'watchdog.main.parse_metrics',
+    return_value={'last_sent_message': time.time() - 120},
+)
 @mock.patch('watchdog.main._load_pyfunc')
 @mock.patch('watchdog.main.DockerClient')
 async def test_watch_pyfunc_trigger_fires(
     docker_client_mock,
     load_pyfunc_mock,
+    parse_metrics_mock,
+    get_metrics_mock,
     process_action_mock,
     pyfunc_config,
 ):
@@ -44,11 +53,18 @@ async def test_watch_pyfunc_trigger_fires(
 
 @pytest.mark.asyncio
 @mock.patch('watchdog.main.process_action')
+@mock.patch('watchdog.main.get_metrics', return_value='content')
+@mock.patch(
+    'watchdog.main.parse_metrics',
+    return_value={'last_sent_message': time.time()},
+)
 @mock.patch('watchdog.main._load_pyfunc')
 @mock.patch('watchdog.main.DockerClient')
 async def test_watch_pyfunc_trigger_does_not_fire(
     docker_client_mock,
     load_pyfunc_mock,
+    parse_metrics_mock,
+    get_metrics_mock,
     process_action_mock,
     pyfunc_config,
 ):
@@ -76,17 +92,21 @@ async def test_watch_pyfunc_trigger_does_not_fire(
 
 @pytest.mark.asyncio
 @mock.patch('watchdog.main.process_action')
+@mock.patch('watchdog.main.get_metrics', return_value='content')
+@mock.patch('watchdog.main.parse_metrics', return_value={})
 @mock.patch('watchdog.main._load_pyfunc')
 @mock.patch('watchdog.main.DockerClient')
-async def test_watch_pyfunc_async_trigger(
+async def test_watch_pyfunc_missing_metric_skips_cycle(
     docker_client_mock,
     load_pyfunc_mock,
+    parse_metrics_mock,
+    get_metrics_mock,
     process_action_mock,
     pyfunc_config,
 ):
-    """Async pyfunc callables are awaited correctly."""
+    """KeyError from pyfunc (missing metric) should skip cycle."""
     docker_client = docker_client_mock()
-    trigger = AsyncMock(return_value=True)
+    trigger = mock.Mock(side_effect=KeyError('last_sent_message'))
     load_pyfunc_mock.return_value = trigger
 
     with mock.patch(
@@ -98,29 +118,28 @@ async def test_watch_pyfunc_async_trigger(
             sleep_mock.assert_has_awaits(
                 [
                     call(pyfunc_config.polling_interval),
-                    call(pyfunc_config.cooldown),
+                    call(pyfunc_config.polling_interval),
                 ]
             )
 
-    trigger.assert_awaited_once()
-    process_action_mock.assert_awaited_once_with(
-        docker_client, pyfunc_config.action, pyfunc_config.container_labels
-    )
+    process_action_mock.assert_not_awaited()
 
 
 @pytest.mark.asyncio
 @mock.patch('watchdog.main.process_action')
+@mock.patch('watchdog.main.get_metrics', side_effect=Exception('connection failed'))
 @mock.patch('watchdog.main._load_pyfunc')
 @mock.patch('watchdog.main.DockerClient')
-async def test_watch_pyfunc_exception_skips_cycle(
+async def test_watch_pyfunc_http_error_skips_cycle(
     docker_client_mock,
     load_pyfunc_mock,
+    get_metrics_mock,
     process_action_mock,
     pyfunc_config,
 ):
-    """Exception in pyfunc should skip cycle, not crash."""
+    """HTTP failure should skip cycle, not crash."""
     docker_client = docker_client_mock()
-    trigger = mock.Mock(side_effect=RuntimeError('check failed'))
+    trigger = mock.Mock()
     load_pyfunc_mock.return_value = trigger
 
     with mock.patch(
@@ -136,6 +155,7 @@ async def test_watch_pyfunc_exception_skips_cycle(
                 ]
             )
 
+    trigger.assert_not_called()
     process_action_mock.assert_not_awaited()
 
 

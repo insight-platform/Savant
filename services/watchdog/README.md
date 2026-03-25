@@ -60,6 +60,9 @@ watch:
         class_name: <str>
         kwargs:  # optional
           <key>: <value>
+        label_filters:  # optional
+          <metric_name>:
+            <label_key>: <label_value>
     # other buffers
 ```
 
@@ -89,8 +92,9 @@ Where:
   * `container` - list of labels to match for the action. Actions are performed on containers that match any of the label sets.
     * `labels` - one or more labels to match on the same container, i.e. the container must have all labels.
   * `module` - Python module path to import (e.g. `watchdog.triggers.discrepancy`).
-  * `class_name` - class name within the module. The class must be callable (implement `__call__`). It is instantiated once at startup with `buffer_url` (from the `buffer` field) and `kwargs`, and called on each polling cycle. Both sync and async callables are supported.
-  * `kwargs` - optional additional keyword arguments passed to the class constructor.
+  * `class_name` - class name within the module. The class must be callable (implement `__call__`). It is instantiated once at startup with `kwargs` and called on each polling cycle with the parsed metrics dict.
+  * `kwargs` - optional keyword arguments passed to the class constructor.
+  * `label_filters` - optional mapping of metric name to label key-value pairs used to select specific metric samples. See [Label filters](#label-filters) below.
 
 **Note**: For each buffer, at least one of the `queue`, `ingress`, `egress`, or `pyfunc` sections must be present.
 
@@ -120,20 +124,21 @@ You can find an example configuration file in the [samples](../../samples/pipeli
 
 ### Custom triggers (pyfunc)
 
-The `pyfunc` watch type allows you to define arbitrary restart triggers as Python classes. The watchdog imports the class at startup, instantiates it with `buffer_url` (from the `buffer` field) and any additional `kwargs`, and calls it on each polling cycle. If the call returns `True`, the configured action is executed on the matched containers.
+The `pyfunc` watch type allows you to define arbitrary restart triggers as Python classes. The watchdog imports the class at startup, instantiates it with `kwargs`, and calls it on each polling cycle with the parsed buffer metrics. Metrics are fetched and parsed automatically by the watchdog — the trigger only needs to evaluate them. If the call returns `True`, the configured action is executed on the matched containers.
 
 The trigger class contract:
 
 ```python
+from typing import Dict
+
 class MyTrigger:
-    def __init__(self, buffer_url: str, **kwargs):
-        # buffer_url is passed automatically from the watch config's `buffer` field.
-        # Additional kwargs come from the config's `kwargs` section.
+    def __init__(self, **kwargs):
+        # kwargs come from the config's `kwargs` section.
         ...
 
-    async def __call__(self) -> bool:
+    def __call__(self, metrics: Dict[str, float]) -> bool:
+        # metrics are fetched automatically from the buffer.
         # Return True to trigger the action.
-        # Both sync and async __call__ are supported.
         ...
 ```
 

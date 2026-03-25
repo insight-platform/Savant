@@ -102,6 +102,14 @@ class PyFuncConfig:
     kwargs: Optional[Dict] = field(default=None)
     """Optional keyword arguments passed to the class constructor."""
 
+    label_filters: Optional[Dict[str, Dict[str, str]]] = field(default=None)
+    """Optional mapping of metric name to label key=value pairs.
+
+    When set, only metric samples whose labels match all specified pairs
+    are considered.  When ``None``, ``max()`` across all samples of the
+    same metric name is used.
+    """
+
     def __post_init__(self):
         validate_container_labels(self.container_labels)
 

@@ -103,6 +103,7 @@ class ConfigParser:
             module=module_path,
             class_name=class_name,
             kwargs=kwargs,
+            label_filters=ConfigParser.__parse_label_filters(pyfunc_config),
         )
 
     @staticmethod
