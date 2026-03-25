@@ -1,7 +1,9 @@
 from omegaconf import DictConfig, ListConfig, OmegaConf
 from omegaconf.errors import ConfigKeyError
 
-from .schema import Action, Config, FlowConfig, QueueConfig, WatchConfig
+import importlib
+
+from .schema import Action, Config, FlowConfig, PyFuncConfig, QueueConfig, WatchConfig
 
 SECONDS_PER_UNIT = {'s': 1, 'm': 60, 'h': 3600, 'd': 86400, 'w': 604800}
 
@@ -70,12 +72,47 @@ class ConfigParser:
         )
 
     @staticmethod
+    def __parse_pyfunc_config(pyfunc_config: DictConfig):
+        if pyfunc_config is None:
+            return None
+
+        module_path = pyfunc_config['module']
+        class_name = pyfunc_config['class_name']
+
+        try:
+            mod = importlib.import_module(module_path)
+        except ModuleNotFoundError as e:
+            raise ValueError(
+                f'Failed to import pyfunc module "{module_path}": {e}'
+            ) from e
+
+        if not hasattr(mod, class_name):
+            raise ValueError(
+                f'Class "{class_name}" not found in module "{module_path}"'
+            )
+
+        kwargs = pyfunc_config.get('kwargs')
+        if kwargs is not None:
+            kwargs = OmegaConf.to_object(kwargs)
+
+        return PyFuncConfig(
+            action=Action(pyfunc_config['action']),
+            cooldown=convert_to_seconds(pyfunc_config['cooldown']),
+            polling_interval=convert_to_seconds(pyfunc_config['polling_interval']),
+            container_labels=ConfigParser.__parse_labels(pyfunc_config['container']),
+            module=module_path,
+            class_name=class_name,
+            kwargs=kwargs,
+        )
+
+    @staticmethod
     def __parse_watch_config(watch_config: DictConfig):
         return WatchConfig(
             buffer=watch_config['buffer'],
             queue=ConfigParser.__parse_queue_config(watch_config.get('queue')),
             egress=ConfigParser.__parse_flow_config(watch_config.get('egress')),
             ingress=ConfigParser.__parse_flow_config(watch_config.get('ingress')),
+            pyfunc=ConfigParser.__parse_pyfunc_config(watch_config.get('pyfunc')),
         )
 
     def parse(self) -> Config:

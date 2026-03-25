@@ -1,0 +1,13 @@
+watch:
+  - buffer: buffer1:8000
+    pyfunc:
+      action: restart
+      cooldown: 120s
+      polling_interval: 10s
+      container:
+        - labels: [com.savant.module=detector]
+      module: watchdog.triggers.discrepancy
+      class_name: DiscrepancyCheck
+      kwargs:
+        egress_idle: 60
+        ingress_idle: 30

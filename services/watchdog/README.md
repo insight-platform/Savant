@@ -50,6 +50,16 @@ watch:
         label_filters:  # optional
           <metric_name>:
             <label_key>: <label_value>
+      pyfunc:  # optional
+        action: <restart|stop>
+        cooldown: <int>
+        polling_interval: <int>
+        container:
+          - labels: [<str>]
+        module: <str>
+        class_name: <str>
+        kwargs:  # optional
+          <key>: <value>
     # other buffers
 ```
 
@@ -72,8 +82,17 @@ Where:
   * `container` - list of labels to match for the action. Actions are performed on containers that match any of the label sets.
     * `labels` - one or more labels to match on the same container, i.e. the container must have all labels.
   * `label_filters` - optional mapping of metric name to label key-value pairs used to select specific metric samples. See [Label filters](#label-filters) below.
+* `pyfunc` - configuration for a custom Python trigger. Optional.
+  * `action` - action to take when the trigger returns `True`. It can be `restart` or `stop`.
+  * `cooldown` - interval in seconds to wait after applying the action.
+  * `polling_interval` - interval in seconds between trigger calls.
+  * `container` - list of labels to match for the action. Actions are performed on containers that match any of the label sets.
+    * `labels` - one or more labels to match on the same container, i.e. the container must have all labels.
+  * `module` - Python module path to import (e.g. `watchdog.triggers.discrepancy`).
+  * `class_name` - class name within the module. The class must be callable (implement `__call__`). It is instantiated once at startup with `buffer_url` (from the `buffer` field) and `kwargs`, and called on each polling cycle. Both sync and async callables are supported.
+  * `kwargs` - optional additional keyword arguments passed to the class constructor.
 
-**Note**: For each buffer, at least one of the `queue`, `ingress`, or `egress` sections must be present.
+**Note**: For each buffer, at least one of the `queue`, `ingress`, `egress`, or `pyfunc` sections must be present.
 
 ### Label filters
 
@@ -98,6 +117,48 @@ egress:
 In this example, only the `last_sent_message` sample with `reason="send_success"` is used for the idle check; the `ack_success` sample is ignored.
 
 You can find an example configuration file in the [samples](../../samples/pipeline_watchdog/config.yml) folder.
+
+### Custom triggers (pyfunc)
+
+The `pyfunc` watch type allows you to define arbitrary restart triggers as Python classes. The watchdog imports the class at startup, instantiates it with `buffer_url` (from the `buffer` field) and any additional `kwargs`, and calls it on each polling cycle. If the call returns `True`, the configured action is executed on the matched containers.
+
+The trigger class contract:
+
+```python
+class MyTrigger:
+    def __init__(self, buffer_url: str, **kwargs):
+        # buffer_url is passed automatically from the watch config's `buffer` field.
+        # Additional kwargs come from the config's `kwargs` section.
+        ...
+
+    async def __call__(self) -> bool:
+        # Return True to trigger the action.
+        # Both sync and async __call__ are supported.
+        ...
+```
+
+A built-in example trigger is provided in `watchdog.triggers.discrepancy`. It detects stuck modules by checking whether egress is idle while ingress is still active — frames are going in but not coming out.
+
+```yaml
+watch:
+  - buffer: ${oc.env:BUFFER_URL}
+    pyfunc:
+      action: restart
+      cooldown: 600s
+      polling_interval: 10s
+      container:
+        - labels: [com.savant.module=detector]
+      module: watchdog.triggers.discrepancy
+      class_name: DiscrepancyCheck
+      kwargs:
+        egress_idle: 60
+        ingress_idle: 30
+```
+
+The `DiscrepancyCheck` trigger accepts (via `kwargs`):
+
+* `egress_idle` - seconds of egress idle time before considering it stalled.
+* `ingress_idle` - seconds within which ingress must have been active for the trigger to fire. If ingress is also idle, the problem is upstream (no input), not a stuck module.
 
 ### Interpolation
 

@@ -1,4 +1,5 @@
 import asyncio
+import importlib
 import logging
 import os
 import signal
@@ -12,7 +13,7 @@ from aiodocker.containers import DockerContainer
 
 from .buffer_metrics import get_metrics, parse_metrics
 from .config.parser import Config, ConfigParser
-from .config.schema import Action, FlowConfig, QueueConfig, WatchConfig
+from .config.schema import Action, FlowConfig, PyFuncConfig, QueueConfig, WatchConfig
 from .config.validator import validate
 
 LOG_LEVEL = os.environ.get('LOGLEVEL', 'INFO')
@@ -225,6 +226,57 @@ async def watch_ingress(docker_client: DockerClient, buffer: str, config: FlowCo
     )
 
 
+def _load_pyfunc(buffer: str, config: PyFuncConfig):
+    """Import the module and instantiate the trigger class."""
+    mod = importlib.import_module(config.module)
+    cls = getattr(mod, config.class_name)
+    kwargs = config.kwargs or {}
+    return cls(buffer_url=buffer, **kwargs)
+
+
+async def _pyfunc_watch_loop(
+    docker_client: DockerClient,
+    watch_name: str,
+    config: PyFuncConfig,
+    evaluate: Callable,
+):
+    await asyncio.sleep(config.polling_interval)
+
+    while True:
+        try:
+            result = evaluate()
+            if asyncio.iscoroutine(result):
+                result = await result
+
+            if result:
+                logger.info(
+                    'PyFunc watch [%s]: trigger returned True, executing action=%s',
+                    watch_name,
+                    config.action.value,
+                )
+                await process_action(
+                    docker_client, config.action, config.container_labels
+                )
+                await asyncio.sleep(config.cooldown)
+            else:
+                await asyncio.sleep(config.polling_interval)
+
+        except Exception as e:
+            logger.warning(
+                'PyFunc watch [%s]: %s: %s, skipping cycle',
+                watch_name,
+                type(e).__name__,
+                e,
+            )
+            await asyncio.sleep(config.polling_interval)
+
+
+async def watch_pyfunc(docker_client: DockerClient, buffer: str, config: PyFuncConfig):
+    trigger = _load_pyfunc(buffer, config)
+    watch_name = f'{config.module}.{config.class_name} [{buffer}]'
+    await _pyfunc_watch_loop(docker_client, watch_name, config, trigger)
+
+
 async def watch_buffer(docker_client: DockerClient, config: WatchConfig):
     logger.info('Watching buffer [%s] metrics', config.buffer)
     watches = []
@@ -238,6 +290,9 @@ async def watch_buffer(docker_client: DockerClient, config: WatchConfig):
     if config.ingress:
         logger.info('Watching ingress flow: %s', config.ingress)
         watches.append(watch_ingress(docker_client, config.buffer, config.ingress))
+    if config.pyfunc:
+        logger.info('Watching pyfunc: %s.%s', config.pyfunc.module, config.pyfunc.class_name)
+        watches.append(watch_pyfunc(docker_client, config.buffer, config.pyfunc))
 
     await asyncio.gather(*watches)
 

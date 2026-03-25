@@ -3,7 +3,14 @@ import os
 
 import pytest
 import yaml
-from watchdog.config.schema import Action, Config, FlowConfig, QueueConfig, WatchConfig
+from watchdog.config.schema import (
+    Action,
+    Config,
+    FlowConfig,
+    PyFuncConfig,
+    QueueConfig,
+    WatchConfig,
+)
 
 # from .context import watchdog
 
@@ -66,6 +73,37 @@ def config_with_egress_only(watch_config) -> Config:
     new_watch_config.ingress = None
 
     return Config(watch_configs=[new_watch_config])
+
+
+@pytest.fixture(scope='session')
+def pyfunc_config() -> PyFuncConfig:
+    return PyFuncConfig(
+        action=Action.RESTART,
+        cooldown=120,
+        polling_interval=10,
+        container_labels=[['com.savant.module=detector']],
+        module='watchdog.triggers.discrepancy',
+        class_name='DiscrepancyCheck',
+        kwargs={
+            'egress_idle': 60,
+            'ingress_idle': 30,
+        },
+    )
+
+
+@pytest.fixture(scope='session')
+def config_with_pyfunc_only(pyfunc_config) -> Config:
+    return Config(
+        watch_configs=[
+            WatchConfig(
+                buffer='buffer1:8000',
+                queue=None,
+                egress=None,
+                ingress=None,
+                pyfunc=pyfunc_config,
+            )
+        ]
+    )
 
 
 @pytest.fixture(scope='session')
