@@ -76,6 +76,31 @@ def link_added_pad(
     assert src_pad.link(sink_pad) == Gst.PadLinkReturn.OK
 
 
+def on_demuxer_pad_removed(
+    element: Gst.Element,
+    src_pad: Gst.Pad,
+    config: Config,
+    pipeline: Gst.Pipeline,
+    dynamic_elements: dict,
+):
+    pad_name = src_pad.get_name()
+    logger.info(
+        'Source %s. Removed pad %s on element %s.',
+        config.source_id,
+        pad_name,
+        element.get_name(),
+    )
+    elements = dynamic_elements.pop(pad_name, [])
+    for elem in elements:
+        logger.debug(
+            'Source %s. Removing element %s.',
+            config.source_id,
+            elem.get_name(),
+        )
+        elem.set_state(Gst.State.NULL)
+        pipeline.remove(elem)
+
+
 def on_demuxer_pad_added(
     element: Gst.Element,
     src_pad: Gst.Pad,
@@ -83,9 +108,10 @@ def on_demuxer_pad_added(
     pipeline: Gst.Pipeline,
     factory: GstElementFactory,
     sink_pad: Gst.Pad,
+    dynamic_elements: dict,
 ):
     caps: Gst.Caps = src_pad.get_pad_template_caps()
-    logger.debug(
+    logger.info(
         'Source %s. Added pad %s on element %s. Caps: %s.',
         config.source_id,
         src_pad.get_name(),
@@ -98,6 +124,8 @@ def on_demuxer_pad_added(
     else:
         src_pad.add_probe(Gst.PadProbeType.BUFFER, delete_frame_from_pipeline, config)
 
+    pad_elements = []
+
     if codec.value.is_raw:
         capsfilter = factory.create(
             PipelineElement(
@@ -109,6 +137,7 @@ def on_demuxer_pad_added(
         assert capsfilter.get_static_pad('src').link(sink_pad) == Gst.PadLinkReturn.OK
         demuxer_peer_pad: Gst.Pad = capsfilter.get_static_pad('sink')
         capsfilter.sync_state_with_parent()
+        pad_elements.append(capsfilter)
     else:
         decodebin = factory.create(PipelineElement('decodebin'))
         decodebin.set_property('sink-caps', caps)
@@ -117,6 +146,7 @@ def on_demuxer_pad_added(
         decodebin.connect('element-added', on_decodebin_element_added, config)
         decodebin.connect('pad-added', link_added_pad, sink_pad)
         decodebin.sync_state_with_parent()
+        pad_elements.append(decodebin)
         logger.debug(
             'Source %s. Added decoder %s.',
             config.source_id,
@@ -140,8 +170,10 @@ def on_demuxer_pad_added(
         )
         demuxer_peer_pad = queue.get_static_pad('sink')
         queue.sync_state_with_parent()
+        pad_elements.append(queue)
 
     assert src_pad.link(demuxer_peer_pad) == Gst.PadLinkReturn.OK
+    dynamic_elements[src_pad.get_name()] = pad_elements
 
 
 def build_input_pipeline(
@@ -204,6 +236,7 @@ def build_input_pipeline(
     gst_sink_elements = add_elements(pipeline, sink_elements, factory)
     savant_rs_video_demux = gst_source_elements[-1]
     converter = gst_sink_elements[0]
+    dynamic_elements = {}
 
     savant_rs_video_demux.connect(
         'pad-added',
@@ -212,6 +245,14 @@ def build_input_pipeline(
         pipeline,
         factory,
         converter.get_static_pad('sink'),
+        dynamic_elements,
+    )
+    savant_rs_video_demux.connect(
+        'pad-removed',
+        on_demuxer_pad_removed,
+        config,
+        pipeline,
+        dynamic_elements,
     )
 
     return pipeline
