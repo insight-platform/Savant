@@ -1,0 +1,37 @@
+services:
+
+  module:
+    image: ghcr.io/insight-platform/savant-deepstream-l4t:latest
+    restart: unless-stopped
+    privileged: true
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ..:/opt/savant/samples
+      - /tmp/argus_socket:/tmp/argus_socket
+    environment:
+      - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
+      - METRICS_FRAME_PERIOD=1000
+    command: samples/nvarguscamerasrc/src/module.yml
+    runtime: nvidia
+
+  always-on-sink:
+    image: ghcr.io/insight-platform/savant-adapters-deepstream-l4t:latest
+    restart: unless-stopped
+    ports:
+      - "554:554"    # RTSP
+      - "1935:1935"  # RTMP
+      - "888:888"    # HLS
+      - "8889:8889"  # WebRTC
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ../assets/stub_imgs:/stub_imgs
+    environment:
+      - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
+      - SOURCE_IDS=argus-0,argus-1
+      - FRAMERATE=5/1
+      - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x720.jpeg
+      - DEV_MODE=True
+    command: python -m adapters.ds.sinks.always_on_rtsp
+
+volumes:
+  zmq_sockets:

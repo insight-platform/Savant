@@ -1,0 +1,30 @@
+# module name, required
+name: nvarguscamerasrc
+# base module parameters
+parameters:
+  batch_size: 2
+  output_frame:
+    codec: hevc
+    encoder_params:
+      profile: Main
+      bitrate: 8000000
+  draw_func: null
+pipeline:
+  source:
+    element: nvarguscamerasrc_bin
+    properties:
+      sources:
+        - source-id: argus-0
+          framerate: 5/1
+          properties:
+            sensor-id: 0
+            sensor-mode: 1
+        - source-id: argus-1
+          framerate: 5/1
+          properties:
+            sensor-id: 1
+            sensor-mode: 1
+  sink:
+    - element: zeromq_sink
+      properties:
+        socket: ${oc.env:ZMQ_SINK_ENDPOINT}
