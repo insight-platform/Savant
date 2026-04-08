@@ -198,9 +198,9 @@ class GstElementFactory:
             )
 
         source_ids = [source_cfg.get('source-id') for source_cfg in sources]
-        if not all(source_ids):
+        if any(sid is None for sid in source_ids):
             raise CreateElementException(
-                'nvarguscamerasrc_bin: source-id is requied for each source.'
+                'nvarguscamerasrc_bin: source-id is required for each source.'
             )
         if len(source_ids) != len(set(source_ids)):
             raise CreateElementException(
@@ -213,19 +213,30 @@ class GstElementFactory:
         for source_cfg in sources:
             source_id = source_cfg['source-id']
             framerate = source_cfg.get('framerate', DEFAULT_FRAMERATE)
-            source_properties = source_cfg.get('properties')
-            if not source_properties:
-                raise CreateElementException(
-                    'nvarguscamerasrc_bin: properties are required.'
-                )
+            source_properties = source_cfg.get('properties', {})
 
-            src_element = Gst.ElementFactory.make('nvarguscamerasrc')
-            for prop_name, prop_value in source_properties.items():
-                if prop_value is not None:
-                    src_element.set_property(prop_name, prop_value)
+            src_element = Gst.ElementFactory.make(
+                'nvarguscamerasrc', f'argus_{source_id}'
+            )
+            if not src_element:
+                raise CreateElementException(
+                    f'nvarguscamerasrc_bin: failed to create nvarguscamerasrc '
+                    f'for source {source_id}. '
+                    f'Is the nvarguscamerasrc plugin available?'
+                )
+            if source_properties:
+                for prop_name, prop_value in source_properties.items():
+                    if prop_value is not None:
+                        src_element.set_property(prop_name, prop_value)
 
             caps_str = f'video/x-raw(memory:NVMM), framerate={framerate}'
-            caps_filter = Gst.ElementFactory.make('capsfilter')
+            caps_filter = Gst.ElementFactory.make(
+                'capsfilter', f'argus_caps_{source_id}'
+            )
+            if not caps_filter:
+                raise CreateElementException(
+                    'nvarguscamerasrc_bin: failed to create capsfilter.'
+                )
             caps_filter.set_property('caps', Gst.Caps.from_string(caps_str))
 
             src_bin.add(src_element)
@@ -258,6 +269,7 @@ def drop_reconfigure_event(pad: Gst.Pad, info: Gst.PadProbeInfo) -> Gst.PadProbe
     Prevents nvarguscamerasrc from renegotiating caps and reopening a session when
     nvstreammux propagates batch-size/num-surfaces-per-frame upstream.
     """
-    if info.get_event().type == Gst.EventType.RECONFIGURE:
+    event: Gst.Event = info.get_event()
+    if event is not None and event.type == Gst.EventType.RECONFIGURE:
         return Gst.PadProbeReturn.DROP
     return Gst.PadProbeReturn.OK
