@@ -4,13 +4,19 @@ name: nvarguscamerasrc
 parameters:
   batch_size: 2
   output_frame:
-    codec: hevc
-    encoder_params:
+    codec: jpeg
+    #codec: hevc # if you are on NX/AGX
+    hevc_encoder_params:
       profile: Main
       bitrate: 8000000
+    jpeg_encoder_params:
+      quality: 95
   draw_func: null
 pipeline:
   source:
+    # use
+    # v4l2-ctl -d /dev/video0 --list-formats-ext
+    # to determine camera formats and max fps
     element: nvarguscamerasrc_bin
     properties:
       sources:
