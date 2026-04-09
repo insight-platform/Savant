@@ -1,11 +1,13 @@
 """GStreamer pipeline elements factory."""
+from fractions import Fraction
+from typing import Dict, List, Union
 
-from typing import Union
-
-from gi.repository import Gst  # noqa:F401
+from gi.repository import GLib, Gst  # noqa:F401
+from savant_rs.py.api.constants import DEFAULT_FRAMERATE
 
 from savant.base.model import AttributeModel, ComplexModel, ObjectModel
 from savant.config.schema import ModelElement, PipelineElement
+from savant.utils.platform import is_aarch64
 
 
 class CreateElementException(Exception):
@@ -27,6 +29,9 @@ class GstElementFactory:
 
         if element.element == 'videotestsrc':
             return self.create_videotestsrc(element)
+
+        if element.element == 'nvarguscamerasrc_bin':
+            return self.create_nvarguscamerasrc_bin(element)
 
         if isinstance(element, ModelElement):
             return self.create_model_element(element)
@@ -153,3 +158,147 @@ class GstElementFactory:
             src_element.link(decodebin)
 
         return src_decodebin
+
+    @staticmethod
+    def create_nvarguscamerasrc_bin(element: PipelineElement) -> Gst.Bin:
+        """Creates ``nvarguscamerasrc_bin`` element as a Gst.Bin wrapping
+        multiple ``nvarguscamerasrc`` elements.
+
+        Example::
+
+            element: nvarguscamerasrc_bin
+            properties:
+              sources:
+                - source-id: camera-0
+                  framerate: 25/1
+                  properties:
+                    sensor-id: 0
+                - source-id: camera-1
+                  framerate: 10/1
+                  properties:
+                    sensor-id: 1
+                    sensor-mode: 1
+
+        :param element: Element to create.
+        :return: Created Gst.Element
+        """
+
+        if not is_aarch64():
+            raise CreateElementException(
+                'nvarguscamerasrc_bin: only supported on aarch64.'
+            )
+        if 'sources' not in element.properties:
+            raise CreateElementException(
+                'nvarguscamerasrc_bin: sources list must be specified.'
+            )
+        sources: List[Dict] = element.properties['sources']
+        if not isinstance(sources, list) or not sources:
+            raise CreateElementException(
+                'nvarguscamerasrc_bin: sources must be non-empty list.'
+            )
+        nvarguscamerasrc_bin_validate_sources(sources)
+        src_bin = Gst.Bin.new(element.name)
+        ghost_pads: List[Gst.GhostPad] = []
+
+        for source_cfg in sources:
+            source_id = source_cfg['source-id']
+            framerate = source_cfg.get('framerate', DEFAULT_FRAMERATE)
+            source_properties = source_cfg['properties']
+
+            src_element = Gst.ElementFactory.make(
+                'nvarguscamerasrc', f'argus_{source_id}'
+            )
+            if not src_element:
+                raise CreateElementException(
+                    f'nvarguscamerasrc_bin: failed to create nvarguscamerasrc '
+                    f'for source {source_id}. '
+                    f'Is the nvarguscamerasrc plugin available?'
+                )
+            for prop_name, prop_value in source_properties.items():
+                if prop_value is not None:
+                    src_element.set_property(prop_name, prop_value)
+
+            caps_str = f'video/x-raw(memory:NVMM), framerate={framerate}'
+            caps_filter = Gst.ElementFactory.make(
+                'capsfilter', f'argus_caps_{source_id}'
+            )
+            if not caps_filter:
+                raise CreateElementException(
+                    'nvarguscamerasrc_bin: failed to create capsfilter.'
+                )
+            caps_filter.set_property('caps', Gst.Caps.from_string(caps_str))
+
+            src_bin.add(src_element)
+            src_bin.add(caps_filter)
+            src_element.link(caps_filter)
+
+            caps_src_pad = caps_filter.get_static_pad('src')
+            caps_src_pad.add_probe(
+                Gst.PadProbeType.EVENT_UPSTREAM,
+                drop_reconfigure_event,
+            )
+            ghost_pad = Gst.GhostPad.new(f'src_{source_id}', caps_src_pad)
+            ghost_pads.append(ghost_pad)
+
+        def add_src_pads_to_bin(*args):
+            """Add ghost pads to bin asynchronously."""
+            for ghost_pad in ghost_pads:
+                ghost_pad.set_active(True)
+                src_bin.add_pad(ghost_pad)
+            return False
+
+        GLib.idle_add(add_src_pads_to_bin)
+
+        return src_bin
+
+
+def drop_reconfigure_event(pad: Gst.Pad, info: Gst.PadProbeInfo) -> Gst.PadProbeReturn:
+    """Pad probe callback that drops upstream RECONFIGURE events.
+
+    Prevents nvarguscamerasrc from renegotiating caps and reopening a session when
+    nvstreammux propagates batch-size/num-surfaces-per-frame upstream.
+    """
+    event: Gst.Event = info.get_event()
+    if event is not None and event.type == Gst.EventType.RECONFIGURE:
+        return Gst.PadProbeReturn.DROP
+    return Gst.PadProbeReturn.OK
+
+
+def nvarguscamerasrc_bin_validate_sources(sources: List[Dict]):
+    """Validate sources list for nvarguscamerasrc_bin."""
+
+    source_ids = []
+    for source_cfg in sources:
+        source_id = source_cfg.get('source-id')
+        if source_id is None:
+            raise CreateElementException(
+                'nvarguscamerasrc_bin: source-id is required for each source.'
+            )
+        if not isinstance(source_id, str):
+            raise CreateElementException(
+                f'nvarguscamerasrc_bin: source-id must be a string, got {type(source_id)}'
+            )
+        if source_id in source_ids:
+            raise CreateElementException(
+                f'nvarguscamerasrc_bin: source-id {source_id} is not unique.'
+            )
+        source_ids.append(source_id)
+
+        framerate = source_cfg.get('framerate')
+        if framerate is not None:
+            try:
+                Fraction(framerate)
+            except Exception:
+                raise CreateElementException(
+                    f'nvarguscamerasrc_bin: framerate must be a fraction, got {framerate}'
+                )
+
+        properties = source_cfg.get('properties')
+        if not properties:
+            raise CreateElementException(
+                'nvarguscamerasrc_bin: properties must be specified for each source.'
+            )
+        if not isinstance(properties, dict):
+            raise CreateElementException(
+                f'nvarguscamerasrc_bin: properties must be a dict, got {type(properties)}'
+            )

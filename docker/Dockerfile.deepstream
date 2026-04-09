@@ -225,6 +225,9 @@ HEALTHCHECK --interval=5s --timeout=5s --start-period=30m --retries=3 \
 
 RUN echo 'python3 -c "from savant.utils.welcome import get_welcome_message; print(get_welcome_message())"' >> /etc/bash.bashrc
 ENV USE_NEW_NVSTREAMMUX=yes
+# To enable nvv4l2h264enc on Jetson
+# https://forums.developer.nvidia.com/t/bug-report-nvv4l2h264enc-fails-in-docker-on-jetson-orin-nx-jetpack-6-2-2-root-cause-is-missing-kmod-lsmod/364611/2
+ENV AARCH64_IGPU=1
 
 ENTRYPOINT ["python", "-m", "savant.entrypoint"]
 
