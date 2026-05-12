@@ -1,0 +1,46 @@
+services:
+
+  video-loop-source:
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer:latest
+    extends:
+      file: docker-compose.l4t.yml
+      service: video-loop-source
+
+  module:
+    privileged: true
+    image: ghcr.io/insight-platform/savant-deepstream:latest
+    extends:
+      file: docker-compose.l4t.yml
+      service: module
+    runtime: runc
+    environment:
+      - CODEC=h264
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+
+  always-on-sink:
+    privileged: true
+    image: ghcr.io/insight-platform/savant-adapters-deepstream:latest
+    extends:
+      file: docker-compose.l4t.yml
+      service: always-on-sink
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+
+  jaeger:
+    extends:
+      file: docker-compose.l4t.yml
+      service: jaeger
+
+volumes:
+  zmq_sockets:

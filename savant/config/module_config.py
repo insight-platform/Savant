@@ -27,6 +27,7 @@ from .schema import (
     Pipeline,
     PipelineElement,
     PyFuncElement,
+    PyGroupElement,
     SinkElement,
     SourceElement,
     TelemetryParameters,
@@ -49,6 +50,19 @@ def pyfunc_element_configurator(
     if module_config.parameters.dev_mode:
         logger.debug(
             'Setting dev mode for PyFuncElement named "%s" to True.',
+            element_config.name,
+        )
+        element_config.dev_mode = True
+    return element_config
+
+
+def pygroup_element_configurator(
+    element_config: DictConfig, module_config: DictConfig
+) -> DictConfig:
+    """Additional configuration steps for PyGroupElements."""
+    if module_config.parameters.dev_mode:
+        logger.debug(
+            'Setting dev mode for PyGroupElement named "%s" to True.',
             element_config.name,
         )
         element_config.dev_mode = True
@@ -174,6 +188,9 @@ def get_schema_configurator(
 
     if element == 'pyfunc':
         return PyFuncElement, pyfunc_element_configurator
+
+    if element == 'pygroup':
+        return PyGroupElement, pygroup_element_configurator
 
     if element == 'nvinfer':
         return ModelElement, nvinfer_element_configurator

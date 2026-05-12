@@ -8,6 +8,7 @@ from savant.config.schema import (
     Pipeline,
     PipelineElement,
     PyFuncElement,
+    PyGroupElement,
 )
 from savant.utils.log import get_logger
 
@@ -64,13 +65,16 @@ def add_queues_to_element_group(
 
         if (
             (next_should_be_queue and element.element != 'queue')
-            or (isinstance(element, PyFuncElement) and not last_is_queue)
+            or (
+                isinstance(element, (PyFuncElement, PyGroupElement))
+                and not last_is_queue
+            )
         ) and not first_element:
             elements.append(PipelineElement('queue', properties=queue_properties))
 
         elements.append(element)
         last_is_queue = element.element == 'queue'
-        next_should_be_queue = isinstance(element, PyFuncElement)
+        next_should_be_queue = isinstance(element, (PyFuncElement, PyGroupElement))
         first_element = False
 
     element_group.elements = elements
@@ -93,6 +97,8 @@ def get_pipeline_element_stages(
         else:
             if isinstance(element, PyFuncElement):
                 stage = f'pyfunc/{element.module}.{element.class_name}'
+            elif isinstance(element, PyGroupElement):
+                stage = element.name or 'pygroup'
             elif element.name:
                 stage = element.name
             else:

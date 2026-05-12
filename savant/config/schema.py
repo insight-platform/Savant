@@ -452,6 +452,46 @@ class PyFuncElement(PipelineElement, PyFunc):
 
 
 @dataclass
+class PyGroupElement(PipelineElement):
+    """A pipeline element that groups multiple sequential PyFunc elements
+    into a single GStreamer element.
+
+    For example,
+
+    .. code-block:: yaml
+
+        - element: pygroup
+          name: my_group
+          elements:
+            - module: module.pyfunc_module_1
+              class_name: PyFuncClass1
+            - module: module.pyfunc_module_2
+              class_name: PyFuncClass2
+              kwargs:
+                key: value
+    """
+
+    element: str = 'pygroup'
+    """``"pygroup"`` is the fixed gstreamer element class for PyGroupElement."""
+
+    dev_mode: bool = False
+    """Whether the pyfuncs are in dev mode."""
+
+    elements: List[PyFuncElement] = field(default_factory=list)
+    """List of PyFunc sub-element configurations.
+    Each item should have ``module``, ``class_name``, and optionally ``kwargs``.
+    """
+
+    def __post_init__(self):
+        self.properties.update(
+            {
+                'elements': self.elements,
+                'dev-mode': self.dev_mode,
+            }
+        )
+
+
+@dataclass
 class DrawFunc(PyFuncElement):
     """A pipeline element that will use an object implementing
     :py:class:`~savant.deepstream.base_drawfunc.BaseNvDsDrawFunc`
