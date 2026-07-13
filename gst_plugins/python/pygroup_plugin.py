@@ -53,8 +53,8 @@ class GstPluginPyGroup(LoggerMixin, GstBase.BaseTransform):
         'elements': (
             object,
             'PyFunc elements configuration',
-            'List of PyFunc element configurations '
-            '(each item is a dict with module, class_name, kwargs).',
+            'List of PyFuncElement configurations '
+            '(each item is a savant.config.schema.PyFuncElement).',
             GObject.ParamFlags.READWRITE,
         ),
         'pipeline': (
