@@ -1,8 +1,8 @@
 # Per-source Converter Configuration from Etcd
 
-A simple pipeline demonstrates how metadata processing in output converters works in Savant. In the demo, two RTSP streams are ingested in the module and processed with the PeopleNet model. The output converter is configurable via etcd.
+A simple pipeline demonstrates how metadata processing in output converters works in Savant. In the demo, two RTSP streams are ingested in the module and processed with the YOLO11n model. The output converter is configurable via etcd.
 
-The resulting streams can be accessed via LL-HLS on `http://locahost:888/stream/city-traffic` and `http://locahost:888/stream/town-centre` or via RTSP on `rtsp://127.0.0.1:554/stream/city-traffic` and `rtsp://127.0.0.1:554/stream/town-centre`.
+The resulting streams can be accessed via LL-HLS on `http://localhost:888/stream/city-traffic` and `http://localhost:888/stream/town-centre` or via RTSP on `rtsp://127.0.0.1:554/stream/city-traffic` and `rtsp://127.0.0.1:554/stream/town-centre`.
 
 Two RTSP streams (`city-traffic` and `town-centre`) are ingested by a single module and
 processed with a YOLO11n detector. The detector's output converter is a custom subclass

@@ -2,7 +2,7 @@
 
 A pipeline demonstrating how to capture MJPEG from a USB camera. MJPEG is a common format for USB/MIPI CSI-2 cameras providing compressed, low-latency video streaming.
 
-The resulting stream can be accessed via LL-HLS on `http://locahost:888/stream/video`
+The resulting stream can be accessed via LL-HLS on `http://localhost:888/stream/video`
 
 Tested on platforms:
 

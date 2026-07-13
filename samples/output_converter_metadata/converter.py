@@ -29,7 +29,10 @@ class EtcdConfigurableConverter(TensorToBBoxConverter):
         if not is_cached:
             if val:
                 try:
-                    self._configs[source_id] = json.loads(val)
+                    parsed_config = json.loads(val)
+                    self._configs[source_id] = (
+                        parsed_config if isinstance(parsed_config, dict) else {}
+                    )
                 except json.JSONDecodeError:
                     self.logger.warning(
                         'Invalid JSON in Etcd config for source %s: %r', source_id, val
@@ -38,7 +41,7 @@ class EtcdConfigurableConverter(TensorToBBoxConverter):
             else:
                 self._configs[source_id] = {}
 
-        return self._configs.get(source_id)
+        return self._configs.get(source_id, {})
 
     def __call__(
         self,

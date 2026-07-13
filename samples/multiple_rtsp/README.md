@@ -2,7 +2,7 @@
 
 A simple pipeline demonstrates how multiplexed processing works in Savant. In the demo, two RTSP streams are ingested in the module and processed with the PeopleNet model. 
 
-The resulting streams can be accessed via LL-HLS on `http://locahost:888/stream/city-traffic` and `http://locahost:888/stream/town-centre`.
+The resulting streams can be accessed via LL-HLS on `http://localhost:888/stream/city-traffic` and `http://localhost:888/stream/town-centre`.
 
 Tested on platforms:
 
