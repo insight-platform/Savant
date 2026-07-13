@@ -278,7 +278,10 @@ class NvInferProcessor:
                 buffer,
                 nvds_frame_meta,
             )
-            source_id = video_frame.source_id if video_frame is not None else None
+            if video_frame is not None:
+                source_id = video_frame.source_id
+            else:
+                source_id = self._sources.get_id_by_pad_index(nvds_frame_meta.pad_index)
             source_info = self._sources.get_source(source_id)
             frame_rect = self._frame_rect(nvds_frame_meta, source_info.padding)
 
