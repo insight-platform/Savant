@@ -1,0 +1,87 @@
+services:
+
+  rtsp-city-traffic:
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:latest
+    restart: unless-stopped
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+    environment:
+      - RTSP_URI=rtsp://hello.savant.video:8554/stream/city-traffic
+      - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
+      - SOURCE_ID=city-traffic
+    entrypoint: /opt/savant/adapters/gst/sources/rtsp.sh
+    depends_on:
+      module:
+        condition: service_healthy
+
+  rtsp-town-centre:
+    image: ghcr.io/insight-platform/savant-adapters-gstreamer-l4t:latest
+    restart: unless-stopped
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+    environment:
+      - RTSP_URI=rtsp://hello.savant.video:8554/stream/town-centre
+      - ZMQ_ENDPOINT=pub+connect:ipc:///tmp/zmq-sockets/input-video.ipc
+      - SOURCE_ID=town-centre
+    entrypoint: /opt/savant/adapters/gst/sources/rtsp.sh
+    depends_on:
+      module:
+        condition: service_healthy
+
+  module:
+    privileged: true
+    image: ghcr.io/insight-platform/savant-deepstream-l4t:latest
+    restart: unless-stopped
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ../../cache:/cache
+      - ..:/opt/savant/samples
+    command: samples/output_converter_metadata/module.yml
+    environment:
+      - MODEL_PATH=/cache/models/yolo11
+      - DOWNLOAD_PATH=/cache/downloads/yolo11
+      - ZMQ_SRC_ENDPOINT=sub+bind:ipc:///tmp/zmq-sockets/input-video.ipc
+      - ZMQ_SINK_ENDPOINT=pub+bind:ipc:///tmp/zmq-sockets/output-video.ipc
+      - METRICS_FRAME_PERIOD=1000
+      - CODEC=jpeg
+    depends_on:
+      etcd:
+        condition: service_healthy
+    runtime: nvidia
+
+  always-on-sink:
+    image: ghcr.io/insight-platform/savant-adapters-deepstream-l4t:latest
+    restart: unless-stopped
+    ports:
+      - "554:554"    # RTSP
+      - "1935:1935"  # RTMP
+      - "888:888"    # HLS
+      - "8889:8889"  # WebRTC
+    volumes:
+      - zmq_sockets:/tmp/zmq-sockets
+      - ../assets/stub_imgs:/stub_imgs
+    environment:
+      - ZMQ_ENDPOINT=sub+connect:ipc:///tmp/zmq-sockets/output-video.ipc
+      - SOURCE_IDS=city-traffic,town-centre
+      - FRAMERATE=25/1
+      - STUB_FILE_LOCATION=/stub_imgs/smpte100_1280x720.jpeg
+      - DEV_MODE=True
+    command: python -m adapters.ds.sinks.always_on_rtsp
+
+  etcd:
+    container_name: etcd
+    image: bitnamilegacy/etcd:3.6.4-debian-12-r4
+    restart: unless-stopped
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_ADVERTISE_CLIENT_URLS=http://etcd:2379
+    ports:
+      - "2379:2379"
+    healthcheck:
+      test: [ "CMD", "/opt/bitnami/scripts/etcd/healthcheck.sh" ]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  zmq_sockets:

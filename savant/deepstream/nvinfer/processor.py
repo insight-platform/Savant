@@ -1,5 +1,7 @@
+import inspect
 import logging
-from typing import Callable, List, Optional, Tuple, Union
+from contextlib import contextmanager, nullcontext
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pyds
@@ -8,7 +10,9 @@ from pygstsavantframemeta import (
     nvds_frame_meta_get_nvds_savant_frame_meta,
 )
 from savant_rs.pipeline2 import VideoPipeline
+from savant_rs.primitives import VideoFrame
 from savant_rs.primitives.geometry import BBox
+from savant_rs.utils import TelemetrySpan
 from savant_rs.utils.symbol_mapper import (
     build_model_object_key,
     get_model_id,
@@ -20,6 +24,7 @@ from savant.base.converter import TensorFormat
 from savant.base.input_preproc import ObjectsPreprocessing
 from savant.base.pyfunc import PyFuncNoopCallException
 from savant.config.schema import FramePadding, ModelElement
+from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
 from savant.deepstream.utils.attribute import (
     nvds_add_attr_meta_to_obj,
@@ -121,6 +126,11 @@ class NvInferProcessor:
             self.preproc = self._preprocess_object_image
             self._restore_object_meta = self._restore_object_meta_
             self._restore_frame = self._restore_frame_
+
+        # cache of "does the resolved converter's __call__ accept `metadata`",
+        # keyed by the converter class (a dev-mode reload yields a new class
+        # object, which invalidates the entry automatically)
+        self._converter_accepts_metadata_cache: Dict[type, bool] = {}
 
         if self._model.output.converter:
             self.postproc = self._process_custom_model_output
@@ -264,219 +274,243 @@ class NvInferProcessor:
         self._model: Union[NvInferAttributeModel, NvInferComplexModel]
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
-            source_id, frame_idx = self._get_frame_source_id_and_idx(
+            video_frame, video_frame_span = self._get_video_frame(
                 buffer,
                 nvds_frame_meta,
             )
+            source_id = video_frame.source_id if video_frame is not None else None
             source_info = self._sources.get_source(source_id)
             frame_rect = self._frame_rect(nvds_frame_meta, source_info.padding)
-            for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
-                self._restore_object_meta(nvds_obj_meta)
-                if not self._is_model_input_object(nvds_obj_meta):
+
+            # Build the frame-meta wrapper lazily, once per frame, and only when
+            # the converter declares a `metadata` parameter (backward compat).
+            pass_metadata = self._converter_accepts_metadata()
+            if (
+                pass_metadata
+                and video_frame is not None
+                and video_frame_span is not None
+            ):
+                frame_meta_cm = _build_frame_meta_cm(
+                    nvds_frame_meta, video_frame, video_frame_span
+                )
+            else:
+                frame_meta_cm = nullcontext(None)
+
+            with frame_meta_cm as frame_meta:
+                converter_kwargs = {'metadata': frame_meta} if pass_metadata else {}
+                self._process_single_frame_output(
+                    nvds_batch_meta, nvds_frame_meta, frame_rect, converter_kwargs
+                )
+        self._restore_frame(buffer)
+
+    def _process_single_frame_output(
+        self,
+        nvds_batch_meta,
+        nvds_frame_meta,
+        frame_rect,
+        converter_kwargs: dict,
+    ):
+        """Processes custom model output (converter wrapper) for a single frame."""
+
+        for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
+            self._restore_object_meta(nvds_obj_meta)
+            if not self._is_model_input_object(nvds_obj_meta):
+                continue
+
+            parent_nvds_obj_meta = nvds_obj_meta
+            for tensor_meta in nvds_tensor_output_iterator(
+                parent_nvds_obj_meta, gie_uid=self._model_uid
+            ):
+                if self._logger.isEnabledFor(logging.TRACE):
+                    self._logger.trace(
+                        'Converting "%s" element tensor output for frame with PTS %s.',
+                        self._element_name,
+                        nvds_frame_meta.buf_pts,
+                    )
+                # parse and post-process model output
+                output_layers = self._tensor_meta_to_outputs(
+                    tensor_meta=tensor_meta,
+                    layer_names=self._model.output.layer_names,
+                )
+                try:
+                    outputs = self._model.output.converter(
+                        *output_layers,
+                        model=self._model,
+                        roi=(
+                            parent_nvds_obj_meta.rect_params.left,
+                            parent_nvds_obj_meta.rect_params.top,
+                            parent_nvds_obj_meta.rect_params.width,
+                            parent_nvds_obj_meta.rect_params.height,
+                        ),
+                        **converter_kwargs,
+                    )
+                except Exception as exc:  # pylint: disable=broad-except
+                    if self._model.output.converter.dev_mode:
+                        if not isinstance(exc, PyFuncNoopCallException):
+                            self._logger.exception('Error calling converter')
+                        outputs = None
+                    else:
+                        raise exc
+                # for object/complex models output - `bbox_tensor` and
+                # `selected_bboxes` - indices of selected bboxes and meta
+                # for attribute/complex models output - `values`
+                bbox_tensor: Optional[np.ndarray] = None
+                selected_bboxes: Optional[List] = None
+                values: Optional[List] = None
+
+                if outputs is None:
                     continue
 
-                parent_nvds_obj_meta = nvds_obj_meta
-                for tensor_meta in nvds_tensor_output_iterator(
-                    parent_nvds_obj_meta, gie_uid=self._model_uid
-                ):
-                    if self._logger.isEnabledFor(logging.TRACE):
-                        self._logger.trace(
-                            'Converting "%s" element tensor output for frame '
-                            'with PTS %s.',
-                            self._element_name,
-                            nvds_frame_meta.buf_pts,
-                        )
-                    # parse and post-process model output
-                    output_layers = self._tensor_meta_to_outputs(
-                        tensor_meta=tensor_meta,
-                        layer_names=self._model.output.layer_names,
+                # complex model
+                if self._is_complex_model:
+                    # output converter returns tensor and attribute values
+                    bbox_tensor, values = outputs
+                    assert bbox_tensor.shape[0] == len(values), (
+                        'Number of detected boxes and attributes do not match.'
                     )
-                    try:
-                        outputs = self._model.output.converter(
-                            *output_layers,
-                            model=self._model,
-                            roi=(
-                                parent_nvds_obj_meta.rect_params.left,
-                                parent_nvds_obj_meta.rect_params.top,
-                                parent_nvds_obj_meta.rect_params.width,
-                                parent_nvds_obj_meta.rect_params.height,
-                            ),
+
+                # object model
+                elif self._is_object_model:
+                    # output converter returns tensor with
+                    # (class_id, confidence, xc, yc, width, height, [angle]),
+                    # coordinates in roi scale (parent object scale)
+                    bbox_tensor = outputs
+
+                # attribute model
+                else:
+                    # output converter returns attribute values
+                    values = outputs
+
+                if bbox_tensor is not None and bbox_tensor.shape[0] > 0:
+                    # object or complex model with non-empty output
+                    if bbox_tensor.shape[1] == 6:  # no angle
+                        selection_type = ObjectSelectionType.REGULAR_BBOX
+
+                        # xc -> left, yc -> top
+                        bbox_tensor[:, 2] -= bbox_tensor[:, 4] / 2
+                        bbox_tensor[:, 3] -= bbox_tensor[:, 5] / 2
+
+                        # width to right, height to bottom
+                        bbox_tensor[:, 4] += bbox_tensor[:, 2]
+                        bbox_tensor[:, 5] += bbox_tensor[:, 3]
+
+                        # clip
+                        bbox_tensor[:, 2][bbox_tensor[:, 2] < frame_rect[0]] = (
+                            frame_rect[0]
                         )
-                    except Exception as exc:  # pylint: disable=broad-except
-                        if self._model.output.converter.dev_mode:
-                            if not isinstance(exc, PyFuncNoopCallException):
-                                self._logger.exception('Error calling converter')
-                            outputs = None
-                        else:
-                            raise exc
-                    # for object/complex models output - `bbox_tensor` and
-                    # `selected_bboxes` - indices of selected bboxes and meta
-                    # for attribute/complex models output - `values`
-                    bbox_tensor: Optional[np.ndarray] = None
-                    selected_bboxes: Optional[List] = None
-                    values: Optional[List] = None
-
-                    if outputs is None:
-                        continue
-
-                    # complex model
-                    if self._is_complex_model:
-                        # output converter returns tensor and attribute values
-                        bbox_tensor, values = outputs
-                        assert bbox_tensor.shape[0] == len(values), (
-                            'Number of detected boxes and attributes do not match.'
+                        bbox_tensor[:, 3][bbox_tensor[:, 3] < frame_rect[1]] = (
+                            frame_rect[1]
+                        )
+                        bbox_tensor[:, 4][bbox_tensor[:, 4] > frame_rect[2]] = (
+                            frame_rect[2]
+                        )
+                        bbox_tensor[:, 5][bbox_tensor[:, 5] > frame_rect[3]] = (
+                            frame_rect[3]
                         )
 
-                    # object model
-                    elif self._is_object_model:
-                        # output converter returns tensor with
-                        # (class_id, confidence, xc, yc, width, height, [angle]),
-                        # coordinates in roi scale (parent object scale)
-                        bbox_tensor = outputs
+                        # right to width, bottom to height
+                        bbox_tensor[:, 4] -= bbox_tensor[:, 2]
+                        bbox_tensor[:, 5] -= bbox_tensor[:, 3]
 
-                    # attribute model
-                    else:
-                        # output converter returns attribute values
-                        values = outputs
+                        # left -> xc , top-> yc
+                        bbox_tensor[:, 2] += bbox_tensor[:, 4] / 2
+                        bbox_tensor[:, 3] += bbox_tensor[:, 5] / 2
 
-                    if bbox_tensor is not None and bbox_tensor.shape[0] > 0:
-                        # object or complex model with non-empty output
-                        if bbox_tensor.shape[1] == 6:  # no angle
-                            selection_type = ObjectSelectionType.REGULAR_BBOX
-
-                            # xc -> left, yc -> top
-                            bbox_tensor[:, 2] -= bbox_tensor[:, 4] / 2
-                            bbox_tensor[:, 3] -= bbox_tensor[:, 5] / 2
-
-                            # width to right, height to bottom
-                            bbox_tensor[:, 4] += bbox_tensor[:, 2]
-                            bbox_tensor[:, 5] += bbox_tensor[:, 3]
-
-                            # clip
-                            bbox_tensor[:, 2][bbox_tensor[:, 2] < frame_rect[0]] = (
-                                frame_rect[0]
-                            )
-                            bbox_tensor[:, 3][bbox_tensor[:, 3] < frame_rect[1]] = (
-                                frame_rect[1]
-                            )
-                            bbox_tensor[:, 4][bbox_tensor[:, 4] > frame_rect[2]] = (
-                                frame_rect[2]
-                            )
-                            bbox_tensor[:, 5][bbox_tensor[:, 5] > frame_rect[3]] = (
-                                frame_rect[3]
-                            )
-
-                            # right to width, bottom to height
-                            bbox_tensor[:, 4] -= bbox_tensor[:, 2]
-                            bbox_tensor[:, 5] -= bbox_tensor[:, 3]
-
-                            # left -> xc , top-> yc
-                            bbox_tensor[:, 2] += bbox_tensor[:, 4] / 2
-                            bbox_tensor[:, 3] += bbox_tensor[:, 5] / 2
-
-                            # add 0 angle
-                            bbox_tensor = np.concatenate(
-                                [
-                                    bbox_tensor,
-                                    np.zeros(
-                                        (bbox_tensor.shape[0], 1), dtype=np.float32
-                                    ),
-                                ],
-                                axis=1,
-                            )
-                        else:
-                            selection_type = ObjectSelectionType.ROTATED_BBOX
-
-                        # add index column to further filter attribute values
+                        # add 0 angle
                         bbox_tensor = np.concatenate(
                             [
                                 bbox_tensor,
-                                np.arange(
-                                    bbox_tensor.shape[0], dtype=np.float32
-                                ).reshape(-1, 1),
+                                np.zeros((bbox_tensor.shape[0], 1), dtype=np.float32),
                             ],
                             axis=1,
                         )
+                    else:
+                        selection_type = ObjectSelectionType.ROTATED_BBOX
 
-                        selected_bboxes = []
-                        for obj in self._model.output.objects:
-                            cls_bbox_tensor = bbox_tensor[
-                                bbox_tensor[:, 0] == obj.class_id
-                            ]
-                            if cls_bbox_tensor.shape[0] == 0:
-                                continue
-                            if obj.selector:
-                                try:
-                                    cls_bbox_tensor = obj.selector(cls_bbox_tensor)
-                                except Exception as exc:  # pylint: disable=broad-except
-                                    if obj.selector.dev_mode:
-                                        if not isinstance(exc, PyFuncNoopCallException):
-                                            self._logger.exception(
-                                                'Error calling selector.'
-                                            )
-                                        cls_bbox_tensor = np.zeros((0, 8))
-                                    else:
-                                        raise exc
+                    # add index column to further filter attribute values
+                    bbox_tensor = np.concatenate(
+                        [
+                            bbox_tensor,
+                            np.arange(bbox_tensor.shape[0], dtype=np.float32).reshape(
+                                -1, 1
+                            ),
+                        ],
+                        axis=1,
+                    )
 
-                            obj_label = build_model_object_key(
-                                self._element_name, obj.label
-                            )
-                            obj_cls_id = MERGED_CLASSES[self._element_name].get(
-                                obj.class_id
-                            )
-                            if obj_cls_id is None:
-                                obj_cls_id = obj.class_id
-                            else:
-                                if self._logger.isEnabledFor(logging.TRACE):
-                                    self._logger.trace(
-                                        'Updating %s custom objs id %s -> %s, '
-                                        'label "%s".',
-                                        len(cls_bbox_tensor),
-                                        obj.class_id,
-                                        obj_cls_id,
-                                        obj_label,
-                                    )
-                            for bbox in cls_bbox_tensor:
-                                if self._logger.isEnabledFor(logging.TRACE):
-                                    self._logger.trace(
-                                        'Adding obj %s into pyds meta for frame '
-                                        'with PTS %s.',
-                                        bbox[2:7],
-                                        nvds_frame_meta.buf_pts,
-                                    )
-                                _nvds_obj_meta = nvds_add_obj_meta_to_frame(
-                                    nvds_batch_meta,
-                                    nvds_frame_meta,
-                                    selection_type,
-                                    obj_cls_id,
-                                    self._model_uid,
-                                    bbox[2:7],
-                                    bbox[1],
-                                    obj_label,
-                                    parent=parent_nvds_obj_meta,
-                                )
-                                selected_bboxes.append((int(bbox[7]), _nvds_obj_meta))
+                    selected_bboxes = []
+                    for obj in self._model.output.objects:
+                        cls_bbox_tensor = bbox_tensor[bbox_tensor[:, 0] == obj.class_id]
+                        if cls_bbox_tensor.shape[0] == 0:
+                            continue
+                        if obj.selector:
+                            try:
+                                cls_bbox_tensor = obj.selector(cls_bbox_tensor)
+                            except Exception as exc:  # pylint: disable=broad-except
+                                if obj.selector.dev_mode:
+                                    if not isinstance(exc, PyFuncNoopCallException):
+                                        self._logger.exception(
+                                            'Error calling selector.'
+                                        )
+                                    cls_bbox_tensor = np.zeros((0, 8))
+                                else:
+                                    raise exc
 
-                    # attribute or complex model
-                    if values:
-                        if self._is_complex_model:
-                            values = [values[i] for i, _ in selected_bboxes]
+                        obj_label = build_model_object_key(
+                            self._element_name, obj.label
+                        )
+                        obj_cls_id = MERGED_CLASSES[self._element_name].get(
+                            obj.class_id
+                        )
+                        if obj_cls_id is None:
+                            obj_cls_id = obj.class_id
                         else:
-                            selected_bboxes = [(0, nvds_obj_meta)]
-                            values = [values]
-                        for (_, _nvds_obj_meta), _values in zip(
-                            selected_bboxes, values
-                        ):
-                            for attr_name, value, confidence in _values:
-                                nvds_add_attr_meta_to_obj(
-                                    frame_meta=nvds_frame_meta,
-                                    obj_meta=_nvds_obj_meta,
-                                    element_name=self._element_name,
-                                    name=attr_name,
-                                    value=value,
-                                    confidence=confidence,
+                            if self._logger.isEnabledFor(logging.TRACE):
+                                self._logger.trace(
+                                    'Updating %s custom objs id %s -> %s, label "%s".',
+                                    len(cls_bbox_tensor),
+                                    obj.class_id,
+                                    obj_cls_id,
+                                    obj_label,
                                 )
-        self._restore_frame(buffer)
+                        for bbox in cls_bbox_tensor:
+                            if self._logger.isEnabledFor(logging.TRACE):
+                                self._logger.trace(
+                                    'Adding obj %s into pyds meta for frame '
+                                    'with PTS %s.',
+                                    bbox[2:7],
+                                    nvds_frame_meta.buf_pts,
+                                )
+                            _nvds_obj_meta = nvds_add_obj_meta_to_frame(
+                                nvds_batch_meta,
+                                nvds_frame_meta,
+                                selection_type,
+                                obj_cls_id,
+                                self._model_uid,
+                                bbox[2:7],
+                                bbox[1],
+                                obj_label,
+                                parent=parent_nvds_obj_meta,
+                            )
+                            selected_bboxes.append((int(bbox[7]), _nvds_obj_meta))
+
+                # attribute or complex model
+                if values:
+                    if self._is_complex_model:
+                        values = [values[i] for i, _ in selected_bboxes]
+                    else:
+                        selected_bboxes = [(0, nvds_obj_meta)]
+                        values = [values]
+                    for (_, _nvds_obj_meta), _values in zip(selected_bboxes, values):
+                        for attr_name, value, confidence in _values:
+                            nvds_add_attr_meta_to_obj(
+                                frame_meta=nvds_frame_meta,
+                                obj_meta=_nvds_obj_meta,
+                                element_name=self._element_name,
+                                name=attr_name,
+                                value=value,
+                                confidence=confidence,
+                            )
 
     def _process_regular_detector_output(self, buffer: Gst.Buffer):
         """Processes output of nvinfer detector.
@@ -561,11 +595,30 @@ class NvInferProcessor:
             and nvds_obj_meta.class_id == self._input_object_class_id
         )
 
-    def _get_frame_source_id_and_idx(
+    def _converter_accepts_metadata(self) -> bool:
+        """Whether the resolved output converter's ``__call__`` declares a
+        ``metadata`` parameter.
+
+        Cached per converter class to avoid calling ``inspect.signature`` in the
+        hot per-tensor loop; the result is recomputed automatically after a
+        dev-mode reload because the reload replaces the class object.
+        """
+        instance = self._model.output.converter.instance
+        converter_cls = type(instance)
+        cached = self._converter_accepts_metadata_cache.get(converter_cls)
+        if cached is None:
+            try:
+                cached = 'metadata' in inspect.signature(instance.__call__).parameters
+            except (TypeError, ValueError):
+                cached = False
+            self._converter_accepts_metadata_cache[converter_cls] = cached
+        return cached
+
+    def _get_video_frame(
         self,
         buffer: Gst.Buffer,
         nvds_frame_meta: pyds.NvDsFrameMeta,
-    ) -> Tuple[Optional[str], Optional[int]]:
+    ) -> Tuple[Optional[VideoFrame], Optional[TelemetrySpan]]:
         savant_batch_meta = gst_buffer_get_savant_batch_meta(buffer)
         if savant_batch_meta is None:
             return None, None
@@ -574,14 +627,10 @@ class NvInferProcessor:
         if savant_frame_meta is None:
             return None, None
 
-        frame_idx = savant_frame_meta.idx
-        video_frame, _ = self._video_pipeline.get_batched_frame(
+        return self._video_pipeline.get_batched_frame(
             savant_batch_meta.idx,
-            frame_idx,
+            savant_frame_meta.idx,
         )
-        source_id = video_frame.source_id
-
-        return source_id, frame_idx
 
     def _frame_rect(self, nvds_frame_meta, frame_padding: Optional[FramePadding]):
         """Frame rect to clip objects.
@@ -602,3 +651,18 @@ class NvInferProcessor:
             nvds_frame_meta.source_frame_width + frame_rect_shift[0] - 1.0,
             nvds_frame_meta.source_frame_height + frame_rect_shift[1] - 1.0,
         )
+
+
+@contextmanager
+def _build_frame_meta_cm(nvds_frame_meta, video_frame, video_frame_span):
+    """Build a savant :class:`NvDsFrameMeta` wrapper for the frame, and open a nested
+    telemetry span for the output conversion.
+    """
+
+    with video_frame_span.nested_span('convert-output') as telemetry_span:
+        with NvDsFrameMeta(
+            nvds_frame_meta,
+            video_frame,
+            telemetry_span,
+        ) as frame_meta:
+            yield frame_meta
