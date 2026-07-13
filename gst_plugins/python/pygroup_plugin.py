@@ -6,15 +6,19 @@ other tasks.
 """
 
 import itertools
-from typing import Any, List, Optional
+from typing import TYPE_CHECKING, Any, List, Optional
 
 from savant_rs.pipeline2 import VideoPipeline
 
 from gst_plugins.python.pyfunc_common import handle_fatal_error, init_pyfunc
-from savant.base.pyfunc import BasePyFuncPlugin, PyFunc
+from savant.base.pyfunc import PyFunc
 from savant.deepstream.pygroup import NvDsPyGroupPlugin
 from savant.gstreamer import GLib, GObject, Gst, GstBase  # noqa: F401
 from savant.utils.log import LoggerMixin
+
+if TYPE_CHECKING:
+    from savant.config.schema import PyFuncElement
+
 
 # RGBA format is required to access the frame (pyds.get_nvds_buf_surface)
 CAPS = Gst.Caps.from_string(
@@ -93,9 +97,9 @@ class GstPluginPyGroup(LoggerMixin, GstBase.BaseTransform):
     def __init__(self):
         super().__init__()
         # properties
-        self.elements: Optional[List['PyFuncElement']] = None
+        self.elements: Optional[List[PyFuncElement]] = None
         self.video_pipeline: Optional[VideoPipeline] = None
-        self.gst_pipeline: Optional['GstPipeline'] = None  # noqa: F821
+        self.gst_pipeline: Optional[GstPipeline] = None  # noqa: F821
         self.dev_mode: bool = False
         self.max_stream_pool_size: int = 1
         # pygroup object
@@ -140,6 +144,7 @@ class GstPluginPyGroup(LoggerMixin, GstBase.BaseTransform):
 
     def do_start(self) -> bool:
         """Do on plugin start."""
+        from savant.deepstream.pyfunc import NvDsPyFuncPlugin
 
         if not self.elements:
             return handle_fatal_error(
@@ -170,15 +175,16 @@ class GstPluginPyGroup(LoggerMixin, GstBase.BaseTransform):
                     self,
                     self.logger,
                     None,
-                    f'Failed to initialize "{elem.module}.{elem.class_name}" pyfunc in pygroup.',
+                    f'Failed to initialize "{elem.module}.{elem.class_name}"'
+                    f' pyfunc in pygroup.',
                     self.dev_mode,
                     True,
                     False,
                 )
 
             try:
-                assert isinstance(pyfunc.instance, BasePyFuncPlugin), (
-                    f'"{pyfunc}" should be an instance of "BasePyFuncPlugin" subclass.'
+                assert isinstance(pyfunc.instance, NvDsPyFuncPlugin), (
+                    f'"{pyfunc}" should be an instance of "NvDsPyFuncPlugin" subclass.'
                 )
                 pyfunc.instance.gst_element = self
             except Exception as exc:
