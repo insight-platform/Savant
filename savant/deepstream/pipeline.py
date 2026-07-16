@@ -43,6 +43,7 @@ from savant.config.schema import (
     Pipeline,
     PipelineElement,
     PyFuncElement,
+    PyGroupElement,
     SourceElement,
     SourceShaper,
     TelemetryParameters,
@@ -296,7 +297,7 @@ class NvDsPipeline(GstPipeline):
                 add_buffer_probe(gst_element.get_static_pad('src'), nvinfer.postproc)
 
         if element_idx is not None:
-            if isinstance(element, PyFuncElement):
+            if isinstance(element, (PyFuncElement, PyGroupElement)):
                 gst_element.set_property('pipeline', self._video_pipeline)
                 gst_element.set_property('gst-pipeline', self)
                 gst_element.set_property('stream-pool-size', self._batch_size)

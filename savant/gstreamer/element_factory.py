@@ -1,4 +1,5 @@
 """GStreamer pipeline elements factory."""
+
 from fractions import Fraction
 from typing import Dict, List, Union
 
@@ -276,7 +277,8 @@ def nvarguscamerasrc_bin_validate_sources(sources: List[Dict]):
             )
         if not isinstance(source_id, str):
             raise CreateElementException(
-                f'nvarguscamerasrc_bin: source-id must be a string, got {type(source_id)}'
+                'nvarguscamerasrc_bin: source-id must be a string, '
+                f'got {type(source_id)}'
             )
         if source_id in source_ids:
             raise CreateElementException(
@@ -290,7 +292,8 @@ def nvarguscamerasrc_bin_validate_sources(sources: List[Dict]):
                 Fraction(framerate)
             except Exception:
                 raise CreateElementException(
-                    f'nvarguscamerasrc_bin: framerate must be a fraction, got {framerate}'
+                    'nvarguscamerasrc_bin: framerate must be a fraction, '
+                    f'got {framerate}'
                 )
 
         properties = source_cfg.get('properties')
@@ -300,5 +303,6 @@ def nvarguscamerasrc_bin_validate_sources(sources: List[Dict]):
             )
         if not isinstance(properties, dict):
             raise CreateElementException(
-                f'nvarguscamerasrc_bin: properties must be a dict, got {type(properties)}'
+                'nvarguscamerasrc_bin: properties must be a dict, '
+                f'got {type(properties)}'
             )
