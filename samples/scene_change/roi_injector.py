@@ -1,5 +1,7 @@
 """Adds a ROI object to a frame."""
 
+from typing import Tuple
+
 from savant_rs.primitives.geometry import BBox
 from savant_rs.utils import eval_expr
 
@@ -11,7 +13,8 @@ from savant.parameter_storage import param_storage
 
 ELEMENT_NAME = 'roi_injector'
 LABEL = 'roi'
-ROI_CACHE_TTL = 5
+ROI_CACHE_TTL = 1000
+MIN_ROI_SIZE = 32
 
 
 class RoiInjector(NvDsPyFuncPlugin):
@@ -19,41 +22,57 @@ class RoiInjector(NvDsPyFuncPlugin):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.default_roi = self._parse_default_roi()
-        self._roi_cache = {}
+        self.frame_width = param_storage()['frame']['width']
+        self.frame_height = param_storage()['frame']['height']
+        self.default_roi = BBox.ltrb(
+            *self._parse_ltrb(str(param_storage()['roi_default']))
+        )
+        self.per_source_roi = {}
 
-    def _parse_default_roi(self):
-        default_roi_str = str(param_storage()['roi_default'])
-        left, top, right, bottom = (float(v) for v in default_roi_str.split(','))
-        return BBox.ltrb(left, top, right, bottom)
+    def _parse_ltrb(self, raw: str) -> Tuple[int, int, int, int]:
+        """Parse the ROI string as (left, top, right, bottom)."""
 
-    def _parse_roi(self, raw: str, source_id: str) -> BBox:
-        """Parse a ROI "left,top,right,bottom"."""
-
-        if not raw:
-            return self.default_roi
-        try:
-            left, top, right, bottom = (float(v) for v in raw.split(','))
-            return BBox.ltrb(left, top, right, bottom)
-        except Exception as e:
-            self.logger.warning(
-                'Failed to parse ROI %r for source %s: %s.', raw, source_id, e
+        left, top, right, bottom = (int(v) for v in raw.split(','))
+        if not (
+            0 <= left < right <= self.frame_width
+            and 0 <= top < bottom <= self.frame_height
+        ):
+            raise ValueError(
+                f'ROI {raw} is out of frame bounds '
+                f'({self.frame_width}x{self.frame_height}).'
             )
-            return self.default_roi
+        if right - left < MIN_ROI_SIZE or bottom - top < MIN_ROI_SIZE:
+            raise ValueError(
+                f'ROI {raw} size must be at least {MIN_ROI_SIZE} in each dimension.'
+            )
+
+        return left, top, right, bottom
 
     def _read_roi(self, source_id: str) -> BBox:
         """Read the current ROI for the source from Etcd."""
+
         val, is_cached = eval_expr(
             f'etcd("roi/{source_id}", "")',
             ttl=ROI_CACHE_TTL,
             no_gil=True,
         )
-        if not is_cached or source_id not in self._roi_cache:
-            self._roi_cache[source_id] = self._parse_roi(val, source_id)
-        return self._roi_cache[source_id]
+        if not is_cached:
+            if val:
+                try:
+                    self.per_source_roi[source_id] = BBox.ltrb(*self._parse_ltrb(val))
+                except Exception as e:
+                    self.logger.warning(
+                        'Failed to parse ROI %r for source %s: %s.', val, source_id, e
+                    )
+                    self.per_source_roi.pop(source_id, None)
+            else:
+                self.per_source_roi.pop(source_id, None)
+
+        return self.per_source_roi.get(source_id, self.default_roi)
 
     def process_frame(self, buffer: Gst.Buffer, frame_meta: NvDsFrameMeta):
         """Callback on each frame in a Deepstream pipeline batch."""
+
         obj_meta = ObjectMeta(
             element_name=ELEMENT_NAME,
             label=LABEL,
