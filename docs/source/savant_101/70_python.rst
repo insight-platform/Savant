@@ -1,7 +1,7 @@
 Python Function Unit
 ====================
 
-The Python Function Unit is used to include arbitrary custom Python code in the pipeline. To work with ``pyfunc``, custom code must be implemented by specifying :py:class:`~savant.deepstream.NvDsPyFuncPlugin` as the parent class, which exposes two methods: the first allows frames for each source to be handled separately, the second supports processing the frames for the whole batch.
+The Python Function Unit is used to include arbitrary custom Python code in the pipeline. To work with ``pyfunc``, custom code must be implemented by specifying :py:class:`~savant.deepstream.pyfunc.NvDsPyFuncPlugin` as the parent class, which exposes two methods: the first allows frames for each source to be handled separately, the second supports processing the frames for the whole batch.
 
 Per-source processing, normally you want to use this method:
 
@@ -135,7 +135,7 @@ regular PyFunc definitions. Every sub-element uses the same ``module``,
           kwargs:
             key: value
 
-Each sub-element must implement :py:class:`~savant.deepstream.NvDsPyFuncPlugin`,
+Each sub-element must implement :py:class:`~savant.deepstream.pyfunc.NvDsPyFuncPlugin`,
 exactly like a standalone ``pyfunc``. Everything a regular PyFunc can do also
 works inside a group: receiving its own ``kwargs``, reading and writing object
 metadata, drawing on frames, and creating :doc:`auxiliary video streams
