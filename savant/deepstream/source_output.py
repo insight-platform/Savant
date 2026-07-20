@@ -531,8 +531,12 @@ class SourceOutputH26X(SourceOutputEncoded):
             self._video_pipeline,
             'encode',
         )
-        wrapped_encoder = pipeline.add_element(PipelineElement('sync_io_wrapper_bin'))
+        wrapped_encoder = pipeline._element_factory.create(
+            PipelineElement('sync_io_wrapper_bin')
+        )
         wrapped_encoder.set_property('nested-element', encoder)
+        pipeline._pipeline.add(wrapped_encoder)
+        pipeline.link_element(wrapped_encoder)
 
         return wrapped_encoder
 
