@@ -657,6 +657,30 @@ Auxiliary Streams
 
 **Link**: `Auxiliary Streams <https://github.com/insight-platform/Savant/tree/develop/samples/auxiliary_streams>`_
 
+PyGroup: Colocated PyFuncs
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Platform Support**: X86 + L4T
+
+**Main Features**:
+
+- Multiple sequential PyFuncs colocated in a single ``pygroup`` element
+- Sequential per-frame execution without inter-element queues
+- Per-stage OpenTelemetry spans preserved for each colocated PyFunc
+
+**Auxiliary Features**:
+
+- Overlay drawing on the main frame
+- Per-stage auxiliary stream generation
+- Preconfigured Jaeger/OTLP tracing
+
+**Adapters Used**:
+
+- :ref:`Video loop source adapter <video_loop_source_adapter>`
+- :ref:`Always On RTSP sink adapter <always_on_rtsp_sink_adapter>` (multi-stream)
+
+**Link**: `PyGroup <https://github.com/insight-platform/Savant/tree/develop/samples/pygroup>`_
+
 Data Integration and APIs
 -------------------------
 

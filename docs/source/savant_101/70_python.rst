@@ -103,3 +103,84 @@ Also, the ``pyfunc`` unit configuration allows setting an arbitrary set of user 
         config_path: /opt/savant/samples/traffic_meter/line_crossing.yml
 
 Parameters defined with ``kwargs`` are available as ``pyfunc`` class instance attributes.
+
+Grouping PyFuncs Into a Single Element
+--------------------------------------
+
+When a pipeline contains several Python Function Units that always run one
+after another, each of them is normally instantiated as a standalone
+GStreamer element, and the framework inserts a queue between neighboring
+units. Every element boundary adds an extra thread and buffer hand-off, which
+is pure overhead for short, strictly sequential PyFuncs.
+
+The ``pygroup`` unit removes this overhead by *colocating* multiple PyFuncs in
+a single GStreamer element. The colocated PyFuncs are executed sequentially on
+every frame, in the listed order, within the same element — without queues in
+between. Each colocated PyFunc keeps its own telemetry span, so per-stage
+observability is preserved (see below).
+
+A ``pygroup`` unit is declared with the ``elements`` key, which holds a list of
+regular PyFunc definitions. Every sub-element uses the same ``module``,
+``class_name``, and (optionally) ``kwargs`` keys as a standalone ``pyfunc``:
+
+.. code-block:: yaml
+
+    - element: pygroup
+      name: my_group
+      elements:
+        - module: module.pyfunc_module_1
+          class_name: PyFuncClass1
+        - module: module.pyfunc_module_2
+          class_name: PyFuncClass2
+          kwargs:
+            key: value
+
+Each sub-element must implement :py:class:`~savant.deepstream.NvDsPyFuncPlugin`,
+exactly like a standalone ``pyfunc``. Everything a regular PyFunc can do also
+works inside a group: receiving its own ``kwargs``, reading and writing object
+metadata, drawing on frames, and creating :doc:`auxiliary video streams
+</advanced_topics/13_auxiliary_video_streams>`. Savant inserts the necessary
+queues *around* the group automatically, just as it does for a standalone
+``pyfunc``.
+
+.. note::
+
+   ``pygroup`` is intended for short chains of PyFuncs that are effectively
+   serial and benefit from lower per-element overhead. Heavy PyFuncs that
+   should run on their own threads, in parallel with the rest of the pipeline,
+   are better kept as standalone ``pyfunc`` units.
+
+Telemetry
+^^^^^^^^^
+
+Colocating PyFuncs does not merge them into an opaque block for tracing
+purposes. For every frame, ``pygroup`` opens a ``process-frame`` span for the
+group and wraps each colocated PyFunc in its own nested span named
+``<module>.<class_name>``:
+
+.. code-block:: text
+
+    process-frame
+    ├── module.pyfunc_module_1.PyFuncClass1
+    └── module.pyfunc_module_2.PyFuncClass2
+
+PyFunc code may open further nested spans inside its own span for finer-grained
+profiling. As a result, you can still measure each stage independently in
+Jaeger or any other OTLP backend. See :doc:`/advanced_topics/9_open_telemetry`
+for details on tracing in Savant.
+
+Development Server
+^^^^^^^^^^^^^^^^^^
+
+The ``pygroup`` unit honors the :doc:`Development Server
+</advanced_topics/9_dev_server>`: when the module runs in dev mode, the
+colocated PyFuncs are reloaded on source changes just like standalone
+``pyfunc`` units.
+
+Sample
+^^^^^^
+
+The `pygroup sample <https://github.com/insight-platform/Savant/tree/develop/samples/pygroup>`__
+colocates two overlay PyFuncs that draw sequentially on the frame, each feeding
+its own auxiliary stream, and ships a preconfigured Jaeger/OTLP setup so the
+per-stage spans can be inspected out of the box.

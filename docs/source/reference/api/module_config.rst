@@ -10,7 +10,7 @@ Main module configuration entities
 
 .. _pipeline_element_hierarchy:
 
-.. inheritance-diagram:: PipelineElement ModelElement PyFuncElement
+.. inheritance-diagram:: PipelineElement ModelElement PyFuncElement PyGroupElement
     :parts: 1
     :caption: PipelineElement hierarchy
 
@@ -25,6 +25,7 @@ Main module configuration entities
     SourceElement
     SinkElement
     PyFuncElement
+    PyGroupElement
     ModelElement
     ElementGroup
     GroupCondition
