@@ -193,6 +193,54 @@ An example of the converter for YOLOv4 listed below. The YOLOv4 model has two ou
             )
 
 
+Accessing Frame Metadata In A Converter
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+By default a converter sees only the model output tensors, the model definition,
+and the ROI it ran on. A converter can also optionally receive the **frame
+metadata**, which lets its post-processing depend on the context of the frame —
+for example, applying different thresholds per source, or adapting to objects and
+tags already present on the frame.
+
+To opt in, add a ``metadata`` parameter to the converter's ``__call__``:
+
+.. code-block:: python
+
+    from typing import Optional
+    from savant.deepstream.meta.frame import NvDsFrameMeta
+
+    class TensorToBBoxConverter(BaseObjectModelOutputConverter):
+        def __call__(
+            self,
+            *output_layers: np.ndarray,
+            model: ObjectModel,
+            roi: Tuple[float, float, float, float],
+            metadata: Optional[NvDsFrameMeta] = None,
+        ) -> np.ndarray:
+            source_id = metadata.source_id if metadata is not None else None
+            ...
+
+The argument is passed a :py:class:`~savant.deepstream.meta.frame.NvDsFrameMeta`
+wrapper for the frame, exposing ``source_id``, ``pts``, the underlying
+``video_frame``, the objects already on the frame, and its tags.
+
+.. note::
+
+    The ``metadata`` argument is **opt-in and backward compatible**. Savant
+    inspects the converter's ``__call__`` signature once (the result is cached per
+    converter class, so there is no per-frame overhead) and passes ``metadata``
+    only when the parameter is declared. Converters written for earlier versions of
+    Savant — including all the built-in ones — keep working unchanged. When
+    ``metadata`` is used, the output conversion is additionally wrapped in a
+    ``convert-output`` telemetry span nested under the frame span, so it remains
+    traceable.
+
+The `output_converter_metadata sample <https://github.com/insight-platform/Savant/tree/develop/samples/output_converter_metadata>`__
+demonstrates this by combining it with :doc:`/advanced_topics/4_etcd`: a YOLO
+output converter reads ``metadata.source_id`` and looks up per-source detection
+thresholds in Etcd, which can be changed live without restarting the pipeline.
+
+
 Object Filtering
 ^^^^^^^^^^^^^^^^
 
