@@ -2,7 +2,7 @@
 
 A simple pipeline demonstrates how GigE Vision Source Adapter works in Savant. In the demo video from one GigE Vision camera is passed as raw-rgba frames, and another one is passed as HEVC-encoded frames. Both streams are passed to an Always-On-RTSP sink.
 
-The resulting streams can be accessed via LL-HLS on `http://locahost:888/stream/gige-raw` (raw-rgba frames) and `http://locahost:888/stream/gige-encoded` (HEVC-encoded frames).
+The resulting streams can be accessed via LL-HLS on `http://localhost:888/stream/gige-raw` (raw-rgba frames) and `http://localhost:888/stream/gige-encoded` (HEVC-encoded frames).
 
 Tested on platforms:
 
