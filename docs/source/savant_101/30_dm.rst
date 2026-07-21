@@ -196,7 +196,7 @@ An example of the converter for YOLOv4 listed below. The YOLOv4 model has two ou
 Accessing Frame Metadata In A Converter
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-By default a converter sees only the model output tensors, the model definition,
+By default, a converter sees only the model output tensors, the model definition,
 and the ROI it ran on. A converter can also optionally receive the **frame
 metadata**, which lets its post-processing depend on the context of the frame —
 for example, applying different thresholds per source, or adapting to objects and
