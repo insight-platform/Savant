@@ -1,0 +1,79 @@
+# module name, required
+name: scene_change
+
+# base module parameters
+parameters:
+  # pipeline processing frame parameters
+  frame:
+    width: 1280
+    height: 720
+  output_frame:
+    codec: ${oc.env:CODEC, 'h264'}
+  # PyFunc drawing the ROI and the scene-change status on the frame.
+  draw_func:
+    module: samples.scene_change.overlay
+    class_name: Overlay
+  # Etcd storage for per-source ROI
+  etcd:
+    # Etcd hosts to connect to
+    hosts: [etcd:2379]
+    # Path in Etcd to watch changes
+    watch_path: savant
+
+  # Name of the ReID (attribute) model used to fingerprint the ROI.
+  reid_model_name: scene_reid
+  # Default region of interest; format: "left,top,right,bottom".
+  roi_default: "100,100,1180,620"
+
+  batch_size: 1
+
+# pipeline definition
+pipeline:
+  # source definition is skipped, zeromq source is used by default to connect with source adapters
+
+  # define pipeline's main elements
+  elements:
+    # Inject the "roi" object; its coordinates are read live from Etcd.
+    - element: pyfunc
+      module: samples.scene_change.roi_injector
+      class_name: RoiInjector
+
+    # ReID model computing the embedding vector of the ROI.
+    - element: nvinfer@attribute_model
+      # Model's name in the pipeline, mandatory
+      name: ${parameters.reid_model_name}
+      # model definition
+      model:
+        remote:
+          url: s3://savant-data/models/scene_reid/scene_reid.zip
+          checksum_url: s3://savant-data/models/scene_reid/scene_reid.md5
+          parameters:
+            endpoint: https://eu-central-1.linodeobjects.com
+        model_file: scene_reid.onnx
+        batch_size: ${parameters.batch_size}
+
+        input:
+          object: roi_injector.roi
+          shape: [3, 224, 224]
+          scale_factor: 0.01735207357279195
+          offsets: [123.675, 116.28, 103.53]
+          maintain_aspect_ratio: true
+        output:
+          layer_names: [output]
+          converter:
+            module: savant.converter.vector_attribute
+            class_name: TensorToVectorConverter
+          attributes:
+            - name: reid
+
+    # Detect scene changes based on ReID vectors.
+    - element: pyfunc
+      module: samples.scene_change.scene_change
+      class_name: SceneChangeDetector
+      kwargs:
+        # Cosine-distance threshold above which a scene change is reported.
+        dist_threshold: 0.1
+        # Age (seconds) of the baseline fingerprint the current frame is compared against.
+        reference_delay: 5.0
+
+  # sink definition is skipped, zeromq sink is used by default to connect with sink adapters
