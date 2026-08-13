@@ -3,7 +3,7 @@
 FROM nvcr.io/nvidia/deepstream:7.1-triton-multiarch AS builder
 
 ENV CUDA_VER=12.6
-ARG DS_YOLO_VER=master
+ARG DS_YOLO_VER=2894bab
 ARG DS_YOLO_PATH=/opt/yolo
 ARG NVDSINFER_PATH=/opt/nvidia/deepstream/deepstream/sources/libs/nvdsinfer
 
