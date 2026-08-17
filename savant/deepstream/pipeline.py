@@ -79,7 +79,11 @@ from .metadata import (
 )
 from .nvinfer.processor import NvInferProcessor
 from .source_output import SourceOutput, create_source_output
-from .utils.attribute import nvds_attr_meta_iterator, nvds_remove_obj_attrs
+from .utils.attribute import (
+    nvds_attr_meta_iterator,
+    nvds_remove_frame_attrs,
+    nvds_remove_source_attrs,
+)
 from .utils.event import GST_NVEVENT_STREAM_EOS, gst_nvevent_parse_stream_eos
 from .utils.iterator import nvds_frame_meta_iterator, nvds_obj_meta_iterator
 from .utils.object import nvds_is_empty_object_meta
@@ -890,6 +894,9 @@ class NvDsPipeline(GstPipeline):
         )
 
         self._buffer_processor.on_eos(source_info)
+        if source_info.pad_idx is not None:
+            # frames that never reached the output probe, e.g. dropped on teardown
+            nvds_remove_source_attrs(source_info.pad_idx)
 
         if not savant_eos:
             try:
@@ -921,46 +928,53 @@ class NvDsPipeline(GstPipeline):
                 'Batch has no Savant Frame Meta.',
                 buffer.pts,
             )
-            return Gst.PadProbeReturn.PASS
 
-        batch_id = savant_batch_meta.idx
+        batch_id = savant_batch_meta.idx if savant_batch_meta is not None else None
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         # convert output meta
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
-            # correct object_id (track_id)
-            # use consecutive numbers for object_id in case there is no tracker
-            object_ids = defaultdict(int)
-            for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
-                if nvds_obj_meta.object_id == UNTRACKED_OBJECT_ID:
-                    nvds_obj_meta.object_id = object_ids[nvds_obj_meta.obj_label]
-                    object_ids[nvds_obj_meta.obj_label] += 1
+            try:
+                if batch_id is None:
+                    continue
 
-            # will extend source metadata
-            savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(
-                nvds_frame_meta
-            )
-            if savant_frame_meta is None:
-                self._logger.warning(
-                    'Failed to update frame meta for frame %s at buffer %s. '
-                    'Frame has no Savant Frame Meta.',
-                    nvds_frame_meta.buf_pts,
-                    buffer.pts,
+                # correct object_id (track_id)
+                # use consecutive numbers for object_id in case there is no tracker
+                object_ids = defaultdict(int)
+                for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
+                    if nvds_obj_meta.object_id == UNTRACKED_OBJECT_ID:
+                        nvds_obj_meta.object_id = object_ids[nvds_obj_meta.obj_label]
+                        object_ids[nvds_obj_meta.obj_label] += 1
+
+                # will extend source metadata
+                savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(
+                    nvds_frame_meta
                 )
-                continue
+                if savant_frame_meta is None:
+                    self._logger.warning(
+                        'Failed to update frame meta for frame %s at buffer %s. '
+                        'Frame has no Savant Frame Meta.',
+                        nvds_frame_meta.buf_pts,
+                        buffer.pts,
+                    )
+                    continue
 
-            frame_idx = savant_frame_meta.idx
-            video_frame: VideoFrame
-            video_frame, video_frame_span = self._video_pipeline.get_batched_frame(
-                batch_id,
-                frame_idx,
-            )
-
-            with video_frame_span.nested_span('update-frame-meta'):
-                self._update_meta_for_single_frame(
-                    frame_idx=frame_idx,
-                    nvds_frame_meta=nvds_frame_meta,
-                    video_frame=video_frame,
+                frame_idx = savant_frame_meta.idx
+                video_frame: VideoFrame
+                video_frame, video_frame_span = self._video_pipeline.get_batched_frame(
+                    batch_id,
+                    frame_idx,
                 )
+
+                with video_frame_span.nested_span('update-frame-meta'):
+                    self._update_meta_for_single_frame(
+                        frame_idx=frame_idx,
+                        nvds_frame_meta=nvds_frame_meta,
+                        video_frame=video_frame,
+                    )
+            finally:
+                # The frame is not seen again downstream, so its attributes end
+                # here, including those of objects already gone from the frame.
+                nvds_remove_frame_attrs(nvds_frame_meta)
 
         return Gst.PadProbeReturn.PASS
 
@@ -998,7 +1012,6 @@ class NvDsPipeline(GstPipeline):
                     attr_meta.name,
                 ) not in self._internal_attrs:
                     attributes.append(nvds_attr_meta_output_converter(attr_meta))
-            nvds_remove_obj_attrs(nvds_frame_meta, nvds_obj_meta)
 
             # check if primary object
             if nvds_obj_meta.obj_label == PRIMARY_OBJECT_KEY:

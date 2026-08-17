@@ -119,7 +119,18 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
     @property
     def uid(self) -> int:
         """Returns uid of the object."""
-        return nvds_get_obj_uid(self._frame_meta, self.ds_object_meta)
+        return nvds_get_obj_uid(self._nvds_frame_meta, self.ds_object_meta)
+
+    @property
+    def _nvds_frame_meta(self) -> pyds.NvDsFrameMeta:
+        """Parent frame meta.
+
+        ``_frame_meta`` is the savant wrapper when the object is created by the
+        constructor and pyds meta when it comes from ``from_nv_ds_object_meta``.
+        """
+        if isinstance(self._frame_meta, pyds.NvDsFrameMeta):
+            return self._frame_meta
+        return self._frame_meta.frame_meta
 
     def get_attr_meta_list(
         self, element_name: str, attr_name: str
@@ -131,7 +142,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         :return: List of AttributeMeta or None if the object has no such attributes.
         """
         return nvds_get_obj_attr_meta_list(
-            frame_meta=self._frame_meta,
+            frame_meta=self._nvds_frame_meta,
             obj_meta=self.ds_object_meta,
             element_name=element_name,
             attr_name=attr_name,
@@ -147,7 +158,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         :return: AttributeMeta or None if the object has no such attribute.
         """
         return nvds_get_obj_attr_meta(
-            frame_meta=self._frame_meta,
+            frame_meta=self._nvds_frame_meta,
             obj_meta=self.ds_object_meta,
             element_name=element_name,
             attr_name=attr_name,
@@ -163,7 +174,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         :param value: List of AttributeMeta.
         """
         nvds_replace_obj_attr_meta_list(
-            frame_meta=self._frame_meta,
+            frame_meta=self._nvds_frame_meta,
             obj_meta=self.ds_object_meta,
             element_name=element_name,
             attr_name=attr_name,
@@ -177,7 +188,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         :param attr_name: Attribute name.
         """
         nvds_remove_obj_attr_meta_list(
-            frame_meta=self._frame_meta,
+            frame_meta=self._nvds_frame_meta,
             obj_meta=self.ds_object_meta,
             element_name=element_name,
             attr_name=attr_name,
@@ -200,7 +211,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         :param replace: Replace attribute if it already exists.
         """
         nvds_add_attr_meta_to_obj(
-            frame_meta=self._frame_meta,
+            frame_meta=self._nvds_frame_meta,
             obj_meta=self.ds_object_meta,
             element_name=element_name,
             name=name,
