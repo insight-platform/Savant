@@ -195,6 +195,10 @@ def _frame_key(frame_meta: pyds.NvDsFrameMeta) -> FrameKey:
     The pad index scopes the key to a source, so frame numbering never has to be
     unique across sources and remove_source() cannot touch another source.
 
+    The idx is minted by VideoPipeline.add_frame, one instance per process
+    (pipeline.py), so it is monotonic and never reused; the storage does not
+    outlive that instance, so a restart cannot collide with retained frames.
+
     A frame without savant frame meta is discarded by the pipeline, but elements
     may still attach attributes to its objects; keying it by pts keeps those
     purgeable by the output probe and subject to the frame cap.
