@@ -188,22 +188,28 @@ NVDS_OBJ_ATTR_STORAGE = ObjAttrStorage()
 
 
 def _frame_key(frame_meta: pyds.NvDsFrameMeta) -> FrameKey:
-    """Storage key of the given frame.
+    """Storage key of the given frame: (pad index, savant frame idx, pts).
+
+    The pad index scopes the key to a source, so frame numbering never has to be
+    unique across sources and remove_source() cannot touch another source.
 
     A frame without savant frame meta is discarded by the pipeline, but elements
-    may still attach attributes to its objects; keying it per frame keeps those
+    may still attach attributes to its objects; keying it by pts keeps those
     purgeable by the output probe and subject to the frame cap.
     """
     savant_frame_meta = nvds_frame_meta_get_nvds_savant_frame_meta(frame_meta)
     if savant_frame_meta is not None:
-        return (savant_frame_meta.idx,)
-    return (None, frame_meta.pad_index, frame_meta.buf_pts)
+        return (frame_meta.pad_index, savant_frame_meta.idx, None)
+    return (frame_meta.pad_index, None, frame_meta.buf_pts)
 
 
 def _check_attr_names(value: List[AttributeMeta], element_name: str, attr_name: str):
     for attr in value:
-        assert attr.element_name == element_name
-        assert attr.name == attr_name
+        if attr.element_name != element_name or attr.name != attr_name:
+            raise ValueError(
+                f'Attribute {attr.element_name}.{attr.name} does not belong to '
+                f'{element_name}.{attr_name}.'
+            )
 
 
 def _add_attr_meta(  # pylint: disable=too-many-arguments
