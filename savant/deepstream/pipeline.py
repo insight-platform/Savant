@@ -925,7 +925,7 @@ class NvDsPipeline(GstPipeline):
         if savant_batch_meta is None:
             self._logger.warning(
                 'Failed to update frame meta for batch at buffer %s. '
-                'Batch has no Savant Frame Meta.',
+                'Batch has no Savant Batch Meta.',
                 buffer.pts,
             )
 
