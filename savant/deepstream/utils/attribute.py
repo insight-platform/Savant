@@ -24,7 +24,7 @@ ObjAttrs = Dict[Tuple[str, str], List[AttributeMeta]]
 
 
 @dataclass
-class _FrameAttrs:
+class _FrameEntry:
     """Attributes of all objects of a single frame."""
 
     pad_idx: int
@@ -45,7 +45,7 @@ class ObjAttrStorage:
     """
 
     def __init__(self, max_frames: int = MAX_TRACKED_FRAMES):
-        self._frames: 'OrderedDict[FrameKey, _FrameAttrs]' = OrderedDict()
+        self._frames: 'OrderedDict[FrameKey, _FrameEntry]' = OrderedDict()
         self._lock = Lock()
         self._max_frames = max_frames
         self._evictions = 0
@@ -64,7 +64,7 @@ class ObjAttrStorage:
         with self._lock:
             frame = self._frames.get(key)
             if frame is None:
-                frame = self._frames[key] = _FrameAttrs(pad_idx=pad_idx)
+                frame = self._frames[key] = _FrameEntry(pad_idx=pad_idx)
             attrs = frame.objects.setdefault(uid, {})
             if replace or (element_name, attr_name) not in attrs:
                 attrs[(element_name, attr_name)] = []
@@ -84,7 +84,7 @@ class ObjAttrStorage:
         with self._lock:
             frame = self._frames.get(key)
             if frame is None:
-                frame = self._frames[key] = _FrameAttrs(pad_idx=pad_idx)
+                frame = self._frames[key] = _FrameEntry(pad_idx=pad_idx)
             frame.objects.setdefault(uid, {})[(element_name, attr_name)] = value
             evicted = self._evict()
         self._warn_evicted(evicted)
@@ -154,7 +154,7 @@ class ObjAttrStorage:
                 for attrs in frame.objects.values()
             ]
 
-    def _drop_empty(self, key: FrameKey, frame: _FrameAttrs):
+    def _drop_empty(self, key: FrameKey, frame: _FrameEntry):
         """Caller holds the lock."""
         if not frame.objects:
             del self._frames[key]
@@ -200,6 +200,128 @@ def _frame_key(frame_meta: pyds.NvDsFrameMeta) -> FrameKey:
     return (None, frame_meta.pad_index, frame_meta.buf_pts)
 
 
+def _check_attr_names(value: List[AttributeMeta], element_name: str, attr_name: str):
+    for attr in value:
+        assert attr.element_name == element_name
+        assert attr.name == attr_name
+
+
+def _add_attr_meta(  # pylint: disable=too-many-arguments
+    key: FrameKey,
+    pad_idx: int,
+    frame_meta: pyds.NvDsFrameMeta,
+    obj_meta: pyds.NvDsObjectMeta,
+    element_name: str,
+    name: str,
+    value: Any,
+    confidence: float,
+    replace: bool,
+):
+    NVDS_OBJ_ATTR_STORAGE.add(
+        key=key,
+        pad_idx=pad_idx,
+        uid=nvds_get_obj_uid(frame_meta, obj_meta),
+        element_name=element_name,
+        attr_name=name,
+        attr=AttributeMeta(
+            element_name=element_name, name=name, value=value, confidence=confidence
+        ),
+        replace=replace,
+    )
+
+
+class FrameAttrs:
+    """Attribute access for a single frame, holding its storage key.
+
+    The module-level functions derive the key from the frame meta on every call,
+    which costs a lookup of the savant frame meta; code that touches many objects
+    or attributes of one frame holds this instead. Valid while the frame is being
+    processed, i.e. within a single probe callback.
+    """
+
+    __slots__ = ('_frame_meta', '_key', '_pad_idx')
+
+    def __init__(self, frame_meta: pyds.NvDsFrameMeta):
+        self._frame_meta = frame_meta
+        self._key = _frame_key(frame_meta)
+        self._pad_idx = frame_meta.pad_index
+
+    def add(  # pylint: disable=too-many-arguments
+        self,
+        obj_meta: pyds.NvDsObjectMeta,
+        element_name: str,
+        name: str,
+        value: Any,
+        confidence: float = 1.0,
+        replace: bool = False,
+    ):
+        """Adds attribute to the object, see
+        :py:func:`nvds_add_attr_meta_to_obj`."""
+        _add_attr_meta(
+            key=self._key,
+            pad_idx=self._pad_idx,
+            frame_meta=self._frame_meta,
+            obj_meta=obj_meta,
+            element_name=element_name,
+            name=name,
+            value=value,
+            confidence=confidence,
+            replace=replace,
+        )
+
+    def iterate(self, obj_meta: pyds.NvDsObjectMeta) -> Iterable[AttributeMeta]:
+        """Object attributes, see :py:func:`nvds_attr_meta_iterator`."""
+        return NVDS_OBJ_ATTR_STORAGE.get_all(
+            key=self._key,
+            uid=nvds_get_obj_uid(self._frame_meta, obj_meta),
+        )
+
+    def get_list(
+        self, obj_meta: pyds.NvDsObjectMeta, element_name: str, attr_name: str
+    ) -> Optional[List[AttributeMeta]]:
+        """See :py:func:`nvds_get_obj_attr_meta_list`."""
+        return NVDS_OBJ_ATTR_STORAGE.get(
+            key=self._key,
+            uid=nvds_get_obj_uid(self._frame_meta, obj_meta),
+            element_name=element_name,
+            attr_name=attr_name,
+        )
+
+    def get(
+        self, obj_meta: pyds.NvDsObjectMeta, element_name: str, attr_name: str
+    ) -> Optional[AttributeMeta]:
+        """See :py:func:`nvds_get_obj_attr_meta`."""
+        attrs = self.get_list(obj_meta, element_name, attr_name)
+        return attrs[0] if attrs else None
+
+    def replace(
+        self,
+        obj_meta: pyds.NvDsObjectMeta,
+        element_name: str,
+        attr_name: str,
+        value: List[AttributeMeta],
+    ):
+        """See :py:func:`nvds_replace_obj_attr_meta_list`."""
+        _check_attr_names(value, element_name, attr_name)
+        NVDS_OBJ_ATTR_STORAGE.replace(
+            key=self._key,
+            pad_idx=self._pad_idx,
+            uid=nvds_get_obj_uid(self._frame_meta, obj_meta),
+            element_name=element_name,
+            attr_name=attr_name,
+            value=value,
+        )
+
+    def remove(self, obj_meta: pyds.NvDsObjectMeta, element_name: str, attr_name: str):
+        """See :py:func:`nvds_remove_obj_attr_meta_list`."""
+        NVDS_OBJ_ATTR_STORAGE.remove_attr(
+            key=self._key,
+            uid=nvds_get_obj_uid(self._frame_meta, obj_meta),
+            element_name=element_name,
+            attr_name=attr_name,
+        )
+
+
 def nvds_add_attr_meta_to_obj(  # pylint: disable=too-many-arguments
     frame_meta: pyds.NvDsFrameMeta,
     obj_meta: pyds.NvDsObjectMeta,
@@ -219,15 +341,15 @@ def nvds_add_attr_meta_to_obj(  # pylint: disable=too-many-arguments
     :param confidence: object confidence.
     :param replace: replace existing attribute.
     """
-    NVDS_OBJ_ATTR_STORAGE.add(
+    _add_attr_meta(
         key=_frame_key(frame_meta),
         pad_idx=frame_meta.pad_index,
-        uid=nvds_get_obj_uid(frame_meta, obj_meta),
+        frame_meta=frame_meta,
+        obj_meta=obj_meta,
         element_name=element_name,
-        attr_name=name,
-        attr=AttributeMeta(
-            element_name=element_name, name=name, value=value, confidence=confidence
-        ),
+        name=name,
+        value=value,
+        confidence=confidence,
         replace=replace,
     )
 
@@ -304,9 +426,7 @@ def nvds_replace_obj_attr_meta_list(
     :param attr_name: attribute name.
     :param value: new attribute value, list.
     """
-    for attr in value:
-        assert attr.element_name == element_name
-        assert attr.name == attr_name
+    _check_attr_names(value, element_name, attr_name)
     NVDS_OBJ_ATTR_STORAGE.replace(
         key=_frame_key(frame_meta),
         pad_idx=frame_meta.pad_index,

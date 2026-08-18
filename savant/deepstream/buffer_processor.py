@@ -35,7 +35,7 @@ from savant.utils.sink_factories import SinkVideoFrame
 from savant.utils.source_info import SourceInfo, SourceInfoRegistry
 
 from .source_output import SourceOutput, SourceOutputOnlyMeta, SourceOutputWithFrame
-from .utils.attribute import nvds_add_attr_meta_to_obj
+from .utils.attribute import FrameAttrs
 from .utils.iterator import nvds_frame_meta_iterator
 from .utils.object import nvds_add_obj_meta_to_frame
 from .utils.surface import get_nvds_buf_surface
@@ -168,6 +168,7 @@ class NvDsBufferProcessor(GstBufferProcessor):
         )
 
         all_nvds_obj_metas = {}
+        frame_attrs = FrameAttrs(nvds_frame_meta)
         # add external objects to nvds meta
         for obj_meta in video_frame.get_all_objects():
             obj_key = build_model_object_key(obj_meta.namespace, obj_meta.label)
@@ -226,8 +227,7 @@ class NvDsBufferProcessor(GstBufferProcessor):
             for namespace, name in obj_meta.attributes:
                 attr = obj_meta.get_attribute(namespace, name)
                 value = attr.values[0]
-                nvds_add_attr_meta_to_obj(
-                    frame_meta=nvds_frame_meta,
+                frame_attrs.add(
                     obj_meta=nvds_obj_meta,
                     element_name=namespace,
                     name=name,

@@ -26,10 +26,7 @@ from savant.base.pyfunc import PyFuncNoopCallException
 from savant.config.schema import FramePadding, ModelElement
 from savant.deepstream.meta.frame import NvDsFrameMeta
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
-from savant.deepstream.utils.attribute import (
-    nvds_add_attr_meta_to_obj,
-    nvds_attr_meta_iterator,
-)
+from savant.deepstream.utils.attribute import FrameAttrs
 from savant.deepstream.utils.iterator import (
     nvds_clf_meta_iterator,
     nvds_frame_meta_iterator,
@@ -153,13 +150,14 @@ class NvInferProcessor:
         )
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
+            frame_attrs = FrameAttrs(nvds_frame_meta)
             for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
                 if not self._is_model_input_object(nvds_obj_meta):
                     continue
                 # TODO: Unify and also switch to the box representation system
                 #  through the center point during meta preprocessing.
                 object_meta = _NvDsObjectMetaImpl.from_nv_ds_object_meta(
-                    nvds_obj_meta, nvds_frame_meta
+                    nvds_obj_meta, nvds_frame_meta, frame_attrs=frame_attrs
                 )
                 if not isinstance(object_meta.bbox, BBox):
                     raise NotImplementedError(
@@ -183,9 +181,8 @@ class NvInferProcessor:
                         parent_object_meta.bbox.copy(),
                         parent_object_meta.confidence,
                         parent_object_meta.track_id,
-                        attributes=nvds_attr_meta_iterator(
-                            nvds_frame_meta,
-                            parent_object_meta.ds_object_meta,
+                        attributes=frame_attrs.iterate(
+                            parent_object_meta.ds_object_meta
                         ),
                     )
 
@@ -195,10 +192,7 @@ class NvInferProcessor:
                     object_meta.bbox.copy(),
                     object_meta.confidence,
                     object_meta.track_id,
-                    attributes=nvds_attr_meta_iterator(
-                        frame_meta=nvds_frame_meta,
-                        obj_meta=object_meta.ds_object_meta,
-                    ),
+                    attributes=frame_attrs.iterate(object_meta.ds_object_meta),
                 )
 
                 if user_parent_object_meta:
@@ -315,6 +309,7 @@ class NvInferProcessor:
     ):
         """Processes custom model output (converter wrapper) for a single frame."""
 
+        frame_attrs = FrameAttrs(nvds_frame_meta)
         for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
             self._restore_object_meta(nvds_obj_meta)
             if not self._is_model_input_object(nvds_obj_meta):
@@ -506,8 +501,7 @@ class NvInferProcessor:
                         values = [values]
                     for (_, _nvds_obj_meta), _values in zip(selected_bboxes, values):
                         for attr_name, value, confidence in _values:
-                            nvds_add_attr_meta_to_obj(
-                                frame_meta=nvds_frame_meta,
+                            frame_attrs.add(
                                 obj_meta=_nvds_obj_meta,
                                 element_name=self._element_name,
                                 name=attr_name,
@@ -572,6 +566,7 @@ class NvInferProcessor:
         self._model: NvInferAttributeModel
         nvds_batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(buffer))
         for nvds_frame_meta in nvds_frame_meta_iterator(nvds_batch_meta):
+            frame_attrs = FrameAttrs(nvds_frame_meta)
             for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
                 self._restore_object_meta(nvds_obj_meta)
                 for nvds_clf_meta in nvds_clf_meta_iterator(nvds_obj_meta):
@@ -582,8 +577,7 @@ class NvInferProcessor:
                         self._model.output.attributes,
                         nvds_label_info_iterator(nvds_clf_meta),
                     ):
-                        nvds_add_attr_meta_to_obj(
-                            frame_meta=nvds_frame_meta,
+                        frame_attrs.add(
                             obj_meta=nvds_obj_meta,
                             element_name=self._element_name,
                             name=attr.name,

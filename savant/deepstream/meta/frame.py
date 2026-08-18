@@ -11,7 +11,7 @@ from savant_rs.utils import TelemetrySpan
 
 from savant.api.builder import build_attribute_value
 from savant.api.parser import parse_attribute_value
-from savant.deepstream.utils.attribute import nvds_remove_obj_attrs
+from savant.deepstream.utils.attribute import FrameAttrs, nvds_remove_obj_attrs
 from savant.meta.errors import MetaValueError
 from savant.meta.object import ObjectMeta
 from savant.utils.log import LoggerMixin
@@ -20,13 +20,17 @@ from .object import _NvDsObjectMetaImpl
 
 
 def nvds_obj_meta_generator(
-    frame_meta: pyds.NvDsFrameMeta, obj_cache: Dict[int, ObjectMeta]
+    frame_meta: pyds.NvDsFrameMeta,
+    obj_cache: Dict[int, ObjectMeta],
+    frame_attrs: Optional[FrameAttrs] = None,
 ) -> Iterator[ObjectMeta]:
     item = frame_meta.obj_meta_list
     while item is not None:
         nvds_obj_meta = pyds.NvDsObjectMeta.cast(item.data)
         obj_meta = ObjectMeta._from_be_object_meta(
-            _NvDsObjectMetaImpl.from_nv_ds_object_meta(nvds_obj_meta, frame_meta)
+            _NvDsObjectMetaImpl.from_nv_ds_object_meta(
+                nvds_obj_meta, frame_meta, frame_attrs=frame_attrs
+            )
         )
 
         try:
@@ -60,6 +64,7 @@ class NvDsFrameMeta(AbstractContextManager, LoggerMixin):
         self._telemetry_span: TelemetrySpan = telemetry_span
         self._primary_obj: Optional[ObjectMeta] = None
         self._objects = {}
+        self._frame_attrs: Optional[FrameAttrs] = None
 
     def __exit__(self, *exc_details):
         self.logger.debug(
@@ -87,12 +92,19 @@ class NvDsFrameMeta(AbstractContextManager, LoggerMixin):
         return self.frame_meta.batch_id
 
     @property
+    def frame_attrs(self) -> FrameAttrs:
+        """Attribute access shared by all objects of this frame."""
+        if self._frame_attrs is None:
+            self._frame_attrs = FrameAttrs(self.frame_meta)
+        return self._frame_attrs
+
+    @property
     def objects(self) -> Iterator[ObjectMeta]:
         """Returns an iterator over object metas in current frame.
 
         :return: Iterator over object metas.
         """
-        return nvds_obj_meta_generator(self.frame_meta, self._objects)
+        return nvds_obj_meta_generator(self.frame_meta, self._objects, self.frame_attrs)
 
     @property
     def roi(self) -> BBox:

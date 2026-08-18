@@ -80,7 +80,7 @@ from .metadata import (
 from .nvinfer.processor import NvInferProcessor
 from .source_output import SourceOutput, create_source_output
 from .utils.attribute import (
-    nvds_attr_meta_iterator,
+    FrameAttrs,
     nvds_remove_frame_attrs,
     nvds_remove_source_attrs,
 )
@@ -1001,12 +1001,11 @@ class NvDsPipeline(GstPipeline):
         # collect frame objects
         nvds_object_id_map = {}  # nvds_obj_meta.object_id -> video_object.id
         parents = {}  # video_object.id -> nvds_obj_meta.parent.object_id
+        frame_attrs = FrameAttrs(nvds_frame_meta)
         for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
             # collect obj attributes
             attributes = []
-            for attr_meta in nvds_attr_meta_iterator(
-                frame_meta=nvds_frame_meta, obj_meta=nvds_obj_meta
-            ):
+            for attr_meta in frame_attrs.iterate(nvds_obj_meta):
                 if (
                     attr_meta.element_name,
                     attr_meta.name,

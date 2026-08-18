@@ -12,13 +12,7 @@ from savant_rs.utils.symbol_mapper import (
     parse_compound_key,
 )
 
-from savant.deepstream.utils.attribute import (
-    nvds_add_attr_meta_to_obj,
-    nvds_get_obj_attr_meta,
-    nvds_get_obj_attr_meta_list,
-    nvds_remove_obj_attr_meta_list,
-    nvds_replace_obj_attr_meta_list,
-)
+from savant.deepstream.utils.attribute import FrameAttrs
 from savant.deepstream.utils.object import (
     nvds_get_obj_bbox,
     nvds_get_obj_draw_label,
@@ -69,6 +63,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         super().__init__()
         element_uid, class_id = get_object_id(element_name, label)
         self._frame_meta = frame_meta
+        self._cached_frame_attrs = frame_meta.frame_attrs
 
         self.ds_object_meta: pyds.NvDsObjectMeta = pyds.nvds_acquire_obj_meta_from_pool(
             frame_meta.batch_meta
@@ -132,6 +127,17 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
             return self._frame_meta
         return self._frame_meta.frame_meta
 
+    @property
+    def _frame_attrs(self) -> FrameAttrs:
+        """Attribute access for the parent frame.
+
+        Created once per object, or shared for the whole frame when the object
+        comes from :py:meth:`from_nv_ds_object_meta`.
+        """
+        if self._cached_frame_attrs is None:
+            self._cached_frame_attrs = FrameAttrs(self._nvds_frame_meta)
+        return self._cached_frame_attrs
+
     def get_attr_meta_list(
         self, element_name: str, attr_name: str
     ) -> Optional[List[AttributeMeta]]:
@@ -141,8 +147,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         :param attr_name: Attribute name.
         :return: List of AttributeMeta or None if the object has no such attributes.
         """
-        return nvds_get_obj_attr_meta_list(
-            frame_meta=self._nvds_frame_meta,
+        return self._frame_attrs.get_list(
             obj_meta=self.ds_object_meta,
             element_name=element_name,
             attr_name=attr_name,
@@ -157,8 +162,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         :param attr_name: Attribute name.
         :return: AttributeMeta or None if the object has no such attribute.
         """
-        return nvds_get_obj_attr_meta(
-            frame_meta=self._nvds_frame_meta,
+        return self._frame_attrs.get(
             obj_meta=self.ds_object_meta,
             element_name=element_name,
             attr_name=attr_name,
@@ -173,8 +177,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         :param attr_name: Attribute name.
         :param value: List of AttributeMeta.
         """
-        nvds_replace_obj_attr_meta_list(
-            frame_meta=self._nvds_frame_meta,
+        self._frame_attrs.replace(
             obj_meta=self.ds_object_meta,
             element_name=element_name,
             attr_name=attr_name,
@@ -187,8 +190,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         :param element_name: Attribute model name.
         :param attr_name: Attribute name.
         """
-        nvds_remove_obj_attr_meta_list(
-            frame_meta=self._nvds_frame_meta,
+        self._frame_attrs.remove(
             obj_meta=self.ds_object_meta,
             element_name=element_name,
             attr_name=attr_name,
@@ -210,8 +212,7 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         :param confidence: Attribute confidence.
         :param replace: Replace attribute if it already exists.
         """
-        nvds_add_attr_meta_to_obj(
-            frame_meta=self._nvds_frame_meta,
+        self._frame_attrs.add(
             obj_meta=self.ds_object_meta,
             element_name=element_name,
             name=name,
@@ -350,21 +351,24 @@ class _NvDsObjectMetaImpl(BaseObjectMetaImpl, LoggerMixin):
         object_meta: pyds.NvDsObjectMeta,
         frame_meta: pyds.NvDsFrameMeta,
         depth: int = 2,
+        frame_attrs: Optional[FrameAttrs] = None,
     ):
         """Factory method, creates instance of this class from pyds meta.
 
         :param object_meta: Deepstream object meta.
         :param frame_meta: Deepstream frame meta.
         :param depth: Object parent recursion depth.
+        :param frame_attrs: Attribute access shared by all objects of the frame.
         :return:
         """
         self = cls.__new__(cls)
         self.ds_object_meta = object_meta
         self._frame_meta = frame_meta
+        self._cached_frame_attrs = frame_attrs
         self._bbox = None
         if not nvds_is_empty_object_meta(object_meta.parent) and depth > 0:
             self._parent_object = _NvDsObjectMetaImpl.from_nv_ds_object_meta(
-                object_meta.parent, frame_meta, depth - 1
+                object_meta.parent, frame_meta, depth - 1, frame_attrs
             )
         else:
             self._parent_object = None
