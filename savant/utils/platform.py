@@ -27,6 +27,31 @@ class UnsupportedPlatform(Exception):
     """UnsupportedPlatform exception class."""
 
 
+def get_os_description() -> str:
+    """Returns a human-readable OS description.
+
+    Uses the lsb_release python module when it is available, otherwise falls
+    back to PRETTY_NAME from /etc/os-release.
+    """
+    try:
+        import lsb_release
+
+        return lsb_release.get_os_release()['DESCRIPTION']
+    except ImportError:
+        pass
+
+    try:
+        with open('/etc/os-release', encoding='utf-8') as os_release:
+            for line in os_release:
+                key, _, value = line.partition('=')
+                if key == 'PRETTY_NAME':
+                    return value.strip().strip('"')
+    except OSError:
+        pass
+
+    return 'Unknown'
+
+
 @lru_cache(maxsize=1)
 def get_platform_info() -> dict:
     """Returns current platform info."""
@@ -41,9 +66,7 @@ def get_platform_info() -> dict:
     if platform_info['sysname'] != 'Linux':
         raise UnsupportedPlatform(f'Unsupported platform {platform_info["sysname"]}.')
 
-    import lsb_release
-
-    platform_info['os'] = lsb_release.get_os_release()['DESCRIPTION']
+    platform_info['os'] = get_os_description()
 
     if platform_info['machine'] == 'x86_64':
         device, driver = (
