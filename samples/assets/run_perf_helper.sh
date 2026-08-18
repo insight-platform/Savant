@@ -92,6 +92,10 @@ function run_perf {
 
   config_perf "$module_config" "$perf_config" "${YQ_ARGS[@]}"
 
-  LOGLEVEL=info ./scripts/run_module.py \
-    ${DOCKER_IMAGE:+--docker-image "$DOCKER_IMAGE"} "$perf_config"
+  local module_args=()
+  if [ -n "${DOCKER_IMAGE-}" ]; then
+    module_args+=(--docker-image "$DOCKER_IMAGE")
+  fi
+
+  LOGLEVEL=info ./scripts/run_module.py "${module_args[@]}" "$perf_config"
 }
