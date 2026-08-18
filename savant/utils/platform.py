@@ -36,7 +36,9 @@ def get_os_description() -> str:
     try:
         import lsb_release
 
-        return lsb_release.get_os_release()['DESCRIPTION']
+        description = lsb_release.get_os_release().get('DESCRIPTION')
+        if description:
+            return description
     except ImportError:
         pass
 
