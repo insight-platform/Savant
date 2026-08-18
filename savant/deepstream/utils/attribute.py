@@ -96,7 +96,9 @@ class ObjAttrStorage:
             frame = self._frames.get(key)
             if frame is None:
                 return None
-            return frame.objects.get(uid, {}).get((element_name, attr_name))
+            attrs = frame.objects.get(uid, {}).get((element_name, attr_name))
+            # a copy: a writer may append to the stored list once the lock is released
+            return list(attrs) if attrs is not None else None
 
     def get_all(self, key: FrameKey, uid: int) -> List[AttributeMeta]:
         with self._lock:
@@ -388,7 +390,8 @@ def nvds_get_obj_attr_meta_list(
     :param obj_meta: object metadata.
     :param element_name: element name that created this attribute.
     :param attr_name: attribute name.
-    :return: List of AttributeMeta/None
+    :return: List of AttributeMeta/None. A copy; use
+        :py:func:`nvds_replace_obj_attr_meta_list` to change stored attributes.
     """
     return NVDS_OBJ_ATTR_STORAGE.get(
         key=_frame_key(frame_meta),

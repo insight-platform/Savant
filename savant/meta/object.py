@@ -139,6 +139,9 @@ class ObjectMeta:
     ) -> Optional[List[AttributeMeta]]:
         """Returns attributes (multi-label case).
 
+        The result is read-only: change attributes with :py:meth:`add_attr_meta`,
+        :py:meth:`replace_attr_meta_list` or :py:meth:`remove_attr_meta_list`.
+
         :param element_name: Attribute model name.
         :param attr_name: Attribute name.
         :return: List of AttributeMeta or None if the object has no such attributes.
@@ -153,6 +156,8 @@ class ObjectMeta:
         self, element_name: str, attr_name: str
     ) -> Optional[AttributeMeta]:
         """Returns attribute.
+
+        The result is read-only, see :py:meth:`get_attr_meta_list`.
 
         :param element_name: Attribute model name.
         :param attr_name: Attribute name.

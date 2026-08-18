@@ -201,6 +201,8 @@ Next, let's look at the methods of working with object attributes. The methods `
 
 These methods return an attribute (or list of attributes in case of multi-label classification) with the specified name, created by the specified element, or ``None`` in case there is no such attribute.
 
+The result is intended for reading only: neither the returned list nor the ``AttributeMeta`` objects in it should be modified in place. Use ``add_attr_meta``, ``replace_attr_meta_list`` and ``remove_attr_meta_list`` to change the attributes of an object.
+
 For example, in the `nvidia_car_classification <https://github.com/insight-platform/Savant/tree/develop/samples/nvidia_car_classification>`__ sample, the attributes created by the classifiers are read in the user rendering procedure:
 
 .. code-block:: python
