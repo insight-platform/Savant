@@ -10,7 +10,7 @@ parameters:
   batch_size: 1
 
   model_name: rtdetr_r50
-  model_ver: 5af9da1
+  model_ver: 2894bab
 
   model: ${parameters.model_name}_${parameters.model_ver}
 
