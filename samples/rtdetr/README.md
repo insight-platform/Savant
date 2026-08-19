@@ -4,6 +4,18 @@ The sample shows how RT-DETR model can be used in a Savant module.
 
 The detector model was prepared in the ONNX format using instructions from [DeepStream-Yolo repo](https://github.com/marcoslucianops/DeepStream-Yolo/blob/master/docs/RTDETR_PyTorch.md).
 
+ONNX export tested with the following dependencies:
+
+- DeepStream-Yolo commit 2894bab
+- RT-DETR commit 0d0a4f5
+- numpy              1.26.4
+- onnx               1.14.0
+- onnxruntime        1.15.1
+- onnxslim           0.1.96
+- torch              2.0.1+cu118
+- torchvision        0.15.2+cu118
+- transformers       4.30.2
+
 Weights used: `v0.1/rtdetr_r50vd_6x_coco_from_paddle.pth`  from the [RT-DETR releases](https://github.com/lyuwenyu/storage/releases).
 
 Tested on platforms:
