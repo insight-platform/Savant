@@ -78,6 +78,7 @@ END
 # Globals:
 #   MULTISTREAM
 #   YQ_ARGS
+#   DOCKER_IMAGE - module image to run, defaults to run_module.py's own default
 # Arguments:
 #   $1 - source module config file path
 #   $2 - data location, eg. video file path
@@ -91,5 +92,10 @@ function run_perf {
 
   config_perf "$module_config" "$perf_config" "${YQ_ARGS[@]}"
 
-  LOGLEVEL=info ./scripts/run_module.py "$perf_config"
+  local module_args=()
+  if [ -n "${DOCKER_IMAGE-}" ]; then
+    module_args+=(--docker-image "$DOCKER_IMAGE")
+  fi
+
+  LOGLEVEL=info ./scripts/run_module.py "${module_args[@]}" "$perf_config"
 }

@@ -9,6 +9,7 @@ from savant_rs.primitives.geometry import BBox
 
 from savant.deepstream.meta.object import _NvDsObjectMetaImpl
 from savant.deepstream.opencv_utils import nvds_to_gpu_mat
+from savant.deepstream.utils.attribute import FrameAttrs
 from savant.deepstream.utils.iterator import (
     nvds_frame_meta_iterator,
     nvds_obj_meta_iterator,
@@ -112,13 +113,16 @@ class ObjectsPreprocessing:
                     image=frame_mat.clone(), cuda_stream=cuda_stream
                 )
                 self._frames_map[buffer][nvds_frame_meta.batch_id] = copy_frame_image
+                frame_attrs = FrameAttrs(nvds_frame_meta)
                 for nvds_obj_meta in nvds_obj_meta_iterator(nvds_frame_meta):
                     if nvds_obj_meta.class_id != class_id:
                         continue
                     if nvds_obj_meta.unique_component_id != model_uid:
                         continue
                     object_meta = _NvDsObjectMetaImpl.from_nv_ds_object_meta(
-                        object_meta=nvds_obj_meta, frame_meta=nvds_frame_meta
+                        object_meta=nvds_obj_meta,
+                        frame_meta=nvds_frame_meta,
+                        frame_attrs=frame_attrs,
                     )
 
                     try:
