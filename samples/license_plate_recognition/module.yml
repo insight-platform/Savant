@@ -18,10 +18,27 @@ parameters:
     module: samples.license_plate_recognition.overlay
     class_name: Overlay
     rendered_objects:
+      # each vehicle type is rendered with its own color;
+      # the proxy "vehicle" object is not listed here, hence it is not rendered
       detector:
         car:
           bbox:
             border_color: '00FF00FF'  # Green
+            background_color: '00000000'  # transparent
+            thickness: 4
+        motorcycle:
+          bbox:
+            border_color: 'FFFF00FF'  # Yellow
+            background_color: '00000000'  # transparent
+            thickness: 4
+        bus:
+          bbox:
+            border_color: 'FF00FFFF'  # Magenta
+            background_color: '00000000'  # transparent
+            thickness: 4
+        truck:
+          bbox:
+            border_color: 'FF8000FF'  # Orange
             background_color: '00000000'  # transparent
             thickness: 4
       lpd:
@@ -34,9 +51,15 @@ parameters:
             font_scale: 1.5
             thickness: 2
 
-  detected_object:
-    label: car
-  
+  # COCO vehicle types predicted by the detector; each type keeps its own label,
+  # so that downstream units are able to distinguish between them
+  vehicle_labels: [car, motorcycle, bus, truck]
+
+  # proxy object created for every detected vehicle, see create_vehicle_roi.py
+  vehicle_roi:
+    element_name: create_vehicle_roi
+    label: vehicle
+
   default_yolo_converter:
     module: savant.converter.yolo
     class_name: TensorToBBoxConverter
@@ -76,19 +99,39 @@ pipeline:
           layer_names: [output0]
           num_detected_classes: 80  # required for YOLOv11
           converter: ${parameters.default_yolo_converter}
+          # every COCO vehicle type gets its own label, see parameters.vehicle_labels
           objects:
             - class_id: 2
-              label: ${parameters.detected_object.label}
+              label: car
               selector: ${parameters.default_yolo_selector}
             - class_id: 3
-              label: ${parameters.detected_object.label}
+              label: motorcycle
               selector: ${parameters.default_yolo_selector}
             - class_id: 5
-              label: ${parameters.detected_object.label}
+              label: bus
               selector: ${parameters.default_yolo_selector}
             - class_id: 7
-              label: ${parameters.detected_object.label}
+              label: truck
               selector: ${parameters.default_yolo_selector}
+
+    # tracker;
+    # it is placed before the proxy ROI unit so that the tracker only receives
+    # the vehicles themselves: a proxy occupies the same area as its parent and
+    # would be discarded (or discard the parent) by the new target policy
+    # of the tracker (see minIouDiff4NewTarget in the tracker config)
+    - element: nvtracker
+      properties:
+        ll-lib-file: /opt/nvidia/deepstream/deepstream/lib/libnvds_nvmultiobjecttracker.so
+        ll-config-file: ${oc.env:PROJECT_PATH}/samples/assets/tracker/config_tracker_NvDCF_perf.yml
+        tracker-width: 640
+        tracker-height: 384
+        display-tracking-id: 0
+
+    # add a proxy "vehicle" child object to each detected vehicle;
+    # it is used as the input object for the LPD model
+    - element: pyfunc
+      module: samples.license_plate_recognition.create_vehicle_roi
+      class_name: CreateVehicleROI
 
     # LPD https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/lpdnet
     - element: nvinfer@detector
@@ -102,7 +145,7 @@ pipeline:
         model_file: LPDNet_usa_pruned_tao5.onnx
         batch_size: 16
         input:
-          object: detector.${parameters.detected_object.label}
+          object: ${parameters.vehicle_roi.element_name}.${parameters.vehicle_roi.label}
           layer_name: input_1:0
           shape: [3, 480, 640]
           scale_factor: 0.0039215697906911373
@@ -118,15 +161,6 @@ pipeline:
                   nms_iou_threshold: 0.5
                   min_width: 24
                   min_height: 16
-
-    # tracker
-    - element: nvtracker
-      properties:
-        ll-lib-file: /opt/nvidia/deepstream/deepstream/lib/libnvds_nvmultiobjecttracker.so
-        ll-config-file: ${oc.env:PROJECT_PATH}/samples/assets/tracker/config_tracker_NvDCF_perf.yml
-        tracker-width: 640
-        tracker-height: 384
-        display-tracking-id: 0
 
     # # LPR https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/lprnet
     # - element: nvinfer@classifier

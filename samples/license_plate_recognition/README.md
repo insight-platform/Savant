@@ -1,6 +1,8 @@
 # License plate recognition 
 
-The app partially reproduces [deepstream_lpr_app](https://github.com/NVIDIA-AI-IOT/deepstream_lpr_app) in the Savant framework. The pipeline detects cars using the YoloV11 model and detects license plates using the NVidia LPD model. Cars and plates track using NVidia tracker the license plate is recognized using the NVidia OCR model. The results are displayed on the frames.
+The app partially reproduces [deepstream_lpr_app](https://github.com/NVIDIA-AI-IOT/deepstream_lpr_app) in the Savant framework. The pipeline detects vehicles using the YOLOv11 model and detects license plates using the Nvidia LPD model. Vehicles are tracked using the Nvidia tracker, and the license plates are recognized using the Nvidia OCR model. The results are displayed on the frames.
+
+The demo also shows how to use a **proxy ROI** to run a model on several object classes at once. The detector assigns its own label to each COCO vehicle type it predicts (`car`, `motorcycle`, `bus`, `truck`), so that downstream units can distinguish between the types. A model unit, however, operates on a single parent object class only. To run the LPD model on every vehicle type, the [`create_vehicle_roi.py`](create_vehicle_roi.py) PyFunc adds a proxy child object labeled `vehicle` to each detected vehicle; the proxy occupies the same area as its parent (trimmed to the frame) and is used as the input object for the LPD model. The proxy object is not listed in `draw_func.rendered_objects`, hence it is not displayed. The tracker is placed before the PyFunc, so that it only receives the vehicles themselves and not the proxies, which fully overlap them.
 
 Preview:
 
