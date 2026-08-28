@@ -19,9 +19,7 @@ services:
 
   module:
     privileged: true
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.l4t
+    image: ghcr.io/insight-platform/savant-deepstream-l4t:latest
     volumes:
       - zmq_sockets:/tmp/zmq-sockets
       - ../../cache:/cache
