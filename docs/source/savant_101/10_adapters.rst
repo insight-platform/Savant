@@ -239,7 +239,7 @@ Most source adapters accept the following common parameters:
 - ``ZMQ_ENDPOINT``: adapter's socket where it sends media stream; it must form a valid ZeroMQ pair with module's input socket; the endpoint coding scheme is ``[<socket_type>+(bind|connect):]<endpoint>``;
 - ``FPS_PERIOD_FRAMES``: a number of frames between FPS reports; FPS reporting helps to estimate the performance of the pipeline components deployed; default is ``1000``;
 - ``FPS_PERIOD_SECONDS``: a number of seconds between FPS reports; default is ``None`` which means that FPS reporting uses ``FPS_PERIOD_FRAMES``;
-- ``FPS_OUTPUT``: a path to the file for FPS reports; default is ``stdout``;
+- ``FPS_OUTPUT``: where to send FPS reports; ``stdout`` prints them to the standard output, ``logger`` sends them to the logger, in which case they are subject to ``LOGLEVEL``; default is ``stdout``;
 - ``USE_ABSOLUTE_TIMESTAMPS``: when ``True`` the adapter puts absolute timestamps into the frames, i.e. the timestamps of the frames start from the time of adapter launch; default is ``False``;
 - ``ABSOLUTE_TIMESTAMPS_OFFSET``: defines the timestamp offset when ``USE_ABSOLUTE_TIMESTAMPS`` is active; default is the time of adapter launch.
 
@@ -278,7 +278,8 @@ The images are served from:
 - ``EOS_ON_FILE_END``: a flag configuring sending of ``EOS`` message after every image; the ``EOS`` message is important to trackers, helping them to reset tracking when a video stream is no longer continuous; default is ``False``;
 - ``EOS_ON_FRAME_PARAMS_CHANGE``: a flag configuring sending of ``EOS`` message after every change in image resolution; the ``EOS`` message is important to trackers, helping them to reset tracking when a video stream is no longer continuous; default is ``True``;
 - ``SORT_BY_TIME``: a flag specifying sorting by modification time (ascending); by default, it is ``False``, causing the files to be sorted lexicographically;
-- ``READ_METADATA``: a flag specifying the need to augment images with metadata from ``JSON`` files with the corresponding names as the source files; default is ``False``.
+- ``READ_METADATA``: a flag specifying the need to augment images with metadata from ``JSON`` files with the corresponding names as the source files; default is ``False``;
+- ``SHUTDOWN_TIMEOUT``: a timeout in seconds to wait for the graceful shutdown of the pipeline before killing it; must be below the container stop grace period; default is ``5``.
 
 Running the adapter with Docker:
 
@@ -322,7 +323,8 @@ The video files are served from:
 - ``EOS_ON_FRAME_PARAMS_CHANGE``: a flag indicating whether to send the ``EOS`` message after every change in video parameters (resolution, framerate); default is ``True``; the ``EOS`` message is crucial for trackers to recognize when a video stream is no longer continuous;
 - ``SYNC_OUTPUT``: flag specifying if to send frames synchronously (i.e. at the source file rate); default is ``False``;
 - ``SORT_BY_TIME``: a flag indicating whether files are sorted by modification time (ascending) before sending to a module; by default, it is ``False`` (lexicographical sorting);
-- ``READ_METADATA``: a flag specifying the need to augment video frames with metadata from ``JSON`` files with the corresponding names as the source files; default is ``False``.
+- ``READ_METADATA``: a flag specifying the need to augment video frames with metadata from ``JSON`` files with the corresponding names as the source files; default is ``False``;
+- ``SHUTDOWN_TIMEOUT``: a timeout in seconds to wait for the graceful shutdown of the pipeline before killing it; must be below the container stop grace period; default is ``5``.
 
 Running the adapter with Docker:
 
@@ -371,7 +373,8 @@ The file location can be:
 - ``READ_METADATA``: a flag indicating the need to augment the stream with metadata from a JSON file corresponding to the source file; default is ``False``;
 - ``SYNC_OUTPUT``: a flag indicating the need to send frames from source synchronously (i.e. at the source file rate); default is ``False``;
 - ``DOWNLOAD_PATH``: a directory to download the file from remote storage before playing it;
-- ``LOSS_RATE``: a probability to drop the frames.
+- ``LOSS_RATE``: a probability to drop the frames;
+- ``SHUTDOWN_TIMEOUT``: a timeout in seconds to wait for the graceful shutdown of the pipeline before killing it; must be below the container stop grace period; default is ``5``.
 
 Running the adapter with Docker:
 
@@ -450,6 +453,11 @@ The adapter delivers video stream using FFmpeg library. It can be used to read v
       - ``True``
       - ``False``
 
+    * - ``SHUTDOWN_TIMEOUT``
+      - Timeout in seconds to wait for graceful shutdown of the pipeline before killing it; must be below the container stop grace period; default is ``5``.
+      - ``5``
+      - ``10``
+
 Running the adapter with Docker:
 
 .. code-block:: bash
@@ -518,6 +526,11 @@ The RTSP Source Adapter delivers RTSP stream to a module. This adapter is based 
       - Timeout in milliseconds for FFmpeg to wait for a frame; default is ``10000``.
       - ``10000``
       - ``20000``
+
+    * - ``SHUTDOWN_TIMEOUT``
+      - Timeout in seconds to wait for graceful shutdown of the pipeline before killing it; must be below the container stop grace period; default is ``5``.
+      - ``5``
+      - ``10``
 
 Running the adapter with Docker:
 
@@ -629,7 +642,8 @@ The adapter is designed to take video streams from Ethernet GigE Vision industri
 * ``ENCODE_BITRATE``: the bitrate for the encoded video stream, in kbit/sec; default is ``2048``;
 * ``ENCODE_KEY_INT_MAX``: the maximum interval between two keyframes, in frames; default is ``30``;
 * ``ENCODE_SPEED_PRESET``: preset name for speed/quality tradeoff options; one of ``ultrafast``, ``superfast``, ``veryfast``, ``faster``, ``fast``, ``medium``, ``slow``, ``slower``, ``veryslow``, ``placebo``; default is ``medium``;
-* ``ENCODE_TUNE``: preset name for tuning options; one of ``psnr``, ``ssim``, ``grain``, ``zerolatency``, ``fastdecode``, ``animation``; default is ``zerolatency``.
+* ``ENCODE_TUNE``: preset name for tuning options; one of ``psnr``, ``ssim``, ``grain``, ``zerolatency``, ``fastdecode``, ``animation``; default is ``zerolatency``;
+* ``SHUTDOWN_TIMEOUT``: a timeout in seconds to wait for the graceful shutdown of the pipeline before killing it; must be below the container stop grace period; default is ``5``.
 
 
 Running the adapter with Docker:
@@ -675,7 +689,8 @@ The file location is:
 - ``SHUTDOWN_AUTH``: an authentication key to shutdown the module after all frames were sent. Must match ``parameters.shutdown_auth`` in the module configuration to have an effect;
 - ``READ_METADATA``: a flag indicating the need to augment the stream with metadata from a JSON file corresponding to the source file; default is ``False``;
 - ``SYNC_OUTPUT``: a flag indicating the need to send frames from source synchronously (i.e. at the source file rate); default is ``False``; the parameter can be used to simulate real-time sources like RTSP-cams;
-- ``DOWNLOAD_PATH``: a directory to download the file from remote storage before playing it.
+- ``DOWNLOAD_PATH``: a directory to download the file from remote storage before playing it;
+- ``SHUTDOWN_TIMEOUT``: a timeout in seconds to wait for the graceful shutdown of the pipeline before killing it; must be below the container stop grace period; default is ``5``.
 
 .. note::
 

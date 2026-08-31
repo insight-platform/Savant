@@ -38,6 +38,17 @@ absolute_ts_option = click.option(
     ),
 )
 
+shutdown_timeout_option = click.option(
+    '--shutdown-timeout',
+    type=click.INT,
+    default=5,
+    help=(
+        'Timeout in seconds to wait for the graceful shutdown of the pipeline '
+        'before killing it. Keep it below the container stop grace period.'
+    ),
+    show_default=True,
+)
+
 
 def output_endpoint_options(func):
     """Click options for output endpoint."""
@@ -52,6 +63,7 @@ def output_endpoint_options(func):
 
 def common_options(func):
     """Common Click source adapter options."""
+    func = shutdown_timeout_option(func)
     func = output_endpoint_options(func)
     func = fps_meter_options(func)
     func = source_id_option(required=True)(func)
@@ -67,6 +79,7 @@ def files_source(
     fps_period_frames: Optional[int],
     fps_period_seconds: Optional[float],
     fps_output: str,
+    shutdown_timeout: int,
     location: str,
     file_type: str,
     envs: List[str],
@@ -101,7 +114,11 @@ def files_source(
             use_absolute_timestamps=use_absolute_timestamps,
             absolute_timestamps_offset=absolute_timestamps_offset,
         )
-        + [f'LOCATION={location}', f'FILE_TYPE={file_type}']
+        + [
+            f'LOCATION={location}',
+            f'FILE_TYPE={file_type}',
+            f'SHUTDOWN_TIMEOUT={shutdown_timeout}',
+        ]
         + envs
     )
     cmd = build_docker_run_command(
@@ -158,6 +175,7 @@ def videos_source(
     fps_period_frames: Optional[int],
     fps_period_seconds: Optional[float],
     fps_output: str,
+    shutdown_timeout: int,
     location: str,
     sort_by_time: bool,
     read_metadata: bool,
@@ -176,6 +194,7 @@ def videos_source(
         fps_period_frames=fps_period_frames,
         fps_period_seconds=fps_period_seconds,
         fps_output=fps_output,
+        shutdown_timeout=shutdown_timeout,
         location=location,
         file_type='video',
         envs=[
@@ -242,6 +261,7 @@ def video_loop_source(
     fps_period_frames: Optional[int],
     fps_period_seconds: Optional[float],
     fps_output: str,
+    shutdown_timeout: int,
     measure_fps_per_loop: bool,
     eos_on_loop_end: bool,
     download_path: str,
@@ -278,6 +298,7 @@ def video_loop_source(
         fps_period_frames=fps_period_frames,
         fps_period_seconds=fps_period_seconds,
         fps_output=fps_output,
+        shutdown_timeout=shutdown_timeout,
         location=location,
         file_type='video',
         envs=envs,
@@ -334,6 +355,7 @@ def video_loop_source(
 @absolute_ts_option
 @adapter_docker_image_option('gstreamer')
 @detach_option
+@shutdown_timeout_option
 @click.argument('location', required=True)
 def multi_stream_source(
     out_endpoint: str,
@@ -344,6 +366,7 @@ def multi_stream_source(
     fps_period_frames: Optional[int],
     fps_period_seconds: Optional[float],
     fps_output: str,
+    shutdown_timeout: int,
     download_path: str,
     mount_download_path: bool,
     source_id_pattern: Optional[str],
@@ -385,6 +408,7 @@ def multi_stream_source(
         fps_period_frames=fps_period_frames,
         fps_period_seconds=fps_period_seconds,
         fps_output=fps_output,
+        shutdown_timeout=shutdown_timeout,
         location=location,
         file_type='video',
         envs=envs,
@@ -442,6 +466,7 @@ def images_source(
     fps_period_frames: Optional[int],
     fps_period_seconds: Optional[float],
     fps_output: str,
+    shutdown_timeout: int,
     location: str,
     framerate: str,
     sort_by_time: bool,
@@ -462,6 +487,7 @@ def images_source(
         fps_period_frames=fps_period_frames,
         fps_period_seconds=fps_period_seconds,
         fps_output=fps_output,
+        shutdown_timeout=shutdown_timeout,
         location=location,
         file_type='image',
         envs=[
@@ -528,6 +554,7 @@ def rtsp_source(
     fps_period_frames: Optional[int],
     fps_period_seconds: Optional[float],
     fps_output: str,
+    shutdown_timeout: int,
     rtsp_uri: str,
     absolute_timestamps_offset: Optional[int] = None,
 ):
@@ -547,6 +574,7 @@ def rtsp_source(
         f'BUFFER_LEN={buffer_len}',
         f'FFMPEG_TIMEOUT_MS={ffmpeg_timeout_ms}',
         f'FFMPEG_LOGLEVEL={ffmpeg_loglevel}',
+        f'SHUTDOWN_TIMEOUT={shutdown_timeout}',
     ]
     if sync and sync_delay is not None:
         envs.append(f'SYNC_DELAY={sync_delay}')
@@ -636,6 +664,7 @@ def gige_cam_source(
     fps_period_frames: Optional[int],
     fps_period_seconds: Optional[float],
     fps_output: str,
+    shutdown_timeout: int,
     width: Optional[int],
     height: Optional[int],
     framerate: Optional[str],
@@ -707,6 +736,7 @@ def gige_cam_source(
     for k, v in envs_dict.items():
         if v is not None:
             envs.append(f'{k}={v}')
+    envs.append(f'SHUTDOWN_TIMEOUT={shutdown_timeout}')
 
     cmd = build_docker_run_command(
         f'source-gige-{source_id}',
@@ -777,6 +807,7 @@ def ffmpeg_source(
     fps_period_frames: Optional[int],
     fps_period_seconds: Optional[float],
     fps_output: str,
+    shutdown_timeout: int,
     uri: str,
     absolute_timestamps_offset: Optional[int] = None,
 ):
@@ -795,6 +826,7 @@ def ffmpeg_source(
         f'BUFFER_LEN={buffer_len}',
         f'FFMPEG_TIMEOUT_MS={ffmpeg_timeout_ms}',
         f'FFMPEG_LOGLEVEL={ffmpeg_loglevel}',
+        f'SHUTDOWN_TIMEOUT={shutdown_timeout}',
     ]
     if sync and sync_delay is not None:
         envs.append(f'SYNC_DELAY={sync_delay}')
