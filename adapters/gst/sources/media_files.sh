@@ -75,6 +75,8 @@ PIPELINE+=(
 source "${PROJECT_PATH}/adapters/shared/utils.sh"
 
 handler() {
+    # Ignore further signals so the bounded shutdown runs once, to completion.
+    trap '' SIGINT SIGTERM
     shutdown_child "${child_pid}" "media files source adapter"
     exit $?
 }
