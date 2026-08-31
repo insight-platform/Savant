@@ -45,7 +45,7 @@ cd rtdetr_pytorch
 wget https://github.com/lyuwenyu/storage/releases/download/v0.1/rtdetr_r50vd_6x_coco_from_paddle.pth
 ```
 
-2. Create a virtualenv and install the pinned export environment ([requirements.txt](requirements.txt) from this sample):
+2. Create a virtualenv and install the pinned export environment ([requirements.txt](export/requirements.txt) from this sample):
 
 ```bash
 python3 -m venv venv

@@ -43,7 +43,7 @@ class SavantOutput(nn.Module):
         boxes = boxes * scale
         # the converter picks the class itself, all class scores are kept
         scores = (
-            F.sigmoid(x["pred_logits"])
+            torch.sigmoid(x["pred_logits"])
             if self.use_focal_loss
             else F.softmax(x["pred_logits"], dim=-1)[:, :, :-1]
         )
@@ -84,6 +84,7 @@ def main(args):
     img_size = args.size * 2 if len(args.size) == 1 else args.size
 
     model = nn.Sequential(model, SavantOutput(img_size, use_focal_loss))
+    model.eval()
 
     onnx_input_im = torch.zeros(args.batch, 3, *img_size).to(device)
     onnx_output_file = args.weights.rsplit(".", 1)[0] + ".onnx"

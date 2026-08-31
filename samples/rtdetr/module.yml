@@ -30,6 +30,7 @@ pipeline:
         workspace_size: 6144
         model_file: ${parameters.model_name}.onnx
         label_file: labels.txt
+        batch_size: ${parameters.batch_size}
 
         input:
           shape: [3, 640, 640]
