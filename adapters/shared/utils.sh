@@ -39,8 +39,14 @@ function shutdown_child {
     exit 0
   fi
 
+  # The pipeline may have already exited on its own.
+  if ! kill -0 "${child_pid}" 2>/dev/null; then
+    echo "${name}: pipeline is already gone, nothing to shut down" >&2
+    return 0
+  fi
+
   echo "${name}: shutdown requested, sending SIGINT to the pipeline, waiting up to ${timeout}s" >&2
-  kill -s SIGINT "${child_pid}"
+  kill -s SIGINT "${child_pid}" 2>/dev/null || true
   (
     sleep "${timeout}"
     if kill -0 "${child_pid}" 2>/dev/null; then
@@ -54,5 +60,6 @@ function shutdown_child {
   local child_status=$?
   # Graceful path won; cancel the killer before the pid can be reused.
   kill "${killer_pid}" 2>/dev/null
+  wait "${killer_pid}" 2>/dev/null || true
   echo "${name}: pipeline exited with status ${child_status}" >&2
 }
