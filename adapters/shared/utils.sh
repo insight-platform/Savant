@@ -38,7 +38,7 @@ function shutdown_child {
   # The signal may arrive before the pipeline is started.
   if [[ -z "${child_pid}" ]]; then
     echo "${name}: shutdown requested before the pipeline started" >&2
-    exit 0
+    return 0
   fi
 
   # The pipeline may have already exited on its own.

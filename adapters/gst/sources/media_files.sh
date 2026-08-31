@@ -76,6 +76,7 @@ source "${PROJECT_PATH}/adapters/shared/utils.sh"
 
 handler() {
     shutdown_child "${child_pid}" "media files source adapter"
+    exit $?
 }
 trap handler SIGINT SIGTERM
 
