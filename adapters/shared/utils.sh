@@ -19,6 +19,8 @@ function print_starting_message {
 # Arguments:
 #   $1 - PID of the child process
 #   $2 - the name of the adapter, used in the log message
+# Returns:
+#   The exit status of the child process
 #########################
 function shutdown_child {
   local child_pid=${1}
@@ -62,4 +64,6 @@ function shutdown_child {
   kill "${killer_pid}" 2>/dev/null
   wait "${killer_pid}" 2>/dev/null || true
   echo "${name}: pipeline exited with status ${child_status}" >&2
+
+  return "${child_status}"
 }
