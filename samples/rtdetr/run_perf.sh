@@ -9,14 +9,5 @@
 MODULE_CONFIG=samples/rtdetr/module.yml
 DATA_LOCATION=data/leeds_1080p.mp4
 
-if [ "$(uname -m)" = "aarch64" ]; then
-  docker compose -f samples/rtdetr/docker-compose.l4t.yml build module
-else
-  docker compose -f samples/rtdetr/docker-compose.x86.yml build module
-fi
-
 source samples/assets/run_perf_helper.sh
-set_source $DATA_LOCATION
-PERF_CONFIG="${MODULE_CONFIG%.*}_perf.yml"
-config_perf $MODULE_CONFIG $PERF_CONFIG "${YQ_ARGS[@]}"
-./scripts/run_module.py -i rtdetr-module $PERF_CONFIG
+run_perf $MODULE_CONFIG $DATA_LOCATION
