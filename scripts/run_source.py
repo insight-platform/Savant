@@ -40,7 +40,7 @@ absolute_ts_option = click.option(
 
 shutdown_timeout_option = click.option(
     '--shutdown-timeout',
-    type=click.INT,
+    type=click.IntRange(min=0),
     default=5,
     help=(
         'Timeout in seconds to wait for the graceful shutdown of the pipeline '

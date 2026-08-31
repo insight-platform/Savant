@@ -23,7 +23,22 @@ function print_starting_message {
 function shutdown_child {
   local child_pid=${1}
   local name=${2-adapter}
-  local timeout=${SHUTDOWN_TIMEOUT:-5}
+  local default_timeout=5
+  local timeout=${SHUTDOWN_TIMEOUT:-${default_timeout}}
+
+  # A non-numeric timeout makes "sleep" fail at once, which would kill the
+  # pipeline with no grace period at all.
+  if [[ ! "${timeout}" =~ ^[0-9]+$ ]]; then
+    echo "${name}: invalid SHUTDOWN_TIMEOUT ${timeout}, using ${default_timeout}s" >&2
+    timeout=${default_timeout}
+  fi
+
+  # The signal may arrive before the pipeline is started.
+  if [[ -z "${child_pid}" ]]; then
+    echo "${name}: shutdown requested before the pipeline started" >&2
+    exit 0
+  fi
+
   echo "${name}: shutdown requested, sending SIGINT to the pipeline, waiting up to ${timeout}s" >&2
   kill -s SIGINT "${child_pid}"
   (

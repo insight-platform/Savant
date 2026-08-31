@@ -241,7 +241,8 @@ Most source adapters accept the following common parameters:
 - ``FPS_PERIOD_SECONDS``: a number of seconds between FPS reports; default is ``None`` which means that FPS reporting uses ``FPS_PERIOD_FRAMES``;
 - ``FPS_OUTPUT``: where to send FPS reports; ``stdout`` prints them to the standard output, ``logger`` sends them to the logger, in which case they are subject to ``LOGLEVEL``; default is ``stdout``;
 - ``USE_ABSOLUTE_TIMESTAMPS``: when ``True`` the adapter puts absolute timestamps into the frames, i.e. the timestamps of the frames start from the time of adapter launch; default is ``False``;
-- ``ABSOLUTE_TIMESTAMPS_OFFSET``: defines the timestamp offset when ``USE_ABSOLUTE_TIMESTAMPS`` is active; default is the time of adapter launch.
+- ``ABSOLUTE_TIMESTAMPS_OFFSET``: defines the timestamp offset when ``USE_ABSOLUTE_TIMESTAMPS`` is active; default is the time of adapter launch;
+- ``SHUTDOWN_TIMEOUT``: a timeout in seconds to wait for the graceful shutdown of the pipeline before killing it; must be below the container stop grace period; default is ``5``.
 
 .. _image_file_source_adapter:
 
