@@ -534,7 +534,7 @@ The RTSP Source Adapter delivers RTSP stream to a module. This adapter is based 
       - ``10``
 
     * - ``STALL_ACTION``
-      - What to do when the source stops delivering frames: ``none`` reports the stall in the health file only, ``message`` also logs a warning, ``fail`` terminates the adapter so that the container supervisor restarts it (**compose only**); default is ``none``. See :ref:`source_stall_detection`.
+      - What to do when the source stops delivering frames: ``none`` leaves stall detection off unless ``PIPELINE_HEALTH_FILEPATH`` is set, in which case the stall is reported in the health file only, ``message`` also logs a warning, ``fail`` terminates the adapter so that the container supervisor restarts it (**compose only**); default is ``none``. See :ref:`source_stall_detection`.
       - ``none``
       - ``message``
 

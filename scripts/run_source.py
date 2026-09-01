@@ -542,9 +542,10 @@ def images_source(
     default='none',
     type=click.Choice(['none', 'message', 'fail']),
     help=(
-        'What to do when the source stops delivering frames. "none" only writes '
-        'the health file, "message" also logs a warning. "fail" needs a '
-        'container supervisor and is rejected here.'
+        'What to do when the source stops delivering frames. "none" leaves the '
+        'detector out of the pipeline, "message" adds it and logs a warning '
+        'on top of writing the health file. "fail" needs a container '
+        'supervisor and is rejected here.'
     ),
     show_default=True,
 )

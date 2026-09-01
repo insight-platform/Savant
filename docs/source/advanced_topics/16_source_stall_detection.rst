@@ -30,7 +30,7 @@ The ``STALL_*`` environment variables are documented with the other :ref:`RTSP s
 
 **Live sources only.** The detector treats silence as a fault, so it must not be used with a source that is legitimately quiet. A file that has been read to the end is quiet by design, which rules out the media files, video loop and multi-stream adapters permanently.
 
-The FFmpeg source and and the GigE camera adapter adapter both are also eligible, neither is wired yet.
+The FFmpeg source and the GigE camera adapter are also eligible, but neither is wired yet.
 
 Statuses
 ^^^^^^^^
