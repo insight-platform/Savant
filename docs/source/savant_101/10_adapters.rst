@@ -533,6 +533,46 @@ The RTSP Source Adapter delivers RTSP stream to a module. This adapter is based 
       - ``5``
       - ``10``
 
+    * - ``STALL_ACTION``
+      - What to do when the source stops delivering frames: ``none`` reports the stall in the health file only, ``message`` also logs a warning, ``fail`` terminates the adapter so that the container supervisor restarts it (**compose only**); default is ``none``. See :ref:`source_stall_detection`.
+      - ``none``
+      - ``message``
+
+    * - ``STALL_MAX_IDLE_SECONDS``
+      - Time in seconds without frames after which the source is considered stalled; default is ``30``.
+      - ``30``
+      - ``60``
+
+    * - ``STALL_MIN_FPS``
+      - Minimum acceptable frame rate over ``STALL_WINDOW_SECONDS``, to catch a stream that degrades rather than going silent; ``0`` disables the rate check; default is ``0``.
+      - ``0``
+      - ``10``
+
+    * - ``STALL_WINDOW_SECONDS``
+      - Window in seconds the frame rate is measured over; ignored when ``STALL_MIN_FPS`` is ``0``; default is ``30``.
+      - ``30``
+      - ``60``
+
+    * - ``STALL_CHECK_INTERVAL``
+      - Interval in seconds between stall evaluations; must be less than ``STALL_WINDOW_SECONDS`` when ``STALL_MIN_FPS`` is set; default is ``5``.
+      - ``5``
+      - ``10``
+
+    * - ``STALL_WARMUP``
+      - Grace period in seconds, counted from the start of streaming, during which no stall verdict is made; default is ``60``.
+      - ``60``
+      - ``120``
+
+    * - ``PIPELINE_HEALTH_FILEPATH``
+      - Path of the heartbeat file the stall detector rewrites, probed by the container health check; setting it enables stall detection even when ``STALL_ACTION`` is ``none``; default is ``$PROJECT_PATH/pipeline_health.txt`` when stall detection is enabled.
+      -
+      - ``/tmp/health/cam1.txt``
+
+    * - ``PIPELINE_HEALTH_MAX_AGE``
+      - Age in whole seconds after which the container health check treats the heartbeat file as stale, and therefore the adapter as unhealthy; default is ``30``.
+      - ``30``
+      - ``60``
+
 Running the adapter with Docker:
 
 .. code-block:: bash

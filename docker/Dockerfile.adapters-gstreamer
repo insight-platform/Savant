@@ -231,8 +231,16 @@ RUN --mount=type=bind,source=adapters/shared,target=/tmp/adapters/shared \
     /tmp/copy_code.sh /tmp/adapters $PROJECT_PATH/adapters
 
 COPY gst_plugins/python/logger.py adapters/gst/gst_plugins/python/
+COPY gst_plugins/python/stall_detector.py adapters/gst/gst_plugins/python/
 
 ENV GST_PLUGIN_PATH=$PROJECT_PATH/adapters/gst/gst_plugins \
     LOGLEVEL=info
+
+# Probes the stall_detector heartbeat file. PIPELINE_HEALTH_FILEPATH is not set
+# image-wide: adapters without the element must have no file, so they pass.
+# Shell form, so that $PROJECT_PATH is expanded at runtime: the exec form does
+# not expand variables, and PROJECT_PATH is a build argument.
+HEALTHCHECK --interval=10s --timeout=5s --start-period=60s --retries=3 \
+    CMD sh $PROJECT_PATH/adapters/shared/pipeline_healthcheck.sh
 
 RUN echo 'python3 -c "from savant.utils.welcome import get_welcome_message; print(get_welcome_message())"' >> /etc/bash.bashrc
