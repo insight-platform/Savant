@@ -18,6 +18,7 @@ def sample(
     at: float,
     frames: int = 0,
     last_arrival=None,
+    epoch_started=None,
     push_started=None,
     epoch: int = 0,
     armed: bool = True,
@@ -29,6 +30,7 @@ def sample(
         time=at,
         frames=frames,
         last_arrival=last_arrival,
+        epoch_started=epoch_started,
         push_started=push_started,
         epoch=epoch,
         armed=armed,
@@ -76,6 +78,20 @@ class TestStatus:
         verdict = evaluator.evaluate(sample(1, frames=0, last_arrival=None))
         assert verdict.status is StallStatus.STALLED
         assert 'since the element started' in verdict.reason
+
+    def test_first_buffer_gets_the_full_idle_allowance(self):
+        """Until the first buffer arrives the stream start is the idle baseline,
+        so a warmup shorter than max-idle-seconds cannot stall the stream.
+        """
+
+        evaluator = StallEvaluator(max_idle_seconds=30)
+        verdict = evaluator.evaluate(sample(20, frames=0, epoch_started=0))
+        assert verdict.status is StallStatus.RUNNING
+        assert verdict.seconds_since_last_frame == pytest.approx(20.0)
+
+        verdict = evaluator.evaluate(sample(31, frames=0, epoch_started=0))
+        assert verdict.status is StallStatus.STALLED
+        assert '31.00 seconds' in verdict.reason
 
     def test_ended_after_eos(self):
         """EOS is not a stall, and it is not "starting" either: nothing to judge."""
@@ -216,7 +232,7 @@ class TestVerdictFields:
         assert verdict.fps == pytest.approx(10.0)
         assert verdict.seconds_since_last_frame == pytest.approx(1.0)
 
-    def test_seconds_since_last_frame_is_none_without_buffers(self):
+    def test_seconds_since_last_frame_is_none_before_the_stream_starts(self):
         evaluator = StallEvaluator(max_idle_seconds=30)
         verdict = evaluator.evaluate(sample(5, frames=0, last_arrival=None))
         assert verdict.seconds_since_last_frame is None

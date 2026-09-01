@@ -202,6 +202,7 @@ class StallDetector(LoggerMixin, Gst.Element):
         self._last_arrival: Optional[float] = None
         self._push_started: Optional[float] = None
         self._epoch = 0
+        self._epoch_started: Optional[float] = None
         self._eos = False
 
         self._warmup_origin: Optional[float] = None
@@ -399,6 +400,7 @@ class StallDetector(LoggerMixin, Gst.Element):
         elif event.type in (Gst.EventType.FLUSH_STOP, Gst.EventType.STREAM_START):
             # Restarted: history is stale, and a seeking source must be re-armed.
             self._epoch += 1
+            self._epoch_started = monotonic()
             self._eos = False
 
         elif event.type == Gst.EventType.CAPS:
@@ -445,6 +447,13 @@ class StallDetector(LoggerMixin, Gst.Element):
             time=now,
             frames=self._frames,
             last_arrival=self._last_arrival,
+            # Before the first stream-start the pipeline reaching PLAYING is the
+            # earliest moment a buffer could have arrived.
+            epoch_started=(
+                self._epoch_started
+                if self._epoch_started is not None
+                else self._warmup_origin
+            ),
             push_started=self._push_started,
             epoch=self._epoch,
             armed=armed,

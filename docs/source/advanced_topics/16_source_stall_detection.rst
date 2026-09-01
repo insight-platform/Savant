@@ -71,7 +71,7 @@ Detection criteria
 
 A stream is ``stalled`` when either criterion trips:
 
-- **Idle timeout.** No buffer has arrived for longer than ``STALL_MAX_IDLE_SECONDS``. This is the primary criterion and is always active.
+- **Idle timeout.** No buffer has arrived for longer than ``STALL_MAX_IDLE_SECONDS``. This is the primary criterion and is always active. Before the first buffer arrives the wait is counted from the start of the stream, so the first buffer gets the same allowance as every later one even when ``STALL_WARMUP`` is shorter than ``STALL_MAX_IDLE_SECONDS``.
 - **Rate floor.** The frame rate over the last ``STALL_WINDOW_SECONDS`` is below ``STALL_MIN_FPS``. This catches a stream that degrades to a trickle rather than going silent. It is **disabled by default**: ``STALL_MIN_FPS=0`` means the idle timeout is the only criterion. The rate arm stays quiet until the collected samples cover a full window, so it cannot fire on a partially filled window.
 
 Neither criterion is evaluated during ``STALL_WARMUP``, counted from the first time the pipeline reaches ``PLAYING``. Later ``PAUSED`` / ``PLAYING`` transitions do not extend the warmup.

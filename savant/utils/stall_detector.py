@@ -34,6 +34,9 @@ class StallSample:
     time: float
     frames: int
     last_arrival: Optional[float]
+    # Start of the current epoch, the baseline for the idle timeout until the
+    # first buffer arrives. None until the stream starts.
+    epoch_started: Optional[float]
     # Start of the outstanding downstream push, None if no push is outstanding.
     push_started: Optional[float]
     # Bumped when the stream restarts, which invalidates the collected history.
@@ -87,6 +90,12 @@ class StallEvaluator:
         idle = None
         if sample.last_arrival is not None:
             idle = sample.time - sample.last_arrival
+        elif sample.epoch_started is not None:
+            # No buffer has arrived yet, so the first one gets the full idle
+            # allowance, counted from the start of the stream. Counting from the
+            # arrival that never happened would stall the stream on the first
+            # armed sample whenever the warmup is shorter than the allowance.
+            idle = sample.time - sample.epoch_started
 
         if (
             sample.push_started is not None
