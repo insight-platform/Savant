@@ -72,13 +72,16 @@ PIPELINE+=(
     zeromq_sink "${SINK_PROPERTIES[@]}"
 )
 
+source "${PROJECT_PATH}/adapters/shared/utils.sh"
+
 handler() {
-    kill -s SIGINT "${child_pid}"
-    wait "${child_pid}"
+    # Ignore further signals so the bounded shutdown runs once, to completion.
+    trap '' SIGINT SIGTERM
+    shutdown_child "${child_pid}" "media files source adapter"
+    exit $?
 }
 trap handler SIGINT SIGTERM
 
-source "${PROJECT_PATH}/adapters/shared/utils.sh"
 print_starting_message "media files source adapter"
 gst-launch-1.0 --eos-on-shutdown "${PIPELINE[@]}" &
 
