@@ -537,6 +537,46 @@ def images_source(
     help='Log level for FFmpeg.',
     show_default=True,
 )
+@click.option(
+    '--stall-action',
+    default='none',
+    type=click.Choice(['none', 'message', 'fail']),
+    help=(
+        'What to do when the source stops delivering frames. "none" leaves the '
+        'detector out of the pipeline, "message" adds it and logs a warning '
+        'on top of writing the health file. "fail" needs a container '
+        'supervisor and is rejected here.'
+    ),
+    show_default=True,
+)
+@click.option(
+    '--stall-max-idle-seconds',
+    default=30,
+    type=click.FLOAT,
+    help='Time without frames after which the source is considered stalled.',
+    show_default=True,
+)
+@click.option(
+    '--stall-min-fps',
+    default=0,
+    type=click.FLOAT,
+    help='Minimum acceptable frame rate. 0 disables the rate check.',
+    show_default=True,
+)
+@click.option(
+    '--stall-window-seconds',
+    default=30,
+    type=click.FLOAT,
+    help='Window the frame rate is measured over. Ignored when --stall-min-fps is 0.',
+    show_default=True,
+)
+@click.option(
+    '--stall-warmup',
+    default=60,
+    type=click.FLOAT,
+    help='Grace period before stall detection starts making verdicts.',
+    show_default=True,
+)
 @absolute_ts_option
 @adapter_docker_image_option('gstreamer')
 @click.argument('rtsp_uri', required=True)
@@ -549,6 +589,11 @@ def rtsp_source(
     ffmpeg_timeout_ms: int,
     ffmpeg_loglevel: str,
     rtsp_transport: str,
+    stall_action: str,
+    stall_max_idle_seconds: float,
+    stall_min_fps: float,
+    stall_window_seconds: float,
+    stall_warmup: float,
     use_absolute_timestamps: Optional[bool],
     docker_image: str,
     fps_period_frames: Optional[int],
@@ -559,6 +604,16 @@ def rtsp_source(
     absolute_timestamps_offset: Optional[int] = None,
 ):
     """Read video stream from RTSP_URI."""
+
+    if stall_action == 'fail':
+        # This script runs `docker run --rm` with no restart policy, so a
+        # terminating action would remove the container for good.
+        raise click.BadParameter(
+            '"fail" needs a container supervisor to restart the adapter. '
+            'Use docker compose with "restart: unless-stopped" or '
+            '"restart: on-failure" and set STALL_ACTION=fail there.',
+            param_hint='--stall-action',
+        )
 
     envs = build_common_envs(
         source_id=source_id,
@@ -575,6 +630,11 @@ def rtsp_source(
         f'FFMPEG_TIMEOUT_MS={ffmpeg_timeout_ms}',
         f'FFMPEG_LOGLEVEL={ffmpeg_loglevel}',
         f'SHUTDOWN_TIMEOUT={shutdown_timeout}',
+        f'STALL_ACTION={stall_action}',
+        f'STALL_MAX_IDLE_SECONDS={stall_max_idle_seconds}',
+        f'STALL_MIN_FPS={stall_min_fps}',
+        f'STALL_WINDOW_SECONDS={stall_window_seconds}',
+        f'STALL_WARMUP={stall_warmup}',
     ]
     if sync and sync_delay is not None:
         envs.append(f'SYNC_DELAY={sync_delay}')

@@ -53,6 +53,27 @@ PIPELINE=(
     "${FFMPEG_SRC[@]}" !
     savant_parse_bin !
 )
+# Lowercased once here, since the element accepts the lowercase names only.
+STALL_ACTION="${STALL_ACTION:="none"}"
+STALL_ACTION="${STALL_ACTION,,}"
+if [[ "${STALL_ACTION}" != "none" ]] || [[ -n "${PIPELINE_HEALTH_FILEPATH}" ]]; then
+    HEALTH_FILEPATH="${PIPELINE_HEALTH_FILEPATH:="${PROJECT_PATH}/pipeline_health.txt"}"
+    PIPELINE+=(
+        stall_detector
+        stall-action="${STALL_ACTION}"
+        max-idle-seconds="${STALL_MAX_IDLE_SECONDS:="30"}"
+        min-fps="${STALL_MIN_FPS:="0"}"
+        window-seconds="${STALL_WINDOW_SECONDS:="30"}"
+        check-interval="${STALL_CHECK_INTERVAL:="5"}"
+        warmup="${STALL_WARMUP:="60"}"
+        probe-name="${SOURCE_ID}"
+        health-filepath="${HEALTH_FILEPATH}"
+        !
+    )
+    # Pre-create so the container probe can tell the feature is enabled, and so an
+    # element that never starts reads as stale rather than absent.
+    echo "starting" > "${HEALTH_FILEPATH}"
+fi
 if [[ "${USE_ABSOLUTE_TIMESTAMPS,,}" == "true" ]]; then
     TS_OFFSET="${ABSOLUTE_TIMESTAMPS_OFFSET:-$(date +%s%N)}"
     PIPELINE+=(

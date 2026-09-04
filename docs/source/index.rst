@@ -228,6 +228,7 @@ Savant provides several Rust-based, Python-extendable services for building comp
    advanced_topics/15_managed_pipeline_shutdown
    advanced_topics/15_embedded_kvs
    advanced_topics/16_pipeline_watchdog
+   advanced_topics/16_source_stall_detection
    advanced_topics/17_restreaming
    advanced_topics/18_stream_routing
    advanced_topics/19_message_buffering
