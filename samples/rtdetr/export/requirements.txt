@@ -7,7 +7,7 @@ numpy==1.26.4
 onnx==1.14.0
 onnxruntime==1.15.1
 onnxslim==0.1.96
-transformers==4.30.2
+transformers==5.10.1
 
 # required by RT-DETR/rtdetr_pytorch/requirements.txt, versions not pinned upstream
 pycocotools
