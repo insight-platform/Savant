@@ -109,9 +109,13 @@ class SourceInfo:
     @contextmanager
     def lock(self):
         self.locked.set()
-        yield
-        self.timestamp = time.time()
-        self.locked.clear()
+        try:
+            yield
+        finally:
+            # Must run even when the body raises: a source that stays locked is
+            # never evicted and never releases the pipeline on shutdown.
+            self.timestamp = time.time()
+            self.locked.clear()
 
 
 class FrameInfo(NamedTuple):
@@ -377,10 +381,10 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
                 )
                 self.zeromq_reader.blacklist_source(video_frame.source_id.encode())
                 self.video_pipeline.delete(savant_frame_meta.idx)
+                with self.source_lock:
+                    self.sources.pop(source_info.source_id, None)
                 with source_info.lock():
                     self.remove_source(source_info, send_eos=False)
-                with self.source_lock:
-                    del self.sources[source_info.source_id]
                 result = Gst.FlowReturn.OK
             else:
                 self.logger.error(
@@ -469,15 +473,18 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
         self.logger.info('Received EOS.')
         with self.source_lock:
             self.is_running = False
-            for source_id, source_info in list(self.sources.items()):
-                self.logger.debug('Sending EOS to source %s.', source_id)
-                if source_info.src_pad is not None:
-                    self.remove_source(source_info, send_eos=True)
-                del self.sources[source_id]
+            sources = list(self.sources.values())
+            self.sources.clear()
+        # Removing a source pushes EOS downstream, which blocks until downstream
+        # elements handle it. Do it with the lock released, so that the eviction
+        # job and the streaming thread are not held up in the meantime.
+        for source_info in sources:
+            self.logger.debug('Sending EOS to source %s.', source_info.source_id)
+            self.remove_source(source_info, send_eos=True)
         self.logger.debug('Emitting shutdown signal.')
         self.emit('shutdown')
 
-        return Gst.FlowReturn.OK
+        return Gst.PadProbeReturn.DROP
 
     def add_source(self, source_id: str, source_info: SourceInfo, first_frame_id: int):
         """Handle adding new source."""
@@ -560,6 +567,12 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
 
     def remove_source(self, source_info: SourceInfo, send_eos: bool):
         """Send EOS event to a src pad."""
+        if source_info.src_pad is None:
+            self.logger.debug(
+                'Source %s has no src pad, nothing to remove.',
+                source_info.source_id,
+            )
+            return
         if send_eos:
             self.logger.debug(
                 'Sending EOS event to pad %s.',
@@ -583,6 +596,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
     def eviction_loop(self):
         """Eviction job loop."""
         self.logger.debug('Start eviction loop')
+        expired = []
         with self.source_lock:
             if not self.is_running:
                 return
@@ -592,9 +606,13 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
                     and source_info.timestamp < time.time() - self.source_timeout
                 ):
                     self.logger.debug('Source %s has expired', source_id)
-                    if source_info.src_pad is not None:
-                        self.remove_source(source_info, send_eos=True)
                     del self.sources[source_id]
+                    expired.append(source_info)
+        # Removing a source pushes EOS downstream, which blocks until downstream
+        # elements handle it. Do it with the lock released, otherwise the
+        # streaming thread cannot handle a single buffer until it completes.
+        for source_info in expired:
+            self.remove_source(source_info, send_eos=True)
         self.logger.debug(
             'Waiting %s seconds for the next eviction loop',
             self.source_eviction_interval,

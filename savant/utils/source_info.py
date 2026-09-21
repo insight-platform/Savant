@@ -136,11 +136,14 @@ class SourceInfoRegistry(metaclass=SingletonMeta):
     def remove_source(self, source_info: SourceInfo) -> None:
         """Delete a given source info entries from internal map.
 
+        Does nothing for a source that has already been removed: teardown can be
+        triggered more than once for the same source, e.g. by a repeated EOS.
+
         :param source_info: SourceInfo to be removed from map.
         """
-        del self._sources[source_info.source_id]
+        self._sources.pop(source_info.source_id, None)
         if source_info.pad_idx is not None:
-            del self._source_id_by_index[source_info.pad_idx]
+            self._source_id_by_index.pop(source_info.pad_idx, None)
 
     def get_id_by_pad_index(self, pad_idx: int) -> str:
         """Retrieve string value associated with given pad index.

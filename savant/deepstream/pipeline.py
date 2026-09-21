@@ -844,15 +844,6 @@ class NvDsPipeline(GstPipeline):
 
             self._sources.remove_source(source_info)
 
-            if source_info.pad_idx is not None:
-                # send GST_EVENT_STREAM_START because demuxer blocks it
-                # if it has already been sent to this pad
-                # (required to reset EOS and make pad live)
-                demuxer_src_pad = self._demuxer_src_pads[source_info.pad_idx]
-                stream_id = source_info.source_id
-                demuxer_src_pad.push_event(Gst.Event.new_stream_start(stream_id))
-                self._free_pad_indices.append(source_info.pad_idx)
-
         except PipelineIsNotRunningError:
             self._logger.info(
                 'Pipeline is not running. '
@@ -862,7 +853,7 @@ class NvDsPipeline(GstPipeline):
             return False
 
         finally:
-            source_info.pad_idx = None
+            self._release_pad_idx(source_info)
             self._logger.debug('Releasing lock for source %s', source_info.source_id)
             source_info.lock.set()
 
@@ -870,6 +861,36 @@ class NvDsPipeline(GstPipeline):
             'Resources for source %s has been released.', source_info.source_id
         )
         return False
+
+    def _release_pad_idx(self, source_info: SourceInfo):
+        """Return the demuxer pad index of a source to the pool of free indices.
+
+        Runs whatever happened while removing the source: an index that is not
+        returned is lost for good, and once every index is lost each new source
+        waits for a free one forever.
+        """
+
+        pad_idx = source_info.pad_idx
+        source_info.pad_idx = None
+        if pad_idx is None:
+            return
+
+        try:
+            self._check_pipeline_is_running()
+            # send GST_EVENT_STREAM_START because demuxer blocks it
+            # if it has already been sent to this pad
+            # (required to reset EOS and make pad live)
+            demuxer_src_pad = self._demuxer_src_pads[pad_idx]
+            stream_id = source_info.source_id
+            demuxer_src_pad.push_event(Gst.Event.new_stream_start(stream_id))
+        except PipelineIsNotRunningError:
+            self._logger.info(
+                'Pipeline is not running. Do not restart the stream on demuxer pad %s.',
+                pad_idx,
+            )
+            return
+        finally:
+            self._free_pad_indices.append(pad_idx)
 
     def on_last_pad_eos(self, pad: Gst.Pad, event: Gst.Event, source_info: SourceInfo):
         """Process EOS on last pad."""
