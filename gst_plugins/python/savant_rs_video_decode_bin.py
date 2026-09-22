@@ -588,6 +588,12 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
             self.logger.debug('Setting state of the bin to PLAYING')
             self.set_state(Gst.State.PLAYING)
         finally:
+            # do_handle_message routes the state change that removes the decoder
+            # only while it is in _elem_to_branch, which _release_branch clears.
+            # That ordering holds only when the transition to NULL is synchronous,
+            # so remove the decoder here instead of relying on the message.
+            if branch.decoder is not None and branch.decoder.get_parent() is self:
+                self.remove(branch.decoder)
             # do_element_removed releases the branch when the decoder leaves the
             # bin. It does not run when the decoder was never added to the bin or
             # has been removed already, so release the branch here as well.

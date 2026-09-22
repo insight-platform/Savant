@@ -877,20 +877,33 @@ class NvDsPipeline(GstPipeline):
 
         try:
             self._check_pipeline_is_running()
+        except PipelineIsNotRunningError:
+            self._logger.info(
+                'Pipeline is not running. Do not restart the stream on demuxer pad %s.',
+                pad_idx,
+            )
+            self._free_pad_indices.append(pad_idx)
+            return
+
+        try:
             # send GST_EVENT_STREAM_START because demuxer blocks it
             # if it has already been sent to this pad
             # (required to reset EOS and make pad live)
             demuxer_src_pad = self._demuxer_src_pads[pad_idx]
             stream_id = source_info.source_id
             demuxer_src_pad.push_event(Gst.Event.new_stream_start(stream_id))
-        except PipelineIsNotRunningError:
-            self._logger.info(
-                'Pipeline is not running. Do not restart the stream on demuxer pad %s.',
+        except Exception:
+            # The pad stays in EOS without the stream start, so a source that got
+            # this index back would silently receive nothing. Losing the index is
+            # the lesser fault.
+            self._logger.exception(
+                'Failed to restart the stream on demuxer pad %s. '
+                'Not returning it to the pool of free indices.',
                 pad_idx,
             )
             return
-        finally:
-            self._free_pad_indices.append(pad_idx)
+
+        self._free_pad_indices.append(pad_idx)
 
     def on_last_pad_eos(self, pad: Gst.Pad, event: Gst.Event, source_info: SourceInfo):
         """Process EOS on last pad."""

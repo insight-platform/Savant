@@ -460,7 +460,7 @@ class SavantRsVideoDemux(LoggerMixin, Gst.Element):
             if source_info.src_pad is not None:
                 self.remove_source(source_info, send_eos=True)
             with self.source_lock:
-                del self.sources[source_id]
+                self.sources.pop(source_id, None)
 
         return Gst.PadProbeReturn.DROP
 
