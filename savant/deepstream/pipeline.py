@@ -858,15 +858,24 @@ class NvDsPipeline(GstPipeline):
             # The output elements of this source are still in the pipeline, and
             # may still be linked to its demuxer pad, so the next source to take
             # the index would fail to link to it. Losing the index is the lesser
-            # fault. It is cleared so that the next generation of this source
-            # asks for one of its own instead of reusing this one.
+            # fault.
             self._logger.exception(
                 'Failed to remove the output elements of source %s. '
                 'Not returning its demuxer pad index %s to the pool of free ones.',
                 source_info.source_id,
                 source_info.pad_idx,
             )
+            # Give up the rest of the source as well, leaking the elements that
+            # could not be removed. Keeping them would leave the source with a
+            # populated after_demuxer, and _on_source_caps builds the output of a
+            # source only when that is empty, so the next generation of it would
+            # take a pad and then never produce any output. Both the registration
+            # and the source are cleared, because the next generation reuses this
+            # object when it is already waiting for it, and starts from a new one
+            # when it is not.
+            self._sources.remove_source(source_info)
             source_info.pad_idx = None
+            source_info.after_demuxer = []
             return False
 
         finally:
