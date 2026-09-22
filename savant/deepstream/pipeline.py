@@ -94,6 +94,11 @@ from .utils.pipeline import (
 )
 from .utils.telemetry import init_tracing, shutdown_tracing
 
+# Time to wait for the previous generation of a source to release the pipeline
+# resources it holds. Bounded, so that resources that are never released drop
+# one source instead of blocking every later add of it.
+SOURCE_RELEASE_TIMEOUT = 60
+
 
 class NvDsPipeline(GstPipeline):
     """Base class for managing the DeepStream Pipeline.
@@ -463,33 +468,61 @@ class NvDsPipeline(GstPipeline):
             new_pad.get_name(),
         )
 
-        try:
-            source_info = self._sources.get_source(source_id)
-        except KeyError:
-            source_info = self._sources.init_source(source_id, None)
-        else:
-            while self._is_running and not source_info.lock.wait(5):
-                self._logger.debug(
-                    'Waiting source %s to release', source_info.source_id
-                )
+        # Claim the source id for this generation of the source. Adds for one
+        # source can run concurrently - the pad of a branch that has already
+        # been replaced can still be waiting here - and each of them setting up
+        # a source of its own would allocate a second muxer branch and a second
+        # demuxer pad index for the same source.
+        while True:
+            with self._source_adding_lock:
+                try:
+                    releasing = self._sources.get_source(source_id)
+                except KeyError:
+                    # A new SourceInfo for each generation, registered while
+                    # holding the lock. A teardown callback scheduled for the
+                    # previous generation still refers to the old object, and
+                    # reusing it would let that callback remove the registration
+                    # and return the demuxer pad index of this generation while
+                    # it is still in use.
+                    source_info = self._sources.init_source(source_id, None)
+                    break
+
+            deadline = time.time() + SOURCE_RELEASE_TIMEOUT
+            while self._is_running and not releasing.lock.wait(5):
+                self._logger.debug('Waiting source %s to release', source_id)
+                if time.time() >= deadline:
+                    self._logger.error(
+                        'Source %s has not been released in %s seconds. '
+                        'Cancel adding it.',
+                        source_id,
+                        SOURCE_RELEASE_TIMEOUT,
+                    )
+                    return
+
             if not self._is_running:
                 self._logger.info(
                     'Pipeline is not running. Cancel adding source %s.',
                     source_id,
                 )
                 return
-            # Register a new SourceInfo for the new generation of this source
-            # instead of reusing the released one. A teardown callback scheduled
-            # for the previous generation still refers to the old object, and
-            # reusing it would let that callback remove the registration and
-            # return the demuxer pad index of this generation while it is in use.
-            source_info = self._sources.init_source(source_id, None)
+
+            if new_pad.get_parent() is None:
+                # The branch behind this pad has been removed while waiting, so
+                # there is nothing left to attach to the pipeline. Claiming the
+                # source here would block every later add of it.
+                self._logger.info(
+                    'Pad %s has been removed. Cancel adding source %s.',
+                    new_pad.get_name(),
+                    source_id,
+                )
+                return
 
         if not self._is_running:
             self._logger.info(
                 'Pipeline is not running. Cancel adding source %s.',
                 source_id,
             )
+            self._release_source_claim(source_info)
             return
 
         self._logger.debug('Ready to add source %s', source_info.source_id)
@@ -504,6 +537,17 @@ class NvDsPipeline(GstPipeline):
             add_frames_to_pipeline,
             ingress_frame_filter,
         )
+
+    def _release_source_claim(self, source_info: SourceInfo):
+        """Give up a source id claimed by :py:meth:`on_source_added`.
+
+        No pipeline resources are allocated for the source yet, but a claim that
+        is not given back blocks every later add of the same source.
+        """
+
+        with self._source_adding_lock:
+            self._sources.remove_source(source_info)
+        source_info.lock.set()
 
     def _on_source_caps(
         self,
@@ -554,6 +598,7 @@ class NvDsPipeline(GstPipeline):
                 self._logger.error(error_msg)
                 frame = inspect.currentframe()
                 gst_post_stream_failed_error(self.pipeline, frame, __file__, error_msg)
+                self._release_source_claim(source_info)
                 return Gst.PadProbeReturn.REMOVE
 
             while source_info.pad_idx is None:
@@ -608,6 +653,7 @@ class NvDsPipeline(GstPipeline):
                 'Pipeline is not running. Cancel adding source %s.',
                 source_info.source_id,
             )
+            self._release_source_claim(source_info)
             return Gst.PadProbeReturn.REMOVE
 
         self._logger.info('Added source %s', source_info.source_id)
