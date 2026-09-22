@@ -23,9 +23,9 @@ DEFAULT_DECODER_QUEUE_LENGTH = 5
 DEFAULT_DECODER_QUEUE_SIZE = 10485760
 # Interval between checks that a branch released its resources.
 BRANCH_RELEASE_CHECK_INTERVAL = 5
-# Time to wait for a branch to release its resources before removing it by
-# force. The wait happens on the streaming thread, so a branch that never tears
-# down on its own must not block it forever.
+# Time to wait for the resources of a branch, either its own or a free stream
+# slot, before giving up on it. Both waits happen on the streaming thread, so a
+# branch that never tears down on its own must not block it forever.
 BRANCH_RELEASE_TIMEOUT = 30
 
 NESTED_DEMUX_PROPERTIES = {
@@ -408,6 +408,10 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
         # previous branch still refers to the old object, and reusing it would
         # let that callback tear down the branch we are adding here.
         branch = BranchInfo(source_id=source_id, lock=Event())
+        # Bounded like the wait above, and for the same reason: a branch of
+        # another source that never releases its slot holds the streaming
+        # thread here, so the deadlock would only move to capacity handling.
+        slot_deadline = time.time() + BRANCH_RELEASE_TIMEOUT
         while True:
             with self._branches_lock:
                 if (
@@ -432,7 +436,15 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
                     source_id,
                 )
                 return Gst.PadProbeReturn.OK
-            time.sleep(5)
+            if time.time() >= slot_deadline:
+                self.logger.error(
+                    'No stream slot for source %s in %s seconds, '
+                    'not starting a branch for it.',
+                    source_id,
+                    BRANCH_RELEASE_TIMEOUT,
+                )
+                return Gst.PadProbeReturn.OK
+            time.sleep(BRANCH_RELEASE_CHECK_INTERVAL)
 
         # The branch occupies the source from here on. Anything that fails
         # below has to remove it again, otherwise no new branch for this source

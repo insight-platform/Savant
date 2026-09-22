@@ -472,7 +472,18 @@ class NvDsPipeline(GstPipeline):
                 self._logger.debug(
                     'Waiting source %s to release', source_info.source_id
                 )
-            source_info.lock.clear()
+            if not self._is_running:
+                self._logger.info(
+                    'Pipeline is not running. Cancel adding source %s.',
+                    source_id,
+                )
+                return
+            # Register a new SourceInfo for the new generation of this source
+            # instead of reusing the released one. A teardown callback scheduled
+            # for the previous generation still refers to the old object, and
+            # reusing it would let that callback remove the registration and
+            # return the demuxer pad index of this generation while it is in use.
+            source_info = self._sources.init_source(source_id, None)
 
         if not self._is_running:
             self._logger.info(
