@@ -462,7 +462,10 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
             self.set_state(Gst.State.PLAYING)
         except Exception:
             self.logger.exception('Failed to add branch with source %s.', source_id)
-            self._remove_branch(branch)
+            # Schedule the teardown instead of running it here: this is the
+            # streaming thread, inside a probe on the pad the decoder is linked
+            # to, and setting the decoder to NULL from it can block.
+            GLib.idle_add(self._remove_branch, branch)
             return Gst.PadProbeReturn.OK
 
         self.logger.info('Branch with source %s added', source_id)
