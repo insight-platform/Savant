@@ -843,6 +843,7 @@ class NvDsPipeline(GstPipeline):
             )
 
             self._sources.remove_source(source_info)
+            self._release_pad_idx(source_info)
 
         except PipelineIsNotRunningError:
             self._logger.info(
@@ -850,10 +851,25 @@ class NvDsPipeline(GstPipeline):
                 'Cancel removing output elements for source %s.',
                 source_info.source_id,
             )
+            self._release_pad_idx(source_info)
+            return False
+
+        except Exception:
+            # The output elements of this source are still in the pipeline, and
+            # may still be linked to its demuxer pad, so the next source to take
+            # the index would fail to link to it. Losing the index is the lesser
+            # fault. It is cleared so that the next generation of this source
+            # asks for one of its own instead of reusing this one.
+            self._logger.exception(
+                'Failed to remove the output elements of source %s. '
+                'Not returning its demuxer pad index %s to the pool of free ones.',
+                source_info.source_id,
+                source_info.pad_idx,
+            )
+            source_info.pad_idx = None
             return False
 
         finally:
-            self._release_pad_idx(source_info)
             self._logger.debug('Releasing lock for source %s', source_info.source_id)
             source_info.lock.set()
 
