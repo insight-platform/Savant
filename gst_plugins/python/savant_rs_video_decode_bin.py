@@ -434,26 +434,37 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
                 return Gst.PadProbeReturn.OK
             time.sleep(5)
 
-        branch.caps = caps
-        branch.codec = caps_to_codec(caps)
-        branch.src_pad = Gst.GhostPad.new_no_target(
-            pad.get_name(), Gst.PadDirection.SRC
-        )
+        # The branch occupies the source from here on. Anything that fails
+        # below has to remove it again, otherwise no new branch for this source
+        # can ever start.
+        try:
+            branch.caps = caps
+            branch.codec = caps_to_codec(caps)
+            branch.src_pad = Gst.GhostPad.new_no_target(
+                pad.get_name(), Gst.PadDirection.SRC
+            )
 
-        branch.decoder = self.build_decoder(branch)
-        self._elem_to_branch[branch.decoder] = branch
+            branch.decoder = self.build_decoder(branch)
+            self._elem_to_branch[branch.decoder] = branch
 
-        branch.src_pad.add_probe(
-            Gst.PadProbeType.EVENT_DOWNSTREAM,
-            on_pad_event,
-            {Gst.EventType.EOS: self.on_src_pad_eos},
-            branch,
-        )
-        self.add(branch.decoder)
-        branch.decoder.sync_state_with_parent()
-        assert pad.link(branch.decoder.get_static_pad('sink')) == Gst.PadLinkReturn.OK
+            branch.src_pad.add_probe(
+                Gst.PadProbeType.EVENT_DOWNSTREAM,
+                on_pad_event,
+                {Gst.EventType.EOS: self.on_src_pad_eos},
+                branch,
+            )
+            self.add(branch.decoder)
+            branch.decoder.sync_state_with_parent()
+            assert (
+                pad.link(branch.decoder.get_static_pad('sink')) == Gst.PadLinkReturn.OK
+            )
 
-        self.set_state(Gst.State.PLAYING)
+            self.set_state(Gst.State.PLAYING)
+        except Exception:
+            self.logger.exception('Failed to add branch with source %s.', source_id)
+            self._remove_branch(branch)
+            return Gst.PadProbeReturn.OK
+
         self.logger.info('Branch with source %s added', source_id)
 
         return Gst.PadProbeReturn.OK
