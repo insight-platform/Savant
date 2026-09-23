@@ -843,15 +843,7 @@ class NvDsPipeline(GstPipeline):
             )
 
             self._sources.remove_source(source_info)
-
-            if source_info.pad_idx is not None:
-                # send GST_EVENT_STREAM_START because demuxer blocks it
-                # if it has already been sent to this pad
-                # (required to reset EOS and make pad live)
-                demuxer_src_pad = self._demuxer_src_pads[source_info.pad_idx]
-                stream_id = source_info.source_id
-                demuxer_src_pad.push_event(Gst.Event.new_stream_start(stream_id))
-                self._free_pad_indices.append(source_info.pad_idx)
+            self._release_pad_idx(source_info)
 
         except PipelineIsNotRunningError:
             self._logger.info(
@@ -859,10 +851,30 @@ class NvDsPipeline(GstPipeline):
                 'Cancel removing output elements for source %s.',
                 source_info.source_id,
             )
+            self._release_pad_idx(source_info)
+            return False
+
+        except Exception:
+            # The teardown stopped partway, so the elements of this source are in
+            # an unknown state - some removed, some not - and the lists tracking
+            # them still hold whatever was left. Its demuxer pad may still carry
+            # that chain, so the index is dropped rather than handed to the next
+            # source.
+            self._logger.exception(
+                'Failed to remove the output elements of source %s. '
+                'Not returning its demuxer pad index %s to the pool of free ones.',
+                source_info.source_id,
+                source_info.pad_idx,
+            )
+            # The source is abandoned. Dropping the registration is not a guess
+            # about how far the teardown got - it discards the whole object, so
+            # the elements it still lists are leaked rather than reused, and the
+            # next generation of this source starts from a fresh SourceInfo.
+            self._sources.remove_source(source_info)
+            source_info.pad_idx = None
             return False
 
         finally:
-            source_info.pad_idx = None
             self._logger.debug('Releasing lock for source %s', source_info.source_id)
             source_info.lock.set()
 
@@ -870,6 +882,49 @@ class NvDsPipeline(GstPipeline):
             'Resources for source %s has been released.', source_info.source_id
         )
         return False
+
+    def _release_pad_idx(self, source_info: SourceInfo):
+        """Return the demuxer pad index of a source to the pool of free indices
+        and clear it on the source.
+
+        Pushes GST_EVENT_STREAM_START on the pad first to reset its EOS state.
+        The index is not returned when that push fails.
+        """
+
+        pad_idx = source_info.pad_idx
+        source_info.pad_idx = None
+        if pad_idx is None:
+            return
+
+        try:
+            self._check_pipeline_is_running()
+        except PipelineIsNotRunningError:
+            self._logger.info(
+                'Pipeline is not running. Do not restart the stream on demuxer pad %s.',
+                pad_idx,
+            )
+            self._free_pad_indices.append(pad_idx)
+            return
+
+        try:
+            # send GST_EVENT_STREAM_START because demuxer blocks it
+            # if it has already been sent to this pad
+            # (required to reset EOS and make pad live)
+            demuxer_src_pad = self._demuxer_src_pads[pad_idx]
+            stream_id = source_info.source_id
+            demuxer_src_pad.push_event(Gst.Event.new_stream_start(stream_id))
+        except Exception:
+            # The pad stays in EOS without the stream start, so a source that got
+            # this index back would silently receive nothing. Losing the index is
+            # the lesser fault.
+            self._logger.exception(
+                'Failed to restart the stream on demuxer pad %s. '
+                'Not returning it to the pool of free indices.',
+                pad_idx,
+            )
+            return
+
+        self._free_pad_indices.append(pad_idx)
 
     def on_last_pad_eos(self, pad: Gst.Pad, event: Gst.Event, source_info: SourceInfo):
         """Process EOS on last pad."""

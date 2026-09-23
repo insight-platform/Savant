@@ -21,6 +21,12 @@ DEFAULT_PASS_EOS = True
 # Default values of "queue" element
 DEFAULT_DECODER_QUEUE_LENGTH = 5
 DEFAULT_DECODER_QUEUE_SIZE = 10485760
+# Interval between checks that a branch released its resources.
+BRANCH_RELEASE_CHECK_INTERVAL = 5
+# Time to wait for the resources of a branch, either its own or a free stream
+# slot, before giving up on it. Both waits happen on the streaming thread, so a
+# branch that never tears down on its own must not block it forever.
+BRANCH_RELEASE_TIMEOUT = 30
 
 NESTED_DEMUX_PROPERTIES = {
     k: v
@@ -115,6 +121,7 @@ class BranchInfo:
     decoder: Optional[Gst.Element] = None
     src_pad: Optional[Gst.GhostPad] = None
     pad_added_to_bin: bool = False
+    released: bool = False
 
     @property
     def caps_name(self):
@@ -326,6 +333,50 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
             caps,
         )
 
+    def _wait_branch_released(self, branch: BranchInfo) -> bool:
+        """Wait until a branch releases the resources of its source.
+
+        Runs on the streaming thread, so the wait must end: a branch that never
+        tears down on its own (e.g. its decoder never produced a src pad, so it
+        never emits EOS) would otherwise block the whole pipeline. Its teardown
+        is scheduled once more before giving up.
+
+        :return: whether the branch released its resources.
+        """
+
+        deadline = time.time() + BRANCH_RELEASE_TIMEOUT
+        rescheduled = False
+        while not branch.lock.wait(BRANCH_RELEASE_CHECK_INTERVAL):
+            if not self._is_running:
+                self.logger.info(
+                    'Bin is not running. '
+                    'Stop waiting resources for source %s to be released.',
+                    branch.source_id,
+                )
+                return False
+
+            if time.time() < deadline:
+                self.logger.debug(
+                    'Waiting resources for source %s to be released.',
+                    branch.source_id,
+                )
+                continue
+
+            if rescheduled:
+                return False
+
+            self.logger.warning(
+                'Resources of source %s have not been released in %s seconds. '
+                'Removing its branch by force.',
+                branch.source_id,
+                BRANCH_RELEASE_TIMEOUT,
+            )
+            rescheduled = True
+            deadline = time.time() + BRANCH_RELEASE_TIMEOUT
+            GLib.idle_add(self._remove_branch, branch)
+
+        return True
+
     def _add_branch(
         self,
         pad: Gst.Pad,
@@ -342,15 +393,25 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
         )
         pad.remove_probe(probe_info.id)
 
-        branch = self._branches.get(source_id)
-        if branch is not None:
-            while not branch.lock.wait(5):
-                self.logger.debug(
-                    'Waiting resources for source %s to be released.', source_id
-                )
-            branch.lock.clear()
-        else:
-            branch = BranchInfo(source_id=source_id, lock=Event())
+        stale_branch = self._branches.get(source_id)
+        if stale_branch is not None and not self._wait_branch_released(stale_branch):
+            # The previous branch of this source is stuck. Starting a new one
+            # next to it would push frames of the same source into two decoders.
+            self.logger.error(
+                'Resources of source %s have not been released, '
+                'not starting a new branch for it.',
+                source_id,
+            )
+            return Gst.PadProbeReturn.OK
+
+        # Always a new BranchInfo: a teardown callback scheduled for the
+        # previous branch still refers to the old object, and reusing it would
+        # let that callback tear down the branch we are adding here.
+        branch = BranchInfo(source_id=source_id, lock=Event())
+        # Bounded like the wait above, and for the same reason: a branch of
+        # another source that never releases its slot holds the streaming
+        # thread here, so the deadlock would only move to capacity handling.
+        slot_deadline = time.time() + BRANCH_RELEASE_TIMEOUT
         while True:
             with self._branches_lock:
                 if (
@@ -369,28 +430,56 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
                 else:
                     self._branches[source_id] = branch
                     break
-            time.sleep(5)
+            if not self._is_running:
+                self.logger.info(
+                    'Bin is not running. Cancel adding branch for source %s.',
+                    source_id,
+                )
+                return Gst.PadProbeReturn.OK
+            if time.time() >= slot_deadline:
+                self.logger.error(
+                    'No stream slot for source %s in %s seconds, '
+                    'not starting a branch for it.',
+                    source_id,
+                    BRANCH_RELEASE_TIMEOUT,
+                )
+                return Gst.PadProbeReturn.OK
+            time.sleep(BRANCH_RELEASE_CHECK_INTERVAL)
 
-        branch.caps = caps
-        branch.codec = caps_to_codec(caps)
-        branch.src_pad = Gst.GhostPad.new_no_target(
-            pad.get_name(), Gst.PadDirection.SRC
-        )
+        # The branch occupies the source from here on. Anything that fails
+        # below has to remove it again, otherwise no new branch for this source
+        # can ever start.
+        try:
+            branch.caps = caps
+            branch.codec = caps_to_codec(caps)
+            branch.src_pad = Gst.GhostPad.new_no_target(
+                pad.get_name(), Gst.PadDirection.SRC
+            )
 
-        branch.decoder = self.build_decoder(branch)
-        self._elem_to_branch[branch.decoder] = branch
+            branch.decoder = self.build_decoder(branch)
+            self._elem_to_branch[branch.decoder] = branch
 
-        branch.src_pad.add_probe(
-            Gst.PadProbeType.EVENT_DOWNSTREAM,
-            on_pad_event,
-            {Gst.EventType.EOS: self.on_src_pad_eos},
-            branch,
-        )
-        self.add(branch.decoder)
-        branch.decoder.sync_state_with_parent()
-        assert pad.link(branch.decoder.get_static_pad('sink')) == Gst.PadLinkReturn.OK
+            branch.src_pad.add_probe(
+                Gst.PadProbeType.EVENT_DOWNSTREAM,
+                on_pad_event,
+                {Gst.EventType.EOS: self.on_src_pad_eos},
+                branch,
+            )
+            self.add(branch.decoder)
+            branch.decoder.sync_state_with_parent()
+            assert (
+                pad.link(branch.decoder.get_static_pad('sink')) == Gst.PadLinkReturn.OK
+            )
 
-        self.set_state(Gst.State.PLAYING)
+            self.set_state(Gst.State.PLAYING)
+        except Exception:
+            self.logger.exception('Failed to add branch with source %s.', source_id)
+            # Schedule the teardown instead of running it here: this is the
+            # streaming thread, inside a probe on the pad the decoder is linked
+            # to, and setting the decoder to NULL from it can block.
+            GLib.idle_add(self._remove_branch, branch)
+            return Gst.PadProbeReturn.OK
+
         self.logger.info('Branch with source %s added', source_id)
 
         return Gst.PadProbeReturn.OK
@@ -462,25 +551,84 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
         )
         if self._pass_eos:
             peer: Gst.Pad = pad.get_peer()
-            peer.send_event(Gst.Event.new_eos())
+            if peer is not None:
+                peer.send_event(Gst.Event.new_eos())
+            else:
+                # The branch is not linked downstream, e.g. the source was reset
+                # before the pipeline attached to it. Removing the branch is
+                # still required, so this must not raise.
+                self.logger.debug(
+                    'Pad %s is not linked, not passing EOS downstream.',
+                    pad.get_name(),
+                )
         GLib.idle_add(self._remove_branch, branch)
         return Gst.PadProbeReturn.DROP
 
     def _remove_branch(self, branch: BranchInfo):
-        """Remove a branch."""
-        self.logger.info('Removing branch with source %s', branch.source_id)
-        self.logger.debug('Removing pad %s', branch.src_pad.get_name())
-        branch.decoder.set_locked_state(True)
-        # do_handle_message deletes branch.decoder when its state changed to NULL
-        self.logger.debug('Setting element %s to state NULL', branch.decoder.get_name())
-        branch.decoder.set_state(Gst.State.NULL)
-        self.logger.debug('Set element %s to state NULL', branch.decoder.get_name())
+        """Remove a branch.
 
-        self.logger.debug('Setting state of the bin to PLAYING')
-        self.set_state(Gst.State.PLAYING)
+        Always releases the resources of the source, even when the decoder
+        cannot be torn down: the streaming thread waits for them before it can
+        start a new branch for the same source.
+        """
+        self.logger.info('Removing branch with source %s', branch.source_id)
+        try:
+            if branch.decoder is not None:
+                branch.decoder.set_locked_state(True)
+                # do_handle_message deletes branch.decoder
+                # when its state changed to NULL
+                self.logger.debug(
+                    'Setting element %s to state NULL', branch.decoder.get_name()
+                )
+                branch.decoder.set_state(Gst.State.NULL)
+                self.logger.debug(
+                    'Set element %s to state NULL', branch.decoder.get_name()
+                )
+
+            self.logger.debug('Setting state of the bin to PLAYING')
+            self.set_state(Gst.State.PLAYING)
+        finally:
+            # do_handle_message routes the state change that removes the decoder
+            # only while it is in _elem_to_branch, which _release_branch clears.
+            # That ordering holds only when the transition to NULL is synchronous,
+            # so remove the decoder here instead of relying on the message.
+            if branch.decoder is not None and branch.decoder.get_parent() is self:
+                self.remove(branch.decoder)
+            # do_element_removed releases the branch when the decoder leaves the
+            # bin. It does not run when the decoder was never added to the bin or
+            # has been removed already, so release the branch here as well.
+            self._release_branch(branch)
         self.logger.info('Branch with source %s removed', branch.source_id)
 
         return False
+
+    def _release_branch(self, branch: BranchInfo):
+        """Release the resources of a branch and let a new branch take its place.
+
+        Safe to call repeatedly and from any thread, releases a branch once.
+        """
+
+        with self._branches_lock:
+            if branch.released:
+                return
+            branch.released = True
+            if self._branches.get(branch.source_id) is branch:
+                del self._branches[branch.source_id]
+            remove_pad = branch.pad_added_to_bin
+            branch.pad_added_to_bin = False
+            no_branches_left = not self._branches
+
+        if branch.decoder is not None:
+            self._elem_to_branch.pop(branch.decoder, None)
+        if remove_pad:
+            self.logger.debug('Removing pad %s', branch.src_pad.get_name())
+            self.remove_pad(branch.src_pad)
+        # Set last: a thread waiting for this source takes it over once it is set.
+        branch.lock.set()
+        self.logger.debug('Resources of source %s has been released', branch.source_id)
+        if not self._is_running and no_branches_left:
+            self.logger.debug('Emitting shutdown signal.')
+            self.emit('shutdown')
 
     def do_element_removed(self, elem: Gst.Element):
         """Release a removed element resources."""
@@ -488,17 +636,7 @@ class SavantRsVideoDecodeBin(LoggerMixin, Gst.Bin):
         branch = self._elem_to_branch.pop(elem, None)
         if branch is None:
             return
-        self.logger.debug('Resources of source %s has been released', branch.source_id)
-        if branch.pad_added_to_bin:
-            self.remove_pad(branch.src_pad)
-        del self._branches[branch.source_id]
-        branch.lock.set()
-        self.logger.debug(
-            'Lock %s of source %s has been released', branch.lock, branch.source_id
-        )
-        if not self._is_running and not self._branches:
-            self.logger.debug('Emitting shutdown signal.')
-            self.emit('shutdown')
+        self._release_branch(branch)
 
     def build_decoder(self, branch: BranchInfo):
         self.logger.debug('Building decoder for source %s', branch.source_id)
