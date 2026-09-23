@@ -859,18 +859,20 @@ class NvDsPipeline(GstPipeline):
             # an unknown state - some removed, some not - and the lists tracking
             # them still hold whatever was left. Its demuxer pad may still carry
             # that chain, so the index is dropped rather than handed to the next
-            # source. Putting the rest of the source back into a usable state is
-            # deliberately not attempted here: it cannot be done reliably without
-            # knowing how far the teardown got. The failure is raised rather than
-            # swallowed so that it is not silent.
+            # source.
             self._logger.exception(
                 'Failed to remove the output elements of source %s. '
                 'Not returning its demuxer pad index %s to the pool of free ones.',
                 source_info.source_id,
                 source_info.pad_idx,
             )
+            # The source is abandoned. Dropping the registration is not a guess
+            # about how far the teardown got - it discards the whole object, so
+            # the elements it still lists are leaked rather than reused, and the
+            # next generation of this source starts from a fresh SourceInfo.
+            self._sources.remove_source(source_info)
             source_info.pad_idx = None
-            raise
+            return False
 
         finally:
             self._logger.debug('Releasing lock for source %s', source_info.source_id)
@@ -882,11 +884,11 @@ class NvDsPipeline(GstPipeline):
         return False
 
     def _release_pad_idx(self, source_info: SourceInfo):
-        """Return the demuxer pad index of a source to the pool of free indices.
+        """Return the demuxer pad index of a source to the pool of free indices
+        and clear it on the source.
 
-        Runs whatever happened while removing the source: an index that is not
-        returned is lost for good, and once every index is lost each new source
-        waits for a free one forever.
+        Pushes GST_EVENT_STREAM_START on the pad first to reset its EOS state.
+        The index is not returned when that push fails.
         """
 
         pad_idx = source_info.pad_idx
