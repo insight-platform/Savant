@@ -127,6 +127,23 @@ class GstPipelineRunner:
         except RuntimeError:
             self._logger.error('Failed to join thread.')
 
+        # add_signal_watch() attaches a GSource backed by a socketpair to the
+        # main context; without removing it the pipeline and its descriptors
+        # stay alive for as long as the runner object is referenced.
+        bus = self._pipeline.get_bus()
+        if bus is not None:
+            for handler in (
+                self.on_error,
+                self.on_eos,
+                self.on_warning,
+                self.on_state_changed,
+            ):
+                try:
+                    bus.disconnect_by_func(handler)
+                except TypeError:
+                    pass
+            bus.remove_signal_watch()
+
         exec_seconds = time() - self._start_time
         self._logger.info(
             'The pipeline is about to stop. Operation took %s.',
