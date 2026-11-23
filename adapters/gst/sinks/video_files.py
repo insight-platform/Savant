@@ -438,6 +438,9 @@ class VideoFilesSink:
         location, writer = location_with_writer
         writer.write_eos(eos)
         writer.close()
+        self.writers.pop(location, None)
+        if self.last_writer_per_source.get(eos.source_id, (None, None))[1] is writer:
+            del self.last_writer_per_source[eos.source_id]
         return True
 
     def terminate(self):
